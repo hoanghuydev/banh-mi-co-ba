@@ -8,6 +8,8 @@
  *   F1 bật/tắt · F2 Perception · F3 Thoại · F4 Đồn thổi · F5 Trí nhớ
  *   F6 Đồng hồ & RNG · F7 Perf · F8 Kinh tế · ~ console lệnh · ?debug=1 bật sẵn
  */
+import { MOOD_CAUSES, moodBaseFace, moodOf, type MoodCause } from "../sim/mood";
+import { NEUTRAL } from "../sim/reaction";
 import type Phaser from "phaser";
 import { bus, type EventKey } from "../core/eventbus";
 import { fmtHhmm } from "../core/clock";
@@ -120,28 +122,52 @@ const PANELS: Record<PanelId, (game: Phaser.Game, dialogLog: string[]) => string
   },
 
   dialog(_g, log) {
-    return [
-      "Rule DB (Valve/Firewatch) chưa dựng — P2-01. Hiện là pool generic + shuffle-bag per-NPC.",
-      `câu bị hoãn vì trần 1 câu/frame: ${dev.stall?.service.dialogDeferred ?? 0}`,
-      "", ...log,
-    ].join("\n");
+    const s = dev.stall?.service;
+    const l = s?.speaker.last;
+    const head = [
+      `rule DB: ${s?.speaker.db.all.length ?? 0} rule · câu bị hoãn vì trần 1 câu/frame: ${s?.dialogDeferred ?? 0}`,
+      `~ rule.why() · rule.test("CONCEPT", "fact=giá trị,…")`,
+    ];
+    if (s && l) {
+      head.push("", `lần hỏi gần nhất: ${l.concept} · ${l.npc} → ${l.picked ?? "(không rule nào khớp)"}`,
+        `  ${l.q.dump().map(([k, v]) => `${k}=${v}`).join(" ")}`,
+        ranking(s.speaker.db.explain(l.concept, l.q, s.speaker.st, l.now), 6));
+    }
+    return [...head, "", ...log].join("\n");
   },
 
   gossip() {
     const w = dev.ctx?.world;
-    return [
-      "Hệ đồn thổi chưa dựng — P2-04 (mở ở GOSSIP_START_DAY = 4, MUTATION_START_DAY = 8).",
-      `tin đang lan trong save: ${w?.gossip.inFlight.length ?? 0}`,
-    ].join("\n");
+    if (!w) return "(chưa vào ván)";
+    const g = w.gossip;
+    const out = [
+      `P2-04 — mở từ ngày 4, nhớ nhầm từ ngày 8 · ngân sách nhớ nhầm còn ${g.budget.mutationsLeft}/4 (lần gần nhất ngày ${g.budget.lastMutationDay})`,
+      `nghe lỏm sáng nay: ${g.overhear ? `${g.overhear.a} → ${g.overhear.b} · ${g.overhear.claim} (nguồn ${g.overhear.source ?? "tự thấy"})` : "—"}`,
+      "", "nhật ký lan tin (mới nhất trước):",
+      ...g.log.slice(-8).reverse().map((e) => `  ngày ${e.day}: ${e.from} → ${e.to} · ${e.claim}${e.mutated ? " (MÉO)" : ""} · hop ${e.hops}`),
+      "", "tin trong đầu từng người:",
+    ];
+    for (const [id, list] of Object.entries(g.beliefs)) {
+      const live = list.filter((b) => !b.dormant);
+      if (!live.length) continue;
+      out.push(`  ${id.padEnd(10)} ` + live.map((b) => `${b.claim}${b.hops ? `←${b.from}` : "(thấy)"} c${b.confidence.toFixed(2)} d${b.declarations}`).join(" · "));
+    }
+    return out.join("\n");
   },
 
   memory() {
     const w = dev.ctx?.world;
     if (!w) return "(chưa vào ván)";
-    const rows = Object.entries(w.npcs).map(([id, n]) =>
-      `${id.padEnd(12)} ghé ${String(n.visits).padStart(3)} · nghe đơn ruột ${n.heard} · cho thêm ${n.freebies}`
-      + ` · ${n.tier} · slot ${n.memory.short.length}/${n.memory.long.length}/${n.memory.core ? 1 : 0}`);
-    return ["3 tầng slot (short/long/core) — P2-03 sẽ ghi vào đây.", "", ...rows].join("\n");
+    const day = w.progress.dayIndex;
+    const rows: string[] = [];
+    for (const [id, n] of Object.entries(w.npcs)) {
+      if (id.startsWith("walkin")) continue;
+      rows.push(`${id.padEnd(10)} ${n.tier.padEnd(12)} điểm ${n.relationPoints.toFixed(0).padStart(4)} trần ${n.trustCeiling}`
+        + ` · ghé ${n.visits} · nghe đơn ${n.heard}${n.absentUntil >= day ? ` · VẮNG tới ngày ${n.absentUntil}` : ""}`);
+      const mem = [...n.memory.short, ...n.memory.long, ...(n.memory.core ? [n.memory.core] : [])];
+      if (mem.length) rows.push("    " + mem.map((m) => `${m.tier[0]}:${m.kind}×${m.occurrences} ${m.intensity.toFixed(0)}`).join(" · "));
+    }
+    return ["P2-03 — SỐ CHỈ Ở ĐÂY (dev). T3: không con số nào lên màn hình chơi.", "", ...rows].join("\n");
   },
 
   clock() {
@@ -223,13 +249,40 @@ function makeApi(game: Phaser.Game, print: (s: string) => void) {
         for (const c of cs) c.gazeOverride = g;
         return `${cs.length} người`;
       },
-      mood: later("P2-02 (kênh phản ứng / tâm trạng nền)"),
+      /** Ép mood ngoài tầm kiểm soát cho người đang ở quán: NONE SEP_MANG MUA_UOT DAU_OM HET_TIEN MET TIN_VUI. */
+      mood(id: string, cause: string) {
+        const cs = need(dev.stall, "quầy").service.customers.filter((c) => c.memKey === id);
+        if (!MOOD_CAUSES.includes(cause as MoodCause)) return `mood lạ — ${MOOD_CAUSES.join(" ")}`;
+        for (const c of cs) {
+          c.dayMood = moodOf(cause as MoodCause);
+          const f = moodBaseFace(c.dayMood);
+          c.react.baseFace = c.react.face = f ?? NEUTRAL;
+        }
+        return `${cs.length} người → ${cause}`;
+      },
     },
     stim: {
       fire(id: string, zone: StallZone = "HANDS") { need(dev.stall, "quầy").fire(id, zone); return `${id}@${zone}`; },
     },
     gossip: { seed: later("P2-04"), tick: later("P2-04"), graph: later("P2-04") },
-    rule: { why: later("P2-01"), test: later("P2-01") },
+    rule: {
+      /** "Tại sao nó nói câu đó?" — xếp hạng mọi rule của lần hỏi gần nhất, rule trượt ở fact nào. */
+      why() {
+        const sp = need(dev.stall, "quầy").service.speaker;
+        const l = need(sp.last, "lần hỏi rule nào");
+        return `${l.concept} · ${l.npc} → ${l.picked ?? "(im)"}\n` + ranking(sp.db.explain(l.concept, l.q, sp.st, l.now));
+      },
+      /** Hỏi thử: `rule.test("DELIVERY", "defectKind=MISSING,defectWasSeen=true,defectCount=1")`. */
+      test(concept: string, facts = "") {
+        const extra: Record<string, string | number | boolean> = {};
+        for (const kv of facts.split(",").map((x) => x.trim()).filter(Boolean)) {
+          const [k, v] = kv.split("=");
+          extra[k] = v === "true" ? true : v === "false" ? false : /^-?\d+$/.test(v) ? Number(v) : v;
+        }
+        const r = need(need(dev.stall, "quầy").service.devTest(concept, extra), "khách ở quầy");
+        return `${concept} · ${r.npc}\n` + ranking(r.ranking);
+      },
+    },
     sim: { headless: () => "chạy bằng Node: npm run sim -- --days 40" },
     bus: {
       dump() {
@@ -271,4 +324,9 @@ function loadState(): { visible: boolean; panel: PanelId } {
 
 function saveState(s: { visible: boolean; panel: PanelId }) {
   try { sessionStorage.setItem(SS_KEY, JSON.stringify(s)); } catch { /* bỏ qua */ }
+}
+
+/** Bảng xếp hạng rule cho F3 / `rule.why` / `rule.test`. */
+function ranking(rows: { id: string; score: number; ok: boolean; why: string }[], n = 10) {
+  return rows.slice(0, n).map((x) => `  ${x.ok ? "✓" : "·"} ${String(x.score).padStart(2)} ${x.id.padEnd(26)} ${x.why}`).join("\n");
 }

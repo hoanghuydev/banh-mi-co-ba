@@ -39,6 +39,16 @@ export type Settings = {
    * Dev/playtest mặc định bật; bản bán ra mặc định tắt và hỏi rõ một lần.
    */
   telemetry: boolean | null;
+  /**
+   * CANON §15 công tắc số 1 / P2-04 RB6: NPC nhớ nhầm & đổ oan. TẮT không tắt đồn thổi —
+   * tin vẫn lan, vẫn có nguồn, vẫn nghe lỏm được, chỉ là LUÔN ĐÚNG (mutation = 0).
+   */
+  allowFalseMemory: boolean;
+  /**
+   * CANON §15 công tắc #4 / P2-05 §4.4: trang cuối ngày của cô Ba tự mở. TẮT thì nhật ký
+   * thô vẫn ghi, vẫn mở bằng tay (Tab); giả thuyết vẫn chạy; báo trước vẫn còn qua lớp 1–2.
+   */
+  notebookAuto: boolean;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -47,6 +57,8 @@ export const DEFAULT_SETTINGS: Settings = {
   noTimePressure: false,
   musicVolume: 55,
   telemetry: DEV_TOOLS || PLAYTEST ? true : null,
+  allowFalseMemory: true,
+  notebookAuto: true,
 };
 
 /** Cài đặt sống độc lập với save: đổi ở menu là có hiệu lực ngay, kể cả chưa có ván nào. */

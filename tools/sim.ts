@@ -15,6 +15,9 @@ import { newGame } from "../src/core/save";
 import { memoryPlatform } from "../src/core/platform";
 import { Telemetry, estimateSeason } from "../src/core/telemetry";
 import { HeadlessStall, POLICIES, nextDay } from "../src/sim/headless";
+import { settleNight } from "../src/sim/night";
+import { CLAIM } from "../src/sim/gossip";
+import { NPCS } from "../src/content/npcs";
 
 const arg = (k: string, d: string) => {
   const i = process.argv.indexOf(`--${k}`);
@@ -64,6 +67,24 @@ const wall = performance.now() - t0;
 console.log(`\nsim · ${days} ngày · seed "${seed}" · policy ${policy.name}\n`);
 console.log("ngày │ phút  │ bán  │ bỏ   │ s/kh  │ rớt   │ bắt   │ im    │ lặp");
 console.log(rows.join("\n"));
+
+// Quan hệ cuối mùa (P2-03 §6) — SỐ CHỈ Ở CÔNG CỤ DEV, không bao giờ lên màn hình (T3).
+settleNight(world);
+console.log("\nquan hệ cuối mùa (dev):  NPC          bucket        điểm  trần  ghé  ký ức S/L/C");
+for (const npc of NPCS) {
+  const n = world.npcs[npc.id];
+  if (!n) continue;
+  console.log(`  ${npc.name.padEnd(22)} ${n.tier.padEnd(13)} ${n.relationPoints.toFixed(0).padStart(4)}  ${String(n.trustCeiling).padStart(4)}  ${String(n.visits).padStart(3)}  ${n.memory.short.length}/${n.memory.long.length}/${n.memory.core ? 1 : 0}`);
+}
+const friends = NPCS.filter((n) => world.npcs[n.id]?.tier === "FRIEND").length;
+console.log(`  Friend: ${friends}/12 (P2-03 §5 mục tiêu 3–5 ở ngày 40)`);
+
+// Đồn thổi (P2-04 §6 cân bằng)
+const glog = world.gossip.log;
+const good = glog.filter((e) => CLAIM[e.claim]?.valence > 0).length;
+console.log(`\nđồn thổi (dev): ${glog.length} lần kể · tốt ${good} : xấu ${glog.length - good} (mục tiêu ≥ 2:1)`
+  + ` · méo ${glog.filter((e) => e.mutatedHere).length} (≤ 4) · hop tối đa ${Math.max(0, ...glog.map((e) => e.hops))}`);
+for (const e of glog.slice(0, 12)) console.log(`  ngày ${String(e.day).padStart(2)}: ${e.from} → ${e.to} · ${e.claim}${e.mutated ? " (MÉO)" : ""}`);
 
 const est = estimateSeason(tele.days, 40);
 const perDay = est.minPerDay + MARKET_MIN_EST + EVENING_MIN_EST;

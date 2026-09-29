@@ -1,0 +1,42 @@
+{
+  "_note": "Đồ thị quan hệ NPC–NPC — P2-04 §2.5, chép nguyên bảng cạnh. Cạnh VÔ HƯỚNG (hai người kể cho nhau cùng một độ thân). strength ∈ [−1, 1]; âm = không kể cho nhau. KHÔNG đổi trong mùa (Đừng-1), trừ 2 cạnh có kịch bản (P4). Bà Bảy ↔ cô Ba: KHÔNG CÓ CẠNH — chuyện không được nhắc.",
+  "edges": [
+    ["BA_SAU", "BA_BAY", 0.85],
+    ["BA_SAU", "CO_MAI", 0.80],
+    ["BA_SAU", "BE_SU", 0.70],
+    ["BA_SAU", "CHI_HANH", 0.70],
+    ["BA_SAU", "CHU_TU", 0.60],
+    ["BA_SAU", "CHU_KIET", 0.50],
+    ["BA_SAU", "CHI_LAN", 0.40],
+    ["BA_BAY", "BE_SU", 0.70],
+    ["BA_BAY", "CO_MAI", 0.60],
+    ["BA_BAY", "THAY_PHUC", 0.60],
+    ["BA_BAY", "ONG_HAI", -0.30],
+    ["CO_MAI", "CHU_KIET", 0.60],
+    ["CO_MAI", "THAY_PHUC", 0.60],
+    ["CO_MAI", "CHI_LAN", 0.50],
+    ["THAY_PHUC", "CHI_HANH", 0.65],
+    ["THAY_PHUC", "BE_SU", 0.65],
+    ["THAY_PHUC", "CHI_LAN", 0.45],
+    ["CHU_TU", "ANH_DUNG", 0.70],
+    ["CHU_TU", "ONG_HAI", 0.60],
+    ["CHU_TU", "CHU_KIET", 0.40],
+    ["ANH_DUNG", "CHU_KIET", 0.55],
+    ["ANH_DUNG", "ANH_BAO", 0.40],
+    ["ANH_DUNG", "CHI_HANH", -0.25],
+    ["ONG_HAI", "CHU_KIET", 0.50],
+    ["ONG_HAI", "CHI_LAN", -0.20],
+    ["BE_SU", "ANH_BAO", 0.60],
+    ["BE_SU", "CHI_HANH", 0.50],
+    ["BE_SU", "CHI_LAN", 0.35]
+  ],
+  "nodes": {
+    "BA_SAU":    { "amplifier": 1.40, "credibility": 0.85, "role": "AMPLIFIER", "resident": true },
+    "BE_SU":     { "amplifier": 1.50, "credibility": 0.55, "role": "AMPLIFIER" },
+    "CHI_LAN":   { "amplifier": 0.35, "credibility": 1.00, "role": "SILENT_STRONG", "neverOverheard": true, "neverMutated": true },
+    "THAY_PHUC": { "amplifier": 0.60, "credibility": 0.95, "role": "DAMPER", "confidenceMulOnReceive": 0.60, "requiresWitnessToRelay": true },
+    "CHU_KIET":  { "amplifier": 1.10, "credibility": 0.50, "role": "DISTORTER", "badNewsMul": 1.15, "goodNewsMul": 0.50 },
+    "CO_MAI":    { "resident": true },
+    "BA_BAY":    { "resident": true }
+  }
+}

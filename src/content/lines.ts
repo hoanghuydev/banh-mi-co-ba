@@ -14,13 +14,8 @@ export const SILENCE_RATE = 0.35;
 /** Túi im lặng: 7 / 20 = 35%. */
 const SILENCE_BAG = 20, SILENCE_TICKETS = 7;
 
-export type LinePool =
-  | "waitSoft" | "waitHard" | "waitConfirmed"
-  | "noticedMess" | "noticeDrop" | "noticeBurnt" | "noticeDirty" | "dirtyRemark"
-  | "ant_MISSING" | "disc_MISSING" | "ant_UNWANTED" | "disc_UNWANTED"
-  | "ratio_under" | "ratio_over" | "cold" | "stuffed"
-  | "happy" | "remembered" | "underdone"
-  | "tea" | "teaNod" | "teaSuspect" | "askReply" | "askPlayer";
+/** Thoại của khách đã sang rule DB (P2-01) — pool chỉ còn câu người chơi tự nói. */
+export type LinePool = "askPlayer";
 
 export type PoolDef = { id: LinePool; tier: 1 | 2 | 3; vars: string[]; variants: string[]; en?: string[] };
 

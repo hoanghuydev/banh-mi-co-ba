@@ -1,7 +1,7 @@
 /**
  * npm run lint:lines [-- --fix] [-- --content <dir>]
  *
- * Linter cho file thoại — P0-03 §2.3(b), 13 kiểm tra L001–L013.
+ * Linter cho file thoại — P0-03 §2.3(b), 13 kiểm tra L001–L013 + L014 (P2-04: tin đồn phải có nguồn).
  * `--fix` sửa được L004 (NFC), L005 (kiểu đặt dấu), L007 (viết hoa toàn bộ).
  *
  * Đọc `content/lines/**.json` (pool generic) và `content/rules/**.json` (response của rule).
@@ -23,7 +23,9 @@ type Red = {
 };
 
 /** Một "túi" thoại cần lint: biến thể + biến được phép + ai nói. */
-type Bag = { file: string; where: string; vi: string[]; en?: string[]; vars: string[]; npc?: string; set: (vi: string[]) => void };
+type Bag = { file: string; where: string; vi: string[]; en?: string[]; vars: string[]; npc?: string; set: (vi: string[]) => void
+  /** L014 — biến BẮT BUỘC có mặt ở mọi dòng (tin đồn: tên nguồn). */
+  mustHave?: string };
 
 // ── bảng chữ ────────────────────────────────────────────────────────────────
 const VN_VOWELS = "aàáảãạăằắẳẵặâầấẩẫậeèéẻẽẹêềếểễệiìíỉĩịoòóỏõọôồốổỗộơờớởỡợuùúủũụưừứửữựyỳýỷỹỵ";
@@ -70,6 +72,21 @@ function collect(contentDir: string): { bags: Bag[]; save: () => void } {
 
   for (const f of walk(join(contentDir, "lines"), [".json"])) {
     const data = readJson<{ pools: { id: string; vars?: string[]; variants: string[]; en?: string[]; npc?: string }[] }>(f);
+    // P2-04 claims.json — tin đồn: hearsay/tell nói về NGUỒN nên có biến {source}
+    const claims = (data as any).claims as Record<string, Record<string, unknown>> | undefined;
+    for (const [id, c] of Object.entries(claims ?? {})) {
+      for (const pool of ["hearsay", "belief", "conviction", "seen", "tell"] as const) {
+        const vi = c[pool] as string[] | undefined;
+        if (!vi) continue;
+        bags.push({
+          file: f, where: `claim ${id}.${pool}`, vi, vars: ["source"], mustHave: pool === "hearsay" || pool === "tell" ? "source" : undefined,
+          set: (v) => { c[pool] = v; dirty.set(f, () => writeFileSync(f, JSON.stringify(data, null, 2) + "\n")); },
+        });
+      }
+    }
+    for (const [id, vi] of Object.entries(((data as any).reactions ?? {}) as Record<string, string[]>)) {
+      bags.push({ file: f, where: `reactions.${id}`, vi, vars: [], set: () => {} });
+    }
     for (const p of data.pools ?? []) {
       bags.push({
         file: f, where: `pool ${p.id}`, vi: p.variants, en: p.en, vars: p.vars ?? [], npc: p.npc,
@@ -82,13 +99,11 @@ function collect(contentDir: string): { bags: Bag[]; save: () => void } {
     const data = readJson<any>(f);
     const rules: any[] = Array.isArray(data) ? data : data.rules ?? [data];
     for (const rule of rules) {
-      const npc = rule.npc ?? rule.criteria?.find((c: any) => c.key === "Customer.npcId" && c.op === "eq")?.value;
-      for (const resp of rule.responses ?? []) {
-        bags.push({
-          file: f, where: `rule ${rule.id}.${resp.id}`, vi: resp.variants, en: resp.en, vars: rule.vars ?? [], npc,
-          set: (vi) => { resp.variants = vi; dirty.set(f, () => writeFileSync(f, JSON.stringify(data, null, 2) + "\n")); },
-        });
-      }
+      // Biến nội suy của rule: `{mon}` = tên món (P2-01 §2.8). NPC nói = criterion npcId.
+      bags.push({
+        file: f, where: `rule ${rule.id}`, vi: rule.say ?? [], en: rule.en, vars: ["mon"], npc: rule.when?.npcId,
+        set: (vi) => { rule.say = vi; dirty.set(f, () => writeFileSync(f, JSON.stringify(data, null, 2) + "\n")); },
+      });
     }
   }
   return { bags, save: () => { for (const w of dirty.values()) w(); } };
@@ -172,6 +187,12 @@ export function lintLines(contentDir: string, opts: { fix?: boolean } = {}): Rep
     for (const [i, en] of (b.en ?? []).entries()) {
       for (const leak of red.enPronounLeaks) {
         if (hasWord(en, leak)) r.add("L009", "ERROR", b.file, `${b.where}.en[${i}]`, `đại từ xưng hô bị DỊCH thành "${leak}" — CANON §2: không dịch`);
+      }
+    }
+    // L014 — P2-04 RB3: mọi dòng thoại phát từ tin NGHE KỂ bắt buộc chèn tên nguồn
+    if (b.mustHave) {
+      for (const [i, s] of b.vi.entries()) {
+        if (!s.includes(`{${b.mustHave}}`)) r.add("L014", "ERROR", b.file, `${b.where}[${i}]`, `thiếu {${b.mustHave}} — tin đồn không truy được nguồn = bị report là bug, và họ đúng`);
       }
     }
     // L011 — thiếu phụ đề Anh

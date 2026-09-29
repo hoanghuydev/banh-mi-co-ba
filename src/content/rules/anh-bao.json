@@ -1,0 +1,18 @@
+{
+  "_note": "Anh Bảo — sinh viên cắm mặt điện thoại: gaze thấp nhất hẻm, sandbox để người chơi học hệ perception. Ô trống '—' ở bảng §4 là CỐ Ý IM LẶNG — đó là dữ liệu.",
+  "rules": [
+    {"id": "bao.dropped_food", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_BAO", "eventId": "DROPPED_FOOD", "obsState": ">=NOTICED"}, "silent": true, "say": []},
+    {"id": "bao.dirty_hands", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_BAO", "eventId": "DIRTY_HANDS", "obsState": ">=NOTICED"}, "silent": true, "say": []},
+    {"id": "bao.burnt_or_cold", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_BAO", "eventId": "BURNT_OR_COLD", "obsState": ">=NOTICED"}, "silent": true, "say": []},
+    {"id": "bao.flourish", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_BAO", "eventId": "FLOURISH", "obsState": ">=NOTICED"}, "silent": true, "say": []},
+    {"id": "bao.wrong_name", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_BAO", "eventId": "WRONG_NAME", "obsState": ">=NOTICED"}, "say": ["Dạ? À… dạ con là Bảo."]},
+    {"id": "bao.wait.noticed", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_BAO", "eventId": "MADE_THEM_WAIT", "obsState": "NOTICED"}, "silent": true, "say": []},
+    {"id": "bao.wait.confirmed", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_BAO", "eventId": "MADE_THEM_WAIT", "obsState": "CONFIRMED"}, "silent": true, "say": []},
+    {"id": "bao.del.seen", "concept": "DELIVERY", "when": {"npcId": "ANH_BAO", "defectCount": ">=1", "defectWasSeen": true}, "silent": true, "say": []},
+    {"id": "bao.del.found", "concept": "DELIVERY", "when": {"npcId": "ANH_BAO", "defectCount": ">=1", "defectWasSeen": false}, "say": ["À… dạ không sao."]},
+    {"id": "bao.del.usual", "concept": "DELIVERY", "when": {"npcId": "ANH_BAO", "defectCount": 0, "orderIsUsual": true}, "say": ["Ủa… dạ. Cảm ơn cô."]},
+    {"id": "bao.del.toomuch", "concept": "DELIVERY", "when": {"npcId": "ANH_BAO", "defectCount": 0, "freeExtraTooMuch": true}, "say": ["Dạ."]},
+    {"id": "bao.tea", "concept": "INTERACT", "when": {"npcId": "ANH_BAO", "interaction": "TEA"}, "say": ["Dạ… con cảm ơn cô."]},
+    {"id": "bao.thi", "concept": "SMALLTALK", "when": {"npcId": "ANH_BAO", "queueLength": "<=2", "npcVisitCount": ">=4"}, "say": ["Dạ… tuần sau con thi rồi cô."], "norepeat": true, "odds": 40}
+  ]
+}

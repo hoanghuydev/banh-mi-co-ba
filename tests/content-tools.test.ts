@@ -26,24 +26,23 @@ function sandbox(rules: unknown[], pools: unknown[]) {
 }
 
 const variants8 = ["Một.", "Hai nè.", "Ba đó.", "Bốn hả?", "Năm rồi.", "Sáu nghen.", "Bảy ha.", "Tám luôn."];
-const rule = (id: string, extra: object) => ({
-  id, concept: "NOTICE_DROP", tier: 1, responses: [{ id: "r1", variants: variants8 }], criteria: [], ...extra,
-});
+const rule = (id: string, extra: object) => ({ id, concept: "NOTICE_EVENT", say: variants8, when: {}, ...extra });
 
 test("validator bắt rule chết, mâu thuẫn, fact mồ côi, response thiếu biến thể", () => {
   const dir = sandbox([
-    rule("dead", { criteria: [{ key: "Customer.khongCo", op: "eq", value: 1 }] }),                         // R001
-    rule("contra", { criteria: [{ key: "Customer.visitCount", op: "gt", value: 10 },
-                                { key: "Customer.visitCount", op: "lt", value: 3 }] }),                   // R002
-    rule("orphan", { criteria: [{ key: "Customer.tier", op: "eq", value: "FRIEND" }],
-                     applycontext: [["Customer.nhoMaiKhongAiDoc", true, 60]] }),                           // R005
-    rule("short", { criteria: [{ key: "Customer.npcId", op: "eq", value: "BA_BAY" }],
-                    responses: [{ id: "r1", variants: variants8.slice(0, 4) }] }),                          // R007
-    rule("badnpc", { criteria: [{ key: "Customer.npcId", op: "eq", value: "ONG_KHONG_TON_TAI" }] }),       // R013
-    rule("both", { criteria: [{ key: "Customer.mood", op: "eq", value: "CALM" }], speakonce: true, norepeat: true }), // R010
+    rule("dead", { when: { khongCo: 1 } }),                                                   // R001
+    rule("contra", { when: { npcVisitCount: "<-3" } }),                                        // R002 (ngoài miền ≥ 0)
+    rule("orphan", { when: { npcRelTier: "FRIEND" },
+                     applycontext: { ctxKhachMoiToi: { value: 1, duration: 60 } } }),         // R005: không rule nào đọc
+    rule("short", { when: { npcMood: ">=10" }, say: variants8.slice(0, 4) }),                // R007 (dòng dùng chung)
+    rule("badnpc", { when: { npcId: "ONG_KHONG_TON_TAI" } }),                                 // R013
+    rule("both", { when: { npcMood: "CALM" }, speakonce: true, norepeat: true }),              // R010
+    rule("ghost", { concept: "KHONG_AI_HOI" }),                                               // R003
+    rule("baddur", { when: { ctxBarkT1_TAY: "absent" },
+                     applycontext: { ctxBarkT1_TAY: { value: 1, duration: -5 } } }),          // R011
   ], []);
   const r = validateRules(dir, join(ROOT, "src"));
-  for (const code of ["R001", "R002", "R005", "R007", "R013", "R010", "R003"]) {
+  for (const code of ["R001", "R002", "R005", "R007", "R013", "R010", "R003", "R011"]) {
     assert.ok(r.has(code), `phải bắt ${code}; có: ${r.diags.map((d) => d.code).join(",")}`);
   }
 });

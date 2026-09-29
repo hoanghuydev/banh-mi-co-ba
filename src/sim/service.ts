@@ -1,5 +1,8 @@
 import { Rng, type RngHub, type BagState } from "../core/rng";
-import { Barks, type LinePool } from "../content/lines";
+import { Barks } from "../content/lines";
+import { Query } from "../dialog/facts";
+import { Speaker, type DialogState } from "../dialog/speaker";
+import type { Rule } from "../dialog/ruledb";
 import { NPCS, WALKIN_NAMES, WALKIN_STYLES, type NpcDef } from "../content/npcs";
 import { DAY_END_MIN, DAY_START_MIN, PEAK_END_MIN, PEAK_START_MIN, fmtHhmm } from "../core/clock";
 import type { Bus } from "../core/eventbus";
@@ -15,7 +18,14 @@ import {
   MAX_LIVE_STIMULI, SALIENCE, STIM_SPEC, observe, peakOfKey, rank, stateOf,
   type ActiveStim, type ObsState, type Occluder, type Zone,
 } from "./perception";
-import { CUSTOMER_GATE, QUEUE_SLOTS, hitsWall } from "../world/map";
+import { CUSTOMER_GATE, QUEUE_SLOTS, STREET_BIN, hitsWall } from "../world/map";
+import { rollVisit } from "./schedule";
+import { SILENT_ABSENCE, record, servedWell, visitProbabilityMul, type BaseKind, type Memory } from "./memory";
+import { CLAIM, activeHeard, disprove, nameOf, poolOf, witness, type GossipState } from "./gossip";
+import { beginDay, displayName, logNote, logOrder, nameCheck, type Notebook } from "./notebook";
+import { moodBaseFace, moodPatienceMul, moodTipMul, rollMood } from "./mood";
+import { faceHoldSec, isSilentGrudge, reactionDelay } from "./personality";
+import { GROUP_OF, faceFor, poseFor, type Intensity, type PoseId } from "./reaction";
 import { CRUST } from "./oven";
 import { satisfaction, servedVector, tasteOf } from "./taste";
 
@@ -52,8 +62,10 @@ export const MAX_BUBBLES = 2;
 const QUEUE_EXPIRE_SEC = 2.5;
 const BARK_DELAY_MIN = 0.2;
 const BARK_DELAY_SPAN = 0.2;
-/** Tier-1 của cùng một người cách nhau ít nhất 20 s, không thì rơi xuống tier-3 ("Hửm."). */
-const TIER1_COOLDOWN = 20;
+/** Chuỗi `followup` quá 6 giây không nói được thì bỏ (P2-01 §2.7 — thế giới đã đổi). */
+const FOLLOWUP_EXPIRE_SEC = 6;
+/** Khách chờ bánh được ngần này giây mà quầy yên thì có thể buông một câu chuyện phiếm. */
+const SMALLTALK_AFTER_SEC = 4;
 /** Hỏi chuyện: 60 s mỗi người mới hỏi lại được (P1-02 §2.8). */
 export const ASK_COOLDOWN = 60;
 
@@ -74,6 +86,12 @@ export type ServiceDeps = {
   bags: Record<string, BagState>;
   /** Reload giữa buổi: bỏ qua mọi lượt khách hẹn tới trước mốc này. */
   resumeAt?: number;
+  /** `world.dialogState` — trí nhớ ngắn của rule DB. Vắng (test) thì dùng bản tạm. */
+  dialog?: DialogState;
+  /** `world.gossip` — tin đồn trong đầu từng người (P2-04). Vắng thì hẻm không ai kể ai. */
+  gossip?: GossipState;
+  /** `world.notebook` — sổ tay cô Ba (P2-05). Máy ghi cột trái vào đây. */
+  notebook?: Notebook;
 };
 
 type Visit = { at: number; npc: NpcDef | null; seq: number };
@@ -81,16 +99,20 @@ type Pending = {
   c: Customer; text: string; tier: 1 | 2 | 3; delay: number; log: boolean
   /** Độ ưu tiên (salience) — câu gọi món và câu phản ứng nặng được nói trước. */
   pri: number; waited: number;
+  /** Rule sinh ra câu này — ghi nhận đã-nói + applycontext + followup LÚC NÓI, không lúc chọn. */
+  rule?: Rule;
 };
+type Followup = { c: Customer; concept: string; at: number };
+
+/** Mỗi lượt hỏi rule DB kèm các fact Session của tình huống (P2-01 §2.3.1). */
+type Extra = Record<string, string | number | boolean>;
 
 const LEAVE_REASON: Record<LeaveReason, BusLeaveReason> = {
   served: "SERVED", impatient: "IMPATIENT", closed: "CLOSED",
 };
 
 /** Sự kiện được phản ứng bằng lời NGAY khi khách NOTICED (P1-02 §2.9). */
-const NOTICE_POOL: Partial<Record<StimId, LinePool>> = {
-  DROPPED_FOOD: "noticeDrop", BURNT_OR_COLD: "noticeBurnt", DIRTY_HANDS: "noticeDirty",
-};
+const NOTICE_SPOKEN: ReadonlySet<StimId> = new Set<StimId>(["DROPPED_FOOD", "BURNT_OR_COLD", "DIRTY_HANDS", "WRONG_NAME", "FLOURISH"]);
 
 const TIP_RATE: Record<RelTier, number> = { RIVAL: 0, ACQUAINTANCE: 0.045, FRIEND: 0.11 };
 /** REMEMBERED_USUAL tầng T-A (khách nói "như mọi bữa" rồi làm đúng) = 70; T-B (tự làm trước) = 90. */
@@ -107,18 +129,26 @@ export class Service {
   private schedule: Visit[] = [];
   private usual = new Map<string, OrderSpec>();
   private barks: Barks;
+  readonly speaker: Speaker;
+  private followups: Followup[] = [];
+  private smalltalked = new Set<string>();
+  private nowMin = DAY_START_MIN;
+  private query = new Query();
+  /** Mốc phản ứng gần đây của cả hàng — chống twinning (P2-02 §5.3). */
+  private reactAt: number[] = [];
   private dialogRng: Rng;
   private queue: Pending[] = [];
   private offStim: () => void;
   private nowSec = 0;
   private stimSeq = 0;
-  private lastTier1 = new Map<string, number>();
   private freeExtraToday = new Map<string, number>();
   private devSeq = 0;
   /** Ly trà còn lại hôm nay. */
   teaLeft = TEA_PER_DAY;
   /** Độ bẩn quầy 0..1 (P1-02 §2.10) — scene đặt mỗi frame. */
   dirt = 0;
+  /** Tay người chơi vừa cầm tiền, chưa rửa — scene đặt mỗi frame (fact `playerHandsDirty`). */
+  handsDirty = false;
   private dirtRemarked = false;
 
   servedCount = 0;
@@ -131,12 +161,15 @@ export class Service {
   constructor(private deps: ServiceDeps) {
     this.dialogRng = deps.hub.stream("dialog-shufflebag");
     this.barks = new Barks(this.dialogRng, deps.bags, deps.day);
+    this.speaker = new Speaker(this.dialogRng, deps.bags, deps.day, deps.dialog, 0);
     this.buildSchedule();
     const cut = deps.resumeAt ?? -1;
     this.schedule = this.schedule.filter((v) => v.at > cut);
 
     // Tầng nhận thấy NGHE bus — không ai gọi thẳng vào nó (P0-01 §2.5 nguyên tắc 3).
+    if (deps.notebook) beginDay(deps.notebook, deps.day);
     this.offStim = deps.bus.on("stim:emitted", (s) => {
+      if (s.stimId === "DROPPED_FOOD" && this.deps.notebook) this.deps.notebook.today.dropped++;
       const spec = STIM_SPEC[s.stimId];
       if (!spec) return;
       const live = this.active.filter((a) => a.until > this.nowSec);
@@ -165,14 +198,27 @@ export class Service {
   private buildSchedule() {
     const rng = this.deps.hub.derive("npc-schedule");
     const list: Omit<Visit, "seq">[] = [];
-    for (const npc of NPCS) if (npc.arrivesAt !== undefined) list.push({ at: npc.arrivesAt, npc });
+    // 12 người có tên: theo lịch sinh hoạt (P2-03 §2.9) — thứ nào, mấy giờ, khả năng bao nhiêu
+    for (const npc of NPCS) {
+      const m = this.mem(npc.id);
+      // trí nhớ → lịch (P2-03 §2.10): người đang giận ghé thưa hơn, người thân ghé đều hơn
+      const t = rollVisit(npc.schedule, this.deps.day, rng, visitProbabilityMul(m) * this.rumourMul(npc.id, 0.9, 1.1));
+      if (t === null || m.gone) continue;
+      // Có lịch hôm nay = một lần ghé mà người chơi có thể LỠ (decay chỉ đếm lần lỡ, không đếm ngày)
+      m.expectedDay = this.deps.day;
+      // Người im lặng đang "vắng n ngày" (P2-02 §4.6): chỗ 7h35 trống — và vẫn tính là lỡ
+      if (m.absentUntil >= this.deps.day) continue;
+      list.push({ at: Math.max(DAY_START_MIN + 2, Math.min(DAY_END_MIN - 12, t)), npc });
+    }
+    // khách vãng lai: dày ở giờ cao điểm 6h30–8h (CANON §13.3); ~1/3 nhịp bỏ trống vì
+    // người có tên giờ đã tự tới theo lịch (trước P2-02 nhịp này rút ngẫu nhiên người có tên)
     let t = DAY_START_MIN + 8;
     while (t < DAY_END_MIN - 10) {
       const peak = t >= PEAK_START_MIN && t < PEAK_END_MIN;
       t += peak ? 9 + rng.next() * 9 : 20 + rng.next() * 22;
       if (t >= DAY_END_MIN - 10) break;
-      const named = rng.next() < 0.35 ? rng.pick(NPCS) : null;
-      list.push({ at: t, npc: named });
+      if (rng.next() < 0.35) continue;
+      list.push({ at: t, npc: null });
     }
     list.sort((a, b) => a.at - b.at);
     this.schedule = list.map((v, seq) => ({ ...v, seq }));
@@ -227,11 +273,22 @@ export class Service {
       : { soi: 0.3 + rng.next() * 0.5, nongTinh: 0.2 + rng.next() * 0.5,
           deTha: 0.5 + rng.next() * 0.4, thanThien: 0.3 + rng.next() * 0.5 };
 
+    // Mood từ dòng số RIÊNG của (ngày, lượt ghé) — không đọc gì của người chơi (P2-02 §5.2)
+    const mood = rollMood(this.deps.hub.derive(`mood:${v.seq}`), this.deps.day);
     const c = new Customer(
       id, memKey, name, person, style, npc, this.usualOf(memKey), m.visits,
-      { ...GATE }, this.patienceOf(npc, nowMin), rng,
+      { ...GATE }, this.patienceOf(npc, nowMin) * moodPatienceMul(mood), rng,
     );
+    c.dayMood = mood;
+    if (npc && this.deps.gossip && activeHeard(this.deps.gossip, npc.id)
+      .some((b) => b.valence < 0 && (b.kind === "ORDER_DEFECT" || b.kind === "DIRTY_HANDS" || b.kind === "DROPPED_FOOD"))) c.gazeBias = 0.1;
+    const base = moodBaseFace(mood);
+    // THẤY → HIỂU → NGHE: mặt nền + prop có từ lúc bước vào hẻm, trước câu nói đầu tiên
+    if (base) c.react.baseFace = c.react.face = base;
+    if (mood.prop === "VAI_XUOI") c.react.basePose = c.react.pose = "SETTLE_IN";
     c.rollOrder(this.canAskUsual(npc, m));
+    // P2-01 §2.12: khách mới tới là chuỗi độc thoại đang dở tự tắt (followup tra lại query).
+    for (const o of this.customers) if (o.phase !== "leaving") this.speaker.apply(o.memKey, "ctxKhachMoiToi", 1, 8, this.nowSec);
     this.customers.push(c);
     this.deps.bus.emit("npc:arrived", { npcId: memKey, visitId: id, slot: "SEATED_FAR", atHhmm: fmtHhmm(v.at) });
   }
@@ -289,30 +346,87 @@ export class Service {
         if (from === to) continue;
         this.deps.bus.emit("perception:stateChanged", { npcId: c.memKey, stimId: o.id, from, to, certainty: o.certainty });
         if (rank(to) <= rank(from)) continue;
+        this.react(c, o.id, to === "GLIMPSED" ? 1 : to === "NOTICED" ? 2 : 3);
+        // Kênh 5 — hệ quả trễ: sự kiện xấu thành ký ức khi CONFIRMED; FLOURISH (salience 15)
+        // chỉ người soi mới thấy, nên NOTICED là đủ (P2-02 §4.11)
+        if (to === "CONFIRMED" && (o.id === "DROPPED_FOOD" || o.id === "DIRTY_HANDS" || o.id === "BURNT_OR_COLD")) {
+          this.remember(c, o.id, SALIENCE[o.id] * o.certainty);
+        } else if (to === "NOTICED" && o.id === "FLOURISH") this.remember(c, "FLOURISH", SALIENCE.FLOURISH);
         if (to === "CONFIRMED") this.deps.bus.emit("perception:confirmed", { npcId: c.memKey, stimId: o.id });
-        if (to === "NOTICED" && NOTICE_POOL[o.id]) this.noticeBark(c, o.id);
+        if (to === "NOTICED" && NOTICE_SPOKEN.has(o.id)) this.noticeBark(c, o.id, to);
       }
     }
   }
 
   /**
-   * Phản ứng khi NOTICED — P1-02 §2.9, CANON §11: 35% im lặng (túi theo người), tier-1
-   * của cùng một người cách nhau ≥ 20 s, không thì rơi xuống tier-3 ("Hửm.").
+   * Phản ứng khi NOTICED — P1-02 §2.9, CANON §11: 35% im lặng (túi theo người). Cooldown
+   * tier-1 giờ nằm trong content (`ctxBarkT1_*` của rule) — rule tier-1 hết lượt thì rule
+   * điểm thấp hơn ("Hửm.") tự thắng.
    */
-  private noticeBark(c: Customer, id: StimId) {
+  private noticeBark(c: Customer, id: StimId, state: ObsState) {
     if (!this.barks.speaks(c.memKey)) {
       this.deps.bus.emit("dialog:silent", { npcId: c.memKey, reason: "RATE_35" });
       return;
     }
-    const last = this.lastTier1.get(c.id) ?? -Infinity;
-    const pool = this.nowSec - last >= TIER1_COOLDOWN ? NOTICE_POOL[id]! : "noticedMess";
-    if (this.barks.tierOf(pool) === 1) this.lastTier1.set(c.id, this.nowSec);
-    this.bark(c, pool, SALIENCE[id]);
+    this.speakConcept(c, "NOTICE_EVENT", { eventId: id, obsState: state, eventSalience: SALIENCE[id] }, SALIENCE[id]);
+  }
+
+  /**
+   * Kênh 1 + 2 — P2-02 §3.1–§3.2. Mặt đổi sau `reactionDelay` (0,20–0,65 s, điềm đạm chậm
+   * hơn); không hai người nào phản ứng trong cùng 60 ms (§5.3 luật phụ 1). Luật 35% im
+   * lặng KHÔNG đụng tới đây: im lặng là không NÓI, không phải không phản ứng.
+   */
+  private react(c: Customer, id: StimId, i: Intensity, pose?: PoseId) {
+    const p = c.personality;
+    const g = GROUP_OF[id];
+    let face = faceFor(g, p, i);
+    // `M1` (mím chặt) là CHỮ KÝ của chị Lan — gần như chỉ dùng M1 khi có chuyện không vừa ý
+    // (P2-02 §3.1 quy ước 1). Người chơi học nó từ chị, rồi rùng mình khi thấy trên mặt ai khác.
+    const negative = g === "HYGIENE" || g === "DEFECT" || g === "NAME" || g === "WAIT";
+    if (face && negative && isSilentGrudge(p)) face = [face[0], face[1], 1];
+    let chosen: PoseId = pose ?? (i >= 2 ? c.npc?.poses?.[id] ?? poseFor(g, p, i) : poseFor(g, p, i));
+    // chị Lan lúc CONFIRMED: ĐỨNG SỮNG (damping 40), không nói (P2-02 §4.6)
+    if (i === 3 && isSilentGrudge(p) && negative && g !== "WAIT") chosen = "FREEZE";
+    let at = this.nowSec + reactionDelay(p, this.dialogRng.next());
+    for (let guard = 0; guard < 20 && this.reactAt.some((t) => Math.abs(t - at) < 0.06); guard++) at += 0.06;
+    this.reactAt.push(at);
+    if (this.reactAt.length > 16) this.reactAt.shift();
+    c.react.schedule(c.now, at - this.nowSec, face, chosen, faceHoldSec(p));
+  }
+
+  /**
+   * Ghi một ký ức chứng kiến (P2-03). Chỉ 12 người có tên mới có trí nhớ — khách vãng
+   * lai lần đầu gặp chuyện xấu thì "im, đi thẳng, không bao giờ quay lại" (P2-02 §5.1 M3′).
+   */
+  private remember(c: Customer, kind: BaseKind, intensity: number, detail?: Memory["detail"]) {
+    if (!c.npc || intensity <= 0) return;
+    const m = this.mem(c.memKey);
+    const day = this.deps.day;
+    const res = record(m, c.personality, kind, Math.min(100, intensity), day, { detail, badDay: c.dayMood.value < 35 });
+    if (this.deps.gossip) witness(this.deps.gossip, c.memKey, kind, Math.min(100, intensity), day);
+    const nb = this.deps.notebook;
+    if (nb) {
+      if (res.healed.length && !nb.today.healed.includes(c.memKey)) nb.today.healed.push(c.memKey);
+      if (kind === "REMEMBERED_USUAL" && (m.memory.short.find((x) => x.kind === kind) ?? m.memory.long.find((x) => x.kind === kind))?.occurrences === 1) {
+        nb.today.firstUsual.push(c.memKey);
+      }
+    }
+    this.deps.bus.emit("memory:written", {
+      npcId: c.memKey, kind: kind as StimId, intensity: Math.round(Math.min(100, intensity)),
+      tier: res.core ? "CORE" : "SHORT", evicted: res.evicted,
+    });
+    // Người im lặng: không nói, không đổi mặt quá mức — CHỈ GHI, rồi vắng (P2-02 §2.3 + §4.6)
+    if (isSilentGrudge(c.personality)) {
+      const hands = kind === "DIRTY_HANDS" && (m.memory.short.find((x) => x.kind === "DIRTY_HANDS")?.occurrences ?? 0) >= 3;
+      const n = SILENT_ABSENCE[kind] ?? (hands ? 3 : 0);
+      if (n) m.absentUntil = Math.max(m.absentUntil, day + n);
+    }
   }
 
   // ──────────────────────────────────────────────────── bước 4 · khách
 
   tickNpcs(dt: number, ctx: { minutes: number; pressure: boolean; dayOver: boolean }) {
+    this.nowMin = ctx.minutes;
     while (this.schedule.length && this.schedule[0].at <= ctx.minutes && !ctx.dayOver) {
       this.spawn(this.schedule.shift()!, ctx.minutes);
     }
@@ -337,7 +451,20 @@ export class Service {
   }
 
   private step(c: Customer, dt: number, dayOver: boolean) {
-    if (c.phase === "leaving") { walk(c, GATE, dt); return; }
+    if (c.phase === "leaving") {
+      if (c.binDetour && c.binAt < 0) {
+        walk(c, STREET_BIN, dt);
+        if (near(c, STREET_BIN, 0.2)) {
+          c.binAt = c.now;
+          c.carrying = false;
+          this.deps.bus.emit("npc:actionTaken", { npcId: c.memKey, action: "BINNED_FOOD" });
+        }
+        return;
+      }
+      if (c.binAt >= 0 && c.now - c.binAt < 0.9) return;     // đứng lại một nhịp ở thùng rác
+      walk(c, GATE, dt);
+      return;
+    }
 
     switch (c.phase) {
       case "arriving":
@@ -378,21 +505,70 @@ export class Service {
   private waitSteps(c: Customer) {
     const r = c.waitRatio;
     const watchAt = Math.max(0.85 * c.waitT, c.waitT - 8) / c.waitT;
-    if (c.waitStage < 1 && r >= 0.6) c.waitStage = 1;
+    if (c.waitStage < 1 && r >= 0.6) { c.waitStage = 1; this.react(c, "MADE_THEM_WAIT", 1); }
     if (c.waitStage < 2 && r >= watchAt) {
       c.waitStage = 2;
       c.gazeM.force("WATCH");
-      if (this.barks.speaks(c.memKey)) this.bark(c, "waitSoft", 60);
+      this.react(c, "MADE_THEM_WAIT", 2);
+      if (this.barks.speaks(c.memKey)) this.speakConcept(c, "NOTICE_EVENT", { eventId: "MADE_THEM_WAIT", obsState: "NOTICED" }, 60);
       else this.deps.bus.emit("dialog:silent", { npcId: c.memKey, reason: "RATE_35" });
     }
     if (c.waitStage < 3 && r >= 1) {
       c.waitStage = 3;
+      this.react(c, "MADE_THEM_WAIT", 3);
+      this.remember(c, "MADE_THEM_WAIT", SALIENCE.MADE_THEM_WAIT);
       c.observations.set(`MADE_THEM_WAIT:${c.id}`, { id: "MADE_THEM_WAIT", slot: "HANDS", certainty: 1, peak: "CONFIRMED", diedAt: null });
       this.deps.bus.emit("perception:stateChanged", { npcId: c.memKey, stimId: "MADE_THEM_WAIT", from: "UNAWARE", to: "CONFIRMED", certainty: 1 });
       this.deps.bus.emit("perception:confirmed", { npcId: c.memKey, stimId: "MADE_THEM_WAIT" });
-      this.bark(c, "waitConfirmed", SALIENCE.MADE_THEM_WAIT);
+      this.speakConcept(c, "NOTICE_EVENT", { eventId: "MADE_THEM_WAIT", obsState: "CONFIRMED" }, SALIENCE.MADE_THEM_WAIT);
     }
-    if (r >= LEAVE_AT) this.leave(c, "impatient");
+    if (r >= LEAVE_AT) { this.leave(c, "impatient"); return; }
+    this.smalltalk(c);
+  }
+
+  /**
+   * SMALLTALK — một lần mỗi lượt ghé, khi khách đã chờ bánh vài giây, không ai đang nói và
+   * không có câu nào đang xếp hàng. Rule quyết định nói gì (quầy dơ, chuyện cải lương…);
+   * không rule nào khớp thì im — chuyện phiếm không cần lưới an toàn.
+   */
+  private smalltalk(c: Customer) {
+    if (c.phase !== "waiting" || this.smalltalked.has(c.id)) return;
+    if (this.nowSec - c.orderedAt < SMALLTALK_AFTER_SEC) return;
+    if (this.queue.length || this.customers.some((x) => x.speaking)) return;
+    this.smalltalked.add(c.id);
+    if (this.mentionGossip(c)) return;
+    this.speakConcept(c, "SMALLTALK", {}, 45, true);
+  }
+
+  /**
+   * Khách nhắc ở quầy một chuyện NGHE KỂ (P2-04 §2.9 ba pool): "nghe {nguồn} nói…" →
+   * "nghe nói…" → "biết mà". Dòng `hearsay` LUÔN có tên nguồn (RB3) — sợi chỉ để lần.
+   * Mỗi chuyện tối đa một lần mỗi ngày mỗi người.
+   */
+  private mentionGossip(c: Customer): boolean {
+    const g = this.deps.gossip;
+    if (!g || !c.npc) return false;
+    const day = this.deps.day;
+    const cands = activeHeard(g, c.memKey).filter((b) => b.mentionedDay !== day);
+    if (!cands.length) return false;
+    const b = cands.reduce((a, x) => (x.confidence * x.intensity > a.confidence * a.intensity ? x : a));
+    const pool = poolOf(b);
+    const lines = CLAIM[b.claim][pool];
+    const text = lines[Math.floor(this.dialogRng.next() * lines.length)].replace(/\{source\}/g, b.from ? nameOf(b.from) : "người ta");
+    b.mentionedDay = day;
+    this.say(c, text, 2, true, 55);
+    this.deps.bus.emit("gossip:mentioned", { npcId: c.memKey, claim: b.claim, source: b.from, pool });
+    const nb = this.deps.notebook;
+    if (nb) { if (b.valence < 0) nb.today.heardBad = true; else nb.today.heardGood = true; }
+    return true;
+  }
+
+  /** Hệ số theo tin đồn đang sống trong đầu người này: xấu → `bad`, tốt → `good`, không có → 1. */
+  private rumourMul(id: string, bad: number, good: number) {
+    const g = this.deps.gossip;
+    if (!g) return 1;
+    const net = activeHeard(g, id).reduce((a, b) => a + b.valence * b.confidence, 0);
+    return net < -0.2 ? bad : net > 0.2 ? good : 1;
   }
 
   private takeOrder(c: Customer) {
@@ -400,12 +576,17 @@ export class Service {
     c.orderLine = line;
     c.orderedAt = this.nowSec;
     this.say(c, line, 2, true, 100);
-    // P1-02 §2.10: quầy bẩn quá thì MỘT lời nhắc nhẹ mỗi ngày — không cằn nhằn mỗi khách.
-    if (this.dirt >= 0.8 && !this.dirtRemarked) {
-      this.dirtRemarked = true;
-      this.bark(c, "dirtyRemark", 55, {}, true);
-    }
+    // mood ngoài tầm kiểm soát: MỘT câu nói ra, không giải thích thêm (P2-02 §5.2)
+    if (c.dayMood.cause !== "NONE") this.speakConcept(c, "GREET", { npcMoodCause: c.dayMood.cause }, 60, true);
+    // P2-03 §2.11 tín hiệu #1 — cách chào: chỉ người đã thân mới hỏi han (không một con số nào)
+    else if (c.npc && this.mem(c.memKey).tier === "FRIEND") this.speakConcept(c, "GREET", {}, 50, true);
     this.deps.bus.emit("order:placed", { npcId: c.memKey, spec: c.order, phrasing: line });
+    // P2-05 cột trái: ai · mấy giờ · gọi gì (NGUYÊN VĂN) · lần thứ mấy. Không đúng/sai, không suy luận.
+    if (this.deps.notebook) {
+      logOrder(this.deps.notebook, {
+        day: this.deps.day, minute: this.nowMin, npcId: c.npc?.id ?? null, orderText: line, visitCount: this.mem(c.memKey).visits,
+      });
+    }
     // Đọc nguyên đơn ruột ra thành lời = người chơi vừa được DẠY một lần.
     if (!c.order!.intent.usual && sameOrder(c.order!, c.usual)) this.mem(c.memKey).heard++;
   }
@@ -418,9 +599,12 @@ export class Service {
     if (reason === "served") this.servedCount++;
     if (reason === "impatient") {
       this.lostCount++;
-      this.bark(c, "waitHard", 80);
-      this.out.push({ kind: "log", text: `${c.name} bỏ đi — chờ lâu quá.` });
+      if (this.deps.notebook) this.deps.notebook.today.lost++;
+      this.speakConcept(c, "FAREWELL", { leaveReason: "IMPATIENT" }, 80);
+      this.out.push({ kind: "log", text: `${this.label(c)} bỏ đi — chờ lâu quá.` });
     }
+    // Autosave nghe npc:left — đổ trí nhớ ngắn của rule DB vào world TRƯỚC khi nó ghi.
+    this.speaker.sync(this.nowSec);
     this.deps.bus.emit("npc:left", { npcId: c.memKey, visitId: c.id, reason: LEAVE_REASON[reason] });
   }
 
@@ -448,17 +632,83 @@ export class Service {
    * tối đa 2 bong bóng cùng lúc; người đứng ngay trước quầy luôn được nói trước; câu
    * chờ quá 2,5 s thì thôi (đã qua lúc để nói).
    */
-  private say(c: Customer, text: string, tier: 1 | 2 | 3 = 2, log = false, pri = 50) {
+  private say(c: Customer, text: string, tier: 1 | 2 | 3 = 2, log = false, pri = 50, rule?: Rule) {
     const delay = BARK_DELAY_MIN + this.dialogRng.next() * BARK_DELAY_SPAN;
-    this.queue.push({ c, text, tier, delay, log, pri, waited: 0 });
+    this.queue.push({ c, text, tier, delay, log, pri, waited: 0, rule });
     this.deps.bus.emit("bark:queued", { npcId: c.memKey, tier, delaySec: delay });
   }
 
-  private bark(c: Customer, pool: LinePool, pri = 50, vars: Record<string, string> = {}, log = false) {
-    this.say(c, this.barks.take(pool, c.memKey, vars), this.barks.tierOf(pool), log, pri);
+  /**
+   * Dựng query — P2-01 §2.1: dict PHẲNG mọi fact đúng NGAY LÚC NÀY, dựng lại mỗi lần hỏi.
+   * Global (giờ, quầy, hàng) · Player · Customer (tính cách ×100, quan hệ) · ctx* · Session.
+   */
+  private buildQuery(c: Customer, extra: Extra): Query {
+    const q = this.query.reset();
+    const h = Math.floor(this.nowMin / 60), mm = Math.floor(this.nowMin % 60);
+    q.set("hour", h * 100 + mm);
+    q.set("timeSlot", this.nowMin < DAY_START_MIN ? "PRE_OPEN" : this.nowMin < PEAK_END_MIN ? "PEAK" : this.nowMin < 630 ? "MID" : "LULL");
+    q.set("day", this.deps.day);
+    q.set("stallCleanliness", Math.round((1 - this.dirt) * 100));
+    q.set("queueLength", this.audience.length);
+    q.set("customersServedToday", this.servedCount);
+    if (this.dirtRemarked) q.set("dirtRemarkedToday", true);
+    q.set("playerHandsDirty", this.handsDirty);
+
+    const m = this.mem(c.memKey);
+    const p = c.personality;
+    q.set("npcId", c.npc ? c.npc.id : "KHACH_VANG_LAI");
+    q.set("npcSoi", Math.round(p.soi * 100));
+    q.set("npcNongTinh", Math.round(p.nongTinh * 100));
+    q.set("npcDeTha", Math.round(p.deTha * 100));
+    q.set("npcThanThien", Math.round(p.thanThien * 100));
+    q.set("npcRelTier", m.tier);
+    q.set("npcVisitCount", m.visits);
+    q.set("npcIsFirstVisit", m.visits <= 1);
+    q.set("npcKnowsUsual", this.canAskUsual(c.npc, m));
+    q.set("npcSlot", Math.max(0, c.slot));
+    q.set("npcGazeState", c.gazeState);
+    q.set("npcMood", c.dayMood.value);
+    q.set("npcMoodCause", c.dayMood.cause);
+    for (const k in extra) q.set(k, extra[k]);
+    return q;
+  }
+
+  /**
+   * Mọi câu khách tự nói (trừ câu gọi món) đi qua đây: dựng query → rule DB chọn → xếp
+   * vào lịch nói. Không rule nào khớp = im lặng (hợp lệ). `concept` luôn là chuỗi literal
+   * ở chỗ gọi để validator (R003) dò được concept nào được hỏi tới.
+   */
+  private speakConcept(c: Customer, concept: string, extra: Extra, pri = 50, log = false, vars: Record<string, string> = {}): boolean {
+    const q = this.buildQuery(c, extra);
+    const got = this.speaker.pick(concept, c.memKey, q, this.nowSec, vars);
+    if (!got) {
+      this.deps.bus.emit("dialog:silent", { npcId: c.memKey, reason: "NO_RULE" });
+      return false;
+    }
+    if (got.rule.silent) {
+      // im lặng có chủ ý: vẫn tính là "đã trả lời" (applycontext, followup không có)
+      this.speaker.spoken(got.rule, c.memKey, this.nowSec);
+      this.deps.bus.emit("dialog:silent", { npcId: c.memKey, reason: "PERSONALITY" });
+      return false;
+    }
+    this.say(c, got.text, got.tier, log, pri, got.rule);
+    return true;
+  }
+
+  /** Followup tới hạn → tra LẠI với query dựng mới (P2-01 §2.7). Không khớp = chuỗi tắt. */
+  private runFollowups() {
+    for (let i = this.followups.length - 1; i >= 0; i--) {
+      const f = this.followups[i];
+      if (f.at > this.nowSec) continue;
+      this.followups.splice(i, 1);
+      if (!this.customers.includes(f.c) || f.c.phase === "leaving") continue;
+      if (this.nowSec - f.at > FOLLOWUP_EXPIRE_SEC) continue;
+      this.speakConcept(f.c, f.concept, {}, 45, true);
+    }
   }
 
   tickDialog(dt: number) {
+    if (this.followups.length) this.runFollowups();
     if (!this.queue.length) return;
     for (const p of this.queue) {
       if (p.delay > 0) p.delay -= dt;
@@ -486,8 +736,19 @@ export class Service {
       this.queue.splice(this.queue.indexOf(p), 1);
       p.c.speak(p.text, bubbleLife(p.text));
       released++;
+      if (p.rule) {
+        this.speaker.spoken(p.rule, p.c.memKey, this.nowSec);
+        // P2-05 RawNote SAID_SOMETHING — chỉ khi khách nói ra chuyện ĐỜI HỌ (không phải lời chê khen)
+        if (p.rule.concept.startsWith("SMALLTALK") && p.c.npc && this.deps.notebook) {
+          logNote(this.deps.notebook, this.deps.day, this.nowMin, p.c.npc.id, { t: "SAID_SOMETHING", text: p.text });
+        }
+        if (p.rule.applycontext.some((a) => a.name === "ctxNhacQuayDo")) this.dirtRemarked = true;
+        // followup đếm từ lúc câu này nói XONG
+        const f = p.rule.followup;
+        if (f) this.followups.push({ c: p.c, concept: f.concept, at: this.nowSec + bubbleLife(p.text) + f.delaySec });
+      }
       this.deps.bus.emit("dialog:spoken", { npcId: p.c.memKey, text: p.text, tier: p.tier });
-      if (p.log) this.out.push({ kind: "log", text: `${p.c.name}: ${p.text}` });
+      if (p.log) this.out.push({ kind: "log", text: `${this.label(p.c)}: ${p.text}` });
     }
   }
 
@@ -506,6 +767,16 @@ export class Service {
     if (!c || c.phase !== "waiting") return { ok: false, reason: "chưa có ai chờ lấy bánh" };
     const bus = this.deps.bus;
 
+    // P2-05 — người chơi gọi khách bằng tên đã ghi trong sổ. Gọi SAI là WRONG_NAME (salience
+    // 100, bỏ qua gaze: là âm thanh nhắm thẳng vào người đó). Chưa ghi tên = không gọi tên.
+    const nb = this.deps.notebook;
+    if (nb && c.npc && nameCheck(nb, c.npc.id) === false) {
+      this.remember(c, "WRONG_NAME", SALIENCE.WRONG_NAME, { wrongNameUsed: nb.pages[c.npc.id].name });
+      this.react(c, "WRONG_NAME", 3);
+      this.speakConcept(c, "NOTICE_EVENT", { eventId: "WRONG_NAME", obsState: "CONFIRMED" }, 95, true);
+      this.emitStim("WRONG_NAME", { target: c.id });
+    }
+
     const raw = diffDish(c.order!, dish);
     // P1-01 §2.4: warmth < 0,55 lúc đưa. Kích thích BURNT_OR_COLD do scene phát đúng lúc đưa.
     if (opts.cold) raw.push(mkDefect("WRONG_TEMP", null));
@@ -520,18 +791,25 @@ export class Service {
     let positive = 0;
 
     // P1-01 §2.4: bánh "chưa tới" không phải lỗi đơn — nhưng người sành ăn (soi ≥ 0,7) chê.
-    const underdone = opts.crust !== undefined && opts.crust < CRUST.READY && c.personality.soi >= 0.7;
+    const crustLow = opts.crust !== undefined && opts.crust < CRUST.READY;
+    const underdone = crustLow && c.personality.soi >= 0.7;
     if (defects.length === 0) {
       const remembered = c.order!.intent.usual;
-      this.bark(c, underdone ? "underdone" : remembered ? "remembered" : "happy", 60, {}, true);
       if (underdone) positive -= 10;
       if (remembered) {
         positive += REMEMBERED_USUAL_TA;
         this.emitStim("REMEMBERED_USUAL", { salience: REMEMBERED_USUAL_TA, target: c.id });
       }
-      positive += this.freeExtra(c, dish);
+      const extra = this.freeExtra(c, dish);
+      positive += extra;
+      this.speakConcept(c, "DELIVERY", {
+        defectCount: 0, orderIsUsual: remembered, dishUnderdone: crustLow, freeExtraTooMuch: extra < 0,
+      }, extra < 0 ? 70 : 60, true);
     } else if (spoken) {
-      this.bark(c, poolFor(spoken), 90, { item: spoken.label }, true);
+      this.speakConcept(c, "DELIVERY", {
+        defectCount: defects.length, defectKind: kindOf(spoken), defectWasSeen: spoken.witness === "ANTICIPATED",
+        orderIsUsual: c.order!.intent.usual,
+      }, 90, true, { mon: spoken.label });
     } else {
       bus.emit("dialog:silent", { npcId: c.memKey, reason: "RATE_35" });
     }
@@ -559,8 +837,43 @@ export class Service {
       mode: spoken ? spoken.witness : defects.length ? "DISCOVERED" : "NONE",
     });
 
-    const tip = this.tipOf(c, silentScore, positive);
+    // Kênh 5: ký ức của lượt ghé này
+    if (defects.length) {
+      const worst = defects.reduce((a, d) => Math.max(a, (d.witness === "DISCOVERED" ? d.sEat : d.sCounter) * d.magnitude), 0);
+      this.remember(c, "ORDER_DEFECT", worst, { missingIngredient: (spoken ?? defects[0]).label });
+    } else if (c.order!.intent.usual) this.remember(c, "REMEMBERED_USUAL", REMEMBERED_USUAL_TA);
+    if (c.npc) {
+      const m = this.mem(c.memKey);
+      m.lastServedDay = this.deps.day;
+      if (nb) {
+        const t = nb.today;
+        (t.served_[c.npc.id] ??= []).push({ minute: this.nowMin, dish: [...dish] });
+        if (!defects.length && c.order!.intent.usual) t.usualServed.push(c.npc.id);
+        if (!defects.length && ![...c.observations.values()].some((o) => o.peak === "CONFIRMED")) t.cleanServedFront.push(c.npc.id);
+      }
+      const sawBad = [...c.observations.values()].some((o) => o.peak === "CONFIRMED");
+      if (!defects.length && !sawBad) {
+        servedWell(m, c.personality, clamp01(1 - silentScore / 120), isSilentGrudge(c.personality));
+        // P2-04 §2.6 kênh #1 — làm NGƯỢC LẠI, trong tầm nhìn: tin "ăn bớt", "bánh rớt"… nhạt đi
+        if (this.deps.gossip) disprove(this.deps.gossip, c.memKey, ["ORDER_DEFECT", "DROPPED_FOOD", "DIRTY_HANDS", "BURNT_OR_COLD"], this.deps.day);
+      }
+    }
+
+    // Kênh 1+2 lúc nhận bánh: lỗi → mặt "sai món" nặng; đúng → tích cực (nhớ đơn thì nặng hơn)
+    if (defects.length) this.react(c, "ORDER_DEFECT", 3);
+    else this.react(c, c.order!.intent.usual ? "REMEMBERED_USUAL" : "FREE_EXTRA", c.order!.intent.usual ? 3 : 2, "HAND_OUT");
+
+    const tip = Math.round(this.tipOf(c, silentScore, positive) * moodTipMul(c.dayMood) * this.rumourMul(c.memKey, 0.8, 1.2) / 1000) * 1000;
     this.out.push({ kind: "paid", amount: PRICE_BANH + tip, item: "dish", tip });
+    if (nb) nb.today.served++;
+    c.carrying = true;
+    // "Trả tiền rồi bỏ món" — P2-02 §3.4: soi ≥ 0,7 + nóng ≤ 0,3 + vệ sinh CONFIRMED. KHÔNG
+    // mất tiền — mất NGƯỜI. Người chơi phải nhìn thấy nó, nên nó xảy ra trong khung hình.
+    const sawHygiene = [...c.observations.values()].some((o) => o.peak === "CONFIRMED"
+      && (o.id === "DROPPED_FOOD" || o.id === "DIRTY_HANDS" || o.id === "BURNT_OR_COLD"));
+    if (c.personality.soi >= 0.7 && c.personality.nongTinh <= 0.3 && (sawHygiene || (isSilentGrudge(c.personality) && defects.length > 0))) {
+      c.binDetour = true;
+    }
     this.leave(c, "served");
     return { ok: true };
   }
@@ -618,12 +931,11 @@ export class Service {
     const n = (this.freeExtraToday.get(c.memKey) ?? 0) + 1;
     this.freeExtraToday.set(c.memKey, n);
     this.mem(c.memKey).freebies++;
-    if (n >= 3 && c.personality.soi >= 0.7) {
-      this.say(c, "Con cho nhiều vậy chi, cô ngại.", 1, true, 70);
-      return -FREE_EXTRA_BASE;
-    }
+    // câu "cô ngại" do rule DELIVERY `freeExtraTooMuch` nói
+    if (n >= 3 && c.personality.soi >= 0.7) return -FREE_EXTRA_BASE;
     const mul = FREE_EXTRA_DIMINISH[Math.min(n - 1, FREE_EXTRA_DIMINISH.length - 1)];
     this.emitStim("FREE_EXTRA", { salience: FREE_EXTRA_BASE * mul });
+    this.remember(c, "FREE_EXTRA", FREE_EXTRA_BASE * mul);
     return FREE_EXTRA_BASE * mul;
   }
 
@@ -639,25 +951,26 @@ export class Service {
   serveTea(): { ok: boolean; reason?: string } {
     const c = this.front;
     if (!c || c.phase === "leaving") return { ok: false, reason: "chưa có ai để mời" };
-    if (c.holdingTea) return { ok: false, reason: `${c.name} còn cầm ly kia` };
-    if (c.suspectBribery) return { ok: false, reason: `${c.name} không nhận nữa` };
+    if (c.holdingTea) return { ok: false, reason: `${this.label(c)} còn cầm ly kia` };
+    if (c.suspectBribery) return { ok: false, reason: `${this.label(c)} không nhận nữa` };
     if (this.teaLeft <= 0) return { ok: false, reason: "hết đá rồi" };
 
     if (c.teaCount + 1 >= TEA.suspectAtCup && c.personality.soi >= TEA.suspectSoi) {
       c.suspectBribery = true;
-      this.bark(c, "teaSuspect", 70, {}, true);
-      return { ok: false, reason: `${c.name} không nhận nữa` };
+      this.speakConcept(c, "INTERACT", { interaction: "TEA_SUSPECT" }, 70, true);
+      return { ok: false, reason: `${this.label(c)} không nhận nữa` };
     }
 
     this.teaLeft--;
     this.out.push({ kind: "cost", amount: TEA_COST, item: "tea" });
     const mul = c.takeTea();
     if (mul > 0) {
-      this.bark(c, "tea", 40, {}, true);
+      this.speakConcept(c, "INTERACT", { interaction: "TEA" }, 40, true);
       this.emitStim("CARED_FOR_THEM", { salience: SALIENCE.CARED_FOR_THEM * mul, target: c.id });
+      this.remember(c, "CARED_FOR_THEM", SALIENCE.CARED_FOR_THEM * mul);
       this.deps.bus.emit("attention:toolUsed", { tool: "TRA_DA", npcId: c.memKey, durationSec: TEA.sipDelay + 2.5 });
     } else {
-      this.bark(c, "teaNod", 20);
+      this.speakConcept(c, "INTERACT", { interaction: "TEA_NOD" }, 20);
     }
     return { ok: true };
   }
@@ -675,8 +988,37 @@ export class Service {
       this.deps.bus.emit("attention:toolUsed", { tool: "ASK_QUESTION", npcId: c.memKey, durationSec: 2.5 });
     }
     // Trong cooldown: vẫn trả lời, nhưng không quay sang nhìn mặt nữa — không farm được.
-    this.bark(c, "askReply", 30);
+    this.speakConcept(c, "INTERACT", { interaction: "ASK" }, 30);
     return { ok: true, line };
+  }
+
+  /**
+   * Dev `rule.test` — hỏi thử rule DB cho người đứng trước quầy với fact Session tuỳ ý,
+   * KHÔNG nói, không đánh dấu gì. Trả bảng xếp hạng giống `rule.why`.
+   */
+  devTest(concept: string, extra: Extra) {
+    const c = this.front ?? this.customers[0];
+    if (!c) return null;
+    const q = this.buildQuery(c, extra);
+    this.speaker.ctx.write(q, c.memKey, this.nowSec);
+    return { npc: c.memKey, facts: q.dump(), ranking: this.speaker.db.explain(concept, q, this.speaker.st, this.nowSec) };
+  }
+
+  /**
+   * Người chơi đang NGHIÊNG NGƯỜI nghe lỏm (P2-04 §2.7 tầng 2) — giá phải trả: người đứng
+   * trước quầy thấy mình lơ đễnh, nhìn kỹ hơn 1,3× trong 5 giây.
+   */
+  playerLeaning() {
+    const c = this.front;
+    if (c) c.watchedIdleUntil = c.now + 5;
+  }
+
+  /**
+   * Tên hiện ra với người chơi (nhật ký, phiếu, lý do) — P2-05: tên người chơi tự ghi trong
+   * sổ, chưa ghi thì "—". Khách vãng lai giữ mô tả hình dáng ("cô nón lá").
+   */
+  label(c: Customer) {
+    return displayName(this.deps.notebook, c.memKey, c.name);
   }
 
   /** Kích thích đang sống — overlay dev (F2) đọc để tách thừa số. */
@@ -689,12 +1031,10 @@ export class Service {
   }
 }
 
-/** Pool thoại cho một lỗi được nói ra. */
-function poolFor(d: DiffedDefect): LinePool {
-  if (d.kind === "WRONG_TEMP") return "cold";
-  if (d.kind === "STUFFED") return "stuffed";
-  if (d.kind === "WRONG_RATIO") return d.dir === "under" ? "ratio_under" : "ratio_over";
-  return `${d.witness === "ANTICIPATED" ? "ant" : "disc"}_${d.kind}` as LinePool;
+/** Giá trị fact `defectKind` cho lỗi được nói ra. */
+function kindOf(d: DiffedDefect): string {
+  if (d.kind === "WRONG_RATIO") return d.dir === "under" ? "RATIO_UNDER" : "RATIO_OVER";
+  return d.kind;
 }
 
 // ───────────────────────────────────────────────────────────────────── đi lại

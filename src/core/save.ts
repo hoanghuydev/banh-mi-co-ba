@@ -11,31 +11,28 @@
  * Chống save-scum (§2.8) = autosave NGAY khi sự kiện xảy ra × seed cố định theo ngày
  * × stream RNG tách. Cái KHÔNG khoá: chơi lại cả ngày bằng nút chính thức.
  */
+import { newRelState, type Memory, type RelState } from "../sim/memory";
+import { newGossipState, type GossipState } from "../sim/gossip";
+import { newNotebook, type Notebook } from "../sim/notebook";
 import { fnv1a, type BagState, type StreamName } from "./rng";
 import { platform as defaultPlatform, type Platform } from "./platform";
 import { BUILD_ID, DEFAULT_SETTINGS, loadSettings, type Settings } from "./flags";
 import type { Bus } from "./eventbus";
-import type { AutosaveReason, NpcId, RelTier, SceneKey, StandPointId, StimId, Weather } from "./types";
+import type { AutosaveReason, NpcId, RelTier, SceneKey, StandPointId, Weather } from "./types";
 import type { TimeBand } from "./clock";
 
 export { loadSettings, saveSettings, DEFAULT_SETTINGS, type Settings } from "./flags";
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
-export type MemorySlot = {
-  id: string; kind: StimId; intensity: number;
-  createdOnDay: number; lastTouchedDay: number;
-  stackIndex: number;
-  source: "WITNESSED" | "TOLD_BY"; toldBy?: NpcId; confidence: number;
-};
+/** Ký ức của NPC — schema ở P2-03 §3, luật ở `sim/memory.ts`. */
+export type MemorySlot = Memory;
 
 /**
  * State của một NPC — phần nặng nhất và quan trọng nhất của save.
- * Ba field đầu là thứ P1 đã dùng thật; phần còn lại là khung cho P2 (trí nhớ, quan hệ).
+ * Trí nhớ + quan hệ (P2-03) nằm trong `RelState`; phần dưới là của P1 và của P2-04/05.
  */
-export type NpcState = {
-  /** Lần ghé trong mùa. */
-  visits: number;
+export type NpcState = RelState & {
   /** Đã được cho thêm bao nhiêu lần. CANON §8(i): spam hào phóng phải mất tác dụng dần. */
   freebies: number;
   /**
@@ -43,12 +40,7 @@ export type NpcState = {
    * ghé ba lần mà hai lần chỉ nói "như mọi bữa" thì người chơi mới nghe đúng một lần.
    */
   heard: number;
-  relationPoints: number;
-  tier: RelTier;
-  /** §8d: đốt rồi để nguội → HẠ TRẦN VĨNH VIỄN. */
-  trustCeiling: number;
   lastSeenDay: number;
-  memory: { short: MemorySlot[]; long: MemorySlot[]; core: MemorySlot | null };
   knownFacts: { factId: string; confidence: number; source: NpcId | "WITNESSED"; hop: number; learnedOnDay: number }[];
   /** §8g — micro-cheat phát hiện theo PATTERN. */
   microCheatCounter: Record<string, number>;
@@ -103,10 +95,8 @@ export type SaveFile = {
 
   npcs: Record<NpcId, NpcState>;
 
-  gossip: {
-    inFlight: { factId: string; origin: NpcId; holders: NpcId[]; hop: number; confidence: number
-                mutatedFrom?: string; createdOnDay: number }[];
-  };
+  /** P2-04 — tin đồn trong đầu từng người, nhật ký lan tin, ngân sách nhớ nhầm của mùa. */
+  gossip: GossipState;
 
   shuffleBags: Record<string, BagState>;
 
@@ -117,12 +107,8 @@ export type SaveFile = {
     barkCooldowns: Record<string, number>;
   };
 
-  /** Sổ tay NGƯỜI CHƠI tự ghi (P2-05). */
-  notebook: {
-    entries: { npcId: NpcId; field: string; value: string; writtenOnDay: number; byPlayer: true }[];
-    hypotheses: { id: string; npcId: NpcId; text: string; status: "OPEN" | "CONFIRMED" | "WRONG"; resolvedOnDay?: number }[];
-    pinned: NpcId[];
-  };
+  /** Sổ tay cô Ba (P2-05) — cột trái máy ghi, cột phải người chơi ghi. */
+  notebook: Notebook;
 
   /**
    * `cleanliness` 1 = sạch bóng, 0 = bẩn hết mức (độ bẩn = 1 − cleanliness, P1-02 §2.10).
@@ -154,9 +140,8 @@ function uuid(): string {
 
 export function newNpcState(): NpcState {
   return {
-    visits: 0, freebies: 0, heard: 0,
-    relationPoints: 0, tier: "ACQUAINTANCE", trustCeiling: 100, lastSeenDay: 0,
-    memory: { short: [], long: [], core: null },
+    ...newRelState(),
+    freebies: 0, heard: 0, lastSeenDay: 0,
     knownFacts: [], microCheatCounter: {}, gone: false,
   };
 }
@@ -182,10 +167,10 @@ export function newGame(name: string, saveId = uuid()): SaveFile {
     equipment: { owned: [], installed: [], wear: {} },
     suppliers: {},
     npcs: {},
-    gossip: { inFlight: [] },
+    gossip: newGossipState(),
     shuffleBags: {},
     dialogState: { spokenOnce: [], norepeat: {}, appliedContext: [], barkCooldowns: {} },
-    notebook: { entries: [], hypotheses: [], pinned: [] },
+    notebook: newNotebook(),
     stall: { cleanliness: 1, layoutSide: "LEFT", presets: [] },
     ledger: [],
     a11y: { ...DEFAULT_SETTINGS, ...loadSettings() },
@@ -221,6 +206,22 @@ export const MIGRATIONS: Record<number, (s: any) => any> = {
     }
     if (old.settings) s.a11y = { ...s.a11y, ...old.settings };
     return s;
+  },
+  // 2 → 3: P2-03 — trí nhớ 3 tầng + quan hệ đầy đủ. Khung memory của v2 chưa từng được
+  // ghi (MemorySlot cũ), nên chỉ bù field mới bằng mặc định, giữ nguyên field cũ.
+  2: (old) => {
+    for (const [k, n] of Object.entries<any>(old.npcs ?? {})) {
+      const fresh = newRelState();
+      old.npcs[k] = {
+        ...fresh, ...n,
+        memory: { short: [], long: [], core: null },
+        pointsAtDawn: n.relationPoints ?? 0,
+      };
+    }
+    // khung `gossip.inFlight` của v2 chưa từng được ghi → thay bằng state P2-04
+    old.gossip = newGossipState();
+    old.notebook = newNotebook();
+    return old;
   },
 };
 

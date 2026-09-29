@@ -54,6 +54,8 @@ export type EventMap = {
   "npc:arrived":              { npcId: NpcId; visitId: string; slot: CustomerSlot; atHhmm: string };
   "npc:slotChanged":          { npcId: NpcId; from: CustomerSlot; to: CustomerSlot };
   "npc:left":                 { npcId: NpcId; visitId: string; reason: LeaveReason };
+  /** Kênh 4 — hành động (P2-02 §3.4). */
+  "npc:actionTaken":          { npcId: NpcId; action: "BINNED_FOOD" };
   "order:placed":             { npcId: NpcId; spec: unknown; phrasing: string };
   "order:delivered":          { npcId: NpcId; dish: string[]; waitedSec: number };
   "delivery:diffed":          { npcId: NpcId; defects: Defect[]; spoken: Defect | null
@@ -63,7 +65,7 @@ export type EventMap = {
   "dialog:requested":         { npcId: NpcId; concept: string; blackboard: Record<string, unknown> };
   "dialog:selected":          { npcId: NpcId; ruleId: string; responseId: string; score: number; rejected: number };
   "dialog:spoken":            { npcId: NpcId; text: string; tier: 1 | 2 | 3 };
-  "dialog:silent":            { npcId: NpcId; reason: "RATE_35" | "COOLDOWN" | "NO_RULE" | "EXPIRED" };
+  "dialog:silent":            { npcId: NpcId; reason: "RATE_35" | "COOLDOWN" | "NO_RULE" | "EXPIRED" | "PERSONALITY" };
   "bark:queued":              { npcId: NpcId; tier: 1 | 2 | 3; delaySec: number };
 
   // ── trí nhớ · quan hệ · đồn thổi (P2) ──────────────────────────────
@@ -72,9 +74,12 @@ export type EventMap = {
   "memory:promoted":          { npcId: NpcId; memoryId: string };
   "memory:decayed":           { npcId: NpcId; memoryId: string; from: number; to: number };
   "relationship:tierChanged": { npcId: NpcId; from: RelTier; to: RelTier };
+  /** Khách nhắc ở quầy một chuyện NGHE KỂ — luôn kèm tên nguồn (P2-04 RB3). P2-05 ghi nhật ký. */
+  "gossip:mentioned":         { npcId: NpcId; claim: string; source: NpcId | null; pool: "hearsay" | "belief" | "conviction" };
+  /** Người chơi nghe lỏm ở góc hẻm — `tier` là mức nghe được (0 hình · 1 nội dung · 2 cả nguồn). */
+  "gossip:overheard":         { a: NpcId; b: NpcId; claim: string; source: NpcId | null; tier: 0 | 1 | 2 };
   "gossip:seeded":            { sourceNpc: NpcId; factId: string; confidence: number };
   "gossip:propagated":        { from: NpcId; to: NpcId; factId: string; hop: number; confidence: number; mutatedTo?: string };
-  "gossip:overheard":         { npcA: NpcId; npcB: NpcId; factId: string; corner: string };
 
   // ── kinh tế (P3) ───────────────────────────────────────────────────
   "econ:purchased":           { itemId: ItemId; qty: number; unitPrice: number; supplierId: string };

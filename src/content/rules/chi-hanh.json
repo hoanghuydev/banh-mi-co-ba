@@ -1,0 +1,16 @@
+{
+  "_note": "Chị Hạnh — người Bắc mới vô Sài Gòn. Dùng từ Bắc là ĐẶC ĐIỂM NHÂN VẬT (linter cho phép). Lỗi ORDER_DEFECT của chị thường do khác từ vùng miền — game bắt người chơi học từ của chị, không ngược lại (CANON §14.1).",
+  "rules": [
+    {"id": "hanh.dropped_food", "concept": "NOTICE_EVENT", "when": {"npcId": "CHI_HANH", "eventId": "DROPPED_FOOD", "obsState": ">=NOTICED", "ctxBarkT1_DROP": "absent"}, "applycontext": {"ctxBarkT1_DROP": {"value": 1, "duration": 90}}, "say": ["Ôi giời…"]},
+    {"id": "hanh.dirty_hands", "concept": "NOTICE_EVENT", "when": {"npcId": "CHI_HANH", "eventId": "DIRTY_HANDS", "obsState": ">=NOTICED"}, "silent": true, "say": []},
+    {"id": "hanh.burnt_or_cold", "concept": "NOTICE_EVENT", "when": {"npcId": "CHI_HANH", "eventId": "BURNT_OR_COLD", "obsState": ">=NOTICED", "ctxBarkT1_KHET": "absent"}, "applycontext": {"ctxBarkT1_KHET": {"value": 1, "duration": 90}}, "say": ["Ơ… bánh này hơi cháy em nhỉ?"]},
+    {"id": "hanh.wrong_name", "concept": "NOTICE_EVENT", "when": {"npcId": "CHI_HANH", "eventId": "WRONG_NAME", "obsState": ">=NOTICED"}, "say": ["Dạ… Hạnh ạ."]},
+    {"id": "hanh.wait.noticed", "concept": "NOTICE_EVENT", "when": {"npcId": "CHI_HANH", "eventId": "MADE_THEM_WAIT", "obsState": "NOTICED"}, "say": ["Em ơi… em còn lâu không em?"]},
+    {"id": "hanh.del.unwanted.seen", "concept": "DELIVERY", "when": {"npcId": "CHI_HANH", "defectKind": "UNWANTED", "defectWasSeen": true}, "say": ["Em ơi chị xin rau mùi chứ không phải {mon} ạ."]},
+    {"id": "hanh.del.unwanted.found", "concept": "DELIVERY", "when": {"npcId": "CHI_HANH", "defectKind": "UNWANTED", "defectWasSeen": false}, "say": ["Ơ… cái này là {mon} à em?"]},
+    {"id": "hanh.del.usual", "concept": "DELIVERY", "when": {"npcId": "CHI_HANH", "defectCount": 0, "orderIsUsual": true}, "say": ["Ơ… em nhớ chị ăn thế à?"]},
+    {"id": "hanh.del.toomuch", "concept": "DELIVERY", "when": {"npcId": "CHI_HANH", "defectCount": 0, "freeExtraTooMuch": true}, "say": ["Ơ nhiều thế em? Chị gửi thêm tiền nhé."]},
+    {"id": "hanh.tea", "concept": "INTERACT", "when": {"npcId": "CHI_HANH", "interaction": "TEA"}, "say": ["Ôi, em chu đáo thế. Trong này ai cũng thế à em?"]},
+    {"id": "hanh.nang", "concept": "SMALLTALK", "when": {"npcId": "CHI_HANH", "queueLength": "<=2", "npcVisitCount": ">=2"}, "say": ["Chị vẫn chưa quen được cái nắng trong này. Ngoài chị giờ này còn se lạnh."], "norepeat": true, "odds": 50}
+  ]
+}

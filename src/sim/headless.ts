@@ -8,6 +8,7 @@
  * Vòng frame y hệt `StallScene`: cùng `runFrame`, cùng thứ tự 7 bước. Chỗ khác
  * duy nhất là "tay người chơi" được thay bằng một con bot có policy.
  */
+import { settleNight } from "./night";
 import { Bus } from "../core/eventbus";
 import { GameContext } from "../core/context";
 import { DAY_START_MIN } from "../core/clock";
@@ -82,7 +83,7 @@ export class HeadlessStall {
     this.bot = this.ctx.rng.derive(`bot:${policy.name}`);
     this.service = new Service({
       bus, hub: this.ctx.rng, saveId: w.saveId, day: w.progress.dayIndex,
-      npcs: w.npcs, bags: w.shuffleBags,
+      npcs: w.npcs, bags: w.shuffleBags, dialog: w.dialogState, gossip: w.gossip, notebook: w.notebook,
       resumeAt: opts.resume ? this.ctx.clock.minutes : undefined,
     });
     bus.on("npc:left", (p) => { if (p.reason === "IMPATIENT") w.progress.today.lost++; });
@@ -192,7 +193,8 @@ export class HeadlessStall {
 }
 
 /** Sang ngày mới trên cùng một world — y như EveningScene → DayScene làm. */
-export function nextDay(world: SaveFile) {
+export function nextDay(world: SaveFile, bus?: Bus) {
+  settleNight(world, bus);
   world.progress.dayIndex++;
   world.progress.gameMinutes = DAY_START_MIN;
   world.progress.today = { served: 0, lost: 0, revenue: 0 };

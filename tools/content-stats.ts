@@ -26,11 +26,12 @@ for (const f of walk(join(content, "rules"), [".json"])) {
   if (f.endsWith("_blackboard.json")) continue;
   const data = readJson<any>(f);
   for (const rule of Array.isArray(data) ? data : data.rules ?? [data]) {
-    const npc = rule.criteria?.find((c: any) => c.key === "Customer.npcId" && c.op === "eq")?.value ?? null;
-    for (const r of rule.responses ?? []) {
-      rows.push({ where: `rule ${rule.id}`, n: r.variants.length, words: r.variants.reduce((a: number, s: string) => a + words(s), 0),
-        tier: rule.tier ?? 2, npc, generic: !npc });
-    }
+    if (rule.silent || !rule.say?.length) continue;            // im lặng có chủ ý: không phải dòng thoại
+    const npc: string | null = typeof rule.when?.npcId === "string" ? rule.when.npcId : null;
+    // tier = tên của dải score (P2-01 §2.9): ≥5 → 1 · 3–4 → 2 · ≤2 → 3
+    const score = Object.keys(rule.when ?? {}).length;
+    rows.push({ where: `rule ${rule.id}`, n: rule.say.length, words: rule.say.reduce((a: number, s: string) => a + words(s), 0),
+      tier: score >= 5 ? 1 : score >= 3 ? 2 : 3, npc, generic: !npc });
   }
 }
 

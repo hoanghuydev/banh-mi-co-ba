@@ -79,7 +79,7 @@ export class Hud {
     }).setOrigin(0, 1), DEPTH + 100);
 
     this.help = fixed(scene.add.text(GAME_W / 2, GAME_H - 22,
-      "WASD đi · Shift chạy · E làm việc · F hỏi chuyện · giữ C che tay · Q bỏ vô thùng · P/Esc tạm dừng", {
+      "WASD đi · Shift chạy · E làm việc · F hỏi chuyện · giữ C che tay · Q bỏ vô thùng · Tab sổ tay · P/Esc tạm dừng", {
       fontFamily: FONT, fontSize: fs(11), color: "#f2efe9", stroke: "#1b2429", strokeThickness: 3,
     }).setOrigin(0.5), DEPTH + 100);
 

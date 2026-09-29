@@ -88,6 +88,19 @@ export const SPAWN = { x: 8.5, y: 2.5 };
  */
 export const CUSTOMER_GATE = { x: 18.5, y: 10.5 };
 
+/**
+ * Chỗ đứng cạnh thùng rác đầu hẻm (ô `V`, x=18 y=8) — P2-02 §4.6: chị Lan trả tiền,
+ * cầm bánh, ra tới đây bỏ vô thùng. Frame quan trọng nhất của cả game: nó phải nằm
+ * TRONG khung hình, trên đường khách vẫn đi ra cổng.
+ */
+export const STREET_BIN = { x: 18.45, y: 9.35 };
+
+/**
+ * GÓC HẺM — sân khấu nghe lỏm (P2-04 §2.7): chéo bên trái xe bánh mì, cách ~4–5 m, cạnh
+ * hai cái ghế nhựa (ô `s` x=2 y=8). Hai người đứng nói chuyện — A kể, B nghe.
+ */
+export const GOSSIP_CORNER = [{ x: 3.4, y: 7.45 }, { x: 4.55, y: 7.9 }] as const;
+
 /** Thứ tự từ sát quầy ra ngoài. `zone` là cột của bảng visibility (CANON §5). */
 export const QUEUE_SLOTS = [
   { x: 12.5, y: 5.4, zone: "FRONT_CENTER" },
@@ -107,6 +120,8 @@ export function assertWalkable() {
   };
   check("SPAWN", SPAWN);
   check("CUSTOMER_GATE", CUSTOMER_GATE);
+  check("STREET_BIN", STREET_BIN);
+  GOSSIP_CORNER.forEach((p, i) => check(`GOSSIP_CORNER[${i}]`, p));
   QUEUE_SLOTS.forEach((s, i) => check(`QUEUE_SLOTS[${i}]`, s));
   if (bad.length) {
     throw new Error(`Bản đồ chặn mất chỗ phải đứng được:\n  ${bad.join("\n  ")}`);

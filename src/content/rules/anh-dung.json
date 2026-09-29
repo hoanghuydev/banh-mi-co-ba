@@ -1,0 +1,16 @@
+{
+  "_note": "Anh Dũng — tài xế Grab (trước là xe ôm), luôn vội → dạy MADE_THEM_WAIT. Cáu vặt, quên nhanh.",
+  "rules": [
+    {"id": "dung.dropped_food", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_DUNG", "eventId": "DROPPED_FOOD", "obsState": ">=NOTICED"}, "silent": true, "say": []},
+    {"id": "dung.dirty_hands", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_DUNG", "eventId": "DIRTY_HANDS", "obsState": ">=NOTICED"}, "silent": true, "say": []},
+    {"id": "dung.burnt_or_cold", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_DUNG", "eventId": "BURNT_OR_COLD", "obsState": ">=NOTICED", "ctxBarkT1_KHET": "absent"}, "applycontext": {"ctxBarkT1_KHET": {"value": 1, "duration": 90}}, "say": ["Nguội rồi nè em."]},
+    {"id": "dung.wrong_name", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_DUNG", "eventId": "WRONG_NAME", "obsState": ">=NOTICED"}, "silent": true, "say": []},
+    {"id": "dung.wait.noticed", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_DUNG", "eventId": "MADE_THEM_WAIT", "obsState": "NOTICED"}, "say": ["Ê em ơi lẹ giùm anh cái, anh có đơn nè."]},
+    {"id": "dung.bye.impatient", "concept": "FAREWELL", "when": {"npcId": "ANH_DUNG", "leaveReason": "IMPATIENT"}, "say": ["Thôi khỏi, anh đi. Bữa khác."]},
+    {"id": "dung.del.seen", "concept": "DELIVERY", "when": {"npcId": "ANH_DUNG", "defectCount": ">=1", "defectWasSeen": true}, "silent": true, "say": []},
+    {"id": "dung.del.unwanted.found", "concept": "DELIVERY", "when": {"npcId": "ANH_DUNG", "defectKind": "UNWANTED", "defectWasSeen": false}, "say": ["Ê em, anh dặn không {mon} mà."]},
+    {"id": "dung.del.usual", "concept": "DELIVERY", "when": {"npcId": "ANH_DUNG", "defectCount": 0, "orderIsUsual": true}, "say": ["Ê được đó em! Khỏi nói luôn hả? Anh khoái vụ này."]},
+    {"id": "dung.tea", "concept": "INTERACT", "when": {"npcId": "ANH_DUNG", "interaction": "TEA"}, "say": ["Ê đúng lúc luôn em ơi. Chạy nắng khát muốn chết."]},
+    {"id": "dung.goccay", "concept": "SMALLTALK", "when": {"npcId": "ANH_DUNG", "queueLength": "<=2", "npcVisitCount": ">=2"}, "say": ["Hồi xưa anh đậu ngay gốc cây kia kìa. Giờ có ai kêu đâu, toàn bấm app."], "speakonce": true}
+  ]
+}

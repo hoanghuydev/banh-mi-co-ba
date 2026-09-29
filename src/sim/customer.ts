@@ -4,6 +4,8 @@ import type { BodyStyle } from "../art/character";
 import { makeOrder, type OrderSpec } from "./order";
 import { traitMulFrom, type Observation, type Observer, type Zone } from "./perception";
 import { GazeMachine, WALKIN_GAZE, type GazeState } from "./gaze";
+import { ReactionState } from "./reaction";
+import { CALM_MOOD, type Mood } from "./mood";
 
 /**
  * Một người khách trong một lượt ghé quán.
@@ -88,6 +90,25 @@ export class Customer implements Observer {
   loudCue = false;
 
   leaveReason: LeaveReason | null = null;
+  /** Kênh 1 + 2 (mặt, dáng) — P2-02 §3. Renderer đọc, sim ghi. */
+  readonly react = new ReactionState();
+  /** Mood ngoài tầm kiểm soát của hôm nay (P2-02 §5.2) — KHÔNG phải `mood` chờ bên dưới. */
+  dayMood: Mood = CALM_MOOD;
+  /**
+   * "Trả tiền rồi bỏ món" (P2-02 §3.4, chữ ký của chị Lan): trên đường về đi vòng qua
+   * thùng rác đầu hẻm. `binAt` = lúc bỏ ổ bánh vô thùng (giây của khách), −1 = chưa.
+   */
+  binDetour = false;
+  binAt = -1;
+  /** Còn cầm ổ bánh trên tay không (lúc đi về). */
+  carrying = false;
+  /**
+   * P2-04 §2.12 danh sách trắng #6: nghe đồn "ăn bớt", "bánh rớt"… thì NHÌN TAY kỹ hơn
+   * (gaze nền +≤0,15). Không đụng traitMul — tin đồn không làm ai soi hơn, chỉ nhìn nhiều hơn.
+   */
+  gazeBias = 0;
+  /** Người chơi nghiêng người nghe lỏm → khách trước quầy thấy mình lơ đễnh: gaze ×1,3 trong 5 s. */
+  watchedIdleUntil = 0;
   orderedAt = 0;
   /** Lời thoại đang hiện trên bong bóng, và còn hiện bao lâu. */
   say: string | null = null;
@@ -133,6 +154,7 @@ export class Customer implements Observer {
    */
   tick(dt: number, pressure: boolean) {
     this.clock += dt;
+    this.react.tick(this.clock);
     if (this.sayFor > 0) {
       this.sayFor -= dt;
       if (this.sayFor <= 0) this.say = null;
@@ -151,7 +173,8 @@ export class Customer implements Observer {
     });
     this.loudCue = false;
     this.questionPending = false;
-    this.gaze = this.gazeOverride ?? this.gazeM.factor;
+    this.gaze = this.gazeOverride ?? Math.min(1, this.gazeM.factor + (this.gazeM.hard ? 0 : this.gazeBias));
+    if (this.gazeOverride === null && this.clock < this.watchedIdleUntil) this.gaze = Math.min(1, this.gaze * 1.3);
   }
 
   get gazeState(): GazeState { return this.gazeM.state; }

@@ -6,6 +6,10 @@ import { nowState } from "../sim/perception";
 import type { ObsState, Slot } from "../core/types";
 import { FONT } from "../ui/theme";
 import type { BubblePool } from "../ui/stall/BubblePool";
+import { NEUTRAL, POSES } from "../sim/reaction";
+import { intensityMul } from "../sim/personality";
+import { drawFace } from "./face";
+import { STREET_BIN } from "../world/map";
 
 /**
  * Phần NHÌN THẤY của một người khách.
@@ -41,6 +45,19 @@ const RAY_DEPTH = 9_450_000;
 
 export type ZonePoint = (slot: Slot) => { x: number; y: number };
 
+/** Lò xo của kênh dáng (P2-02 §3.2): K cứng, DAMP giảm chấn — cao thì "chắc", thấp thì "nhão". */
+const K = 120, DAMP = 14;
+type Spring = { v: number; x: number };
+const spring = (s: Spring, target: number, dt: number, d = DAMP) => {
+  s.v += (-K * (s.x - target) - d * s.v) * dt;
+  s.x += s.v * dt;
+};
+/** Mày tóc bạc vẽ lên nền da thì chìm mất — sậm lại cho đọc được. */
+const browColor = (hair: number) => {
+  const r = (hair >> 16) & 255, g = (hair >> 8) & 255, b = hair & 255;
+  return 0.3 * r + 0.59 * g + 0.11 * b > 140 ? 0x5a5550 : hair;
+};
+
 export class CustomerActor {
   private body: Phaser.GameObjects.Image;
   private shadow: Phaser.GameObjects.Image;
@@ -49,19 +66,26 @@ export class CustomerActor {
   /** Tia nhìn, cặp mày NOTICED, và đạo cụ ánh nhìn — một Graphics, vẽ lại mỗi frame. */
   private fx: Phaser.GameObjects.Graphics;
 
+  /** Đạo cụ trên THÂN (áo ướt, tay băng, ổ bánh cầm về) — nằm cùng lớp với người. */
+  private propFx: Phaser.GameObjects.Graphics;
+  private sp = { fwd: { v: 0, x: 0 }, up: { v: 0, x: 0 }, rot: { v: 0, x: 0 }, sy: { v: 0, x: 1 } };
+  private lastT = -1;
+
   private facing: Facing = "n";
   private lastX: number;
   private lastY: number;
   private bob = 0;
 
-  constructor(scene: Phaser.Scene, private c: Customer, private bubbles: BubblePool, textScale = 1) {
+  constructor(scene: Phaser.Scene, private c: Customer, private bubbles: BubblePool, textScale = 1,
+    /** P2-05: tên người chơi ghi trong sổ, hoặc "—". */
+    private label: (c: Customer) => string = (x) => x.name) {
     // Texture nướng theo `memKey` (dáng người), không theo `id` (duy nhất mỗi lượt ghé).
     if (!scene.textures.exists(`${c.memKey}_s`)) buildBody(scene, c.memKey, c.body);
 
     this.shadow = scene.add.image(0, 0, FX.shadow).setOrigin(0.5, 0.5);
     this.body = scene.add.image(0, 0, textureFor("n", c.memKey).key).setOrigin(0.5, 1);
 
-    this.tag = scene.add.text(0, 0, c.name, {
+    this.tag = scene.add.text(0, 0, label(c), {
       fontFamily: FONT, fontSize: `${Math.round(10 * textScale)}px`, fontStyle: "500", color: "#f2efe6",
       stroke: "#1b2429", strokeThickness: 3,
     }).setOrigin(0.5);
@@ -72,6 +96,7 @@ export class CustomerActor {
       stroke: MARK_STROKE, strokeThickness: 4,
     }).setOrigin(0.5);
     this.fx = scene.add.graphics().setDepth(RAY_DEPTH);
+    this.propFx = scene.add.graphics();
 
     this.lastX = c.x;
     this.lastY = c.y;
@@ -95,13 +120,40 @@ export class CustomerActor {
     const fidget = c.mood === "annoyed" ? Math.sin(time / 130) * 1.6 * amp
       : c.mood === "checking" ? Math.sin(time / 320) * 0.9 * amp : 0;
 
+    // ── kênh 2: dáng — một bộ TARGET cho lò xo, 0 sprite mới (P2-02 §3.2) ─────────
+    const dt = this.lastT < 0 ? 0 : Math.min(0.05, (time - this.lastT) / 1000);
+    this.lastT = time;
+    const pose = POSES[c.react.pose];
+    const s = intensityMul(c.personality);                 // nóng tính phóng đại BIÊN ĐỘ, không tốc độ
+    let tFwd = pose.fwd * s, tUp = pose.up * s, tRot = pose.rot * s;
+    const tSy = pose.sy ?? 1;
+    const since = c.now - c.react.poseSince;
+    if (pose.osc && !reducedMotion && (!pose.osc.beats || since < pose.osc.beats * pose.osc.period)) {
+      const w = Math.sin((since / pose.osc.period) * Math.PI * 2) * pose.osc.amp * s;
+      if (pose.osc.axis === "x") tFwd += w; else if (pose.osc.axis === "y") tUp += w; else tRot += w;
+    }
+    if (reducedMotion) {                                   // CANON §15.3: nhảy thẳng tới target, không nhún
+      this.sp.fwd.x = tFwd; this.sp.up.x = tUp; this.sp.rot.x = tRot; this.sp.sy.x = tSy;
+    } else {
+      const d = pose.d ?? DAMP;
+      spring(this.sp.fwd, tFwd, dt, d); spring(this.sp.up, tUp, dt, d);
+      spring(this.sp.rot, tRot, dt, d); spring(this.sp.sy, tSy, dt, d);
+    }
+    // "về phía quầy" trên màn hình = hướng −y của thế giới
+    const a = toScreen(c.x, c.y), b = toScreen(c.x, c.y - 1);
+    const len = Math.hypot(b.sx - a.sx, b.sy - a.sy) || 1;
+    const fx = ((b.sx - a.sx) / len) * this.sp.fwd.x, fy = ((b.sy - a.sy) / len) * this.sp.fwd.x * 0.5;
+
     const tex = textureFor(this.facing, c.memKey);
     this.body.setTexture(tex.key).setFlipX(tex.flip);
-    this.body.setPosition(sx + fidget, footY(sy) - hop).setDepth(depth);
-    this.body.setScale(1, 1 + Math.sin(this.bob * 2) * 0.02 * amp);
+    this.body.setPosition(sx + fidget + fx, footY(sy) - hop + fy - this.sp.up.x).setDepth(depth);
+    this.body.setAngle(this.sp.rot.x * (tex.flip ? -1 : 1));
+    this.body.setScale(1, this.sp.sy.x + Math.sin(this.bob * 2) * 0.02 * amp);
     this.shadow.setPosition(sx, sy).setDepth(depth - 1);
 
     const headX = sx + fidget, headY = footY(sy) - BODY_H + 12 - hop;
+    const name = this.label(c);
+    if (this.tag.text !== name) this.tag.setText(name);
     this.tag.setPosition(sx, sy - BODY_H - 8).setDepth(depth + 1)
       .setAlpha(c.phase === "leaving" ? 0.45 : 0.9);
 
@@ -133,6 +185,16 @@ export class CustomerActor {
     // ── đạo cụ của trạng thái ánh nhìn ──────────────────────────────────────
     if (watching) this.drawGazeProp(g, headX, headY, time, reducedMotion);
 
+    // ── kênh 1: nét mặt — huy hiệu cạnh đầu, chỉ hiện khi mặt KHÁC nền trung tính ──
+    const face = c.react.face;
+    if (face !== NEUTRAL && (face[0] || face[1] || face[2])) {
+      // Celeste: đổi mặt thì giật đầu 1 px trong 90 ms — "cái giật" của cảm xúc
+      const jolt = !reducedMotion && c.now - c.react.faceChangedAt < 0.09 ? -1 : 0;
+      drawFace(g, sx + 22, markY + 6 + jolt, face, c.body.skin, browColor(c.body.hair), c.phase === "leaving" ? 0.7 : 1);
+    }
+
+    this.drawBodyProps(sx + fidget + fx, footY(sy) - hop + fy - this.sp.up.x, depth, time, reducedMotion);
+
     // Bong bóng lấy từ pool (P0-01 §2.6c) — không tạo, không huỷ object nào ở đây.
     // Người xếp hàng phía sau: bong bóng nhỏ hơn 15%, mờ hơn (P1-04 §2.9).
     if (c.say) {
@@ -141,6 +203,50 @@ export class CustomerActor {
       b.place(sx, sy - BODY_H - 46, OVERLAY_DEPTH + 2, c.slot > 0 ? 0.85 : 1, reducedMotion);
     } else {
       this.bubbles.release(c.id, reducedMotion);
+    }
+  }
+
+  /**
+   * Prop của mood (P2-02 §5.2: THẤY → HIỂU → NGHE — nhìn thấy từ xa, trước câu nói đầu)
+   * và ổ bánh khách cầm về. Vẽ ngay trên thân, cùng lớp chiều sâu với người.
+   */
+  private drawBodyProps(x: number, foot: number, depth: number, time: number, rm: boolean) {
+    const c = this.c, g = this.propFx;
+    g.clear().setDepth(depth + 0.5);
+    const shoulder = foot - 36;
+    switch (c.dayMood.prop) {
+      case "AO_UOT": {                                     // áo ướt: vai sậm + giọt nước
+        g.fillStyle(0x1b2a3a, 0.35).fillEllipse(x, shoulder + 4, 26, 10);
+        const drip = rm ? 0 : (time / 400) % 1;
+        g.fillStyle(0x9fc6e8, 0.9).fillCircle(x - 9, shoulder + 8 + drip * 10, 1.4).fillCircle(x + 8, shoulder + 12 + ((drip + 0.5) % 1) * 10, 1.4);
+        break;
+      }
+      case "TAY_BANG":                                     // tay băng trắng
+        g.fillStyle(0xf4f1ea, 1).fillRoundedRect(x + 9, shoulder + 10, 6, 9, 2);
+        g.lineStyle(1, 0xc9c3b8, 1).lineBetween(x + 9, shoulder + 13, x + 15, shoulder + 13).lineBetween(x + 9, shoulder + 16, x + 15, shoulder + 16);
+        break;
+      case "AO_MOI": {                                     // áo mới: lấp lánh
+        const t = rm ? 0.5 : (Math.sin(time / 260) + 1) / 2;
+        g.fillStyle(0xfff4c2, 0.5 + 0.5 * t).fillCircle(x - 8, shoulder + 3, 1.6).fillCircle(x + 7, shoulder + 9, 1.3);
+        break;
+      }
+      case "VI_MONG":                                      // ví mỏng lép cầm tay
+        g.fillStyle(0x6b4a33, 1).fillRoundedRect(x + 8, shoulder + 14, 7, 5, 1.5);
+        break;
+      default:
+        break;
+    }
+    // ổ bánh cầm về — và, với chị Lan, rơi vào thùng rác đầu hẻm (P2-02 §4.6)
+    const binT = c.binAt >= 0 ? c.now - c.binAt : -1;
+    if (c.carrying || (binT >= 0 && binT < 0.35)) {
+      let bx = x + 11, by = shoulder + 14;
+      if (binT >= 0) {
+        const bin = toScreen(STREET_BIN.x - 0.45, STREET_BIN.y - 1.1);
+        const k = binT / 0.35;
+        bx += (bin.sx - bx) * k; by += (footY(bin.sy) - 22 - by) * k * k;
+      }
+      g.fillStyle(0xc98a45, 1).fillEllipse(bx, by, 14, 6);
+      g.fillStyle(0xe6b574, 1).fillEllipse(bx - 1, by - 1, 10, 3);
     }
   }
 
@@ -179,6 +285,7 @@ export class CustomerActor {
     this.tag.destroy();
     this.mark.destroy();
     this.fx.destroy();
+    this.propFx.destroy();
     this.bubbles.release(this.c.id, true);           // người đã khuất: tắt ngay, không mờ dần
   }
 }

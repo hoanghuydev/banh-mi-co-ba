@@ -1,9 +1,9 @@
 /**
  * npm run validate:rules [-- --content <dir>]
  *
- * Validator cho rule DB — P0-03 §2.3(a), 14 kiểm tra R001–R014.
- * ERROR chặn commit; WARN in ra nhưng cho qua. Chỉ lỗi làm HỎNG THẬT mới là ERROR —
- * validator quá nghiêm thì writer sẽ tắt nó đi (R8).
+ * Validator cho rule DB — P0-03 §2.3(a), 14 kiểm tra R001–R014, theo đúng định dạng
+ * runtime đọc (`when` / `say`, P2-01 §2.4). ERROR chặn commit; WARN in ra nhưng cho qua.
+ * Chỉ lỗi làm HỎNG THẬT mới là ERROR — validator quá nghiêm thì writer sẽ tắt nó đi (R8).
  *
  * Rule chết là loại bug tốn nhất để tìm bằng tay: không crash, chỉ là không bao giờ nói.
  */
@@ -12,80 +12,78 @@ import { pathToFileURL } from "node:url";
 import { NPC_IDS, STIM_IDS } from "../src/core/types";
 import { ROOT, Report, read, readJson, walk } from "./lib";
 
-export type Criterion = { key: string; op: "eq" | "neq" | "gt" | "gte" | "lt" | "lte" | "in"; value: unknown };
+type WhenValue = string | number | boolean | (string | number)[];
 export type Rule = {
   id: string;
   concept: string;
-  criteria: Criterion[];
-  responses: { id: string; variants: string[]; en?: string[] }[];
-  applycontext?: [string, unknown, number][];
-  followup?: [string, string, number];
+  when?: Record<string, WhenValue>;
+  say: string[];
+  en?: string[];
+  applycontext?: Record<string, { value: number | boolean; duration: number }>;
+  followup?: { target: string; concept: string; delay: number };
   speakonce?: boolean;
   norepeat?: boolean;
+  cooldown?: number;
   odds?: number;
-  tier?: 1 | 2 | 3;
-  npc?: string;
+  silent?: boolean;
 };
 
-type KeyDef = { type: "enum" | "ordinal" | "number" | "bool" | "string"; values?: string[] | string; min?: number; max?: number };
-type Schema = { keys: Record<string, KeyDef>; signature: Record<string, string[]> };
+type FactDef = { type: "enum" | "ordinal" | "number" | "bool"; values?: string[] | string; min?: number; max?: number; ctx?: boolean };
+type Schema = { concepts: string[]; facts: Record<string, FactDef>; signature: Record<string, string[]>; silentOk?: string[] };
 
 const MACROS: Record<string, readonly string[]> = { "@NPC_IDS": NPC_IDS, "@STIM_IDS": STIM_IDS };
 export const LINE_VARIANT_FLOOR = 6;
+/** Mỗi concept cần một rule "lưới an toàn" điểm thấp (P2-01 §2.9: tier-3 = score ≤ 2). */
+const SAFETY_NET_SCORE = 2;
 
-function valuesOf(def: KeyDef): string[] | null {
+function valuesOf(def: FactDef): readonly string[] | null {
   if (!def.values) return null;
-  return typeof def.values === "string" ? [...(MACROS[def.values] ?? [])] : def.values;
+  return typeof def.values === "string" ? MACROS[def.values] ?? [] : def.values;
 }
 
-/** Tập giá trị còn thoả sau khi giao mọi criterion trên một key. Rỗng = R002. */
-function satisfiable(def: KeyDef, cs: Criterion[]): boolean {
-  if (def.type === "number") {
-    let lo = def.min ?? -Infinity, hi = def.max ?? Infinity;
-    const not = new Set<number>();
-    for (const c of cs) {
-      const v = Number(c.value);
-      if (c.op === "eq") { lo = Math.max(lo, v); hi = Math.min(hi, v); }
-      else if (c.op === "gt") lo = Math.max(lo, v + 1e-9);
-      else if (c.op === "gte") lo = Math.max(lo, v);
-      else if (c.op === "lt") hi = Math.min(hi, v - 1e-9);
-      else if (c.op === "lte") hi = Math.min(hi, v);
-      else if (c.op === "neq") not.add(v);
-    }
-    return lo <= hi && !(lo === hi && not.has(lo));
+/**
+ * Khoảng [lo, hi] mà một criterion chấp nhận, trên miền của fact. Trả lỗi dạng chuỗi
+ * nếu giá trị lạ (R001/R013) hoặc khoảng rỗng (R002).
+ */
+function interval(def: FactDef, spec: string | number | boolean): { lo: number; hi: number } | { bad: string; code: "R001" | "R002" | "R013" } {
+  const vals = valuesOf(def);
+  const dom = def.type === "bool" ? { lo: 0, hi: 1 }
+    : vals ? { lo: 0, hi: vals.length - 1 } : { lo: def.min ?? -Infinity, hi: def.max ?? Infinity };
+  const macro = typeof def.values === "string";
+  const enc = (v: string | number | boolean): number | null => {
+    if (def.type === "bool") return v === true || v === "true" || v === 1 ? 1 : v === false || v === "false" || v === 0 ? 0 : null;
+    if (def.type === "number") { const n = Number(v); return Number.isFinite(n) ? n : null; }
+    const i = vals!.indexOf(String(v));
+    return i < 0 ? null : i;
+  };
+  const badVal = (v: unknown) => ({ bad: `'${v}' không phải giá trị hợp lệ${vals ? ` (${vals.join("|")})` : ""}`, code: macro ? "R013" as const : "R001" as const });
+  if (spec === "absent" || spec === "present") return dom;
+  let lo: number, hi: number;
+  const s = typeof spec === "string" ? spec : null;
+  const m = s ? /^(>=|<=|>|<)(.+)$/.exec(s) : null;
+  const r = s && !m ? /^(.+)\.\.(.+)$/.exec(s) : null;
+  if (m) {
+    if (def.type === "enum" || def.type === "bool") return { bad: `so sánh '${m[1]}' trên fact ${def.type} — chỉ ordinal/number mới so được`, code: "R001" };
+    const v = enc(m[2]);
+    if (v === null) return badVal(m[2]);
+    [lo, hi] = m[1] === ">=" ? [v, Infinity] : m[1] === ">" ? [v + 1, Infinity] : m[1] === "<=" ? [-Infinity, v] : [-Infinity, v - 1];
+  } else if (r) {
+    const a = enc(r[1]), b = enc(r[2]);
+    if (a === null) return badVal(r[1]);
+    if (b === null) return badVal(r[2]);
+    [lo, hi] = [a, b];
+  } else {
+    const v = enc(spec);
+    if (v === null) return badVal(spec);
+    lo = hi = v;
   }
-  if (def.type === "bool") {
-    let allowed = new Set([true, false]);
-    for (const c of cs) {
-      if (c.op === "eq") allowed = new Set([...allowed].filter((x) => x === c.value));
-      if (c.op === "neq") allowed.delete(c.value as boolean);
-    }
-    return allowed.size > 0;
-  }
-  const all = valuesOf(def);
-  if (!all) {                                                // string tự do
-    const eqs = new Set(cs.filter((c) => c.op === "eq").map((c) => String(c.value)));
-    return eqs.size <= 1;
-  }
-  let allowed = new Set(all);
-  for (const c of cs) {
-    const v = String(c.value);
-    const i = all.indexOf(v);
-    const keep = (pred: (x: string, j: number) => boolean) => { allowed = new Set([...allowed].filter((x) => pred(x, all.indexOf(x)))); };
-    if (c.op === "eq") keep((x) => x === v);
-    else if (c.op === "neq") keep((x) => x !== v);
-    else if (c.op === "in") keep((x) => (c.value as string[]).includes(x));
-    else if (def.type === "ordinal") {
-      if (c.op === "gte") keep((_, j) => j >= i);
-      if (c.op === "gt") keep((_, j) => j > i);
-      if (c.op === "lte") keep((_, j) => j <= i);
-      if (c.op === "lt") keep((_, j) => j < i);
-    }
-  }
-  return allowed.size > 0;
+  lo = Math.max(lo, dom.lo); hi = Math.min(hi, dom.hi);
+  if (lo > hi) return { bad: `'${spec}' nằm ngoài miền [${dom.lo}, ${dom.hi}] — không bao giờ đúng`, code: "R002" };
+  return { lo, hi };
 }
 
-const critKey = (c: Criterion) => `${c.key}|${c.op}|${JSON.stringify(c.value)}`;
+/** Chữ ký criterion để so trùng (R008/R009). Mảng tách thành nhiều chữ ký như runtime. */
+const critSig = (name: string, spec: WhenValue) => `${name}=${JSON.stringify(spec)}`;
 
 export function validateRules(contentDir: string, srcDir: string): Report {
   const r = new Report();
@@ -96,98 +94,105 @@ export function validateRules(contentDir: string, srcDir: string): Report {
   const rules: { rule: Rule; file: string }[] = [];
   for (const f of walk(rulesDir, [".json"])) {
     if (f.endsWith("_blackboard.json")) continue;
-    const data = readJson<Rule | Rule[] | { rules: Rule[] }>(f);
-    const list = Array.isArray(data) ? data : "rules" in data ? data.rules : [data];
+    const data = readJson<Rule[] | { rules: Rule[] }>(f);
+    const list = Array.isArray(data) ? data : data.rules ?? [];
     for (const rule of list) rules.push({ rule, file: f });
   }
 
-  // Concept nào thật sự được phát trong code (dialog:requested) — R003.
+  // Concept nào thật sự được HỎI trong code — R003. Chỗ gọi luôn viết concept là literal.
   const emitted = new Set<string>();
+  const followTargets = new Set<string>();
   for (const f of walk(srcDir, [".ts"])) {
-    for (const m of read(f).matchAll(/concept:\s*["'`]([A-Z0-9_]+)["'`]/g)) emitted.add(m[1]);
+    const src = read(f);
+    for (const m of src.matchAll(/concept:\s*["'`]([A-Z0-9_]+)["'`]/g)) emitted.add(m[1]);
+    for (const m of src.matchAll(/speakConcept\([^,()]+,\s*["'`]([A-Z0-9_]+)["'`]/g)) emitted.add(m[1]);
   }
-  for (const { rule } of rules) if (rule.followup) emitted.add(rule.followup[1]);   // followup cũng là một nguồn phát
+  for (const { rule } of rules) if (rule.followup) { emitted.add(rule.followup.concept); followTargets.add(rule.followup.concept); }
 
   const concepts = new Set(rules.map((x) => x.rule.concept));
-  const readKeys = new Set(rules.flatMap((x) => x.rule.criteria.map((c) => c.key)));
+  const readFacts = new Set(rules.flatMap((x) => Object.keys(x.rule.when ?? {})));
 
   for (const { rule, file } of rules) {
     const where = `[${rule.id}]`;
-    const byKey = new Map<string, Criterion[]>();
-    for (const c of rule.criteria) byKey.set(c.key, [...(byKey.get(c.key) ?? []), c]);
+    if (!schema.concepts.includes(rule.concept)) r.add("R003", "ERROR", file, where, `concept '${rule.concept}' không có trong danh mục concepts của blackboard`);
 
-    for (const [key, cs] of byKey) {
-      const def = schema.keys[key];
-      if (!def) { r.add("R001", "ERROR", file, where, `key '${key}' không có trong blackboard — rule không bao giờ match`); continue; }
-      if (!satisfiable(def, cs)) {
-        r.add("R002", "ERROR", file, where, `'${key}': ${cs.map((c) => `${c.op} ${JSON.stringify(c.value)}`).join(" ∧ ")} mâu thuẫn`);
-      }
-      // R013 — định danh phải thuộc CANON (11+1 sự kiện, 12 NPC)
-      const canon = def.values === "@NPC_IDS" ? NPC_IDS : def.values === "@STIM_IDS" ? STIM_IDS : null;
-      if (canon) {
-        for (const c of cs) {
-          const vals = Array.isArray(c.value) ? c.value : [c.value];
-          for (const v of vals) if (!canon.includes(String(v) as never)) {
-            r.add("R013", "ERROR", file, where, `'${v}' không thuộc danh sách CANON của ${key}`);
-          }
-        }
+    for (const [name, spec] of Object.entries(rule.when ?? {})) {
+      const def = schema.facts[name];
+      if (!def) { r.add("R001", "ERROR", file, where, `fact '${name}' không có trong blackboard — rule không bao giờ khớp`); continue; }
+      for (const one of Array.isArray(spec) ? spec : [spec]) {
+        const iv = interval(def, one);
+        if ("bad" in iv) r.add(iv.code, "ERROR", file, where, `'${name}': ${iv.bad}`);
       }
     }
-    if (rule.npc && !NPC_IDS.includes(rule.npc as never)) r.add("R013", "ERROR", file, where, `npc '${rule.npc}' không thuộc CANON §9`);
 
     if (!emitted.has(rule.concept)) {
-      r.add("R003", "ERROR", file, where, `concept '${rule.concept}' không có ai emit (không có dialog:requested nào trong src/)`);
+      r.add("R003", "ERROR", file, where, `concept '${rule.concept}' không ai hỏi tới (không có speakConcept/concept: nào trong src/, không followup nào trỏ tới)`);
     }
-    if (rule.followup && !concepts.has(rule.followup[1])) {
-      r.add("R004", "ERROR", file, where, `followup trỏ tới concept '${rule.followup[1]}' không tồn tại`);
+    if (rule.followup) {
+      if (!concepts.has(rule.followup.concept)) r.add("R004", "ERROR", file, where, `followup trỏ tới concept '${rule.followup.concept}' không có rule nào`);
+      if (rule.followup.target !== "SELF") r.add("R004", "ERROR", file, where, `followup target '${rule.followup.target}' — bản dựng mới hỗ trợ SELF`);
     }
-    for (const [key, , dur] of rule.applycontext ?? []) {
-      if (!readKeys.has(key)) r.add("R005", "ERROR", file, where, `applycontext ghi '${key}' mà không rule nào đọc — trí nhớ ghi vào hư không`);
-      if (!(dur > 0)) r.add("R011", "ERROR", file, where, `applycontext '${key}' có duration_sec ${dur} ≤ 0`);
+    for (const [fact, a] of Object.entries(rule.applycontext ?? {})) {
+      const def = schema.facts[fact];
+      if (!def) { r.add("R001", "ERROR", file, where, `applycontext ghi fact '${fact}' không có trong blackboard`); continue; }
+      if (!def.ctx) r.add("R005", "ERROR", file, where, `applycontext ghi '${fact}' không phải fact ctx* — chỉ fact ctx được ghi từ rule`);
+      if (!readFacts.has(fact)) r.add("R005", "ERROR", file, where, `applycontext ghi '${fact}' mà không rule nào đọc — trí nhớ ghi vào hư không`);
+      // P2-01 §2.6: −1 = tới hết ngày · 0 = chỉ tick này · > 0 = giây
+      if (!(a.duration === -1 || a.duration >= 0)) r.add("R011", "ERROR", file, where, `applycontext '${fact}' duration ${a.duration} không hợp lệ (−1 | 0 | > 0)`);
     }
-    for (const resp of rule.responses) {
-      if (resp.variants.length < LINE_VARIANT_FLOOR) {
-        r.add("R007", "WARN", file, `${where}.${resp.id}`, `${resp.variants.length} biến thể < sàn ${LINE_VARIANT_FLOOR} (mục tiêu 8)`);
-      }
+    if (rule.silent) {
+      if (rule.say?.length) r.add("R007", "ERROR", file, where, "rule `silent` mà vẫn có câu trong `say`");
+    } else if (!rule.say?.length) r.add("R007", "ERROR", file, where, "không có câu nào trong `say` (muốn im thì đặt `silent: true`)");
+    // Sàn biến thể là cho dòng DÙNG CHUNG (lặp nhiều nhất). Dòng riêng của một NPC có ctx
+    // cooldown / odds, và bảng P2-02 §4 chỉ cho 1 câu mẫu mỗi ô — không cảnh báo.
+    else if (rule.say.length < LINE_VARIANT_FLOOR && !rule.when?.npcId && !rule.speakonce && !rule.norepeat && !followTargets.has(rule.concept)) {
+      r.add("R007", "WARN", file, where, `${rule.say.length} biến thể < sàn ${LINE_VARIANT_FLOOR} (mục tiêu 8)`);
     }
+    if (rule.en && rule.en.length !== rule.say.length) r.add("R007", "WARN", file, where, `en có ${rule.en.length} dòng, say có ${rule.say.length}`);
     if (rule.speakonce && rule.norepeat) r.add("R010", "ERROR", file, where, "speakonce và norepeat cùng bật — mâu thuẫn ngữ nghĩa");
     if (rule.odds !== undefined && (rule.odds < 0 || rule.odds > 100)) r.add("R011", "ERROR", file, where, `odds ${rule.odds} ngoài [0,100]`);
+    if (rule.cooldown !== undefined && rule.cooldown < 0) r.add("R011", "ERROR", file, where, `cooldown ${rule.cooldown} < 0`);
   }
 
   // R008 trùng hệt · R009 che khuất vô ích
-  const sig = (x: Rule) => x.criteria.map(critKey).sort();
+  const sig = (x: Rule) => Object.entries(x.when ?? {}).map(([k, v]) => critSig(k, v)).sort();
+  const ids = new Map<string, string>();
+  for (const { rule, file } of rules) {
+    if (ids.has(rule.id)) r.add("R008", "ERROR", file, `[${rule.id}]`, `id trùng với rule trong ${ids.get(rule.id)}`);
+    ids.set(rule.id, file);
+  }
   for (let i = 0; i < rules.length; i++) {
     for (let j = i + 1; j < rules.length; j++) {
       const a = rules[i].rule, b = rules[j].rule;
       if (a.concept !== b.concept) continue;
       const sa = sig(a), sb = sig(b);
       if (sa.join() === sb.join()) {
-        r.add("R008", "ERROR", rules[j].file, `[${b.id}]`, `trùng hệt [${a.id}] — hoà điểm, thứ tự load quyết định = không xác định`);
+        r.add("R008", "ERROR", rules[j].file, `[${b.id}]`, `cùng điều kiện với [${a.id}] — hoà điểm, hai rule tranh nhau ngẫu nhiên`);
         continue;
       }
       const [small, big, bigFile] = sa.length < sb.length ? [a, b, rules[j].file] : [b, a, rules[i].file];
       const setBig = new Set(sig(big));
       const subset = sig(small).every((k) => setBig.has(k));
-      const sameText = JSON.stringify(small.responses.map((x) => x.variants)) === JSON.stringify(big.responses.map((x) => x.variants));
-      if (subset && sameText) {
+      if (subset && JSON.stringify(small.say) === JSON.stringify(big.say)) {
         r.add("R009", "WARN", bigFile, `[${big.id}]`, `cụ thể hơn [${small.id}] nhưng nói y hệt — che khuất vô ích`);
       }
     }
   }
 
-  // R006 key không ai dùng · R012 thiếu lưới tier-3 · R014 thiếu dòng đặc trưng
-  for (const key of Object.keys(schema.keys)) {
-    if (!readKeys.has(key)) r.add("R006", "WARN", schemaFile, key, "khai báo trong blackboard nhưng không criterion nào đọc");
+  // R006 fact không ai đọc · R012 thiếu lưới an toàn · R014 thiếu dòng đặc trưng
+  for (const [name, def] of Object.entries(schema.facts)) {
+    if (!readFacts.has(name) && !def.ctx) r.add("R006", "WARN", schemaFile, name, "khai báo trong blackboard nhưng không rule nào đọc");
   }
+  const silentOk = new Set(schema.silentOk ?? []);
   for (const concept of concepts) {
-    if (!rules.some((x) => x.rule.concept === concept && x.rule.tier === 3)) {
-      r.add("R012", "WARN", rulesDir, concept, "không có rule tier-3 làm lưới an toàn — có tình huống NPC câm");
+    if (followTargets.has(concept) || silentOk.has(concept)) continue;    // chuỗi / chuyện phiếm: im là hợp lệ
+    if (!rules.some((x) => x.rule.concept === concept && Object.keys(x.rule.when ?? {}).length <= SAFETY_NET_SCORE)) {
+      r.add("R012", "WARN", rulesDir, concept, `không có rule score ≤ ${SAFETY_NET_SCORE} làm lưới an toàn — có tình huống NPC câm`);
     }
   }
   for (const [npc, sigConcepts] of Object.entries(schema.signature)) {
     if (npc.startsWith("_")) continue;
-    const has = rules.some((x) => sigConcepts.includes(x.rule.concept)
-      && x.rule.criteria.some((c) => c.key === "Customer.npcId" && c.value === npc));
+    const has = rules.some((x) => sigConcepts.includes(x.rule.concept) && x.rule.when?.npcId === npc);
     if (!has) r.add("R014", "WARN", schemaFile, npc, `chưa có dòng riêng cho tình huống đặc trưng (${sigConcepts.join(", ")})`);
   }
   return r;

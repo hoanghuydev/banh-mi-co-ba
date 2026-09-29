@@ -1,0 +1,17 @@
+{
+  "_note": "Bé Su — học sinh cấp 2 quay TikTok. Bộ khuếch đại danh tiếng: không giận, nhưng KỂ cho cả hẻm (pGossip 0.70). Không phải trò đùa.",
+  "rules": [
+    {"id": "su.dropped_food", "concept": "NOTICE_EVENT", "when": {"npcId": "BE_SU", "eventId": "DROPPED_FOOD", "obsState": ">=NOTICED", "ctxBarkT1_DROP": "absent"}, "applycontext": {"ctxBarkT1_DROP": {"value": 1, "duration": 90}}, "say": ["Ê ghê quá cô ơiiii!"]},
+    {"id": "su.dirty_hands", "concept": "NOTICE_EVENT", "when": {"npcId": "BE_SU", "eventId": "DIRTY_HANDS", "obsState": ">=NOTICED", "ctxBarkT1_TAY": "absent"}, "applycontext": {"ctxBarkT1_TAY": {"value": 1, "duration": 90}}, "say": ["Cô ơi tay cô nè! Tiền dơ lắm á cô!"]},
+    {"id": "su.burnt_or_cold", "concept": "NOTICE_EVENT", "when": {"npcId": "BE_SU", "eventId": "BURNT_OR_COLD", "obsState": ">=NOTICED", "ctxBarkT1_KHET": "absent"}, "applycontext": {"ctxBarkT1_KHET": {"value": 1, "duration": 90}}, "say": ["Ui cháy đen thui luôn! Cô ơi cho con quay cái này!"]},
+    {"id": "su.wrong_name", "concept": "NOTICE_EVENT", "when": {"npcId": "BE_SU", "eventId": "WRONG_NAME", "obsState": ">=NOTICED"}, "say": ["Ủa cô ơi con là Su mà! S-U Su á! Cô nhớ nha, mai con kiểm tra!"]},
+    {"id": "su.flourish", "concept": "NOTICE_EVENT", "when": {"npcId": "BE_SU", "eventId": "FLOURISH", "obsState": ">=NOTICED"}, "say": ["Cô làm nhanh dữ! Quay lại coi nè!"], "cooldown": 120},
+    {"id": "su.wait.confirmed", "concept": "NOTICE_EVENT", "when": {"npcId": "BE_SU", "eventId": "MADE_THEM_WAIT", "obsState": "CONFIRMED"}, "say": ["Không sao cô, con quay cái xe cô cái đã."]},
+    {"id": "su.del.seen", "concept": "DELIVERY", "when": {"npcId": "BE_SU", "defectCount": ">=1", "defectWasSeen": true, "defectKind": "RATIO_UNDER"}, "say": ["Cô ơi con dặn nhiều {mon} mà cô bỏ có chút xíu à!"]},
+    {"id": "su.del.found", "concept": "DELIVERY", "when": {"npcId": "BE_SU", "defectCount": ">=1", "defectWasSeen": false, "defectKind": "MISSING"}, "say": ["Ơ {mon} đâu rồiii"]},
+    {"id": "su.del.usual", "concept": "DELIVERY", "when": {"npcId": "BE_SU", "defectCount": 0, "orderIsUsual": true}, "say": ["Cô nhớ con nè! Cô nhớ con thiệt nè! Mai con dẫn nhỏ bạn qua nha cô!"]},
+    {"id": "su.del.toomuch", "concept": "DELIVERY", "when": {"npcId": "BE_SU", "defectCount": 0, "freeExtraTooMuch": true}, "say": ["Cô ơi cô cho con thêm nữa đi cô ơiiii"]},
+    {"id": "su.tea", "concept": "INTERACT", "when": {"npcId": "BE_SU", "interaction": "TEA"}, "say": ["Cô cưng quá à! Con quay cô nha!"]},
+    {"id": "su.tiktok", "concept": "SMALLTALK", "when": {"npcId": "BE_SU", "queueLength": "<=2"}, "say": ["Cô ơi video hôm bữa quay xe cô được mấy ngàn view rồi á!"], "norepeat": true, "odds": 60}
+  ]
+}

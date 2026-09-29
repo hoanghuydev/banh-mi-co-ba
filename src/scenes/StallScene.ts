@@ -13,6 +13,11 @@ import { runFrame } from "../sim/frame";
 import { cool, isWarm } from "../sim/loaf";
 import { Steam } from "../ui/stall/Steam";
 import { BubblePool } from "../ui/stall/BubblePool";
+import { GossipCorner } from "../ui/stall/GossipCorner";
+import { NotebookView } from "../ui/notebook/NotebookView";
+import { logNote } from "../sim/notebook";
+import { CLAIM } from "../sim/gossip";
+import { OverhearScene, type Tier } from "../sim/overhear";
 import { dev } from "../dev/registry";
 import type { DayScene } from "./DayScene";
 import { diffDish, type Ingredient } from "../sim/order";
@@ -70,6 +75,11 @@ export class StallScene extends Phaser.Scene {
   private hud!: Hud;
   private ring!: Phaser.GameObjects.Image;
   private bubbles!: BubblePool;
+  /** Cảnh nghe lỏm sáng nay (P2-04 §2.7) — null nếu đêm qua không ai kể gì. */
+  private corner: GossipCorner | null = null;
+  private overhearTier: Tier = 0;
+  /** Sổ tay mở giữa ngày (Tab) — pause HOÀN TOÀN, kể cả kiên nhẫn của khách (CANON §15.2). */
+  private notebook: NotebookView | null = null;
 
   private near: Station | null = null;
 
@@ -201,7 +211,7 @@ export class StallScene extends Phaser.Scene {
     const w = this.world;
     this.service = new Service({
       bus, hub: this.ctx.rng, saveId: w.saveId, day: w.progress.dayIndex,
-      npcs: w.npcs, bags: w.shuffleBags,
+      npcs: w.npcs, bags: w.shuffleBags, dialog: w.dialogState, gossip: w.gossip, notebook: w.notebook,
       resumeAt: this.resumed ? this.clock.minutes : undefined,
     });
     this.assembly = new AssemblyPanel(this,
@@ -212,6 +222,16 @@ export class StallScene extends Phaser.Scene {
     );
     this.bindInput();
     this.wire();
+
+    // P2-04 §2.7 — cảnh nghe lỏm của đêm qua, nếu có
+    this.corner?.destroy();
+    this.corner = null;
+    const plan = w.gossip?.overhear;
+    if (plan && plan.day === w.progress.dayIndex) {
+      this.corner = new GossipCorner(this, new OverhearScene(plan, {
+        reducedMotion: this.settings.reducedMotion, noTimePressure: this.settings.noTimePressure,
+      }), this.bubbles);
+    }
 
     if (DEV_TOOLS) {
       dev.stall = {
@@ -387,6 +407,7 @@ export class StallScene extends Phaser.Scene {
       if (ev.code === "KeyP" && this.paused && !this.overlayBack) { this.resume(); return; }
       if (ev.code === "Escape" || ev.repeat || this.paused) return;
       if (ev.code === "KeyP") { this.pause(); return; }   // "tạm dừng MỌI LÚC" (CANON §15.2)
+      if (ev.code === "Tab") { ev.preventDefault(); this.openNotebook(); return; }
       if (this.assembly.isOpen) { this.assembly.handleKey(ev.code); return; }
       // Không làm ngay: xếp hàng để áp ở bước craft của frame kế (P0-01 §2.4).
       if (ev.code === "KeyQ") this.intents.push(() => this.discard());
@@ -440,6 +461,7 @@ export class StallScene extends Phaser.Scene {
         this.addDirt(0.0015 * Math.max(0, this.clock.minutes - this.lastMinutes));
         this.lastMinutes = this.clock.minutes;
         this.service.dirt = this.dirt;
+        this.service.handsDirty = this.hands === "MONEY";
         // Trục nguội chạy nền, không ai điều khiển, luôn chống lại người chơi (P1-01 §2.5).
         const weather = this.world.progress.weather;
         if (this.player.hand === "loaf_hot" || this.player.hand === "loaf_filled") this.handWarmth = cool(this.handWarmth, dt, weather);
@@ -461,6 +483,7 @@ export class StallScene extends Phaser.Scene {
       },
       dialog: (dt) => {
         this.service.tickDialog(dt);
+        this.tickOverhear(dt);
         this.drainService();
         telemetry.dialogDeferred = this.service.dialogDeferred;
         // Hết giờ thì khách đang chờ được mời về (`closed`); đợi họ đi khuất mới đóng quầy.
@@ -469,6 +492,36 @@ export class StallScene extends Phaser.Scene {
       render: () => this.renderSync(),
       renderPaused: () => this.renderSync(),
     }, dtMs);
+  }
+
+  /**
+   * Nghe lỏm — ba tầng theo việc người chơi đang làm (P2-04 §2.7): tay bận → chỉ biết có
+   * người nói; dừng tay đứng yên → nghe nội dung; đứng yên + giữ Shift (nghiêng người) →
+   * nghe cả nguồn, nhưng khách trước quầy thấy mình lơ đễnh. Không có nút phát lại.
+   */
+  private tickOverhear(dt: number) {
+    const k = this.corner;
+    if (!k) return;
+    const handsBusy = this.player.hand !== "empty" || this.assembly.isOpen || this.busy !== null || this.handsBusy;
+    const still = !this.player.moving;
+    const tier: Tier = handsBusy || !still ? 0 : this.keys.SHIFT.isDown ? 2 : 1;
+    this.overhearTier = tier;
+    if (k.sc.state === "PLAY" && tier === 2) this.service.playerLeaning();
+    // lõm khách: hàng vắng, và hai người đang nói chuyện không đứng ở quầy lúc đó
+    const quiet = this.service.audience.length <= 2
+      && !this.service.customers.some((c) => c.memKey === k.sc.plan.a || c.memKey === k.sc.plan.b);
+    const ended = k.sc.tick(dt, { minutes: this.clock.minutes, quiet, tier });
+    if (ended) {
+      const p = k.sc.plan;
+      const source = k.sc.bestFirst >= 2 ? p.source : null;
+      bus.emit("gossip:overheard", { a: p.a, b: p.b, claim: p.claim, source, tier: k.sc.best });
+      // P2-05: nghe hụt vẫn không mất trắng — tầng 1 ghi được NỘI DUNG, chỉ mất NGUỒN
+      const nb = this.world.notebook;
+      if (nb && k.sc.best >= 1) {
+        logNote(nb, this.world.progress.dayIndex, this.clock.minutes, p.a, { t: "EAVESDROP", claim: p.claim, ...(source ? { source } : {}) });
+        if (CLAIM[p.claim]?.valence < 0) nb.today.heardBad = true; else nb.today.heardGood = true;
+      }
+    }
   }
 
   /** Bước 6: CHỈ ĐỌC state vừa tính rồi vẽ. Không đọc input, không đổi state. */
@@ -482,6 +535,7 @@ export class StallScene extends Phaser.Scene {
     this.drawOven();
     this.drawGrip();
     this.drawDirt();
+    this.corner?.draw(this.overhearTier, this.clock.minutes, this.time.now, this.settings.reducedMotion);
     const ticket = this.frontTicket();
     this.hud.dockFeed(this.assembly.isOpen);
     this.hud.update({
@@ -539,7 +593,7 @@ export class StallScene extends Phaser.Scene {
   private frontTicket() {
     const c = this.service.front;
     if (!c || !c.orderLine || c.phase === "leaving") return null;
-    return { name: c.name, text: `"${c.orderLine}"`, urgent: false };
+    return { name: this.service.label(c), text: `"${c.orderLine}"`, urgent: false };
   }
 
   /** Dựng / dọn sprite khách theo danh sách trong `Service`. */
@@ -547,7 +601,9 @@ export class StallScene extends Phaser.Scene {
     const live = new Set<string>();
     for (const c of this.service.customers) {
       live.add(c.id);
-      if (!this.actors.has(c.id)) this.actors.set(c.id, new CustomerActor(this, c, this.bubbles, this.settings.textScale));
+      if (!this.actors.has(c.id)) {
+        this.actors.set(c.id, new CustomerActor(this, c, this.bubbles, this.settings.textScale, (x) => this.service.label(x)));
+      }
     }
     for (const [id, actor] of this.actors) {
       if (live.has(id)) continue;
@@ -1000,6 +1056,22 @@ export class StallScene extends Phaser.Scene {
       ["Thôi, bán tiếp", () => this.showPauseMenu("Tạm dừng")],
     ], "Chơi lại ngày này sẽ đưa mọi thứ về sáng sớm. Chợ vẫn bán giá đó,\nkhách vẫn tới giờ đó — chỉ có con là biết trước.");
     this.overlayBack = () => this.showPauseMenu("Tạm dừng");
+  }
+
+  /** Tab — sổ tay giữa ngày. Mở sổ = pause hoàn toàn; đóng sổ = bán tiếp. */
+  private openNotebook() {
+    if (this.overlay || this.closed || this.notebook?.open) return;
+    if (this.assembly.isOpen) this.assembly.park();
+    this.paused = true;
+    this.clock.paused = true;
+    this.busy = null;
+    this.intents = [];
+    this.tweens.pauseAll();
+    bus.emit("ui:pauseToggled", { paused: true, source: "PLAYER" });
+    this.notebook = new NotebookView(this.game, this, this.world, {
+      mode: "midday", textScale: this.settings.textScale, showEvening: this.settings.notebookAuto ?? true,
+      onClose: () => { this.notebook = null; this.resume(); },
+    });
   }
 
   private resume() {

@@ -4,7 +4,9 @@
 
 Bản này có **sảnh menu**, **quán bánh mì ở góc phố**, **di chuyển**, **chuỗi thao tác làm một ổ bánh**,
 và **vòng lặp bán hàng với khách thật**: khách tới → gọi món → bạn kẹp nhân → đưa → họ phản ứng → trả tiền.
-Trí nhớ dài hạn 3 tầng, tin đồn và kinh tế nằm ở các phase sau (xem `../docs/CANON.md` §17).
+Từ P2: **12 khách có tên** với lịch ghé theo thứ trong tuần, **nhớ** chuyện bạn làm (và quên dần),
+**kể cho nhau nghe** (bạn nghe lỏm được ở góc hẻm), và **sổ tay cô Ba** để bạn tự ghi tên, ghi đoán.
+Kinh tế nằm ở phase sau (xem `../docs/CANON.md` §17).
 
 ## Chạy
 
@@ -43,6 +45,8 @@ Client-only, offline-first: **không server, không netcode** (CANON §2). Save 
 | đứng ở bồn rửa, giữ `E` 3 s | rửa tay — nhận tiền xong tay **dính tiền**, bốc bánh bằng tay đó là khách thấy (DIRTY_HANDS) |
 | `E` ở thớt trống, tay không | lau thớt — quầy bẩn dần (vụn bánh → ruồi) làm khách soi kỹ hơn |
 | `P` / `Esc` / nút ⏸ | tạm dừng (đóng băng đồng hồ, sự kiên nhẫn **và** mức nhận thấy của khách) |
+| `Tab` | **sổ tay cô Ba** — pause hoàn toàn. Trái: máy ghi ai · mấy giờ · gọi gì · lần thứ mấy. Phải: **con tự ghi** tên, ghi chú, "cô đoán" |
+| đứng yên lúc có người nói chuyện ở góc hẻm | nghe lỏm được **nội dung**; giữ `Shift` (nghiêng người) thì nghe được cả **ai nói** — nhưng khách trước quầy thấy mình lơ đễnh |
 
 **Chuỗi thao tác:** kệ → **lò (3 slot, nướng nền)** → thớt → quầy gọi món.
 Lò không còn là "giữ phím canh giờ": bỏ ổ vào rồi đi làm việc khác, **vòng trên cửa lò**
@@ -266,7 +270,10 @@ Trộn hai thang này là mọi kích thích tắt ngay trước khi ai kịp nh
 
 ## Chưa có (và cố ý chưa có)
 
-Trí nhớ 3 tầng và decay, đồn thổi, rule DB thoại đầy đủ, 12 NPC (mới có 3),
-kinh tế (hạn dùng, giá chợ, nghĩa vụ — MarketScene/EveningScene mới là khung), sổ tay cuối ngày,
-đóng gói Electron.
+Kinh tế (hạn dùng, giá chợ, nghĩa vụ — MarketScene mới là khung), arc nhân vật + cảnh nhỏ khi đoán
+đúng 3 điều (P4), overrides lịch có báo trước 3–4 ngày (chú Tư dời chỗ, anh Dũng đổi ca — P4),
+kênh cải chính qua nguồn (#2) của tin đồn, phụ đề tiếng Anh, đóng gói Electron.
+
+**Về tên khách:** tên trên đầu khách và trên phiếu là tên **con tự ghi** trong sổ (chưa ghi thì `—`).
+Tên nghe được qua lời khách, lời đồn, và lời cô Ba. Ghi sai tên rồi đưa bánh là **gọi sai tên** (WRONG_NAME).
 Xem lộ trình phase ở `../docs/CANON.md` §17.
