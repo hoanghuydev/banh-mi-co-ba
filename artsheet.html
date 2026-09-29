@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<title>Bánh Mì Cô Ba — bảng soi art</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  /*
+    CÔNG CỤ DEV, KHÔNG NẰM TRONG BẢN BUILD.
+    Vite chỉ lấy `index.html` làm entry khi build, nên file này chỉ sống ở `npm run dev`.
+
+    Vì sao cần: art ở đây vẽ bằng code và chỉ cao 60–80 px trong game. Soi bằng cách
+    chạy game rồi zoom ảnh chụp màn hình vừa chậm vừa không thấy được cái mình vừa sửa.
+    Trang này nướng đúng những texture đó rồi phóng to 4x, đặt cạnh nhau — sửa một dòng
+    trong `art/` là thấy ngay kết quả.
+
+    Mở: http://localhost:5174/artsheet.html
+  */
+  body {
+    margin: 0; background: #262c33; color: #e8eef3;
+    font-family: "Be Vietnam Pro", system-ui, sans-serif;
+  }
+  h2 { font-size: 14px; font-weight: 500; margin: 26px 0 8px; color: #93a1ab; letter-spacing: .04em; }
+  .row { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; }
+  figure { margin: 0; text-align: center; }
+  figcaption { font-size: 11px; color: #8d99a2; margin-top: 6px; }
+  canvas { image-rendering: auto; background: #323a42; border-radius: 6px; }
+  main { padding: 20px 28px 60px; }
+  #host { position: fixed; left: -4000px; top: 0; }
+</style>
+</head>
+<body>
+<main id="out"></main>
+<div id="host"></div>
+<script type="module">
+import Phaser from "phaser";
+import { buildTextures, TILE, BUILD, COUNTER, PROP, HELD, holdAnchor, BODY_H } from "./src/art/index.ts";
+import { BASE } from "./src/art/canvas.ts";
+import { TH } from "./src/world/iso.ts";
+import { buildBody } from "./src/art/character.ts";
+import { WALKIN_STYLES, WALKIN_NAMES, NPCS } from "./src/content/npcs.ts";
+import { PAL } from "./src/art/palette.ts";
+
+/**
+ * Dàn nhân vật để soi — lấy THẲNG từ `content/npcs.ts` chứ không chép lại,
+ * nên bảng soi không bao giờ lệch với cái chạy trong game.
+ */
+const BODIES = [
+  ["người chơi", { skin: PAL.skin, hair: PAL.hair, shirt: PAL.shirt, trousers: PAL.trousers, apron: PAL.apron, hairStyle: "bob" }],
+  ...NPCS.map((n) => [n.name, n.body]),
+  ...WALKIN_STYLES.map((b, i) => [WALKIN_NAMES[i] ?? `khách ${i}`, b]),
+];
+
+const ZOOM = 4;
+
+new Phaser.Game({
+  type: Phaser.AUTO, parent: "host", width: 8, height: 8,
+  render: { antialias: true },
+  scene: {
+    create() {
+      buildTextures(this);
+      BODIES.forEach(([, style], i) => buildBody(this, `s${i}`, style, ["idle", "carry"]));
+
+      const out = document.getElementById("out");
+      const section = (title, entries) => {
+        out.insertAdjacentHTML("beforeend", `<h2>${title}</h2>`);
+        const row = document.createElement("div");
+        row.className = "row";
+        out.appendChild(row);
+        for (const [caption, key] of entries) {
+          if (!this.textures.exists(key)) continue;
+          const src = this.textures.get(key).getSourceImage();
+          const c = document.createElement("canvas");
+          c.width = src.width * ZOOM;
+          c.height = src.height * ZOOM;
+          const ctx = c.getContext("2d");
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(src, 0, 0, c.width, c.height);
+          const fig = document.createElement("figure");
+          fig.append(c, Object.assign(document.createElement("figcaption"), { textContent: caption }));
+          row.appendChild(fig);
+        }
+      };
+
+      /** Vẽ thân + món cầm chồng lên nhau, đúng công thức neo của `Player`. */
+      const composite = (title, scene) => {
+        out.insertAdjacentHTML("beforeend", `<h2>${title}</h2>`);
+        const row = document.createElement("div");
+        row.className = "row";
+        out.appendChild(row);
+
+        for (const facing of ["s", "e", "w", "n"]) {
+          for (const hand of ["loaf_hot", "loaf_filled", "tea"]) {
+            const flip = facing === "w";
+            const bodyKey = `s0_${flip ? "e" : facing}_c`;
+            const body = scene.textures.get(bodyKey).getSourceImage();
+            const item = scene.textures.get(HELD.key(hand)).getSourceImage();
+            const a = holdAnchor(facing);
+
+            const c = document.createElement("canvas");
+            c.width = body.width * ZOOM;
+            c.height = body.height * ZOOM;
+            const ctx = c.getContext("2d");
+            ctx.imageSmoothingEnabled = false;
+            ctx.save();
+            if (flip) { ctx.translate(c.width, 0); ctx.scale(-1, 1); }
+            ctx.drawImage(body, 0, 0, body.width * ZOOM, body.height * ZOOM);
+            ctx.restore();
+
+            // `footY` trong texture = đáy trừ (BASE + TH/2) — xem art/canvas.ts
+            const footInTex = body.height - 1 - BASE - TH / 2;
+            const ix = body.width / 2 + a.x - item.width / 2;
+            const iy = footInTex - a.y - item.height / 2;
+            ctx.drawImage(item, ix * ZOOM, iy * ZOOM, item.width * ZOOM, item.height * ZOOM);
+
+            const fig = document.createElement("figure");
+            fig.append(c, Object.assign(document.createElement("figcaption"),
+              { textContent: `${facing} · ${hand}` }));
+            row.appendChild(fig);
+          }
+        }
+        void BODY_H;
+      };
+
+      BODIES.forEach(([name], i) =>
+        section(`nhân vật — ${name}`, [
+          ["trước", `s${i}_s`], ["nghiêng", `s${i}_e`], ["sau", `s${i}_n`],
+          ["bưng · trước", `s${i}_s_c`], ["bưng · nghiêng", `s${i}_e_c`], ["bưng · sau", `s${i}_n_c`],
+        ]));
+
+      section("món cầm trên tay", ["loaf_cold", "loaf_hot", "loaf_burnt", "loaf_filled", "tea"]
+        .map((h) => [h, HELD.key(h)]));
+
+      // Ghép y hệt cách `entities/Player.ts` ghép lúc chạy: thân tư thế `carry`
+      // + món dán vào `holdAnchor()`. Lệch ở đây là lệch trong game.
+      composite("cầm trên tay — ghép thật", this);
+
+      section("quầy", [
+        ["đầu quầy", COUNTER.end],
+        ...Array.from({ length: COUNTER.CASE_COUNT }, (_, i) => [`tủ kính ${i}`, COUNTER.case(i)]),
+        ["trạm làm việc", COUNTER.work],
+      ]);
+      section("đạo cụ", Object.entries(PROP).map(([k, v]) => [k, v]));
+      section("kiến trúc", [
+        ...Array.from({ length: BUILD.WALL_COUNT }, (_, i) => [`tường ${i}`, BUILD.wall(i)]),
+        ["cửa sau", BUILD.door],
+        ...Array.from({ length: BUILD.NEIGHBOUR_COUNT }, (_, i) => [`hàng xóm ${i}`, BUILD.neighbour(i)]),
+      ]);
+      section("sàn", [
+        ...["shop", "walk", "road"].flatMap((k) =>
+          Array.from({ length: TILE.VARIANTS }, (_, i) => [`${k}${i}`, TILE.floor(k, i)])),
+      ]);
+    },
+  },
+});
+</script>
+</body>
+</html>
