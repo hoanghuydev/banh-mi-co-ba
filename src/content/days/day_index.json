@@ -1,0 +1,13 @@
+{
+  "openHhmm": "06:00",
+  "closeHhmm": "11:00",
+  "bands": [
+    { "id": "PRE_OPEN", "fromHhmm": "06:00", "toHhmm": "06:30", "scaleBusy": 30, "scaleIdle": 30 },
+    { "id": "PEAK",     "fromHhmm": "06:30", "toHhmm": "08:00", "scaleBusy": 30, "scaleIdle": 30 },
+    { "id": "MID",      "fromHhmm": "08:00", "toHhmm": "09:30", "scaleBusy": 30, "scaleIdle": 60 },
+    { "id": "LULL",     "fromHhmm": "09:30", "toHhmm": "11:00", "scaleBusy": 30, "scaleIdle": 120 }
+  ],
+  "timeScaleBase": 30,
+  "rainCustomerMultiplier": 0.6,
+  "note": "PEAK không bao giờ tua nhanh kể cả lúc trống — khách kế tiếp tới trong vài giây."
+}

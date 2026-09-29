@@ -69,6 +69,7 @@ export function textureForTile(
     case "P": return PROP.pothos;
     case "C": return PROP.crate;
     case "V": return PROP.bin;
+    case "W": return PROP.sink;
     default: return null;                              // ô trống: chỉ có sàn, không có đạo cụ
   }
 }

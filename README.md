@@ -10,9 +10,17 @@ Trí nhớ dài hạn 3 tầng, tin đồn và kinh tế nằm ở các phase sa
 
 ```bash
 npm install
-npm run dev        # http://localhost:5174
-npm run build      # tsc --noEmit + vite build -> dist/
-npm run check      # chỉ typecheck
+npm run dev              # http://localhost:5174 — có overlay dev (F1–F8, ~ console, ?debug=1)
+npm run build            # typecheck + cổng CI + vite build -> dist/ + quét dist không lọt code dev
+npm run build:playtest   # bản gửi người lạ chơi thử cổng P1 -> dist-playtest/ (docs/playtest/)
+npm run check            # chỉ typecheck
+npm test                 # test tất định, save, clock, frame, telemetry, công cụ nội dung
+npm run ci               # check + gates + validate:rules + lint:lines + test
+npm run gates            # cổng P0: không phaser trong sim/, không Math.random ngoài core/, …
+npm run validate:rules   # R001–R014 cho rule DB (P0-03 §2.3a)
+npm run lint:lines       # L001–L013 cho thoại tiếng Việt, `-- --fix` sửa NFC / kiểu dấu / viết hoa
+npm run content:stats    # đếm dòng/từ, đối chiếu mốc CANON §11
+npm run sim -- --days 40 --policy newbie   # chạy 40 ngày không render (< 3 s)
 ```
 
 Client-only, offline-first: **không server, không netcode** (CANON §2). Save nằm ở localStorage.
@@ -22,16 +30,26 @@ Client-only, offline-first: **không server, không netcode** (CANON §2). Save 
 | phím | việc |
 |---|---|
 | `WASD` / mũi tên | đi (xoay 45° — bấm `D` là đi sang **phải màn hình**) |
-| `E` / `Space` | làm việc ở trạm đang đứng cạnh. Trạm có thanh tiến trình thì **giữ** phím |
-| kéo–thả | kéo miếng nhân thả vào ổ bánh |
-| `1`–`9`, `0` | bỏ thêm một phần nguyên liệu (đường bàn phím) |
+| giữ `Shift` | chạy — nhanh hơn, nhưng **cầm đồ mà chạy thì tay lỏng dần** (grip, P1-01 §2.7) |
+| `E` / `Space` | làm việc ở trạm đang đứng cạnh (rót trà thì **giữ** phím) |
+| kéo–thả / chạm / `1`–`9`, `0` | bỏ thêm một phần nguyên liệu |
 | `Backspace` | hoàn tác miếng vừa bỏ |
-| `Q` | bỏ thứ đang cầm |
-| `Esc` | tạm dừng (đóng băng cả đồng hồ **và** cả sự kiên nhẫn của khách) |
+| `Esc` (trong bảng kẹp nhân) · nút "để đó" · đi khỏi thớt | **gác** ổ lại trên thớt, giữ nguyên phần đã kẹp |
+| `F` | hỏi chuyện khách trước quầy — họ nhìn **mặt** mình thay vì nhìn tay (ASK_QUESTION) |
+| giữ `C` | nghiêng người che tay — khách phía trước khó thấy tay/thớt hơn (OCCLUDE_BODY) |
+| `Q` | bỏ thứ đang cầm vô thùng (1 giây, không ai để ý) |
+| nút `P1` `P2` `P3` trong bảng kẹp nhân | áp preset chia sẵn buổi sáng — một chạm thay mười chạm, nhưng **không tự sửa theo lời khách dặn** |
+| `E` ba nhịp (gập · cuộn · xoắn) | gói bánh — ba nhịp **đều tay** là một khoảnh khắc khéo tay khách nhìn thấy (FLOURISH) |
+| đứng ở bồn rửa, giữ `E` 3 s | rửa tay — nhận tiền xong tay **dính tiền**, bốc bánh bằng tay đó là khách thấy (DIRTY_HANDS) |
+| `E` ở thớt trống, tay không | lau thớt — quầy bẩn dần (vụn bánh → ruồi) làm khách soi kỹ hơn |
+| `P` / `Esc` / nút ⏸ | tạm dừng (đóng băng đồng hồ, sự kiên nhẫn **và** mức nhận thấy của khách) |
 
-**Chuỗi thao tác:** kệ nguyên liệu → lò than → thớt → chỗ đưa hàng.
-Ở **lò** phải **thả tay đúng lúc**: quá vạch trắng là bánh cháy, và bánh cháy **bắt buộc bỏ**
-(CANON §7.2 — không có nút nhặt lên dùng tiếp).
+**Chuỗi thao tác:** kệ → **lò (3 slot, nướng nền)** → thớt → quầy gọi món.
+Lò không còn là "giữ phím canh giờ": bỏ ổ vào rồi đi làm việc khác, **vòng trên cửa lò**
+cho biết độ giòn (vạch = giòn / sém). Quá tay là **cháy, có mùi** — cả hàng cùng ngửi thấy.
+Ổ ra lò **nguội dần** (~26 s, hơi khói tắt = nguội) — đưa ổ nguội là khách chê.
+Bánh cháy **bắt buộc bỏ** (CANON §7.2). Rớt đồ chỉ xảy ra khi tay lỏng (chạy, va đồ đạc) —
+luôn có vòng cảnh báo cam → đỏ quanh món trước khi rớt (T5: rủi ro phải đọc được trước).
 
 ## Vòng lặp bán hàng
 
@@ -126,14 +144,19 @@ vẫn trừ tiền ngầm — nói hết làm game dễ đi chứ không khó l�
 
 ```
 src/
-  core/        clock · config · eventbus · rng · save     khung P0, không biết gì về Phaser
+  core/        clock · rng · save · eventbus · context · flags · platform · telemetry · types
+               khung P0, không biết gì về Phaser
   world/       iso (phép chiếu) · map (bản đồ quán + phố) · stations (luật trạm)
-  sim/         perception (§5) · order (§14, T2) · customer · service    luật chơi, không đụng Phaser
-  content/     npcs (§9) · lines (§11 shuffle-bag)        dữ liệu viết tay
+  sim/         perception (§5) · order (§14, T2) · customer · service · frame · headless
+               luật chơi, không đụng Phaser — chạy headless được
+  content/     npcs (§9) · lines/*.json (§11) · days/ · rules/ · redlines.json   dữ liệu viết tay
   art/         palette · canvas · tiles · building · counter · sign · props · character · fx · index
   entities/    Player · CustomerActor                     vị trí, va chạm, sprite, bong bóng thoại
-  ui/          theme · Hud · AssemblyPanel                lớp thông tin + bảng kẹp nhân
-  scenes/      BootScene · MenuScene · StallScene         StallScene chỉ ĐIỀU PHỐI
+  ui/          theme · Hud · AssemblyPanel · stall/BubblePool   lớp thông tin + bảng kẹp nhân
+  scenes/      Boot · Menu · Day (thường trực, sở hữu GameContext) → Market → Stall → Evening
+  dev/         overlay F1–F8 + console — chỉ có ở dev build, tree-shake khỏi bản phát hành
+tools/         sim · validate-rules · lint-lines · content-stats · check-gates   (Node, qua tsx)
+tests/         node:test
 ```
 
 `sim/` không import Phaser dòng nào — luật chơi tách hẳn khỏi cách vẽ, nên test được
@@ -192,7 +215,9 @@ Thêm một công đoạn mới = thêm **một dòng** vào `STATIONS` (`world/
 | Khung hình thiết kế | 1024 × 576, `Phaser.Scale.FIT` |
 | Ô isometric | 60 × 30 (2:1) |
 | Bản đồ | 20 × 12 ô = 960 × 480 px, cả góc phố lọt gọn một khung hình (CANON T1) |
-| Một buổi bán | 05:30 → 10:30 giờ game = **5 phút thật** (`core/clock.ts`, `scale = 1`) |
+| Một buổi bán | 06:00 → 11:00 giờ game, `TIME_SCALE_BASE = 30`; quầy trống ở MID/LULL thì tua 60/120 (P0-02 §2.1) — bot đo ~7,5 phút thật |
+| Khung giờ | `PRE_OPEN` 6:00 · `PEAK` 6:30–8:00 (không bao giờ tua) · `MID` · `LULL` |
+| fps | 30 (CANON §2) |
 | Khách một buổi | ~12–16 người, dày hơn hẳn trong cao điểm 6h30–8h (CANON §13.3) |
 | Một mùa | 40 ngày, có điểm kết (CANON T4) |
 | Tốc độ đi | 3.4 ô/giây |
@@ -202,7 +227,9 @@ Thêm một công đoạn mới = thêm **một dòng** vào `STATIONS` (`world/
 - **T1** — cả góc phố trong một khung hình, camera không đi lang thang; khúc quầy ở trạm
   làm việc để **trống cố ý** để tay người chơi luôn nhìn thấy được.
 - **T5** — "quá tay" ở lò là **thanh tiến trình có vạch nhìn thấy trước**, không phải roll xúc xắc.
-- **§2** — autosave ngay sau mỗi lần đưa hàng, không phải cuối ngày.
+- **§2 / §8e** — autosave NGAY khi sự kiện xảy ra (khách rời đi, bị bắt quả tang, chuyển cảnh,
+  mất focus), double-buffer A/B + meta; seed cố định theo ngày + **6 stream RNG tách riêng**;
+  nút chính thức **"Chơi lại ngày này"** khôi phục đúng bản chụp đầu ngày.
 - **T2** — người chơi KHÔNG BAO GIỜ chọn câu nói, chỉ chọn nguyên liệu. Không có dialogue tree.
 - **T3** — không một chỉ số quan hệ nào hiện ra. Sốt ruột đọc qua **dáng** (đứng yên → nhấp nhổm
   → khoanh tay) và qua lời, không qua thanh số.
@@ -214,8 +241,9 @@ Thêm một công đoạn mới = thêm **một dòng** vào `STATIONS` (`world/
 - **§7.2 / §7.4** — đồ hỏng bắt buộc bỏ; cô Ba buồn chứ không la.
 - **§14** — bảng màu xanh xám + nắng gắt trắng (KHÔNG vàng nghệ); ghế nhựa, hũ đũa,
   bảng hiệu đỏ chữ vàng, xe máy dựng sát vách, chậu trầu bà.
-- **§15** — pause mọi lúc và đóng băng đồng hồ; 4 mức cỡ chữ; giảm chuyển động;
-  chế độ không giới hạn thời gian. Cả ba công tắc đều **có tác dụng thật**.
+- **§15** — pause mọi lúc, đóng băng đồng hồ + kiên nhẫn + certainty (một điểm `dt = 0` duy nhất);
+  4 mức cỡ chữ; giảm chuyển động; chế độ không giới hạn thời gian (kiên nhẫn không tụt,
+  đồng hồ chậm một nửa, lỗi vẫn là lỗi). Cả ba công tắc đều **có tác dụng thật**.
 - **§16 Đừng-4** — không frame-by-frame: nhịp bước là squash/stretch + lerp.
 
 ## Hai thứ phải sống XUYÊN NGÀY
@@ -223,21 +251,22 @@ Thêm một công đoạn mới = thêm **một dòng** vào `STATIONS` (`world/
 `Service` được tạo mới mỗi sáng, nên bất cứ thứ gì để trong nó là mất sau một ngày.
 Hai thứ không được phép mất:
 
-- **Đơn "ruột" của mỗi khách** — sinh từ `Rng.forSeason(seed, npcId)`, bất biến cả 40 ngày.
+- **Đơn "ruột" của mỗi khách** — sinh từ `Rng.forSeason(saveId, npcId)`, bất biến cả 40 ngày.
   Sinh lại mỗi sáng thì *"cho cô như mọi bữa"* (CANON §3.2, salience 90 — khoảnh khắc
   chữa lành lõi của game) thành vô nghĩa.
-- **Số lần ghé và số lần được cho thêm** — nằm trong `save.npcMemory`, tích luỹ qua ngày.
-  Từ lần ghé thứ 3 khách mới được phép nói *"như mọi bữa"*.
+- **State từng NPC + shuffle-bag thoại** — nằm trong `world.npcs` / `world.shuffleBags` của save,
+  tích luỹ qua ngày. Khách chỉ được nói *"như mọi bữa"* khi người chơi đã NGHE đơn ruột ≥ 2 lần.
 
 ## Hai thang thời gian — đừng trộn
 
-`core/clock.ts` là **giờ trong ngày**, bị nén lại (1 giây thật = 1 phút game).
-Tầng nhận thấy chạy bằng **giây thật** (`StallScene.elapsed`), vì chuyện "khách có kịp
+`core/clock.ts` là **giờ trong ngày**, bị nén lại (1 giây thật = 30 giây game).
+`clock.advance()` trả `dt` **giây thật** — tầng nhận thấy, kiên nhẫn, delay bark đều chạy bằng nó, vì chuyện "khách có kịp
 nhìn thấy không" diễn ra theo tay người chơi chứ không theo đồng hồ treo tường.
 Trộn hai thang này là mọi kích thích tắt ngay trước khi ai kịp nhận ra — đã vấp một lần rồi.
 
 ## Chưa có (và cố ý chưa có)
 
 Trí nhớ 3 tầng và decay, đồn thổi, rule DB thoại đầy đủ, 12 NPC (mới có 3),
-kinh tế (hạn dùng, giá chợ, nghĩa vụ), sổ tay cuối ngày, âm thanh.
+kinh tế (hạn dùng, giá chợ, nghĩa vụ — MarketScene/EveningScene mới là khung), sổ tay cuối ngày,
+đóng gói Electron.
 Xem lộ trình phase ở `../docs/CANON.md` §17.

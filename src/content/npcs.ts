@@ -1,4 +1,5 @@
 import type { BodyStyle } from "../art/character";
+import type { GazeProfile } from "../sim/gaze";
 
 /**
  * Dàn nhân vật — CANON §9. Tên và bốn chỉ số tính cách lấy đúng từ bảng đó,
@@ -27,13 +28,20 @@ export type NpcDef = {
   body: BodyStyle;
   /** Giờ ghé quán (phút trong ngày). Vắng thì tới ngẫu nhiên. */
   arrivesAt?: number;
-  /** Kiên nhẫn gốc tính bằng giây thật, trước khi nhân với tính cách. */
+  /**
+   * `patienceBaseSec` của P1-02 §2.7 — giây thật tới mốc MADE_THEM_WAIT (r = 1).
+   * Bỏ đi ở r ≥ 1,6. KHÔNG nhân traitMul: kiên nhẫn là chuyện thời gian, không phải soi.
+   */
   patience: number;
+  /** Khung giờ vội (phút trong ngày) — trong khung này sức chờ × 0,65. */
+  rush?: [number, number];
+  /** Túi vé ánh nhìn 20 vé + số lần được bấm điện thoại mỗi lượt (P1-02 §2.5.4). */
+  gaze: GazeProfile;
 };
 
 export const NPCS: NpcDef[] = [
   {
-    id: "bay", name: "Bà Bảy", role: "bán vé số",
+    id: "BA_BAY", name: "Bà Bảy", role: "bán vé số",
     personality: { soi: 0.9, nongTinh: 0.6, deTha: 0.8, thanThien: 0.7 },
     // tóc búi bạc + kính lão + lưng còng: ba tín hiệu tuổi tác, đọc được ở 62 px
     body: {
@@ -41,26 +49,31 @@ export const NPCS: NpcDef[] = [
       stoop: true, hairStyle: "bun", glasses: true,
     },
     arrivesAt: 6 * 60 + 10,
-    patience: 70,
+    patience: 90,
+    // người soi nhất hẻm KHÔNG bao giờ bấm điện thoại — đó là cả con người bà
+    gaze: { tickets: [9, 4, 5, 0, 2, 0], phoneBudget: 0 },
   },
   {
-    id: "tu", name: "Chú Tư", role: "bảo vệ công ty",
+    id: "CHU_TU", name: "Chú Tư", role: "bảo vệ công ty",
     personality: { soi: 0.3, nongTinh: 0.3, deTha: 0.9, thanThien: 0.6 },
     body: {
       skin: 0xd9a97e, hair: 0x2b2420, shirt: 0x41628c, trousers: 0x2f3a49,
       hat: "cap", hairStyle: "short",
     },
     arrivesAt: 6 * 60 + 45,                            // CANON §9: khách 6h45 T2–T6
-    patience: 85,
+    patience: 35,
+    rush: [6 * 60 + 30, 7 * 60],                       // trễ giờ vô ca: 35 s → ~23 s
+    gaze: { tickets: [3, 4, 7, 2, 0, 4], phoneBudget: 1 },
   },
   {
-    id: "dung", name: "Anh Dũng", role: "tài xế công nghệ",
+    id: "ANH_DUNG", name: "Anh Dũng", role: "tài xế công nghệ",
     personality: { soi: 0.2, nongTinh: 0.5, deTha: 0.7, thanThien: 0.5 },
     body: {
       skin: 0xe0b085, hair: 0x241e1b, shirt: 0x2f7d52, trousers: 0x2a3138,
       hat: "helmet", hairStyle: "short",
     },
-    patience: 42,                                      // luôn vội — đây là chỗ đau
+    patience: 28,                                      // luôn vội — đây là chỗ đau
+    gaze: { tickets: [2, 3, 5, 4, 0, 6], phoneBudget: 2 },
   },
 ];
 

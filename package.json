@@ -1,19 +1,29 @@
 {
   "name": "banh-mi-co-ba",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "Bánh Mì Cô Ba — a game about being watched while you work",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && npm run gates && vite build && npm run gates -- --dist",
+    "build:playtest": "tsc --noEmit && vite build --mode playtest --outDir dist-playtest",
     "preview": "vite preview",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "test": "node --import tsx --test \"tests/**/*.test.ts\"",
+    "gates": "tsx tools/check-gates.ts",
+    "validate:rules": "tsx tools/validate-rules.ts",
+    "lint:lines": "tsx tools/lint-lines.ts",
+    "content:stats": "tsx tools/content-stats.ts",
+    "sim": "tsx tools/sim.ts",
+    "ci": "npm run check && npm run gates && npm run validate:rules && npm run lint:lines && npm test"
   },
   "dependencies": {
     "phaser": "^3.90.0"
   },
   "devDependencies": {
+    "@types/node": "^26.6.3",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vite": "^7.1.7"
   }

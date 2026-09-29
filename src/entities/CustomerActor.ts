@@ -3,60 +3,81 @@ import { depthOf, facingOf, toScreen, type Facing } from "../world/iso";
 import { BODY_H, FX, buildBody, footY, textureFor } from "../art";
 import type { Customer } from "../sim/customer";
 import { nowState } from "../sim/perception";
-import { FONT, UI } from "../ui/theme";
+import type { ObsState, Slot } from "../core/types";
+import { FONT } from "../ui/theme";
+import type { BubblePool } from "../ui/stall/BubblePool";
 
 /**
  * Phần NHÌN THẤY của một người khách.
  *
- * CANON §5 bắt buộc mỗi mức `certainty` phải có biểu hiện hình ảnh:
- *   GLIMPSED  → quay đầu, dấu `?` nhỏ
- *   NOTICED   → nhíu mày (ở đây: chấm cảnh báo)
- *   CONFIRMED → phản ứng đầy đủ (bong bóng thoại)
- * Không có thanh kiên nhẫn dạng số — trụ cột T3. Sốt ruột đọc qua DÁNG:
- * đứng yên → nhấp nhổm → khoanh tay nghiêng người.
+ * T5 — attention phải NHÌN THẤY ĐƯỢC, bằng HÌNH chứ không bằng số:
+ *  · Dấu trên đầu, ba HÌNH DẠNG khác nhau (không phân biệt bằng màu — P1-04 §4.1):
+ *      GLIMPSED `?` · NOTICED cặp mày nhíu · CONFIRMED `!`
+ *  · Tia nhìn (P1-04 §2.5, PA-B) từ mắt khách tới đúng vùng họ đang để ý, bốn bậc rời rạc.
+ *  · Trạng thái ÁNH NHÌN có đạo cụ riêng (P1-02 §2.5.3 "không hoạt ảnh = không trạng thái"):
+ *      điện thoại sáng xanh · ly trà che mặt · liếc đồng hồ tay.
+ *    Người chơi phải thấy VÌ SAO khách không thấy mình làm rớt bánh.
+ * Không có thanh kiên nhẫn — T3. Sốt ruột đọc qua DÁNG: đứng yên → nhấp nhổm → liếc đồng hồ.
  */
+
+/** P1-04 §2.5 — bảng tia nhìn. Màu tia cố ý KHÔNG vàng / đỏ. */
+const GAZE_RAY: Record<Exclude<ObsState, "UNAWARE">, { width: number; alpha: number; dash: [number, number] | null }> = {
+  GLIMPSED:  { width: 2, alpha: 0.15, dash: [6, 8] },
+  NOTICED:   { width: 4, alpha: 0.38, dash: [10, 4] },
+  CONFIRMED: { width: 7, alpha: 0.70, dash: null },
+};
+const RAY_COLOR = 0xcfd8da;
+const RING_COLOR = 0xc4342a;
+const MARK_INK = "#f2efe9";
+const MARK_STROKE = "#2b2f31";
+/**
+ * Dấu trên đầu + bong bóng: trên NHÃN TRẠM (8.000.000) — nhãn đục "quầy gọi món" nằm
+ * đúng chỗ đầu người khách đứng trước quầy, để dưới là mất hết dấu `?`/`!` của người quan
+ * trọng nhất. Tia nhìn: trên cả bảng kẹp nhân (9.400.000) — lúc kẹp là lúc khách nhìn tay
+ * mình kỹ nhất, tia phải chỉ thẳng vào ổ bánh trong bảng.
+ */
+const OVERLAY_DEPTH = 8_100_000;
+const RAY_DEPTH = 9_450_000;
+
+export type ZonePoint = (slot: Slot) => { x: number; y: number };
+
 export class CustomerActor {
   private body: Phaser.GameObjects.Image;
   private shadow: Phaser.GameObjects.Image;
-  private bubble: Phaser.GameObjects.Container;
-  private bubbleBg: Phaser.GameObjects.Graphics;
-  private bubbleText: Phaser.GameObjects.Text;
   private mark: Phaser.GameObjects.Text;
   private tag: Phaser.GameObjects.Text;
+  /** Tia nhìn, cặp mày NOTICED, và đạo cụ ánh nhìn — một Graphics, vẽ lại mỗi frame. */
+  private fx: Phaser.GameObjects.Graphics;
 
   private facing: Facing = "n";
   private lastX: number;
   private lastY: number;
   private bob = 0;
 
-  constructor(scene: Phaser.Scene, private c: Customer) {
-    // Texture nướng theo `memKey` (dáng người), không theo `id` (duy nhất mỗi lượt ghé) —
-    // nếu không thì Chú Tư ghé hai lần là nướng lại hai bộ sprite y hệt nhau.
+  constructor(scene: Phaser.Scene, private c: Customer, private bubbles: BubblePool, textScale = 1) {
+    // Texture nướng theo `memKey` (dáng người), không theo `id` (duy nhất mỗi lượt ghé).
     if (!scene.textures.exists(`${c.memKey}_s`)) buildBody(scene, c.memKey, c.body);
 
     this.shadow = scene.add.image(0, 0, FX.shadow).setOrigin(0.5, 0.5);
     this.body = scene.add.image(0, 0, textureFor("n", c.memKey).key).setOrigin(0.5, 1);
 
     this.tag = scene.add.text(0, 0, c.name, {
-      fontFamily: FONT, fontSize: "10px", fontStyle: "500", color: "#f2efe6",
+      fontFamily: FONT, fontSize: `${Math.round(10 * textScale)}px`, fontStyle: "500", color: "#f2efe6",
+      stroke: "#1b2429", strokeThickness: 3,
     }).setOrigin(0.5);
 
+    // Dấu trên đầu cỡ CỐ ĐỊNH, không co giãn theo sprite (P1-04 §2.5).
     this.mark = scene.add.text(0, 0, "", {
-      fontFamily: FONT, fontSize: "16px", fontStyle: "700", color: "#ffd98a",
+      fontFamily: FONT, fontSize: "18px", fontStyle: "700", color: MARK_INK,
+      stroke: MARK_STROKE, strokeThickness: 4,
     }).setOrigin(0.5);
-
-    this.bubbleBg = scene.add.graphics();
-    this.bubbleText = scene.add.text(0, 0, "", {
-      fontFamily: FONT, fontSize: "12px", color: UI.ink, align: "center",
-      wordWrap: { width: 190 },
-    }).setOrigin(0.5);
-    this.bubble = scene.add.container(0, 0, [this.bubbleBg, this.bubbleText]).setVisible(false);
+    this.fx = scene.add.graphics().setDepth(RAY_DEPTH);
 
     this.lastX = c.x;
     this.lastY = c.y;
   }
 
-  draw(reducedMotion: boolean, time: number) {
+  draw(reducedMotion: boolean, time: number, zonePoint: ZonePoint, nowSec: number) {
     const c = this.c;
     const moved = Math.hypot(c.x - this.lastX, c.y - this.lastY);
     if (moved > 0.002) this.facing = facingOf(c.x - this.lastX, c.y - this.lastY);
@@ -80,35 +101,76 @@ export class CustomerActor {
     this.body.setScale(1, 1 + Math.sin(this.bob * 2) * 0.02 * amp);
     this.shadow.setPosition(sx, sy).setDepth(depth - 1);
 
+    const headX = sx + fidget, headY = footY(sy) - BODY_H + 12 - hop;
     this.tag.setPosition(sx, sy - BODY_H - 8).setDepth(depth + 1)
       .setAlpha(c.phase === "leaving" ? 0.45 : 0.9);
 
-    // dấu nhận thấy: `?` khi mới liếc thấy, `!` khi đã chắc (CANON §5)
-    const st = nowState(c);
-    const glyph = !st ? "" : st.state === "GLIMPSED" ? "?" : st.state === "UNAWARE" ? "" : "!";
-    this.mark.setText(glyph)
-      .setColor(st?.state === "GLIMPSED" ? "#ffd98a" : "#ff9a7a")
-      .setPosition(sx + 14, sy - BODY_H - 18 + Math.sin(time / 260) * 1.5 * amp)
-      .setDepth(depth + 2);
+    const g = this.fx;
+    g.clear();
+    const watching = c.phase !== "leaving" && c.phase !== "arriving";
 
-    if (c.say) this.drawBubble(sx, sy, depth, c.say);
-    else this.bubble.setVisible(false);
+    // ── tia nhìn + dấu trên đầu ────────────────────────────────────────────
+    const st = watching ? nowState(c, nowSec) : null;
+    const markY = sy - BODY_H - 24;
+    if (st && st.state !== "UNAWARE") {
+      const r = GAZE_RAY[st.state];
+      const to = zonePoint(st.slot);
+      ray(g, headX, headY, to.x, to.y, r.width, r.alpha, r.dash);
+      if (st.state === "CONFIRMED") g.lineStyle(3, RING_COLOR, 0.9).strokeCircle(to.x, to.y, 16);
+    }
+    if (st?.state === "NOTICED") {
+      // cặp mày nhíu — hình dạng khác hẳn `?` và `!`
+      g.lineStyle(4, 0x2b2f31, 1);
+      g.lineBetween(sx - 11, markY - 5, sx - 2, markY + 1);
+      g.lineBetween(sx + 11, markY - 5, sx + 2, markY + 1);
+      g.lineStyle(2, 0xf2efe9, 1);
+      g.lineBetween(sx - 11, markY - 5, sx - 2, markY + 1);
+      g.lineBetween(sx + 11, markY - 5, sx + 2, markY + 1);
+    }
+    const glyph = st?.state === "GLIMPSED" ? "?" : st?.state === "CONFIRMED" ? "!" : "";
+    this.mark.setText(glyph).setPosition(sx, markY).setDepth(OVERLAY_DEPTH + 1);
+
+    // ── đạo cụ của trạng thái ánh nhìn ──────────────────────────────────────
+    if (watching) this.drawGazeProp(g, headX, headY, time, reducedMotion);
+
+    // Bong bóng lấy từ pool (P0-01 §2.6c) — không tạo, không huỷ object nào ở đây.
+    // Người xếp hàng phía sau: bong bóng nhỏ hơn 15%, mờ hơn (P1-04 §2.9).
+    if (c.say) {
+      const b = this.bubbles.acquire(c.id);
+      b.setText(c.say);
+      b.place(sx, sy - BODY_H - 46, OVERLAY_DEPTH + 2, c.slot > 0 ? 0.85 : 1, reducedMotion);
+    } else {
+      this.bubbles.release(c.id, reducedMotion);
+    }
   }
 
-  private drawBubble(sx: number, sy: number, depth: number, text: string) {
-    this.bubbleText.setText(text);
-    const w = Math.max(this.bubbleText.width + 20, 60);
-    const h = this.bubbleText.height + 14;
-
-    this.bubbleBg.clear();
-    this.bubbleBg.fillStyle(0x0d1216, 0.2);
-    this.bubbleBg.fillRoundedRect(-w / 2 + 2, -h / 2 + 3, w, h, 9);
-    this.bubbleBg.fillStyle(UI.paper, 0.97);
-    this.bubbleBg.fillRoundedRect(-w / 2, -h / 2, w, h, 9);
-    this.bubbleBg.fillTriangle(-5, h / 2 - 1, 5, h / 2 - 1, 0, h / 2 + 8);
-
-    this.bubbleText.setPosition(0, 0);
-    this.bubble.setPosition(sx, sy - BODY_H - 40).setDepth(depth + 3).setVisible(true);
+  private drawGazeProp(g: Phaser.GameObjects.Graphics, x: number, y: number, time: number, rm: boolean) {
+    switch (this.c.gazeState) {
+      case "PHONE": {
+        // điện thoại trước mặt, màn hình sáng xanh nhấp nháy — lý do khách không thấy gì
+        const pulse = rm ? 0.5 : 0.35 + 0.25 * Math.sin(time / 180);
+        g.fillStyle(0x7fb8ff, pulse).fillCircle(x + 10, y + 8, 12);
+        g.fillStyle(0x1b2429, 1).fillRoundedRect(x + 5, y, 10, 16, 2);
+        g.fillStyle(0x9fd0ff, 1).fillRect(x + 6.5, y + 2, 7, 11);
+        break;
+      }
+      case "DRINKING": {
+        // ly trà che ngang mặt
+        g.fillStyle(0xd9e6ea, 0.95).fillRoundedRect(x - 6, y - 4, 12, 16, 3);
+        g.fillStyle(0xa8743f, 0.9).fillRect(x - 5, y + 2, 10, 9);
+        g.fillStyle(0xffffff, 0.8).fillRect(x - 3, y + 3, 3, 3);
+        break;
+      }
+      case "WATCH": {
+        // liếc đồng hồ tay
+        g.fillStyle(0x2b2f31, 1).fillCircle(x + 12, y + 20, 5);
+        g.fillStyle(0xf2efe9, 1).fillCircle(x + 12, y + 20, 3.5);
+        g.lineStyle(1.5, 0x2b2f31, 1).lineBetween(x + 12, y + 20, x + 12, y + 17.5);
+        break;
+      }
+      default:
+        break;
+    }
   }
 
   destroy() {
@@ -116,6 +178,20 @@ export class CustomerActor {
     this.shadow.destroy();
     this.tag.destroy();
     this.mark.destroy();
-    this.bubble.destroy(true);
+    this.fx.destroy();
+    this.bubbles.release(this.c.id, true);           // người đã khuất: tắt ngay, không mờ dần
+  }
+}
+
+/** Tia nhìn: vệt mềm, không phải tia laser. Nét đứt ở hai bậc thấp. */
+function ray(g: Phaser.GameObjects.Graphics, x1: number, y1: number, x2: number, y2: number,
+  width: number, alpha: number, dash: [number, number] | null) {
+  g.lineStyle(width, RAY_COLOR, alpha);
+  if (!dash) { g.lineBetween(x1, y1, x2, y2); return; }
+  const len = Math.hypot(x2 - x1, y2 - y1);
+  const ux = (x2 - x1) / len, uy = (y2 - y1) / len;
+  for (let d = 0; d < len; d += dash[0] + dash[1]) {
+    const e = Math.min(len, d + dash[0]);
+    g.lineBetween(x1 + ux * d, y1 + uy * d, x1 + ux * e, y1 + uy * e);
   }
 }

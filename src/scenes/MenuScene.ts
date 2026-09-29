@@ -1,14 +1,17 @@
 import Phaser from "phaser";
-import { button, label, panel, toggle, UI } from "../ui/theme";
+import { Stack, button, buttonHeight, label, panel, toggle, UI } from "../ui/theme";
 import { PAL as P } from "../art/palette";
 import { COUNTER, textureFor } from "../art";
 import {
-  clearSave, loadGame, loadSettings, newGame, saveGame, saveSettings, type Settings,
+  SaveService, SaveTooNewError, loadSettings, saveSettings, type SaveFile, type Settings,
 } from "../core/save";
+import { bus } from "../core/eventbus";
+import { PLAYTEST } from "../core/flags";
+import { telemetry } from "../core/session";
 import { GAME_W, GAME_H } from "../core/config";
 import { CUES, MUSIC_STEPS, music } from "../audio/music";
 
-type Page = "main" | "settings" | "about";
+type Page = "main" | "settings" | "about" | "telemetry";
 
 /**
  * Sảnh menu. Mọi trang dựng lại từ đầu trong một container -> chuyển trang là
@@ -29,8 +32,13 @@ export class MenuScene extends Phaser.Scene {
 
   private show(page: Page) {
     this.page?.destroy(true);
+    this.input.off("wheel");
+    this.input.off("pointermove");
     this.page = this.add.container(0, 0);
-    ({ main: () => this.pageMain(), settings: () => this.pageSettings(), about: () => this.pageAbout() })[page]();
+    ({
+      main: () => this.pageMain(), settings: () => this.pageSettings(),
+      about: () => this.pageAbout(), telemetry: () => this.pageTelemetryAsk(),
+    })[page]();
     this.page.setAlpha(0);
     this.tweens.add({ targets: this.page, alpha: 1, duration: 160 });
   }
@@ -74,8 +82,18 @@ export class MenuScene extends Phaser.Scene {
 
   // ---------------------------------------------------------------- trang chính
 
+  /** Đọc save chỉ để hiện "Chơi tiếp" — không dựng context, không đụng RNG. */
+  private peekSave(): { save: SaveFile | null; tooNew: boolean } {
+    try {
+      return { save: new SaveService(bus, () => { throw new Error("peek"); }).load(), tooNew: false };
+    } catch (e) {
+      return { save: null, tooNew: e instanceof SaveTooNewError };
+    }
+  }
+
   private pageMain() {
-    const save = loadGame();
+    const { save, tooNew } = this.peekSave();
+    const over = save?.flags.seasonOver === true;
 
     this.page.add(panel(this, GAME_W / 2, 152, 560, 168, 0xf7f4ec, 0.94));
     this.page.add(label(this, GAME_W / 2, 118, "Bánh Mì Cô Ba", 40, UI.ink, "700"));
@@ -87,30 +105,54 @@ export class MenuScene extends Phaser.Scene {
       primary: true, width: 300, hint: "một mùa 40 ngày, có điểm kết",
     }));
 
-    this.page.add(button(this, x, 352, save ? "Chơi tiếp" : "Chưa có ván nào", () => this.continueRun(), {
-      width: 300, disabled: !save,
-      hint: save ? `ngày ${save.day} · ${save.money.toLocaleString("vi-VN")}₫` : undefined,
-    }));
+    // P0-02 §2.7 luật 1: save của phiên bản MỚI hơn thì từ chối, nói rõ, không đoán mò.
+    this.page.add(button(this, x, 352,
+      tooNew ? "Bản lưu của phiên bản mới hơn" : over ? "Mùa đã kết" : save ? "Chơi tiếp" : "Chưa có ván nào",
+      () => this.continueRun(), {
+        width: 300, disabled: !save || over,
+        hint: tooNew ? "cập nhật game để chơi tiếp"
+          : save ? `ngày ${save.progress.dayIndex} · ${save.money.cash.toLocaleString("vi-VN")}₫` : undefined,
+      }));
 
     this.page.add(button(this, x, 410, "Cài đặt", () => this.show("settings"), { width: 300 }));
     this.page.add(button(this, x, 462, "Giới thiệu", () => this.show("about"), { width: 300 }));
 
     // dòng chân trang nằm trên dải mặt đường tối -> phải dùng màu sáng mới đọc được
     this.page.add(label(this, GAME_W / 2, GAME_H - 26,
-      "bản dựng thử v0.1 · sảnh menu + khu bán hàng + di chuyển", 11, "#cfdae0", "400"));
+      `bản dựng thử v0.2${PLAYTEST ? " · chơi thử" : ""} · chợ sáng → bán → buổi tối`, 11, "#cfdae0", "400"));
   }
 
   private startNew() {
-    const old = loadGame();
-    if (old) clearSave();
-    const data = newGame("Cháu cô Ba");
-    saveGame(data);
-    this.scene.start("stall", { save: data });
+    // Bản bán ra: hỏi rõ MỘT lần về telemetry trước ván đầu tiên (P0-03 §4).
+    if (loadSettings().telemetry === null) { this.show("telemetry"); return; }
+    this.scene.start("day", { mode: "new" });
   }
 
   private continueRun() {
-    const save = loadGame();
-    if (save) this.scene.start("stall", { save });
+    if (this.peekSave().save) this.scene.start("day", { mode: "continue" });
+  }
+
+  private setTelemetry(on: boolean) {
+    const s = loadSettings();
+    s.telemetry = on;
+    saveSettings(s);
+    telemetry.enabled = on;
+  }
+
+  /** P0-03 §2.1: telemetry CỤC BỘ — nói rõ ghi gì, và rằng nó không gửi đi đâu. */
+  private pageTelemetryAsk() {
+    this.page.add(panel(this, GAME_W / 2, GAME_H / 2, 560, 300, 0xf7f4ec, 0.97));
+    this.page.add(label(this, GAME_W / 2, GAME_H / 2 - 104, "Ghi lại cách con chơi?", 22, UI.ink, "700"));
+    this.page.add(label(this, GAME_W / 2, GAME_H / 2 - 34,
+      "Game có thể ghi lại vài con số — một ngày dài bao lâu, khách nào bỏ đi —\n"
+      + "vào máy của con. Không gửi đi đâu cả. Con muốn gửi cho người làm game\n"
+      + "thì vào Cài đặt, bấm \"Xuất số liệu\". Đổi ý lúc nào cũng được.", 13, UI.muted, "400"));
+    this.page.add(button(this, GAME_W / 2 - 124, GAME_H / 2 + 80, "Được, cứ ghi", () => {
+      this.setTelemetry(true); this.startNew();
+    }, { width: 220, primary: true }));
+    this.page.add(button(this, GAME_W / 2 + 124, GAME_H / 2 + 80, "Thôi, khỏi", () => {
+      this.setTelemetry(false); this.startNew();
+    }, { width: 220 }));
   }
 
   // ------------------------------------------------------------------ cài đặt
@@ -126,38 +168,61 @@ export class MenuScene extends Phaser.Scene {
       saveSettings(s);
     };
 
-    this.page.add(panel(this, GAME_W / 2, GAME_H / 2 + 6, 520, 452, 0xf7f4ec, 0.96));
-    this.page.add(label(this, GAME_W / 2, 116, "Cài đặt", 26, UI.ink, "700"));
+    const bg = this.add.graphics();
+    this.page.add(bg);
+    const st = new Stack(92, 10);
+    const x = GAME_W / 2;
+    this.page.add(st.place(label(this, x, 0, "Cài đặt", 26, UI.ink, "700"), 16));
 
     const sizes: Settings["textScale"][] = [1, 1.25, 1.5, 2];
-    this.page.add(toggle(this, GAME_W / 2, 178, "Cỡ chữ",
-      () => `${Math.round(s.textScale * 100)}%`,
-      () => { put({ textScale: sizes[(sizes.indexOf(s.textScale) + 1) % sizes.length] }); this.show("settings"); }));
+    const tg = (name: string, get: () => string, fn: () => void) =>
+      this.page.add(st.button(toggle(this, x, 0, name, get, fn, 340)));
 
-    this.page.add(toggle(this, GAME_W / 2, 238, "Giảm chuyển động",
-      () => (s.reducedMotion ? "bật" : "tắt"),
-      () => put({ reducedMotion: !s.reducedMotion })));
-
-    this.page.add(toggle(this, GAME_W / 2, 298, "Không giới hạn thời gian",
-      () => (s.noTimePressure ? "bật" : "tắt"),
-      () => put({ noTimePressure: !s.noTimePressure })));
-
+    tg("Cỡ chữ", () => `${Math.round(s.textScale * 100)}%`,
+      () => { put({ textScale: sizes[(sizes.indexOf(s.textScale) + 1) % sizes.length] }); this.show("settings"); });
+    tg("Giảm chuyển động", () => (s.reducedMotion ? "bật" : "tắt"), () => put({ reducedMotion: !s.reducedMotion }));
+    tg("Không giới hạn thời gian", () => (s.noTimePressure ? "bật" : "tắt"), () => put({ noTimePressure: !s.noTimePressure }));
     // CANON §15.4: mỗi kênh âm thanh một công tắc riêng. Mới có kênh Nhạc —
     // bốn kênh còn lại thêm vào đây khi có âm thanh cho chúng.
-    this.page.add(toggle(this, GAME_W / 2, 358, "Nhạc nền",
-      () => (s.musicVolume === 0 ? "tắt" : `${s.musicVolume}%`),
-      () => {
-        // giá trị lạ (save cũ, sửa tay localStorage) -> rơi về nấc đầu, không kẹt
-        const at = (MUSIC_STEPS as readonly number[]).indexOf(s.musicVolume);
-        put({ musicVolume: MUSIC_STEPS[(Math.max(at, -1) + 1) % MUSIC_STEPS.length] });
-        music.applySettings(s);
-        music.play(this, "menu", 400);          // kéo từ 0 lên thì phải mồi lại
-      }));
+    tg("Nhạc nền", () => (s.musicVolume === 0 ? "tắt" : `${s.musicVolume}%`), () => {
+      // giá trị lạ (save cũ, sửa tay localStorage) -> rơi về nấc đầu, không kẹt
+      const at = (MUSIC_STEPS as readonly number[]).indexOf(s.musicVolume);
+      put({ musicVolume: MUSIC_STEPS[(Math.max(at, -1) + 1) % MUSIC_STEPS.length] });
+      music.applySettings(s);
+      music.play(this, "menu", 400);          // kéo từ 0 lên thì phải mồi lại
+    });
+    // P0-03 §2.1: cục bộ, có công tắc, KHÔNG gửi đi đâu.
+    tg("Ghi số liệu chơi thử", () => (s.telemetry ? "bật" : "tắt"),
+      () => { put({ telemetry: !s.telemetry }); telemetry.enabled = !!s.telemetry; });
 
-    this.page.add(label(this, GAME_W / 2, 408,
-      "Khách vẫn bỏ đi vì bạn làm sai — nhưng không bao giờ vì bạn chậm.", 12, UI.muted, "400"));
+    this.page.add(st.place(label(this, x, 0,
+      "Khách vẫn bỏ đi vì bạn làm sai — nhưng không bao giờ vì bạn chậm.\n"
+      + "Số liệu chỉ nằm trong máy này; muốn gửi cho người làm game thì bấm xuất.", 11, UI.muted, "400")
+      .setWordWrapWidth(470).setAlign("center"), 14));
 
-    this.page.add(button(this, GAME_W / 2, 458, "Quay lại", () => this.show("main"), { width: 220 }));
+    const row = st.y + buttonHeight() / 2;
+    this.page.add(button(this, x - 118, row, "Xuất số liệu", () => telemetry.download(), { width: 210 }));
+    this.page.add(button(this, x + 118, row, "Quay lại", () => this.show("main"), { width: 210 }));
+    st.skip(buttonHeight() + 20);
+
+    // nền khung cao đúng bằng nội dung
+    bg.fillStyle(0xf7f4ec, 0.96).fillRoundedRect(x - 270, 70, 540, st.y - 70, 16);
+    // Chữ to (150–200%) thì trang dài hơn màn hình: cuộn bằng con lăn / kéo, không cắt chữ.
+    this.enableScroll(st.y + 10);
+  }
+
+  /** Cuộn trang hiện tại theo chiều dọc nếu nó cao hơn khung hình. */
+  private enableScroll(contentBottom: number) {
+    const extra = Math.max(0, contentBottom - GAME_H);
+    if (!extra) return;
+    const page = this.page;
+    const clamp = (y: number) => Math.max(-extra, Math.min(0, y));
+    this.input.on("wheel", (_p: unknown, _o: unknown, _dx: number, dy: number) => {
+      if (page.active) page.y = clamp(page.y - dy * 0.6);
+    });
+    this.input.on("pointermove", (p: Phaser.Input.Pointer) => {
+      if (page.active && p.isDown) page.y = clamp(page.y + (p.y - p.prevPosition.y));
+    });
   }
 
   // --------------------------------------------------------------- giới thiệu
@@ -170,9 +235,9 @@ export class MenuScene extends Phaser.Scene {
       "Bạn bán bánh mì ở đầu hẻm Sài Gòn.",
       "Khách đứng cách bạn nửa mét và nhìn thấy mọi thứ bạn làm.",
       "",
-      "Bản dựng thử này mới có: sảnh menu, khu bán hàng,",
-      "di chuyển và chuỗi thao tác làm một ổ bánh.",
-      "Khách, trí nhớ và tin đồn nằm ở giai đoạn sau.",
+      "Bản dựng thử này có: vòng một ngày (chợ sáng → bán → buổi tối),",
+      "khách nhìn thấy bạn làm, đơn \"như mọi bữa\", ly trà đá.",
+      "Trí nhớ dài hạn và tin đồn nằm ở giai đoạn sau.",
     ];
     this.page.add(label(this, GAME_W / 2, 210, lines.join("\n"), 14, UI.ink, "400"));
 

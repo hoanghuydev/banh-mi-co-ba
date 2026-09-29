@@ -1,13 +1,16 @@
 import Phaser from "phaser";
-import { depthOf, toScreen, facingOf, type Facing } from "../world/iso";
+import { TH, depthOf, toScreen, facingOf, type Facing } from "../world/iso";
 import { hitsWall, SPAWN } from "../world/map";
-import { FX, HELD, footY, holdAnchor, textureFor } from "../art";
+import { BASE, FX, HELD, footY, holdAnchor, textureFor } from "../art";
 import { type Hand } from "../world/stations";
 
 /** Người chơi đi bao nhiêu ô mỗi giây. */
 export const SPEED = 3.4;
 
-export type MoveInput = { up: boolean; down: boolean; left: boolean; right: boolean };
+/** Giữ Shift để chạy: nhanh hơn, nhưng cầm đồ mà chạy là tay lỏng dần (P1-01 §2.7, grip). */
+export const RUN_MUL = 1.45;
+
+export type MoveInput = { up: boolean; down: boolean; left: boolean; right: boolean; run?: boolean };
 
 /**
  * Nhân vật người chơi: vị trí, va chạm, hướng nhìn, và ba sprite đi kèm
@@ -35,6 +38,10 @@ export class Player {
 
   /** Có đang bước không — dùng cho nhịp nhún và cho việc huỷ thao tác khi rời trạm. */
   moving = false;
+  /** Đang chạy (Shift) — tempo cao hơn, grip hụt dần. */
+  running = false;
+  /** Frame này có va vào tường/đồ đạc không (muốn đi mà bị chặn cả hai trục). */
+  bumped = false;
 
   private bob = 0;
   private body: Phaser.GameObjects.Image;
@@ -67,15 +74,21 @@ export class Player {
     let wy = ix - iy;
 
     this.moving = wx !== 0 || wy !== 0;
+    this.running = this.moving && !!input.run;
+    this.bumped = false;
     if (!this.moving) { this.bob = 0; return; }
 
     const len = Math.hypot(wx, wy);
-    wx = (wx / len) * SPEED * dt;
-    wy = (wy / len) * SPEED * dt;
+    const speed = SPEED * (this.running ? RUN_MUL : 1);
+    wx = (wx / len) * speed * dt;
+    wy = (wy / len) * speed * dt;
 
     // tách hai trục ra thử riêng -> chạm tường thì trượt dọc tường, không bị dính cứng
-    if (!hitsWall(this.x + wx, this.y)) this.x += wx;
-    if (!hitsWall(this.x, this.y + wy)) this.y += wy;
+    const bx = hitsWall(this.x + wx, this.y), by = hitsWall(this.x, this.y + wy);
+    if (!bx) this.x += wx;
+    if (!by) this.y += wy;
+    // va thẳng vào thứ gì đó (không trượt được trục nào) = cú va
+    this.bumped = (bx || wx === 0) && (by || wy === 0);
 
     this.facing = facingOf(wx, wy);
     this.bob += dt * 11;
@@ -107,15 +120,22 @@ export class Player {
       return;
     }
 
-    // Neo đo TỪ ĐIỂM CHẠM ĐẤT lên, cùng gốc toạ độ với `footY` — nên món nhún
-    // theo đúng nhịp bước của người, không bị trôi lệch một nhịp.
+    // Neo đo TỪ BÀN CHÂN lên. Bàn chân KHÔNG nằm ở `footY(sy)` — đó là đáy
+    // texture, thấp hơn chân `1 + BASE + TH/2` px (xem `prop` trong canvas.ts);
+    // dùng thẳng footY là món rơi xuống ngang dép. Trừ `hop` để món nhún cùng nhịp.
     const a = holdAnchor(this.facing);
+    const feet = footY(sy) - (1 + BASE + TH / 2);
     this.held
       .setTexture(HELD.key(this.hand))
-      .setPosition(sx + a.x, footY(sy) - hop - a.y)
+      .setPosition(sx + a.x, feet - hop - a.y)
       // Quay lưng thì món khuất sau thân; mọi hướng khác thì nằm trong lòng hai bàn tay.
       .setDepth(depth + (a.behind ? -0.5 : 1))
       .setVisible(true);
+  }
+
+  /** Sprite món đang cầm — để scene vẽ hơi khói đúng ngay trên ổ bánh (P1-01 §4). */
+  get heldSprite(): Readonly<Phaser.GameObjects.Image> {
+    return this.held;
   }
 
   destroy() {

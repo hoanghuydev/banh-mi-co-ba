@@ -12,8 +12,11 @@ import { shade, type Pen } from "./canvas";
  */
 export const FOOD = {
   icon: (id: Ingredient) => `ing_${id}`,
+  /** Bản to của icon, dùng cho lớp nhân nằm trong ổ — nướng riêng cho nét, không phóng hình nhỏ. */
+  big: (id: Ingredient) => `ing_${id}_big`,
   loaf: "loaf_open",
   ICON: 36,
+  BIG_SCALE: 1.7,
 } as const;
 
 type Draw = (g: Pen, cx: number, cy: number, s: number) => void;
@@ -223,11 +226,15 @@ function loaf(scene: Phaser.Scene) {
 export function buildFood(scene: Phaser.Scene) {
   if (scene.textures.exists(FOOD.loaf)) return;
   loaf(scene);
-  const S = FOOD.ICON;
-  for (const ing of INGREDIENTS) {
-    const g = scene.make.graphics({ x: 0, y: 0 }, false);
-    DRAWERS[ing.id](g, S / 2, S / 2, 1);
-    g.generateTexture(FOOD.icon(ing.id), S, S);
-    g.destroy();
-  }
+  const bake = (key: (id: Ingredient) => string, s: number) => {
+    const S = Math.ceil(FOOD.ICON * s);
+    for (const ing of INGREDIENTS) {
+      const g = scene.make.graphics({ x: 0, y: 0 }, false);
+      DRAWERS[ing.id](g, S / 2, S / 2, s);
+      g.generateTexture(key(ing.id), S, S);
+      g.destroy();
+    }
+  };
+  bake(FOOD.icon, 1);
+  bake(FOOD.big, FOOD.BIG_SCALE);
 }

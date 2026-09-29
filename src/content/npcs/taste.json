@@ -1,0 +1,9 @@
+{
+  "_note": "Khẩu vị ẩn — P1-01 §3 content/npcs/taste.json. Thứ tự chiều: pate, meat, veg, chili, salt, sauce, crust. BA_BAY, CHU_TU lấy nguyên từ doc. ANH_DUNG doc không có (doc dùng chi_lan) — số dưới đây do bản dựng đặt: vội, thích cay đậm, không để ý rau. ⚠️ Cần người thiết kế duyệt.",
+  "npcs": {
+    "CHU_TU":   { "ideal": [0.60, 0.75, 0.50, 0.35, 0.55, 0.50, 0.70], "weight": [0.4, 0.8, 0.3, 0.4, 0.3, 0.3, 0.9], "tolerance": 0.24 },
+    "BA_BAY":   { "ideal": [0.70, 0.60, 0.70, 0.55, 0.60, 0.60, 0.62], "weight": [0.8, 0.5, 0.8, 0.6, 0.5, 0.5, 0.5], "tolerance": 0.14 },
+    "ANH_DUNG": { "ideal": [0.45, 0.70, 0.35, 0.75, 0.55, 0.65, 0.70], "weight": [0.3, 0.6, 0.2, 0.8, 0.3, 0.5, 0.5], "tolerance": 0.25 },
+    "CHI_LAN":  { "ideal": [0.30, 0.55, 0.22, 0.00, 0.30, 0.25, 0.60], "weight": [0.7, 0.4, 0.95, 1.0, 0.6, 0.7, 0.4], "tolerance": 0.09 }
+  }
+}

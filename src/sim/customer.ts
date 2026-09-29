@@ -3,7 +3,7 @@ import type { NpcDef, Personality } from "../content/npcs";
 import type { BodyStyle } from "../art/character";
 import { makeOrder, type OrderSpec } from "./order";
 import { traitMulFrom, type Observation, type Observer, type Zone } from "./perception";
-import type { StimId } from "../core/eventbus";
+import { GazeMachine, WALKIN_GAZE, type GazeState } from "./gaze";
 
 /**
  * Một người khách trong một lượt ghé quán.
@@ -22,9 +22,26 @@ export type CustomerPhase =
 
 export type LeaveReason = "served" | "impatient" | "closed";
 
+/** P1-02 §2.7: sức chờ mặc định (giây thật tới mốc MADE_THEM_WAIT). */
+export const DEFAULT_PATIENCE_SEC = 50;
+/** Rời đi khi đã chờ quá 1,6 lần sức chờ. */
+export const LEAVE_AT = 1.6;
+
+/** P1-02 §2.8 — trà đá. */
+export const TEA = {
+  /** Đưa xong 0,6 s khách mới cúi uống. */
+  sipDelay: 0.6,
+  /** Ly thứ hai trong vòng 45 s chỉ được cái gật đầu — không cúi uống, không CARED_FOR_THEM. */
+  cooldown: 45,
+  /** CARED_FOR_THEM nhỏ dần: ly 1 / 2 / 3+. */
+  diminish: [1.0, 0.6, 0.25] as const,
+  /** Người soi ≥ 0,7 nhận tới ly thứ 3 là bắt bài chuyện mua chuộc. */
+  suspectSoi: 0.7,
+  suspectAtCup: 3,
+};
+
 export class Customer implements Observer {
   phase: CustomerPhase = "arriving";
-  /** Ô đang đứng / đang đi tới. */
   x: number;
   y: number;
   tx: number;
@@ -33,40 +50,49 @@ export class Customer implements Observer {
   /** Chỗ trong hàng chờ; 0 là ngay trước mặt người bán. */
   slot = -1;
   zone: Zone = "SEATED_FAR";
-  gaze = 1;
+  gaze = 0.45;
+  /** Chỉ cho dev (`npc.gaze`): ép gaze cố định để tune §5. null = tự nhiên. */
+  gazeOverride: number | null = null;
+  /** Vật che riêng (vd. người đứng trước chắn tầm) — scene/service đặt mỗi frame. */
   occluder = 1;
   traitMul: number;
-  observations = new Map<StimId, Observation>();
+  /** traitMul gốc từ tính cách — `traitMul` = gốc × (1 + 0,35·độ bẩn quầy). */
+  readonly baseTrait: number;
+  observations = new Map<string, Observation>();
+  readonly gazeM: GazeMachine;
 
   order: OrderSpec | null = null;
-  /** Giây thật còn lại trước khi bỏ đi. */
-  patience: number;
-  readonly patienceMax: number;
+  /** Câu gọi món NGUYÊN VĂN — thứ duy nhất phiếu đơn được phép hiện (P1-03 §2.4.3). */
+  orderLine = "";
 
-  /** Đã cằn nhằn tới tier mấy — để không lặp lại một câu. */
-  nagged = 0;
-  /** Cửa sổ bấm điện thoại còn lại (giây). CANON §5.4: chỉ 2–3 giây. */
-  private phoneFor = 0;
-  private phoneCooldown = 4;
+  // ── chờ (kênh THỜI GIAN, P1-02 §2.7) ─────────────────────────────────────────
+  /** Giây thật đã chờ. Pause / chế độ không giới hạn thời gian thì đứng yên. */
+  waitSec = 0;
+  /** Sức chờ: tới đây là MADE_THEM_WAIT (CONFIRMED). */
+  readonly waitT: number;
+  /** Đã qua mấy mốc: 1 = nhấp nhổm (0,6) · 2 = liếc đồng hồ + thở dài · 3 = CONFIRMED. */
+  waitStage = 0;
 
   // ── trà đá ─────────────────────────────────────────────────────────────────
-  /** Số ly đã nhận trong lượt này. */
   teaCount = 0;
-  /** Còn cầm ly bao lâu. Đang cầm thì không nhận thêm — ràng buộc VẬT LÝ, không phải bộ đếm. */
   private holdingTeaFor = 0;
-  /** Đang cúi xuống uống. ĐÂY mới là cửa sổ hạ gaze của CANON §5.4, không phải bản thân ly trà. */
-  private sipFor = 0;
-  /**
-   * Đã bắt bài chuyện bạn lôi trà đá ra đánh lạc hướng.
-   * CANON §8(i): "người tinh ý nhận ra bạn đang mua chuộc → phản tác dụng".
-   * Bắt bài rồi thì công cụ đó cháy vĩnh viễn với người này.
-   */
-  onToTea = false;
+  private sipIn = -1;
+  private lastTeaAt = -Infinity;
+  /** Bắt bài chuyện mua chuộc (CANON §8i) → không nhận nữa trong lượt này. */
+  suspectBribery = false;
+
+  // ── hỏi chuyện (ASK_QUESTION) ─────────────────────────────────────────────
+  private questionPending = false;
+  lastAskedAt = -Infinity;
+  /** Có tiếng động lớn trong frame này (service đặt, tick tiêu). */
+  loudCue = false;
 
   leaveReason: LeaveReason | null = null;
+  orderedAt = 0;
   /** Lời thoại đang hiện trên bong bóng, và còn hiện bao lâu. */
   say: string | null = null;
   sayFor = 0;
+  private clock = 0;
 
   constructor(
     readonly id: string,
@@ -77,24 +103,19 @@ export class Customer implements Observer {
     readonly body: BodyStyle,
     readonly npc: NpcDef | null,
     readonly usual: OrderSpec,
-    /** Lần ghé thứ mấy trong mùa — từ lần 3 mới được phép nói "như mọi bữa". */
     readonly visitCount: number,
     spawn: { x: number; y: number },
-    patienceBase: number,
+    /** `patienceBaseSec` đã tính cả khung giờ vội. */
+    patienceSec: number,
     private rng: Rng,
   ) {
     this.x = this.tx = spawn.x;
     this.y = this.ty = spawn.y;
-    this.traitMul = traitMulFrom(personality.soi);
-    // nóng tính thì mất kiên nhẫn nhanh hơn; điềm đạm thì chờ được lâu
-    this.patienceMax = patienceBase * (1.25 - personality.nongTinh * 0.5);
-    this.patience = this.patienceMax;
+    this.traitMul = this.baseTrait = traitMulFrom(personality.soi);
+    this.waitT = patienceSec;
+    this.gazeM = new GazeMachine(npc?.gaze ?? WALKIN_GAZE, id, rng);
   }
 
-  /**
-   * `canAskUsual` do `Service` quyết, không tự suy ra từ `visitCount`:
-   * điều kiện thật là "người chơi đã NGHE đủ", chứ không phải "khách đã ghé đủ".
-   */
   rollOrder(canAskUsual: boolean) {
     this.order = makeOrder(this.rng, this.usual, canAskUsual);
   }
@@ -104,71 +125,72 @@ export class Customer implements Observer {
     this.sayFor = seconds;
   }
 
+  get speaking() { return this.say !== null; }
+
   /**
-   * Nhịp thở của khách: điện thoại, kiên nhẫn, bong bóng thoại.
    * `pressure` = false khi bật chế độ không giới hạn thời gian (CANON §15.2):
    * khách vẫn bỏ đi vì bạn làm SAI, nhưng không bao giờ vì bạn CHẬM.
    */
   tick(dt: number, pressure: boolean) {
+    this.clock += dt;
     if (this.sayFor > 0) {
       this.sayFor -= dt;
       if (this.sayFor <= 0) this.say = null;
     }
-
     if (this.holdingTeaFor > 0) this.holdingTeaFor -= dt;
-    if (this.sipFor > 0) this.sipFor -= dt;
-
-    // Cửa sổ bấm điện thoại: chỉ 2–3 giây, đủ để dùng nếu đã chuẩn bị sẵn,
-    // không đủ để "farm" (CANON §8a).
-    if (this.phoneFor > 0) {
-      this.phoneFor -= dt;
-      if (this.phoneFor <= 0) this.phoneCooldown = 5 + this.rng.next() * 7;
-    } else {
-      this.phoneCooldown -= dt;
-      if (this.phoneCooldown <= 0 && this.phase !== "arriving") {
-        this.phoneFor = 2 + this.rng.next();
-      }
+    if (this.sipIn >= 0) {
+      this.sipIn -= dt;
+      if (this.sipIn < 0) this.gazeM.force("DRINKING");
     }
-    const distracted = this.phoneFor > 0 || this.sipFor > 0;
-    this.gaze = distracted ? 0.05 : this.slot === 0 ? 1 : 0.55;
 
-    if (pressure && (this.phase === "queueing" || this.phase === "waiting")) {
-      this.patience -= dt;
-    }
+    if (pressure && (this.phase === "queueing" || this.phase === "waiting")) this.waitSec += dt;
+
+    this.gazeM.tick(dt, {
+      loudCue: this.loudCue, question: this.questionPending,
+      waitRatio: this.waitRatio, hasCompanion: false, raining: false,
+    });
+    this.loudCue = false;
+    this.questionPending = false;
+    this.gaze = this.gazeOverride ?? this.gazeM.factor;
   }
 
-  get onPhone() {
-    return this.phoneFor > 0;
-  }
+  get gazeState(): GazeState { return this.gazeM.state; }
+  get sipping() { return this.gazeM.state === "DRINKING"; }
+  get onPhone() { return this.gazeM.state === "PHONE"; }
+  get holdingTea() { return this.holdingTeaFor > 0; }
 
-  get patienceRatio() {
-    return Math.max(0, this.patience / this.patienceMax);
-  }
+  get waitRatio() { return this.waitSec / this.waitT; }
 
-  get holdingTea() {
-    return this.holdingTeaFor > 0;
-  }
+  /** Còn trong 45 s kể từ ly trước? */
+  get teaOnCooldown() { return this.clock - this.lastTeaAt < TEA.cooldown; }
 
   /**
-   * Nhận được mấy ly trước khi thấy kỳ. Người SOI cao bắt bài sớm hơn hẳn:
-   * Bà Bảy (soi 0.9) chịu đúng một ly, Anh Dũng (soi 0.2) tới ly thứ ba.
-   * Dùng lại đúng chiều tính cách đã có, không đẻ thêm chỉ số mới (CANON §4).
+   * Nhận ly trà. Trả hệ số CARED_FOR_THEM (0 = chỉ gật đầu). Cửa sổ hạ gaze chỉ có
+   * khi ngoài cooldown — cửa sổ attention phải ngắn và KHÔNG farm được (§8a).
    */
-  get teaTolerance() {
-    return this.personality.soi > 0.7 ? 1 : this.personality.soi > 0.4 ? 2 : 3;
-  }
-
-  /** `sipSeconds = 0` nghĩa là khách chỉ cầm lấy đặt xuống, KHÔNG có cửa sổ hạ gaze. */
-  takeTea(sipSeconds: number) {
+  takeTea(): number {
+    const onCd = this.teaOnCooldown;
     this.teaCount++;
     this.holdingTeaFor = 7;
-    this.sipFor = sipSeconds;
+    if (onCd) return 0;
+    this.lastTeaAt = this.clock;
+    this.sipIn = TEA.sipDelay;
+    return TEA.diminish[Math.min(this.teaCount - 1, TEA.diminish.length - 1)];
   }
+
+  /** Người chơi hỏi chuyện → nhìn mặt người chơi thay vì nhìn tay (P1-02 §2.8). */
+  ask() {
+    this.lastAskedAt = this.clock;
+    this.questionPending = true;
+  }
+
+  get now() { return this.clock; }
 
   /** Ba nấc biểu cảm — CANON T3: đọc qua dáng và mặt, không qua thanh số. */
   get mood(): "calm" | "checking" | "annoyed" {
-    if (this.patienceRatio > 0.55) return "calm";
-    if (this.patienceRatio > 0.22) return "checking";
+    const r = this.waitRatio;
+    if (r < 0.6) return "calm";
+    if (r < 1) return "checking";
     return "annoyed";
   }
 }

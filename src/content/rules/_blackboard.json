@@ -1,0 +1,24 @@
+{
+  "_note": "BlackboardSchema — mọi key mà criterion của rule DB được phép đọc (P0-03 §2.3 R001). Thêm key ở đây TRƯỚC, viết rule sau. 'ordinal' = enum có thứ tự, so sánh gte/lte được.",
+  "keys": {
+    "Customer.npcId":       { "type": "enum", "values": "@NPC_IDS" },
+    "Customer.obsState":    { "type": "ordinal", "values": ["UNAWARE", "GLIMPSED", "NOTICED", "CONFIRMED"] },
+    "Customer.tier":        { "type": "enum", "values": ["RIVAL", "ACQUAINTANCE", "FRIEND"] },
+    "Customer.mood":        { "type": "ordinal", "values": ["CALM", "CHECKING", "ANNOYED"] },
+    "Customer.visitCount":  { "type": "number", "min": 0 },
+    "Customer.stimId":      { "type": "enum", "values": "@STIM_IDS" },
+    "Customer.sawDropToday":{ "type": "bool" },
+    "Customer.onPhone":     { "type": "bool" },
+    "Session.waitedSec":    { "type": "number", "min": 0 },
+    "Session.defect":       { "type": "string" },
+    "World.dayIndex":       { "type": "number", "min": 1, "max": 40 },
+    "World.band":           { "type": "ordinal", "values": ["PRE_OPEN", "PEAK", "MID", "LULL"] },
+    "World.weather":        { "type": "enum", "values": ["NANG", "MUA", "AM_U"] }
+  },
+  "signature": {
+    "_note": "R014 — tình huống đặc trưng mỗi NPC PHẢI có dòng riêng (CANON §11 đòn bẩy 2).",
+    "BA_BAY": ["CAI_LUONG"],
+    "CHI_HANH": ["TU_BAC"],
+    "CHU_KIET": ["DOI_THU"]
+  }
+}

@@ -24,7 +24,7 @@ import { blob, diamond, heightFor, prop, shade, slab, standing, type Pen } from 
 export const PROP = {
   oven: "oven", tea: "tea", shelf: "shelf",
   stool: "stool", table: "table", bike: "bike", pothos: "pothos",
-  crate: "crate", bin: "bin",
+  crate: "crate", bin: "bin", sink: "sink",
 } as const;
 
 // ───────────────────────────────────────────────────────────── mẩu dùng nhiều nơi
@@ -442,7 +442,35 @@ function bin(scene: Phaser.Scene) {
   });
 }
 
+/**
+ * Bồn rửa tay (P1-01 §2.8) — chậu inox trên chân sắt, vòi nước, chai xà bông đỏ.
+ * Bóng hình khác hẳn thùng trà (thấp, rộng, có vòi cong) để không ai nhầm hai thứ.
+ */
+function sink(scene: Phaser.Scene) {
+  const H = 30;
+  const W = TW - 22, D = TH - 10;
+  prop(scene, PROP.sink, heightFor(H + 26), (g, cx, cy) => {
+    standing(g, cx, cy, H, 0x5e6b73, W, D);             // chân tủ sắt
+    const top = cy - H;
+    g.fillStyle(0xc9d3d8, 1);                           // mặt chậu inox
+    diamond(g, cx, top, W, D);
+    g.fillStyle(0x8e9aa1, 1);                           // lòng chậu
+    g.fillEllipse(cx, top, W - 14, D - 6);
+    g.fillStyle(0x9fc6d8, 0.7);                         // nước đọng
+    g.fillEllipse(cx + 2, top + 1, W - 26, D - 12);
+    g.lineStyle(3, 0xaab5bb, 1);                        // vòi cong
+    g.beginPath();
+    g.moveTo(cx - 10, top - 2);
+    g.lineTo(cx - 10, top - 18);
+    g.lineTo(cx - 2, top - 18);
+    g.lineTo(cx - 2, top - 12);
+    g.strokePath();
+    slab(g, cx + 10, top - 14, 7, 14, 2, 0xc0392b, 2);  // chai xà bông đỏ — điểm nhấn
+  });
+}
+
 export function buildProps(scene: Phaser.Scene) {
+  sink(scene);
   oven(scene);
   tea(scene);
   shelf(scene);

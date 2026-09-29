@@ -66,14 +66,20 @@ export const STATIONS: Station[] = [
     holdMs: 1500, overcookMs: 2300, spoils: "loaf_burnt",
   },
   {
-    id: "board", tx: 7, ty: 4, name: "thớt", verb: "kẹp nhân",
+    id: "board", tx: 4, ty: 4, name: "thớt", verb: "kẹp nhân",
     // holdMs = 0: bấm E là MỞ BẢNG CHỌN NGUYÊN LIỆU, không phải giữ phím chờ xong.
     // Trụ cột T2 nằm ở đây — người chơi chọn nguyên liệu chứ không chọn câu nói.
     slot: "BOARD", needs: ["loaf_hot"], gives: "loaf_filled", holdMs: 0,
   },
   {
-    id: "handoff", tx: 12, ty: 4, name: "chỗ đưa hàng", verb: "đưa cho khách",
+    id: "handoff", tx: 12, ty: 4, name: "quầy gọi món", verb: "đưa cho khách",
     slot: "HANDS", needs: ["loaf_filled", "tea"], gives: "empty", holdMs: 0,
+  },
+  {
+    // P1-01 §2.8: 3,0 s cố định, kỹ năng không rút ngắn được, rửa cả hai tay.
+    // Vùng TAY — khách thấy mình rửa tay (nhưng rửa tay KHÔNG có sự kiện tích cực nào).
+    id: "sink", tx: 15, ty: 1, name: "rửa tay", verb: "rửa tay",
+    slot: "HANDS", needs: ["empty"], gives: "empty", holdMs: 3000,
   },
   {
     id: "tea", tx: 13, ty: 1, name: "thùng trà đá", verb: "rót ly trà đá",

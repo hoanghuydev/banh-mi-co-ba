@@ -1,0 +1,317 @@
+{
+  "_note": "Pool GENERIC dùng chung cho mọi khách (CANON §11 đòn bẩy 2). Bag là PER-NPC: bagId = generic:{pool}:{npcId}. Luật viết P1-03 §2.7: ANTICIPATED = thì quá khứ, nói VỀ PHÍA người chơi, bình tĩnh hơn; DISCOVERED = thì hiện tại, nói về ổ bánh, mở đầu bằng 'ủa'. {item} = tên món. ⚠️ Bản nháp của dev — cần người viết giọng Nam duyệt.",
+  "pools": [
+    {
+      "id": "waitSoft",
+      "tier": 1,
+      "vars": [],
+      "_note": "Chờ tới mốc thứ hai — liếc đồng hồ, thở dài.",
+      "variants": [
+        "Chừng nào xong vậy con?",
+        "Con làm lẹ giùm cô chút nghen.",
+        "Trời ơi, tui trễ giờ rồi.",
+        "Còn lâu không con?",
+        "Hà… lâu dữ ta.",
+        "Con ơi, tới cô chưa?"
+      ]
+    },
+    {
+      "id": "waitHard",
+      "tier": 2,
+      "vars": [],
+      "_note": "Chờ quá sức — bỏ đi.",
+      "variants": [
+        "Thôi khỏi, tui đi chỗ khác.",
+        "Đợi hết nổi rồi, tui đi nghen.",
+        "Bữa khác ghé vậy.",
+        "Thôi, trễ giờ rồi, cô đi."
+      ]
+    },
+    {
+      "id": "waitConfirmed",
+      "tier": 1,
+      "vars": [],
+      "_note": "Chạm mốc MADE_THEM_WAIT — đã thật sự thấy mình bị để chờ.",
+      "variants": [
+        "Con, cô đứng nãy giờ rồi đó.",
+        "Người ta tới sau mà được trước hả con?",
+        "Cô chờ lâu lắm rồi nghen con.",
+        "Trời, đứng mỏi chưn luôn."
+      ]
+    },
+    {
+      "id": "noticedMess",
+      "tier": 3,
+      "vars": [],
+      "_note": "Lưới an toàn tier-3 — nhận thấy nhưng không có dòng cụ thể.",
+      "variants": [
+        "Ủa…",
+        "Hửm.",
+        "Ơ…",
+        "Ủa con…"
+      ]
+    },
+    {
+      "id": "noticeDrop",
+      "tier": 1,
+      "vars": [],
+      "_note": "NOTICED một lần rớt đồ.",
+      "variants": [
+        "Ủa, rớt rồi kìa con.",
+        "Ê, cái đó rớt rồi.",
+        "Con ơi, rớt kìa.",
+        "Ối, rớt rồi.",
+        "Rớt rồi con, bỏ đi nghen.",
+        "Ủa con, cái ổ…"
+      ]
+    },
+    {
+      "id": "noticeBurnt",
+      "tier": 1,
+      "vars": [],
+      "_note": "NOTICED mùi khét — cả hàng cùng ngửi.",
+      "variants": [
+        "Ủa, mùi gì khét vậy?",
+        "Khét rồi con ơi.",
+        "Con, lò kìa!",
+        "Trời, khét lẹt.",
+        "Cháy bánh rồi kìa con.",
+        "Ủa, khói kìa con."
+      ]
+    },
+    {
+      "id": "noticeDirty",
+      "tier": 1,
+      "vars": [],
+      "_note": "NOTICED tay dơ — cầm tiền xong bốc đồ ăn (P1-01 §2.8).",
+      "variants": [
+        "Ủa con, cầm tiền xong rửa tay chưa?",
+        "Con, tay mới cầm tiền đó.",
+        "Rửa tay cái đã con.",
+        "Ơ, tay con…",
+        "Con ơi, cầm tiền rồi bốc bánh hả?",
+        "Hừm, tay đó con."
+      ]
+    },
+    {
+      "id": "dirtyRemark",
+      "tier": 2,
+      "vars": [],
+      "_note": "Quầy bẩn ≥ 0,8 — một lời nhắc nhẹ mỗi ngày (P1-02 §2.10).",
+      "variants": [
+        "Con, bữa nay ruồi nhiều quá ha.",
+        "Quầy dơ rồi kìa con, lau chút đi.",
+        "Ủa, sao bữa nay bề bộn vậy con.",
+        "Con lau cái thớt chút đi con."
+      ]
+    },
+    {
+      "id": "ant_MISSING",
+      "tier": 1,
+      "vars": [
+        "item"
+      ],
+      "_note": "ANTICIPATED — đã thấy người chơi quên món.",
+      "variants": [
+        "Cô thấy rồi nha con, nãy con bỏ qua {item} luôn.",
+        "Nãy cô ngó thấy mà, con quên {item} rồi.",
+        "Cô đứng đây thấy hết nha, thiếu {item} đó con.",
+        "Hồi nãy con bốc lộn, bỏ sót {item} rồi con.",
+        "Cô thấy con quên {item}, thôi cô hổng nói.",
+        "Thấy rồi đó nghen, {item} con quên bỏ."
+      ]
+    },
+    {
+      "id": "disc_MISSING",
+      "tier": 1,
+      "vars": [
+        "item"
+      ],
+      "_note": "DISCOVERED — chỉ biết lúc mở ra ăn.",
+      "variants": [
+        "Ủa… {item} đâu con?",
+        "Ủa, thiếu {item} rồi nè.",
+        "Ơ, hổng có {item} hả con?",
+        "Ủa mà {item} đâu ta?",
+        "Sao hổng thấy {item} vậy con?",
+        "Ủa… hình như thiếu {item}."
+      ]
+    },
+    {
+      "id": "ant_UNWANTED",
+      "tier": 1,
+      "vars": [
+        "item"
+      ],
+      "variants": [
+        "Cô thấy con bỏ {item} vô rồi đó, cô dặn rồi mà.",
+        "Nãy cô thấy con rắc {item}, cô nói không mà con.",
+        "Cô đứng đây thấy hết, có {item} rồi kìa.",
+        "Cô dặn không {item} mà con, nãy cô thấy rồi."
+      ]
+    },
+    {
+      "id": "disc_UNWANTED",
+      "tier": 1,
+      "vars": [
+        "item"
+      ],
+      "variants": [
+        "Ủa, cô dặn không {item} mà con.",
+        "Ơ, có {item} nè con.",
+        "Ủa sao lại có {item} vậy?",
+        "Ủa… {item} ở đâu ra vậy con."
+      ]
+    },
+    {
+      "id": "ratio_under",
+      "tier": 2,
+      "vars": [
+        "item"
+      ],
+      "variants": [
+        "Ủa, ít {item} quá con.",
+        "Sao {item} ít xíu vậy con?",
+        "Lần sau cho cô thêm chút {item} nghen.",
+        "Ủa, {item} đâu mà ít dữ."
+      ]
+    },
+    {
+      "id": "ratio_over",
+      "tier": 2,
+      "vars": [
+        "item"
+      ],
+      "variants": [
+        "Trời, {item} nhiều dữ vậy con.",
+        "Ủa, sao {item} nhiều quá vậy?",
+        "Nhiều {item} quá con ơi.",
+        "Ủa, bỏ {item} gì mà dữ vậy con."
+      ]
+    },
+    {
+      "id": "cold",
+      "tier": 1,
+      "vars": [
+        "item"
+      ],
+      "_note": "WRONG_TEMP — ổ đã nguội lúc đưa (P1-01 §2.4).",
+      "variants": [
+        "Ủa… bánh nguội ngắt rồi con.",
+        "Ơ, bánh nguội rồi nè.",
+        "Bánh hết giòn rồi con ơi.",
+        "Ủa, bánh nguội vậy con."
+      ]
+    },
+    {
+      "id": "stuffed",
+      "tier": 2,
+      "vars": [
+        "item"
+      ],
+      "variants": [
+        "Trời, nhồi dữ vậy sao cô cắn.",
+        "Ổ này kẹp hổng lại luôn con.",
+        "Ủa, bung hết ra rồi nè."
+      ]
+    },
+    {
+      "id": "happy",
+      "tier": 2,
+      "vars": [],
+      "variants": [
+        "Ngon à nghen.",
+        "Cảm ơn con.",
+        "Được đó con.",
+        "Thơm quá.",
+        "Rồi, cảm ơn nghen.",
+        "Ừ, vậy được rồi."
+      ]
+    },
+    {
+      "id": "remembered",
+      "tier": 1,
+      "vars": [],
+      "_note": "Làm đúng 'như mọi bữa' — khoảnh khắc lõi của game.",
+      "variants": [
+        "Con nhớ hả? Giỏi.",
+        "Ừ, đúng rồi đó con.",
+        "Khỏi nói mà con cũng biết, hay ghê.",
+        "Y như mọi bữa, được đó."
+      ]
+    },
+    {
+      "id": "underdone",
+      "tier": 1,
+      "vars": [],
+      "_note": "Bánh chưa giòn (crust < 0,45) — chỉ khách sành ăn (soi ≥ 0,7) mới nói (P1-01 §2.4).",
+      "variants": [
+        "Bánh chưa giòn nghen con.",
+        "Ổ này nướng chưa tới con ơi.",
+        "Hơi mềm à con.",
+        "Lần sau nướng giòn giòn chút nghen."
+      ]
+    },
+    {
+      "id": "tea",
+      "tier": 2,
+      "vars": [],
+      "variants": [
+        "Ờ, đang khát.",
+        "Trời nắng mà có ly trà đá là nhất.",
+        "Cảm ơn con nghen.",
+        "Ừ, cho cô ly trà."
+      ]
+    },
+    {
+      "id": "teaNod",
+      "tier": 3,
+      "vars": [],
+      "_note": "Ly trong cooldown 45 s — chỉ gật đầu, không cúi uống.",
+      "variants": [
+        "Ừ, để đó đi con.",
+        "Cô còn nè.",
+        "Ờ.",
+        "Để đó con."
+      ]
+    },
+    {
+      "id": "teaSuspect",
+      "tier": 1,
+      "vars": [],
+      "_note": "CANON §8i — người tinh ý bắt bài chuyện mua chuộc.",
+      "variants": [
+        "Thôi đủ rồi con, cô đâu có khát.",
+        "Con cho cô uống hoài vậy chi?",
+        "Cô uống nhiêu đó được rồi.",
+        "Ủa, bữa nay con mời trà dữ ha."
+      ]
+    },
+    {
+      "id": "askReply",
+      "tier": 2,
+      "vars": [],
+      "_note": "Trả lời khi người chơi hỏi chuyện (ASK_QUESTION).",
+      "variants": [
+        "Ờ, cũng khoẻ con.",
+        "Bữa nay nắng quá con.",
+        "Cũng vậy vậy thôi con.",
+        "Khoẻ, khoẻ.",
+        "Ờ, đi làm sớm nè.",
+        "Cũng đỡ rồi con."
+      ]
+    },
+    {
+      "id": "askPlayer",
+      "tier": 2,
+      "vars": [],
+      "_note": "Câu người chơi hỏi — hiện ở nhật ký, không phải bong bóng khách.",
+      "variants": [
+        "Bữa nay cô khoẻ hông?",
+        "Sáng nay đi đâu sớm vậy?",
+        "Trời nắng ghê ha.",
+        "Mấy bữa nay làm ăn được hông?"
+      ]
+    }
+  ]
+}

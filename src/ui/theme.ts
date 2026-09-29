@@ -21,6 +21,36 @@ export const UI = {
   goodCss: "#3f7d5a",
 } as const;
 
+/**
+ * Xếp từ trên xuống theo CHIỀU CAO ĐO ĐƯỢC của từng thứ — không đặt toạ độ cố định.
+ * Toạ độ cố định chỉ đúng ở cỡ chữ 100%; ở 150–200% chữ tự chồng lên nhau (CANON §15.1:
+ * hộp phải TỰ GIÃN theo chữ).
+ */
+export class Stack {
+  y: number;
+  constructor(top: number, private gap = 12) { this.y = top; }
+  /** Đặt một object có origin (0.5, 0.5) ngay dưới thứ trước đó. */
+  place<T extends Phaser.GameObjects.Components.Transform & { height: number; displayHeight?: number }>(o: T, gap = this.gap): T {
+    const h = (o as any).displayHeight ?? o.height;
+    o.setY(this.y + h / 2);
+    this.y += h + gap;
+    return o;
+  }
+  /** Chừa một khoảng cho nút (nút là Container, chiều cao = `buttonHeight()`). */
+  button<T extends Phaser.GameObjects.Components.Transform>(o: T, gap = this.gap): T {
+    const h = buttonHeight();
+    o.setY(this.y + h / 2);
+    this.y += h + gap;
+    return o;
+  }
+  skip(dy: number) { this.y += dy; }
+}
+
+/** Chiều cao nút theo cỡ chữ — mọi layout xếp nút theo đúng con số này, không đoán. */
+export function buttonHeight(maxScale = 1.5) {
+  return Math.round(46 * Math.min(textScale(), maxScale));
+}
+
 /** Cỡ chữ người chơi chọn ở Cài đặt (CANON §15.1: 4 mức). */
 export function textScale() {
   return loadSettings().textScale;
@@ -59,6 +89,12 @@ export type ButtonOpts = {
   primary?: boolean;
   disabled?: boolean;
   hint?: string;
+  /**
+   * Trần phóng chữ của nút (mặc định 1,5 — bằng trần chiều cao nút). Chữ và hộp phải cùng
+   * một trần, không thì ở 200% chữ tràn khỏi nút và đè lên dòng gợi ý. Nút nằm trong một
+   * khung cố định (bảng kẹp nhân) được chặn thấp hơn.
+   */
+  maxScale?: number;
 };
 
 /**
@@ -70,13 +106,16 @@ export function button(
   onClick: () => void, opts: ButtonOpts = {},
 ) {
   const w = opts.width ?? 260;
-  const h = Math.round(46 * Math.min(textScale(), 1.5));
+  const cap = opts.maxScale ?? 1.5;
+  const h = buttonHeight(cap);
   const c = scene.add.container(x, y);
+  // label() nhân cỡ chữ với textScale — chia ngược lại để chữ nút theo đúng trần `cap`.
+  const ts = textScale(), k = Math.min(ts, cap) / ts;
 
   const bg = scene.add.graphics();
-  const txt = label(scene, 0, opts.hint ? -7 : 0, text, 16,
+  const txt = label(scene, 0, opts.hint ? -Math.round(h * 0.16) : 0, text, 16 * k,
     opts.primary ? "#ffffff" : UI.ink, opts.primary ? "700" : "500");
-  const hint = opts.hint ? label(scene, 0, 12, opts.hint, 11, opts.primary ? "#ffd9d2" : UI.muted, "400") : null;
+  const hint = opts.hint ? label(scene, 0, Math.round(h * 0.26), opts.hint, 11 * k, opts.primary ? "#ffd9d2" : UI.muted, "400") : null;
 
   const paint = (hover: boolean) => {
     bg.clear();
@@ -101,9 +140,18 @@ export function button(
     // gọi Contains, nên hit area phải tính từ (0,0) — để (-w/2,-h/2) thì vùng bấm
     // lệch đúng nửa nút sang trái/lên trên.
     c.setInteractive(new Phaser.Geom.Rectangle(0, 0, w, h), Phaser.Geom.Rectangle.Contains);
+    // Chỉ bấm khi nhấn XUỐNG và nhả RA trên cùng nút này. Không thì một cú kéo–thả nhả tay
+    // trúng nút (vd. thả miếng nhân lên nút preset) sẽ bấm luôn nút đó.
+    let pressed = false;
     c.on("pointerover", () => { paint(true); scene.input.setDefaultCursor("pointer"); });
-    c.on("pointerout", () => { paint(false); scene.input.setDefaultCursor("default"); });
-    c.on("pointerup", () => { scene.input.setDefaultCursor("default"); onClick(); });
+    c.on("pointerout", () => { pressed = false; paint(false); scene.input.setDefaultCursor("default"); });
+    c.on("pointerdown", () => { pressed = true; });
+    c.on("pointerup", () => {
+      scene.input.setDefaultCursor("default");
+      if (!pressed) return;
+      pressed = false;
+      onClick();
+    });
   }
   return c;
 }

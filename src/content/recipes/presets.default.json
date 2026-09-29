@@ -1,0 +1,11 @@
+{
+  "_note": "3 preset mặc định — P1-01 §3, ánh xạ sang bộ nguyên liệu hiện có (chưa có heo quay → dùng xíu mại cho 'đậm cay'). `dish` = số phần mỗi món; `prepped` = số phần đã chia sẵn mỗi sáng (prepUnits). Đúng 3 preset / ngày (hằng số v1).",
+  "presets": [
+    { "id": "P1", "name": "đầy đủ nhà mình", "prepped": 12,
+      "dish": { "pate": 2, "thit": 2, "chalua": 2, "dochua": 2, "dualeo": 2, "hanhngo": 2, "ot": 1, "tuongot": 1 } },
+    { "id": "P2", "name": "đậm cay", "prepped": 8,
+      "dish": { "pate": 2, "xiumai": 3, "dochua": 1, "dualeo": 1, "hanhngo": 1, "ot": 3, "tuongot": 3 } },
+    { "id": "P3", "name": "nhẹ, ít rau", "prepped": 8,
+      "dish": { "pate": 1, "chalua": 2, "dochua": 1, "dualeo": 1, "hanhngo": 1, "ot": 0, "tuongot": 1 } }
+  ]
+}

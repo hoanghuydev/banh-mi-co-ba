@@ -16,6 +16,8 @@ import type { Rng } from "../core/rng";
  * Vì sao KHÔNG cho bỏ vô hạn:
  *  · §8(i) cấm spam hành vi mua chuộc — phải có diminishing returns
  *  · và một ổ bánh mì thì kẹp không lại nếu nhồi quá — xem `CAPACITY`
+ *
+ * Bảng phân loại lỗi, mức nặng nhẹ và dung sai theo P1-03 §2.6.
  */
 
 export type Ingredient =
@@ -52,24 +54,32 @@ export const INGREDIENTS: IngredientInfo[] = [
 export const BY_ID = new Map(INGREDIENTS.map((i) => [i.id, i]));
 export const labelOf = (id: Ingredient) => BY_ID.get(id)!.label;
 
-/** Nhồi quá là ổ bánh kẹp không lại. Đơn bình thường tốn 8–10 phần. */
-export const CAPACITY = 15;
+/**
+ * Nhồi quá là ổ bánh kẹp không lại. Đơn nặng nhất gọi được là 2 nhân (một "nhiều")
+ * + rau đầy đủ + nhiều ớt + nhiều tương = 17 phần — trần phải trên mức đó, không thì
+ * có đơn không làm đúng nổi.
+ */
+export const CAPACITY = 20;
 
 /** Mấy thứ cho thêm được mà khách không phật lòng — nguồn của `FREE_EXTRA`. */
 const NICETY: ReadonlySet<Ingredient> = new Set<Ingredient>(["dochua", "ot", "tuongot", "hanhngo"]);
 
 const NHAN = INGREDIENTS.filter((i) => i.kind === "nhan").map((i) => i.id);
+/** "Cho một ổ đầy đủ" ở Sài Gòn = thịt nguội + chả lụa + pate (P1-03 §2.2). */
+const DAY_DU: readonly Ingredient[] = ["pate", "thit", "chalua"];
 
 /**
  * Ý định gọi món. Cả CÂU NÓI lẫn BẢNG ĐỊNH LƯỢNG đều suy ra từ đây, nên hai thứ
- * không bao giờ lệch nhau — câu nói tự nó đủ để làm đúng ổ bánh mà không cần nhìn phiếu.
+ * không bao giờ lệch nhau — câu nói tự nó đủ để làm đúng ổ bánh (có test bất biến).
  */
 export type OrderIntent = {
-  /** 1–2 loại nhân mặn, mặc định mức 2. */
+  /** Loại nhân mặn, mặc định mức 2. */
   nhan: Ingredient[];
   /** Một loại nhân được xin thêm — lên mức 3. */
   nhieu?: Ingredient;
-  /** "đầy đủ" = rau full; "ít" = ít rau, bỏ hành ngò. */
+  /** Gọi "một ổ đầy đủ" — ba nhân tiêu chuẩn, không cần kể tên. */
+  dayDu?: boolean;
+  /** "it" = "cho ít rau": rau MỘT NỬA — không phải cấm thứ nào (P1-03 §2.3 luật vàng). */
   rau: "day-du" | "it";
   ot: 0 | 1 | 3;
   tuong: 0 | 1 | 3;
@@ -85,8 +95,8 @@ export type OrderSpec = {
 export function levelsOf(it: OrderIntent): Partial<Record<Ingredient, number>> {
   const lv: Partial<Record<Ingredient, number>> = {};
   for (const n of it.nhan) lv[n] = it.nhieu === n ? 3 : 2;
-  if (it.rau === "day-du") { lv.dochua = 2; lv.dualeo = 2; lv.hanhngo = 2; }
-  else { lv.dochua = 1; lv.dualeo = 1; lv.hanhngo = 0; }
+  const veg = it.rau === "day-du" ? 2 : 1;
+  lv.dochua = veg; lv.dualeo = veg; lv.hanhngo = veg;
   lv.ot = it.ot;
   lv.tuongot = it.tuong;
   return lv;
@@ -95,14 +105,16 @@ export function levelsOf(it: OrderIntent): Partial<Record<Ingredient, number>> {
 export const specOf = (intent: OrderIntent): OrderSpec => ({ intent, levels: levelsOf(intent) });
 
 function randomIntent(rng: Rng, usual: boolean): OrderIntent {
-  const nhan = [rng.pick(NHAN)];
-  if (rng.next() < 0.3) {                              // thỉnh thoảng gọi hai nhân
-    const second = rng.pick(NHAN.filter((n) => n !== nhan[0]));
-    nhan.push(second);
+  const dayDu = rng.next() < 0.15;
+  const nhan = dayDu ? [...DAY_DU] : [rng.pick(NHAN)];
+  if (!dayDu && rng.next() < 0.3) {                    // thỉnh thoảng gọi hai nhân
+    nhan.push(rng.pick(NHAN.filter((n) => n !== nhan[0])));
   }
+  const nhieu = rng.next() < 0.25 ? rng.pick(nhan) : undefined;
   return {
     nhan,
-    nhieu: rng.next() < 0.25 ? rng.pick(nhan) : undefined,
+    nhieu: dayDu ? undefined : nhieu,
+    dayDu: dayDu || undefined,
     rau: rng.next() < 0.7 ? "day-du" : "it",
     ot: rng.next() < 0.25 ? 3 : rng.next() < 0.3 ? 0 : 1,
     tuong: rng.next() < 0.2 ? 3 : rng.next() < 0.25 ? 0 : 1,
@@ -123,17 +135,18 @@ export function makeOrder(rng: Rng, usual: OrderSpec, canAskUsual: boolean): Ord
 /**
  * Câu gọi món, dùng đúng cách nói miền Nam của CANON §14.
  *
- * LUẬT: câu nói phải TỰ NÓ quyết định được ổ bánh. Nghe xong là làm đúng được,
- * không cần nhìn phiếu; phiếu trên HUD chỉ là cái nạng cho bản dựng thử.
- * Có test bất biến kiểm chuyện này.
+ * LUẬT: câu nói phải TỰ NÓ quyết định được ổ bánh — và phiếu đơn trên màn hình chỉ
+ * được hiện ĐÚNG câu này, nguyên văn (P1-03 §2.4.3: checklist đã phân tích là giết T2).
+ * Rau đầy đủ là mặc định nên không ai nói ra; chỉ nói khi muốn ít.
  */
 export function sayOrder(spec: OrderSpec): string {
   const it = spec.intent;
-  if (it.usual) return "Cho cô như mọi bữa nghen con.";
+  if (it.usual) return "Như mọi bữa nghen con.";
 
-  const nhan = it.nhan.map((n) => (it.nhieu === n ? `nhiều ${labelOf(n)}` : labelOf(n)));
-  const parts = [`Cho một ổ ${nhan.join(" với ")}`];
-  parts.push(it.rau === "day-du" ? "đầy đủ" : "cho ít rau");
+  const parts = [it.dayDu
+    ? "Cho một ổ đầy đủ"
+    : `Cho một ổ ${it.nhan.map((n) => (it.nhieu === n ? `nhiều ${labelOf(n)}` : labelOf(n))).join(" với ")}`];
+  if (it.rau === "it") parts.push("cho ít rau");
   if (it.ot === 3) parts.push("nhiều ớt");
   else if (it.ot === 0) parts.push("không ớt");
   if (it.tuong === 3) parts.push("nhiều tương");
@@ -141,78 +154,96 @@ export function sayOrder(spec: OrderSpec): string {
   return parts.join(", ") + ".";
 }
 
-/** Tóm tắt ngắn để in lên phiếu đơn trên HUD. */
-export function ticketOf(spec: OrderSpec): string {
-  const on: string[] = [], off: string[] = [];
-  for (const ing of INGREDIENTS) {
-    const lv = spec.levels[ing.id];
-    if (lv === undefined) continue;
-    if (lv === 0) off.push(ing.label);
-    else on.push(lv === 1 ? `ít ${ing.label}` : lv >= 3 ? `nhiều ${ing.label}` : ing.label);
-  }
-  return on.join(" · ") + (off.length ? `   ✕ ${off.join(" ")}` : "");
-}
-
 /** Hai đơn có cùng nội dung không (bỏ qua chuyện có nói "như mọi bữa" hay không). */
 export function sameOrder(a: OrderSpec, b: OrderSpec) {
   return INGREDIENTS.every((i) => (a.levels[i.id] ?? -1) === (b.levels[i.id] ?? -1));
 }
 
+// ─────────────────────────────────────────────────────────── delivery-time diff
+
+/**
+ * Phân loại lỗi — P1-03 §2.6. `sCounter` là salience nếu phát hiện TẠI QUẦY (khách
+ * đứng nhìn), `sEat` là lúc cắn miếng đầu (×5). WRONG_TEMP ở đây là ổ nguội (P1-01 §2.4).
+ * `stuffed` không có trong doc — giữ lại vì là chuyện vật lý (ổ nhồi không kẹp lại được).
+ */
+export type DefectKind = "MISSING" | "UNWANTED" | "WRONG_RATIO" | "WRONG_TEMP" | "STUFFED";
+
 export type Defect = {
-  kind: "missing" | "forbidden" | "under" | "over" | "unwanted" | "stuffed";
+  kind: DefectKind;
   item: Ingredient | null;
-  /** Nặng hay nhẹ — thiếu hẳn nhân mặn đau hơn dư một cọng ngò. */
+  /** Hướng lệch của WRONG_RATIO. */
+  dir?: "under" | "over";
+  magnitude: number;
+  sCounter: number;
+  sEat: number;
+  /** Nhãn món để điền vào câu thoại ("pate", "đồ chua"…). */
+  label: string;
+  /** Tên cũ — điểm để xếp hạng `take(1)` (= sCounter × magnitude). */
   weight: number;
+  /** Tên cũ — mô tả ngắn cho log/telemetry. */
   text: string;
 };
 
-export function portionsOf(dish: Ingredient[]) {
+const BASE: Record<DefectKind, number> = { MISSING: 20, UNWANTED: 24, WRONG_RATIO: 12, WRONG_TEMP: 18, STUFFED: 12 };
+/** P1-03 §2.6 ITEM_WEIGHT, ánh xạ sang bộ nguyên liệu hiện có. */
+const ITEM_WEIGHT: Record<Ingredient, number> = {
+  pate: 1.4, thit: 1.3, chalua: 1.2, xiumai: 1.3, opla: 1.3,
+  dochua: 1.0, dualeo: 0.8, hanhngo: 0.7, ot: 0.8, tuongot: 1.0,
+};
+/** Mức lệch một nấc = 0,5 trên thang tỉ lệ; lệch trong ±0,25 là chấp nhận được. */
+const DEFAULT_TOLERANCE = 0.25;
+const LEVEL_TO_RATIO = 0.5;
+
+const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
+
+export function mkDefect(kind: DefectKind, item: Ingredient | null, magnitude = 1, dir?: "under" | "over"): Defect {
+  const w = item ? ITEM_WEIGHT[item] : 1;
+  const sCounter = Math.min(100, BASE[kind] * w * magnitude);
+  const label = item ? labelOf(item) : kind === "WRONG_TEMP" ? "bánh nguội" : "nhồi chặt quá";
+  const text = kind === "MISSING" ? `thiếu ${label}`
+    : kind === "UNWANTED" ? `có ${label}`
+    : kind === "WRONG_RATIO" ? `${dir === "under" ? "ít" : "nhiều"} ${label} quá`
+    : kind === "WRONG_TEMP" ? "bánh nguội ngắt"
+    : "ổ bánh nhồi chặt quá, kẹp không lại";
+  return { kind, item, dir, magnitude, sCounter, sEat: Math.min(100, sCounter * 5), label, weight: sCounter, text };
+}
+
+export function portionsOf(dish: readonly Ingredient[]) {
   const m = new Map<Ingredient, number>();
   for (const id of dish) m.set(id, (m.get(id) ?? 0) + 1);
   return m;
 }
 
 /**
- * So ổ bánh đã làm với đơn đã gọi.
- * CANON §6: nhiều lỗi cùng lúc chỉ được NÓI RA một lỗi, phần còn lại vẫn trừ tiền ngầm.
+ * So ổ bánh đã làm với đơn đã gọi (P1-03 §2.6).
+ *  · MISSING   — thứ khách gọi mà ổ không có
+ *  · UNWANTED  — thứ khách đã NÓI không muốn ("không ớt") mà vẫn có
+ *  · WRONG_RATIO — lệch mức quá dung sai ±0,25
+ * Thứ khách KHÔNG nhắc tới (thêm một nhân khách không gọi) không phải lỗi đơn —
+ * chỉ lời khách nói ra mới là ràng buộc cứng (CANON Đ3).
+ * Kết quả xếp theo điểm giảm dần: phần tử đầu là ứng viên của `take(1)`.
  */
-export function diffDish(spec: OrderSpec, dish: Ingredient[]): Defect[] {
+export function diffDish(spec: OrderSpec, dish: readonly Ingredient[]): Defect[] {
   const got = portionsOf(dish);
   const out: Defect[] = [];
 
   for (const ing of INGREDIENTS) {
     const want = spec.levels[ing.id];
+    if (want === undefined) continue;
     const have = got.get(ing.id) ?? 0;
-    const heavy = ing.kind === "nhan";
 
-    if (want === undefined) {
-      // khách không nói tới: thêm nhân mặn lạ là sai món, thêm rau/sốt thì không sao
-      if (have > 0 && heavy) {
-        out.push({ kind: "unwanted", item: ing.id, weight: 2, text: `có ${ing.label}` });
-      }
-      continue;
-    }
-    if (want === 0 && have > 0) {
-      out.push({ kind: "forbidden", item: ing.id, weight: 3, text: `có ${ing.label}` });
-    } else if (want > 0 && have === 0) {
-      out.push({ kind: "missing", item: ing.id, weight: heavy ? 3 : 1, text: `thiếu ${ing.label}` });
-    } else if (have < want) {
-      out.push({ kind: "under", item: ing.id, weight: want - have >= 2 ? 2 : 1, text: `ít ${ing.label} quá` });
-    } else if (have > want) {
-      // Cho THÊM MỘT PHẦN đồ chua / ớt / tương / ngò không phải lỗi — đó là hào phóng,
-      // và CANON §3.2 xếp `FREE_EXTRA` vào nhóm sự kiện TÍCH CỰC. Từ hai phần trở lên
-      // thì hết là hào phóng, thành ẩu. Thứ khách đã CẤM thì bao nhiêu cũng là lỗi,
-      // nhánh `want === 0` ở trên đã chặn rồi.
-      const generous = NICETY.has(ing.id) && have - want === 1;
-      if (!generous) {
-        out.push({ kind: "over", item: ing.id, weight: have - want >= 2 ? 2 : 1, text: `nhiều ${ing.label} quá` });
-      }
-    }
+    if (want === 0 && have > 0) { out.push(mkDefect("UNWANTED", ing.id)); continue; }
+    if (want > 0 && have === 0) { out.push(mkDefect("MISSING", ing.id)); continue; }
+    if (have === want) continue;
+    // Cho THÊM MỘT PHẦN đồ chua / ớt / tương / ngò không phải lỗi — đó là hào phóng,
+    // CANON §3.2 xếp `FREE_EXTRA` vào nhóm TÍCH CỰC. Từ hai phần trở lên thì thành ẩu.
+    if (have - want === 1 && NICETY.has(ing.id)) continue;
+    const gap = Math.abs(have - want) * LEVEL_TO_RATIO;
+    if (gap <= DEFAULT_TOLERANCE) continue;
+    out.push(mkDefect("WRONG_RATIO", ing.id, clamp01((gap - DEFAULT_TOLERANCE) / 1.0), have < want ? "under" : "over"));
   }
 
-  if (dish.length > CAPACITY) {
-    out.push({ kind: "stuffed", item: null, weight: 2, text: "ổ bánh nhồi chặt quá, kẹp không lại" });
-  }
+  if (dish.length > CAPACITY) out.push(mkDefect("STUFFED", null, 1));
   return out.sort((a, b) => b.weight - a.weight);
 }
 
@@ -221,7 +252,7 @@ export function diffDish(spec: OrderSpec, dish: Ingredient[]): Defect[] {
  * Chỉ tính khi ổ bánh không có lỗi nào — hào phóng trên một ổ làm sai thì không
  * phải là hào phóng, là chống chế.
  */
-export function generosityOf(spec: OrderSpec, dish: Ingredient[]) {
+export function generosityOf(spec: OrderSpec, dish: readonly Ingredient[]) {
   const got = portionsOf(dish);
   let extra = 0;
   for (const id of NICETY) {
@@ -229,4 +260,11 @@ export function generosityOf(spec: OrderSpec, dish: Ingredient[]) {
     extra += Math.max(0, (got.get(id) ?? 0) - want);
   }
   return extra;
+}
+
+/** Ổ bánh ĐÚNG đơn — cái người chơi phải làm ra khi nghe câu gọi món. Dùng cho test và bot. */
+export function dishFor(spec: OrderSpec): Ingredient[] {
+  const out: Ingredient[] = [];
+  for (const ing of INGREDIENTS) for (let i = 0; i < (spec.levels[ing.id] ?? 0); i++) out.push(ing.id);
+  return out;
 }

@@ -1,8 +1,9 @@
 import Phaser from "phaser";
-import { GAME_W, GAME_H } from "../core/config";
+import { GAME_H } from "../core/config";
 import { FOOD, buildFood } from "../art/food";
 import { CAPACITY, INGREDIENTS, labelOf, portionsOf, type Ingredient } from "../sim/order";
 import { FONT, UI, button, panel } from "./theme";
+import { Steam } from "./stall/Steam";
 
 /**
  * Bảng kẹp nhân — nơi trụ cột T2 sống hoặc chết.
@@ -20,15 +21,29 @@ import { FONT, UI, button, panel } from "./theme";
  * Muốn dừng hẳn thì bấm Esc — pause thật, đóng băng cả sự kiên nhẫn (CANON §15.2).
  */
 
-const PANEL_W = 690;
+/**
+ * Bảng nằm BÊN TRÁI, dưới phiếu đơn của HUD — KHÔNG che hàng khách (hàng khách đứng ở
+ * giữa–phải màn hình). Lúc kẹp nhân là lúc khách nhìn tay mình kỹ nhất; bảng mà che mặt
+ * họ là T1/T5 chết đúng lúc quan trọng nhất (P1-04 §2.1: sân khấu luôn phải thấy được).
+ */
+const PANEL_W = 470;
 const PANEL_H = 400;
+const PANEL_LEFT = 8;
+/** Phiếu đơn của HUD nằm góc trên PHẢI, nên bảng dùng được gần hết chiều cao bên trái. */
+const PANEL_TOP = 96;
 const TILE_W = 140;
-const TILE_H = 50;
-const TILE_GAP = 6;
+const TILE_H = 44;
+/** Khoảng cách tâm giữa hai hàng khay. */
+const ROW_STEP = 50;
+const TRAY_COLS = 3;
+const WRAP_BEATS = ["gập", "cuộn", "xoắn"] as const;
+const WRAP_EVEN_TOL = 0.18;
 
 export class AssemblyPanel {
   private root: Phaser.GameObjects.Container;
   private loafImg!: Phaser.GameObjects.Image;
+  /** Hơi khói trên ổ — tắt hẳn khi ổ đã nguội (P1-01 §4). */
+  private steam!: Steam;
   private fillLayer!: Phaser.GameObjects.Container;
   private hint!: Phaser.GameObjects.Text;
   private dropZone!: Phaser.Geom.Rectangle;
@@ -44,20 +59,53 @@ export class AssemblyPanel {
    * Giữ đúng thứ tự thao tác nên Hoàn tác chỉ việc `pop()`.
    */
   private stack: Ingredient[] = [];
+  /** Nhãn [tên, gợi ý] của 3 nút preset. */
+  private presetBtns: Phaser.GameObjects.Text[][] = [];
+  /**
+   * Gói bánh 3 nhịp: gập · cuộn · xoắn (P1-01 §2.9 WRAP_FAST). Mốc thời gian mỗi nhịp —
+   * nhịp đều tay (lệch ≤ 18%) là FLOURISH. Không có nhánh "gói hỏng": gói lệch nhịp vẫn gói xong.
+   */
+  private wrapBeats: number[] = [];
   private tiles = new Map<Ingredient, () => void>();
   private open = false;
 
-  constructor(private scene: Phaser.Scene, private onDone: (dish: Ingredient[]) => void) {
+  constructor(
+    private scene: Phaser.Scene,
+    private onDone: (dish: Ingredient[], evenWrap: boolean) => void,
+    /** Đóng bảng mà CHƯA gói — ổ bánh nằm lại trên thớt với đúng phần nhân đã kẹp. */
+    private onPark: (dish: Ingredient[]) => void = () => {},
+    /** Vừa đặt một phần lên ổ — scene cần biết để phát lỗi NGAY lúc đặt sai (P1-03 §2.6.2). */
+    private onAdd: (id: Ingredient) => void = () => {},
+    /** Bấm nút preset P1/P2/P3 — scene trả lại danh sách phần (hoặc null nếu hết phần chia sẵn). */
+    private onPreset: (i: number) => Ingredient[] | null = () => null,
+  ) {
     buildFood(scene);
 
-    const cx = GAME_W / 2, cy = GAME_H / 2 - 6;
+    const cx = PANEL_LEFT + PANEL_W / 2, cy = PANEL_TOP + PANEL_H / 2;
+    const top = PANEL_TOP;
     this.root = scene.add.container(0, 0).setDepth(9_400_000).setScrollFactor(0).setVisible(false);
-    this.root.add(panel(scene, cx, cy, PANEL_W, PANEL_H, UI.paper, 0.98).setScrollFactor(0));
-    this.root.add(this.text(cx, cy - PANEL_H / 2 + 24, "Kẹp nhân", 16, UI.ink, "700"));
+    this.root.add(panel(scene, cx, cy, PANEL_W, PANEL_H, UI.paper, 1).setScrollFactor(0));
+    // Ba preset chia sẵn buổi sáng (P1-01 §2.6) — một chạm thay cho mười chạm. Nhãn ghi số
+    // phần còn lại: hết thì quay về kẹp tay, không bị chặn.
+    for (let i = 0; i < 3; i++) {
+      const b = button(scene, cx - PANEL_W / 2 + 62 + i * 108, top + 26, `P${i + 1}`, () => this.applyPreset(i), { width: 100, hint: " ", maxScale: 1 });
+      b.setScrollFactor(0);
+      this.presetBtns.push(b.list.filter((o) => o instanceof Phaser.GameObjects.Text) as Phaser.GameObjects.Text[]);
+      this.root.add(b);
+    }
+    // Không bắt người chơi kẹt trong bảng: khách khác đang chờ ly trà, bánh trong lò sắp
+    // cháy… thì gác ổ lại trên thớt, đi làm việc khác, quay lại kẹp tiếp.
+    this.root.add(button(scene, cx + PANEL_W / 2 - 60, top + 26, "để đó", () => this.park(), {
+      width: 96, hint: "Esc", maxScale: 1,
+    }).setScrollFactor(0));
 
-    this.buildLoaf(cx - PANEL_W / 2 + 176, cy - 26);
-    this.buildTray(cx + 58, cy - PANEL_H / 2 + 76);
-    this.buildActions(cx, cy + PANEL_H / 2 - 36);
+    this.buildLoaf(cx, top + 112);
+    // Phiếu đơn KHÔNG nằm trong bảng: bảng nằm ngay dưới phiếu của HUD nên câu khách
+    // nói (nguyên văn) luôn thấy được ngay phía trên.
+    this.buildTray(cx, top + 210);
+    // Hàng cuối của khay chỉ có một ô (10 món / 3 cột) — hai nút Hoàn tác / Gói lại nằm
+    // ngay trên hai cột trống của hàng đó, không chồng lên ô nào.
+    this.buildActions(cx, top + 210 + 3 * ROW_STEP);
   }
 
   // ───────────────────────────────────────────────────────────────── dựng bảng
@@ -66,20 +114,44 @@ export class AssemblyPanel {
   private buildLoaf(x: number, y: number) {
     this.loafImg = this.scene.add.image(x, y, FOOD.loaf).setScrollFactor(0);
     this.fillLayer = this.scene.add.container(0, 0).setScrollFactor(0);
-    this.root.add([this.loafImg, this.fillLayer]);
+    this.steam = new Steam(this.scene, true);
+    this.root.add([this.loafImg, this.fillLayer, this.steam.graphics]);
 
     // khe kẹp nhân, rộng hơn hình một chút cho dễ thả trúng
-    this.dropZone = new Phaser.Geom.Rectangle(x - 140, y - 74, 280, 136);
+    // Vùng thả KHÔNG được chạm hàng nút phía trên (preset, "để đó") — nhả tay trúng nút là bấm nút.
+    this.dropZone = new Phaser.Geom.Rectangle(x - 140, y - 48, 280, 110);
     this.hint = this.text(x, y + 62, "kéo miếng nhân thả vào đây", 11, UI.muted, "400");
     this.root.add(this.hint);
   }
 
-  /** Khay nguyên liệu: 2 cột × 4 hàng, mỗi ô kéo được và bấm được. */
+  /**
+   * Dời cả bảng xuống để mép trên nằm dưới `y` (đáy khung ngày/giờ của HUD — ở chữ 200%
+   * khung đó cao hơn). Không dời quá đáy màn hình.
+   */
+  placeBelow(y: number) {
+    const dy = Math.max(0, Math.min(GAME_H - 4 - (PANEL_TOP + PANEL_H), y + 8 - PANEL_TOP));
+    if (dy === this.root.y) return;
+    this.dropZone.y += dy - this.root.y;
+    this.root.y = dy;
+  }
+
+  /** Điểm màn hình của ổ bánh trong bảng — đích của tia nhìn khi bảng đang mở. */
+  get loafPoint() {
+    return { x: this.loafImg.x, y: this.loafImg.y + this.root.y };
+  }
+
+  /** Scene gọi mỗi frame: ổ còn ấm thì còn khói. */
+  setWarm(warm: boolean, time: number, reducedMotion: boolean) {
+    if (!this.open) return;
+    this.steam.draw(this.loafImg.x, this.loafImg.y - 58, 0, time, warm, reducedMotion, 1.6);
+  }
+
+  /** Khay nguyên liệu: 3 cột, mỗi ô kéo được và bấm được. */
   private buildTray(x: number, y: number) {
     INGREDIENTS.forEach((ing, i) => {
-      const col = i % 2, row = (i / 2) | 0;
-      const tx = x + col * (TILE_W + 10);
-      const ty = y + row * (TILE_H + TILE_GAP);
+      const col = i % TRAY_COLS, row = (i / TRAY_COLS) | 0;
+      const tx = x + (col - (TRAY_COLS - 1) / 2) * (TILE_W + 8);
+      const ty = y + row * ROW_STEP;
       this.root.add(this.makeTile(ing.id, ing.key, ing.label, tx, ty));
     });
   }
@@ -147,7 +219,7 @@ export class AssemblyPanel {
       this.ghost = null;
       this.hint.setColor(UI.muted);
       paint(false);
-      if (dropped) this.add(id);
+      if (dropped && this.open) this.add(id);
     });
 
     return c;
@@ -159,9 +231,10 @@ export class AssemblyPanel {
   }
 
   private buildActions(cx: number, y: number) {
-    this.root.add(button(this.scene, cx - 106, y, "Hoàn tác", () => this.undo(), { width: 160 }));
-    this.root.add(button(this.scene, cx + 106, y, "Gói lại", () => this.confirm(), {
-      width: 200, primary: true, hint: "bấm E cũng được",
+    const col = (c: number) => cx + (c - (TRAY_COLS - 1) / 2) * (TILE_W + 8);
+    this.root.add(button(this.scene, col(1), y, "Hoàn tác", () => this.undo(), { width: TILE_W, maxScale: 1 }));
+    this.root.add(button(this.scene, col(2), y, "Gói lại", () => this.confirm(), {
+      width: TILE_W, primary: true, hint: "3 nhịp: E · E · E", maxScale: 1,
     }));
     this.root.list.filter((o) => o instanceof Phaser.GameObjects.Container)
       .forEach((o) => (o as Phaser.GameObjects.Container).setScrollFactor(0));
@@ -178,10 +251,13 @@ export class AssemblyPanel {
 
   /** Bỏ thêm một phần. Chạm trần của món đó, hoặc đầy ổ, thì không nhận nữa. */
   private add(id: Ingredient) {
+    if (!this.open) return;                             // kéo dở mà bảng đã đóng (đi khỏi thớt)
+    if (this.wrapBeats.length) { this.flash("đang gói — Hoàn tác để mở ra"); return; }
     const have = portionsOf(this.stack).get(id) ?? 0;
     if (have >= this.maxOf(id)) { this.flash(`${labelOf(id)} hết chỗ rồi`); return; }
     if (this.stack.length >= CAPACITY) { this.flash("ổ bánh đầy rồi, kẹp không lại"); return; }
     this.stack.push(id);
+    this.onAdd(id);
     this.repaint();
   }
 
@@ -194,18 +270,47 @@ export class AssemblyPanel {
 
   private flash(msg: string) {
     this.hint.setText(msg).setColor(UI.accentCss);
-    this.scene.time.delayedCall(900, () => { if (this.open) this.repaint(); });
+    // P1-04 §2.4 mục 7: lý do hiện đủ 2,5 s — không có nút nào bị chặn mà câm.
+    this.scene.time.delayedCall(2500, () => { if (this.open) this.repaint(); });
   }
 
   private undo() {
+    if (this.wrapBeats.length) { this.wrapBeats = []; this.repaint(); return; }  // huỷ gói trước
     this.stack.pop();
     this.repaint();
   }
 
+  /** Scene báo tên + số phần còn lại của 3 preset. */
+  setPresets(list: readonly { id: string; name: string; prepped: number }[]) {
+    list.slice(0, 3).forEach((p, i) => {
+      const [main, hint] = this.presetBtns[i] ?? [];
+      main?.setText(`${p.id} · ${p.prepped}`);
+      hint?.setText(p.name);
+    });
+  }
+
+  private applyPreset(i: number) {
+    if (this.wrapBeats.length) return;
+    const dish = this.onPreset(i);
+    if (!dish) { this.flash("preset đó hết phần chia sẵn rồi"); return; }
+    this.stack = [];
+    for (const id of dish) { this.stack.push(id); this.onAdd(id); }
+    this.repaint();
+  }
+
   private confirm() {
+    if (!this.open) return;
+    if (!this.stack.length && !this.wrapBeats.length) { this.flash("ổ còn trống — kẹp nhân trước đã"); return; }
+    const now = this.scene.time.now;
+    this.wrapBeats.push(now);
+    if (this.wrapBeats.length < WRAP_BEATS.length) { this.repaint(); return; }
+    const [a, b, c] = this.wrapBeats;
+    const i1 = b - a, i2 = c - b;
+    const even = Math.abs(i1 - i2) / ((i1 + i2) / 2) <= WRAP_EVEN_TOL && i1 < 1500 && i2 < 1500;
+    this.wrapBeats = [];
     const dish = [...this.stack];
     this.hide();
-    this.onDone(dish);
+    this.onDone(dish, even);
   }
 
   /**
@@ -218,20 +323,26 @@ export class AssemblyPanel {
     this.fillLayer.removeAll(true);
     this.hint.setColor(UI.muted);
 
-    if (this.stack.length === 0) {
+    if (this.stack.length === 0 && !this.wrapBeats.length) {
       this.hint.setText("kéo miếng nhân thả vào đây");
       this.tiles.forEach((f) => f());
       return;
     }
-    this.hint.setText(`bấm vào một lớp để gỡ bớt   ·   ${this.stack.length}/${CAPACITY} phần`);
+    this.hint.setText(this.wrapBeats.length
+      ? `gói: ${WRAP_BEATS.map((w, i) => `${i < this.wrapBeats.length ? "●" : "○"} ${w}`).join("  ")}   — bấm tiếp, đều tay`
+      : `bấm vào một lớp để gỡ bớt   ·   ${this.stack.length}/${CAPACITY} phần`);
 
-    // Xếp so le thành nhiều hàng, hàng sau chồng lên hàng trước. Xếp thành MỘT cột
-    // thì đống nhân vống hẳn ra ngoài ổ bánh; trải thành hàng thì vừa nằm gọn trong
-    // ruột bánh, vừa đọc ra "ổ này nhồi nhiều hay ít" chỉ bằng chiều cao đống.
-    const PER_ROW = 5, ROW_H = 12, SPAN = 178;
+    // Dàn NGANG như lát nhân xếp dọc ruột bánh: miếng sau đè lên 65% miếng trước,
+    // miếng nào cũng còn lộ 35% — vẫn đủ nhận ra hình dáng từng loại. Hàng đầy
+    // (chạm bề ngang ruột bánh) thì sang hàng mới, nằm cao hơn và chồng lên hàng trước.
+    const SIZE = Math.ceil(FOOD.ICON * FOOD.BIG_SCALE);
+    const STEP = SIZE * (1 - 0.65);
+    const CRUMB_W = 250;                               // bề ngang ruột bánh, xem `loaf()` trong food.ts
+    const PER_ROW = Math.floor((CRUMB_W - SIZE) / STEP) + 1;
+    const ROW_H = 16;
     const counts = portionsOf(this.stack);
     const total = this.stack.length;
-    const baseY = this.loafImg.y + 13;
+    const baseY = this.loafImg.y + 10;
     let i = 0;
 
     for (const ing of INGREDIENTS) {                   // dưới lên trên, đúng thứ tự xếp lớp
@@ -240,9 +351,9 @@ export class AssemblyPanel {
         const row = (i / PER_ROW) | 0;
         const col = i % PER_ROW;
         const inRow = Math.min(PER_ROW, total - row * PER_ROW);
-        const x = this.loafImg.x + (inRow === 1 ? 0 : -SPAN / 2 + (col * SPAN) / (inRow - 1));
-        const img = this.scene.add.image(x, baseY - row * ROW_H, FOOD.icon(ing.id))
-          .setScrollFactor(0).setScale(0.78);
+        const x = this.loafImg.x + (col - (inRow - 1) / 2) * STEP;   // canh giữa theo số miếng trong hàng
+        const img = this.scene.add.image(x, baseY - row * ROW_H, FOOD.big(ing.id))
+          .setScrollFactor(0);
         img.setInteractive({ useHandCursor: true });
         img.on("pointerup", () => this.removeOne(ing.id));
         this.fillLayer.add(img);
@@ -257,11 +368,22 @@ export class AssemblyPanel {
     return this.open;
   }
 
-  show() {
-    this.stack = [];
+  /** `initial` = phần nhân đã kẹp dở từ lần trước (ổ đang gác trên thớt). */
+  show(initial: readonly Ingredient[] = []) {
+    this.stack = [...initial];
+    this.wrapBeats = [];
     this.open = true;
     this.root.setVisible(true);
     this.repaint();
+  }
+
+  /** Gác ổ lại trên thớt — giữ nguyên phần đã kẹp. */
+  park() {
+    if (!this.open) return;
+    this.wrapBeats = [];
+    const dish = [...this.stack];
+    this.hide();
+    this.onPark(dish);
   }
 
   hide() {
@@ -282,6 +404,7 @@ export class AssemblyPanel {
       return true;
     }
     if (code === "Backspace") { this.undo(); return true; }
+    if (code === "Escape") { this.park(); return true; }
     if (code === "KeyE" || code === "Space" || code === "Enter") { this.confirm(); return true; }
     return false;
   }

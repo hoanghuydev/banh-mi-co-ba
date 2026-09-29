@@ -21,7 +21,7 @@
  */
 export const MAP = [
   "NN###D############NN",  // y0  nhà hàng xóm · tường sau quán có CỬA ở x=5 · nhà hàng xóm
-  "###.K..O.....T.P.###",  // y1  kệ nguyên liệu · lò than · thùng trà đá · chậu cây
+  "###.K..O.....T.WP###",  // y1  kệ nguyên liệu · lò than · thùng trà đá · bồn rửa tay · chậu cây (góc trong cùng)
   "###..............##N",  // y2  lối đi sau quầy
   "###..............###",  // y3  lối đi sau quầy
   "###QQQQQQQQQQQQ..###",  // y4  QUẦY (thớt x=7, chỗ đưa hàng x=12) — lối ra 2 ô ở x=15,16
@@ -40,7 +40,7 @@ export const WORLD_H = MAP.length;
 /** Ký tự bản đồ. Mỗi ký tự ứng với đúng một texture, tra ở `art/index.ts`. */
 export type TileCode =
   | "." | "#" | "N" | "D" | "Q" | "O" | "T" | "K" | "s" | "b" | "M" | "P"
-  | "C" | "V";
+  | "C" | "V" | "W";
 
 export function tileAt(tx: number, ty: number): TileCode {
   if (tx < 0 || ty < 0 || tx >= WORLD_W || ty >= WORLD_H) return "#";
