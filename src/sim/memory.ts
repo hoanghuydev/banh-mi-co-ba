@@ -57,6 +57,8 @@ export type RelState = {
   missStreak: number;
   /** Ngày gần nhất NPC có lịch ghé (để decay chỉ đếm lần ghé bị LỠ). */
   expectedDay: number;
+  /** Giờ (phút) định ghé hôm đó — dẹp hàng sớm trước giờ này là họ tới mà không có gì (P3-01 §2.7). */
+  expectedAt?: number;
   /** Ngày gần nhất được phục vụ xong (không tính bỏ đi). */
   lastServedDay: number;
   trustCeiling: number;

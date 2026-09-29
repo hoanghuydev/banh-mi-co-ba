@@ -22,7 +22,7 @@ export type CustomerPhase =
   | "waiting"     // đã gọi món, chờ bánh
   | "leaving";    // xong việc (được phục vụ, hoặc bỏ đi)
 
-export type LeaveReason = "served" | "impatient" | "closed";
+export type LeaveReason = "served" | "impatient" | "closed" | "soldout";
 
 /** P1-02 §2.7: sức chờ mặc định (giây thật tới mốc MADE_THEM_WAIT). */
 export const DEFAULT_PATIENCE_SEC = 50;
@@ -109,6 +109,10 @@ export class Customer implements Observer {
   gazeBias = 0;
   /** Người chơi nghiêng người nghe lỏm → khách trước quầy thấy mình lơ đễnh: gaze ×1,3 trong 5 s. */
   watchedIdleUntil = 0;
+  /** Thấy người bán rửa tay ở vòi (P3-04 C1) — tới lúc này soi bớt đi một chút. */
+  washRelief = 0;
+  /** Trời + chỗ đứng (P3-01 weather.gazeMul · P3-05 avgGazeFactor) — nhân vào gaze nền. */
+  gazeMul = 1;
   orderedAt = 0;
   /** Lời thoại đang hiện trên bong bóng, và còn hiện bao lâu. */
   say: string | null = null;
@@ -173,7 +177,7 @@ export class Customer implements Observer {
     });
     this.loudCue = false;
     this.questionPending = false;
-    this.gaze = this.gazeOverride ?? Math.min(1, this.gazeM.factor + (this.gazeM.hard ? 0 : this.gazeBias));
+    this.gaze = this.gazeOverride ?? Math.min(1, (this.gazeM.factor + (this.gazeM.hard ? 0 : this.gazeBias)) * this.gazeMul);
     if (this.gazeOverride === null && this.clock < this.watchedIdleUntil) this.gaze = Math.min(1, this.gaze * 1.3);
   }
 

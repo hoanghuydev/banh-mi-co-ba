@@ -117,7 +117,7 @@ test("save v2 → v3: bù field trí nhớ mới, giữ nguyên điểm cũ", ()
   v2.npcs = { BA_BAY: { visits: 4, freebies: 1, heard: 2, relationPoints: 30, tier: "ACQUAINTANCE", trustCeiling: 100, lastSeenDay: 3,
     memory: { short: [], long: [], core: null }, knownFacts: [], microCheatCounter: {}, gone: false } };
   const v3 = MIGRATIONS[2](v2);
-  assert.equal(SCHEMA_VERSION, 3);
+  assert.ok(SCHEMA_VERSION >= 3);
   assert.equal(v3.npcs.BA_BAY.relationPoints, 30);
   assert.equal(v3.npcs.BA_BAY.visits, 4);
   assert.equal(v3.npcs.BA_BAY.burnCount, 0);

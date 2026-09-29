@@ -32,6 +32,9 @@ export type OvenLoaf = { crust: number; burntFired: boolean };
 export class Oven {
   slots: (OvenLoaf | null)[] = Array(OVEN_SLOTS).fill(null);
   heat = 1;
+  /** Lò gas (P3-04 A1): nướng nhanh hơn, và cửa sổ trước khi cháy rộng hơn. */
+  rateMul = 1;
+  burnAt: number = CRUST.BURNT;
 
   get count() { return this.slots.filter(Boolean).length; }
   get hasRoom() { return this.slots.some((s) => s === null); }
@@ -66,8 +69,8 @@ export class Oven {
     const burnt: OvenLoaf[] = [];
     for (const s of this.slots) {
       if (!s) continue;
-      s.crust += CRUST_RATE * this.heat * dt;
-      if (s.crust > CRUST.BURNT && !s.burntFired) { s.burntFired = true; burnt.push(s); }
+      s.crust += CRUST_RATE * this.rateMul * this.heat * dt;
+      if (s.crust > this.burnAt && !s.burntFired) { s.burntFired = true; burnt.push(s); }
     }
     return burnt;
   }

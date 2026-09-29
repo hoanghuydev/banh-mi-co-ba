@@ -14,16 +14,21 @@
 import { newRelState, type Memory, type RelState } from "../sim/memory";
 import { newGossipState, type GossipState } from "../sim/gossip";
 import { newNotebook, type Notebook } from "../sim/notebook";
+import { ECON, newInventory, scaledVnd, weatherOf, type InventoryState } from "../sim/econ";
+import { newEconState, type EconState } from "../sim/obligations";
+import type { SupplierState } from "../sim/suppliers";
+import type { DebtRecord } from "../sim/till";
+import { newEquipState } from "../sim/equipment";
 import { fnv1a, type BagState, type StreamName } from "./rng";
 import { platform as defaultPlatform, type Platform } from "./platform";
 import { BUILD_ID, DEFAULT_SETTINGS, loadSettings, type Settings } from "./flags";
 import type { Bus } from "./eventbus";
-import type { AutosaveReason, NpcId, RelTier, SceneKey, StandPointId, Weather } from "./types";
+import type { AutosaveReason, NpcId, SceneKey, StandPointId, Weather } from "./types";
 import type { TimeBand } from "./clock";
 
 export { loadSettings, saveSettings, DEFAULT_SETTINGS, type Settings } from "./flags";
 
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 /** Ký ức của NPC — schema ở P2-03 §3, luật ở `sim/memory.ts`. */
 export type MemorySlot = Memory;
@@ -46,6 +51,8 @@ export type NpcState = RelState & {
   microCheatCounter: Record<string, number>;
   gone: boolean;
   goneReason?: "ARC" | "SILENT_EXIT" | "MOVED";
+  /** Chuyện "một lần mỗi người cả mùa" đã xảy ra (vd. thấy thớt riêng — P3-04 A3). */
+  seen?: Record<string, number>;
 };
 
 export type LedgerRow = { day: number; revenue: number; cost: number; served: number; lost: number };
@@ -79,19 +86,21 @@ export type SaveFile = {
 
   money: {
     cash: number;
-    debtsOwedToPlayer: { npcId: NpcId; amount: number; sinceDay: number }[];
+    /** P3-03 §2.6 — sổ nợ khách: ai mua chịu, bao nhiêu, người chơi có ghi không. */
+    debtsOwedToPlayer: DebtRecord[];
     debtsPlayerOwes: { kind: string; amount: number; dueDay: number }[];
     qrEnabled: boolean;
   };
 
-  inventory: {
-    items: { itemId: string; qty: number; boughtOnDay: number; quality: number; supplierId: string }[];
-    fridgeCapacity: number;
-  };
+  /** P3-03 — kho theo LÔ (ngày mua, phần còn lại, chất lượng gốc). */
+  inventory: InventoryState;
+  /** P3-06 — chỗ đứng, tiền thuê còn nợ, nghĩa vụ đã trả, những gì đã mất. */
+  econ: EconState;
 
   equipment: { owned: string[]; installed: string[]; wear: Record<string, number> };
 
-  suppliers: Record<string, { relationPoints: number; tier: RelTier; lastBoughtDay: number; streakDays: number }>;
+  /** P3-02 — người bán ở chợ LÀ NPC: mối quen, nợ, trễ hạn. Không bao giờ hiện ra thành số. */
+  suppliers: Record<string, SupplierState>;
 
   npcs: Record<NpcId, NpcState>;
 
@@ -158,13 +167,14 @@ export function newGame(name: string, saveId = uuid()): SaveFile {
     playerName: name || "Cháu cô Ba",
     progress: {
       dayIndex: 1, band: "PRE_OPEN", gameMinutes: 6 * 60, scene: "Market",
-      weather: "NANG", standPoint: "DAU_HEM", dayStartSnapshotRef: null,
+      weather: weatherOf(1), standPoint: "DAU_HEM", dayStartSnapshotRef: null,
       today: { served: 0, lost: 0, revenue: 0 },
     },
     rng: { counters: [] },
-    money: { cash: 150_000, debtsOwedToPlayer: [], debtsPlayerOwes: [], qrEnabled: false },
-    inventory: { items: [], fridgeCapacity: 0 },
-    equipment: { owned: [], installed: [], wear: {} },
+    money: { cash: scaledVnd(ECON.startCash_k), debtsOwedToPlayer: [], debtsPlayerOwes: [], qrEnabled: false },
+    inventory: newInventory(),
+    econ: newEconState(),
+    equipment: newEquipState(),
     suppliers: {},
     npcs: {},
     gossip: newGossipState(),
@@ -221,6 +231,16 @@ export const MIGRATIONS: Record<number, (s: any) => any> = {
     // khung `gossip.inFlight` của v2 chưa từng được ghi → thay bằng state P2-04
     old.gossip = newGossipState();
     old.notebook = newNotebook();
+    return old;
+  },
+  // 3 → 4: P3 — kho theo lô, sổ kinh tế, 6 kiểu trời. Khung `inventory.items` cũ chưa từng dùng.
+  3: (old) => {
+    old.inventory = newInventory();
+    old.econ = newEconState();
+    old.suppliers = {};
+    old.money.debtsOwedToPlayer = [];
+    old.equipment = newEquipState();
+    old.progress.weather = weatherOf(old.progress.dayIndex ?? 1);
     return old;
   },
 };

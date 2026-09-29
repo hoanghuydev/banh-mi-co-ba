@@ -186,6 +186,7 @@ export class MenuScene extends Phaser.Scene {
     tg("Khách nhớ nhầm / đồn sai", () => (s.allowFalseMemory ? "bật" : "tắt"), () => put({ allowFalseMemory: !s.allowFalseMemory }));
     // CANON §15 công tắc #4 (P2-05 §4.4): tắt thì nhật ký vẫn ghi, vẫn mở bằng Tab
     tg("Sổ tay cô Ba cuối ngày", () => (s.notebookAuto ? "bật" : "tắt"), () => put({ notebookAuto: !s.notebookAuto }));
+    tg("Nghi thức đốt vía", () => (s.skipRitual ? "bỏ qua" : "có"), () => put({ skipRitual: !s.skipRitual }));
     // CANON §15.4: mỗi kênh âm thanh một công tắc riêng. Mới có kênh Nhạc —
     // bốn kênh còn lại thêm vào đây khi có âm thanh cho chúng.
     tg("Nhạc nền", () => (s.musicVolume === 0 ? "tắt" : `${s.musicVolume}%`), () => {

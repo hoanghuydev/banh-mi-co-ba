@@ -13,7 +13,6 @@ import {
 } from "../src/sim/gossip";
 import { OverhearScene } from "../src/sim/overhear";
 import { ROOT } from "../tools/lib";
-import { PRICE_BANH } from "../src/sim/service";
 
 function season(days: number, id: string, allowFalse = true): SaveFile {
   const w = newGame("g", id);
@@ -127,7 +126,13 @@ test("danh sách ĐEN: tin đồn không bao giờ đổi GIÁ bánh — tệ nh
     const drain = h.service.drain.bind(h.service);
     h.service.drain = () => {
       const out = drain();
-      for (const e of out) if (e.kind === "paid") { paid++; assert.equal(e.amount - e.tip, PRICE_BANH); }
+      for (const e of out) {
+        if (e.kind !== "paid") continue;
+        paid++;
+        // thiếu tiền lẻ thì bớt ≤ 5k (P3-03 §2.8), vía tốt làm tròn lên 1k — ngoài ra giá là giá
+        const base = e.amount - e.tip;
+        assert.ok([25_000, 32_000, 40_000].some((p) => base >= p - 5000 && base <= p + 1000), `${base}`);
+      }
       return out;
     };
     h.run();

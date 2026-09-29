@@ -14,7 +14,7 @@ test("ổ ra lò nguội sau ~26 s (P1-01 §2.4), mưa nguội nhanh hơn 1,4 l�
   assert.ok(isWarm(w), "25 s vẫn còn ấm");
   for (let i = 0; i < 2 * 30; i++) w = cool(w, 1 / 30);
   assert.ok(!isWarm(w), "27 s đã nguội");
-  assert.ok(cool(1, 10, "MUA") < cool(1, 10, "NANG"));
+  assert.ok(cool(1, 10, "MUA_RAO") < cool(1, 10, "NANG_GAT"));
 });
 
 test("đưa ổ nguội: lỗi 'bánh nguội ngắt' được nói ra, không tính là ORDER_DEFECT", () => {

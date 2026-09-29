@@ -9,10 +9,11 @@
 import { NPCS } from "../content/npcs";
 import type { Bus } from "../core/eventbus";
 import { newNpcState, type SaveFile } from "../core/save";
-import { nightly } from "./memory";
-import { gossipTick, newGossipState } from "./gossip";
+import { nightly, record } from "./memory";
+import { gossipTick, newGossipState, witness } from "./gossip";
 import { checkHypotheses, composeEvening, landmarkTier, newNotebook } from "./notebook";
 import { makeUsual } from "./order";
+import { STANDS } from "./stands";
 import { Rng } from "../core/rng";
 import { SEASON_DAYS } from "../core/save";
 
@@ -28,10 +29,26 @@ export function settleNight(w: SaveFile, bus?: Bus) {
   const sent = gossipTick(w.gossip, {
     saveId: w.saveId, day, allowFalseMemory: w.a11y.allowFalseMemory ?? true,
     present: (id) => w.npcs[id]?.lastSeenDay === day,
+    // ghế ngồi (P3-04 D1) và chỗ đông người nói chuyện (cổng trường ×2,4, chợ ×1,7 — P3-05) → chuyện lan nhanh hơn
+    extraTransmissions: (w.equipment?.owned.includes("GHE_BAN") ? 1 : 0) + (STANDS[w.econ?.stand ?? "L1"].gossip >= 1.5 ? 1 : 0),
   });
   for (const e of sent) {
     bus?.emit("gossip:propagated", { from: e.from, to: e.to, factId: e.claim, hop: e.hops, confidence: 0, mutatedTo: e.mutated ? e.claim : undefined });
   }
+  // P3-01 §2.7 ăn gian (l) — dẹp hàng sớm: người có lịch ghé SAU giờ dẹp tới mà không có gì.
+  // Không có sự kiện thứ 12: là MADE_THEM_WAIT lý do CLOSED_EARLY (70, nặng hơn khi quen lâu).
+  const closedAt = w.econ?.today.closedAtMin ?? null;
+  if (closedAt !== null) {
+    for (const npc of NPCS) {
+      const s = w.npcs[npc.id];
+      if (!s || s.expectedDay !== day || s.lastServedDay === day || s.absentUntil >= day) continue;
+      if ((s.expectedAt ?? 0) < closedAt) continue;
+      const streak = Math.min(s.visits, 20);
+      record(s, npc.personality, "MADE_THEM_WAIT", Math.min(100, 70 * (1 + (0.5 * streak) / 10)), day);
+      witness(w.gossip, npc.id, "MADE_THEM_WAIT", 70, day);
+    }
+  }
+
   for (const npc of NPCS) {
     const s = (w.npcs[npc.id] ??= newNpcState());
     const r = nightly(s, npc.personality, day);

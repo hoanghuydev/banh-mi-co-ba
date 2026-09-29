@@ -49,6 +49,8 @@ export type Settings = {
    * thô vẫn ghi, vẫn mở bằng tay (Tab); giả thuyết vẫn chạy; báo trước vẫn còn qua lớp 1–2.
    */
   notebookAuto: boolean;
+  /** P3-01 §2.6: "Bỏ qua nghi thức đốt vía" — minigame không bao giờ hiện, vía về 0 lúc 6h30. */
+  skipRitual: boolean;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -59,6 +61,7 @@ export const DEFAULT_SETTINGS: Settings = {
   telemetry: DEV_TOOLS || PLAYTEST ? true : null,
   allowFalseMemory: true,
   notebookAuto: true,
+  skipRitual: false,
 };
 
 /** Cài đặt sống độc lập với save: đổi ở menu là có hiệu lực ngay, kể cả chưa có ván nào. */

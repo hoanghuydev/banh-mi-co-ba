@@ -47,6 +47,7 @@ Client-only, offline-first: **không server, không netcode** (CANON §2). Save 
 | `P` / `Esc` / nút ⏸ | tạm dừng (đóng băng đồng hồ, sự kiên nhẫn **và** mức nhận thấy của khách) |
 | `Tab` | **sổ tay cô Ba** — pause hoàn toàn. Trái: máy ghi ai · mấy giờ · gọi gì · lần thứ mấy. Phải: **con tự ghi** tên, ghi chú, "cô đoán" |
 | đứng yên lúc có người nói chuyện ở góc hẻm | nghe lỏm được **nội dung**; giữ `Shift` (nghiêng người) thì nghe được cả **ai nói** — nhưng khách trước quầy thấy mình lơ đễnh |
+| `G` (vài giây sau khi khách nói "ghi sổ nghen") | **ghi nợ** vào sổ — không bấm thì chỉ còn trí nhớ hai bên, mà trí nhớ thì lệch dần (P3-02) |
 
 **Chuỗi thao tác:** kệ → **lò (3 slot, nướng nền)** → thớt → quầy gọi món.
 Lò không còn là "giữ phím canh giờ": bỏ ổ vào rồi đi làm việc khác, **vòng trên cửa lò**
@@ -54,6 +55,22 @@ cho biết độ giòn (vạch = giòn / sém). Quá tay là **cháy, có mùi**
 Ổ ra lò **nguội dần** (~26 s, hơi khói tắt = nguội) — đưa ổ nguội là khách chê.
 Bánh cháy **bắt buộc bỏ** (CANON §7.2). Rớt đồ chỉ xảy ra khi tay lỏng (chạy, va đồ đạc) —
 luôn có vòng cảnh báo cam → đỏ quanh món trước khi rớt (T5: rủi ro phải đọc được trước).
+
+## Một ngày kinh tế (Phase 3)
+
+**Chợ sáng** (trước quầy): giá hôm nay theo thứ trong tuần + chuyện ngoài chợ, giá hôm qua mờ bên cạnh.
+Chọn tiền lẻ mang theo (100/200/300k), "Mua như hôm qua", mua chịu mối quen (thân rồi mới cho chịu —
+trả trễ Chủ nhật là mối nhớ). Đồ để trong thùng xốp có hạn, hàng cũ xuống chất dần; pate chỉ để qua đêm.
+
+**Tối đếm tiền**: sổ thu chi bên trái, bên phải ba trang — **Sổ nợ nần** (tiền chỗ, gửi về nhà, hụi,
+tiền học, thuốc; hoãn được nhưng mất là mất thật: mất chỗ đầu hẻm, bị đuổi hụi, phải bán đồ nghề),
+**Đồ nghề** (xe 12 ô — mua/bán lại 60%, món hiện ngay trên xe, không có con số hiệu ứng),
+**Chỗ đứng** (hỏi dì Năm để coi chỗ; dán giấy báo dời trước 1/2/4 bữa — báo trước càng lâu người quen
+càng đi theo; dời ra xa thì người không theo sẽ không ghé nữa). Không có game over: hết tiền thì cô Ba bù,
+gửi về nhà thiếu.
+
+Tiền trong game = giá thật × một hệ số (`ECON.scale` = 0,40 trong `content/econ/econ.json`)
+cho các khoản theo ngày/mùa; giá từng ổ, từng lạng ngoài chợ giữ đúng giá thật.
 
 ## Vòng lặp bán hàng
 

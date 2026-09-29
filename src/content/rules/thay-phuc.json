@@ -12,6 +12,7 @@
     {"id": "phuc.del.usual", "concept": "DELIVERY", "when": {"npcId": "THAY_PHUC", "defectCount": 0, "orderIsUsual": true}, "say": ["Thầy dạy học ba mươi năm, thầy biết đứa nào chịu để ý. Con để ý."]},
     {"id": "phuc.del.toomuch", "concept": "DELIVERY", "when": {"npcId": "THAY_PHUC", "defectCount": 0, "freeExtraTooMuch": true}, "say": ["Con cho thầy thì thầy nhận. Nhưng đừng cho ai cũng vậy."]},
     {"id": "phuc.tea", "concept": "INTERACT", "when": {"npcId": "THAY_PHUC", "interaction": "TEA"}, "say": ["Cảm ơn con. Thầy ngồi một chút rồi thầy về."]},
-    {"id": "phuc.hocro", "concept": "SMALLTALK", "when": {"npcId": "THAY_PHUC", "queueLength": "<=2", "npcVisitCount": ">=2"}, "say": ["Hồi thầy còn đứng lớp, sáng nào cũng ăn ổ bánh mì ở cổng trường. Ba chục năm."], "norepeat": true, "odds": 50}
+    {"id": "phuc.hocro", "concept": "SMALLTALK", "when": {"npcId": "THAY_PHUC", "queueLength": "<=2", "npcVisitCount": ">=2"}, "say": ["Hồi thầy còn đứng lớp, sáng nào cũng ăn ổ bánh mì ở cổng trường. Ba chục năm."], "norepeat": true, "odds": 50},
+    {"id": "phuc.gas.aroma", "concept": "DELIVERY", "when": {"npcId": "THAY_PHUC", "defectCount": 0, "equipGasOven": true, "npcVisitCount": ">=12"}, "say": ["Ủa… bánh hôm nay không có mùi khói hả con?"], "odds": 18, "norepeat": true}
   ]
 }

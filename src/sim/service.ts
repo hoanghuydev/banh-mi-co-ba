@@ -23,6 +23,12 @@ import { rollVisit } from "./schedule";
 import { SILENT_ABSENCE, record, servedWell, visitProbabilityMul, type BaseKind, type Memory } from "./memory";
 import { CLAIM, activeHeard, disprove, nameOf, poolOf, witness, type GossipState } from "./gossip";
 import { beginDay, displayName, logNote, logOrder, nameCheck, type Notebook } from "./notebook";
+import { CAL, crowdMul, isRain, loafPriceVnd, tasteThreshold, tierOf, weatherOf } from "./econ";
+import { has, walkInMul as equipWalkIn, type EquipState } from "./equipment";
+import {
+  SHORT_OF_CASH_RATE, makeChange, openDebtOf, recalledAmount, viaOf, viaRoundUp, viaWalkInMul,
+  type DebtRecord, type OpeningFacts, type ViaMood,
+} from "./till";
 import { moodBaseFace, moodPatienceMul, moodTipMul, rollMood } from "./mood";
 import { faceHoldSec, isSilentGrudge, reactionDelay } from "./personality";
 import { GROUP_OF, faceFor, poseFor, type Intensity, type PoseId } from "./reaction";
@@ -74,6 +80,10 @@ export const bubbleLife = (text: string) => Math.min(4.5, Math.max(1.6, 1.6 + 0.
 
 export type ServiceEvent =
   | { kind: "log"; text: string }
+  /** Khách quên tiền, mua chịu — scene hỏi người chơi có GHI sổ không (P3-03 §2.6). */
+  | { kind: "credit"; record: DebtRecord; name: string }
+  /** Khách trả nợ bữa trước — số họ NHỚ (ghi rồi thì là số đã ghi). */
+  | { kind: "repay"; amount: number; npcId: string; name: string }
   | { kind: "paid"; amount: number; item: "dish"; tip: number }
   | { kind: "cost"; amount: number; item: "tea" };
 
@@ -92,6 +102,25 @@ export type ServiceDeps = {
   gossip?: GossipState;
   /** `world.notebook` — sổ tay cô Ba (P2-05). Máy ghi cột trái vào đây. */
   notebook?: Notebook;
+  /** Hệ số khách vãng lai của chỗ đứng hôm nay (P3-05). */
+  standMul?: number;
+  /** P3-05 — người quen đang theo mình tới chỗ này (null = ở đầu hẻm, ai cũng ghé). */
+  followers?: string[] | null;
+  /** Hôm nay chỗ này không bán được (đám cưới chắn hẻm, ngập chợ…). */
+  standClosed?: boolean;
+  /** Hệ số sức chờ của chỗ đứng (văn phòng không ai chờ nổi). */
+  patienceMul?: number;
+  /** Hệ số ánh nhìn: trời (mưa thì ít nhìn) × chỗ đứng (cổng trường ai cũng cắm mặt điện thoại). */
+  gazeMul?: number;
+  /** `world.money.debtsOwedToPlayer` — sổ nợ khách. Vắng thì không ai mua chịu. */
+  debts?: DebtRecord[];
+  /** Tiền lẻ còn trong két (P3-03 §2.8). Vắng thì coi như luôn đủ lẻ. */
+  till?: { floatLeft: number };
+  allowFalseMemory?: boolean;
+  /** `world.equipment` — đồ nghề trên xe (P3-04). */
+  equip?: EquipState;
+  /** Loa rao đang mở không (bị hàng xóm bắt tắt thì false). */
+  loaOn?: boolean;
 };
 
 type Visit = { at: number; npc: NpcDef | null; seq: number };
@@ -108,7 +137,7 @@ type Followup = { c: Customer; concept: string; at: number };
 type Extra = Record<string, string | number | boolean>;
 
 const LEAVE_REASON: Record<LeaveReason, BusLeaveReason> = {
-  served: "SERVED", impatient: "IMPATIENT", closed: "CLOSED",
+  served: "SERVED", impatient: "IMPATIENT", closed: "CLOSED", soldout: "SOLD_OUT",
 };
 
 /** Sự kiện được phản ứng bằng lời NGAY khi khách NOTICED (P1-02 §2.9). */
@@ -149,6 +178,16 @@ export class Service {
   dirt = 0;
   /** Tay người chơi vừa cầm tiền, chưa rửa — scene đặt mỗi frame (fact `playerHandsDirty`). */
   handsDirty = false;
+  /**
+   * Hết sạch bánh mì (kho + lò + thớt + tay) — scene đặt mỗi frame. Khách tới là về không
+   * (P3-03 §2.3 OUT_OF_STOCK): người quen nhớ, và người quen lâu nhớ nặng hơn.
+   */
+  soldOut = false;
+  soldOutCount = 0;
+  /** Vía mở hàng (P3-01 §2.6) — quyết ở lượt khách ĐẦU TIÊN, không một pixel UI nào. */
+  via: ViaMood = 0;
+  viaSettled = false;
+  private opening: OpeningFacts = { walkedAway: false, complained: false, noChange: false, paidExact: false, smiled: false, friend: false };
   private dirtRemarked = false;
 
   servedCount = 0;
@@ -162,6 +201,7 @@ export class Service {
     this.dialogRng = deps.hub.stream("dialog-shufflebag");
     this.barks = new Barks(this.dialogRng, deps.bags, deps.day);
     this.speaker = new Speaker(this.dialogRng, deps.bags, deps.day, deps.dialog, 0);
+    if (has(deps.equip, "BINH_TRA")) this.teaLeft = 40;                  // P3-04 D3: ~8 → ~40 ly/ngày
     this.buildSchedule();
     const cut = deps.resumeAt ?? -1;
     this.schedule = this.schedule.filter((v) => v.at > cut);
@@ -199,6 +239,7 @@ export class Service {
     const rng = this.deps.hub.derive("npc-schedule");
     const list: Omit<Visit, "seq">[] = [];
     // 12 người có tên: theo lịch sinh hoạt (P2-03 §2.9) — thứ nào, mấy giờ, khả năng bao nhiêu
+    if (this.deps.standClosed) { this.schedule = []; return; }
     for (const npc of NPCS) {
       const m = this.mem(npc.id);
       // trí nhớ → lịch (P2-03 §2.10): người đang giận ghé thưa hơn, người thân ghé đều hơn
@@ -206,8 +247,11 @@ export class Service {
       if (t === null || m.gone) continue;
       // Có lịch hôm nay = một lần ghé mà người chơi có thể LỠ (decay chỉ đếm lần lỡ, không đếm ngày)
       m.expectedDay = this.deps.day;
+      m.expectedAt = t;
       // Người im lặng đang "vắng n ngày" (P2-02 §4.6): chỗ 7h35 trống — và vẫn tính là lỡ
       if (m.absentUntil >= this.deps.day) continue;
+      // dời chỗ rồi mà người này không đi theo: lần ghé đó bị LỠ (quan hệ nguội dần) — P3-05 CD-2
+      if (this.deps.followers && !this.deps.followers.includes(npc.id)) continue;
       list.push({ at: Math.max(DAY_START_MIN + 2, Math.min(DAY_END_MIN - 12, t)), npc });
     }
     // khách vãng lai: dày ở giờ cao điểm 6h30–8h (CANON §13.3); ~1/3 nhịp bỏ trống vì
@@ -217,7 +261,11 @@ export class Service {
       const peak = t >= PEAK_START_MIN && t < PEAK_END_MIN;
       t += peak ? 9 + rng.next() * 9 : 20 + rng.next() * 22;
       if (t >= DAY_END_MIN - 10) break;
-      if (rng.next() < 0.35) continue;
+      // P3-01 §2.4.4: trời + sự kiện nhân KHÁCH VÃNG LAI (người có tên không bị trời bớt)
+      const wx = weatherOf(this.deps.day);
+      const gear = equipWalkIn(this.deps.equip, isRain(wx), wx === "NANG_GAT", this.deps.loaOn ?? true);
+      const keep = Math.min(1, 0.65 * CAL.weatherInfo[wx].walkIn * crowdMul(this.deps.day) * (this.deps.standMul ?? 1) * gear);
+      if (rng.next() >= keep) continue;
       list.push({ at: t, npc: null });
     }
     list.sort((a, b) => a.at - b.at);
@@ -253,11 +301,12 @@ export class Service {
     const rush = npc?.rush && at >= npc.rush[0] && at < npc.rush[1] ? 0.65 : 1;
     const tier = npc ? this.mem(npc.id).tier : "ACQUAINTANCE";
     const bond = tier === "RIVAL" ? 0.8 : tier === "FRIEND" ? 1.35 : 1;
-    return base * rush * bond;
+    return base * rush * bond * (this.deps.patienceMul ?? 1);
   }
 
   private spawn(v: Visit, nowMin: number) {
     const npc = v.npc;
+    if (!npc && this.via !== 0 && this.deps.hub.derive(`via:${v.seq}`).next() > viaWalkInMul(this.via)) return;
     // Mỗi lượt ghé có dòng số RIÊNG, sinh từ (ngày, số thứ tự lượt).
     const rng = this.deps.hub.derive(`visit:${v.seq}`);
     const memKey = npc ? npc.id : `walkin${v.seq % WALKIN_STYLES.length}`;
@@ -280,6 +329,7 @@ export class Service {
       { ...GATE }, this.patienceOf(npc, nowMin) * moodPatienceMul(mood), rng,
     );
     c.dayMood = mood;
+    c.gazeMul = this.deps.gazeMul ?? 1;
     if (npc && this.deps.gossip && activeHeard(this.deps.gossip, npc.id)
       .some((b) => b.valence < 0 && (b.kind === "ORDER_DEFECT" || b.kind === "DIRTY_HANDS" || b.kind === "DROPPED_FOOD"))) c.gazeBias = 0.1;
     const base = moodBaseFace(mood);
@@ -336,7 +386,7 @@ export class Service {
 
     for (const c of this.audience) {
       // P1-02 §2.4: quầy bẩn thì ai cũng soi kỹ hơn — không liên quan tới quan hệ.
-      c.traitMul = Math.min(2.2, c.baseTrait * (1 + 0.35 * this.dirt));
+      c.traitMul = Math.min(2.2, c.baseTrait * (1 + 0.35 * this.dirt)) - (c.now < c.washRelief ? 0.12 : 0);
       const before = new Map<string, ObsState>();
       for (const [k, o] of c.observations) before.set(k, stateOf(o.certainty));
       observe(c, this.active, nowSec, dt, occluders);
@@ -572,6 +622,7 @@ export class Service {
   }
 
   private takeOrder(c: Customer) {
+    if (this.soldOut) { this.turnAway(c); return; }
     const line = sayOrder(c.order!);
     c.orderLine = line;
     c.orderedAt = this.nowSec;
@@ -591,12 +642,28 @@ export class Service {
     if (!c.order!.intent.usual && sameOrder(c.order!, c.usual)) this.mem(c.memKey).heard++;
   }
 
+  /**
+   * Tới mà hết bánh. Không có sự kiện thứ 12 (CANON §3): là MADE_THEM_WAIT lý do OUT_OF_STOCK,
+   * cường độ 55 × (1 + 0,5·min(số lần ghé, 20)/10) — khách ruột lâu năm nhớ nặng nhất.
+   */
+  private turnAway(c: Customer) {
+    this.soldOutCount++;
+    this.speakConcept(c, "FAREWELL", { leaveReason: "SOLD_OUT" }, 80, true);
+    if (c.npc) {
+      const streak = Math.min(this.mem(c.memKey).visits, 20);
+      this.remember(c, "MADE_THEM_WAIT", 55 * (1 + (0.5 * streak) / 10));
+    }
+    this.react(c, "MADE_THEM_WAIT", 2);
+    this.leave(c, "soldout");
+  }
+
   private leave(c: Customer, reason: LeaveReason) {
     c.phase = "leaving";
     c.leaveReason = reason;
     c.slot = -1;
     c.zone = "SEATED_FAR";                             // quay lưng rồi thì không còn nhìn quầy
     if (reason === "served") this.servedCount++;
+    if (!this.viaSettled && (reason === "impatient" || reason === "soldout")) { this.opening.walkedAway = true; this.settleVia(); }
     if (reason === "impatient") {
       this.lostCount++;
       if (this.deps.notebook) this.deps.notebook.today.lost++;
@@ -653,6 +720,7 @@ export class Service {
     q.set("customersServedToday", this.servedCount);
     if (this.dirtRemarked) q.set("dirtRemarkedToday", true);
     q.set("playerHandsDirty", this.handsDirty);
+    if (has(this.deps.equip, "LO_GAS")) q.set("equipGasOven", true);
 
     const m = this.mem(c.memKey);
     const p = c.personality;
@@ -762,7 +830,7 @@ export class Service {
    * chỉ NÓI một, phần còn lại vẫn tính ngầm vào tiền boa. Không bao giờ trừ tiền bánh —
    * tệ nhất là không có boa (P1-03 §2.12).
    */
-  serveDish(dish: Ingredient[], opts: { cold?: boolean; crust?: number } = {}): { ok: boolean; reason?: string } {
+  serveDish(dish: Ingredient[], opts: { cold?: boolean; crust?: number; quality?: number } = {}): { ok: boolean; reason?: string } {
     const c = this.front;
     if (!c || c.phase !== "waiting") return { ok: false, reason: "chưa có ai chờ lấy bánh" };
     const bus = this.deps.bus;
@@ -780,8 +848,10 @@ export class Service {
     const raw = diffDish(c.order!, dish);
     // P1-01 §2.4: warmth < 0,55 lúc đưa. Kích thích BURNT_OR_COLD do scene phát đúng lúc đưa.
     if (opts.cold) raw.push(mkDefect("WRONG_TEMP", null));
+    // P3-03 §2.3: đồ trong kho đã xuống — người soi nếm ra sớm hơn (chị Lan chỉ chịu lệch 0,09)
+    if (opts.quality !== undefined && 1 - opts.quality >= tasteThreshold(c.personality.soi)) raw.push(mkDefect("TASTE_OFF", null));
     const defects: DiffedDefect[] = raw.map((d) => {
-      const key = d.kind === "WRONG_TEMP" || d.kind === "STUFFED" ? null : orderDefectKey(c.id, d.kind, d.item);
+      const key = d.kind === "WRONG_TEMP" || d.kind === "STUFFED" || d.kind === "TASTE_OFF" ? null : orderDefectKey(c.id, d.kind, d.item);
       const seen = key ? rank(peakOfKey(c, key)) >= rank("NOTICED") : false;
       return { ...d, key, witness: seen ? "ANTICIPATED" : "DISCOVERED" };
     });
@@ -859,12 +929,23 @@ export class Service {
       }
     }
 
+    // P3-04 A3 — thớt riêng sống/chín: người rất kỹ tính (soi ≥ 0,8) để ý, MỘT lần mỗi người cả mùa
+    if (c.npc && !defects.length && has(this.deps.equip, "THOT_RIENG") && c.personality.soi >= 0.8) {
+      const m = this.mem(c.memKey);
+      m.seen ??= {};
+      if (!m.seen.thotRieng) {
+        m.seen.thotRieng = this.deps.day;
+        this.remember(c, "CARED_FOR_THEM", 50);
+        this.say(c, "Con này làm ăn sạch sẽ à nghen.", 2, true, 55);
+      }
+    }
+
     // Kênh 1+2 lúc nhận bánh: lỗi → mặt "sai món" nặng; đúng → tích cực (nhớ đơn thì nặng hơn)
     if (defects.length) this.react(c, "ORDER_DEFECT", 3);
     else this.react(c, c.order!.intent.usual ? "REMEMBERED_USUAL" : "FREE_EXTRA", c.order!.intent.usual ? 3 : 2, "HAND_OUT");
 
     const tip = Math.round(this.tipOf(c, silentScore, positive) * moodTipMul(c.dayMood) * this.rumourMul(c.memKey, 0.8, 1.2) / 1000) * 1000;
-    this.out.push({ kind: "paid", amount: PRICE_BANH + tip, item: "dish", tip });
+    this.settlePayment(c, loafPriceVnd(tierOf(c.order!.intent)), tip, !!spoken);
     if (nb) nb.today.served++;
     c.carrying = true;
     // "Trả tiền rồi bỏ món" — P2-02 §3.4: soi ≥ 0,7 + nóng ≤ 0,3 + vệ sinh CONFIRMED. KHÔNG
@@ -1005,6 +1086,73 @@ export class Service {
   }
 
   /**
+   * Tiền — P3-03 §2.5/2.6/2.8. Giá theo thực đơn (không bao giờ trừ tiền bánh). Khách quen
+   * có khi quên tiền → mua chịu; tới trả nợ thì nói số họ NHỚ; thối không đủ lẻ thì làm
+   * tròn xuống hoặc chạy qua cô Mai đổi (khách đứng chờ).
+   */
+  private settlePayment(c: Customer, price: number, tip: number, complained: boolean) {
+    const day = this.deps.day;
+    const debts = this.deps.debts;
+    // trả nợ bữa trước
+    const open = c.npc && debts ? openDebtOf(debts, c.memKey, day) : undefined;
+    if (open) {
+      const amt = recalledAmount(open, day, c.personality, this.deps.saveId, this.deps.allowFalseMemory ?? true);
+      open.settledOnDay = day;
+      open.settledAmount = amt;
+      this.out.push({ kind: "repay", amount: amt, npcId: c.memKey, name: this.label(c) });
+    }
+    // quên tiền — chỉ khách có tên (người quen mới dám mua chịu), và chưa đang nợ
+    const r = this.deps.hub.derive(`cash:${c.id}`);
+    const qr = has(this.deps.equip, "BANG_QR");
+    if (c.npc && debts && !open && r.next() < (qr ? 0.02 : SHORT_OF_CASH_RATE)) {
+      const record: DebtRecord = { npcId: c.memKey, day, minute: Math.round(this.nowMin), trueAmount: price, playerWrote: null };
+      debts.push(record);
+      this.say(c, "Chết, bữa nay quên đem tiền. Mai gửi nghen con?", 2, true, 60);
+      this.out.push({ kind: "credit", record, name: this.label(c) });
+      this.noteOpening({ complained, paidExact: false, smiled: false, noChange: false, friend: c.npc !== null && this.mem(c.memKey).tier === "FRIEND" });
+      return;
+    }
+    let amount = price + tip;
+    if (tip === 0 && this.via > 0 && r.next() < viaRoundUp(this.via)) amount += 1000;
+    let noChange = false, exact = false;
+    const scanned = qr && r.next() < 0.5;
+    if (this.deps.till && !scanned) {
+      const ch = makeChange(amount, this.deps.till, r.next());
+      exact = ch.ok && ch.need === 0;
+      if (!ch.ok) {
+        noChange = true;
+        if (ch.roundedDown) {
+          amount -= ch.roundedDown;
+          this.out.push({ kind: "log", text: `hết tiền lẻ — bớt cho khách ${ch.roundedDown.toLocaleString("vi-VN")}₫` });
+        } else {
+          // chạy qua cô Mai đổi: khách đứng chờ — một chút MADE_THEM_WAIT (P3-03 §2.8)
+          this.out.push({ kind: "log", text: "hết tiền lẻ — chạy qua cô Mai đổi" });
+          if (c.npc) this.remember(c, "MADE_THEM_WAIT", 20);
+        }
+      }
+    }
+    this.out.push({ kind: "paid", amount, item: "dish", tip });
+    this.noteOpening({ complained, paidExact: exact, smiled: tip > 0, noChange, friend: c.npc !== null && this.mem(c.memKey).tier === "FRIEND" });
+  }
+
+  private noteOpening(f: Omit<OpeningFacts, "walkedAway">) {
+    if (this.viaSettled) return;
+    Object.assign(this.opening, f);
+    this.settleVia();
+  }
+
+  private settleVia() {
+    this.viaSettled = true;
+    this.via = viaOf(this.opening);
+    this.deps.bus.emit("telemetry:mark", { key: "via", value: this.via });
+  }
+
+  /** Đốt vía xong (hoặc cô Ba đốt giùm): vía xấu về 0 — KHÔNG BAO GIỜ lên +1 (P3-01 §2.6). */
+  burnVia() {
+    if (this.via < 0) this.via = 0;
+  }
+
+  /**
    * Người chơi đang NGHIÊNG NGƯỜI nghe lỏm (P2-04 §2.7 tầng 2) — giá phải trả: người đứng
    * trước quầy thấy mình lơ đễnh, nhìn kỹ hơn 1,3× trong 5 giây.
    */
@@ -1019,6 +1167,14 @@ export class Service {
    */
   label(c: Customer) {
     return displayName(this.deps.notebook, c.memKey, c.name);
+  }
+
+  /**
+   * P3-04 C1 — rửa tay ở vòi NGAY TRƯỚC MẶT khách: ai đang nhìn tay mình thì yên tâm hơn
+   * (traitMul −0,12 trong 120 s). Chạy qua đúng công thức nhận thấy — không có đường tắt.
+   */
+  washedVisibly() {
+    for (const c of this.audience) if (c.gaze >= 0.45) c.washRelief = c.now + 120;
   }
 
   /** Kích thích đang sống — overlay dev (F2) đọc để tách thừa số. */

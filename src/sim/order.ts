@@ -166,7 +166,11 @@ export function sameOrder(a: OrderSpec, b: OrderSpec) {
  * đứng nhìn), `sEat` là lúc cắn miếng đầu (×5). WRONG_TEMP ở đây là ổ nguội (P1-01 §2.4).
  * `stuffed` không có trong doc — giữ lại vì là chuyện vật lý (ổ nhồi không kẹp lại được).
  */
-export type DefectKind = "MISSING" | "UNWANTED" | "WRONG_RATIO" | "WRONG_TEMP" | "STUFFED";
+/**
+ * `TASTE_OFF` (P3-03 §2.3): đồ để lâu / pate rẻ / đồ chua quá ngày → khách NẾM ra lúc ăn
+ * (salience 20 tại quầy, 100 lúc ăn). Không phải lỗi công thức — là lỗi của KHO.
+ */
+export type DefectKind = "MISSING" | "UNWANTED" | "WRONG_RATIO" | "WRONG_TEMP" | "STUFFED" | "TASTE_OFF";
 
 export type Defect = {
   kind: DefectKind;
@@ -184,7 +188,7 @@ export type Defect = {
   text: string;
 };
 
-const BASE: Record<DefectKind, number> = { MISSING: 20, UNWANTED: 24, WRONG_RATIO: 12, WRONG_TEMP: 18, STUFFED: 12 };
+const BASE: Record<DefectKind, number> = { MISSING: 20, UNWANTED: 24, WRONG_RATIO: 12, WRONG_TEMP: 18, STUFFED: 12, TASTE_OFF: 20 };
 /** P1-03 §2.6 ITEM_WEIGHT, ánh xạ sang bộ nguyên liệu hiện có. */
 const ITEM_WEIGHT: Record<Ingredient, number> = {
   pate: 1.4, thit: 1.3, chalua: 1.2, xiumai: 1.3, opla: 1.3,
@@ -199,11 +203,12 @@ const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 export function mkDefect(kind: DefectKind, item: Ingredient | null, magnitude = 1, dir?: "under" | "over"): Defect {
   const w = item ? ITEM_WEIGHT[item] : 1;
   const sCounter = Math.min(100, BASE[kind] * w * magnitude);
-  const label = item ? labelOf(item) : kind === "WRONG_TEMP" ? "bánh nguội" : "nhồi chặt quá";
+  const label = item ? labelOf(item) : kind === "WRONG_TEMP" ? "bánh nguội" : kind === "TASTE_OFF" ? "vị lạ" : "nhồi chặt quá";
   const text = kind === "MISSING" ? `thiếu ${label}`
     : kind === "UNWANTED" ? `có ${label}`
     : kind === "WRONG_RATIO" ? `${dir === "under" ? "ít" : "nhiều"} ${label} quá`
     : kind === "WRONG_TEMP" ? "bánh nguội ngắt"
+    : kind === "TASTE_OFF" ? "ăn thấy lạ vị"
     : "ổ bánh nhồi chặt quá, kẹp không lại";
   return { kind, item, dir, magnitude, sCounter, sEat: Math.min(100, sCounter * 5), label, weight: sCounter, text };
 }

@@ -5,7 +5,7 @@
     "day":                 { "scope": "Global", "type": "number", "min": 1, "max": 40 },
     "hour":                { "scope": "Global", "type": "number", "min": 600, "max": 1100, "_note": "giờ·100 + phút: 6h43 → 643" },
     "timeSlot":            { "scope": "Global", "type": "ordinal", "values": ["PRE_OPEN", "PEAK", "MID", "LULL"] },
-    "weather":             { "scope": "Global", "type": "enum", "values": ["NANG", "MUA", "AM_U"] },
+    "weather":             { "scope": "Global", "type": "enum", "values": ["NANG_GAT", "MAT", "AM_U", "MUA_RAO", "MUA_DAM", "OI"] },
     "stallCleanliness":    { "scope": "Global", "type": "number", "min": 0, "max": 100 },
     "queueLength":         { "scope": "Global", "type": "number", "min": 0 },
     "customersServedToday":{ "scope": "Global", "type": "number", "min": 0 },
@@ -13,6 +13,7 @@
 
     "playerHolding":       { "scope": "Player", "type": "enum", "values": ["EMPTY", "BANH", "BANH_CHAY", "TRA"] },
     "playerHandsDirty":    { "scope": "Player", "type": "bool" },
+    "equipGasOven":        { "scope": "Global", "type": "bool", "conditional": true, "_note": "P3-04 A1 — đã đổi lò than sang lò gas" },
 
     "npcId":               { "scope": "Customer", "type": "enum", "values": "@NPC_IDS" },
     "npcSoi":              { "scope": "Customer", "type": "number", "min": 0, "max": 100 },
@@ -43,13 +44,13 @@
     "obsState":            { "scope": "Session", "type": "ordinal", "values": ["UNAWARE", "GLIMPSED", "NOTICED", "CONFIRMED"], "conditional": true },
     "witnessCount":        { "scope": "Session", "type": "number", "min": 0, "conditional": true },
     "orderIsUsual":        { "scope": "Session", "type": "bool", "conditional": true },
-    "defectKind":          { "scope": "Session", "type": "enum", "values": ["NONE", "MISSING", "UNWANTED", "RATIO_UNDER", "RATIO_OVER", "WRONG_TEMP", "STUFFED"], "conditional": true },
+    "defectKind":          { "scope": "Session", "type": "enum", "values": ["NONE", "MISSING", "UNWANTED", "RATIO_UNDER", "RATIO_OVER", "WRONG_TEMP", "STUFFED", "TASTE_OFF"], "conditional": true },
     "defectWasSeen":       { "scope": "Session", "type": "bool", "conditional": true },
     "defectCount":         { "scope": "Session", "type": "number", "min": 0, "conditional": true },
     "dishUnderdone":       { "scope": "Session", "type": "bool", "conditional": true },
     "freeExtraTooMuch":    { "scope": "Session", "type": "bool", "conditional": true },
     "waitTier":            { "scope": "Session", "type": "ordinal", "values": ["NHANH", "VUA", "LAU", "QUA_LAU"] },
-    "leaveReason":         { "scope": "Session", "type": "enum", "values": ["SERVED", "IMPATIENT", "CLOSED"], "conditional": true },
+    "leaveReason":         { "scope": "Session", "type": "enum", "values": ["SERVED", "IMPATIENT", "CLOSED", "SOLD_OUT"], "conditional": true },
     "interaction":         { "scope": "Session", "type": "enum", "values": ["TEA", "TEA_NOD", "TEA_SUSPECT", "ASK"], "conditional": true, "_note": "concept INTERACT — bổ sung của bản dựng: P2-01 chưa có concept cho trà đá / hỏi chuyện" },
     "secSinceLastLine":    { "scope": "Session", "type": "number", "min": 0 }
   },

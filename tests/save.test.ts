@@ -98,7 +98,7 @@ test("checksum sai thì CẢNH BÁO, không chặn (§8f)", () => {
   const w = newGame("x", "id-5");
   service(w, p).flushNow();
   const raw = p.read("banhmicoba.slotA")!;
-  p.write("banhmicoba.slotA", raw.replace('"cash":150000', '"cash":999999999'));
+  p.write("banhmicoba.slotA", raw.replace(`"cash":${w.money.cash}`, '"cash":999999999'));
   const bus = new Bus();
   const marks: string[] = [];
   bus.on("telemetry:mark", (m) => marks.push(m.key));

@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { dawn } from "../sim/day";
 import { bus, type EventKey, type EventMap } from "../core/eventbus";
 import { GameContext } from "../core/context";
 import { DAY_START_MIN } from "../core/clock";
@@ -75,9 +76,14 @@ export class DayScene extends Phaser.Scene {
     w.progress.scene = "Market";
     // P1-01 §2.6: sáng nào cũng chia lại phần cho 3 preset.
     w.stall.presets = refillPresets(w.stall.presets as never);
+    // P3-06: xe đã bán bớt (CART_DOWNGRADED) chỉ còn 2 chỗ kẹp sẵn — vĩnh viễn trong mùa
+    if (w.econ && w.stall.presets.length > w.econ.presetSlots) w.stall.presets = w.stall.presets.slice(0, w.econ.presetSlots);
     // P1-02 §2.10: qua đêm cô Ba dọn bớt — sáng ra còn 40% độ bẩn hôm qua.
     w.stall.cleanliness = 1 - (1 - w.stall.cleanliness) * 0.4;
     gcBags(w.shuffleBags, w.progress.dayIndex);
+    // P3: rạng sáng — trời hôm nay, dọn hàng hư, thu tiền chỗ. TRƯỚC bản chụp đầu ngày, để
+    // "chơi lại ngày này" không thu tiền chỗ hai lần và ra đúng trời đó, giá đó.
+    dawn(w);
     ctx.sync();
     w.progress.dayStartSnapshotRef = ctx.save.writeDayStart(ctx.snapshot());
     bus.emit("day:started", { dayIndex: w.progress.dayIndex, daySeed: ctx.rng.daySeed, weather: w.progress.weather });
@@ -156,7 +162,10 @@ export class DayScene extends Phaser.Scene {
 
     // Autosave — P0-02 §2.6: ghi NGAY khi sự kiện xảy ra, không đợi hết ngày.
     on("npc:left", () => ctx.save.request("CUSTOMER_DONE"));
-    on("perception:confirmed", () => ctx.save.request("EVENT"));    // cú ghi quan trọng nhất của §8e
+    on("perception:confirmed", (p) => {
+      if (p.stimId === "DIRTY_HANDS") ctx.world.flags.dirtyHandsConfirmed = true;   // mở khoá vòi rửa (P3-04 C1)
+      ctx.save.request("EVENT");
+    });    // cú ghi quan trọng nhất của §8e
     on("gossip:seeded", () => ctx.save.request("EVENT"));
     on("relationship:tierChanged", () => ctx.save.request("EVENT"));
     on("obligation:due", () => ctx.save.request("EVENT"));

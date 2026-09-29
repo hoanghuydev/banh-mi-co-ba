@@ -17,8 +17,8 @@ export const COOL_RATE = 0.0173;
 export const WARM_OK = 0.55;
 const RAIN_COOL_MUL = 1.4;
 
-export function cool(warmth: number, dt: number, weather: Weather = "NANG") {
-  return Math.max(0, warmth - COOL_RATE * (weather === "MUA" ? RAIN_COOL_MUL : 1) * dt);
+export function cool(warmth: number, dt: number, weather: Weather = "NANG_GAT") {
+  return Math.max(0, warmth - COOL_RATE * (weather === "MUA_RAO" || weather === "MUA_DAM" ? RAIN_COOL_MUL : 1) * dt);
 }
 
 export const isWarm = (warmth: number) => warmth >= WARM_OK;

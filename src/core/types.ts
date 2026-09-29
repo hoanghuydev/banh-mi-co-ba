@@ -45,7 +45,8 @@ export const NPC_IDS = [
 ] as const;
 export type NpcId = string;
 
-export type Weather = "NANG" | "MUA" | "AM_U";
+/** Sáu kiểu trời của lịch mùa (P3-01 §2.4.4). Mưa = MUA_RAO | MUA_DAM — xem `isRain`. */
+export type Weather = "NANG_GAT" | "MAT" | "AM_U" | "MUA_RAO" | "MUA_DAM" | "OI";
 export type StandPointId = "DAU_HEM" | string;
 
 export type LeaveReason = "SERVED" | "IMPATIENT" | "SILENT_EXIT" | "SOLD_OUT" | "REFUSED" | "CLOSED";

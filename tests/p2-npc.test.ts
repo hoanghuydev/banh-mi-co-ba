@@ -83,9 +83,9 @@ test("mood: tất định theo seed, hai ngày đầu thế giới đứng yên,
   assert.equal(seen.size, 7, `chỉ thấy ${[...seen]}`);
 });
 
-test("lịch: ngày 1 là thứ Bảy; chú Tư không bao giờ ghé cuối tuần; không ai ghé 100% số ngày", () => {
-  assert.equal(weekdayOf(1), "SAT");
-  assert.equal(weekdayOf(12), "WED");                    // P2-03 §2.10: "ngày 12, thứ Tư"
+test("lịch: ngày 1 là thứ Hai; chú Tư không bao giờ ghé cuối tuần; không ai ghé 100% số ngày", () => {
+  assert.equal(weekdayOf(1), "MON");                     // P3-01 §2.4.4: ngày 1 là thứ Hai
+  assert.equal(weekdayOf(12), "FRI");
   const tu = NPCS.find((n) => n.id === "CHU_TU")!;
   let weekdays = 0, hits = 0;
   for (let d = 1; d <= 400; d++) {

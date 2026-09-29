@@ -323,7 +323,7 @@ export function landmarkTier(g: GossipState, strangerVisits: number, baSauFriend
 export type EveningCtx = {
   day: number;
   lastDay: boolean;
-  weather: "NANG" | "MUA" | "AM_U";
+  weather: import("../core/types").Weather;
   /** Người đã gặp mà đang lỡ liên tiếp n lần ghé có lịch (P2-03 missStreak). */
   absences: { npcId: NpcId; missed: number }[];
   landmark: 0 | 1 | 2 | 3 | 4;
@@ -354,11 +354,11 @@ export function composeEvening(nb: Notebook, c: EveningCtx): EveningNote {
   if (t.firstUsual.length) cands.push({ id: "firstUsual" });
   if (t.visitors.includes("BA_BAY")) cands.push({ id: "baBay" });
   if (shortAbs) cands.push({ id: "absentShort", name: NAME(shortAbs.npcId) });
-  if (c.weather === "MUA") cands.push({ id: "rain" });
+  if (c.weather === "MUA_RAO" || c.weather === "MUA_DAM") cands.push({ id: "rain" });
   if (t.newFaces || t.strangers >= 4) cands.push({ id: "newFace" });
   if (t.lost) cands.push({ id: "lost" });
   if (t.served >= 15) cands.push({ id: "goodDay" });
-  if (c.weather === "NANG") cands.push({ id: "sunny" });
+  if (c.weather === "NANG_GAT") cands.push({ id: "sunny" });
   cands.push({ id: "ordinary" });
 
   const ranked = cands.map((x) => ({ ...x, def: NOTE_RULES[x.id] })).filter((x) => x.def && !(x.def.speakonce && c.spokenOnce.includes(`note:${x.id}`)))

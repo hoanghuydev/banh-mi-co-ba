@@ -67,6 +67,11 @@ export class AssemblyPanel {
    */
   private wrapBeats: number[] = [];
   private tiles = new Map<Ingredient, () => void>();
+  /** Dao bén (P3-04 A2) nới cửa sổ gói đều tay 0,18 → 0,30. */
+  wrapTol = WRAP_EVEN_TOL;
+  /** Kẹp gắp (P3-04 A4): gắp chậm hơn bốc tay — mỗi lần gắp cách nhau chừng này (ms). */
+  addCooldownMs = 0;
+  private lastAddAt = -1e9;
   private open = false;
 
   constructor(
@@ -78,6 +83,11 @@ export class AssemblyPanel {
     private onAdd: (id: Ingredient) => void = () => {},
     /** Bấm nút preset P1/P2/P3 — scene trả lại danh sách phần (hoặc null nếu hết phần chia sẵn). */
     private onPreset: (i: number) => Ingredient[] | null = () => null,
+    /**
+     * P3-03 — hết là hết (KH-3): trả lý do nếu KHÔNG bỏ thêm được phần này (kho hết),
+     * null nếu được. Kiểm lúc bỏ vào; kho chỉ bị trừ lúc gói xong (gỡ ra thì như chưa lấy).
+     */
+    private canAdd: (id: Ingredient, stack: readonly Ingredient[]) => string | null = () => null,
   ) {
     buildFood(scene);
 
@@ -256,6 +266,11 @@ export class AssemblyPanel {
     const have = portionsOf(this.stack).get(id) ?? 0;
     if (have >= this.maxOf(id)) { this.flash(`${labelOf(id)} hết chỗ rồi`); return; }
     if (this.stack.length >= CAPACITY) { this.flash("ổ bánh đầy rồi, kẹp không lại"); return; }
+    const out = this.canAdd(id, this.stack);
+    if (out) { this.flash(out); return; }
+    const now = this.scene.time.now;
+    if (now - this.lastAddAt < this.addCooldownMs) return;
+    this.lastAddAt = now;
     this.stack.push(id);
     this.onAdd(id);
     this.repaint();
@@ -291,8 +306,14 @@ export class AssemblyPanel {
 
   private applyPreset(i: number) {
     if (this.wrapBeats.length) return;
+    const probe: Ingredient[] = [];
     const dish = this.onPreset(i);
     if (!dish) { this.flash("preset đó hết phần chia sẵn rồi"); return; }
+    for (const id of dish) {
+      const out = this.canAdd(id, probe);
+      if (out) { this.flash(out); return; }
+      probe.push(id);
+    }
     this.stack = [];
     for (const id of dish) { this.stack.push(id); this.onAdd(id); }
     this.repaint();
@@ -306,7 +327,7 @@ export class AssemblyPanel {
     if (this.wrapBeats.length < WRAP_BEATS.length) { this.repaint(); return; }
     const [a, b, c] = this.wrapBeats;
     const i1 = b - a, i2 = c - b;
-    const even = Math.abs(i1 - i2) / ((i1 + i2) / 2) <= WRAP_EVEN_TOL && i1 < 1500 && i2 < 1500;
+    const even = Math.abs(i1 - i2) / ((i1 + i2) / 2) <= this.wrapTol && i1 < 1500 && i2 < 1500;
     this.wrapBeats = [];
     const dish = [...this.stack];
     this.hide();

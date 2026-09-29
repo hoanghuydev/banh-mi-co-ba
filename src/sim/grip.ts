@@ -28,6 +28,8 @@ export type GripTier = "SAFE" | "WARN" | "SHAKE";
 
 export class Grip {
   value = 1;
+  /** Khung gia cố (P3-04 F2): xe chắc hơn, cầm đồ đi lại ít rớt hơn (×0,85). */
+  lossMul = 1;
   private bumpCd = 0;
 
   reset() { this.value = 1; this.bumpCd = 0; }
@@ -40,11 +42,11 @@ export class Grip {
   tick(dt: number, tempo: number, bumped: boolean, slip = 0): boolean {
     this.bumpCd = Math.max(0, this.bumpCd - dt);
     const over = Math.max(0, tempo - SAFE_TEMPO);
-    const drain = (over * DRAIN_MUL + slip * 0.35) * dt;
+    const drain = (over * DRAIN_MUL + slip * 0.35) * dt * this.lossMul;
     const gain = over === 0 ? RECOVER * dt : 0;
     this.value = Math.max(0, Math.min(1, this.value - drain + gain));
     if (bumped && this.bumpCd === 0) {
-      this.value = Math.max(0, this.value - BUMP_LOSS);
+      this.value = Math.max(0, this.value - BUMP_LOSS * this.lossMul);
       this.bumpCd = BUMP_COOLDOWN;
     }
     return this.value <= 0;

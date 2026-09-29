@@ -16,6 +16,7 @@ import { memoryPlatform } from "../src/core/platform";
 import { Telemetry, estimateSeason } from "../src/core/telemetry";
 import { HeadlessStall, POLICIES, nextDay } from "../src/sim/headless";
 import { settleNight } from "../src/sim/night";
+import { eveningCounting } from "../src/sim/day";
 import { CLAIM } from "../src/sim/gossip";
 import { NPCS } from "../src/content/npcs";
 
@@ -42,6 +43,7 @@ let simMs = 0;
 const tele = new Telemetry(bus, true, platform, () => simMs);
 
 const rows: string[] = [];
+const k = (v: number) => String(Math.round(v / 1000)).padStart(5);
 for (let d = 1; d <= days; d++) {
   if (d > 1) nextDay(world);
   simMs = 0;
@@ -50,6 +52,8 @@ for (let d = 1; d <= days; d++) {
   simMs = h.elapsed * 1000;
   h.close();
   const m = tele.days.at(-1)!;
+  eveningCounting(world);
+  const et = world.econ.today;
   rows.push([
     String(d).padStart(3),
     (h.elapsed / 60).toFixed(2).padStart(6),
@@ -60,12 +64,15 @@ for (let d = 1; d <= days; d++) {
     (m.confirmRate.DROPPED_FOOD ?? 0).toFixed(2).padStart(6),
     m.silentNoticeRate.toFixed(2).padStart(6),
     String(m.lineRepeatWithin2h).padStart(5),
+    k(world.progress.today.revenue), k(et.market), k(et.fixed + et.rent + et.sendHome), k(world.money.cash),
+    world.econ.today.soldOut ? `hết×${world.econ.today.soldOut}` : "",
+    world.econ.losses.join(","),
   ].join(" │ "));
 }
 const wall = performance.now() - t0;
 
 console.log(`\nsim · ${days} ngày · seed "${seed}" · policy ${policy.name}\n`);
-console.log("ngày │ phút  │ bán  │ bỏ   │ s/kh  │ rớt   │ bắt   │ im    │ lặp");
+console.log("ngày │ phút  │ bán  │ bỏ   │ s/kh  │ rớt   │ bắt   │ im    │ lặp   │  thu │  chợ │ cố định+nhà │ trong ống (k)");
 console.log(rows.join("\n"));
 
 // Quan hệ cuối mùa (P2-03 §6) — SỐ CHỈ Ở CÔNG CỤ DEV, không bao giờ lên màn hình (T3).

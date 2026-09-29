@@ -18,8 +18,11 @@ export const WEEKDAY_VI: Record<Weekday, string> = {
 export const WEEKDAYS_WORK: readonly Weekday[] = ["MON", "TUE", "WED", "THU", "FRI"];
 export const EVERY_DAY = WEEKDAYS;
 
-/** Ngày 1 của mùa là THỨ BẢY (ví dụ trong doc P2-03 §2.10: "ngày 12, thứ Tư"). */
-const DAY1_INDEX = 5;
+/**
+ * Ngày 1 của mùa là THỨ HAI — lịch giá chợ, lịch thời tiết và bảng nghĩa vụ của P3 đều
+ * đếm theo mốc này (P3-01 §2.4.4). (Ví dụ "ngày 12, thứ Tư" ở P2-03 §2.10 là bản cũ.)
+ */
+const DAY1_INDEX = 0;
 export function weekdayOf(day: number): Weekday {
   return WEEKDAYS[(((day - 1 + DAY1_INDEX) % 7) + 7) % 7];
 }

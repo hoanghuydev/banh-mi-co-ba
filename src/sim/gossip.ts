@@ -219,6 +219,8 @@ export type TickCtx = {
   allowFalseMemory: boolean;
   /** Ai có mặt trong hẻm hôm nay (đã ghé quán). Người ở hẻm (bà Sáu, cô Mai, bà Bảy) luôn có mặt. */
   present: (id: NpcId) => boolean;
+  /** Ghế nhựa (P3-04 D1): khách ngồi lại nói chuyện với nhau → thêm lượt kể mỗi đêm. */
+  extraTransmissions?: number;
 };
 
 /** Một đêm của cái hẻm. Trả các lần truyền tin (để P2-05 ghi nhật ký). */
@@ -237,7 +239,7 @@ export function gossipTick(g: GossipState, t: TickCtx): GossipLogEntry[] {
     if (!g.overhear && !nodeOf(teller).neverOverheard) g.overhear = planOverhear(teller, listener, g.beliefs[listener].at(-1)!, b, day + 1, rng);
   };
 
-  let budget = MAX_TRANSMISSIONS_PER_NIGHT;
+  let budget = MAX_TRANSMISSIONS_PER_NIGHT + (t.extraTransmissions ?? 0);
   // §2.13 #1 — chuỗi đầu tiên có kịch bản: lần đầu có người CHỨNG KIẾN bánh rớt, đêm đó
   // người đó kể cho bà Sáu (nút khuếch đại, đi ngang cả hẻm) — xảy ra với MỌI người chơi
   if (!g.scriptedDone) {

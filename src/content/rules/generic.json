@@ -36,6 +36,9 @@
     {"id": "gen.mood.hettien", "concept": "GREET", "when": {"npcMoodCause": "HET_TIEN"}, "say": ["Cuối tháng rồi con.", "Bữa nay ăn ổ không thôi, cuối tháng rồi."]},
     {"id": "gen.mood.met", "concept": "GREET", "when": {"npcMoodCause": "MET"}, "say": ["Tối qua ngủ có ba tiếng.", "Mệt quá con ơi."]},
     {"id": "gen.mood.vui", "concept": "GREET", "when": {"npcMoodCause": "TIN_VUI"}, "say": ["Bữa nay vui quá con ơi!", "Có chuyện vui, bữa nay ăn ngon một bữa."]},
-    {"id": "gen.greet.friend", "concept": "GREET", "when": {"npcRelTier": "FRIEND", "npcMoodCause": "NONE"}, "say": ["Nay khoẻ hông con?", "Bữa nay đông hông con?", "Sáng nay con dậy sớm ha.", "Ủa con, hôm qua bán được hông?", "Nay trời mát ha con.", "Con ăn sáng chưa đó?"], "_note": "P2-03 §2.11 tín hiệu #1: chỉ Friend mới hỏi han. Không có dòng nào nói ra quan hệ."}
+    {"id": "gen.greet.friend", "concept": "GREET", "when": {"npcRelTier": "FRIEND", "npcMoodCause": "NONE"}, "say": ["Nay khoẻ hông con?", "Bữa nay đông hông con?", "Sáng nay con dậy sớm ha.", "Ủa con, hôm qua bán được hông?", "Nay trời mát ha con.", "Con ăn sáng chưa đó?"], "_note": "P2-03 §2.11 tín hiệu #1: chỉ Friend mới hỏi han. Không có dòng nào nói ra quan hệ."},
+    {"id": "gen.del.taste", "concept": "DELIVERY", "when": {"defectKind": "TASTE_OFF"}, "say": ["Ủa… bữa nay ăn thấy lạ lạ con.", "Pate bữa nay sao hơi chua chua.", "Ủa, đồ chua này để lâu rồi hả con?", "Bữa nay ăn không giống mọi bữa."]},
+    {"id": "gen.bye.soldout", "concept": "FAREWELL", "when": {"leaveReason": "SOLD_OUT"}, "say": ["Ủa hết bánh rồi hả? Thôi bữa khác.", "Hết rồi hả con. Thôi để mai.", "Trời, hết sớm vậy. Thôi, tui qua chỗ khác.", "Ủa… hết rồi hả. Ừ, thôi."]},
+    {"id": "tu.bye.soldout", "concept": "FAREWELL", "when": {"npcId": "CHU_TU", "leaveReason": "SOLD_OUT"}, "say": ["Ờ... thôi bữa khác con. Chú qua bển vậy."]}
   ]
 }
