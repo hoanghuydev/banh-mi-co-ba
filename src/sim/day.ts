@@ -13,6 +13,7 @@ import {
 import { duesOpen, eveningCount, morningRent, newEconState, newToday, pay, processDefaults, rentVnd } from "./obligations";
 import { CAL, ECON, fixedCostVnd, isRain } from "./econ";
 import { extraDailyVnd, has, newEquipState, resellable, sellEquip, type EquipId } from "./equipment";
+import { moment, morningLines } from "./story";
 import { resolveFollowers, standClosed, standDayMul, MOVE, STANDS, type StandId } from "./stands";
 import { LATE_LINE, SUPPLIERS, afterMarket, dawnCheck, discounted, state, type SupplierId, type SupplierState } from "./suppliers";
 
@@ -49,6 +50,8 @@ export function dawn(w: SaveFile) {
   // P3-02 §2.6.1: nợ người bán quá hạn → một lần trễ, trần ×0,75 vĩnh viễn — họ NÓI một câu
   w.suppliers ??= {};
   w.econ.morningLines = dawnCheck(w.suppliers, day).map((id) => `${SUPPLIERS[id].name}: "${LATE_LINE[id] ?? "Con nhớ tiền bữa trước nghen."}"`);
+  // P4 — cô Ba (và người trong hẻm) nói một câu lúc đi chợ: không popup, không dấu chấm than
+  if (w.story) w.econ.morningLines.push(...morningLines(day, w.story, { hasQr: has(w.equipment, "BANG_QR") }));
   // P3-05 — hôm nay là ngày dời xe (tờ giấy dán đã đủ ngày)
   const plan = w.econ.movePlan;
   if (plan && plan.moveDay === day) {
@@ -98,7 +101,17 @@ export function basketFor(inv: InventoryState, loaves: number, day: number, pate
 export function unitPriceVnd(g: GoodId, day: number, suppliers?: Record<string, SupplierState>) {
   const id = GOODS[g].seller as SupplierId;
   const p = priceOf(g, day);
-  return vnd(suppliers ? discounted(g, p, id, state(suppliers, id)) : p);
+  const q = suppliers ? discounted(g, p, id, state(suppliers, id)) : p;
+  return vnd(suppliers && quenMat(g, day, suppliers) ? Math.round(q * 1.12 * 2) / 2 : q);
+}
+
+/**
+ * P4-05 §2.2 A — "QUEN MẶT ĐẮT HÀNG": ngày 23, mối pate quen (đã mua ≥ 15 buổi) báo giá cao
+ * hơn cho chính người chơi — vẫn cười, vẫn hỏi thăm cô Ba. Không giải thích, không có đáp án.
+ */
+export function quenMat(g: GoodId, day: number, suppliers: Record<string, SupplierState>) {
+  if (day !== 23 || g !== "PATE_NHA") return false;
+  return (suppliers[GOODS[g].seller]?.buyDays ?? 0) >= 15;
 }
 
 export function basketCost(b: Partial<Record<GoodId, number>>, day: number, suppliers?: Record<string, SupplierState>) {
@@ -121,6 +134,10 @@ export function buyBasket(w: SaveFile, b: Partial<Record<GoodId, number>>) {
   const cost = basketCost(basket, day, w.suppliers);
   w.money.cash -= cost;
   w.econ.today.market += cost;
+  // P4-04 §2.3 — "còn cái xe... con tính sao thì tính": ngày 35–39 người chơi trả lời bằng việc MUA HÀNG
+  if (w.story) w.story.basketLoaves[day] = (w.story.basketLoaves[day] ?? 0) + (basket.BANH ?? 0);
+  // biết mình bị báo giá cao mà vẫn mua ở mối quen
+  if (w.story && (basket.PATE_NHA ?? 0) > 0 && quenMat("PATE_NHA", day, w.suppliers)) moment(w.story, "QUEN_MAT_DAT_HANG");
   for (const [g, n] of Object.entries(basket)) if (n) buy(w.inventory, g as GoodId, n, day);
   w.inventory.lastBasket = basket;
   afterMarket(w.suppliers, new Set(Object.entries(basket).filter(([, n]) => n).map(([g]) => GOODS[g as GoodId].seller as SupplierId)), day);

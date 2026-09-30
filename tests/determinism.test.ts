@@ -22,6 +22,13 @@ function day7(): SaveFile {
   return w;
 }
 
+/** Ngày thường đông khách (P4-02: ngày 7 là Chủ nhật nắng — nhẹ hơn 20%, quá ít khách cho bài reload). */
+function busyDay(): SaveFile {
+  const w = newGame("t", "det-save");
+  w.progress.dayIndex = 8;
+  return w;
+}
+
 function record(bus: Bus, keys?: EventKey[]) {
   const out: string[] = [];
   bus.onAny((e, p) => {
@@ -76,7 +83,7 @@ test("reload giữa ngày (sau khách thứ 5) → những người còn lại t
 
   const busA = new Bus();
   const all = arrivals(busA);
-  new HeadlessStall(day7(), POLICIES.greedy, { bus: busA }).run();
+  new HeadlessStall(busyDay(), POLICIES.greedy, { bus: busA }).run();
 
   // Lần B: chơi tới lúc khách thứ 5 rời đi, ghi save xuống "đĩa", tắt tab.
   const platform = memoryPlatform();
@@ -84,7 +91,7 @@ test("reload giữa ngày (sau khách thứ 5) → những người còn lại t
   const before = arrivals(busB);
   let left = 0;
   busB.on("npc:left", () => left++);
-  const hB = new HeadlessStall(day7(), POLICIES.greedy, { bus: busB, platform });
+  const hB = new HeadlessStall(busyDay(), POLICIES.greedy, { bus: busB, platform });
   hB.run({ until: () => left >= 5 });
   new SaveService(busB, () => hB.ctx.snapshot(), platform).flushNow("QUIT");
 

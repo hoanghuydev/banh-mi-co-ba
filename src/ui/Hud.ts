@@ -161,7 +161,8 @@ export class Hud {
     const m = Math.floor(s.clock.minutes);
     const hhmm = `${Math.floor(m / 60)}h${String(m % 60).padStart(2, "0")}`;
     const slow = this.settings.noTimePressure ? " · thong thả" : "";
-    this.left.setText(`ngày ${s.day} / ${s.seasonDays}\n${hhmm} · ${BAND_LABEL[s.clock.band]}${slow}`);
+    // P4-02 §4: KHÔNG có "/40" — người chơi không được đếm ngược, chữ đó biến mùa thành thanh tiến trình
+    this.left.setText(`ngày ${s.day}\n${hhmm} · ${BAND_LABEL[s.clock.band]}${slow}`);
     this.right.setText(`${s.money.toLocaleString("vi-VN")}₫\nđã đưa ${s.served} phần`);
     this.drawStats();
 

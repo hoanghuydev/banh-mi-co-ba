@@ -1,0 +1,28 @@
+{
+  "id": "SK-11",
+  "name": "Cái khăn của chú Kiệt",
+  "act": 3,
+  "day": 25,
+  "mandatory": false,
+  "trigger": {
+    "auto": true
+  },
+  "playerActions": [
+    {
+      "id": "dem_do_chua",
+      "kind": "dua_vat",
+      "label": "Đem qua cho chú một hũ đồ chua mới",
+      "shortTerm": "Chú: \"Ờ. Cảm ơn.\"",
+      "longTerm": "Mở SK-32 (ngày 31)."
+    },
+    {
+      "id": "khong_lam_gi",
+      "kind": "khong_lam_gi",
+      "label": "Không làm gì",
+      "shortTerm": "Chuyện tự lan.",
+      "longTerm": "SK-32 khoá vĩnh viễn."
+    }
+  ],
+  "runtime": "arcs.extraVisits(bay-ngang ngày 25) + story.eveningActions(kiet_dochua)",
+  "designNote": "Nhánh \"kể cho khách\" không có (không có ô thoại — đúng E1)."
+}

@@ -1,0 +1,21 @@
+{
+  "id": "SK-36",
+  "name": "Bà Sáu đặt gánh xuống",
+  "act": 4,
+  "day": 35,
+  "mandatory": false,
+  "trigger": {
+    "auto": true
+  },
+  "playerActions": [
+    {
+      "id": "khong_lam_gi",
+      "kind": "khong_lam_gi",
+      "label": "Không có gì",
+      "shortTerm": "Bà khoe, bà cười.",
+      "longTerm": "Tiếng rao của bà mất khỏi mốc 8h50."
+    }
+  ],
+  "runtime": "story.eveningLines(35) + arcs.BA_SAU (không đi ngang từ 35)",
+  "designNote": "—"
+}

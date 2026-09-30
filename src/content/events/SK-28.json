@@ -1,0 +1,21 @@
+{
+  "id": "SK-28",
+  "name": "Bà Sáu khoe bằng lái xe tải",
+  "act": 3,
+  "day": 22,
+  "mandatory": false,
+  "trigger": {
+    "auto": true
+  },
+  "playerActions": [
+    {
+      "id": "khong_lam_gi",
+      "kind": "khong_lam_gi",
+      "label": "Nghe",
+      "shortTerm": "Bà kể.",
+      "longTerm": "—"
+    }
+  ],
+  "runtime": "arcs.BA_SAU ngày 22",
+  "designNote": "—"
+}

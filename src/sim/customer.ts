@@ -1,5 +1,6 @@
 import type { Rng } from "../core/rng";
 import type { NpcDef, Personality } from "../content/npcs";
+import type { ArcDay } from "../content/arcs";
 import type { BodyStyle } from "../art/character";
 import { makeOrder, type OrderSpec } from "./order";
 import { traitMulFrom, type Observation, type Observer, type Zone } from "./perception";
@@ -41,6 +42,9 @@ export const TEA = {
   suspectSoi: 0.7,
   suspectAtCup: 3,
 };
+
+/** Kịch bản một lượt ghé = ngày của arc + (khách đặc biệt) tên, tờ tiền đưa. */
+export type VisitPlan = ArcDay & { key?: string; name?: string; style?: number; paysWith?: number };
 
 export class Customer implements Observer {
   phase: CustomerPhase = "arriving";
@@ -114,6 +118,16 @@ export class Customer implements Observer {
   /** Trời + chỗ đứng (P3-01 weather.gazeMul · P3-05 avgGazeFactor) — nhân vào gaze nền. */
   gazeMul = 1;
   orderedAt = 0;
+  /** P4 — kịch bản của lượt ghé này (arc P4-01 / sự kiện P4-03). null = lượt thường. */
+  plan: VisitPlan | null = null;
+  /** Mua thêm ổ nữa — gọi sau khi nhận ổ trước (cô Mai hai ổ, bà Bảy thứ Bảy…). */
+  more: OrderSpec[] = [];
+  /** Câu nói có hẹn giờ (giây của service) — ai nói (`by` = người khác trong hàng). */
+  script: { at: number; text: string; by?: string }[] = [];
+  /** Chỉ đi ngang (chú Kiệt gật đầu, bà Sáu rao): đứng lại `stay` giây ở chỗ dừng rồi đi. */
+  pass: { stay: number; until: number; nod?: boolean } | null = null;
+  /** Ngồi im trước khi gọi (anh Dũng ngày 11) — không tính vào thời gian chờ. */
+  holdLeft = 0;
   /** Lời thoại đang hiện trên bong bóng, và còn hiện bao lâu. */
   say: string | null = null;
   sayFor = 0;
@@ -169,7 +183,7 @@ export class Customer implements Observer {
       if (this.sipIn < 0) this.gazeM.force("DRINKING");
     }
 
-    if (pressure && (this.phase === "queueing" || this.phase === "waiting")) this.waitSec += dt;
+    if (pressure && this.holdLeft <= 0 && (this.phase === "queueing" || this.phase === "waiting")) this.waitSec += dt;
 
     this.gazeM.tick(dt, {
       loudCue: this.loudCue, question: this.questionPending,

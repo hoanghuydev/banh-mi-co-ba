@@ -72,6 +72,28 @@ gửi về nhà thiếu.
 Tiền trong game = giá thật × một hệ số (`ECON.scale` = 0,40 trong `content/econ/econ.json`)
 cho các khoản theo ngày/mùa; giá từng ổ, từng lạng ngoài chợ giữ đúng giá thật.
 
+## Một mùa 40 ngày (Phase 4)
+
+Mùa có nhịp 4 hồi (học luật · mở rộng · áp lực và mất mát · khép lại) — người chơi **không bao
+giờ** thấy mình ở hồi mấy, và HUD không có "/40". Lịch mùa ở `src/content/season/days.json` là
+nguồn duy nhất: trời, sự kiện, mốc arc, tín hiệu báo trước (có test cân bằng + phanh XĐ3).
+
+- **Mở dần bằng người, không popup:** đồn thổi + nhớ nhầm từ ngày 9 hoặc phút thứ 90 (cú lộ:
+  bà Sáu kể cô Mai nghe trước tiệm) · sổ nợ ngày 9 (cô Mai — trước đó bán chịu chỉ nhớ trong
+  đầu) · **tự ghi sổ tay ngày 11** (thầy Phúc đưa cây bút) · bảng QR, đèn ca tối ngày 14 · đổi
+  chỗ đứng ngày 16.
+- **12 người gọi đúng câu của mình** (P4-01), có khẩu vị ẩn không bao giờ nói ra — làm theo khẩu
+  vị ẩn cũng đúng, bỏ qua thì không bị gì. **Gói sẵn ổ quen trước khi khách mở miệng** là cách
+  "nhớ" mạnh nhất (REMEMBERED_USUAL tầng T-B).
+- Người đi ngang không mua: chú Kiệt 6h10 liếc vô lò (nóng thì gật đầu), bà Sáu rao, cô Mai chạy
+  bộ sáng thứ Hai. Có người sẽ đi, có báo trước — không có gì đánh dấu.
+- **Tối — "Chuyện trong hẻm":** thỉnh thoảng có một việc để làm bằng tay (đem hũ đồ chua qua cho
+  ai đó, đẩy xe ra sân đình, thuê làm bảng hay chờ người vẽ). Không bấm = không làm gì — cũng là
+  một lựa chọn.
+- **Ngày 40** không có cảnh tối: sau khi khách cuối đi là khoảng lặng 40 giây (Enter/Space để qua),
+  rồi màn kết — ai còn ghé, sổ tay của chính người chơi, cô Mai chốt sổ, dòng cuối của cô Ba,
+  credits, **một nút duy nhất**. Không điểm, không %, không New Game+.
+
 ## Vòng lặp bán hàng
 
 Khách đi từ ngoài đường vào, xếp hàng, gọi món, chờ, nhận bánh rồi đi.

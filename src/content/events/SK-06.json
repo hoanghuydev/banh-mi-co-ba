@@ -1,0 +1,28 @@
+{
+  "id": "SK-06",
+  "name": "Đưa nhầm đơn của người khác",
+  "act": 2,
+  "day": 13,
+  "mandatory": true,
+  "trigger": {
+    "auto": true
+  },
+  "playerActions": [
+    {
+      "id": "lam_lai",
+      "kind": "mon_an",
+      "label": "Làm lại ổ mới",
+      "shortTerm": "Tốn nguyên liệu + thời gian.",
+      "longTerm": "—"
+    },
+    {
+      "id": "khong_lam_gi",
+      "kind": "khong_lam_gi",
+      "label": "Để vậy",
+      "shortTerm": "Chị Lan im mà nhớ; ông Hải la to mà tha.",
+      "longTerm": "—"
+    }
+  ],
+  "runtime": "CHƯA — service chỉ đưa cho người đứng trước quầy (không đưa nhầm được)",
+  "designNote": "Cần cơ chế chọn người nhận khi ≥ 2 người cùng chờ."
+}

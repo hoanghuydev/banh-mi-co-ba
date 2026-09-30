@@ -1,0 +1,21 @@
+{
+  "id": "SK-34",
+  "name": "Cô Ba nói cô nghỉ hẳn",
+  "act": 4,
+  "day": 34,
+  "mandatory": false,
+  "trigger": {
+    "auto": true
+  },
+  "playerActions": [
+    {
+      "id": "khong_lam_gi",
+      "kind": "khong_lam_gi",
+      "label": "Ngồi nghe",
+      "shortTerm": "—",
+      "longTerm": "Sáu ngày sau người chơi quyết bằng hành động: mua hàng hay không."
+    }
+  ],
+  "runtime": "story.eveningLines(34) + ending.playerStays",
+  "designNote": "VA: nhẹ nhõm, không bi kịch."
+}

@@ -1,0 +1,21 @@
+{
+  "id": "SK-21",
+  "name": "Thầy Phúc đưa cây bút",
+  "act": 2,
+  "day": 11,
+  "mandatory": false,
+  "trigger": {
+    "auto": true
+  },
+  "playerActions": [
+    {
+      "id": "khong_lam_gi",
+      "kind": "khong_lam_gi",
+      "label": "Nhận cây bút",
+      "shortTerm": "Mở sổ tay khách (người chơi tự ghi).",
+      "longTerm": "Toàn bộ màn kết là cuốn sổ này."
+    }
+  ],
+  "runtime": "season.notebookWriteOpen (ngày 11) + arcs.THAY_PHUC",
+  "designNote": "—"
+}

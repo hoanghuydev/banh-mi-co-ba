@@ -129,9 +129,9 @@ test("danh sách ĐEN: tin đồn không bao giờ đổi GIÁ bánh — tệ nh
       for (const e of out) {
         if (e.kind !== "paid") continue;
         paid++;
-        // thiếu tiền lẻ thì bớt ≤ 5k (P3-03 §2.8), vía tốt làm tròn lên 1k — ngoài ra giá là giá
+        // thiếu tiền lẻ thì bớt ≤ 5k (P3-03 §2.8) — ngoài ra giá là giá (bánh mì không 10k, P4-03 SK-31)
         const base = e.amount - e.tip;
-        assert.ok([25_000, 32_000, 40_000].some((p) => base >= p - 5000 && base <= p + 1000), `${base}`);
+        assert.ok([10_000, 25_000, 32_000, 40_000].some((p) => base >= p - 5000 && base <= p + 1000), `${base}`);
       }
       return out;
     };

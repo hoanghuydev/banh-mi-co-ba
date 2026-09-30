@@ -84,6 +84,8 @@ export type GossipState = {
   overhear: OverhearPlan | null;
   /** Chuỗi đầu tiên có KỊCH BẢN (§2.13 #1) — không phó mặc xác suất. */
   scriptedDone: boolean;
+  /** P4-02 §2.3 — CÚ LỘ đã diễn chưa (bà Sáu kể cô Mai nghe, trước tiệm, đêm đầu tiên hẻm được phép kể). */
+  revealDone?: boolean;
   seq: number;
 };
 
@@ -102,7 +104,13 @@ for (const [a, b, s] of (TIES as unknown as { edges: [string, string, number][] 
   (TIE.get(a) ?? TIE.set(a, []).get(a)!).push({ to: b, strength: s });
   (TIE.get(b) ?? TIE.set(b, []).get(b)!).push({ to: a, strength: s });
 }
-export const tiesOf = (id: NpcId) => TIE.get(id) ?? [];
+const NEVER = (TIES as unknown as { neverTellsTo?: Record<string, string[] | string> }).neverTellsTo ?? {};
+/** Cạnh để KỂ (một chiều): bỏ những người mà người này không bao giờ kể cho (P4-01). */
+export const tiesOf = (id: NpcId) => {
+  const no = NEVER[id];
+  const list = TIE.get(id) ?? [];
+  return Array.isArray(no) ? list.filter((e) => !no.includes(e.to)) : list;
+};
 export const nodeOf = (id: NpcId): Node => NODES[id] ?? {};
 
 type ClaimDef = { kind: string; valence: -1 | 1; label: string; mutated?: boolean; hearsay: string[]; belief: string[];
@@ -221,6 +229,17 @@ export type TickCtx = {
   present: (id: NpcId) => boolean;
   /** Ghế nhựa (P3-04 D1): khách ngồi lại nói chuyện với nhau → thêm lượt kể mỗi đêm. */
   extraTransmissions?: number;
+  /**
+   * P4-01 NPC-12 — sau SK-32 (hai người cùng nghề) chú Kiệt kể tin XẤU ít hẳn đi: 0,45 → 0,15,
+   * vĩnh viễn. Người chơi không bao giờ được thông báo — chỉ thấy hẻm bớt dò xét.
+   */
+  willMul?: (teller: NpcId, valence: number) => number;
+  /**
+   * P4-02 §2.2–2.3 (CANON §12.6): hẻm đã được phép kể chưa — ngày ≥ 9 hoặc ≥ 90 phút chơi.
+   * Chưa mở thì CHỈ có chuỗi kịch bản đầu tiên (người chứng kiến → bà Sáu) đi ngầm, không
+   * méo, không cảnh nghe lỏm: "tin đã đi được 5 ngày trước khi người chơi biết". Vắng = mở.
+   */
+  open?: boolean;
 };
 
 /** Một đêm của cái hẻm. Trả các lần truyền tin (để P2-05 ghi nhật ký). */
@@ -232,11 +251,12 @@ export function gossipTick(g: GossipState, t: TickCtx): GossipLogEntry[] {
   const rng = Rng.forSeason(t.saveId, `gossip:${day}`);
   const inAlley = (id: NpcId) => !!nodeOf(id).resident || t.present(id);
 
+  const open = t.open ?? true;
   const send = (teller: NpcId, b: Belief, listener: NpcId) => {
-    const e = transmit(g, teller, b, listener, day, rng, t.allowFalseMemory);
+    const e = transmit(g, teller, b, listener, day, rng, t.allowFalseMemory && open);
     out.push(e);
     g.log.push(e);
-    if (!g.overhear && !nodeOf(teller).neverOverheard) g.overhear = planOverhear(teller, listener, g.beliefs[listener].at(-1)!, b, day + 1, rng);
+    if (open && !g.overhear && !nodeOf(teller).neverOverheard) g.overhear = planOverhear(teller, listener, g.beliefs[listener].at(-1)!, b, day + 1, rng);
   };
 
   let budget = MAX_TRANSMISSIONS_PER_NIGHT + (t.extraTransmissions ?? 0);
@@ -248,6 +268,16 @@ export function gossipTick(g: GossipState, t: TickCtx): GossipLogEntry[] {
       const b = (g.beliefs[n.id] ?? []).find((x) => x.kind === "DROPPED_FOOD" && x.hops === 0 && !x.toldTo.includes("BA_SAU"));
       if (b) { send(n.id, b, "BA_SAU"); g.scriptedDone = true; budget--; break; }
     }
+  }
+  if (!open) return out;
+  // P4-02 §2.3 CÚ LỘ — đêm đầu tiên hẻm được kể: bà Sáu dừng gánh trước tiệm cô Mai, và
+  // người chơi nghe (sáng mai 8h50) chuyện đã đi mấy ngày mà mình không biết. Chỉ dùng
+  // tin bà Sáu THẬT SỰ đang giữ — không có thì không có cảnh (không bịa thông tin).
+  if (!g.revealDone) {
+    g.revealDone = true;
+    const held = (g.beliefs.BA_SAU ?? []).filter((x) => !x.dormant && !x.toldTo.includes("CO_MAI"));
+    const b = held.find((x) => x.hops > 0) ?? held[0];
+    if (b) { g.overhear = null; send("BA_SAU", b, "CO_MAI"); budget--; }
   }
 
   const tellers = NPCS.map((n) => n.id).filter(inAlley);
@@ -263,7 +293,7 @@ export function gossipTick(g: GossipState, t: TickCtx): GossipLogEntry[] {
       && (!node.requiresWitnessToRelay || b.hops === 0));                // thầy Phúc: chưa thấy tận mắt thì chưa kể
     const b = weighted(rng, pool, (x) => x.intensity * x.confidence * x.intensityMul * (x.valence > 0 ? GOOD_NEWS_MUL : BAD_NEWS_MUL));
     const roll = rng.next();
-    if (!b || roll >= tellWillingness(teller, b.kind)) continue;
+    if (!b || roll >= tellWillingness(teller, b.kind) * (t.willMul?.(teller, b.valence) ?? 1)) continue;
     const cands = tiesOf(teller).filter((e) => e.strength > 0 && !b.toldTo.includes(e.to) && !b.chain.includes(e.to) && inAlley(e.to));
     const pick = weighted(rng, cands, (e) => e.strength);
     if (!pick) continue;

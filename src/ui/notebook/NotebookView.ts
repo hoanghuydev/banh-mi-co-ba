@@ -1,5 +1,6 @@
 import type Phaser from "phaser";
 import { NPCS } from "../../content/npcs";
+import { notebookWriteOpen } from "../../sim/season";
 import { buildBody } from "../../art";
 import type { SaveFile } from "../../core/save";
 import type { NpcId } from "../../core/types";
@@ -267,6 +268,14 @@ export class NotebookView {
     const img = this.el("img");
     img.src = this.face(id); img.alt = "";
     img.style.cssText = "width:44px;height:44px;border-radius:50%;object-fit:cover;object-position:50% 0;image-rendering:pixelated;background:#d9cdb2";
+    // P4-03 SK-21: thầy Phúc đưa cây bút NGÀY 11 — trước đó cột phải chỉ có mặt người, chưa ghi được
+    if (!notebookWriteOpen(this.w.progress.dayIndex)) {
+      top.append(img);
+      wrap.append(top);
+      wrap.append(this.el("div", "nb-t", `gặp lần đầu ngày ${p.firstSeenDay}`));
+      wrap.append(this.el("div", "nb-empty", "chưa có cây bút — con nhớ trong đầu đã."));
+      return wrap;
+    }
     const name = this.el("input", "nb-in");
     name.placeholder = "tên (con tự ghi)";
     name.value = p.name;

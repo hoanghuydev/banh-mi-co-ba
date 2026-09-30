@@ -1,0 +1,28 @@
+{
+  "id": "SK-24",
+  "name": "Chuyện cái bảng hiệu",
+  "act": 2,
+  "day": 16,
+  "mandatory": false,
+  "trigger": {
+    "auto": true
+  },
+  "playerActions": [
+    {
+      "id": "dung_nghe",
+      "kind": "than_the",
+      "label": "Đứng yên nghe",
+      "shortTerm": "Biết ông Hải viết bảng.",
+      "longTerm": "Điều kiện của SK-29."
+    },
+    {
+      "id": "khong_lam_gi",
+      "kind": "khong_lam_gi",
+      "label": "Bận",
+      "shortTerm": "Bà Sáu nói lại ngày 25.",
+      "longTerm": "—"
+    }
+  ],
+  "runtime": "story.storyOverhear(16) + onStoryOverheard + arcs.BA_SAU ngày 25",
+  "designNote": "—"
+}

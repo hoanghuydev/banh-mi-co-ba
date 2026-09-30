@@ -1,0 +1,49 @@
+{
+  "_note": "P4-05 §2.7 — từ điển gọi món, NGUYÊN VĂN. Đây là từ vựng của T2. `source` phải truy được (CANON §14 · idea.md §19.3 · P4-01/P4-03 — hoặc phỏng vấn PV-xx khi có). `authored: true` = bản dựng viết, CHỦ BIÊN VĂN HOÁ PHẢI DUYỆT. `game` = câu này đã có trong game chưa (sim/order + content/arcs). ⚠️ CHƯA có phỏng vấn nào (P4-05 §2.10) — 0% câu có nguồn PV.",
+  "phrases": [
+    { "text": "cho một ổ đầy đủ", "region": "nam", "maps": "pate + thịt nguội + chả lụa, rau đủ", "ambiguous": "'đầy đủ' của mỗi xe một khác — học đầy đủ CỦA XE NÀY", "source": "CANON §14", "game": true },
+    { "text": "bánh mì không", "region": "nam", "maps": "chỉ ổ bánh", "ambiguous": "BẪY LỚN NHẤT — không phải khách quên (ML-04, ML-12)", "source": "CANON §14", "game": true },
+    { "text": "cho ít rau", "region": "nam", "maps": "rau một nửa, KHÔNG phải bỏ rau", "ambiguous": "'ít' của mỗi người khác nhau (ML-09)", "source": "CANON §14", "game": true },
+    { "text": "nhiều ớt", "region": "nam", "maps": "ớt mức 3", "source": "CANON §14", "game": true },
+    { "text": "không ớt", "region": "nam", "maps": "ớt 0", "source": "CANON §14", "game": true },
+    { "text": "không hành", "region": "nam", "maps": "bỏ hành lá", "ambiguous": "nằm cạnh ngò rí trong khay — tay dễ quơ trúng", "source": "P4-05 §2.7 A", "game": true },
+    { "text": "đừng bỏ ngò", "region": "nam", "maps": "bỏ ngò rí", "source": "P4-01 thầy Phúc", "game": true },
+    { "text": "cho xin bịch", "region": "nam", "maps": "thêm bịch nilon ngoài giấy gói", "source": "P4-01 chú Tư", "game": "câu có, bịch chưa có" },
+    { "text": "gói mang về", "region": "nam", "maps": "gói kỹ, không ăn tại chỗ", "source": "P4-01 chị Lan", "game": "câu có, cách gói chưa có" },
+    { "text": "ăn tại chỗ", "region": "nam", "maps": "cần ghế, giấy lót, trà đá", "source": "P4-01 ông Hải, thầy Phúc", "game": "câu có" },
+    { "text": "như mọi bữa", "region": "nam", "maps": "đơn quen — TRÍ NHỚ của người chơi", "source": "P4-01 chú Tư", "game": true },
+    { "text": "y như hôm qua", "region": "nam", "maps": "đơn quen", "source": "P4-05 §2.7 A", "game": false },
+    { "text": "làm giống chỉ đó", "region": "nam", "maps": "đơn của người khác đang đứng đó", "source": "P4-05 §2.7 A", "game": "biến thể: 'làm giống ổng' (SK-17)" },
+    { "text": "cho con hai ổ, một ăn liền một mang về", "region": "nam", "maps": "hai ổ, gói khác nhau", "source": "P4-05 §2.7 A", "game": "hai ổ có; gói khác chưa" },
+    { "text": "đừng nướng, con để chút nữa ăn", "region": "nam", "maps": "không nướng lại", "source": "P4-05 §2.7 A", "game": false },
+    { "text": "bỏ hết vô", "region": "nam", "maps": "mọi nhân + rau", "source": "P4-05 §2.7 A", "game": false },
+    { "text": "cho ổ nhỏ thôi", "region": "nam", "maps": "ổ nhỏ", "source": "P4-05 §2.7 A", "game": false },
+    { "text": "Cho bà ổ thịt, ít rau thôi con, bà nhai không nổi.", "region": "nam", "maps": "thịt nguội, rau 1", "source": "P4-01 bà Bảy", "game": true },
+    { "text": "Cho chú ổ đầy đủ, nhiều ớt, cho xin bịch.", "region": "nam", "maps": "đầy đủ, ớt 3", "source": "P4-01 chú Tư", "game": true },
+    { "text": "Ổ xíu mại, gói lẹ giùm anh, anh có cuốc.", "region": "nam", "maps": "xíu mại", "source": "P4-01 anh Dũng", "game": true },
+    { "text": "Cho em ổ chả lụa, không ớt, không hành. Gói mang về.", "region": "nam", "maps": "chả lụa, ớt 0, hành 0", "source": "P4-01 chị Lan", "game": true },
+    { "text": "Cho con ổ bánh mì không, chấm sữa á cô.", "region": "nam", "maps": "bánh mì không", "source": "P4-01 bé Su", "game": "câu có; sữa đặc chưa có" },
+    { "text": "Cho chú ổ ốp la, hai trứng. Chú ăn tại chỗ. Cho xin ly trà đá.", "region": "nam", "maps": "ốp la mức 2", "source": "P4-01 ông Hải (sáng)", "game": true },
+    { "text": "Ổ gì cũng được con ơi. Ờ... đầy đủ. Đầy đủ đi.", "region": "nam", "maps": "đầy đủ", "source": "P4-01 ông Hải (chiều)", "game": true },
+    { "text": "Cho cô hai ổ, một đầy đủ một không hành. Cô ăn với con Hương.", "region": "nam", "maps": "hai ổ", "source": "P4-01 cô Mai", "game": true },
+    { "text": "Cho thầy ổ pate, ít rau, đừng bỏ ngò. Ăn tại chỗ.", "region": "nam", "maps": "pate, rau 1, ngò 0", "source": "P4-01 thầy Phúc", "game": true },
+    { "text": "Chị lấy một cái bánh mì pa-tê. Cho chị xin ít rau mùi. Với một cốc trà đá.", "region": "bac", "maps": "pate, rau 1", "ambiguous": "rau mùi = ngò rí, KHÔNG phải hành lá; cái = ổ; cốc = ly", "source": "P4-01 chị Hạnh", "game": true },
+    { "text": "Cho chị một ổ pa-tê... à, cho ít ngò. Ly trà đá nữa em.", "region": "bac", "maps": "pate, rau 1", "source": "P4-01 chị Hạnh M3", "game": true },
+    { "text": "Cho chị ổ pate, ít ngò, ly trà đá. Cảm ơn em nghen.", "region": "bac", "maps": "pate, rau 1", "source": "P4-01 chị Hạnh M5", "game": true },
+    { "text": "Dạ... ổ đầy đủ. Dạ.", "region": "nam", "maps": "đầy đủ", "source": "P4-01 anh Bảo", "game": true },
+    { "text": "Cho em ổ bánh mì không thôi.", "region": "nam", "maps": "bánh mì không", "source": "P4-03 SK-31", "game": true },
+    { "text": "Đổi hôn con? Chén tàu hũ lấy ổ bánh.", "region": "nam", "maps": "đổi hàng — bánh mì không (ML-13)", "source": "P4-01 bà Sáu", "game": "bản dựng thêm 'không' cho câu tự đủ (T2)" }
+  ],
+  "traSua": {
+    "_note": "P4-05 §2.7 D — mở khoá ngày 14. CHƯA có trong game (không có hệ đồ uống ngoài trà đá). '100 đá' = ĐẦY LY, không phải 'đá 100%'. Không cho 'ăn gian bằng đá' (đề xuất KHÔNG của doc — thuộc họ micro-cheat §8 g).",
+    "rows": [
+      { "text": "100 đường, 100 đá", "sugar": 100, "ice": 100, "who": "khách vãng lai không rành" },
+      { "text": "70 đường, 100 đá", "sugar": 70, "ice": 100, "who": "bé Su — đơn quen từ ngày 14" },
+      { "text": "70 đường, 70 đá", "sugar": 70, "ice": 70, "who": "khách vãng lai trẻ" },
+      { "text": "50 đường, 50 đá", "sugar": 50, "ice": 50, "who": "anh Bảo — ít đá hơn = đáng tiền hơn" },
+      { "text": "50 đường, không đá", "sugar": 50, "ice": 0, "who": "chị Hạnh — nói 'không đá' chứ không 'ít đá'" },
+      { "text": "ít đường thôi em", "sugar": 50, "ice": null, "who": "cô Mai — không dùng cú pháp số" },
+      { "text": "không đường", "sugar": 0, "ice": null, "who": "thầy Phúc (trà đá đường)" }
+    ]
+  }
+}

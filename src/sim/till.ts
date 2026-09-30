@@ -89,9 +89,14 @@ export function viaOf(f: OpeningFacts): ViaMood {
   return s <= -2 ? -1 : s >= 2 ? 1 : 0;
 }
 
-/** Toàn bộ hiệu ứng của vía — trần cứng 5% (P3-01 §2.6): khách vãng lai ±3%, làm tròn tiền ±2%. */
-export const viaWalkInMul = (v: ViaMood) => 1 + 0.03 * v;
-export const viaRoundUp = (v: ViaMood) => 0.02 * v;
+/**
+ * Hiệu ứng CƠ HỌC của vía = KHÔNG. P3-01 §2.6 từng cho ±3% khách / ±2% làm tròn; P4-05 §2.1 B
+ * (tài liệu thi hành lằn ranh LR-6) cấm hẳn: "KHÔNG CÓ buff/debuff số" — đốt vía hay không
+ * thì cùng seed ra cùng một ngày (có test). Vía chỉ còn là cô Ba phản ứng. Mối tương quan
+ * có thật mà nguyên nhân trần tục (hết tiền lẻ, hàng chờ dài) tự nó đã có sẵn trong game.
+ */
+export const viaWalkInMul = (_v: ViaMood) => 1;
+export const viaRoundUp = (_v: ViaMood) => 0;
 
 /** Nghi thức đốt vía — 5 nhịp, không phạt đếm sai (P3-01 §2.6). */
 export const RITUAL_STEPS = [

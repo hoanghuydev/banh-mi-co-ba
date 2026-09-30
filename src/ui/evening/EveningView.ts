@@ -3,6 +3,8 @@ import { SEASON_DAYS } from "../../core/save";
 import { ECON, WEEKDAY_VI, weekdayIdx } from "../../sim/econ";
 import { RECONCILE_DAYS, debtGap } from "../../sim/till";
 import { STANDS, STAND_IDS } from "../../sim/stands";
+import { creditBookOpen, standsOpen } from "../../sim/season";
+import { doAction, eveningActions } from "../../sim/story";
 import { canMoveTo, postMove, scout } from "../../sim/day";
 import { rentVnd } from "../../sim/obligations";
 import {
@@ -107,6 +109,23 @@ export class EveningView {
 
     // ── phải: sổ nghĩa vụ (chữ viết tay) + lời nhắc
     const R = this.el("div", "ev-col ev-right");
+    // P4-03 — chuyện trong hẻm: làm hay không là chuyện của con (E2: đưa vật / thân thể; không bấm = không làm gì)
+    const acts = eveningActions(day, w.story);
+    if (acts.length) {
+      R.append(this.el("div", "ev-h", "Chuyện trong hẻm"));
+      for (const a of acts) {
+        const box = this.el("div", "ev-due");
+        const b = this.el("button", "ev-btn", a.costVnd ? `${a.label} (${money(a.costVnd)})` : a.label);
+        b.disabled = (a.costVnd ?? 0) > w.money.cash;
+        b.onclick = () => {
+          if (a.costVnd) w.money.cash -= a.costVnd;
+          this.msg = doAction(w.story, a.id, day);
+          this.render();
+        };
+        box.append(b);
+        R.append(box);
+      }
+    }
     R.append(this.el("div", "ev-h", "Sổ nợ nần"));
     // điện thoại: em gọi — báo trước 6 ngày, gọi lại mỗi tối tới khi đóng (P3-06 §2.2)
     const hoc = [...upcoming(e, day, 6), ...duesOpen(e, day)].find((d) => d.kind === "TIEN_HOC");
@@ -158,7 +177,8 @@ export class EveningView {
     }
     // ── sổ nợ khách (P3-03 §2.6): máy chỉ biết SỐ NGƯỜI chưa ghi — số tiền là trí nhớ của con
     const debts = w.money.debtsOwedToPlayer ?? [];
-    const unwritten = debts.filter((d) => d.day === day && d.playerWrote === null);
+    // P4-03 SK-20: trước ngày 9 chưa có cuốn sổ caro — bán chịu thì chỉ còn trí nhớ hai bên
+    const unwritten = creditBookOpen(day) ? debts.filter((d) => d.day === day && d.playerWrote === null) : [];
     const openWritten = debts.filter((d) => d.playerWrote !== null && d.settledOnDay === undefined && day - d.day < 14);
     if (unwritten.length || openWritten.length) R.append(this.el("div", "ev-h", "Sổ bán chịu"));
     if (unwritten.length) R.append(this.el("div", "ev-note", `Hôm nay có ${unwritten.length} người mua chịu mà con chưa ghi.`));
@@ -192,7 +212,9 @@ export class EveningView {
   private finishRender(book: HTMLElement) {
     const day = this.w.progress.dayIndex;
     const foot = this.el("div", "ev-foot");
-    for (const [id, label] of [["debts", "Sổ nợ nần"], ["gear", "Đồ nghề"], ["stand", "Chỗ đứng"]] as const) {
+    // P4-02 §2.2: bà Sáu chỉ chỗ ngày 16 — trước đó không có trang "Chỗ đứng"
+    const tabs = standsOpen(day) ? [["debts", "Sổ nợ nần"], ["gear", "Đồ nghề"], ["stand", "Chỗ đứng"]] as const : [["debts", "Sổ nợ nần"], ["gear", "Đồ nghề"]] as const;
+    for (const [id, label] of tabs) {
       const b = this.el("button", `ev-btn${this.tab === id ? " primary" : ""}`, label);
       b.setAttribute("aria-pressed", String(this.tab === id));
       b.onclick = () => { this.tab = id; this.msg = ""; this.render(); };

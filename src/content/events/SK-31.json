@@ -1,0 +1,35 @@
+{
+  "id": "SK-31",
+  "name": "Cuối tháng, khách hết tiền",
+  "act": 3,
+  "day": 29,
+  "mandatory": true,
+  "trigger": {
+    "auto": true
+  },
+  "playerActions": [
+    {
+      "id": "len_bo_pate",
+      "kind": "mon_an",
+      "label": "Lén bỏ pate vào",
+      "shortTerm": "Anh không biết ngay.",
+      "longTerm": "Vắng ngày 30, ngày 31 quay lại trả tiền."
+    },
+    {
+      "id": "lam_dung_va_lam_ngon",
+      "kind": "mon_an",
+      "label": "Làm đúng ổ bánh mì không — và làm nó thật ngon",
+      "shortTerm": "Anh cầm, đi.",
+      "longTerm": "Ngày 40 anh không cầm điện thoại."
+    },
+    {
+      "id": "khong_lam_gi",
+      "kind": "khong_lam_gi",
+      "label": "Làm ổ bánh mì không bình thường",
+      "shortTerm": "Không có gì xảy ra.",
+      "longTerm": "Hợp lệ."
+    }
+  ],
+  "runtime": "arcs.ANH_BAO ngày 29–31 + story.onServed (baoSneak / baoRespect)",
+  "designNote": "Nhánh \"cho thêm nói rõ\" và \"ghi sổ nợ\" chưa phân biệt được."
+}

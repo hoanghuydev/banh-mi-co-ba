@@ -6,6 +6,8 @@ import { bus, type EventKey, type EventMap } from "../core/eventbus";
 import { NEGATIVE_STIMS, type StallCloseReason, type StimId } from "../core/types";
 import type { GameContext } from "../core/context";
 import { SEASON_DAYS, loadSettings, type Settings } from "../core/save";
+import { creditBookOpen } from "../sim/season";
+import { moment, onStoryOverheard } from "../sim/story";
 import { DEV_TOOLS, PLAYTEST } from "../core/flags";
 import { telemetry } from "../core/session";
 import { Service } from "../sim/service";
@@ -89,6 +91,10 @@ export class StallScene extends Phaser.Scene {
   private breadQ = 1;
   /** Khách vừa mua chịu — còn vài giây để bấm G ghi sổ. */
   private ritualOffered = false;
+  /** P4-04 §2.2 — lúc chị Lan đi khỏi khung hình ngày 40 (bắt đầu khoảng lặng 40 giây). */
+  private finaleAt = -1;
+  /** Lúc gói xong ổ đang cầm — để biết người chơi có làm TRƯỚC khi khách gọi không (T-B). */
+  private dishReadyAt = 0;
   private pendingDebt: { record: import("../sim/till").DebtRecord; name: string; until: number } | null = null;
   private dishQ = 1;
 
@@ -234,6 +240,7 @@ export class StallScene extends Phaser.Scene {
       ...standDeps(w),
       debts: w.money.debtsOwedToPlayer, till: w.econ, allowFalseMemory: w.a11y.allowFalseMemory ?? true,
       equip: w.equipment, loaOn: (w.econ?.loaOffUntil ?? 0) < w.progress.dayIndex,
+      story: w.story, noTimePressure: this.settings.noTimePressure,
       resumeAt: this.resumed || w.flags.lateOpenDay === w.progress.dayIndex ? this.clock.minutes : undefined,
     });
     this.assembly = new AssemblyPanel(this,
@@ -461,7 +468,8 @@ export class StallScene extends Phaser.Scene {
       clock: (raw) => {
         frameDeltas.push(raw);
         if (frameDeltas.length > 5400) frameDeltas.shift();
-        this.clock.busy = this.service.busy;
+        // khoảng lặng ngày 40: đồng hồ đi chậm như lúc có khách — 40 giây thật không được tua mất
+        this.clock.busy = this.service.busy || this.finaleAt >= 0;
         return this.closed ? 0 : this.clock.advance(raw);
       },
       input: (dt) => {
@@ -503,6 +511,8 @@ export class StallScene extends Phaser.Scene {
       },
       perception: (dt) => {
         this.elapsed += dt;
+        this.service.ovenHot = this.oven.busy || this.service.servedCount > 0;
+        this.tickFinale();
         this.service.perceive(dt, this.elapsed, this.occluders());
       },
       npc: (dt) => {
@@ -551,8 +561,14 @@ export class StallScene extends Phaser.Scene {
       const p = k.sc.plan;
       const source = k.sc.bestFirst >= 2 ? p.source : null;
       bus.emit("gossip:overheard", { a: p.a, b: p.b, claim: p.claim, source, tier: k.sc.best });
-      // P2-05: nghe hụt vẫn không mất trắng — tầng 1 ghi được NỘI DUNG, chỉ mất NGUỒN
       const nb = this.world.notebook;
+      // P4-03 — cảnh có kịch bản (bảng hiệu, "nhà tui gần xe bánh mì cô Ba", tin đo đạc): không phải tin đồn về mình
+      if (p.claim.startsWith("story:")) {
+        onStoryOverheard(this.world.story, p.claim, k.sc.best, this.world.progress.dayIndex);
+        if (nb && k.sc.best >= 1) logNote(nb, this.world.progress.dayIndex, this.clock.minutes, p.a, { t: "SAID_SOMETHING", text: p.lines.join(" — ") });
+        return;
+      }
+      // P2-05: nghe hụt vẫn không mất trắng — tầng 1 ghi được NỘI DUNG, chỉ mất NGUỒN
       if (nb && k.sc.best >= 1) {
         logNote(nb, this.world.progress.dayIndex, this.clock.minutes, p.a, { t: "EAVESDROP", claim: p.claim, ...(source ? { source } : {}) });
         if (CLAIM[p.claim]?.valence < 0) nb.today.heardBad = true; else nb.today.heardGood = true;
@@ -662,8 +678,11 @@ export class StallScene extends Phaser.Scene {
       if (ev.kind === "credit") {
         // P3-03 §2.6: GHI_SO tốn 2 giây tay; không bấm = "ghi sau" (tối chỉ biết số người chưa ghi)
         w.progress.today.served++;
-        this.pendingDebt = { record: ev.record, name: ev.name, until: this.elapsed + 4 };
-        this.hud.log(`${ev.name} mua chịu ${ev.record.trueAmount.toLocaleString("vi-VN")}₫ — bấm G để ghi sổ`);
+        // P4-03 SK-20: cuốn sổ caro là cô Mai đưa NGÀY 9 — trước đó bán chịu thì chỉ nhớ trong đầu
+        if (creditBookOpen(w.progress.dayIndex)) {
+          this.pendingDebt = { record: ev.record, name: ev.name, until: this.elapsed + 4 };
+          this.hud.log(`${ev.name} mua chịu ${ev.record.trueAmount.toLocaleString("vi-VN")}₫ — bấm G để ghi sổ`);
+        } else this.hud.log(`${ev.name} mua chịu ${ev.record.trueAmount.toLocaleString("vi-VN")}₫ — chưa có sổ, nhớ trong đầu`);
         continue;
       }
       if (ev.kind === "repay") {
@@ -799,6 +818,7 @@ export class StallScene extends Phaser.Scene {
     this.grip.reset();                                 // cầm ổ mới gói lên: tay chắc lại từ đầu
     this.handWarmth = this.boardWarmth;
     this.dish = dish;
+    this.dishReadyAt = this.elapsed;
     this.player.hand = "loaf_filled";
     // gói xong mới trừ kho — lô cũ nhất trước (P3-03); chất lượng từng phần vào dishQuality
     const day = this.world.progress.dayIndex;
@@ -858,7 +878,7 @@ export class StallScene extends Phaser.Scene {
     if (cold) this.emit("BURNT_OR_COLD", "HANDS");
     const res = this.player.hand === "tea"
       ? this.service.serveTea()
-      : this.service.serveDish(this.dish, { cold, crust: this.handCrust, quality: this.dishQ });
+      : this.service.serveDish(this.dish, { cold, crust: this.handCrust, quality: this.dishQ, readyAt: this.dishReadyAt });
 
     if (!res.ok) { this.hud.log(res.reason ?? "chưa đưa được"); return; }
 
@@ -929,7 +949,7 @@ export class StallScene extends Phaser.Scene {
     this.dish = [];
     this.busy = null;
     this.handsBusyUntil = this.elapsed + 1.0;
-    if (wasBurnt) this.hud.log("cô Ba: \"bánh đó con để cô ăn.\"");   // CANON §7.4: cô buồn chứ không la
+    if (wasBurnt) { this.hud.log("cô Ba: \"bánh đó con để cô ăn.\""); moment(this.world.story, "BANH_DO_CON_DE_CO_AN"); }   // CANON §7.4: cô buồn chứ không la
   }
 
   /**
@@ -978,6 +998,7 @@ export class StallScene extends Phaser.Scene {
     this.emit("DROPPED_FOOD", "HANDS");
     this.addDirt(0.06);                                // DROP_MESS
     this.hud.log("rớt rồi…");
+    moment(this.world.story, "BANH_DO_CON_DE_CO_AN");  // rớt thì bỏ — đúng luật (P4-05 §2.2 B)
   }
 
   /** Vật che tầm nhìn (P1-02 §2.6): thân người che tay (giữ C) · hơi lò khi lò đang nướng. */
@@ -1177,6 +1198,7 @@ export class StallScene extends Phaser.Scene {
         s.burnVia();
         this.resume();
         this.hud.log(RITUAL_LINES.done);
+        moment(this.world.story, "VIA_LANH_THI_O");
         return;
       }
       this.overlay = this.modal(`Đốt vía · ${i + 1}/${RITUAL_STEPS.length}`, [[RITUAL_STEPS[i], () => step(i + 1)]], i === 0 ? RITUAL_PRAYER : undefined);
@@ -1217,6 +1239,24 @@ export class StallScene extends Phaser.Scene {
     if (has(e, "KHAN_3_MAU")) draw(5.4, 4.5, (x, y, gg) => { [0x5aa05a, 0xe0c040, 0xc84a3a].forEach((c, i) => gg.fillStyle(c, 1).fillRect(x - 7 + i * 5, y - 46, 4, 6)); });
     if (has(e, "TU_MAT")) draw(2.6, 2.4, (x, y, gg) => { gg.fillStyle(0xe8eef1, 1).fillRoundedRect(x - 12, y - 40, 24, 40, 3).lineStyle(1, 0x9aa6ae, 1).strokeRoundedRect(x - 12, y - 40, 24, 40, 3); });
     if (has(e, "NOI_U")) draw(9.4, 1.6, (x, y, gg) => { gg.fillStyle(0xb8bec3, 1).fillEllipse(x, y - 34, 18, 10).fillStyle(0x8a9095, 1).fillRect(x - 9, y - 34, 18, 8); });
+  }
+
+  /**
+   * Ngày 40, sau khi chị Lan đi: cô Ba nói MỘT câu (không phải câu hỏi), rồi hẻm trống 40 giây.
+   * Người chơi vẫn đi lại, dọn quầy được — bấm phím bất kỳ (E/Space/Enter) là qua màn kết.
+   * Không nhạc, không swell (P4-03 §2.5).
+   */
+  private tickFinale() {
+    if (this.world.progress.dayIndex < 40 || this.closed) return;
+    if (this.finaleAt < 0 && this.service.lanLeft && !this.service.busy) {
+      this.finaleAt = this.elapsed;
+      this.hud.log("Cô Ba: Hết rồi hả con.");
+      music.duck(true);
+      const skip = () => { if (this.finaleAt >= 0 && this.elapsed - this.finaleAt > 1.5) this.close("PLAYER"); };
+      this.input.keyboard?.once("keydown-ENTER", skip);
+      this.input.keyboard?.once("keydown-SPACE", skip);
+    }
+    if (this.finaleAt >= 0 && this.elapsed - this.finaleAt >= 40) this.close("PLAYER");
   }
 
   /** Tab — sổ tay giữa ngày. Mở sổ = pause hoàn toàn; đóng sổ = bán tiếp. */

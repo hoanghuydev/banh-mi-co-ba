@@ -14,7 +14,7 @@ import { ECON } from "./econ";
 
 export type EquipId = "LO_THAN" | "THUNG_XOP" | "LO_GAS" | "DAO_BEN" | "THOT_RIENG" | "KEP_GAP" | "TU_MAT" | "NOI_U"
   | "LONG_BAN" | "VOI_BON" | "THUNG_RAC" | "KHAN_3_MAU" | "GHE_BAN" | "DU_CHE" | "BINH_TRA" | "BANG_QR" | "LOA_RAO"
-  | "BANG_HIEU" | "GIA_TREO" | "KHUNG_GIA_CO";
+  | "BANG_HIEU" | "GIA_TREO" | "KHUNG_GIA_CO" | "DEN_CA_TOI";
 
 export type EquipDef = {
   name: string; group: string; price_k: number; slots: number; daily_k: number; starting?: boolean;

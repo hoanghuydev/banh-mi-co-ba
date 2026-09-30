@@ -1,0 +1,28 @@
+{
+  "id": "SK-15",
+  "name": "App khoá tài khoản anh Dũng",
+  "act": 2,
+  "day": 11,
+  "mandatory": false,
+  "trigger": {
+    "auto": true
+  },
+  "playerActions": [
+    {
+      "id": "dua_tra",
+      "kind": "dua_vat",
+      "label": "Đưa ly trà đá lúc anh ngồi im",
+      "shortTerm": "Anh kể.",
+      "longTerm": "Điều kiện mềm cho ngày 34 và 40."
+    },
+    {
+      "id": "khong_lam_gi",
+      "kind": "khong_lam_gi",
+      "label": "Để yên",
+      "shortTerm": "Anh gọi món rồi đi.",
+      "longTerm": "—"
+    }
+  ],
+  "runtime": "arcs.ANH_DUNG (holdSec 40) + story.onTea",
+  "designNote": "—"
+}

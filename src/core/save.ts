@@ -12,6 +12,7 @@
  * × stream RNG tách. Cái KHÔNG khoá: chơi lại cả ngày bằng nút chính thức.
  */
 import { newRelState, type Memory, type RelState } from "../sim/memory";
+import { newStoryState, type StoryState } from "../sim/story";
 import { newGossipState, type GossipState } from "../sim/gossip";
 import { newNotebook, type Notebook } from "../sim/notebook";
 import { ECON, newInventory, scaledVnd, weatherOf, type InventoryState } from "../sim/econ";
@@ -28,7 +29,7 @@ import type { TimeBand } from "./clock";
 
 export { loadSettings, saveSettings, DEFAULT_SETTINGS, type Settings } from "./flags";
 
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 /** Ký ức của NPC — schema ở P2-03 §3, luật ở `sim/memory.ts`. */
 export type MemorySlot = Memory;
@@ -136,6 +137,8 @@ export type SaveFile = {
 
   telemetry: { optedIn: boolean; sessionCount: number; totalPlayMs: number };
   flags: Record<string, boolean | number | string>;
+  /** P4 — chuyện của mùa: chuyện ĐÃ xảy ra (không điểm, không ngưỡng lộ ra — T3). */
+  story: StoryState;
 };
 
 export const SEASON_DAYS = 40;
@@ -186,6 +189,7 @@ export function newGame(name: string, saveId = uuid()): SaveFile {
     a11y: { ...DEFAULT_SETTINGS, ...loadSettings() },
     telemetry: { optedIn: false, sessionCount: 0, totalPlayMs: 0 },
     flags: {},
+    story: newStoryState(),
   };
 }
 
@@ -241,6 +245,11 @@ export const MIGRATIONS: Record<number, (s: any) => any> = {
     old.money.debtsOwedToPlayer = [];
     old.equipment = newEquipState();
     old.progress.weather = weatherOf(old.progress.dayIndex ?? 1);
+    return old;
+  },
+  // 4 → 5: P4 — chuyện của mùa. Save giữa mùa bắt đầu với "chưa có chuyện gì" (không bịa quá khứ).
+  4: (old) => {
+    old.story = newStoryState();
     return old;
   },
 };

@@ -26,7 +26,7 @@ import { refillPresets } from "../sim/presets";
  */
 export type DayStart = { mode: "new" } | { mode: "continue" };
 
-const CHILDREN = ["market", "stall", "evening"] as const;
+const CHILDREN = ["market", "stall", "evening", "ending"] as const;
 type Child = typeof CHILDREN[number];
 
 /** Tiền đổi ít nhất ngần này mới đáng một lần autosave riêng (P0-02 §2.6). */
@@ -59,6 +59,15 @@ export class DayScene extends Phaser.Scene {
     else this.resume();
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.teardown());
+  }
+
+  /**
+   * Giờ chơi THẬT (kể cả pause — Steam cũng tính vậy). P4-02 §2.3: cú lộ đồn thổi bắn ở
+   * ngày 9 HOẶC phút thứ 90, cái nào tới trước. Frame dài (tab ẩn) bị cắt ở 250 ms.
+   */
+  update(_t: number, delta: number) {
+    const t = this.ctx?.world.telemetry;
+    if (t) t.totalPlayMs = (t.totalPlayMs ?? 0) + Math.min(250, Math.max(0, delta));
   }
 
   // ───────────────────────────────────────────────────────────── luồng ngày
@@ -122,7 +131,7 @@ export class DayScene extends Phaser.Scene {
 
   private open(child: Child, extra: Record<string, unknown> = {}) {
     this.closeChildren();
-    const key = ({ market: "Market", stall: "Stall", evening: "Evening" } as const)[child];
+    const key = ({ market: "Market", stall: "Stall", evening: "Evening", ending: "Evening" } as const)[child];
     this.ctx.setScene(key);
     this.scene.launch(child, { ctx: this.ctx, day: this, ...extra });
   }
@@ -144,9 +153,12 @@ export class DayScene extends Phaser.Scene {
         dayIndex: w.progress.dayIndex,
         summary: { served: p.served, lost: p.lost, revenue: p.revenue },
       });
+      // P4-04: ngày 40 không có cảnh tối — sau khoảng lặng là màn kết
+      if (w.progress.dayIndex >= SEASON_DAYS) { w.flags.seasonOver = true; this.open("ending"); ctx.save.flushNow("SCENE_CHANGE"); return; }
       this.open("evening");
       ctx.save.request("SCENE_CHANGE");
     });
+    on("ending:done", () => this.quitToMenu());
     on("evening:done", () => {
       const w = ctx.world;
       if (w.progress.dayIndex >= SEASON_DAYS) {

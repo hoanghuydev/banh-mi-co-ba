@@ -1,0 +1,28 @@
+{
+  "id": "SK-38",
+  "name": "Trẻ con nhặt được ví",
+  "act": 4,
+  "day": 37,
+  "mandatory": true,
+  "trigger": {
+    "auto": true
+  },
+  "playerActions": [
+    {
+      "id": "de_len_quay",
+      "kind": "than_the",
+      "label": "Để ví lên quầy",
+      "shortTerm": "Chủ ví tới gần trưa.",
+      "longTerm": "Ông quay lại ngày 39, 40."
+    },
+    {
+      "id": "khong_lam_gi",
+      "kind": "khong_lam_gi",
+      "label": "Không làm gì",
+      "shortTerm": "—",
+      "longTerm": "—"
+    }
+  ],
+  "runtime": "arcs.extraVisits(sk38a/b/c)",
+  "designNote": "Bản dựng chỉ có nhánh \"để lên quầy\"; ba nhánh kia chưa có."
+}

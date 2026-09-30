@@ -1,0 +1,28 @@
+{
+  "id": "SK-01",
+  "name": "Hết tiền thối lúc 6h30",
+  "act": 1,
+  "day": 2,
+  "mandatory": false,
+  "trigger": {
+    "auto": true
+  },
+  "playerActions": [
+    {
+      "id": "doi_tien",
+      "kind": "than_the",
+      "label": "Chạy qua tiệm cô Mai đổi",
+      "shortTerm": "Hàng chờ dài ra.",
+      "longTerm": "Cô Mai M1 — từ ngày 3 cô tự mang tiền lẻ qua."
+    },
+    {
+      "id": "khong_lam_gi",
+      "kind": "khong_lam_gi",
+      "label": "Đứng đợi",
+      "shortTerm": "Cô Mai chạy qua trước khi được hỏi.",
+      "longTerm": "Như trên."
+    }
+  ],
+  "runtime": "arcs.extraVisits(sk01) + service.settlePayment(paysWith)",
+  "designNote": "Bản dựng: cô Mai LUÔN chạy qua (doc: chạy qua trước khi được hỏi). Nhánh \"từ chối bán\" chưa có — cần REFUSED_SERVICE (CANON §3.4)."
+}

@@ -79,8 +79,14 @@ export type OrderIntent = {
   nhieu?: Ingredient;
   /** Gọi "một ổ đầy đủ" — ba nhân tiêu chuẩn, không cần kể tên. */
   dayDu?: boolean;
-  /** "it" = "cho ít rau": rau MỘT NỬA — không phải cấm thứ nào (P1-03 §2.3 luật vàng). */
-  rau: "day-du" | "it";
+  /**
+   * "it" = "cho ít rau": rau MỘT NỬA — không phải cấm thứ nào (P1-03 §2.3 luật vàng).
+   * "khong" = "không rau" / "bánh mì không" — P4-05 §2.7 A: chỉ ổ bánh. Bẫy lớn nhất của
+   * người chơi mới (tưởng khách quên) — ML-04 bé Su, ML-12 anh Bảo ngày 29.
+   */
+  rau: "day-du" | "it" | "khong";
+  /** Thứ khách NÓI bỏ ra ("không hành", "đừng bỏ ngò") — mức 0, bỏ vô là UNWANTED. */
+  bo?: Ingredient[];
   ot: 0 | 1 | 3;
   tuong: 0 | 1 | 3;
   usual: boolean;
@@ -90,15 +96,28 @@ export type OrderSpec = {
   intent: OrderIntent;
   /** Mức khách muốn cho từng thứ. Không có trong bảng = khách không nói tới. */
   levels: Partial<Record<Ingredient, number>>;
+  /**
+   * Câu gọi NGUYÊN VĂN của một người có tên (P4-01 "Đơn hàng quen"). Luật T2 vẫn giữ: câu
+   * phải tự nó quyết định được ổ bánh — có test đọc lại câu ra bảng định lượng.
+   */
+  phrase?: string;
+  /** Câu nói tắt khi đã quen ("Như mọi bữa nghen con.") — mỗi người một kiểu nói. */
+  short?: string;
+  /**
+   * KHẨU VỊ ẨN (P4-01, P4-03 §2.2 ML) — mức mà người này THẬT SỰ muốn nhưng không bao giờ
+   * nói. Ổ làm theo mức này cũng ĐÚNG. Bỏ qua thì không bị gì (ignorePenalty = none).
+   */
+  alt?: Partial<Record<Ingredient, number>>;
 };
 
 export function levelsOf(it: OrderIntent): Partial<Record<Ingredient, number>> {
   const lv: Partial<Record<Ingredient, number>> = {};
   for (const n of it.nhan) lv[n] = it.nhieu === n ? 3 : 2;
-  const veg = it.rau === "day-du" ? 2 : 1;
+  const veg = it.rau === "day-du" ? 2 : it.rau === "it" ? 1 : 0;
   lv.dochua = veg; lv.dualeo = veg; lv.hanhngo = veg;
   lv.ot = it.ot;
   lv.tuongot = it.tuong;
+  for (const b of it.bo ?? []) lv[b] = 0;
   return lv;
 }
 
@@ -141,12 +160,16 @@ export function makeOrder(rng: Rng, usual: OrderSpec, canAskUsual: boolean): Ord
  */
 export function sayOrder(spec: OrderSpec): string {
   const it = spec.intent;
-  if (it.usual) return "Như mọi bữa nghen con.";
+  if (it.usual) return spec.short ?? "Như mọi bữa nghen con.";
+  if (spec.phrase) return spec.phrase;
+  if (!it.nhan.length && !it.dayDu && it.rau === "khong") return "Cho một ổ bánh mì không.";
 
   const parts = [it.dayDu
     ? "Cho một ổ đầy đủ"
     : `Cho một ổ ${it.nhan.map((n) => (it.nhieu === n ? `nhiều ${labelOf(n)}` : labelOf(n))).join(" với ")}`];
   if (it.rau === "it") parts.push("cho ít rau");
+  else if (it.rau === "khong") parts.push("không rau");
+  for (const b of it.bo ?? []) if (b === "hanhngo") parts.push("không hành");
   if (it.ot === 3) parts.push("nhiều ớt");
   else if (it.ot === 0) parts.push("không ớt");
   if (it.tuong === 3) parts.push("nhiều tương");

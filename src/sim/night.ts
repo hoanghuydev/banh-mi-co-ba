@@ -14,6 +14,9 @@ import { gossipTick, newGossipState, witness } from "./gossip";
 import { checkHypotheses, composeEvening, landmarkTier, newNotebook } from "./notebook";
 import { makeUsual } from "./order";
 import { STANDS } from "./stands";
+import { daySpec, gossipOpen } from "./season";
+import { arcCtx, endOfDay, eveningNoteOverride, newStoryState, storyOverhear } from "./story";
+import { usualOf as authoredUsual } from "../content/arcs";
 import { Rng } from "../core/rng";
 import { SEASON_DAYS } from "../core/save";
 
@@ -31,7 +34,14 @@ export function settleNight(w: SaveFile, bus?: Bus) {
     present: (id) => w.npcs[id]?.lastSeenDay === day,
     // ghế ngồi (P3-04 D1) và chỗ đông người nói chuyện (cổng trường ×2,4, chợ ×1,7 — P3-05) → chuyện lan nhanh hơn
     extraTransmissions: (w.equipment?.owned.includes("GHE_BAN") ? 1 : 0) + (STANDS[w.econ?.stand ?? "L1"].gossip >= 1.5 ? 1 : 0),
+    // P4-02 §2.3: cảnh của đêm nay diễn sáng mai — mở khi SÁNG MAI đã là ngày 9 (hoặc đã ≥ 90 phút chơi)
+    open: gossipOpen(day + 1, w.telemetry?.totalPlayMs ?? 0),
+    willMul: (teller, valence) => (teller === "CHU_KIET" && valence < 0 && w.story?.flags.kietTalked ? 0.15 / 0.45 : 1),
   });
+  // P4-03 — cảnh nghe lỏm có kịch bản của sáng mai (SK-24 bảng hiệu, thước đo tiến trình, tin đo đạc)
+  const sp = w.story ? storyOverhear(day + 1) : null;
+  if (sp) w.gossip.overhear = { day: day + 1, a: sp.a, b: sp.b, claim: sp.id, source: null, lines: sp.lines, hiddenA: sp.lines[0] };
+  if (w.story) endOfDay(w.story, day);
   for (const e of sent) {
     bus?.emit("gossip:propagated", { from: e.from, to: e.to, factId: e.claim, hop: e.hops, confidence: 0, mutatedTo: e.mutated ? e.claim : undefined });
   }
@@ -58,11 +68,17 @@ export function settleNight(w: SaveFile, bus?: Bus) {
 
   // P2-05 — tick mực đỏ cho giả thuyết đúng VÀ đã chứng minh hôm nay, rồi trang của cô Ba
   const nb = (w.notebook ??= newNotebook());
-  const confirmations = checkHypotheses(nb, day, (id) => makeUsual(Rng.forSeason(w.saveId, id)).levels);
+  const story = w.story ?? newStoryState();
+  const actx = arcCtx(story, day, { rain: false, owns: () => false, hasWrongName: () => false });
+  const confirmations = checkHypotheses(nb, day, (id) => (authoredUsual(id, actx) ?? makeUsual(Rng.forSeason(w.saveId, id))).levels);
   composeEvening(nb, {
     day, lastDay: day >= SEASON_DAYS, weather: w.progress.weather,
     absences: nb.met.map((id) => ({ npcId: id, missed: w.npcs[id]?.gone ? 0 : w.npcs[id]?.missStreak ?? 0 })).filter((a) => a.missed >= 2),
     landmark: landmarkTier(w.gossip, nb.today.strangers, w.npcs.BA_SAU?.tier === "FRIEND"),
     confirmations, bags: w.shuffleBags, rng: Rng.forSeason(w.saveId, `note:${day}`), spokenOnce: w.dialogState.spokenOnce,
   });
+  // P4-02 §2.5 phanh #2: tối hôm có người không tới, cô Ba ghi 2–3 dòng — KHÔNG phán đúng sai
+  const override = eveningNoteOverride(day, story, daySpec(day).notebookLine);
+  const note = nb.eveningNotes.find((n) => n.day === day);
+  if (override && note) note.lines = override.split("\n");
 }

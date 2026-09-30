@@ -44,17 +44,20 @@ export type Policy = {
   defectRate: number;
   /** Xác suất đưa ly trà đá trước khi làm. */
   teaRate: number;
+  /** Người quen (đã nghe đơn ≥ 3 lần): xác suất bot làm SẴN ổ quen trước khi khách gọi (T-B). */
+  anticipate?: number;
 };
 
 /** P3-04 §2.6 — build "Vệ sinh" tham chiếu (ngày:món). */
 export const BUILD_VE_SINH: [number, EquipId][] = [
-  [2, "KEP_GAP"], [4, "THUNG_RAC"], [5, "KHAN_3_MAU"], [5, "THOT_RIENG"], [6, "LONG_BAN"], [8, "BANG_QR"],
+  [2, "KEP_GAP"], [4, "THUNG_RAC"], [5, "KHAN_3_MAU"], [5, "THOT_RIENG"], [6, "LONG_BAN"], [14, "BANG_QR"],
   [12, "VOI_BON"], [15, "DAO_BEN"], [19, "GIA_TREO"], [22, "TU_MAT"], [29, "GHE_BAN"], [33, "BINH_TRA"],
 ];
 
 export const POLICIES: Record<string, Policy> = {
   /** Làm đúng, làm nhanh — trần trên của thông lượng. */
-  greedy: { name: "greedy", workSec: [7, 10], dropRate: 0, defectRate: 0, teaRate: 0, build: BUILD_VE_SINH },
+  // P4-02 §2.7: 14–28 khách/ngày → bot làm ăn giỏi đi chợ cho ~20 ổ
+  greedy: { name: "greedy", workSec: [7, 10], dropRate: 0, defectRate: 0, teaRate: 0, build: BUILD_VE_SINH, anticipate: 0.5, buyLoaves: 20 },
   /** Người mới: chậm, thỉnh thoảng rớt, thỉnh thoảng thiếu. */
   newbie: { name: "newbie", workSec: [12, 20], dropRate: 0.08, defectRate: 0.15, teaRate: 0.1 },
   /** Người chơi "khéo": hay dùng trà đá. */
@@ -114,6 +117,7 @@ export class HeadlessStall {
       ...standDeps(w),
       debts: w.money.debtsOwedToPlayer, till: w.econ, allowFalseMemory: w.a11y.allowFalseMemory ?? true,
       equip: w.equipment, loaOn: (w.econ?.loaOffUntil ?? 0) < w.progress.dayIndex,
+      story: w.story,
       resumeAt: opts.resume || lateOpen ? this.ctx.clock.minutes : undefined,
     });
     bus.on("npc:left", (p) => { if (p.reason === "IMPATIENT") w.progress.today.lost++; });
@@ -171,7 +175,9 @@ export class HeadlessStall {
       const q = take(inv, ing, 1, day);
       if (q.length) { parts.push({ ing, q: q[0] }); served.push(ing); }
     }
-    s.serveDish(served, { quality: dishQuality(this.breadQ, parts) });
+    // làm sẵn ổ quen trước khi khách mở miệng (T-B, P4-01 "chuẩn bị ổ chú Tư từ 6h42")
+    const known = c.npc && (this.ctx.world.npcs[c.memKey]?.heard ?? 0) >= 3 && this.bot.next() < (p.anticipate ?? 0);
+    s.serveDish(served, { quality: dishQuality(this.breadQ, parts), readyAt: known ? c.orderedAt - 1 : undefined });
     this.work = null;
   }
 

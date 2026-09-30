@@ -1,0 +1,28 @@
+{
+  "id": "SK-27",
+  "name": "Buổi đờn ca tài tử ở sân đình",
+  "act": 3,
+  "day": 21,
+  "mandatory": false,
+  "trigger": {
+    "auto": true
+  },
+  "playerActions": [
+    {
+      "id": "ra_dinh",
+      "kind": "than_the",
+      "label": "Đẩy xe ra sân đình",
+      "shortTerm": "Bán được nhiều.",
+      "longTerm": "Cô Ba và bà Bảy ở nhà một mình."
+    },
+    {
+      "id": "khong_lam_gi",
+      "kind": "khong_lam_gi",
+      "label": "Ở lại hẻm",
+      "shortTerm": "Bán ế.",
+      "longTerm": "Bà Bảy ghé, ngồi xuống, mở loa ngoài nghe cải lương."
+    }
+  ],
+  "runtime": "story.eveningActions(dinh_ca) + storyCrowdMul(21) + arcs.extraVisits(bay-dinh)",
+  "designNote": "Mối bất hoà 15 năm KHÔNG BAO GIỜ được giải thích."
+}

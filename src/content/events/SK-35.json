@@ -1,0 +1,21 @@
+{
+  "id": "SK-35",
+  "name": "Bà Sáu nhờ giữ giùm cái gánh",
+  "act": 4,
+  "day": 34,
+  "mandatory": false,
+  "trigger": {
+    "auto": true
+  },
+  "playerActions": [
+    {
+      "id": "khong_lam_gi",
+      "kind": "khong_lam_gi",
+      "label": "Giữ",
+      "shortTerm": "Bà về.",
+      "longTerm": "—"
+    }
+  ],
+  "runtime": "arcs.BA_SAU ngày 34 + story.timeline",
+  "designNote": "Bán tàu hũ giùm CHƯA có."
+}

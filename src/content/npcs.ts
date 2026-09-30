@@ -57,7 +57,8 @@ export const NPCS: NpcDef[] = [
       skin: 0xe3b189, hair: 0xb9b3ab, shirt: 0x7d5e8c, trousers: 0x3b3550,
       stoop: true, hairStyle: "bun", glasses: true,
     },
-    schedule: [{ days: EVERY_DAY, arriveMin: at(6, 10), jitterMin: 8, probability: 0.9 }],
+    // P4-01: mở hàng T2·T4·T6 lúc 6h20 · T7 mua HAI ổ · T3·T5 chỉ đi ngang (arcs) · CN không
+    schedule: [{ days: ["MON", "WED", "FRI", "SAT"], arriveMin: at(6, 20), jitterMin: 4, probability: 0.94 }],
     patience: 90,
     // người soi nhất hẻm KHÔNG bao giờ bấm điện thoại — đó là cả con người bà
     gaze: { tickets: [9, 4, 5, 0, 2, 0], phoneBudget: 0 },
@@ -71,7 +72,7 @@ export const NPCS: NpcDef[] = [
       hat: "cap", hairStyle: "short",
     },
     // CANON §9: khách 6h45 T2–T6 (P2-03 §2.9 chép nguyên)
-    schedule: [{ days: WEEKDAYS_WORK, arriveMin: at(6, 45), jitterMin: 7, probability: 0.95 }],
+    schedule: [{ days: WEEKDAYS_WORK, arriveMin: at(6, 45), jitterMin: 3, probability: 0.96 }],   // P4-01: ±3 phút — đồng hồ sống
     patience: 35,
     rush: [at(6, 30), at(7)],                          // trễ giờ vô ca: 35 s → ~23 s
     gaze: { tickets: [3, 4, 7, 2, 0, 4], phoneBudget: 1 },
@@ -84,7 +85,8 @@ export const NPCS: NpcDef[] = [
       skin: 0xe0b085, hair: 0x241e1b, shirt: 0x2f7d52, trousers: 0x2a3138,
       hat: "helmet", hairStyle: "short",
     },
-    schedule: [{ days: ["MON", "TUE", "WED", "THU", "FRI", "SAT"], arriveMin: at(7, 20), jitterMin: 22, probability: 0.7 }],
+    // P4-01: 7h20 ± 12 MỌI ngày kể cả T7/CN (tới ngày 17) — không cố định, đối lập chú Tư
+    schedule: [{ days: EVERY_DAY, arriveMin: at(7, 20), jitterMin: 12, probability: 0.8 }],
     patience: 28,                                      // luôn vội — đây là chỗ đau
     gaze: { tickets: [2, 3, 5, 4, 0, 6], phoneBudget: 2 },
     poses: { DROPPED_FOOD: "SHRUG", MADE_THEM_WAIT: "SHIFT_WEIGHT", WRONG_NAME: "SHIFT_WEIGHT" },
@@ -98,7 +100,11 @@ export const NPCS: NpcDef[] = [
       hairStyle: "bob", bag: 0x3a3440,
     },
     // 7h35 — P2-02 §4.6 "chỗ 7h35 của cô trống"
-    schedule: [{ days: WEEKDAYS_WORK, arriveMin: at(7, 35), jitterMin: 5, probability: 0.9 }],
+    // P4-01: 7h05 ± 2 — còn đúng giờ hơn chú Tư · T7 ~9h30 thỉnh thoảng, mặc đồ thường
+    schedule: [
+      { days: WEEKDAYS_WORK, arriveMin: at(7, 5), jitterMin: 2, probability: 0.96 },
+      { days: ["SAT"], arriveMin: at(9, 30), jitterMin: 15, probability: 0.35 },
+    ],
     patience: 45,
     gaze: { tickets: [8, 1, 4, 5, 0, 2], phoneBudget: 2 },
     // người im lặng: đứng sững chứ không nói (P2-02 §4.6)
@@ -113,8 +119,8 @@ export const NPCS: NpcDef[] = [
       hairStyle: "ponytail",
     },
     schedule: [
-      { days: WEEKDAYS_WORK, arriveMin: at(6, 35), jitterMin: 8, probability: 0.75 },   // trước giờ vô lớp
-      { days: ["SAT"], arriveMin: at(9), jitterMin: 30, probability: 0.5 },
+      { days: ["MON", "TUE", "WED", "THU", "FRI", "SAT"], arriveMin: at(6, 35), jitterMin: 5, probability: 0.88 },   // đi học
+      { days: ["SUN"], arriveMin: at(9), jitterMin: 15, probability: 0.8 },                                          // đi chơi, ở lại lâu
     ],
     patience: 70,
     gaze: { tickets: [3, 3, 5, 7, 2, 0], phoneBudget: 3 },
@@ -129,7 +135,12 @@ export const NPCS: NpcDef[] = [
       hairStyle: "short", build: "round",
     },
     // lệch lớn quanh 8h50 → có hôm gặp ông trước 10h (tử tế), có hôm sau 10h (khó chịu)
-    schedule: [{ days: EVERY_DAY, arriveMin: at(8, 50), jitterMin: 75, probability: 0.55 }],
+    // P4-01: HAI người — bản sáng (T3·T5·T7·CN 7h30, tử tế) và bản "sau 10 giờ" (bản dựng: T2·T4·T6
+    // 10h40 — ngày bán chỉ tới 11h, doc ghi 16h30). Cùng cái áo, cùng khuôn mặt.
+    schedule: [
+      { days: ["TUE", "THU", "SAT", "SUN"], arriveMin: at(7, 30), jitterMin: 8, probability: 0.85 },
+      { days: ["MON", "WED", "FRI"], arriveMin: at(10, 40), jitterMin: 6, probability: 0.7 },
+    ],
     patience: 55,
     rush: [at(10), at(11)],                            // sau 10h: hết kiên nhẫn nhanh
     gaze: { tickets: [4, 6, 8, 0, 2, 0], phoneBudget: 0 },
@@ -143,7 +154,8 @@ export const NPCS: NpcDef[] = [
       skin: 0xe6b58c, hair: 0x231c18, shirt: 0xc9577a, trousers: 0x3b3c4a,
       hairStyle: "bun", build: "round",
     },
-    schedule: [{ days: EVERY_DAY, arriveMin: at(8, 10), jitterMin: 35, probability: 0.6 }],
+    // P4-01: 8h10 sau giờ cao điểm — cố tình tránh giờ đông (không bao giờ giải thích) · CN không mua
+    schedule: [{ days: ["MON", "TUE", "WED", "THU", "FRI", "SAT"], arriveMin: at(8, 10), jitterMin: 5, probability: 0.9 }],
     patience: 50,
     gaze: { tickets: [5, 5, 6, 2, 2, 0], phoneBudget: 1 },
     poses: { DROPPED_FOOD: "TILT_HEAD", MADE_THEM_WAIT: "PEEK_OVER", BURNT_OR_COLD: "TILT_HEAD", WRONG_NAME: "TILT_HEAD" },
@@ -156,7 +168,11 @@ export const NPCS: NpcDef[] = [
       skin: 0xdcae86, hair: 0xe0ddd6, shirt: 0xe6dcc0, trousers: 0x55565c,
       hairStyle: "short", glasses: true, stoop: true,
     },
-    schedule: [{ days: EVERY_DAY, arriveMin: at(7), jitterMin: 15, probability: 0.7 }],
+    // P4-01: 7h40 ± 5 ngày thường · T7/CN 6h00 mặc đồ xe đạp, mua mang theo
+    schedule: [
+      { days: WEEKDAYS_WORK, arriveMin: at(7, 40), jitterMin: 5, probability: 0.92 },
+      { days: ["SAT", "SUN"], arriveMin: at(6), jitterMin: 5, probability: 0.85 },
+    ],
     patience: 80,
     gaze: { tickets: [7, 5, 6, 0, 2, 0], phoneBudget: 0 },
     poses: { DROPPED_FOOD: "NOD", DIRTY_HANDS: "TILT_HEAD", MADE_THEM_WAIT: "IDLE", WRONG_NAME: "NOD" },
@@ -169,7 +185,11 @@ export const NPCS: NpcDef[] = [
       skin: 0xf2caa5, hair: 0x2e231d, shirt: 0x6a8fb5, trousers: 0x363a44,
       hairStyle: "ponytail", bag: 0x8a5a44,
     },
-    schedule: [{ days: ["MON", "TUE", "WED", "THU", "FRI", "SAT"], arriveMin: at(7, 15), jitterMin: 12, probability: 0.75 }],
+    // P4-01: 7h15 ± 6, ngay sau chị Lan · T7 ~10h mang máy ảnh đi chụp hẻm · CN không
+    schedule: [
+      { days: WEEKDAYS_WORK, arriveMin: at(7, 15), jitterMin: 6, probability: 0.88 },
+      { days: ["SAT"], arriveMin: at(10), jitterMin: 15, probability: 0.6 },
+    ],
     patience: 55,
     gaze: { tickets: [5, 4, 7, 3, 0, 1], phoneBudget: 1 },
     poses: { DROPPED_FOOD: "LEAN_BACK", MADE_THEM_WAIT: "SHIFT_WEIGHT", WRONG_NAME: "TURN_AWAY_QUARTER" },
@@ -182,7 +202,7 @@ export const NPCS: NpcDef[] = [
       skin: 0xe4b48a, hair: 0x1f1b18, shirt: 0x3c3f46, trousers: 0x2b2f38,
       hat: "cap", hairStyle: "short",
     },
-    schedule: [{ days: WEEKDAYS_WORK, arriveMin: at(7, 50), jitterMin: 10, probability: 0.8 }],
+    schedule: [{ days: WEEKDAYS_WORK, arriveMin: at(8, 45), jitterMin: 15, probability: 0.85 }],   // P4-01: khách của khoảng lặng
     patience: 75,
     gaze: { tickets: [2, 1, 4, 11, 0, 2], phoneBudget: 4 },
     poses: { DROPPED_FOOD: "PHONE_DOWN", MADE_THEM_WAIT: "PHONE_DOWN", WRONG_NAME: "PHONE_UP" },
@@ -195,7 +215,8 @@ export const NPCS: NpcDef[] = [
       skin: 0xd6a275, hair: 0x9c968e, shirt: 0x5e7f63, trousers: 0x262626,
       hat: "nonla", hairStyle: "bun", stoop: true,
     },
-    schedule: [{ days: EVERY_DAY, arriveMin: at(9, 30), jitterMin: 20, probability: 0.8 }],
+    // P4-01: vòng 1 ~8h50 — tiếng rao là mốc giờ của cả hẻm (vòng 2 ở arcs). Hiếm khi mua: bà ĐỔI.
+    schedule: [{ days: EVERY_DAY, arriveMin: at(8, 50), jitterMin: 6, probability: 0.92 }],
     patience: 80,
     gaze: { tickets: [4, 6, 8, 0, 2, 0], phoneBudget: 0 },
     poses: { MADE_THEM_WAIT: "SETTLE_IN", WRONG_NAME: "SHRUG" },
@@ -209,7 +230,8 @@ export const NPCS: NpcDef[] = [
       hairStyle: "short", apron: 0x8d3b2f,
     },
     // qua "ngó" sau giờ cao điểm bên xe mình — không phải ngày nào cũng qua
-    schedule: [{ days: ["TUE", "THU", "SUN"], arriveMin: at(10, 15), jitterMin: 15, probability: 0.6 }],
+    // P4-01: KHÔNG mua. Từ ngày 5, 6h10 đẩy xe ngang, liếc vô lò — lò nóng thì gật đầu. CN nghỉ.
+    schedule: [{ days: ["MON", "TUE", "WED", "THU", "FRI", "SAT"], arriveMin: at(6, 10), jitterMin: 2, probability: 0.97 }],
     patience: 45,
     gaze: { tickets: [8, 3, 7, 0, 0, 2], phoneBudget: 0 },
     poses: { DROPPED_FOOD: "PEEK_OVER", DIRTY_HANDS: "PEEK_OVER", MADE_THEM_WAIT: "ARMS_CROSS", WRONG_NAME: "ARMS_CROSS" },

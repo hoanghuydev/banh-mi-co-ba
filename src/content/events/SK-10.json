@@ -1,0 +1,28 @@
+{
+  "id": "SK-10",
+  "name": "Cúp điện",
+  "act": 3,
+  "day": 24,
+  "mandatory": true,
+  "trigger": {
+    "auto": true
+  },
+  "playerActions": [
+    {
+      "id": "ban_nguoi",
+      "kind": "mon_an",
+      "label": "Bán bánh nguội",
+      "shortTerm": "Người soi thấy.",
+      "longTerm": "—"
+    },
+    {
+      "id": "khong_lam_gi",
+      "kind": "khong_lam_gi",
+      "label": "Làm như thường với lò than",
+      "shortTerm": "Lò than không cần điện.",
+      "longTerm": "—"
+    }
+  ],
+  "runtime": "service (QR vô dụng từ 7h15) + story.timeline",
+  "designNote": "Xe cô Ba chạy lò THAN (P3-04) nên cúp điện chỉ làm hỏng bảng QR và đèn. Doc giả định lò điện."
+}

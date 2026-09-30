@@ -28,9 +28,9 @@ test("báo trước quan trọng: dán giấy 3 ngày giữ nhiều người hơ
   assert.ok(r.abandoned.includes("CHI_LAN") || r.followers.includes("CHI_LAN"));
 });
 
-test("đám cưới chắn đầu hẻm ngày 13–14; sự kiện hẻm nào cũng được báo trước ≥ 2 ngày", () => {
-  assert.ok(standClosed("L1", 13) && standClosed("L1", 14) && !standClosed("L1", 15));
-  assert.ok(standDayMul("L5", 13, false) > standDayMul("L1", 12, false) * 1.5);
+test("ngập chợ 17–18 chắn chợ sáng; đám cưới ngày 38 (SK-39) KHÔNG chắn đầu hẻm; sự kiện hẻm nào cũng báo trước ≥ 1 ngày", () => {
+  assert.ok(standClosed("L3", 17) && standClosed("L3", 18) && !standClosed("L3", 19));
+  assert.ok(!standClosed("L1", 38) && standDayMul("L1", 38, false) > standDayMul("L1", 37, false) * 1.4);
   for (const e of ALLEY_EVENTS) assert.ok(e.fromDay - e.warnFrom >= 1 && e.line.length > 0, e.id);
 });
 

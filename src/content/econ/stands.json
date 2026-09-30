@@ -24,8 +24,9 @@
     "L5": ["BA_BAY", "CHU_TU", "ANH_DUNG", "CHI_LAN", "BE_SU", "ONG_HAI", "CO_MAI", "THAY_PHUC", "CHI_HANH", "ANH_BAO", "BA_SAU", "CHU_KIET"]
   },
   "events": [
-    { "id": "dam_cuoi",    "fromDay": 13, "toDay": 14, "mul": { "L1": 0, "L5": 2.8 }, "warnFrom": 11,
-      "line": "Cô Mai: \"Nhà con Hương cuối hẻm cưới, thứ Bảy dựng rạp.\"" },
+    { "id": "dam_cuoi",    "fromDay": 38, "toDay": 38, "mul": { "L1": 1.5, "L5": 1.3 }, "warnFrom": 36,
+      "line": "Cô Mai: \"Mốt nhà giữa hẻm cưới đó con, rạp dựng từ năm giờ sáng.\"",
+      "_p4": "P4-03 SK-39: đám cưới ở NGÀY 38, rạp chiếm 2/3 lối đi nhưng xe VẪN bán được, khách vãng lai +50%. Bản P3-05 (ngày 13–14, chắn hẳn đầu hẻm) đè lên bà Bảy M2 và chị Lan M2 của lịch mùa P4-02 — dời theo lịch mùa (nguồn duy nhất)." },
     { "id": "ngap_cho",    "fromDay": 17, "toDay": 18, "mul": { "L3": 0, "L5": 0.5, "L1": 0.6, "L2": 0.85 }, "warnFrom": 16,
       "line": "Bà Bảy: \"Mai mưa lớn đó con, cô thấy kiến bò lên tường.\"" },
     { "id": "sua_duong",   "fromDay": 19, "toDay": 22, "mul": { "L4": 0, "L3": 1.12 }, "warnFrom": 16,

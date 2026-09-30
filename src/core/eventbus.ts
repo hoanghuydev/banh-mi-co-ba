@@ -103,6 +103,8 @@ export type EventMap = {
   "market:done":              { spent: number; bought: { itemId: ItemId; qty: number }[] };
   "stall:closed":             { reason: StallCloseReason; served: number; revenue: number; lost: number };
   "evening:done":             { dayIndex: number };
+  /** P4-04 — màn kết xong, người chơi bấm "Về menu chính". */
+  "ending:done":              { dayIndex: number };
 };
 
 export type EventKey = keyof EventMap;

@@ -1,0 +1,14 @@
+{
+  "_note": "P4-05 §2.2 B — thành tựu dựa trên KHOẢNH KHẮC, không dựa trên tích luỹ. Tên là tục ngữ / lời nói thật. Không popup trong game (T3) — chỉ ghi vào `story.moments`; nền tảng (Steam, P6) đọc sau. KHÔNG có: bán 500 ổ, kiếm 10 triệu, thân với 10 NPC, gặp tất cả nhân vật. Mô tả KHÔNG giải thích sự trớ trêu.",
+  "items": [
+    { "id": "QUEN_MAT_DAT_HANG", "name": "Quen mặt đắt hàng", "when": "mối quen báo giá cao hơn cho mình, và mình vẫn mua ở đó", "desc": "Ông bà nói: quen mặt đắt hàng.", "runtime": "day.buyBasket ngày 23 (QMDH)" },
+    { "id": "NHU_MOI_BUA", "name": "Như mọi bữa", "when": "lần đầu ổ quen đã gói sẵn trước khi khách mở miệng", "desc": "Khỏi kêu nữa.", "runtime": "service REMEMBERED_USUAL T-B" },
+    { "id": "NHA_TUI_GAN_XE_BANH_MI", "name": "Nhà tui gần xe bánh mì cô Ba", "when": "một người trong hẻm lấy cái xe làm mốc chỉ đường", "desc": "Nói vậy cho dễ.", "runtime": "story.onStoryOverheard (LADDER-1)" },
+    { "id": "TINH_LANG_NGHIA_XOM", "name": "Tình làng nghĩa xóm", "when": "một người tự đứng bán giùm", "desc": "Chòm xóm mà con.", "runtime": "CHƯA — SK-19 chưa chạy" },
+    { "id": "VIA_LANH_THI_O", "name": "Vía lành thì ở", "when": "lần đầu tự tay đốt vía", "desc": "Đốt vía, đốt van, đốt gan, đốt ruột.", "runtime": "StallScene ritual" },
+    { "id": "BANH_DO_CON_DE_CO_AN", "name": "Bánh đó con để cô ăn", "when": "lần đầu làm rớt ổ bánh và bỏ đi đúng luật", "desc": "Rớt thì bỏ.", "runtime": "StallScene (Q bỏ vô thùng sau khi rớt)" },
+    { "id": "ONG_BA_NOI_KHONG_SAI", "name": "Ông bà nói không sai", "when": "nghe người trong nghề nói đồ mắc để được lâu hơn", "desc": "Tính ra không rẻ.", "runtime": "story.onPass (SK-32)" },
+    { "id": "LAU_QUA_KHONG_CAM_CO", "name": "Lâu quá không cầm cọ", "when": "chú Hải vẽ lại cái bảng hiệu", "desc": "Nét cuối không đẹp bằng nét cũ.", "runtime": "story.onServed (SK-29)" },
+    { "id": "CON_O_NAO_KHONG_EM", "name": "Còn ổ nào không em?", "when": "ngày cuối — mở cho mọi người chơi, không điều kiện", "desc": " ", "runtime": "story (SK-42)" }
+  ]
+}

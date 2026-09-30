@@ -1,0 +1,28 @@
+{
+  "id": "SK-02",
+  "name": "Bà Sáu rủ đổi",
+  "act": 1,
+  "day": 3,
+  "mandatory": false,
+  "trigger": {
+    "auto": true
+  },
+  "playerActions": [
+    {
+      "id": "doi",
+      "kind": "mon_an",
+      "label": "Đưa ổ bánh mì không đổi chén tàu hũ",
+      "shortTerm": "BARTER, không qua tiền.",
+      "longTerm": "Bà hỏi đổi lại vài bữa một lần."
+    },
+    {
+      "id": "khong_lam_gi",
+      "kind": "khong_lam_gi",
+      "label": "Không đưa",
+      "shortTerm": "Bà cười, đi.",
+      "longTerm": "Từ chối hai lần (ngày 3 và 6) — bà không bao giờ hỏi nữa. Không được thông báo."
+    }
+  ],
+  "runtime": "arcs.BA_SAU (barter) + story.onServed/onUnserved",
+  "designNote": "softensNegative 0,30 của bà (P4-01 NPC-11) CHƯA nối vào gossip."
+}

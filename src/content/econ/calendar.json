@@ -1,15 +1,15 @@
 {
-  "_note": "Lịch mùa CỐ ĐỊNH theo SEASON_SEED (P3-01 §2.4.4, P3-03 §2.5) — chống save-scum (CANON §8e): chơi lại ngày nào cũng ra đúng trời đó, giá đó. Ngày 1 là THỨ HAI. Giá = base × chỉ số thứ × sự kiện, làm tròn tới nghìn; bánh mì luôn 3,5 (trừ khi lò bà Tám nghỉ).",
-  "weather": ["MAT","NANG_GAT","NANG_GAT","AM_U","NANG_GAT","NANG_GAT","MAT","NANG_GAT","OI","MUA_RAO",
-              "NANG_GAT","NANG_GAT","MAT","AM_U","NANG_GAT","NANG_GAT","MUA_DAM","MUA_RAO","AM_U","MAT",
-              "NANG_GAT","NANG_GAT","MAT","NANG_GAT","MUA_RAO","NANG_GAT","NANG_GAT","AM_U","MAT","NANG_GAT",
-              "NANG_GAT","MUA_RAO","NANG_GAT","MAT","AM_U","NANG_GAT","NANG_GAT","MUA_DAM","MAT","NANG_GAT"],
+  "_note": "Lịch mùa CỐ ĐỊNH theo SEASON_SEED (P3-01 §2.4.4, P3-03 §2.5) — chống save-scum (CANON §8e): chơi lại ngày nào cũng ra đúng trời đó, giá đó. Ngày 1 là THỨ HAI. Giá = base × chỉ số thứ × sự kiện, làm tròn tới nghìn; bánh mì luôn 3,5 (trừ khi lò bà Tám nghỉ). · P4: mảng `weather` chép ĐÚNG từ content/season/days.json (P4-02 §2.4 — lịch mùa là nguồn duy nhất, có test khớp); dịch heo dời về 19–23 theo P4-02; bỏ hội chợ 36–37 vì Hồi IV là 'gỡ dần' (P4-02 §2.7). Mưa rào −25%, mưa dầm −40% (P4-02 §5: mưa −40%).",
+  "weather": ["MAT","NANG_GAT","MAT","MUA_RAO","NANG_GAT","MAT","NANG_GAT","MAT","OI","MAT",
+              "MUA_RAO","NANG_GAT","AM_U","NANG_GAT","MAT","MUA_RAO","NANG_GAT","MAT","MUA_RAO","NANG_GAT",
+              "MAT","MUA_RAO","OI","MUA_DAM","MUA_RAO","MAT","MUA_RAO","NANG_GAT","MUA_RAO","MAT",
+              "MUA_DAM","NANG_GAT","AM_U","MUA_RAO","NANG_GAT","MUA_RAO","MAT","NANG_GAT","MUA_RAO","MAT"],
   "weatherInfo": {
     "NANG_GAT": { "label": "nắng gắt",  "walkIn": 1.00, "gazeMul": 1.00 },
     "MAT":      { "label": "trời mát",  "walkIn": 1.05, "gazeMul": 1.00 },
     "AM_U":     { "label": "âm u",      "walkIn": 0.95, "gazeMul": 0.95 },
-    "MUA_RAO":  { "label": "mưa rào",   "walkIn": 0.60, "gazeMul": 0.78 },
-    "MUA_DAM":  { "label": "mưa dầm",   "walkIn": 0.45, "gazeMul": 0.62 },
+    "MUA_RAO":  { "label": "mưa rào",   "walkIn": 0.75, "gazeMul": 0.78 },
+    "MUA_DAM":  { "label": "mưa dầm",   "walkIn": 0.60, "gazeMul": 0.62 },
     "OI":       { "label": "trời oi",   "walkIn": 0.90, "gazeMul": 1.00 }
   },
   "weekdayIndex": {
@@ -20,7 +20,7 @@
     "fixed":[1, 1, 1, 1, 1, 1, 1]
   },
   "events": [
-    { "id": "dich_heo",       "fromDay": 8,  "toDay": 12, "priceMul": { "pate": 1.40, "thit": 1.25 }, "telegraphFromDay": 6,  "speakers": ["BA_BAY", "CO_MAI"],
+    { "id": "dich_heo",       "fromDay": 19, "toDay": 23, "priceMul": { "pate": 1.40, "thit": 1.25 }, "telegraphFromDay": 17,  "speakers": ["BA_BAY", "CO_MAI"],
       "line": "Nghe nói bên dưới có dịch heo. Mấy bữa nữa chắc pate lên giá đó con." },
     { "id": "mua_mien_tay",   "fromDay": 17, "toDay": 19, "priceMul": { "rau": 1.30 }, "telegraphFromDay": 16, "speakers": ["RADIO"],
       "line": "Radio nói miền Tây mưa lớn. Rau chắc lên giá." },
@@ -28,8 +28,6 @@
       "line": "Mốt rằm rồi đó con, người ta ăn chay nhiều." },
     { "id": "lo_ba_tam_nghi", "fromDay": 28, "toDay": 30, "breadPrice_k": 4.2, "breadQ0": 0.90, "telegraphFromDay": 25, "speakers": ["LO_BA_TAM"],
       "line": "Ba bữa nữa nhà cô có giỗ, cô nghỉ lò ba ngày. Con qua lò khác lấy đỡ nghen." },
-    { "id": "gas_tang",       "fromDay": 33, "toDay": 40, "priceMul": {}, "telegraphFromDay": 99, "speakers": [] },
-    { "id": "hoi_cho",        "fromDay": 36, "toDay": 37, "priceMul": {}, "crowdMul": 1.25, "telegraphFromDay": 33, "speakers": ["BE_SU"],
-      "line": "Cô ơi mốt có hội chợ ở đầu đường đó, đông lắm!" }
+    { "id": "gas_tang",       "fromDay": 33, "toDay": 40, "priceMul": {}, "telegraphFromDay": 99, "speakers": [] }
   ]
 }

@@ -1,0 +1,28 @@
+{
+  "id": "SK-19",
+  "name": "Khách tự đứng bán hộ",
+  "act": 3,
+  "day": 32,
+  "mandatory": true,
+  "trigger": {
+    "auto": true
+  },
+  "playerActions": [
+    {
+      "id": "dem_tien",
+      "kind": "than_the",
+      "label": "Đếm tiền trước mặt bà",
+      "shortTerm": "Một khoảng lặng.",
+      "longTerm": "—"
+    },
+    {
+      "id": "khong_lam_gi",
+      "kind": "khong_lam_gi",
+      "label": "Không đếm, cảm ơn",
+      "shortTerm": "Không bao giờ biết con số.",
+      "longTerm": "—"
+    }
+  ],
+  "runtime": "CHƯA — cần người chơi rời quầy giữa giờ (chạy ra chợ lấy pate)",
+  "designNote": "Sự kiện \"hay nhất có thể có\" (CANON §14) — ưu tiên cao ở P5."
+}

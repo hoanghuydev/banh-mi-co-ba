@@ -1,0 +1,27 @@
+# LR-4 · CHIẾN TRANH — KHÔNG MỘT CHỮ (P4-05 §2.8). Mỗi dòng một từ khoá; khớp theo RANH GIỚI TỪ.
+# CHẶN BUILD (test p4-redlines + npm run ci). Muốn gỡ một dòng: Chủ biên văn hoá (VH) ký ở docs/audit/LAN-RANH-DO.md.
+chiến tranh
+chiến trường
+bộ đội
+lính
+quân đội
+sĩ quan
+nón cối
+mũ cối
+súng
+bom
+đạn
+pháo
+giải phóng
+thống nhất
+di tản
+thương binh
+liệt sĩ
+tử sĩ
+cựu chiến binh
+war
+soldier
+army
+veteran
+napalm
+saigon 1975

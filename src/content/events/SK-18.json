@@ -1,0 +1,21 @@
+{
+  "id": "SK-18",
+  "name": "Nhại giọng chị Hạnh",
+  "act": 1,
+  "day": 8,
+  "mandatory": false,
+  "trigger": {
+    "auto": true
+  },
+  "playerActions": [
+    {
+      "id": "khong_lam_gi",
+      "kind": "khong_lam_gi",
+      "label": "Không có ô thoại — người chơi không kịp",
+      "shortTerm": "Chị Hạnh vắng 2 ngày.",
+      "longTerm": "Ngày 11 làm đúng ổ của chị mà không hỏi lại một chữ."
+    }
+  ],
+  "runtime": "arcs.extraVisits(sk18) + arcs.ONG_HAI ngày 8 + CHI_HANH vắng 9–10",
+  "designNote": "Người nhại LUÔN là khách vô danh; người chặn là ông Hải (người trong hẻm). Không có nhân vật nước ngoài."
+}

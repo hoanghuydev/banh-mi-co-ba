@@ -17,24 +17,24 @@ import { HeadlessStall, POLICIES, nextDay } from "../src/sim/headless";
 import { weekdayOf } from "../src/sim/schedule";
 import { ROOT, walk, read } from "../tools/lib";
 
-test("lịch mùa cố định: ngày 1 thứ Hai; 4 mưa rào + 2 mưa dầm + 1 oi (P3-01 §2.4.4)", () => {
+test("lịch mùa cố định: ngày 1 thứ Hai; 11 mưa rào + 2 mưa dầm + 2 oi (lịch mùa P4-02 §2.4 thay P3-01 §2.4.4)", () => {
   assert.equal(weekdayOf(1), "MON");
   const w = CAL.weather;
   assert.equal(w.length, 40);
-  assert.equal(w.filter((x) => x === "MUA_RAO").length, 4);
+  assert.equal(w.filter((x) => x === "MUA_RAO").length, 11);
   assert.equal(w.filter((x) => x === "MUA_DAM").length, 2);
-  assert.equal(w.filter((x) => x === "OI").length, 1);
-  assert.equal(weatherOf(10), "MUA_RAO");
-  assert.ok(isRain(weatherOf(17)));
+  assert.equal(w.filter((x) => x === "OI").length, 2);
+  assert.equal(weatherOf(24), "MUA_DAM");
+  assert.ok(isRain(weatherOf(19)));
 });
 
-test("giá chợ: thứ Hai đắt, thứ Năm rẻ; dịch heo ngày 8–12; bánh mì là mỏ neo 3,5 (trừ lò bà Tám nghỉ)", () => {
+test("giá chợ: thứ Hai đắt, thứ Năm rẻ; dịch heo ngày 19–23 (P4-02); bánh mì là mỏ neo 3,5 (trừ lò bà Tám nghỉ)", () => {
   assert.ok(priceOf("THIT_NGUOI", 1) > priceOf("THIT_NGUOI", 4));          // T2 > T5
-  assert.ok(priceOf("PATE_THUONG", 8) > priceOf("PATE_THUONG", 15) * 1.3); // dịch heo
+  assert.ok(priceOf("PATE_THUONG", 22) > priceOf("PATE_THUONG", 15) * 1.3); // dịch heo (22 và 15 đều thứ Hai)
   for (let d = 1; d <= 40; d++) assert.equal(priceOf("BANH", d), d >= 28 && d <= 30 ? 4.2 : 3.5);
-  // tỉ lệ khớp bảng 40 ngày của P3-03 (pate thường 60k gốc: ngày 1 = 67, ngày 8 = 94)
+  // tỉ lệ khớp bảng 40 ngày của P3-03 (pate thường 60k gốc: thứ Hai = 67; ngày 22 = thứ Hai × dịch heo 1,4 × rằm 0,95 ≈ 90)
   assert.ok(Math.abs((priceOf("PATE_THUONG", 1) / 20) * 60 - 67) <= 1);
-  assert.ok(Math.abs((priceOf("PATE_THUONG", 8) / 20) * 60 - 94) <= 2);
+  assert.ok(Math.abs((priceOf("PATE_THUONG", 22) / 20) * 60 - 90) <= 2);
 });
 
 test("kho: lô cũ nhất trước; pate trong thùng xốp chỉ sống 1 ngày; hàng hư là KHOÁ", () => {

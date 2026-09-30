@@ -1,0 +1,21 @@
+{
+  "id": "SK-20",
+  "name": "Cô Mai mở sổ nợ",
+  "act": 2,
+  "day": 9,
+  "mandatory": false,
+  "trigger": {
+    "auto": true
+  },
+  "playerActions": [
+    {
+      "id": "khong_lam_gi",
+      "kind": "khong_lam_gi",
+      "label": "Nhận cuốn sổ",
+      "shortTerm": "Mở hệ sổ nợ.",
+      "longTerm": "Ngày 40 cô Mai chốt sổ."
+    }
+  ],
+  "runtime": "season.creditBookOpen (ngày 9) + arcs.CO_MAI",
+  "designNote": "Trước ngày 9 bán chịu chỉ nhớ trong đầu (không bấm G được)."
+}

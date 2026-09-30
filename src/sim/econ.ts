@@ -30,7 +30,7 @@ export type GoodDef = {
 export const ECON = ECON_JSON as unknown as {
   scale: number; startCash_k: number;
   fixedCost_k: { base: number; fromDay: number; raised: number };
-  menu_k: { thuong: number; dayDu: number; dacBiet: number };
+  menu_k: { khong: number; thuong: number; dayDu: number; dacBiet: number };
   sendHome_k: number;
   rent_k: Record<string, number> & { depositDays: number; graceDays: number };
   hui: { perPeriod_k: number; days: number[]; graceDays: number; lastGraceDays: number; remindDays: number[] };
@@ -180,10 +180,12 @@ export const coldSlotCap = (inv?: InventoryState) => (inv?.storage === "tu_mat" 
 
 // ─────────────────────────────────────────────────────────────── giá ổ + chất lượng ổ
 
-export type Tier = "thuong" | "dayDu" | "dacBiet";
+/** "khong" = bánh mì không (P4-03 SK-31: 10.000₫ thay vì 25.000₫). */
+export type Tier = "khong" | "thuong" | "dayDu" | "dacBiet";
 /** Giá bán theo loại ổ khách gọi (P3-03 §2.5 thực đơn). */
 export function tierOf(intent: { nhan: readonly string[]; nhieu?: string; dayDu?: boolean }): Tier {
   const n = intent.nhan.length;
+  if (!n && !intent.dayDu) return "khong";
   if ((intent.dayDu || n >= 3) && intent.nhieu) return "dacBiet";
   if (intent.dayDu || n >= 2) return "dayDu";
   return "thuong";

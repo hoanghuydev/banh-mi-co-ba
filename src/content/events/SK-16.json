@@ -1,0 +1,28 @@
+{
+  "id": "SK-16",
+  "name": "Clip xấu",
+  "act": 3,
+  "day": 23,
+  "mandatory": false,
+  "trigger": {
+    "auto": true
+  },
+  "playerActions": [
+    {
+      "id": "lam_sach",
+      "kind": "than_the",
+      "label": "Làm sạch quầy, làm đẹp trước mặt bé",
+      "shortTerm": "Khách nhìn quầy kỹ hơn vài ngày.",
+      "longTerm": "Bé Su KHÔNG BAO GIỜ bị game trừng phạt."
+    },
+    {
+      "id": "khong_lam_gi",
+      "kind": "khong_lam_gi",
+      "label": "Không làm gì",
+      "shortTerm": "—",
+      "longTerm": "—"
+    }
+  ],
+  "runtime": "CHƯA",
+  "designNote": "Cần đếm sự kiện salience ≥ 75 trước mặt bé Su trong Hồi II."
+}

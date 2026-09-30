@@ -1,0 +1,21 @@
+{
+  "id": "SK-22",
+  "name": "Mối hàng mới",
+  "act": 2,
+  "day": 12,
+  "mandatory": false,
+  "trigger": {
+    "auto": true
+  },
+  "playerActions": [
+    {
+      "id": "khong_lam_gi",
+      "kind": "khong_lam_gi",
+      "label": "Nghe cô Ba dặn",
+      "shortTerm": "—",
+      "longTerm": "Mối nhớ người chơi trả đúng hẹn không (P3-02)."
+    }
+  ],
+  "runtime": "story.morningLines(12)",
+  "designNote": "Bản dựng: P3 đã có đủ 5 mối từ ngày 1 — ngày 12 chỉ còn là lời dặn."
+}
