@@ -20,6 +20,8 @@ import {
 import { TALK_NPC_IDS, TalkStore } from "../src/content/talks";
 import { newGame } from "../src/core/save";
 import { HeadlessStall, POLICIES } from "../src/sim/headless";
+import { Customer } from "../src/sim/customer";
+import { makeUsual } from "../src/sim/order";
 
 const P = Object.fromEntries(NPCS.map((n) => [n.id, n.personality]));
 const TALKS: Talk[] = await TalkStore.loadAll();
@@ -30,6 +32,11 @@ const ctx = (over: Partial<TalkCtx> = {}): TalkCtx => ({
 });
 
 const byId = (id: string) => TALKS.find((t) => t.id === id)!;
+
+/** Một lượt ghé trần trụi, sức chờ 50 s — chỉ để đo `patienceLeft` / `soothe`. */
+const mkCustomer = (id: string) =>
+  new Customer(id, "CHU_TU", "Chú Tư", P.CHU_TU, NPCS[1].body, null,
+    makeUsual(new Rng(1)), 0, { x: 0, y: 0 }, 50, new Rng(2));
 
 // ────────────────────────────────────────────────────────────── T — máy chạy
 
@@ -458,4 +465,48 @@ test("E-4 trên Service THẬT: F → Esc → F lại vẫn mở được bảng
   const again = svc.openTalk();
   assert.ok(again, "Esc xong bấm F lại thì bảng không mở nữa — đúng lỗi đã báo");
   assert.equal(again!.line, first!.line, "mở lại mà ra cuộc khác — cuộc cũ bị đốt mất");
+});
+
+// ──────────────────────────── P — vòng kiên nhẫn & câu dỗ (P5-05)
+
+test("P-1 `patienceLeft` đo theo mốc BỎ ĐI, không theo mốc MADE_THEM_WAIT", () => {
+  const c = mkCustomer("x");
+  assert.equal(c.patienceLeft, 1, "chưa chờ giây nào mà vòng đã vơi");
+  c.waitSec = c.waitT;                               // đúng mốc MADE_THEM_WAIT
+  assert.ok(c.patienceLeft > 0,
+    "tới mốc MADE_THEM_WAIT là vòng cạn sạch — mà người ta còn đứng thêm 60% nữa");
+  c.waitSec = c.waitT * 1.6;                         // đúng mốc bỏ đi
+  assert.equal(c.patienceLeft, 0, "hết vòng mà chưa phải lúc bỏ đi");
+  c.waitSec = c.waitT * 99;
+  assert.equal(c.patienceLeft, 0, "vòng âm");
+});
+
+test("P-2 `soothe` lấy lại phần ĐÃ chờ, không bao giờ âm, và luôn yếu hơn chọc giận", () => {
+  const c = mkCustomer("x");
+  c.waitSec = 20;
+  c.soothe(25);
+  assert.ok(c.waitSec < 20 && c.waitSec > 0, `dỗ xong còn ${c.waitSec}`);
+
+  // dỗ người vừa tới thì gần như vô nghĩa — đó là chủ ý
+  const fresh = mkCustomer("y");
+  fresh.waitSec = 1;
+  fresh.soothe(30);
+  assert.ok(fresh.waitSec < 1 && fresh.waitSec >= 0);
+
+  c.waitSec = 5;
+  c.soothe(1000);
+  assert.ok(c.waitSec >= 0, "dỗ quá tay thành kiên nhẫn âm");
+});
+
+test("P-3 không câu `calm` nào quá 30 — nếu không thì chọc rồi dỗ thành cách chơi tối ưu", () => {
+  for (const t of TALKS) {
+    for (const { node } of walkNodes(t)) {
+      if (node.calm === undefined) continue;
+      assert.ok(node.calm > 0 && node.calm <= 30, `${t.id}: "${node.say}" calm ${node.calm}`);
+      assert.ok(!node.anger, `${t.id}: "${node.say}" vừa chọc vừa dỗ`);
+      assert.notEqual(node.tone, "GAT", `${t.id}: "${node.say}" gắt mà lại làm người ta dịu xuống`);
+    }
+  }
+  const soothing = TALKS.flatMap((t) => walkNodes(t)).filter((x) => x.node.calm);
+  assert.ok(soothing.length >= 8, `mới có ${soothing.length} câu dỗ — quá ít để người chơi tìm ra`);
 });

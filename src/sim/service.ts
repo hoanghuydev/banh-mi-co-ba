@@ -1804,6 +1804,10 @@ export class Service {
     if (anger > 0) {
       c.waitSec += angerToWaitSec(anger, c.waitT, c.waitSec, LEAVE_AT);
       this.reactTalk(c, "NAME", anger >= 45 ? 3 : 2);
+    } else if (o.calm) {
+      // Dỗ: điềm đạm thì dễ dịu hơn (nghịch đảo của `intensityMul` dùng cho `anger`).
+      c.soothe(o.calm / intensityMul(c.personality));
+      this.reactTalk(c, "CARED", 1);
     } else if ((o.rel ?? 0) >= 3) {
       this.reactTalk(c, "CARED", 1);
     }

@@ -258,7 +258,8 @@
                 "kind": "CARED_FOR_THEM",
                 "intensity": 40
               },
-              "reply": "Ngồi chi con. Ngồi rồi lười, bà đi tiếp."
+              "reply": "Ngồi chi con. Ngồi rồi lười, bà đi tiếp.",
+              "calm": 28
             },
             {
               "say": "Bữa khác con mua nghen bà.",

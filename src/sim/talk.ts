@@ -79,6 +79,14 @@ export type TalkEffect = {
    * người chơi thấy hậu quả NGAY ở dáng đứng và ở việc họ bỏ về sớm — không phải một con số.
    */
   anger?: number;
+  /**
+   * Dỗ: 0..100 — LẤY LẠI ngần ấy % quãng đã chờ. Ngược chiều `anger`.
+   *
+   * Cố ý YẾU hơn `anger` nhiều: một câu tử tế không xoá được mười lăm giây đứng chờ,
+   * nhưng nó mua thêm được một chút. Không có `calm` nào quá 30 — nếu không thì cách
+   * chơi tối ưu thành "chọc cho họ chờ rồi nói ngọt", và cái đồng hồ thành đồ trang trí.
+   */
+  calm?: number;
   /** Đặt một cờ chuyện (story.flags) — cho arc và cho `need` của cuộc khác đọc lại. */
   flag?: string;
 };

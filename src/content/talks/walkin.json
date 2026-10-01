@@ -244,7 +244,8 @@
             "say": "Dạ anh thông cảm giùm em.",
             "tone": "AM",
             "rel": 2,
-            "reply": "…Ừ. Thôi."
+            "reply": "…Ừ. Thôi.",
+            "calm": 18
           }
         ]
       },
@@ -281,7 +282,8 @@
                   "ref": "di",
                   "act": {
                     "kind": "STEP_ASIDE"
-                  }
+                  },
+                  "calm": 30
                 },
                 {
                   "say": "Thì anh về anh chửi lại sếp anh đi.",
@@ -295,9 +297,11 @@
               "say": "Dạ anh đợi em một phút nữa thôi.",
               "tone": "THUONG",
               "reply": "Ừ. Một phút thôi nghen.",
-              "ref": "di"
+              "ref": "di",
+              "calm": 12
             }
-          ]
+          ],
+          "calm": 25
         },
         {
           "say": "Dạ anh mới đứng có một phút à anh.",
@@ -310,7 +314,8 @@
               "tone": "AM",
               "rel": 2,
               "reply": "…Ờ. Thôi, em làm đi.",
-              "ref": "di"
+              "ref": "di",
+              "calm": 20
             },
             {
               "say": "Dạ ai cũng phải chờ hết anh à.",

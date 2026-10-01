@@ -21,7 +21,17 @@ import { STREET_BIN } from "../world/map";
  *  · Trạng thái ÁNH NHÌN có đạo cụ riêng (P1-02 §2.5.3 "không hoạt ảnh = không trạng thái"):
  *      điện thoại sáng xanh · ly trà che mặt · liếc đồng hồ tay.
  *    Người chơi phải thấy VÌ SAO khách không thấy mình làm rớt bánh.
- * Không có thanh kiên nhẫn — T3. Sốt ruột đọc qua DÁNG: đứng yên → nhấp nhổm → liếc đồng hồ.
+ * Sốt ruột đọc qua DÁNG trước hết: đứng yên → nhấp nhổm → liếc đồng hồ.
+ *
+ * ⚠️ P5-05 — VÒNG KIÊN NHẪN trên đầu là một NGOẠI LỆ CÓ CHỦ Ý do người thiết kế chốt.
+ * CANON L2 cấm đúng hình dạng này (cho `certainty`) với lý do: "một thanh trên đầu người
+ * sẽ khiến người chơi NGỪNG NHÌN MẶT VĨNH VIỄN". Lý do đó áp cho vòng này y như vậy —
+ * nó đo kiên nhẫn chứ không đo certainty, nhưng nó nằm đúng chỗ ấy và làm đúng việc ấy.
+ * Ba cái hãm để dáng và mặt không chết hẳn:
+ *   · vòng CHỈ hiện khi đang xếp hàng — chưa vào hàng hoặc đã quay lưng thì không có
+ *   · vòng KHÔNG có số, không có vạch chia: nó nói "sắp hết", không nói "còn 37%"
+ *   · `certainty`, quan hệ, khẩu vị vẫn TUYỆT ĐỐI không có thanh nào — L2 còn nguyên
+ * Bỏ vòng này đi thì xoá `drawPatience` và lời gọi của nó, không còn gì dính.
  */
 
 /** P1-04 §2.5 — bảng tia nhìn. Màu tia cố ý KHÔNG vàng / đỏ. */
@@ -31,6 +41,35 @@ const GAZE_RAY: Record<Exclude<ObsState, "UNAWARE">, { width: number; alpha: num
   CONFIRMED: { width: 7, alpha: 0.70, dash: null },
 };
 const RAY_COLOR = 0xcfd8da;
+
+/**
+ * Vòng kiên nhẫn — P5-05. Xanh dương → vàng → đỏ, nội suy liên tục chứ không nhảy bậc:
+ * nhảy bậc thì người chơi chỉ nhớ "đang màu vàng", nội suy thì họ thấy nó ĐANG ĐỔI.
+ */
+const PATIENCE_COLORS = [0x3f7fb0, 0xd8b13c, 0xc0392b] as const;
+const PATIENCE_R = 11;
+const PATIENCE_W = 3.5;
+/** Vòng nằm trên cả dấu `?`/`!` — hai thứ khác nhau, không được chồng nhau. */
+const PATIENCE_LIFT = 21;
+/** Bỏ về vì bị đuổi / bị nói nặng / chờ quá lâu: vòng đỏ nguyên còn nán lại ngần này giây. */
+const PATIENCE_RED_SEC = 0.9;
+
+/** Lerp hai màu 24-bit theo từng kênh. */
+function mixRgb(a: number, b: number, t: number) {
+  const f = (sh: number) => {
+    const x = (a >> sh) & 0xff, y = (b >> sh) & 0xff;
+    return Math.round(x + (y - x) * t) << sh;
+  };
+  return f(16) | f(8) | f(0);
+}
+
+/** 1 → xanh dương, 0,5 → vàng, 0 → đỏ. */
+function patienceColor(frac: number) {
+  const [blue, yellow, red] = PATIENCE_COLORS;
+  return frac > 0.5
+    ? mixRgb(yellow, blue, (frac - 0.5) * 2)
+    : mixRgb(red, yellow, frac * 2);
+}
 const RING_COLOR = 0xc4342a;
 const MARK_INK = "#f2efe9";
 const MARK_STROKE = "#2b2f31";
@@ -110,6 +149,8 @@ export class CustomerActor {
   private tag: Phaser.GameObjects.Text;
   /** Tia nhìn, cặp mày NOTICED, và đạo cụ ánh nhìn — một Graphics, vẽ lại mỗi frame. */
   private fx: Phaser.GameObjects.Graphics;
+  /** Giây (đồng hồ của khách) lúc họ quay lưng đi — vòng đỏ nán lại từ mốc này. */
+  private leftAt = -1;
 
   /** Đạo cụ trên THÂN (áo ướt, tay băng, ổ bánh cầm về) — nằm cùng lớp với người. */
   private propFx: Phaser.GameObjects.Graphics;
@@ -236,6 +277,8 @@ export class CustomerActor {
     const glyph = st?.state === "GLIMPSED" ? "?" : st?.state === "CONFIRMED" ? "!" : "";
     this.mark.setText(glyph).setPosition(sx, markY).setDepth(OVERLAY_DEPTH + 1);
 
+    this.drawPatience(g, sx, markY - PATIENCE_LIFT);
+
     // ── đạo cụ của trạng thái ánh nhìn ──────────────────────────────────────
     if (watching) this.drawGazeProp(g, headX, headY, time, reducedMotion);
 
@@ -337,6 +380,46 @@ export class CustomerActor {
       g.fillStyle(0xc98a45, 1).fillEllipse(bx, by, 14, 6);
       g.fillStyle(0xe6b574, 1).fillEllipse(bx - 1, by - 1, 10, 3);
     }
+  }
+
+  /**
+   * Vòng kiên nhẫn — P5-05. Xem lời cảnh báo ở đầu file: đây là ngoại lệ của CANON L2.
+   *
+   * Chỉ hiện khi người ta ĐANG XẾP HÀNG. Lúc còn đi vô (`arriving`) chưa có gì để đếm —
+   * `waitSec` còn chưa chạy (xem `Customer.tick`), vẽ vòng đầy thì nói dối. Lúc đã quay
+   * lưng thì cũng hết chuyện, trừ một nhịp đỏ cuối để người chơi kịp hiểu VÌ SAO họ đi.
+   */
+  private drawPatience(g: Phaser.GameObjects.Graphics, x: number, y: number) {
+    const c = this.c;
+    const leaving = c.phase === "leaving";
+
+    if (leaving) {
+      // Bỏ về vì mình: một vòng đỏ ĐẦY, mờ dần. Được phục vụ xong thì không có gì cả —
+      // người ta đi vì xong việc, không phải vì hết chịu nổi.
+      const bad = c.leaveReason === "impatient" || c.leaveReason === "insulted" || c.leaveReason === "refused";
+      if (!bad) { this.leftAt = -1; return; }
+      if (this.leftAt < 0) this.leftAt = c.now;
+      const t = (c.now - this.leftAt) / PATIENCE_RED_SEC;
+      if (t >= 1) return;
+      g.lineStyle(PATIENCE_W, PATIENCE_COLORS[2], 1 - t);
+      g.strokeCircle(x, y, PATIENCE_R);
+      return;
+    }
+    this.leftAt = -1;
+    if (c.phase === "arriving" || c.pass) return;
+
+    const frac = c.patienceLeft;
+    // Rãnh mờ phía sau: không có nó thì lúc gần cạn, cái cung đỏ ngắn ngủn trông như
+    // một vệt bẩn chứ không ra "sắp hết giờ".
+    g.lineStyle(PATIENCE_W, 0x0d1216, 0.22);
+    g.strokeCircle(x, y, PATIENCE_R);
+    if (frac <= 0) return;
+    // Vơi theo chiều kim đồng hồ từ 12 giờ — chiều ai cũng đọc được mà không cần học.
+    const from = -Math.PI / 2;
+    g.lineStyle(PATIENCE_W, patienceColor(frac), 0.95);
+    g.beginPath();
+    g.arc(x, y, PATIENCE_R, from, from + Math.PI * 2 * frac, false);
+    g.strokePath();
   }
 
   private drawGazeProp(g: Phaser.GameObjects.Graphics, x: number, y: number, time: number, rm: boolean) {

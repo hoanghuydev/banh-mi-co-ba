@@ -224,6 +224,26 @@ export class Customer implements Observer {
 
   get waitRatio() { return this.waitSec / this.waitT; }
 
+  /**
+   * Còn lại bao nhiêu phần kiên nhẫn, 1 → 0 — P5-05. Hết là bỏ về (`LEAVE_AT`).
+   *
+   * Khác `waitRatio` ở MẪU SỐ: `waitRatio` đo theo mốc MADE_THEM_WAIT (r = 1, lúc người
+   * ta THẬT SỰ thấy mình bị để chờ), còn cái này đo theo mốc BỎ ĐI (r = 1,6). Vẽ thanh
+   * theo `waitRatio` thì thanh cạn sạch trong khi người ta còn đứng đó thêm 60% nữa.
+   */
+  get patienceLeft() {
+    return Math.max(0, Math.min(1, 1 - this.waitRatio / LEAVE_AT));
+  }
+
+  /**
+   * Nói được một câu làm người ta dịu lại — P5-05. `amount` 0..100 = lấy lại ngần ấy %
+   * quãng ĐÃ chờ, chứ không phải % tổng sức chờ: dỗ một người vừa mới tới thì gần như
+   * không có tác dụng gì, dỗ người đã đứng lâu mới đáng kể. Không bao giờ về dưới 0.
+   */
+  soothe(amount: number) {
+    this.waitSec = Math.max(0, this.waitSec - this.waitSec * (Math.min(100, amount) / 100));
+  }
+
   /** Còn trong 45 s kể từ ly trước? */
   get teaOnCooldown() { return this.clock - this.lastTeaAt < TEA.cooldown; }
 
