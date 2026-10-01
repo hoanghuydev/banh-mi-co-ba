@@ -54,6 +54,13 @@ export type NpcState = RelState & {
   goneReason?: "ARC" | "SILENT_EXIT" | "MOVED";
   /** Chuyện "một lần mỗi người cả mùa" đã xảy ra (vd. thấy thớt riêng — P3-04 A3). */
   seen?: Record<string, number>;
+  /**
+   * P5-01 trò chuyện — id cuộc ĐÃ chơi với người này (cả mùa; không bao giờ nghe lại
+   * nguyên một cuộc) và chủ đề đã đụng HÔM NAY (không hỏi đi hỏi lại một chuyện trong
+   * cùng buổi). Không bắt buộc có: save cũ thiếu hai trường này vẫn chạy.
+   */
+  talksDone?: string[];
+  talkTopics?: { day: number; topics: string[] };
 };
 
 export type LedgerRow = { day: number; revenue: number; cost: number; served: number; lost: number };

@@ -16,6 +16,7 @@ import { runFrame } from "../sim/frame";
 import { cool, isWarm } from "../sim/loaf";
 import { Steam } from "../ui/stall/Steam";
 import { BubblePool } from "../ui/stall/BubblePool";
+import { TalkPanel } from "../ui/stall/TalkPanel";
 import { GossipCorner } from "../ui/stall/GossipCorner";
 import { NotebookView } from "../ui/notebook/NotebookView";
 import { logNote } from "../sim/notebook";
@@ -184,6 +185,8 @@ export class StallScene extends Phaser.Scene {
 
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
   private paused = false;
+  /** P5-01 — bảng trò chuyện. Mở = đồng hồ đứng (kể cả kiên nhẫn của khách). */
+  private talk!: TalkPanel;
   private closed = false;
   private resumed = false;
   private overlay: Phaser.GameObjects.Container | null = null;
@@ -264,6 +267,7 @@ export class StallScene extends Phaser.Scene {
     this.player.reset();
 
     this.hud = new Hud(this, this.settings, () => (this.paused ? this.resume() : this.pause()));
+    this.talk = new TalkPanel(this, (i) => this.pickTalk(i), () => this.ignoreTalk());
     this.handSteam = new Steam(this);
     this.boardSteam = new Steam(this);
     // Ổ gác trên thớt phải THẤY được. Trước đây chỉ có khói, mà khói tắt hẳn khi ổ nguội
@@ -314,7 +318,7 @@ export class StallScene extends Phaser.Scene {
       () => this.orderIsEmptyLoaf(),
       (i) => this.consumePreset(i),
     );
-    if (has(this.world.equipment, "DAO_BEN")) this.assembly.wrapTol = 0.30;
+    if (has(this.world.equipment, "DAO_BEN")) this.assembly.wrapSnapMs = 1500;
     if (has(this.world.equipment, "KEP_GAP")) this.assembly.addCooldownMs = 350;
     this.drawEquipment();
     this.bindInput();
@@ -373,6 +377,9 @@ export class StallScene extends Phaser.Scene {
         music.duck(false);
         bus.emit("ui:pauseToggled", { paused: false, source: "MENU" });
       }
+      // Bảng trò chuyện gắn listener lên `window` (capture) — không gỡ là phím Esc của
+      // màn sau vẫn chạy vào cái bảng đã chết.
+      this.talk.destroy();
       for (const f of this.off) f();
       this.off = [];
       this.service.dispose();
@@ -805,6 +812,14 @@ export class StallScene extends Phaser.Scene {
         bus.emit("money:changed", { delta: ev.amount, balance: w.money.cash, reason: "DEBT_REPAID" });
         continue;
       }
+      // Khách tự bắt chuyện: chỉ là một lời mời. Không bấm F cũng không sao — mà cũng
+      // không phải là không sao (xem `talk.ignore`).
+      // Cùng lối nhắc với "bấm G để ghi sổ": một dòng ở nhật ký, không có mũi tên nhấp
+      // nháy trên đầu ai. Không bấm F cũng chơi tiếp được — mà cũng không phải không sao.
+      if (ev.kind === "talkOffer") {
+        this.hud.log(`${ev.name} bắt chuyện — bấm F để trả lời`);
+        continue;
+      }
       w.money.cash += ev.amount;
       w.progress.today.revenue += ev.amount;
       w.progress.today.served++;
@@ -1002,7 +1017,7 @@ export class StallScene extends Phaser.Scene {
     // xếp hàng phía sau có thấy cũng không thành "đã thấy" lỗi trong ổ CỦA HỌ.
     this.addDirt(0.002);                               // giấy gói, vụn bánh
     const c = this.service.front;
-    // FLOURISH (P1-01 §2.9 WRAP_FAST): gói ba nhịp đều tay. Không có nhánh "gói hỏng",
+    // FLOURISH (P1-01 §2.9 WRAP_FAST): gói liền tay sau miếng nhân cuối. Không có nhánh "gói hỏng",
     // không chạm vào tiền — chỉ là một khoảnh khắc khéo tay trước mắt khách.
     if (evenWrap) {
       const last = c ? this.lastFlourish.get(c.id) ?? -Infinity : -Infinity;
@@ -1172,13 +1187,62 @@ export class StallScene extends Phaser.Scene {
     if (band === "SINGED") this.hud.log("ổ này sém cạnh rồi");
   }
 
-  /** Hỏi chuyện khách đang đứng trước quầy (ASK_QUESTION) — tay bận ~2,5 s. */
+  /**
+   * F — bắt chuyện với người trước quầy (hoặc trả lời người vừa bắt chuyện với mình).
+   *
+   * Có chuyện để nói → mở bảng lựa chọn và ĐÓNG BĂNG đồng hồ. Không có → rơi về câu xã
+   * giao một nhịp của P1-02 (`ask()`), vẫn tốn 2,5 s tay bận như cũ.
+   */
   private askFront() {
-    if (this.handsBusy) return;
+    if (this.handsBusy || this.paused || this.closed || this.talk.isOpen) return;
+    const view = this.service.openTalk();
+    if (view) { this.openTalkPanel(view); return; }
     const res = this.service.ask();
     if (!res.ok) { this.hud.log(res.reason ?? ""); return; }
     this.hud.log(`con: "${res.line}"`);
     this.handsBusyUntil = this.elapsed + this.workSeconds(2.5);
+  }
+
+  /**
+   * Đóng băng trong lúc đọc — CANON §15.2 cho pause, và cùng một lý do: bảng này bắt
+   * người chơi ĐỌC. Bốn dòng tiếng Việt mất 6–10 giây; anh Dũng có 28 giây kiên nhẫn.
+   * Không đóng băng thì luật của trò chơi trở thành "đừng bao giờ nói chuyện với ai".
+   *
+   * KHÔNG dùng `this.pause()`: pause mở menu, hạ nhạc, và bắn `ui:pauseToggled` (telemetry
+   * đếm thành một lần người chơi tạm dừng). Đây chỉ cần đúng một thứ — `clock.paused`.
+   */
+  private openTalkPanel(view: ReturnType<Service["openTalk"]>) {
+    if (!view) return;
+    if (this.assembly.isOpen) this.assembly.park();
+    this.clock.paused = true;
+    this.busy = null;
+    this.intents = [];
+    this.talk.show(view);
+  }
+
+  /** Người chơi chọn một dòng. Khách đáp ngay trong bảng — không qua bong bóng. */
+  private pickTalk(i: number) {
+    const next = this.service.chooseTalk(i);
+    for (const l of this.service.drainLogs()) this.hud.log(l);
+    if (!next) { this.closeTalkPanel(); return; }
+    // Nhịp cuối: vẫn vẽ bảng một lần nữa để người chơi ĐỌC được câu đáp cuối cùng, rồi
+    // Enter mới đóng. Đáp xong đóng cái rụp là mất đúng câu quan trọng nhất của cuộc.
+    this.talk.show(next);
+    if (!next.done) return;
+  }
+
+  /** Esc giữa chừng = làm thinh. Service tính tiền cho nó (`talk.ignore`). */
+  private ignoreTalk() {
+    this.service.closeTalk();
+    for (const l of this.service.drainLogs()) this.hud.log(l);
+    this.closeTalkPanel();
+  }
+
+  private closeTalkPanel() {
+    this.talk.destroy();
+    // Người chơi có thể đã bấm Esc giữa lúc game đang pause thật — đừng thả đồng hồ ra
+    // khi menu tạm dừng vẫn đang mở.
+    if (!this.paused && !this.closed) this.clock.paused = false;
   }
 
   /**

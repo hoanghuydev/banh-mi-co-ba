@@ -1,0 +1,211 @@
+{
+  "_note": "Bé Su — học sinh cấp 2, 13 tuổi. Gọi người chơi là 'cô', tự xưng 'con'. KHÔNG được hỏi nó chuyện đi làm, lương, chồng con, nhậu. Nó quay TikTok, giỏi toán thật, thanThien 1,0 — nói nhiều nhất hẻm, và nó MANG DRAMA TỚI: drama trên mạng, drama trong lớp, chuyện nó nghe lỏm người lớn. Nó kể hết, không giữ được cái gì.",
+  "talks": [
+    {
+      "id": "su.quay",
+      "npc": "BE_SU",
+      "topic": "quayphim",
+      "opener": "Cô ơi cô, con quay cái lò cô được hông cô?",
+      "weight": 14,
+      "ignore": { "reply": "Ủa… thôi con hổng quay nữa đâu cô.", "rel": -2 },
+      "shared": {
+        "chao": [
+          { "say": "Ừ, con quay đi. Cô làm tiếp đây.", "tone": "THUONG", "rel": 1, "reply": "Dạ con quay lẹ thôi cô." },
+          { "say": "Quay xong cho cô coi với nghen con.", "tone": "AM", "rel": 3, "mem": { "kind": "CARED_FOR_THEM", "intensity": 40 }, "reply": "Dạ! Chiều con gửi cô coi. Cô đừng cười con nha." },
+          { "say": "Thôi đủ rồi con, cô mỏi tay.", "tone": "THANG", "reply": "Dạ đủ rồi. Cảm ơn cô nha cô!" }
+        ]
+      },
+      "tree": [
+        {
+          "say": "Được chớ. Đợi cô lau cái thớt cái đã.",
+          "tone": "AM",
+          "rel": 3,
+          "reply": "Dạ! Cô đứng im đó nha cô, đừng nhìn ống kính.",
+          "then": [
+            {
+              "say": "Con quay cái này chi vậy con?",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Con làm kênh đồ ăn hẻm mình đó cô. Được hai ngàn người theo rồi.",
+              "then": [
+                { "say": "Hai ngàn người lận hả? Dữ vậy con.", "tone": "DUA", "rel": 3, "reply": "Dạ chút xíu hà cô. Mà quay cô là con lên liền á." },
+                { "say": "Con quay hẻm mình chi, có gì đâu mà coi.", "tone": "THANG", "rel": -1, "reply": "Có chớ cô. Hẻm mình đẹp mà. Tại cô ở đây hoài cô hổng thấy." },
+                { "say": "Con ráng học đi, mấy cái đó chơi thôi.", "tone": "THANG", "rel": -2, "reply": "Dạ… con học mà cô. Con đứng nhất lớp đó." },
+                { "say": "Mai cô dọn quầy sạch cho con quay.", "tone": "AM", "rel": 4, "flag": "suQuaySach", "mem": { "kind": "CARED_FOR_THEM", "intensity": 45 }, "reply": "Thiệt hả cô! Dạ, mai con quay nha cô." }
+              ]
+            },
+            { "say": "Quay thì quay, mà đừng quay mặt cô nghen.", "tone": "THUONG", "rel": 1, "reply": "Dạ con quay tay cô thôi. Tay cô đẹp mà cô.", "ref": "chao" },
+            { "say": "Con quay rồi cô nổi tiếng cô bán hổng kịp đó.", "tone": "DUA", "rel": 3, "reply": "Vậy cô nhớ chia con một ổ đầy đủ nha cô!", "ref": "chao" },
+            { "say": "Đứng xa cái lò ra con, nóng.", "tone": "THUONG", "rel": 2, "reply": "Dạ dạ. Con lùi nè cô." }
+          ]
+        },
+        {
+          "say": "Quay gì mà quay. Lo ăn đi con.",
+          "tone": "THANG",
+          "reply": "Dạ… con ăn liền nè cô.",
+          "then": [
+            { "say": "Ăn xong rồi quay nghen, cô hổng cấm.", "tone": "AM", "rel": 3, "reply": "Dạ! Cô dễ thương ghê á cô." },
+            { "say": "Ăn xong đi học, đừng la cà.", "tone": "THUONG", "rel": 1, "reply": "Dạ. Con đi liền." },
+            { "say": "Ngày nào cũng quay, chán thiệt chớ.", "tone": "GAT", "rel": -4, "anger": 25, "mem": { "kind": "RUDE_TO_THEM", "intensity": 50 }, "silent": true }
+          ]
+        },
+        {
+          "say": "Con quay cô xấu là cô hổng bán cho con nữa đó.",
+          "tone": "DUA",
+          "rel": 2,
+          "reply": "Hổng dám đâu cô! Con quay cô đẹp nhất hẻm luôn á.",
+          "then": [
+            { "say": "Nói dóc. Đẹp nhất hẻm là cô Mai chớ.", "tone": "DUA", "rel": 3, "reply": "Cô Mai đẹp kiểu cô Mai. Cô đẹp kiểu bánh mì nóng á cô." },
+            { "say": "Ừ, quay đi con.", "tone": "THUONG", "rel": 1, "reply": "Dạ!", "ref": "chao" },
+            { "say": "Con nịnh cô chi vậy con.", "tone": "THANG", "rel": 1, "reply": "Dạ con nói thiệt mà. Con hổng biết nịnh đâu cô." }
+          ]
+        },
+        {
+          "say": "Thôi con. Cô hổng thích lên mạng.",
+          "tone": "LANH",
+          "rel": -1,
+          "reply": "Dạ… con hiểu rồi cô.",
+          "then": [
+            { "say": "Hổng phải tại con đâu. Cô ngại thôi.", "tone": "AM", "rel": 3, "reply": "Dạ. Con hổng buồn đâu cô. Con quay cái xe thôi được hông?" },
+            { "say": "Ừ.", "tone": "LANH", "rel": -1, "silent": true }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "su.drama.mang",
+      "npc": "BE_SU",
+      "topic": "drama",
+      "when": { "day": [8, 40], "minVisits": 3 },
+      "opener": "Cô ơi cô biết vụ cái quán chè đường Vườn Chuối hông cô?",
+      "weight": 12,
+      "ignore": { "reply": "Dạ thôi… cô bận con kể sau.", "rel": -1 },
+      "shared": {
+        "ket": [
+          { "say": "Thôi ăn đi con, nguội bánh.", "tone": "THUONG", "rel": 1, "reply": "Dạ. Con kể nhiều quá hen cô." },
+          { "say": "Mấy chuyện đó nghe rồi quên đi con.", "tone": "AM", "rel": 2, "reply": "Dạ… con biết. Mà con hổng quên được á cô." },
+          { "say": "Con kể chuyện người ta hoài coi chừng đó.", "tone": "THANG", "rel": -1, "reply": "Dạ… con xin lỗi cô." }
+        ]
+      },
+      "tree": [
+        {
+          "say": "Chè Vườn Chuối sao con?",
+          "tone": "AM",
+          "rel": 1,
+          "reply": "Có người quay được con ruồi trong ly chè. Clip bốn triệu view đó cô. Quán đóng cửa luôn rồi.",
+          "then": [
+            {
+              "say": "Trời. Một con ruồi mà dẹp luôn cái quán hả con.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Dạ. Mà cô biết gì hông — con coi kỹ rồi, cái ly đó hổng phải ly của quán.",
+              "then": [
+                { "say": "Vậy là người ta dựng chuyện hả con?", "tone": "AM", "rel": 3, "mem": { "kind": "REMEMBERED_STORY", "intensity": 40 }, "reply": "Dạ con nghĩ vậy. Mà con nói ở lớp hổng ai tin con hết." },
+                { "say": "Con coi kỹ dữ ha. Con làm thám tử luôn đi.", "tone": "DUA", "rel": 3, "reply": "Dạ con coi tới hai chục lần lận cô. Con rảnh quá mà." },
+                { "say": "Con đừng có nói ra nghen, mệt lắm.", "tone": "THANG", "rel": 1, "reply": "Dạ. Con cũng sợ nên con im luôn rồi cô." },
+                { "say": "Chuyện người ta, con xía vô chi.", "tone": "LANH", "rel": -2, "reply": "Dạ…", "ref": "ket" }
+              ]
+            },
+            {
+              "say": "Vậy chắc quán đó dơ thiệt rồi con.",
+              "tone": "THUONG",
+              "reply": "Hổng biết nữa cô. Mà cô Mai nói hồi trước quán đó sạch nhất khu luôn á.",
+              "then": [
+                { "say": "Vậy mà một cái clip là xong. Ghê thiệt.", "tone": "AM", "rel": 2, "reply": "Dạ. Con sợ luôn á cô. Con quay cô con cũng sợ." },
+                { "say": "Nên cô mới hổng muốn con quay đó con.", "tone": "THANG", "rel": 1, "reply": "Dạ… con hiểu rồi cô." },
+                { "say": "Kệ người ta đi con.", "tone": "LANH", "rel": -1, "silent": true }
+              ]
+            },
+            { "say": "Cô bận lắm con, để bữa khác nghen.", "tone": "LANH", "rel": -1, "reply": "Dạ." }
+          ]
+        },
+        {
+          "say": "Cô hổng có coi mấy cái đó con.",
+          "tone": "THUONG",
+          "reply": "Dạ. Cô hổng coi là đúng rồi. Coi riết con thấy ai cũng xấu hết á cô.",
+          "then": [
+            { "say": "Ai cũng xấu hả? Con nói cô nghe coi.", "tone": "AM", "rel": 3, "reply": "Dạ… tại lên đó người ta chỉ đăng lúc người ta chửi nhau thôi á cô." },
+            { "say": "Vậy bớt coi lại đi con.", "tone": "AM", "rel": 2, "reply": "Dạ con biết. Mà bỏ hổng được cô ơi." },
+            { "say": "Ừ.", "tone": "LANH", "rel": -1, "silent": true }
+          ]
+        },
+        {
+          "say": "Con hóng drama dữ ha con.",
+          "tone": "DUA",
+          "rel": 1,
+          "reply": "Dạ con hóng số một hẻm này luôn á cô. Bà Bảy mới số hai.",
+          "then": [
+            { "say": "Bà Bảy mà nghe câu đó là con chết nghen.", "tone": "DUA", "rel": 3, "reply": "Cô đừng méc bà nha cô! Con lạy cô á." },
+            { "say": "Con nói xấu người lớn vậy hả con.", "tone": "THANG", "rel": -2, "reply": "Dạ… con giỡn thôi mà cô." },
+            { "say": "Hóng chi cho mệt. Lo học đi.", "tone": "GAT", "rel": -4, "anger": 20, "mem": { "kind": "RUDE_TO_THEM", "intensity": 45 }, "silent": true }
+          ]
+        },
+        {
+          "say": "Cô đang làm con. Chút nữa nghen.",
+          "tone": "LANH",
+          "rel": -1,
+          "reply": "Dạ."
+        }
+      ]
+    },
+    {
+      "id": "su.buon",
+      "npc": "BE_SU",
+      "topic": "buon",
+      "when": { "day": [12, 40], "minVisits": 6, "tier": ["ACQUAINTANCE", "FRIEND"] },
+      "opener": "Cô… bữa nay con hổng quay. Con hổng có hứng.",
+      "initiates": 0.3,
+      "ignore": { "reply": "Dạ… thôi hổng có gì đâu cô.", "rel": -3, "mem": { "kind": "RUDE_TO_THEM", "intensity": 35 } },
+      "shared": {
+        "ui": [
+          { "say": "Hẻm này cô sống mười mấy năm. Nó hổng dơ.", "tone": "AM", "rel": 4, "mem": { "kind": "CARED_FOR_THEM", "intensity": 55 }, "reply": "Dạ. Con thương hẻm mình mà cô. Con mới quay chớ." },
+          { "say": "Mai con quay tiếp. Cô lau quầy sạch cho con.", "tone": "AM", "rel": 4, "flag": "suQuayLai", "mem": { "kind": "CARED_FOR_THEM", "intensity": 50 }, "reply": "Thiệt hả cô! Dạ, mai con quay nha cô." },
+          { "say": "Thôi nghỉ quay đi con, đỡ mệt.", "tone": "THUONG", "rel": -1, "reply": "Dạ… chắc vậy quá cô." },
+          { "say": "Ăn đi rồi đi học, trễ rồi.", "tone": "THANG", "rel": 1, "reply": "Dạ. Cảm ơn cô nghen cô." }
+        ]
+      },
+      "tree": [
+        {
+          "say": "Ủa. Có chuyện gì hả con?",
+          "tone": "AM",
+          "rel": 3,
+          "reply": "Con đăng cái clip hẻm mình. Người ta vô chửi con quá trời cô ơi.",
+          "then": [
+            {
+              "say": "Người ta nói gì con?",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Nói hẻm con dơ. Nói đồ ăn vầy mà cũng quay. Con đọc con khóc luôn.",
+              "then": [
+                { "say": "Tụi đó ngồi nhà gõ phím thôi con. Kệ nó.", "tone": "THANG", "rel": 3, "reply": "Dạ… mà sao con vẫn buồn cô.", "ref": "ui" },
+                { "say": "Con đọc mấy cái đó chi cho khổ con.", "tone": "AM", "rel": 3, "reply": "Con hổng đọc hổng được cô. Nó cứ hiện lên á.", "ref": "ui" },
+                { "say": "Vậy thì đừng đăng nữa. Đơn giản mà.", "tone": "THANG", "rel": -1, "reply": "Dạ… cô nói nghe dễ ghê.", "ref": "ui" },
+                { "say": "Con còn nhỏ mà bày đặt lên mạng chi.", "tone": "GAT", "rel": -6, "anger": 35, "mem": { "kind": "RUDE_TO_THEM", "intensity": 75 }, "silent": true }
+              ]
+            },
+            { "say": "Con ngồi xuống ghế đi. Cô rót con ly trà.", "tone": "AM", "rel": 4, "mem": { "kind": "CARED_FOR_THEM", "intensity": 50 }, "reply": "Dạ… con ngồi chút xíu thôi nha cô.", "ref": "ui" },
+            { "say": "Ai làm gì con? Nói cô nghe.", "tone": "THANG", "rel": 2, "reply": "Hổng ai hết cô. Người trên mạng à. Mà đau thiệt đó cô.", "ref": "ui" }
+          ]
+        },
+        {
+          "say": "Hứng gì mà hứng. Ăn đi con.",
+          "tone": "THUONG",
+          "reply": "Dạ…",
+          "then": [
+            { "say": "…Mà có chuyện gì thì nói cô nghe nghen.", "tone": "AM", "rel": 3, "reply": "Dạ… con bị người ta chửi trên mạng á cô.", "ref": "ui" },
+            { "say": "Ăn lẹ đi, trễ học rồi.", "tone": "THUONG", "reply": "Dạ." },
+            { "say": "Mặt mày vầy cô nhìn mệt quá con.", "tone": "GAT", "rel": -5, "anger": 30, "mem": { "kind": "RUDE_TO_THEM", "intensity": 65 }, "silent": true }
+          ]
+        },
+        {
+          "say": "Vậy thôi con về đi, cô đông khách.",
+          "tone": "LANH",
+          "rel": -4,
+          "anger": 20,
+          "mem": { "kind": "RUDE_TO_THEM", "intensity": 55 },
+          "reply": "Dạ. Con về."
+        }
+      ]
+    }
+  ]
+}

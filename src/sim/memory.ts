@@ -21,8 +21,9 @@ import { decayMul, relGainMul } from "./personality";
 
 export type BaseKind =
   | "WRONG_NAME" | "MADE_THEM_WAIT" | "BURNT_OR_COLD" | "DROPPED_FOOD" | "ORDER_DEFECT" | "DIRTY_HANDS"
+  | "RUDE_TO_THEM"
   | "REMEMBERED_USUAL" | "REMEMBERED_STORY" | "CARED_FOR_THEM" | "FREE_EXTRA" | "FLOURISH";
-export type HealableKind = "WRONG_NAME" | "DROPPED_FOOD" | "DIRTY_HANDS" | "BURNT_OR_COLD" | "ORDER_DEFECT";
+export type HealableKind = "WRONG_NAME" | "DROPPED_FOOD" | "DIRTY_HANDS" | "BURNT_OR_COLD" | "ORDER_DEFECT" | "RUDE_TO_THEM";
 export type MemoryKind = BaseKind | `HEALED_${HealableKind}`;
 
 export type Memory = {
@@ -96,6 +97,7 @@ export const SERVED_WELL_PTS = 1.0;
 
 export const VALENCE: Record<BaseKind, -1 | 1> = {
   WRONG_NAME: -1, MADE_THEM_WAIT: -1, BURNT_OR_COLD: -1, DROPPED_FOOD: -1, ORDER_DEFECT: -1, DIRTY_HANDS: -1,
+  RUDE_TO_THEM: -1,
   REMEMBERED_USUAL: 1, REMEMBERED_STORY: 1, CARED_FOR_THEM: 1, FREE_EXTRA: 1, FLOURISH: 1,
 };
 
@@ -106,6 +108,9 @@ export const DECAY: Record<BaseKind, { hold: number; taper: number; floor: numbe
   DIRTY_HANDS:      { hold: 1, taper: 8,  floor: 10 },
   BURNT_OR_COLD:    { hold: 1, taper: 6,  floor: 0 },
   MADE_THEM_WAIT:   { hold: 0, taper: 4,  floor: 0 },
+  // Lời nói khó nghe: phai chậm hơn một ổ bánh nguội, nhanh hơn gọi sai tên. Sàn 15 —
+  // "nó có nói một câu đó" là thứ người ta còn giữ lại được sau hai tuần.
+  RUDE_TO_THEM:     { hold: 2, taper: 11, floor: 15 },
   ORDER_DEFECT:     { hold: 1, taper: 5,  floor: 0 },
   REMEMBERED_USUAL: { hold: 3, taper: 20, floor: 15 },
   REMEMBERED_STORY: { hold: 3, taper: 16, floor: 10 },
@@ -124,10 +129,13 @@ export const REDEEM: Partial<Record<BaseKind, RedeemSpec>> = {
   BURNT_OR_COLD:  { K: 1.6, minDistinctDays: 2 },
   ORDER_DEFECT:   { K: 1.5, minDistinctDays: 2 },
   MADE_THEM_WAIT: { K: 1.2, minDistinctDays: 1 },
+  // Chuộc một câu nói phải bằng LỜI và sự để ý, không bằng ổ bánh to hơn (§2.7 "đúng trục").
+  RUDE_TO_THEM:   { K: 2.0, minDistinctDays: 3, requireKinds: ["CARED_FOR_THEM", "REMEMBERED_STORY"] },
 };
 
 export const SALIENCE_OF: Record<BaseKind, number> = {
   WRONG_NAME: 100, MADE_THEM_WAIT: 100, BURNT_OR_COLD: 80, DROPPED_FOOD: 75, ORDER_DEFECT: 100, DIRTY_HANDS: 40,
+  RUDE_TO_THEM: 65,
   REMEMBERED_USUAL: 90, REMEMBERED_STORY: 70, CARED_FOR_THEM: 50, FREE_EXTRA: 25, FLOURISH: 15,
 };
 
@@ -319,6 +327,24 @@ function insertLong(s: RelState, m: Memory, day: number, p: Personality) {
   if (currentIntensity(victim, day, p) < currentIntensity(m, day, p)) s.memory.long[s.memory.long.indexOf(victim)] = m;
 }
 
+/**
+ * Một câu nói qua lại làm ấm lên (hoặc nguội đi) MỘT CHÚT — P5-01.
+ *
+ * Phần lớn câu trong một cuộc trò chuyện không đáng thành ký ức: nó chỉ là chuyện
+ * "nói chuyện được" hay "nói chuyện khó chịu". Nên nó đi thẳng vào điểm quan hệ, KHÔNG
+ * qua `record()`: không chiếm slot trí nhớ, không đi tin đồn, không chuộc được bằng
+ * một ổ bánh. Câu nào nặng tới mức người ta NHỚ thì content phải khai `mem` riêng.
+ *
+ * `relGainMul` chỉ nhân cho phần DƯƠNG — người khép kín ấm lên chậm, nhưng không vì
+ * khép kín mà bớt đau khi bị nói nặng.
+ */
+export function talkPoints(s: RelState, p: Personality, delta: number) {
+  const before = s.relationPoints;
+  s.relationPoints += delta > 0 ? delta * relGainMul(p) : delta;
+  clampPoints(s);
+  return s.relationPoints - before;
+}
+
 /** Được phục vụ tử tế mà không có chuyện gì (không phải ký ức — chỉ là thói quen quen mặt). */
 export function servedWell(s: RelState, p: Personality, quality01: number, silentGrudge: boolean) {
   // người im lặng không ấm lên vì một ổ bánh bình thường — cửa duy nhất là NHỚ ĐÚNG (P2-02 §5)
@@ -408,4 +434,6 @@ export function visitProbabilityMul(s: RelState) {
 /** "Vắng n ngày" của người im lặng — P2-02 §4.6 (chị Lan): kind → số ngày vắng. */
 export const SILENT_ABSENCE: Partial<Record<BaseKind, number>> = {
   DROPPED_FOOD: 5, WRONG_NAME: 3, ORDER_DEFECT: 3, BURNT_OR_COLD: 2, MADE_THEM_WAIT: 2,
+  // Chị Lan bị nói nặng một câu: không cãi, không giận ra mặt — bốn bữa sau chỗ 7h05 trống.
+  RUDE_TO_THEM: 4,
 };

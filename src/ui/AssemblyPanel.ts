@@ -48,8 +48,17 @@ const MAX_SCALE = 1.45;
 const MAX_SCALE_W = 1.15;
 /** Trần phóng của nút — nút cao quá thì hàng cuối của khay không còn chỗ. */
 const MAX_SCALE_BTN = 1.25;
-const WRAP_BEATS = ["gập", "cuộn", "xoắn"] as const;
-const WRAP_EVEN_TOL = 0.18;
+/**
+ * Gói bánh là MỘT cú bấm. Trước đây là ba nhịp gập · cuộn · xoắn và FLOURISH đo
+ * bằng độ đều của hai khoảng nhịp — ba cú bấm cho mỗi ổ, mỗi khách, cả bốn mươi
+ * ngày, là quá nhiều thao tác cho một thứ không có nhánh hỏng.
+ *
+ * FLOURISH không mất theo: nó chuyển từ ĐỀU TAY sang NHANH TAY — gói trong vòng
+ * `wrapSnapMs` kể từ lúc đặt miếng nhân cuối là khéo. Vẫn là một khoảnh khắc đọc
+ * được từ nhịp tay người chơi, và `service.ts` (SK ngày 5 của bé Sử) cùng
+ * `gossip.ts` vẫn có cái để bắt.
+ */
+const WRAP_SNAP_MS = 900;
 
 export class AssemblyPanel {
   private root: Phaser.GameObjects.Container;
@@ -80,14 +89,9 @@ export class AssemblyPanel {
   private presetUsed: number | null = null;
   /** Preset đang chờ xác nhận ghi đè (bấm lần nữa) — xem `applyPreset`. */
   private presetArm: number | null = null;
-  /**
-   * Gói bánh 3 nhịp: gập · cuộn · xoắn (P1-01 §2.9 WRAP_FAST). Mốc thời gian mỗi nhịp —
-   * nhịp đều tay (lệch ≤ 18%) là FLOURISH. Không có nhánh "gói hỏng": gói lệch nhịp vẫn gói xong.
-   */
-  private wrapBeats: number[] = [];
   private tiles = new Map<Ingredient, () => void>();
-  /** Dao bén (P3-04 A2) nới cửa sổ gói đều tay 0,18 → 0,30. */
-  wrapTol = WRAP_EVEN_TOL;
+  /** Dao bén (P3-04 A2) nới cửa sổ gói nhanh tay 0,9 s → 1,5 s. */
+  wrapSnapMs = WRAP_SNAP_MS;
   /** Kẹp gắp (P3-04 A4): gắp chậm hơn bốc tay — mỗi lần gắp cách nhau chừng này (ms). */
   addCooldownMs = 0;
   private lastAddAt = -1e9;
@@ -334,7 +338,7 @@ export class AssemblyPanel {
     const col = (c: number) => cx + (c - (TRAY_COLS - 1) / 2) * (this.tw + 8);
     this.root.add(button(this.scene, col(1), y, "Hoàn tác", () => this.undo(), { width: this.tw, maxScale: MAX_SCALE_BTN }));
     this.root.add(button(this.scene, col(2), y, "Gói lại", () => this.confirm(), {
-      width: this.tw, primary: true, hint: "3 nhịp: E · E · E", maxScale: MAX_SCALE_BTN,
+      width: this.tw, primary: true, hint: "E", maxScale: MAX_SCALE_BTN,
     }));
     this.root.list.filter((o) => o instanceof Phaser.GameObjects.Container)
       .forEach((o) => (o as Phaser.GameObjects.Container).setScrollFactor(0));
@@ -352,7 +356,6 @@ export class AssemblyPanel {
   /** Bỏ thêm một phần. Chạm trần của món đó, hoặc đầy ổ, thì không nhận nữa. */
   private add(id: Ingredient) {
     if (!this.open) return;                             // kéo dở mà bảng đã đóng (đi khỏi thớt)
-    if (this.wrapBeats.length) { this.flash("đang gói — Hoàn tác để mở ra"); return; }
     const have = portionsOf(this.stack).get(id) ?? 0;
     if (have >= this.maxOf(id)) { this.flash(`${labelOf(id)} hết chỗ rồi`); return; }
     if (this.stack.length >= CAPACITY) { this.flash("ổ bánh đầy rồi, kẹp không lại"); return; }
@@ -369,9 +372,6 @@ export class AssemblyPanel {
 
   /** Gỡ MỘT phần của món đó — bỏ miếng mới nhất. */
   private removeOne(id: Ingredient) {
-    // Đang gói mà còn gỡ được nhân ra thì gói xong ổ RỖNG: nhịp 1 · gỡ hết nhân · nhịp 2, 3.
-    // `add()` đã chặn đúng kiểu này từ đầu (xem trên) — gỡ cũng phải chặn y vậy.
-    if (this.wrapBeats.length) { this.flash("đang gói — Hoàn tác để mở ra"); return; }
     const at = this.stack.lastIndexOf(id);
     if (at >= 0) this.stack.splice(at, 1);
     this.presetArm = null;
@@ -386,7 +386,6 @@ export class AssemblyPanel {
   }
 
   private undo() {
-    if (this.wrapBeats.length) { this.wrapBeats = []; this.repaint(); return; }  // huỷ gói trước
     this.stack.pop();
     this.presetArm = null;
     if (!this.stack.length) this.presetUsed = null;
@@ -409,7 +408,6 @@ export class AssemblyPanel {
    * ở `confirm()`, qua `onPresetConsumed`.
    */
   private applyPreset(i: number) {
-    if (this.wrapBeats.length) return;
     // Ghi đè cả ổ đang kẹp là chuyện lớn: Hoàn tác chỉ `pop()` một miếng nên 20 phần đã
     // kẹp tay không lấy lại được. Hỏi một lần trước khi xoá.
     if (this.stack.length && this.presetArm !== i) {
@@ -427,6 +425,9 @@ export class AssemblyPanel {
     }
     this.stack = [];
     for (const id of dish) { this.stack.push(id); this.onAdd(id); }
+    // Preset cũng là một lần "vừa đặt nhân xong" — không ghi mốc thì bấm P1 rồi gói
+    // ngay lập tức vẫn trượt FLOURISH, mà đó mới đúng là cú gói nhanh nhất có thể.
+    this.lastAddAt = this.scene.time.now;
     this.presetUsed = i;
     this.presetArm = null;
     this.repaint();
@@ -437,19 +438,14 @@ export class AssemblyPanel {
     // Ổ trống KHÔNG phải lúc nào cũng sai: bé Sử gọi "ổ bánh mì không" cả 40 ngày, bà Sáu
     // đổi chén tàu hũ lấy ổ không, và SK-31 ngày 29 (bắt buộc) có hẳn nhánh "làm đúng ổ
     // bánh mì không". Đơn nào cho phép thì scene nói qua `allowEmptyLoaf`.
-    // Kiểm ở MỌI nhịp chứ không chỉ nhịp đầu — ổ không được rỗng đi giữa lúc gói.
     if (!this.stack.length && !this.allowEmptyLoaf()) {
-      this.wrapBeats = [];
       this.flash("ổ còn trống — kẹp nhân trước đã");
       return;
     }
-    const now = this.scene.time.now;
-    this.wrapBeats.push(now);
-    if (this.wrapBeats.length < WRAP_BEATS.length) { this.repaint(); return; }
-    const [a, b, c] = this.wrapBeats;
-    const i1 = b - a, i2 = c - b;
-    const even = Math.abs(i1 - i2) / ((i1 + i2) / 2) <= this.wrapTol && i1 < 1500 && i2 < 1500;
-    this.wrapBeats = [];
+    // Gói liền tay sau miếng cuối = khéo. Ổ chưa đặt miếng nào trong phiên này
+    // (`lastAddAt` còn ở -1e9) thì không tính — gác ổ cả phút rồi quay lại bấm gói
+    // không phải là nhanh tay.
+    const even = this.scene.time.now - this.lastAddAt <= this.wrapSnapMs;
     const dish = [...this.stack];
     const used = this.presetUsed;
     this.presetUsed = null;
@@ -469,14 +465,12 @@ export class AssemblyPanel {
     this.fillLayer.removeAll(true);
     this.hint.setColor(UI.muted);
 
-    if (this.stack.length === 0 && !this.wrapBeats.length) {
+    if (this.stack.length === 0) {
       this.hint.setText("kéo miếng nhân thả vào đây");
       this.tiles.forEach((f) => f());
       return;
     }
-    this.hint.setText(this.wrapBeats.length
-      ? `gói: ${WRAP_BEATS.map((w, i) => `${i < this.wrapBeats.length ? "●" : "○"} ${w}`).join("  ")}   — bấm tiếp, đều tay`
-      : `bấm vào một lớp để gỡ bớt   ·   ${this.stack.length}/${CAPACITY} phần`);
+    this.hint.setText(`bấm vào một lớp để gỡ bớt   ·   ${this.stack.length}/${CAPACITY} phần`);
 
     // Dàn NGANG như lát nhân xếp dọc ruột bánh: miếng sau đè lên miếng trước, miếng
     // nào cũng còn lộ một phần — đủ nhận ra hình dáng từng loại.
@@ -518,7 +512,9 @@ export class AssemblyPanel {
     this.stack = [...initial];
     // Ổ mới tinh: quên preset cũ. Ổ gác dở mở lại: GIỮ, không thì gác một cái là mất suất.
     if (!this.stack.length) this.presetUsed = null;
-    this.wrapBeats = [];
+    // Mở lại ổ gác dở KHÔNG phải vừa đặt nhân: để mốc cũ thì bấm gói luôn là ăn
+    // FLOURISH free. Lùi hẳn ra ngoài mọi cửa sổ nhanh tay.
+    this.lastAddAt = -1e9;
     this.presetArm = null;
     this.open = true;
     this.root.setVisible(true);
@@ -528,7 +524,6 @@ export class AssemblyPanel {
   /** Gác ổ lại trên thớt — giữ nguyên phần đã kẹp (và giữ cả `presetUsed`). */
   park() {
     if (!this.open) return;
-    this.wrapBeats = [];
     this.presetArm = null;
     const dish = [...this.stack];
     this.hide();

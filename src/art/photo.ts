@@ -280,10 +280,11 @@ function openLoaf(scene: Phaser.Scene) {
   const lh = (lid.height / lid.width) * w;
   const x = (FOOD.LOAF_W - w) / 2;
   const cy = FOOD.LOAF_H / 2 + FOOD.CRUMB_DY;        // tâm lòng máng
-  // Nắp thò lên ĐÚNG `LID_PEEK` px phía trên mép máng: lấy mép trên của máng, lùi
-  // lên chừng đó rồi mới đặt nắp xuống. (Bản trước trừ cả nửa chiều cao nắp nên
-  // nắp bay hẳn ra ngoài khung texture — ổ bánh trong bảng kẹp mất hẳn một mặt.)
-  made.ctx.drawImage(shrink(lid, w, lh), x, cy - th / 2 - FOOD.LID_PEEK + lh / 2, w, lh);
+  // Nắp thò lên ĐÚNG `LID_PEEK` px phía trên mép máng: MÉP TRÊN của nắp nằm cao
+  // hơn mép trên của máng chừng đó, hết. Đừng cộng thêm nửa chiều cao nắp — làm
+  // vậy thì phần ló ra phụ thuộc nắp cao bao nhiêu, nên nắp càng cao càng tụt
+  // xuống, và với ảnh nắp đủ dày thì nó chui hẳn sau máng rồi tràn khỏi texture.
+  made.ctx.drawImage(shrink(lid, w, lh), x, cy - th / 2 - FOOD.LID_PEEK, w, lh);
   made.ctx.drawImage(shrink(trough, w, th), x, cy - th / 2, w, th);
   made.tex.refresh();
 }

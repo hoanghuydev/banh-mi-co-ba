@@ -29,8 +29,9 @@ export const FOOD = {
   CRUMB_W: 214,
   /** Tâm lòng máng nằm dưới tâm ảnh bao nhiêu px (vì nắp chiếm phần trên). */
   CRUMB_DY: 16,
-  /** Nắp lật ra sau ló lên trên mép máng bao nhiêu px. */
-  LID_PEEK: 30,
+  /** Nắp lật ra sau ló lên trên mép máng bao nhiêu px. Trần là ~38: cao hơn nữa
+   *  thì lưng nắp bị khung texture `LOAF_H` xén mất. */
+  LID_PEEK: 38,
 } as const;
 
 type Draw = (g: Pen, cx: number, cy: number, s: number) => void;

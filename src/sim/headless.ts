@@ -189,6 +189,8 @@ export class HeadlessStall {
       // bot ghi sổ nợ theo chính sách (mặc định: ghi hết)
       if (ev.kind === "credit") { w.progress.today.served++; if (this.bot.next() < (this.policy.writeDebts ?? 1)) ev.record.playerWrote = ev.record.trueAmount; continue; }
       if (ev.kind === "repay") { w.money.cash += ev.amount; w.progress.today.revenue += ev.amount; continue; }
+      // bot không trò chuyện — nó không có mắt để đọc bốn lựa chọn
+      if (ev.kind === "talkOffer") continue;
       w.money.cash += ev.amount;
       w.progress.today.revenue += ev.amount;
       w.progress.today.served++;

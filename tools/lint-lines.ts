@@ -94,6 +94,23 @@ function collect(contentDir: string): { bags: Bag[]; save: () => void } {
       });
     }
   }
+  // P5-01 — hội thoại có nhánh. Hai túi mỗi cuộc, vì hai giọng khác nhau: lời KHÁCH
+  // (dính luật giọng Bắc/Nam theo `npc`) và lời NGƯỜI CHƠI (luôn giọng Nam).
+  for (const f of walk(join(contentDir, "talks"), [".json"])) {
+    const data = readJson<{ talks: any[] }>(f);
+    for (const t of data.talks ?? []) {
+      const npcLines: string[] = [t.opener, ...(t.ignore?.reply ? [t.ignore.reply] : [])];
+      const sayLines: string[] = [];
+      for (const b of t.beats ?? []) {
+        for (const o of b.options ?? []) {
+          sayLines.push(o.say);
+          if (o.reply) npcLines.push(o.reply);
+        }
+      }
+      bags.push({ file: f, where: `talk ${t.id}.npc`, vi: npcLines, vars: [], npc: t.npc, set: () => {} });
+      bags.push({ file: f, where: `talk ${t.id}.say`, vi: sayLines, vars: [], set: () => {} });
+    }
+  }
   for (const f of walk(join(contentDir, "rules"), [".json"])) {
     if (f.endsWith("_blackboard.json")) continue;
     const data = readJson<any>(f);

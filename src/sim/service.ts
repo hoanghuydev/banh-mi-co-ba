@@ -4,7 +4,7 @@ import { Query } from "../dialog/facts";
 import { Speaker, type DialogState } from "../dialog/speaker";
 import type { Rule } from "../dialog/ruledb";
 import { NPCS, WALKIN_NAMES, WALKIN_STYLES, type NpcDef } from "../content/npcs";
-import { DAY_END_MIN, DAY_START_MIN, PEAK_END_MIN, PEAK_START_MIN, fmtHhmm } from "../core/clock";
+import { DAY_END_MIN, DAY_START_MIN, PEAK_END_MIN, PEAK_START_MIN, bandOf, fmtHhmm } from "../core/clock";
 import type { Bus } from "../core/eventbus";
 import type { CustomerSlot, LeaveReason as BusLeaveReason, RelTier, StimId } from "../core/types";
 import { newNpcState, type NpcState } from "../core/save";
@@ -21,6 +21,11 @@ import {
 import { CUSTOMER_GATE, QUEUE_SLOTS, STREET_BIN, hitsWall } from "../world/map";
 import { rollVisit } from "./schedule";
 import { SILENT_ABSENCE, record, servedWell, visitProbabilityMul, type BaseKind, type Memory } from "./memory";
+import { TalkStore } from "../content/talks";
+import {
+  DEFAULT_IGNORE_REL, TalkSession, angerToWaitSec, applyTalk, pickTalk, visibleOptions,
+  type Talk, type TalkCtx, type TalkEffect, type TalkTone,
+} from "./talk";
 import { CLAIM, activeHeard, disprove, nameOf, poolOf, witness, type GossipState } from "./gossip";
 import { beginDay, displayName, logNote, logOrder, nameCheck, type Notebook } from "./notebook";
 import { CAL, crowdMul, isRain, loafPriceVnd, tasteThreshold, tierOf, weatherOf } from "./econ";
@@ -31,7 +36,7 @@ import {
   type DebtRecord, type OpeningFacts, type ViaMood,
 } from "./till";
 import { moodBaseFace, moodPatienceMul, moodTipMul, rollMood } from "./mood";
-import { faceHoldSec, isSilentGrudge, reactionDelay } from "./personality";
+import { faceHoldSec, intensityMul, isSilentGrudge, reactionDelay } from "./personality";
 import { GROUP_OF, faceFor, poseFor, type Group, type Intensity, type PoseId } from "./reaction";
 import { CRUST } from "./oven";
 import { satisfaction, servedVector, tasteOf } from "./taste";
@@ -55,6 +60,17 @@ import type { VisitPlan } from "./customer";
 const SLOTS: readonly { x: number; y: number; zone: Zone }[] = QUEUE_SLOTS;
 const GATE = CUSTOMER_GATE;
 const WALK_SPEED = 2.2;
+
+/**
+ * Khách TỰ bắt chuyện — P5-01 §3. Đa số khách KHÔNG bắt chuyện: họ tới mua bánh mì.
+ *
+ * Ba cái van, cả ba đều cần: `initiates` của từng cuộc (ít cuộc có, và đều ≤ 0,35),
+ * trần cả buổi, và khoảng cách giữa hai lần. Thiếu trần thì một buổi đông khách thành
+ * ra sáu lần bị bắt chuyện — người chơi không làm được việc, và đó là lúc hệ thống trò
+ * chuyện quay ra phá chính trò chơi.
+ */
+const TALK_OFFERS_PER_DAY = 3;
+const TALK_OFFER_GAP_SEC = 100;
 
 /** Giá một ổ. Kinh tế thật nằm ở phase P3. */
 export const PRICE_BANH = 25_000;
@@ -151,7 +167,22 @@ export type ServiceEvent =
   /** Khách trả nợ bữa trước — số họ NHỚ (ghi rồi thì là số đã ghi). */
   | { kind: "repay"; amount: number; npcId: string; name: string }
   | { kind: "paid"; amount: number; item: "dish"; tip: number }
-  | { kind: "cost"; amount: number; item: "tea" };
+  | { kind: "cost"; amount: number; item: "tea" }
+  /** P5-01 — khách vừa tự bắt chuyện. Scene hiện gợi ý "F để trả lời"; làm lơ cũng được. */
+  | { kind: "talkOffer"; npcId: string; name: string };
+
+/** Một nhịp của cuộc trò chuyện, đủ cho UI vẽ. T3: không một con số nào ở đây. */
+export type TalkView = {
+  npcKey: string;
+  name: string;
+  /** Câu khách vừa nói — `opener`, hoặc `reply` của đúng lựa chọn vừa bấm. */
+  line: string;
+  /** Khách cố ý KHÔNG đáp. Bảng vẽ "…" chứ không vẽ một ô trống (P2-02 §2.3). */
+  silent: boolean;
+  options: readonly { say: string; tone: TalkTone }[];
+  /** Hết chuyện: UI đóng bảng sau khi người chơi đọc xong câu cuối. */
+  done: boolean;
+};
 
 export type ServiceDeps = {
   bus: Bus;
@@ -247,6 +278,15 @@ export class Service {
   /** Ly trà đã mời cho từng người HÔM NAY — trần và mức nhỏ dần đếm theo ngày (§8i). */
   private teaToday = new Map<string, number>();
   private devSeq = 0;
+  /** P5-01 — cuộc trò chuyện đang mở (bảng lựa chọn đang hiện, đồng hồ đang đứng). */
+  private talkSession: TalkSession | null = null;
+  private talkWith: Customer | null = null;
+  /** Khách đã tự bắt chuyện và đang chờ được trả lời. */
+  private offer: { c: Customer; talk: Talk } | null = null;
+  /** Nội dung trò chuyện, nạp theo từng người lúc họ đi vô (P5-01 luật 4). */
+  readonly talks = new TalkStore();
+  private offersToday = 0;
+  private lastOfferAt = -Infinity;
   /** Ly trà còn lại hôm nay. */
   teaLeft = TEA_PER_DAY;
   /** Độ bẩn quầy 0..1 (P1-02 §2.10) — scene đặt mỗi frame. */
@@ -312,6 +352,9 @@ export class Service {
 
   dispose() {
     this.offStim();
+    this.endTalk();
+    this.offer = null;
+    this.talks.clear();
   }
 
   /**
@@ -493,6 +536,9 @@ export class Service {
       { ...GATE }, this.patienceOf(npc, nowMin) * moodPatienceMul(mood), rng,
     );
     c.plan = plan;
+    // Nạp nền cây hội thoại của người này. Không `await`: họ còn đi bộ mấy giây thật từ
+    // cổng vào quầy, và `openTalk()` đã có đường lui nếu chưa kịp xong.
+    void this.talks.ensure(npc ? npc.id : "WALKIN");
     if (plan?.pass) {
       // người đi ngang: KHÔNG vào hàng, không gọi món — tới chỗ dừng, đứng một nhịp, đi
       c.phase = "leaving";
@@ -629,11 +675,32 @@ export class Service {
     let chosen: PoseId = pose ?? (i >= 2 ? c.npc?.poses?.[id] ?? poseFor(g, p, i) : poseFor(g, p, i));
     // chị Lan lúc CONFIRMED: ĐỨNG SỮNG (damping 40), không nói (P2-02 §4.6)
     if (i === 3 && isSilentGrudge(p) && negative && g !== "WAIT") chosen = "FREEZE";
+    this.scheduleReact(c, face, chosen);
+  }
+
+  /**
+   * Phản ứng với một chuyện KHÔNG có kích thích riêng — lời nói qua lại ở quầy (P5-01).
+   * Cùng luật giãn 60 ms và cùng `faceHoldSec` với `react()`; khác ở chỗ không có `StimId`
+   * nào để tra `npc.poses`, nên dáng lấy thẳng từ bảng nhóm.
+   */
+  private reactTalk(c: Customer, g: Group, i: Intensity, pose?: PoseId) {
+    const p = c.personality;
+    let face = faceFor(g, p, i);
+    const negative = g === "NAME";
+    if (face && negative && isSilentGrudge(p)) face = [face[0], face[1], 1];
+    let chosen: PoseId = pose ?? poseFor(g, p, i);
+    if (i === 3 && isSilentGrudge(p) && negative) chosen = "FREEZE";
+    this.scheduleReact(c, face, chosen);
+  }
+
+  /** Đặt mặt + dáng lên hàng đợi phản ứng. Không hai người nào đổi mặt trong cùng 60 ms. */
+  private scheduleReact(c: Customer, face: ReturnType<typeof faceFor>, pose: PoseId) {
+    const p = c.personality;
     let at = this.nowSec + reactionDelay(p, this.dialogRng.next());
     for (let guard = 0; guard < 20 && this.reactAt.some((t) => Math.abs(t - at) < 0.06); guard++) at += 0.06;
     this.reactAt.push(at);
     if (this.reactAt.length > 16) this.reactAt.shift();
-    c.react.schedule(c.now, at - this.nowSec, face, chosen, faceHoldSec(p));
+    c.react.schedule(c.now, at - this.nowSec, face, pose, faceHoldSec(p));
   }
 
   /**
@@ -805,6 +872,7 @@ export class Service {
     if (this.nowSec - c.orderedAt < SMALLTALK_AFTER_SEC) return;
     if (this.queue.length || this.customers.some((x) => x.speaking)) return;
     this.smalltalked.add(c.id);
+    if (this.offerTalk(c)) return;
     if (this.mentionGossip(c)) return;
     this.speakConcept(c, "SMALLTALK", {}, 45, true);
   }
@@ -889,6 +957,9 @@ export class Service {
   lanLeft = false;
 
   private leave(c: Customer, reason: LeaveReason) {
+    // Bắt chuyện mà không ai trả lời tới lúc đi: đó mới là lúc làm thinh thành ra thiệt.
+    if (this.offer?.c === c) { this.applyIgnore(c, this.offer.talk); this.offer = null; }
+    if (this.talkWith === c) this.endTalk();
     if (c.plan?.tag === "SK-42") this.lanLeft = true;
     if (reason !== "served" && this.deps.story) onUnserved(this.deps.story, c.npc?.id ?? null, c.plan?.tag, !!c.plan?.barter);
     c.phase = "leaving";
@@ -903,6 +974,7 @@ export class Service {
       this.speakConcept(c, "FAREWELL", { leaveReason: "IMPATIENT" }, 80);
       this.out.push({ kind: "log", text: `${this.label(c)} bỏ đi — chờ lâu quá.` });
     }
+    this.talks.release(c.npc ? c.npc.id : "WALKIN");
     // Autosave nghe npc:left — đổ trí nhớ ngắn của rule DB vào world TRƯỚC khi nó ghi.
     this.speaker.sync(this.nowSec);
     this.deps.bus.emit("npc:left", { npcId: c.memKey, visitId: c.id, reason: LEAVE_REASON[reason] });
@@ -1375,6 +1447,177 @@ export class Service {
     return { ok: false, reason: `${this.label(c)} không nhận nữa` };
   }
 
+  // ─────────────────────────────────────────────────────── trò chuyện (P5-01)
+
+  /**
+   * Bấm F. Trả `null` = không có chuyện gì để nói với người này lúc này — scene rơi về
+   * `ask()` cũ (một câu xã giao, không có bảng lựa chọn).
+   *
+   * ⚠️ HỢP ĐỒNG VỚI SCENE: bảng còn mở thì đồng hồ phải ĐỨNG (`clock.paused`). Đọc bốn
+   * dòng mà kiên nhẫn vẫn tụt thì người chơi học được đúng một bài — đừng bao giờ bấm F.
+   */
+  openTalk(): TalkView | null {
+    if (this.talkSession) return this.talkView("");
+    // Khách vừa tự bắt chuyện thì F là TRẢ LỜI họ, dù họ đứng ở đâu trong hàng.
+    const c = this.offer?.c ?? this.front;
+    if (!c || c.phase === "leaving") return null;
+    const key = this.talkKey(c);
+    // Chưa nạp xong (vừa spawn, hoặc chunk còn đang tải): rơi về `ask()`. Không chặn frame.
+    if (!this.offer && !this.talks.has(key)) { this.talks.ensure(key); return null; }
+    const talk = this.offer?.c === c ? this.offer.talk : pickTalk(this.talks.get(key), this.talkCtx(c), this.dialogRng);
+    if (!talk) return null;
+    const opened = this.offer?.c === c;
+    this.offer = null;
+    this.markTalkUsed(c, talk);
+    this.talkSession = new TalkSession(talk, c.memKey);
+    this.talkWith = c;
+    // Nhìn MẶT người bán, không nhìn tay — cùng cửa với ASK_QUESTION cũ (P1-02 §2.8).
+    c.ask();
+    this.deps.bus.emit("attention:toolUsed", { tool: "ASK_QUESTION", npcId: c.memKey, durationSec: 3 });
+    // Khách đã nói opener thành bong bóng lúc họ bắt chuyện rồi — không nói lại lần hai.
+    return this.talkView(opened ? "" : talk.opener);
+  }
+
+  /** Người chơi bấm lựa chọn thứ `i` (hoặc phím số). Trả nhịp kế, hoặc nhịp cuối với `done`. */
+  chooseTalk(i: number): TalkView | null {
+    const s = this.talkSession, c = this.talkWith;
+    if (!s || !c) return null;
+    const r = s.choose(i, this.talkFlags());
+    if (!r) return null;
+    this.out.push({ kind: "log", text: `con: "${r.node.say}"` });
+    this.applyTalkOption(c, r.node);
+    if (r.reply) this.out.push({ kind: "log", text: `${this.label(c)}: "${r.reply}"` });
+    // Im lặng vẫn phải THẤY được: mặt đổi, dáng đổi, chỉ là không có chữ nào.
+    else if (r.node.silent) this.reactTalk(c, "NAME", 1, "TURN_AWAY_QUARTER");
+    const view = this.talkView(r.reply ?? "", !r.reply && !!r.node.silent);
+    if (r.done) this.endTalk();
+    return view;
+  }
+
+  /**
+   * Đóng bảng mà chưa nói hết — Esc, hoặc đi làm việc khác. KHÔNG phải nút huỷ: làm thinh
+   * với người đang nói chuyện với mình là một câu trả lời, và nó có giá (`talk.ignore`).
+   */
+  closeTalk(): void {
+    const s = this.talkSession, c = this.talkWith;
+    this.endTalk();
+    if (!s || !c || s.done) return;
+    this.applyIgnore(c, s.talk);
+  }
+
+  get talkOpen() {
+    return this.talkSession !== null;
+  }
+
+  private endTalk() {
+    this.talkSession = null;
+    this.talkWith = null;
+  }
+
+  /** Làm thinh: hiệu ứng khai trong `talk.ignore`, mặc định chỉ nguội đi một chút. */
+  private applyIgnore(c: Customer, talk: Talk) {
+    const ig = talk.ignore ?? { rel: DEFAULT_IGNORE_REL };
+    this.applyTalkOption(c, { rel: ig.rel ?? DEFAULT_IGNORE_REL, anger: ig.anger, mem: ig.mem });
+    if (ig.reply) this.say(c, ig.reply, 2, true, 55);
+  }
+
+  private talkFlags(): TalkCtx["flags"] {
+    return (this.deps.story?.flags ?? {}) as TalkCtx["flags"];
+  }
+
+  /** Khoá kho nội dung: người có tên dùng id, khách vãng lai dùng chung một file. */
+  private talkKey(c: Customer) {
+    return c.npc ? c.npc.id : "WALKIN";
+  }
+
+  private talkCtx(c: Customer): TalkCtx {
+    const m = this.mem(c.memKey);
+    return {
+      npcId: this.talkKey(c),
+      day: this.deps.day,
+      slot: bandOf(this.nowMin),
+      rain: isRain(weatherOf(this.deps.day)),
+      tier: m.tier,
+      visits: m.visits,
+      flags: this.talkFlags(),
+      usedToday: m.talkTopics?.day === this.deps.day ? m.talkTopics.topics : [],
+      usedSeason: m.talksDone ?? [],
+    };
+  }
+
+  /** Ghi "đã nói chuyện này rồi" NGAY lúc mở, không đợi nói xong — bỏ ngang cũng là đã nghe. */
+  private markTalkUsed(c: Customer, t: Talk) {
+    const m = this.mem(c.memKey);
+    (m.talksDone ??= []).push(t.id);
+    if (m.talkTopics?.day !== this.deps.day) m.talkTopics = { day: this.deps.day, topics: [] };
+    m.talkTopics.topics.push(t.topic);
+  }
+
+  private talkView(line: string, silent = false): TalkView | null {
+    const s = this.talkSession, c = this.talkWith;
+    if (!s || !c) return null;
+    const here = s.options;
+    const opts = here ? visibleOptions(here, this.talkFlags()) : [];
+    return {
+      npcKey: c.memKey, name: this.label(c), line, silent,
+      options: opts.map((o) => ({ say: o.say, tone: o.tone })),
+      done: s.done || !here,
+    };
+  }
+
+  /**
+   * Hệ quả của MỘT lựa chọn. Ba kênh, đúng thứ tự THẤY → HIỂU → NGHE của P2-02:
+   *   mặt + dáng (thấy ngay)  ·  sức chờ (hiểu: họ bớt muốn đứng đây)  ·  trí nhớ (nghe sau)
+   *
+   * Khách vãng lai KHÔNG có trí nhớ (P2-02 §5.1 M3′) nhưng VẪN giận được: giận là chuyện
+   * của lượt ghé này, không cần ai nhớ ai.
+   */
+  private applyTalkOption(c: Customer, o: TalkEffect) {
+    if (c.npc) {
+      const out = applyTalk(o, this.mem(c.memKey), c.personality, this.deps.day);
+      // `memory:written` cố ý KHÔNG bắn ở đây: event đó khai `kind: StimId`, mà lời nói
+      // không phải một kích thích ai cũng nhìn thấy — nó chỉ xảy ra giữa hai người ở quầy.
+      // Cũng vì vậy nó không đi qua `witness()`: bà Sáu không đem câu này đi kể được.
+      if (out.mem) {
+        // Người im lặng không cãi lại: mấy bữa sau chỗ của họ trống (P2-02 §4.6).
+        const days = SILENT_ABSENCE[out.mem];
+        const m = this.mem(c.memKey);
+        if (days && isSilentGrudge(c.personality)) m.absentUntil = Math.max(m.absentUntil, this.deps.day + days);
+      }
+    }
+    if (o.flag && this.deps.story) this.deps.story.flags[o.flag] = this.deps.day;
+
+    const anger = (o.anger ?? 0) * intensityMul(c.personality);
+    if (anger > 0) {
+      c.waitSec += angerToWaitSec(anger, c.waitT, c.waitSec, LEAVE_AT);
+      this.reactTalk(c, "NAME", anger >= 45 ? 3 : 2);
+    } else if ((o.rel ?? 0) >= 3) {
+      this.reactTalk(c, "CARED", 1);
+    }
+  }
+
+  /**
+   * Khách TỰ bắt chuyện — một lần mỗi lượt ghé, chen vào đúng chỗ của SMALLTALK cũ.
+   * Họ nói opener thành bong bóng rồi đứng đó; người chơi bấm F thì bảng mở ngay tại
+   * nhịp đầu (không nghe lại opener). Không bấm gì tới lúc họ đi = làm thinh, có giá.
+   */
+  private offerTalk(c: Customer): boolean {
+    if (this.offer || this.talkSession) return false;
+    if (this.offersToday >= TALK_OFFERS_PER_DAY) return false;
+    if (this.nowSec - this.lastOfferAt < TALK_OFFER_GAP_SEC) return false;
+    const key = this.talkKey(c);
+    if (!this.talks.has(key)) return false;
+    const talk = pickTalk(this.talks.get(key).filter((t) => !!t.initiates), this.talkCtx(c), this.dialogRng);
+    if (!talk) return false;
+    if (this.deps.hub.derive(`talk:${this.deps.day}:${c.id}`).next() >= (talk.initiates ?? 0)) return false;
+    this.offersToday++;
+    this.lastOfferAt = this.nowSec;
+    this.offer = { c, talk };
+    this.say(c, talk.opener, 2, true, 70);
+    this.out.push({ kind: "talkOffer", npcId: c.memKey, name: this.label(c) });
+    return true;
+  }
+
   /**
    * Hỏi chuyện — P1-02 §2.8 (ASK_QUESTION): khách nhìn MẶT người chơi (gaze 0,35) thay vì
    * nhìn tay, trong 1,5–4 s. Cooldown 60 s mỗi người. Trả câu người chơi nói (để ghi nhật ký).
@@ -1523,6 +1766,22 @@ export class Service {
 
   drain() {
     return this.out.splice(0, this.out.length);
+  }
+
+  /**
+   * Chỉ rút các dòng NHẬT KÝ — bảng trò chuyện cần in câu ra HUD ngay, mà lúc đó đồng hồ
+   * đang đứng nên vòng `settle()` chưa chạy. Sự kiện tiền vẫn nằm nguyên trong hàng đợi
+   * để đúng một chỗ xử: nếu rút luôn ở đây thì một lần bấm F ăn mất một lần thu tiền.
+   */
+  drainLogs(): string[] {
+    const out: string[] = [];
+    for (let i = this.out.length - 1; i >= 0; i--) {
+      const e = this.out[i];
+      if (e.kind !== "log") continue;
+      out.unshift(e.text);
+      this.out.splice(i, 1);
+    }
+    return out;
   }
 }
 

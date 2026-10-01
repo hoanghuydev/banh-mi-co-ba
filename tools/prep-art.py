@@ -399,16 +399,40 @@ def open_loaf():
     """
     Ổ bánh rạch đôi -> hai nửa RỜI: `loaf_lid` (nắp) và `loaf_trough` (máng).
 
-    Ảnh gốc là hai nửa dựng ĐỨNG cạnh nhau. Xoay 90° theo chiều kim đồng hồ thì
-    nửa trái thành nửa TRÊN (vỏ ngửa lên — đúng cái nắp lật ra sau) và nửa phải
-    thành nửa DƯỚI (mặt cắt ngửa lên — đúng cái máng để thả nhân vào).
-    Tách đôi ở đây để `photo.ts` xếp chồng được: nắp thò ra sau lưng máng.
+    Ảnh gốc là hai nửa dựng ĐỨNG cạnh nhau, CÁCH NHAU một rãnh trong suốt. Tách
+    đôi ở ĐÚNG cái rãnh đó — KHÔNG đi qua `clean()`, vì `despeckle()` chỉ giữ
+    mảng alpha lớn nhất nên nó xoá sạch một nửa ổ, rồi nhát cắt giữa ảnh lại xẻ
+    đôi cái nửa còn sót: ra hai mẩu bánh cụt. Mỗi nửa despeckle RIÊNG, sau khi
+    đã rời nhau.
+
+    Xoay 90° theo chiều kim đồng hồ thì nửa trái thành nửa TRÊN (vỏ ngửa lên —
+    đúng cái nắp lật ra sau) và nửa phải thành nửa DƯỚI (mặt cắt ngửa lên — đúng
+    cái máng để thả nhân vào). Tách đôi ở đây để `photo.ts` xếp chồng được:
+    nắp thò ra sau lưng máng.
     """
-    im = clean("sliced_open_baguette" + R).transpose(Image.ROTATE_270)
-    half = im.height // 2
-    lid = fit(trim(im.crop((0, 0, im.width, half))), 448)
-    trough = fit(trim(im.crop((0, half, im.width, im.height))), 448)
-    return lid, trough
+    im, has_alpha = raw("sliced_open_baguette" + R)
+    im = trim(im if has_alpha else cut_black(im))
+
+    # Rãnh giữa hai nửa: dải cột RỘNG NHẤT mà alpha gần như bằng 0.
+    A = im.getchannel("A")
+    cols = [sum(A.crop((x, 0, x + 1, im.height)).getdata()) for x in range(im.width)]
+    gap, run = None, None
+    for x in range(im.width + 1):
+        if x < im.width and cols[x] <= 255 * 3:
+            run = [x, x] if run is None else [run[0], x]
+        elif run is not None:
+            if gap is None or run[1] - run[0] > gap[1] - gap[0]:
+                gap = run
+            run = None
+    if gap is None:
+        sys.exit("sliced_open_baguette: không thấy rãnh giữa hai nửa ổ bánh")
+    cut = (gap[0] + gap[1] + 1) // 2
+
+    def half(x0, x1):
+        piece = despeckle(im.crop((x0, 0, x1, im.height)).copy())
+        return fit(trim(piece.transpose(Image.ROTATE_270)), 448)
+
+    return half(0, cut), half(cut, im.width)
 
 
 def main():
