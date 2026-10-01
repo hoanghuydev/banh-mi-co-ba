@@ -49,8 +49,15 @@ const RAY_COLOR = 0xcfd8da;
 const PATIENCE_COLORS = [0x3f7fb0, 0xd8b13c, 0xc0392b] as const;
 const PATIENCE_R = 11;
 const PATIENCE_W = 3.5;
-/** Vòng nằm trên cả dấu `?`/`!` — hai thứ khác nhau, không được chồng nhau. */
-const PATIENCE_LIFT = 21;
+/**
+ * Vòng cao hơn ĐỈNH ĐẦU bao nhiêu px (không phải so với dấu `?`/`!`).
+ *
+ * Neo theo đầu chứ không theo `markY`: `markY` đã nằm sẵn 45 px trên đỉnh đầu — chỗ của
+ * dấu `?`/`!` — nên cộng thêm vào đó nữa là vòng bay lơ lửng cách người ta hơn 60 px,
+ * nhìn như của ai khác. Ở 14 px thì vòng ngồi ngay trên tóc, mà vẫn còn ~9 px hở với
+ * dấu `?`/`!` phía trên: hai thứ khác nhau, không được chồng nhau.
+ */
+const PATIENCE_LIFT = 14;
 /** Bỏ về vì bị đuổi / bị nói nặng / chờ quá lâu: vòng đỏ nguyên còn nán lại ngần này giây. */
 const PATIENCE_RED_SEC = 0.9;
 
@@ -277,7 +284,9 @@ export class CustomerActor {
     const glyph = st?.state === "GLIMPSED" ? "?" : st?.state === "CONFIRMED" ? "!" : "";
     this.mark.setText(glyph).setPosition(sx, markY).setDepth(OVERLAY_DEPTH + 1);
 
-    this.drawPatience(g, sx, markY - PATIENCE_LIFT);
+    // Không trừ `hop`: vòng đứng yên, chỉ có người nhún. Vòng nhún theo là nhiễu — mắt
+    // phải đọc được nó vơi tới đâu, không phải đọc nó đang nhảy.
+    this.drawPatience(g, sx, footY(sy) - BODY_H - PATIENCE_LIFT);
 
     // ── đạo cụ của trạng thái ánh nhìn ──────────────────────────────────────
     if (watching) this.drawGazeProp(g, headX, headY, time, reducedMotion);
