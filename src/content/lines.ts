@@ -14,8 +14,11 @@ export const SILENCE_RATE = 0.35;
 /** Túi im lặng: 7 / 20 = 35%. */
 const SILENCE_BAG = 20, SILENCE_TICKETS = 7;
 
-/** Thoại của khách đã sang rule DB (P2-01) — pool chỉ còn câu người chơi tự nói. */
-export type LinePool = "askPlayer" | "promiseKept" | "promiseBroken" | "promiseWrong";
+/**
+ * Thoại của khách đã sang rule DB (P2-01), câu người chơi đã sang `content/talks` (P5-01).
+ * Còn lại đúng ba túi của P5-02: câu khách nói khi mình giữ / nuốt / làm trật lời hứa.
+ */
+export type LinePool = "promiseKept" | "promiseBroken" | "promiseWrong";
 
 export type PoolDef = { id: LinePool; tier: 1 | 2 | 3; vars: string[]; variants: string[]; en?: string[] };
 

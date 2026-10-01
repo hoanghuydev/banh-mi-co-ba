@@ -27,7 +27,6 @@
     {"id": "gen.tea", "concept": "INTERACT", "when": {"interaction": "TEA"}, "say": ["Ờ, đang khát.", "Trời nắng mà có ly trà đá là nhất.", "Cảm ơn con nghen.", "Ừ, cho cô ly trà."]},
     {"id": "gen.tea.nod", "concept": "INTERACT", "when": {"interaction": "TEA_NOD"}, "say": ["Ừ, để đó đi con.", "Cô còn nè.", "Ờ.", "Để đó con."]},
     {"id": "gen.tea.suspect", "concept": "INTERACT", "when": {"interaction": "TEA_SUSPECT"}, "say": ["Thôi đủ rồi con, cô đâu có khát.", "Con cho cô uống hoài vậy chi?", "Cô uống nhiêu đó được rồi.", "Ủa, bữa nay con mời trà dữ ha."]},
-    {"id": "gen.ask", "concept": "INTERACT", "when": {"interaction": "ASK"}, "say": ["Ờ, cũng khoẻ con.", "Bữa nay nắng quá con.", "Cũng vậy vậy thôi con.", "Khoẻ, khoẻ.", "Ờ, đi làm sớm nè.", "Cũng đỡ rồi con."]},
     {"id": "gen.quaydo", "concept": "SMALLTALK", "when": {"stallCleanliness": "<=20", "ctxNhacQuayDo": "absent", "dirtRemarkedToday": "absent", "ctxDangDocThoai": "absent"}, "say": ["Con, bữa nay ruồi nhiều quá ha.", "Quầy dơ rồi kìa con, lau chút đi.", "Ủa, sao bữa nay bề bộn vậy con.", "Con lau cái thớt chút đi con."], "applycontext": {"ctxNhacQuayDo": {"value": 1, "duration": -1}}},
     {"id": "gen.mood.sepmang", "concept": "GREET", "when": {"npcMoodCause": "SEP_MANG"}, "silent": true, "say": [], "_note": "cộc lốc, không chào — mặt lầm lì đã nói thay"},
     {"id": "gen.mood.sepmang.xinloi", "concept": "GREET", "when": {"npcMoodCause": "SEP_MANG", "npcThanThien": ">=50"}, "say": ["Xin lỗi con nghen. Hồi sáng bị nói.", "Bữa nay mệt quá, con đừng để bụng nghen."]},

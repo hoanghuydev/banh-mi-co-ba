@@ -1,18 +1,6 @@
 {
-  "_note": "Pool GENERIC dùng chung cho mọi khách (CANON §11 đòn bẩy 2). Bag là PER-NPC: bagId = generic:{pool}:{npcId}. Luật viết P1-03 §2.7: ANTICIPATED = thì quá khứ, nói VỀ PHÍA người chơi, bình tĩnh hơn; DISCOVERED = thì hiện tại, nói về ổ bánh, mở đầu bằng 'ủa'. {item} = tên món. ⚠️ Bản nháp của dev — cần người viết giọng Nam duyệt. · P2-01: thoại của KHÁCH đã chuyển sang rule DB (content/rules/*.json); ở đây chỉ còn câu người chơi tự nói.",
+  "_note": "Pool GENERIC dùng chung cho mọi khách (CANON §11 đòn bẩy 2). Bag là PER-NPC: bagId = generic:{pool}:{npcId}. Luật viết P1-03 §2.7: ANTICIPATED = thì quá khứ, nói VỀ PHÍA người chơi, bình tĩnh hơn; DISCOVERED = thì hiện tại, nói về ổ bánh, mở đầu bằng 'ủa'. {item} = tên món. ⚠️ Bản nháp của dev — cần người viết giọng Nam duyệt. · P2-01: thoại của KHÁCH đã chuyển sang rule DB (content/rules/*.json). · P5-01: túi `askPlayer` (câu người chơi tự nói khi bấm F) ĐÃ BỎ — người chơi giờ CHỌN câu ở bảng hội thoại, không rút ngẫu nhiên nữa; rút riêng là lý do câu hỏi và câu đáp không bao giờ khớp.",
   "pools": [
-    {
-      "id": "askPlayer",
-      "tier": 2,
-      "vars": [],
-      "_note": "Câu người chơi hỏi — hiện ở nhật ký, không phải bong bóng khách.",
-      "variants": [
-        "Bữa nay cô khoẻ hông?",
-        "Sáng nay đi đâu sớm vậy?",
-        "Trời nắng ghê ha.",
-        "Mấy bữa nay làm ăn được hông?"
-      ]
-    },
     {
       "id": "promiseKept",
       "tier": 2,

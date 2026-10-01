@@ -108,7 +108,6 @@ test("mỗi concept Service hỏi đều có lưới an toàn — tình huống 
     ["DELIVERY", [["defectCount", 2]]],
     ["FAREWELL", [["leaveReason", "IMPATIENT"]]],
     ["INTERACT", [["interaction", "TEA"]]],
-    ["INTERACT", [["interaction", "ASK"]]],
   ];
   for (const [concept, facts] of cases) {
     q.reset();

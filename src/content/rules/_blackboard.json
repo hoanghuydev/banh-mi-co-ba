@@ -51,7 +51,7 @@
     "freeExtraTooMuch":    { "scope": "Session", "type": "bool", "conditional": true },
     "waitTier":            { "scope": "Session", "type": "ordinal", "values": ["NHANH", "VUA", "LAU", "QUA_LAU"] },
     "leaveReason":         { "scope": "Session", "type": "enum", "values": ["SERVED", "IMPATIENT", "CLOSED", "SOLD_OUT"], "conditional": true },
-    "interaction":         { "scope": "Session", "type": "enum", "values": ["TEA", "TEA_NOD", "TEA_SUSPECT", "ASK"], "conditional": true, "_note": "concept INTERACT — bổ sung của bản dựng: P2-01 chưa có concept cho trà đá / hỏi chuyện" },
+    "interaction":         { "scope": "Session", "type": "enum", "values": ["TEA", "TEA_NOD", "TEA_SUSPECT"], "conditional": true, "_note": "concept INTERACT — bổ sung của bản dựng: P2-01 chưa có concept cho trà đá. Giá trị ASK đã bỏ ở P5-01: hỏi chuyện giờ đi qua content/talks, không qua rule DB." },
     "secSinceLastLine":    { "scope": "Session", "type": "number", "min": 0 }
   },
   "silentOk": ["SMALLTALK"],

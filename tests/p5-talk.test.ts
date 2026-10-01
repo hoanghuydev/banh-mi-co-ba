@@ -7,6 +7,7 @@
  * người viết nội dung phải tự nhớ 100 lần — và sẽ quên.
  */
 import { test } from "node:test";
+import { readFile } from "node:fs/promises";
 import assert from "node:assert/strict";
 import { NPCS } from "../src/content/npcs";
 import { Rng } from "../src/core/rng";
@@ -17,6 +18,8 @@ import {
   type Talk, type TalkCtx, type TalkNode,
 } from "../src/sim/talk";
 import { TALK_NPC_IDS, TalkStore } from "../src/content/talks";
+import { newGame } from "../src/core/save";
+import { HeadlessStall, POLICIES } from "../src/sim/headless";
 
 const P = Object.fromEntries(NPCS.map((n) => [n.id, n.personality]));
 const TALKS: Talk[] = await TalkStore.loadAll();
@@ -380,4 +383,79 @@ test("A-5 vết `BROKEN_PROMISE` phai chậm hơn và đọng lại cao hơn m�
   // và phải chuộc được — bằng VIỆC LÀM, không bằng lời
   assert.ok(REDEEM.BROKEN_PROMISE, "không có đường chuộc lời hứa gãy");
   assert.deepEqual(REDEEM.BROKEN_PROMISE!.requireKinds, ["FREE_EXTRA", "CARED_FOR_THEM"]);
+});
+
+// ───────────────────────────────── E — Esc giữa chừng (lỗi người chơi báo)
+
+test("E-1 mở bảng rồi Esc mà CHƯA nói câu nào: cuộc đó còn nguyên, bấm F lại vẫn vào", () => {
+  /**
+   * Lỗi gốc: `markTalkUsed` chạy ngay lúc MỞ, nên Esc là đốt luôn cuộc đó cả mùa —
+   * `pickTalk` không còn gì để rút và nút F trông như chết. Giờ chỉ đánh dấu khi người
+   * chơi THẬT SỰ chọn một câu. Test này là cái chốt giữ, đừng tối ưu nó đi.
+   */
+  const t = byId("bay.veso");
+  const used: string[] = [];
+  const s = new TalkSession(t, "BA_BAY");
+  assert.equal(s.done, false);
+  // Esc = chưa `choose()` lần nào → không có gì để ghi vào `talksDone`
+  assert.deepEqual(s.picked, [], "chưa bấm gì mà đã tính là đã nói");
+  assert.ok(eligible(TALKS, ctx({ npcId: "BA_BAY", usedSeason: used })).some((x) => x.id === t.id));
+});
+
+test("E-2 chọn MỘT câu rồi Esc: cuộc đó tính là đã nghe, không nghe lại cả mùa", () => {
+  const t = byId("bay.veso");
+  const s = new TalkSession(t, "BA_BAY");
+  s.choose(0, { flags: {} });
+  assert.equal(s.picked.length, 1, "đã chọn mà không ghi lại");
+  // Service gọi `markTalkUsed` đúng ở nhịp này → mô phỏng bằng usedSeason
+  assert.ok(!eligible(TALKS, ctx({ npcId: "BA_BAY", usedSeason: [t.id] })).some((x) => x.id === t.id));
+});
+
+test("E-3 cơ chế hỏi chuyện CŨ đã bỏ hẳn — không còn túi `askPlayer`, không còn rule `gen.ask`", async () => {
+  const lines = JSON.parse(
+    await readFile(new URL("../src/content/lines/generic.json", import.meta.url), "utf8"),
+  ) as { pools: { id: string }[] };
+  assert.ok(!lines.pools.some((p) => p.id === "askPlayer"),
+    "túi `askPlayer` còn đó — câu người chơi lại rút ngẫu nhiên, và bug cũ quay lại");
+
+  const rules = JSON.parse(
+    await readFile(new URL("../src/content/rules/generic.json", import.meta.url), "utf8"),
+  ) as { rules: { id: string }[] };
+  assert.ok(!rules.rules.some((r) => r.id === "gen.ask"), "rule `gen.ask` còn đó");
+
+  const bb = JSON.parse(
+    await readFile(new URL("../src/content/rules/_blackboard.json", import.meta.url), "utf8"),
+  ) as { facts: Record<string, { values?: string[] }> };
+  assert.ok(!bb.facts.interaction.values?.includes("ASK"), "fact `interaction` còn giá trị ASK");
+});
+
+test("E-4 trên Service THẬT: F → Esc → F lại vẫn mở được bảng (lỗi người chơi báo)", async () => {
+  const w = newGame("esc-f", "esc-f-seed");
+  const h = new HeadlessStall(w, POLICIES.newbie, {});
+  const svc = h.service;
+
+  /*
+   * Phải NHẢ cho vòng lặp sự kiện thở giữa chừng: `talks.ensure()` là `import()` động,
+   * promise của nó nằm ở hàng đợi microtask. Một vòng `while` đồng bộ thuần (kiểu
+   * `HeadlessStall.run`) không bao giờ nhả, nên nội dung KHÔNG BAO GIỜ nạp xong và
+   * `openTalk()` luôn trả null. Trong game thật thì rAF nhả mỗi frame nên không gặp.
+   */
+  for (let round = 0; round < 400 && !svc.front; round++) {
+    for (let i = 0; i < 60; i++) h.step(1000 / 30);
+    await Promise.resolve();
+  }
+  const c = svc.front;
+  assert.ok(c, "chạy hết buổi mà không ai tới quầy");
+  await svc.talks.ensure(c!.npc?.id ?? "WALKIN");
+
+  const first = svc.openTalk();
+  assert.ok(first, "bấm F lần đầu không mở được bảng");
+  assert.ok(first!.options.length >= 2, "bảng mở mà không có lựa chọn nào");
+
+  svc.closeTalk();                                  // Esc, chưa chọn câu nào
+  assert.equal(svc.talkOpen, false);
+
+  const again = svc.openTalk();
+  assert.ok(again, "Esc xong bấm F lại thì bảng không mở nữa — đúng lỗi đã báo");
+  assert.equal(again!.line, first!.line, "mở lại mà ra cuộc khác — cuộc cũ bị đốt mất");
 });

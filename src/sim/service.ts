@@ -108,6 +108,11 @@ const FOLLOWUP_EXPIRE_SEC = 6;
 /** Khách chờ bánh được ngần này giây mà quầy yên thì có thể buông một câu chuyện phiếm. */
 const SMALLTALK_AFTER_SEC = 4;
 /** Hỏi chuyện: 60 s mỗi người mới hỏi lại được (P1-02 §2.8). */
+/**
+ * Giữa hai lần khách QUAY SANG NHÌN MẶT người bán (P1-02 §2.8). Không phải cooldown của
+ * nút F — F mở được hay không là do còn chuyện để nói hay không. Cái này chỉ chặn việc
+ * bấm F liên tục để ép gaze rời khỏi tay mình.
+ */
 export const ASK_COOLDOWN = 60;
 
 /** P1-04 §2.9: bong bóng sống `clamp(1600 + 45·số ký tự, 1600, 4500)` ms. */
@@ -303,6 +308,10 @@ export class Service {
   readonly talks = new TalkStore();
   private offersToday = 0;
   private lastOfferAt = -Infinity;
+  /** Người chơi đã CHỌN ít nhất một câu trong cuộc đang mở chưa. */
+  private talkEngaged = false;
+  /** Cuộc đang mở là do khách bắt chuyện trước (chứ không phải người chơi bấm F). */
+  private talkNpcOpened = false;
   /** Lời hứa đang treo của từng lượt ghé (theo `customer.id`) — P5-02. */
   private pledges = new Map<string, { promised: string[]; discount: number; free: boolean }>();
   /** Ly trà còn lại hôm nay. */
@@ -1479,8 +1488,9 @@ export class Service {
   // ─────────────────────────────────────────────────────── trò chuyện (P5-01)
 
   /**
-   * Bấm F. Trả `null` = không có chuyện gì để nói với người này lúc này — scene rơi về
-   * `ask()` cũ (một câu xã giao, không có bảng lựa chọn).
+   * Bấm F. Trả `null` = không có chuyện gì để nói với người này lúc này (chưa ai ở quầy,
+   * nội dung chưa nạp xong, hoặc đã nói hết chuyện với người này rồi). Scene báo một dòng
+   * nhật ký — KHÔNG còn đường lui "một câu xã giao" nào nữa.
    *
    * ⚠️ HỢP ĐỒNG VỚI SCENE: bảng còn mở thì đồng hồ phải ĐỨNG (`clock.paused`). Đọc bốn
    * dòng mà kiên nhẫn vẫn tụt thì người chơi học được đúng một bài — đừng bao giờ bấm F.
@@ -1497,12 +1507,22 @@ export class Service {
     if (!talk) return null;
     const opened = this.offer?.c === c;
     this.offer = null;
-    this.markTalkUsed(c, talk);
+    /*
+     * CỐ Ý chưa đánh dấu "đã nói chuyện này" ở đây — xem `chooseTalk`.
+     *
+     * Trước đây đánh dấu ngay lúc mở, nên mở bảng rồi bấm Esc là cuộc đó mất luôn CẢ MÙA:
+     * bấm F lại thì `pickTalk` không còn gì để rút và nút F trông như chết. Mở bảng ra đọc
+     * rồi đổi ý thì mình chưa nói câu nào cả — không có gì để nhớ.
+     */
     this.talkSession = new TalkSession(talk, c.memKey);
     this.talkWith = c;
+    this.talkEngaged = false;
+    this.talkNpcOpened = opened;
     // Nhìn MẶT người bán, không nhìn tay — cùng cửa với ASK_QUESTION cũ (P1-02 §2.8).
-    c.ask();
-    this.deps.bus.emit("attention:toolUsed", { tool: "ASK_QUESTION", npcId: c.memKey, durationSec: 3 });
+    if (c.now - c.lastAskedAt >= ASK_COOLDOWN) {
+      c.ask();
+      this.deps.bus.emit("attention:toolUsed", { tool: "ASK_QUESTION", npcId: c.memKey, durationSec: 3 });
+    }
     // Khách đã nói opener thành bong bóng lúc họ bắt chuyện rồi — không nói lại lần hai.
     return this.talkView(opened ? "" : talk.opener);
   }
@@ -1513,6 +1533,8 @@ export class Service {
     if (!s || !c) return null;
     const r = s.choose(i, this.talkGate());
     if (!r) return null;
+    // Nói ra một câu rồi mới tính là đã nghe cuộc này — một lần cho cả mùa.
+    if (!this.talkEngaged) { this.talkEngaged = true; this.markTalkUsed(c, s.talk); }
     this.out.push({ kind: "log", text: `con: "${r.node.say}"` });
     this.applyTalkOption(c, r.node);
     if (r.reply) this.out.push({ kind: "log", text: `${this.label(c)}: "${r.reply}"` });
@@ -1529,9 +1551,29 @@ export class Service {
    */
   closeTalk(): void {
     const s = this.talkSession, c = this.talkWith;
+    const engaged = this.talkEngaged, npcOpened = this.talkNpcOpened;
     this.endTalk();
     if (!s || !c || s.done) return;
-    this.applyIgnore(c, s.talk);
+    /*
+     * LÀM THINH có giá — nhưng chỉ khi thật sự có cái để làm thinh.
+     *
+     *   khách mở lời trước, mình đóng bảng        → làm thinh với người đang nói. Có giá.
+     *   mình bấm F rồi đổi ý, CHƯA nói câu nào     → chưa có gì xảy ra. Không mất gì,
+     *                                                và cuộc đó vẫn còn để bấm F lại.
+     *   mình đã nói rồi mới bỏ ngang               → bỏ người ta giữa chừng. Có giá.
+     */
+    if (npcOpened || engaged) this.applyIgnore(c, s.talk);
+  }
+
+  /**
+   * Vì sao F không mở được bảng — để scene nói ra cho người chơi biết phím vẫn sống.
+   * Ba lý do, ba câu khác nhau: không có ai · chưa nạp kịp · hết chuyện để nói.
+   */
+  talkUnavailable(): string {
+    const c = this.offer?.c ?? this.front;
+    if (!c || c.phase === "leaving") return "chưa có ai để nói chuyện";
+    if (!this.talks.has(this.talkKey(c))) return "…";
+    return `hết chuyện để nói với ${this.label(c)} bữa nay rồi`;
   }
 
   get talkOpen() {
@@ -1541,6 +1583,8 @@ export class Service {
   private endTalk() {
     this.talkSession = null;
     this.talkWith = null;
+    this.talkEngaged = false;
+    this.talkNpcOpened = false;
   }
 
   /** Làm thinh: hiệu ứng khai trong `talk.ignore`, mặc định chỉ nguội đi một chút. */
@@ -1799,23 +1843,6 @@ export class Service {
     this.say(c, talk.opener, 2, true, 70);
     this.out.push({ kind: "talkOffer", npcId: c.memKey, name: this.label(c) });
     return true;
-  }
-
-  /**
-   * Hỏi chuyện — P1-02 §2.8 (ASK_QUESTION): khách nhìn MẶT người chơi (gaze 0,35) thay vì
-   * nhìn tay, trong 1,5–4 s. Cooldown 60 s mỗi người. Trả câu người chơi nói (để ghi nhật ký).
-   */
-  ask(): { ok: boolean; line?: string; reason?: string } {
-    const c = this.front;
-    if (!c || c.phase === "leaving") return { ok: false, reason: "chưa có ai để hỏi chuyện" };
-    const line = this.barks.take("askPlayer", "player");
-    if (c.now - c.lastAskedAt >= ASK_COOLDOWN) {
-      c.ask();
-      this.deps.bus.emit("attention:toolUsed", { tool: "ASK_QUESTION", npcId: c.memKey, durationSec: 2.5 });
-    }
-    // Trong cooldown: vẫn trả lời, nhưng không quay sang nhìn mặt nữa — không farm được.
-    this.speakConcept(c, "INTERACT", { interaction: "ASK" }, 30);
-    return { ok: true, line };
   }
 
   /**

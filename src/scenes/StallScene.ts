@@ -1194,17 +1194,18 @@ export class StallScene extends Phaser.Scene {
   /**
    * F — bắt chuyện với người trước quầy (hoặc trả lời người vừa bắt chuyện với mình).
    *
-   * Có chuyện để nói → mở bảng lựa chọn và ĐÓNG BĂNG đồng hồ. Không có → rơi về câu xã
-   * giao một nhịp của P1-02 (`ask()`), vẫn tốn 2,5 s tay bận như cũ.
+   * Chỉ còn MỘT đường: mở bảng lựa chọn và ĐÓNG BĂNG đồng hồ. Đường lui cũ (rút một câu
+   * xã giao từ túi `askPlayer`) đã bỏ hẳn — chính nó là cái bug ban đầu: câu người chơi
+   * và câu khách rút từ hai túi độc lập nên không bao giờ ăn khớp nhau.
+   *
+   * Không có chuyện để nói thì nói thẳng ra vậy, chứ không im: bấm một phím mà màn hình
+   * không nhúc nhích thì người chơi tưởng phím hỏng.
    */
   private askFront() {
     if (this.handsBusy || this.paused || this.closed || this.talk.isOpen) return;
     const view = this.service.openTalk();
     if (view) { this.openTalkPanel(view); return; }
-    const res = this.service.ask();
-    if (!res.ok) { this.hud.log(res.reason ?? ""); return; }
-    this.hud.log(`con: "${res.line}"`);
-    this.handsBusyUntil = this.elapsed + this.workSeconds(2.5);
+    this.hud.log(this.service.talkUnavailable());
   }
 
   /**
