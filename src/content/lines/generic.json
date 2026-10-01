@@ -12,6 +12,48 @@
         "Trời nắng ghê ha.",
         "Mấy bữa nay làm ăn được hông?"
       ]
+    },
+    {
+      "id": "promiseKept",
+      "tier": 2,
+      "vars": [
+        "mon"
+      ],
+      "_note": "P5-02 — người chơi HỨA bỏ thêm {mon} và đã bỏ thật. Nhẹ thôi: giữ lời chỉ là làm đúng điều mình nói, không phải ân huệ.",
+      "variants": [
+        "Ờ, có bỏ thiệt nghen. Cảm ơn con.",
+        "Con nói sao làm vậy. Hiếm à nghen.",
+        "Có {mon} nè. Ờ.",
+        "Vậy mới nói chuyện được."
+      ]
+    },
+    {
+      "id": "promiseBroken",
+      "tier": 1,
+      "vars": [
+        "mon"
+      ],
+      "_note": "P5-02 — HỨA bỏ thêm {mon} rồi KHÔNG bỏ gì hết. Câu nặng nhất của hệ trò chuyện: người ta không cãi, người ta chỉ nói ra cái mình vừa nghe.",
+      "variants": [
+        "Ủa… hồi nãy nói có {mon} mà.",
+        "Thôi khỏi. Mà lần sau đừng hứa.",
+        "Hứa rồi quên hả. Ờ.",
+        "Nói thì dễ hả con."
+      ]
+    },
+    {
+      "id": "promiseWrong",
+      "tier": 1,
+      "vars": [
+        "mon"
+      ],
+      "_note": "P5-02 — HỨA {mon} mà bỏ món khác. Có lòng, mà trật. Nhẹ hơn nuốt lời, nặng hơn làm đúng.",
+      "variants": [
+        "Cái này đâu phải {mon}.",
+        "Ủa, nói {mon} mà sao cái này.",
+        "Thôi cũng được. Mà đâu phải thứ con nói.",
+        "Con bỏ nhầm rồi."
+      ]
     }
   ]
 }

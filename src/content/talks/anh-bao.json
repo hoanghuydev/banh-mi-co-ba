@@ -51,7 +51,11 @@
                     "intensity": 55
                   },
                   "flag": "baoDuocCho",
-                  "reply": "Dạ thôi cô… dạ. Dạ em cảm ơn cô."
+                  "reply": "Dạ thôi cô… dạ. Dạ em cảm ơn cô.",
+                  "act": {
+                    "kind": "PROMISE",
+                    "item": "pate"
+                  }
                 },
                 {
                   "say": "Ba bữa thì em ăn gì hả em?",
@@ -116,7 +120,11 @@
                 "kind": "CARED_FOR_THEM",
                 "intensity": 45
               },
-              "reply": "Dạ… dạ thôi cô. Dạ, em cảm ơn cô."
+              "reply": "Dạ… dạ thôi cô. Dạ, em cảm ơn cô.",
+              "act": {
+                "kind": "PROMISE",
+                "item": "chalua"
+              }
             },
             {
               "say": "Ừ. Mười ngàn.",
@@ -130,7 +138,10 @@
           "say": "Mười ngàn. Em đứng qua bên cho cô bán nghen.",
           "tone": "LANH",
           "rel": -2,
-          "reply": "Dạ. Dạ em xin lỗi cô."
+          "reply": "Dạ. Dạ em xin lỗi cô.",
+          "act": {
+            "kind": "STEP_ASIDE"
+          }
         }
       ]
     },

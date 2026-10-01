@@ -185,7 +185,11 @@ export class HeadlessStall {
     const w = this.ctx.world;
     for (const ev of this.service.drain()) {
       if (ev.kind === "log") continue;
-      if (ev.kind === "cost") { w.money.cash -= ev.amount; w.econ.today.fixed += ev.amount; continue; }
+      if (ev.kind === "cost") {
+        w.money.cash -= ev.amount;
+        if (ev.item === "talk") w.econ.today.story += ev.amount; else w.econ.today.fixed += ev.amount;
+        continue;
+      }
       // bot ghi sổ nợ theo chính sách (mặc định: ghi hết)
       if (ev.kind === "credit") { w.progress.today.served++; if (this.bot.next() < (this.policy.writeDebts ?? 1)) ev.record.playerWrote = ev.record.trueAmount; continue; }
       if (ev.kind === "repay") { w.money.cash += ev.amount; w.progress.today.revenue += ev.amount; continue; }

@@ -15,7 +15,7 @@ export const SILENCE_RATE = 0.35;
 const SILENCE_BAG = 20, SILENCE_TICKETS = 7;
 
 /** Thoại của khách đã sang rule DB (P2-01) — pool chỉ còn câu người chơi tự nói. */
-export type LinePool = "askPlayer";
+export type LinePool = "askPlayer" | "promiseKept" | "promiseBroken" | "promiseWrong";
 
 export type PoolDef = { id: LinePool; tier: 1 | 2 | 3; vars: string[]; variants: string[]; en?: string[] };
 

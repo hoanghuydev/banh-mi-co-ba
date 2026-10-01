@@ -11,7 +11,7 @@ import { newNpcState, type NpcState } from "../core/save";
 import { orderDefectKey } from "../core/stimid";
 import { Customer, DEFAULT_PATIENCE_SEC, LEAVE_AT, TEA, teaSuspectAtCup, type LeaveReason } from "./customer";
 import {
-  INGREDIENTS, diffDish, generosityOf, makeUsual, mkDefect, sameOrder, sayOrder,
+  INGREDIENTS, diffDish, generosityOf, labelOf, makeUsual, mkDefect, sameOrder, sayOrder,
   type Defect, type Ingredient, type OrderSpec,
 } from "./order";
 import {
@@ -24,7 +24,7 @@ import { SILENT_ABSENCE, record, servedWell, visitProbabilityMul, type BaseKind,
 import { TalkStore } from "../content/talks";
 import {
   DEFAULT_IGNORE_REL, TalkSession, angerToWaitSec, applyTalk, pickTalk, visibleOptions,
-  type Talk, type TalkCtx, type TalkEffect, type TalkTone,
+  type Talk, type TalkAct, type TalkCtx, type TalkEffect, type TalkGate, type TalkTone,
 } from "./talk";
 import { CLAIM, activeHeard, disprove, nameOf, poolOf, witness, type GossipState } from "./gossip";
 import { beginDay, displayName, logNote, logOrder, nameCheck, type Notebook } from "./notebook";
@@ -71,6 +71,21 @@ const WALK_SPEED = 2.2;
  */
 const TALK_OFFERS_PER_DAY = 3;
 const TALK_OFFER_GAP_SEC = 100;
+
+/**
+ * Giữ lời / nuốt lời — P5-02. Giữ lời thưởng VỪA PHẢI (nó chỉ là làm đúng điều mình nói);
+ * nuốt lời phạt NẶNG, và nặng hơn cả một lỗi đơn hàng, vì lỗi đơn là tay làm sai còn
+ * nuốt lời là mình đã nói ra miệng rồi đổi ý.
+ */
+const PROMISE_KEPT = 45;
+const PROMISE_SWAPPED = 55;
+const PROMISE_BROKEN = 85;
+
+/**
+ * Chửi tới mức này thì người ta BỎ VỀ, không mua nữa (sau khi nhân `intensityMul`).
+ * Ông Hải (nongTinh 0,9 → ×1,40) nổ ở `anger` 40; thầy Phúc (0,2 → ×0,70) phải 80.
+ */
+const STORM_OFF_ANGER = 55;
 
 /** Giá một ổ. Kinh tế thật nằm ở phase P3. */
 export const PRICE_BANH = 25_000;
@@ -167,7 +182,7 @@ export type ServiceEvent =
   /** Khách trả nợ bữa trước — số họ NHỚ (ghi rồi thì là số đã ghi). */
   | { kind: "repay"; amount: number; npcId: string; name: string }
   | { kind: "paid"; amount: number; item: "dish"; tip: number }
-  | { kind: "cost"; amount: number; item: "tea" }
+  | { kind: "cost"; amount: number; item: "tea" | "talk" }
   /** P5-01 — khách vừa tự bắt chuyện. Scene hiện gợi ý "F để trả lời"; làm lơ cũng được. */
   | { kind: "talkOffer"; npcId: string; name: string };
 
@@ -241,6 +256,7 @@ type Extra = Record<string, string | number | boolean>;
 
 const LEAVE_REASON: Record<LeaveReason, BusLeaveReason> = {
   served: "SERVED", impatient: "IMPATIENT", closed: "CLOSED", soldout: "SOLD_OUT",
+  refused: "REFUSED", insulted: "SILENT_EXIT",
 };
 
 /** Sự kiện được phản ứng bằng lời NGAY khi khách NOTICED (P1-02 §2.9). */
@@ -287,6 +303,8 @@ export class Service {
   readonly talks = new TalkStore();
   private offersToday = 0;
   private lastOfferAt = -Infinity;
+  /** Lời hứa đang treo của từng lượt ghé (theo `customer.id`) — P5-02. */
+  private pledges = new Map<string, { promised: string[]; discount: number; free: boolean }>();
   /** Ly trà còn lại hôm nay. */
   teaLeft = TEA_PER_DAY;
   /** Độ bẩn quầy 0..1 (P1-02 §2.10) — scene đặt mỗi frame. */
@@ -957,6 +975,14 @@ export class Service {
   lanLeft = false;
 
   private leave(c: Customer, reason: LeaveReason) {
+    // Hứa bỏ thêm món rồi để người ta đi về tay không: lời hứa đó gãy ngay tại đây,
+    // không cần đợi tới lúc đưa bánh (vì sẽ không có lúc đưa bánh nào nữa).
+    const pledge = this.pledges.get(c.id);
+    if (reason !== "served" && pledge?.promised.length) {
+      this.remember(c, "BROKEN_PROMISE", PROMISE_BROKEN);
+      pledge.promised = [];
+    }
+    this.pledges.delete(c.id);
     // Bắt chuyện mà không ai trả lời tới lúc đi: đó mới là lúc làm thinh thành ra thiệt.
     if (this.offer?.c === c) { this.applyIgnore(c, this.offer.talk); this.offer = null; }
     if (this.talkWith === c) this.endTalk();
@@ -1193,15 +1219,18 @@ export class Service {
       }
       const extra = this.freeExtra(c, dish);
       positive += extra;
+      positive += this.settlePledge(c, dish);
       this.speakConcept(c, "DELIVERY", {
         defectCount: 0, orderIsUsual: remembered, dishUnderdone: crustLow, freeExtraTooMuch: extra < 0,
       }, extra < 0 ? 70 : 60, true);
     } else if (spoken) {
+      positive += this.settlePledge(c, dish);
       this.speakConcept(c, "DELIVERY", {
         defectCount: defects.length, defectKind: kindOf(spoken), defectWasSeen: spoken.witness === "ANTICIPATED",
         orderIsUsual: c.order!.intent.usual,
       }, 90, true, { mon: spoken.label });
     } else {
+      positive += this.settlePledge(c, dish);
       bus.emit("dialog:silent", { npcId: c.memKey, reason: "RATE_35" });
     }
 
@@ -1275,7 +1304,7 @@ export class Service {
       // Ổ rỗng: đưa ra cái gì thì tính tiền cái đó — bánh mì không (xem `isHollowLoaf`).
       // Ổ vẫn được TRẢ TIỀN BÁNH, chỉ không được tính tiền nhân chưa hề bỏ vô.
       if (hollow) this.out.push({ kind: "log", text: `${this.label(c)} trả tiền một ổ bánh mì không — trong ổ không có gì.` });
-      this.settlePayment(c, loafPriceVnd(hollow ? "khong" : tierOf(c.order!.intent)), tip, !!spoken);
+      this.settlePayment(c, this.pricedAfterPledge(c, loafPriceVnd(hollow ? "khong" : tierOf(c.order!.intent))), tip, !!spoken);
     }
     if (nb) nb.today.served++;
     if (this.deps.story) {
@@ -1482,7 +1511,7 @@ export class Service {
   chooseTalk(i: number): TalkView | null {
     const s = this.talkSession, c = this.talkWith;
     if (!s || !c) return null;
-    const r = s.choose(i, this.talkFlags());
+    const r = s.choose(i, this.talkGate());
     if (!r) return null;
     this.out.push({ kind: "log", text: `con: "${r.node.say}"` });
     this.applyTalkOption(c, r.node);
@@ -1525,6 +1554,11 @@ export class Service {
     return (this.deps.story?.flags ?? {}) as TalkCtx["flags"];
   }
 
+  /** Điều kiện hiện lựa chọn. Két rỗng thì không hứa được chuyện tốn tiền (P5-02). */
+  private talkGate(): TalkGate {
+    return { flags: this.talkFlags(), cash: this.deps.till?.floatLeft };
+  }
+
   /** Khoá kho nội dung: người có tên dùng id, khách vãng lai dùng chung một file. */
   private talkKey(c: Customer) {
     return c.npc ? c.npc.id : "WALKIN";
@@ -1557,12 +1591,147 @@ export class Service {
     const s = this.talkSession, c = this.talkWith;
     if (!s || !c) return null;
     const here = s.options;
-    const opts = here ? visibleOptions(here, this.talkFlags()) : [];
+    const opts = here ? visibleOptions(here, this.talkGate()) : [];
     return {
       npcKey: c.memKey, name: this.label(c), line, silent,
       options: opts.map((o) => ({ say: o.say, tone: o.tone })),
       done: s.done || !here,
     };
+  }
+
+  /**
+   * HÀNH ĐỘNG THẬT của một câu nói — P5-02.
+   *
+   * Phần lớn `act` không kết thúc ở đây: nó TREO một lời hứa lên lượt ghé (`pledges`),
+   * rồi `deliver()` và `settlePayment()` mới là chỗ biết người chơi có giữ lời không.
+   * Đó là chủ ý: lời hứa phải sống qua quãng thời gian người chơi còn có thể đổi ý.
+   */
+  private applyAct(c: Customer, act: TalkAct) {
+    const pledge = (this.pledges.get(c.id) ?? { promised: [], discount: 0, free: false });
+    this.pledges.set(c.id, pledge);
+    switch (act.kind) {
+      case "PAY": {
+        // Tiền ra khỏi ngăn kéo NGAY, trước cả khi họ đưa tờ vé số — mua là mua.
+        const have = this.deps.till?.floatLeft ?? Infinity;
+        const amt = Math.min(act.vnd, have);
+        if (this.deps.till) this.deps.till.floatLeft -= amt;
+        this.out.push({ kind: "cost", amount: amt, item: "talk" });
+        this.out.push({ kind: "log", text: `${act.note} — ${amt.toLocaleString("vi-VN")}₫` });
+        break;
+      }
+      case "DISCOUNT":
+        pledge.discount += act.vnd;
+        break;
+      case "FREE_LOAF":
+        pledge.free = true;
+        break;
+      case "PROMISE":
+        // Hứa cùng một món hai lần không thành hai món nợ.
+        if (!pledge.promised.includes(act.item)) pledge.promised.push(act.item);
+        break;
+      case "STEP_ASIDE":
+        this.askStepAside(c);
+        break;
+      case "REFUSE":
+        this.out.push({ kind: "log", text: `${this.label(c)} bị mời đi.` });
+        this.leave(c, "refused");
+        break;
+    }
+  }
+
+  /**
+   * "Con đứng qua bên cho cô bán nghen."
+   *
+   * Người ta NGHE hay KHÔNG là chuyện của người ta, không phải của người chơi — nên đây
+   * là một phép thử quan hệ, không phải một cái nút. Thân thì dạt qua thật (người sau
+   * được phục vụ trước, thấy bằng mắt). Không thân, hoặc đang quạu, thì họ đứng ì ra,
+   * và mình vừa làm mất mặt một người ngay trước hàng.
+   */
+  private askStepAside(c: Customer) {
+    const m = this.mem(c.memKey);
+    const willing = c.npc
+      ? (m.tier === "FRIEND" ? 0.92 : m.tier === "RIVAL" ? 0.15 : 0.55) * (1.25 - c.personality.nongTinh)
+      : 0.45;
+    if (this.deps.hub.derive(`aside:${this.deps.day}:${c.id}`).next() < willing) {
+      this.yieldSlot(c);
+      this.reactTalk(c, "CARED", 1, "STEP_BACK_HALF");
+      this.out.push({ kind: "log", text: `${this.label(c)} dạt qua một bên.` });
+      return;
+    }
+    // Không dạt: đứng y chỗ cũ. Mất mặt trước hàng thì đắt hơn một câu nói thường.
+    this.reactTalk(c, "NAME", 2, "ARMS_CROSS");
+    if (c.npc) {
+      const r = record(m, c.personality, "RUDE_TO_THEM", 45, this.deps.day);
+      void r;
+    }
+    c.waitSec += angerToWaitSec(25 * intensityMul(c.personality), c.waitT, c.waitSec, LEAVE_AT);
+    this.out.push({ kind: "log", text: `${this.label(c)} không nhúc nhích.` });
+  }
+
+  /** Đẩy người này xuống sau người kế tiếp. Thứ tự mảng CHÍNH LÀ thứ tự hàng (`assignSlots`). */
+  private yieldSlot(c: Customer) {
+    const i = this.customers.indexOf(c);
+    const j = this.customers.findIndex((x, k) => k > i && x.phase !== "leaving" && !x.pass);
+    if (i < 0 || j < 0) return;
+    this.customers.splice(i, 1);
+    this.customers.splice(j, 0, c);
+    this.assignSlots();
+  }
+
+  /**
+   * Giá ổ sau khi trừ cái người chơi đã HỨA MIỆNG — P5-02.
+   *
+   * Trước đây "Dạ thôi em bớt cô ba ngàn vậy" không bớt một đồng nào: khách vẫn trả đủ,
+   * mà người chơi vẫn được tiếng tử tế. Giờ ba ngàn đó ra khỏi doanh thu thật, nên câu
+   * "bớt cho cô" là một quyết định kinh tế chứ không còn là một câu xã giao.
+   */
+  private pricedAfterPledge(c: Customer, price: number): number {
+    const pledge = this.pledges.get(c.id);
+    if (!pledge) return price;
+    if (pledge.free) {
+      this.out.push({ kind: "log", text: `${this.label(c)} — ổ này mình nói không lấy tiền.` });
+      return 0;
+    }
+    if (pledge.discount > 0) {
+      const cut = Math.min(pledge.discount, price);
+      this.out.push({ kind: "log", text: `bớt ${cut.toLocaleString("vi-VN")}₫ cho ${this.label(c)}.` });
+      return price - cut;
+    }
+    return price;
+  }
+
+  /**
+   * Lời hứa được kiểm lúc ĐƯA BÁNH — P5-02. Trả về điểm cộng/trừ để `deliver()` gộp vào
+   * `positive`, và nói ra câu của người ta.
+   *
+   * Ba kết cục, ba câu khác nhau:
+   *   giữ lời           → họ thấy, và họ nhớ (CARED_FOR_THEM)
+   *   bỏ thứ KHÁC       → họ vẫn nhận, nhưng họ biết mình bị đổi (BROKEN_PROMISE nhẹ)
+   *   không bỏ gì       → BROKEN_PROMISE nặng. Đây là chỗ đắt nhất của cả hệ trò chuyện.
+   */
+  private settlePledge(c: Customer, dish: Ingredient[]): number {
+    const pledge = this.pledges.get(c.id);
+    if (!pledge?.promised.length) return 0;
+    let score = 0;
+    for (const item of pledge.promised) {
+      const label = labelOf(item as Ingredient);
+      if (dish.includes(item as Ingredient)) {
+        score += PROMISE_KEPT;
+        this.remember(c, "CARED_FOR_THEM", PROMISE_KEPT);
+        this.say(c, this.barks.take("promiseKept", c.memKey, { mon: label }), 2, true, 70);
+        continue;
+      }
+      // Bỏ nhầm món khác: có lòng, mà không phải thứ đã hứa.
+      // "Bỏ nhầm": trong ổ có một miếng NHÂN mà đơn không hề gọi — tức là có lòng bỏ thêm,
+      // chỉ là bỏ trật thứ đã hứa. Khác hẳn với không bỏ gì hết.
+      const swapped = dish.some((x) => !c.order!.levels[x] && NHAN_IDS.has(x));
+      score -= swapped ? PROMISE_SWAPPED : PROMISE_BROKEN;
+      this.remember(c, "BROKEN_PROMISE", swapped ? PROMISE_SWAPPED : PROMISE_BROKEN);
+      this.say(c, this.barks.take(swapped ? "promiseWrong" : "promiseBroken", c.memKey, { mon: label }), 2, true, 95);
+      this.reactTalk(c, "NAME", swapped ? 2 : 3);
+    }
+    pledge.promised = [];
+    return score;
   }
 
   /**
@@ -1593,6 +1762,20 @@ export class Service {
       this.reactTalk(c, "NAME", anger >= 45 ? 3 : 2);
     } else if ((o.rel ?? 0) >= 3) {
       this.reactTalk(c, "CARED", 1);
+    }
+    if ("act" in o && o.act) this.applyAct(c, o.act as TalkAct);
+
+    /*
+     * BỎ VỀ — P5-02. Chửi một người tới mức này thì họ không mua nữa, và chuyện đó phải
+     * THẤY ĐƯỢC: họ quay lưng đi, `lost` nhích lên, ổ đang làm dở thành ổ thừa.
+     *
+     * Ngưỡng tính SAU `intensityMul`, nên chính tính cách quyết ai nổ trước: ông Hải
+     * (nongTinh 0,9 → ×1,40) bỏ về ở `anger` 40, thầy Phúc (0,2 → ×0,70) phải tới 80.
+     * Đặt cuối hàm để quan hệ và lời hứa ghi xong trước khi người ta bước đi.
+     */
+    if (anger >= STORM_OFF_ANGER && c.phase !== "leaving") {
+      this.out.push({ kind: "log", text: `${this.label(c)} bỏ đi — bị nói nặng quá.` });
+      this.leave(c, "insulted");
     }
   }
 

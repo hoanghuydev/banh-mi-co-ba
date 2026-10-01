@@ -23,7 +23,11 @@ export type CustomerPhase =
   | "waiting"     // đã gọi món, chờ bánh
   | "leaving";    // xong việc (được phục vụ, hoặc bỏ đi)
 
-export type LeaveReason = "served" | "impatient" | "closed" | "soldout";
+/**
+ * `refused`  người chơi mời đi (P5-02 act REFUSE)
+ * `insulted` bị nói nặng tới mức bỏ về — KHÔNG mua nữa, và không phải "chờ lâu quá"
+ */
+export type LeaveReason = "served" | "impatient" | "closed" | "soldout" | "refused" | "insulted";
 
 /** P1-02 §2.7: sức chờ mặc định (giây thật tới mốc MADE_THEM_WAIT). */
 export const DEFAULT_PATIENCE_SEC = 50;

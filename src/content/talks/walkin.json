@@ -19,13 +19,43 @@
               "rel": 2,
               "reply": "…Ờ. Nói vậy thì tui ăn thử.",
               "then": [
-                { "say": "Dạ anh ăn từ từ nghen.", "tone": "AM", "rel": 2, "reply": "…Ừ. Cũng được. Thôi tui lấy một ổ." },
-                { "say": "Ngon thì anh ghé nữa nghen anh.", "tone": "AM", "rel": 3, "reply": "Để coi. Mà ừ, ổ này được thiệt." },
-                { "say": "Thấy chưa. Mười lăm làm gì có cái này.", "tone": "DUA", "rel": -1, "reply": "Thôi thôi. Tui thua. Lấy một ổ." }
-              ]
+                {
+                  "say": "Dạ anh ăn từ từ nghen.",
+                  "tone": "AM",
+                  "rel": 2,
+                  "reply": "…Ừ. Cũng được. Thôi tui lấy một ổ."
+                },
+                {
+                  "say": "Ngon thì anh ghé nữa nghen anh.",
+                  "tone": "AM",
+                  "rel": 3,
+                  "reply": "Để coi. Mà ừ, ổ này được thiệt."
+                },
+                {
+                  "say": "Thấy chưa. Mười lăm làm gì có cái này.",
+                  "tone": "DUA",
+                  "rel": -1,
+                  "reply": "Thôi thôi. Tui thua. Lấy một ổ."
+                }
+              ],
+              "act": {
+                "kind": "FREE_LOAF"
+              }
             },
-            { "say": "Vậy anh qua bên kia mua đi anh.", "tone": "LANH", "rel": -1, "anger": 20, "reply": "Ờ. Tui qua. Làm gì dữ vậy." },
-            { "say": "Anh chê thì anh đừng mua, nói nhiều.", "tone": "GAT", "rel": -3, "anger": 60, "silent": true }
+            {
+              "say": "Vậy anh qua bên kia mua đi anh.",
+              "tone": "LANH",
+              "rel": -1,
+              "anger": 20,
+              "reply": "Ờ. Tui qua. Làm gì dữ vậy."
+            },
+            {
+              "say": "Anh chê thì anh đừng mua, nói nhiều.",
+              "tone": "GAT",
+              "rel": -3,
+              "anger": 60,
+              "silent": true
+            }
           ]
         },
         {
@@ -34,9 +64,23 @@
           "rel": 2,
           "reply": "Ờ… chị nói thiệt ghê. Mấy người kia là chê người ta liền.",
           "then": [
-            { "say": "Chú Kiệt bán cũng đàng hoàng mà anh.", "tone": "AM", "rel": 3, "reply": "Ừ. Thôi lấy một ổ của chị đi. Chị nói tui nghe lọt." },
-            { "say": "Anh ăn bên nào cũng được mà anh.", "tone": "THUONG", "rel": 1, "reply": "Ừ. Thôi tui mua đây." },
-            { "say": "Dạ.", "tone": "LANH", "silent": true }
+            {
+              "say": "Chú Kiệt bán cũng đàng hoàng mà anh.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "Ừ. Thôi lấy một ổ của chị đi. Chị nói tui nghe lọt."
+            },
+            {
+              "say": "Anh ăn bên nào cũng được mà anh.",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "Ừ. Thôi tui mua đây."
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "silent": true
+            }
           ]
         },
         {
@@ -52,13 +96,27 @@
       "id": "walkin.quayclip",
       "npc": "WALKIN",
       "topic": "clip",
-      "when": { "day": [9, 40] },
+      "when": {
+        "day": [
+          9,
+          40
+        ]
+      },
       "opener": "Ê, cho tui quay cái này cái. Tui làm kênh review đồ ăn.",
       "weight": 12,
       "shared": {
         "di": [
-          { "say": "Dạ anh ăn ngon miệng nghen.", "tone": "THUONG", "rel": 1, "reply": "Ờ. Cảm ơn." },
-          { "say": "Dạ hai lăm ngàn anh.", "tone": "LANH", "reply": "Ờ." }
+          {
+            "say": "Dạ anh ăn ngon miệng nghen.",
+            "tone": "THUONG",
+            "rel": 1,
+            "reply": "Ờ. Cảm ơn."
+          },
+          {
+            "say": "Dạ hai lăm ngàn anh.",
+            "tone": "LANH",
+            "reply": "Ờ."
+          }
         ]
       },
       "tree": [
@@ -74,13 +132,38 @@
               "rel": 2,
               "reply": "…Ờ. Thôi được. Tui quay cái lò thôi vậy.",
               "then": [
-                { "say": "Dạ em cảm ơn anh.", "tone": "AM", "rel": 3, "reply": "Có gì đâu. Tui cũng ghét bị quay mà tui đi quay người ta." },
-                { "say": "Anh quay xong gửi em coi với nghen.", "tone": "AM", "rel": 2, "reply": "Ừ. Để tui gửi." },
-                { "say": "Dạ.", "tone": "LANH", "silent": true }
+                {
+                  "say": "Dạ em cảm ơn anh.",
+                  "tone": "AM",
+                  "rel": 3,
+                  "reply": "Có gì đâu. Tui cũng ghét bị quay mà tui đi quay người ta."
+                },
+                {
+                  "say": "Anh quay xong gửi em coi với nghen.",
+                  "tone": "AM",
+                  "rel": 2,
+                  "reply": "Ừ. Để tui gửi."
+                },
+                {
+                  "say": "Dạ.",
+                  "tone": "LANH",
+                  "silent": true
+                }
               ]
             },
-            { "say": "Anh quay rồi người ta vô chửi em thì sao anh?", "tone": "THANG", "rel": 1, "reply": "Thì… ờ. Cũng có chuyện đó thiệt. Thôi tui hổng quay chị." },
-            { "say": "Quay cái gì mà quay. Tắt máy đi.", "tone": "GAT", "rel": -3, "anger": 55, "silent": true }
+            {
+              "say": "Anh quay rồi người ta vô chửi em thì sao anh?",
+              "tone": "THANG",
+              "rel": 1,
+              "reply": "Thì… ờ. Cũng có chuyện đó thiệt. Thôi tui hổng quay chị."
+            },
+            {
+              "say": "Quay cái gì mà quay. Tắt máy đi.",
+              "tone": "GAT",
+              "rel": -3,
+              "anger": 55,
+              "silent": true
+            }
           ]
         },
         {
@@ -88,10 +171,32 @@
           "tone": "LANH",
           "reply": "Ủa. Quay cho chị nổi tiếng mà chị không chịu hả?",
           "then": [
-            { "say": "Dạ em bán được rồi anh, em không cần nổi tiếng.", "tone": "AM", "rel": 2, "reply": "…Ờ. Nghe cũng có lý." },
-            { "say": "Anh quay là chuyện của anh, em không ký gì hết.", "tone": "THANG", "rel": 1, "reply": "Ừ ừ, tui hiểu. Tui cất máy." },
-            { "say": "Anh mà quay là em gọi công an đó anh.", "tone": "GAT", "rel": -2, "anger": 60, "silent": true },
-            { "say": "…", "tone": "IM", "rel": -1, "reply": "Ờ, thôi. Tui đi chỗ khác.", "ref": "di" }
+            {
+              "say": "Dạ em bán được rồi anh, em không cần nổi tiếng.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "…Ờ. Nghe cũng có lý."
+            },
+            {
+              "say": "Anh quay là chuyện của anh, em không ký gì hết.",
+              "tone": "THANG",
+              "rel": 1,
+              "reply": "Ừ ừ, tui hiểu. Tui cất máy."
+            },
+            {
+              "say": "Anh mà quay là em gọi công an đó anh.",
+              "tone": "GAT",
+              "rel": -2,
+              "anger": 60,
+              "silent": true
+            },
+            {
+              "say": "…",
+              "tone": "IM",
+              "rel": -1,
+              "reply": "Ờ, thôi. Tui đi chỗ khác.",
+              "ref": "di"
+            }
           ]
         },
         {
@@ -100,8 +205,18 @@
           "rel": 1,
           "reply": "Ngon! Chị cười cái coi. Một hai ba…",
           "then": [
-            { "say": "Dạ em cười hổng được đâu anh.", "tone": "DUA", "rel": 2, "reply": "Ha. Vậy chị cứ làm việc đi, vậy mới thật." },
-            { "say": "Dạ anh quay lẹ giùm em nghen.", "tone": "THUONG", "reply": "Ừ, hai phút thôi.", "ref": "di" }
+            {
+              "say": "Dạ em cười hổng được đâu anh.",
+              "tone": "DUA",
+              "rel": 2,
+              "reply": "Ha. Vậy chị cứ làm việc đi, vậy mới thật."
+            },
+            {
+              "say": "Dạ anh quay lẹ giùm em nghen.",
+              "tone": "THUONG",
+              "reply": "Ừ, hai phút thôi.",
+              "ref": "di"
+            }
           ]
         }
       ]
@@ -110,13 +225,27 @@
       "id": "walkin.cau",
       "npc": "WALKIN",
       "topic": "cau",
-      "when": { "day": [6, 40] },
+      "when": {
+        "day": [
+          6,
+          40
+        ]
+      },
       "opener": "Sao lâu vậy em? Tui đứng đây nãy giờ nè.",
       "weight": 13,
       "shared": {
         "di": [
-          { "say": "Dạ ổ của anh đây. Anh đi mạnh giỏi.", "tone": "THUONG", "reply": "Ờ." },
-          { "say": "Dạ anh thông cảm giùm em.", "tone": "AM", "rel": 2, "reply": "…Ừ. Thôi." }
+          {
+            "say": "Dạ ổ của anh đây. Anh đi mạnh giỏi.",
+            "tone": "THUONG",
+            "reply": "Ờ."
+          },
+          {
+            "say": "Dạ anh thông cảm giùm em.",
+            "tone": "AM",
+            "rel": 2,
+            "reply": "…Ừ. Thôi."
+          }
         ]
       },
       "tree": [
@@ -132,13 +261,42 @@
               "rel": 3,
               "reply": "Xe tui thủng lốp. Trễ họp. Sếp tui chửi tui trước mặt cả phòng.",
               "then": [
-                { "say": "Vậy chắc anh mệt lắm rồi.", "tone": "AM", "rel": 3, "reply": "…Ừ. Em là người đầu tiên hôm nay nói chuyện tử tế với tui." },
-                { "say": "Sếp gì mà chửi nhân viên trước mặt người ta.", "tone": "CHUI", "rel": 2, "reply": "Đó! Tui cũng nghĩ vậy mà tui đâu dám nói." },
-                { "say": "Dạ anh ngồi xuống ghế đợi em chút.", "tone": "AM", "rel": 3, "reply": "Ừ… ừ. Thôi tui ngồi.", "ref": "di" },
-                { "say": "Thì anh về anh chửi lại sếp anh đi.", "tone": "DUA", "rel": -2, "reply": "…Nói dễ ghê." }
+                {
+                  "say": "Vậy chắc anh mệt lắm rồi.",
+                  "tone": "AM",
+                  "rel": 3,
+                  "reply": "…Ừ. Em là người đầu tiên hôm nay nói chuyện tử tế với tui."
+                },
+                {
+                  "say": "Sếp gì mà chửi nhân viên trước mặt người ta.",
+                  "tone": "CHUI",
+                  "rel": 2,
+                  "reply": "Đó! Tui cũng nghĩ vậy mà tui đâu dám nói."
+                },
+                {
+                  "say": "Dạ anh ngồi xuống ghế đợi em chút.",
+                  "tone": "AM",
+                  "rel": 3,
+                  "reply": "Ừ… ừ. Thôi tui ngồi.",
+                  "ref": "di",
+                  "act": {
+                    "kind": "STEP_ASIDE"
+                  }
+                },
+                {
+                  "say": "Thì anh về anh chửi lại sếp anh đi.",
+                  "tone": "DUA",
+                  "rel": -2,
+                  "reply": "…Nói dễ ghê."
+                }
               ]
             },
-            { "say": "Dạ anh đợi em một phút nữa thôi.", "tone": "THUONG", "reply": "Ừ. Một phút thôi nghen.", "ref": "di" }
+            {
+              "say": "Dạ anh đợi em một phút nữa thôi.",
+              "tone": "THUONG",
+              "reply": "Ừ. Một phút thôi nghen.",
+              "ref": "di"
+            }
           ]
         },
         {
@@ -147,9 +305,26 @@
           "anger": 15,
           "reply": "Một phút của em với một phút của tui khác nhau đó.",
           "then": [
-            { "say": "Dạ đúng rồi anh. Em xin lỗi.", "tone": "AM", "rel": 2, "reply": "…Ờ. Thôi, em làm đi.", "ref": "di" },
-            { "say": "Dạ ai cũng phải chờ hết anh à.", "tone": "THANG", "anger": 25, "reply": "Ờ. Thì tui chờ." },
-            { "say": "Anh gấp thì anh đi chỗ khác đi anh.", "tone": "GAT", "rel": -3, "anger": 70, "silent": true }
+            {
+              "say": "Dạ đúng rồi anh. Em xin lỗi.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "…Ờ. Thôi, em làm đi.",
+              "ref": "di"
+            },
+            {
+              "say": "Dạ ai cũng phải chờ hết anh à.",
+              "tone": "THANG",
+              "anger": 25,
+              "reply": "Ờ. Thì tui chờ."
+            },
+            {
+              "say": "Anh gấp thì anh đi chỗ khác đi anh.",
+              "tone": "GAT",
+              "rel": -3,
+              "anger": 70,
+              "silent": true
+            }
           ]
         },
         {
@@ -173,10 +348,28 @@
           "rel": 2,
           "reply": "Ờ! Vậy mới dễ thương chớ. Tui mua hoài đó nghen.",
           "then": [
-            { "say": "Dạ cô ghé nữa nghen cô.", "tone": "AM", "rel": 3, "reply": "Ừ. Tui ở ngay đầu hẻm mà." },
-            { "say": "Dạ cô nhớ ghé thiệt đó nghen.", "tone": "DUA", "rel": 2, "reply": "Nhớ chớ. Tui nói là tui làm." },
-            { "say": "Dạ.", "tone": "LANH", "silent": true }
-          ]
+            {
+              "say": "Dạ cô ghé nữa nghen cô.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "Ừ. Tui ở ngay đầu hẻm mà."
+            },
+            {
+              "say": "Dạ cô nhớ ghé thiệt đó nghen.",
+              "tone": "DUA",
+              "rel": 2,
+              "reply": "Nhớ chớ. Tui nói là tui làm."
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "silent": true
+            }
+          ],
+          "act": {
+            "kind": "DISCOUNT",
+            "vnd": 5000
+          }
         },
         {
           "say": "Dạ em bán đúng giá cô à.",
@@ -189,12 +382,40 @@
               "rel": 1,
               "reply": "Lỗ gì mà lỗ. Bánh mì lời gấp đôi chớ ít hả.",
               "then": [
-                { "say": "Dạ cô tính thử coi: bánh, pate, thịt, rau…", "tone": "THANG", "rel": 2, "reply": "…Ờ. Thôi tui hổng nói nữa. Lấy ba ổ." },
-                { "say": "Dạ thôi em bớt cô ba ngàn vậy.", "tone": "THUONG", "rel": 1, "reply": "Ờ, ba ngàn cũng được. Cô này biết điều." },
-                { "say": "Cô không biết thì cô đừng nói cô.", "tone": "GAT", "rel": -3, "anger": 65, "silent": true }
+                {
+                  "say": "Dạ cô tính thử coi: bánh, pate, thịt, rau…",
+                  "tone": "THANG",
+                  "rel": 2,
+                  "reply": "…Ờ. Thôi tui hổng nói nữa. Lấy ba ổ."
+                },
+                {
+                  "say": "Dạ thôi em bớt cô ba ngàn vậy.",
+                  "tone": "THUONG",
+                  "rel": 1,
+                  "reply": "Ờ, ba ngàn cũng được. Cô này biết điều.",
+                  "act": {
+                    "kind": "DISCOUNT",
+                    "vnd": 3000
+                  }
+                },
+                {
+                  "say": "Cô không biết thì cô đừng nói cô.",
+                  "tone": "GAT",
+                  "rel": -3,
+                  "anger": 65,
+                  "silent": true
+                }
               ]
             },
-            { "say": "Dạ vậy thôi cô mua chỗ khác đi cô.", "tone": "LANH", "anger": 30, "reply": "Chèn ơi. Hỏi một câu mà." }
+            {
+              "say": "Dạ vậy thôi cô mua chỗ khác đi cô.",
+              "tone": "LANH",
+              "anger": 30,
+              "reply": "Chèn ơi. Hỏi một câu mà.",
+              "act": {
+                "kind": "REFUSE"
+              }
+            }
           ]
         },
         {

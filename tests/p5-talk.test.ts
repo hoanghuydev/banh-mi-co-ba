@@ -10,7 +10,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { NPCS } from "../src/content/npcs";
 import { Rng } from "../src/core/rng";
-import { newRelState } from "../src/sim/memory";
+import { DECAY, REDEEM, newRelState } from "../src/sim/memory";
 import {
   ADDRESS, DEFAULT_IGNORE_REL, FORBIDDEN_SELF, MAX_DEPTH, TalkSession, angerToWaitSec, applyTalk,
   childrenOf, eligible, linesOf, pickTalk, visibleOptions, walkNodes, WALKIN_CALLS,
@@ -36,7 +36,7 @@ test("T-1 câu đáp đi THEO lựa chọn, không rút riêng — đúng cái b
   assert.equal(new Set(replies).size, replies.length, "bốn lựa chọn mà đáp lại giống nhau");
   for (const [i, o] of t.tree.entries()) {
     const s = new TalkSession(t, "BA_BAY");
-    assert.equal(s.choose(i, {})!.reply, o.reply, `lựa chọn ${i} nhận câu đáp của lựa chọn khác`);
+    assert.equal(s.choose(i, { flags: {} })!.reply, o.reply, `lựa chọn ${i} nhận câu đáp của lựa chọn khác`);
   }
 });
 
@@ -44,7 +44,7 @@ test("T-2 mỗi nhánh có BỘ LỰA CHỌN RIÊNG — chọn A và chọn B kh
   const t = byId("bay.veso");
   const next = (i: number) => {
     const s = new TalkSession(t, "BA_BAY");
-    s.choose(i, {});
+    s.choose(i, { flags: {} });
     return (s.options ?? []).map((o) => o.say).join("|");
   };
   const a = next(0), b = next(1);
@@ -61,7 +61,7 @@ test("T-3 rẽ được nhiều cấp: A → A4 → A4b", () => {
     const here = s.options!;
     // đi theo nhánh nào còn con, để xuống đáy
     const i = here.findIndex((o) => childrenOf(o, deep!));
-    s.choose(i >= 0 ? i : 0, {});
+    s.choose(i >= 0 ? i : 0, { flags: {} });
     steps++;
   }
   assert.ok(steps >= 3, `chỉ đi được ${steps} cấp`);
@@ -74,7 +74,7 @@ test("T-4 nhánh cụt thì cuộc đóng, không rơi vào nhịp không tồn 
       const here = s.options;
       assert.ok(here, `${t.id}: chưa done mà hết nhịp`);
       const i = here!.findIndex((o) => childrenOf(o, t));
-      s.choose(i >= 0 ? i : 0, {});
+      s.choose(i >= 0 ? i : 0, { flags: {} });
     }
     assert.equal(s.done, true, `${t.id}: đi mãi không kết thúc — \`ref\` quay vòng?`);
     assert.equal(s.options, null);
@@ -87,7 +87,7 @@ test("T-5 khách im lặng vẫn là một nước đi: `silent` đi tiếp bìn
   const i = silent!.t.tree.indexOf(silent!.n);
   if (i < 0) return;                                   // nút im nằm sâu — T-4 đã phủ
   const s = new TalkSession(silent!.t, silent!.t.npc);
-  const r = s.choose(i, {})!;
+  const r = s.choose(i, { flags: {} })!;
   assert.equal(r.reply, undefined, "khai `silent` mà vẫn có câu đáp");
 });
 
@@ -155,8 +155,8 @@ test("T-11 `need` ẩn lựa chọn chưa mở, mà vẫn luôn còn một đư�
     { say: "a", tone: "AM", need: "chuaCo" },
     { say: "b", tone: "LANH", need: "chuaCo" },
   ];
-  assert.equal(visibleOptions(nodes, {}).length, 1, "lọc sạch hết thì bảng không còn nút nào bấm");
-  assert.equal(visibleOptions(nodes, { chuaCo: 1 }).length, 2);
+  assert.equal(visibleOptions(nodes, { flags: {} }).length, 1, "lọc sạch hết thì bảng không còn nút nào bấm");
+  assert.equal(visibleOptions(nodes, { flags: { chuaCo: 1 } }).length, 2);
 });
 
 test("T-12 kho nạp theo người: `ensure` rồi mới có, `release` thì trả chỗ", async () => {
@@ -304,4 +304,80 @@ test("L-10 cây không sâu quá `MAX_DEPTH` — `ref` quay vòng là treo máy 
     const deepest = walkNodes(t).reduce((a, x) => Math.max(a, x.depth), 0);
     assert.ok(deepest <= MAX_DEPTH, `${t.id}: sâu ${deepest} cấp`);
   }
+});
+
+// ──────────────────────────────────── A — lời nói có HÀNH ĐỘNG THẬT (P5-02)
+
+test("A-1 câu nào hứa chuyện có thật thì phải mang `act` — không có lời nói miễn phí", () => {
+  /**
+   * Lưới này đọc CHÍNH LỜI THOẠI. Người viết thêm một câu "để cô bỏ thêm miếng chả" mà
+   * quên gắn `act` thì câu đó lại thành chữ suông — đúng cái bug đang sửa. Từ khoá cố ý
+   * hẹp: chỉ bắt những lối nói CHẮC CHẮN là một lời hứa.
+   */
+  const promises: [RegExp, string][] = [
+    [/\bcô bỏ (chút|thêm|cho)\b/i, "PROMISE"],
+    [/\bbỏ cho (em|con|anh|chị)\b.*\bmiếng\b/i, "PROMISE"],
+    [/\bbớt (cô|chú|anh|chị|bà|em)\b.*\bngàn\b/i, "DISCOUNT"],
+    // Phải là NGƯỜI CHƠI hứa, nên bắt buộc có chủ ngữ ngôi thứ nhất: "em không lấy tiền".
+    // Không có cửa này thì "Sao chú hổng lấy tiền chú?" — một câu HỎI — bị tính là lời hứa.
+    [/\b(em|con|cô|tui)\s+(không|hổng)\s+lấy tiền\b/i, "FREE_LOAF"],
+    [/\bđứng qua bên\b|\bdạt qua\b/i, "STEP_ASIDE"],
+    [/\bmua chỗ khác\b/i, "REFUSE"],
+    [/\bcho (con|em) (một|hai|ba) tờ\b|\blấy hết cho\b|\bđưa đây một tờ\b/i, "PAY"],
+  ];
+  for (const t of TALKS) {
+    for (const { node } of walkNodes(t)) {
+      for (const [re, kind] of promises) {
+        if (!re.test(node.say)) continue;
+        assert.ok(node.act, `${t.id}: "${node.say}" hứa chuyện có thật mà không có \`act\``);
+        assert.equal(node.act!.kind, kind, `${t.id}: "${node.say}" nên là ${kind}`);
+      }
+    }
+  }
+});
+
+test("A-2 `act` tốn tiền phải khai `needCash` — không hứa được cái mình không trả nổi", () => {
+  for (const t of TALKS) {
+    for (const { node } of walkNodes(t)) {
+      if (node.act?.kind !== "PAY") continue;
+      assert.equal(node.needCash, node.act.vnd, `${t.id}: "${node.say}" trả ${node.act.vnd} mà cổng tiền là ${node.needCash}`);
+      assert.ok(node.act.note.length > 0, `${t.id}: PAY không có ghi chú để vô sổ`);
+    }
+  }
+});
+
+test("A-3 két rỗng thì lựa chọn tốn tiền BIẾN MẤT, mà vẫn còn đường đi tiếp", () => {
+  const nodes: TalkNode[] = [
+    { say: "mua hai tờ", tone: "AM", needCash: 20000, act: { kind: "PAY", vnd: 20000, note: "vé số" } },
+    { say: "thôi bà", tone: "LANH" },
+  ];
+  assert.equal(visibleOptions(nodes, { flags: {}, cash: 20000 }).length, 2);
+  const broke = visibleOptions(nodes, { flags: {}, cash: 5000 });
+  assert.equal(broke.length, 1, "hết tiền mà vẫn mời người ta mua vé số");
+  assert.equal(broke[0].say, "thôi bà");
+  // cash không khai = không chặn (test cũ, sim headless)
+  assert.equal(visibleOptions(nodes, { flags: {} }).length, 2);
+});
+
+test("A-4 nuốt lời đau hơn bỏ nhầm món, và cả hai đều đau hơn một câu nói nặng", () => {
+  const bad = (kind: "BROKEN_PROMISE" | "RUDE_TO_THEM", i: number) => {
+    const s = newRelState();
+    s.relationPoints = 60;
+    return -applyTalk({ mem: { kind, intensity: i } }, s, P.ANH_BAO, 10).relDelta;
+  };
+  const broken = bad("BROKEN_PROMISE", 85);
+  const swapped = bad("BROKEN_PROMISE", 55);
+  const rude = bad("RUDE_TO_THEM", 65);
+  assert.ok(broken > swapped, "nuốt lời mà rẻ hơn bỏ nhầm món");
+  assert.ok(broken > rude, "hứa rồi quên mà nhẹ hơn nói một câu khó nghe");
+});
+
+test("A-5 vết `BROKEN_PROMISE` phai chậm hơn và đọng lại cao hơn mọi vết âm khác", () => {
+  const bp = DECAY.BROKEN_PROMISE;
+  for (const k of ["RUDE_TO_THEM", "ORDER_DEFECT", "BURNT_OR_COLD", "MADE_THEM_WAIT"] as const) {
+    assert.ok(bp.floor >= DECAY[k].floor, `BROKEN_PROMISE đọng lại ít hơn ${k}`);
+  }
+  // và phải chuộc được — bằng VIỆC LÀM, không bằng lời
+  assert.ok(REDEEM.BROKEN_PROMISE, "không có đường chuộc lời hứa gãy");
+  assert.deepEqual(REDEEM.BROKEN_PROMISE!.requireKinds, ["FREE_EXTRA", "CARED_FOR_THEM"]);
 });

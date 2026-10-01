@@ -21,9 +21,9 @@ import { decayMul, relGainMul } from "./personality";
 
 export type BaseKind =
   | "WRONG_NAME" | "MADE_THEM_WAIT" | "BURNT_OR_COLD" | "DROPPED_FOOD" | "ORDER_DEFECT" | "DIRTY_HANDS"
-  | "RUDE_TO_THEM"
+  | "RUDE_TO_THEM" | "BROKEN_PROMISE"
   | "REMEMBERED_USUAL" | "REMEMBERED_STORY" | "CARED_FOR_THEM" | "FREE_EXTRA" | "FLOURISH";
-export type HealableKind = "WRONG_NAME" | "DROPPED_FOOD" | "DIRTY_HANDS" | "BURNT_OR_COLD" | "ORDER_DEFECT" | "RUDE_TO_THEM";
+export type HealableKind = "WRONG_NAME" | "DROPPED_FOOD" | "DIRTY_HANDS" | "BURNT_OR_COLD" | "ORDER_DEFECT" | "RUDE_TO_THEM" | "BROKEN_PROMISE";
 export type MemoryKind = BaseKind | `HEALED_${HealableKind}`;
 
 export type Memory = {
@@ -97,7 +97,7 @@ export const SERVED_WELL_PTS = 1.0;
 
 export const VALENCE: Record<BaseKind, -1 | 1> = {
   WRONG_NAME: -1, MADE_THEM_WAIT: -1, BURNT_OR_COLD: -1, DROPPED_FOOD: -1, ORDER_DEFECT: -1, DIRTY_HANDS: -1,
-  RUDE_TO_THEM: -1,
+  RUDE_TO_THEM: -1, BROKEN_PROMISE: -1,
   REMEMBERED_USUAL: 1, REMEMBERED_STORY: 1, CARED_FOR_THEM: 1, FREE_EXTRA: 1, FLOURISH: 1,
 };
 
@@ -111,6 +111,9 @@ export const DECAY: Record<BaseKind, { hold: number; taper: number; floor: numbe
   // Lời nói khó nghe: phai chậm hơn một ổ bánh nguội, nhanh hơn gọi sai tên. Sàn 15 —
   // "nó có nói một câu đó" là thứ người ta còn giữ lại được sau hai tuần.
   RUDE_TO_THEM:     { hold: 2, taper: 11, floor: 15 },
+  // Hứa rồi không làm phai CHẬM NHẤT trong nhóm âm, và sàn cao nhất (30). Một câu nói
+  // nặng còn đổ cho lúc nóng được; "nó nói nó cho mà nó không cho" thì không đổ cho đâu.
+  BROKEN_PROMISE:   { hold: 3, taper: 16, floor: 30 },
   ORDER_DEFECT:     { hold: 1, taper: 5,  floor: 0 },
   REMEMBERED_USUAL: { hold: 3, taper: 20, floor: 15 },
   REMEMBERED_STORY: { hold: 3, taper: 16, floor: 10 },
@@ -131,11 +134,13 @@ export const REDEEM: Partial<Record<BaseKind, RedeemSpec>> = {
   MADE_THEM_WAIT: { K: 1.2, minDistinctDays: 1 },
   // Chuộc một câu nói phải bằng LỜI và sự để ý, không bằng ổ bánh to hơn (§2.7 "đúng trục").
   RUDE_TO_THEM:   { K: 2.0, minDistinctDays: 3, requireKinds: ["CARED_FOR_THEM", "REMEMBERED_STORY"] },
+  // Chuộc lời hứa gãy phải bằng chính thứ đã hứa: LÀM, không phải nói (§2.7 "đúng trục").
+  BROKEN_PROMISE: { K: 2.4, minDistinctDays: 3, requireKinds: ["FREE_EXTRA", "CARED_FOR_THEM"] },
 };
 
 export const SALIENCE_OF: Record<BaseKind, number> = {
   WRONG_NAME: 100, MADE_THEM_WAIT: 100, BURNT_OR_COLD: 80, DROPPED_FOOD: 75, ORDER_DEFECT: 100, DIRTY_HANDS: 40,
-  RUDE_TO_THEM: 65,
+  RUDE_TO_THEM: 65, BROKEN_PROMISE: 85,
   REMEMBERED_USUAL: 90, REMEMBERED_STORY: 70, CARED_FOR_THEM: 50, FREE_EXTRA: 25, FLOURISH: 15,
 };
 
@@ -435,5 +440,5 @@ export function visitProbabilityMul(s: RelState) {
 export const SILENT_ABSENCE: Partial<Record<BaseKind, number>> = {
   DROPPED_FOOD: 5, WRONG_NAME: 3, ORDER_DEFECT: 3, BURNT_OR_COLD: 2, MADE_THEM_WAIT: 2,
   // Chị Lan bị nói nặng một câu: không cãi, không giận ra mặt — bốn bữa sau chỗ 7h05 trống.
-  RUDE_TO_THEM: 4,
+  RUDE_TO_THEM: 4, BROKEN_PROMISE: 5,
 };

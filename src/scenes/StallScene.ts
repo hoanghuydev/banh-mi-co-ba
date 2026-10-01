@@ -787,7 +787,11 @@ export class StallScene extends Phaser.Scene {
       if (ev.kind === "cost") {                        // trà là MỜI: tốn tiền, không phải bán
         w.money.cash -= ev.amount;
         // Phải vào sổ, không thì cột "đếm tiền" buổi tối lệch đúng bội số của TEA_COST.
-        w.econ.today.fixed += ev.amount;
+        // Tiền tiêu vì một câu nói (mua vé số của bà Bảy) đi dòng `story` — "chuyện trong
+        // hẻm" — chứ không lẫn vô chi phí cố định: buổi tối phải đọc ra được mình đã
+        // tiêu bao nhiêu vì tử tế với người ta.
+        if (ev.item === "talk") w.econ.today.story += ev.amount;
+        else w.econ.today.fixed += ev.amount;
         bus.emit("money:changed", { delta: -ev.amount, balance: w.money.cash, reason: "TEA" });
         continue;
       }

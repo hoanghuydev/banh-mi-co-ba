@@ -83,7 +83,37 @@ export type TalkEffect = {
   flag?: string;
 };
 
+/**
+ * HÀNH ĐỘNG THẬT mà một câu nói sinh ra — P5-02.
+ *
+ * Đây là chỗ sửa khuyết điểm lớn nhất của bản P5-01: lời nói MIỄN PHÍ. Người chơi bấm
+ * "Để cô bỏ chút pate, cô hổng tính tiền" rồi đưa ra ổ không có pate, và không có gì
+ * xảy ra — vì câu đó chỉ là chữ. Nói mà thế giới không phải giữ lời thì không phải
+ * hội thoại, chỉ là một cái máy phát điểm thiện cảm.
+ *
+ *   PAY        tiền ra khỏi két NGAY (mua vé số của bà Bảy). Nút bị ẨN nếu không đủ tiền.
+ *   DISCOUNT   ổ của lượt ghé này bớt tiền thật, ở `settlePayment`
+ *   FREE_LOAF  ổ này không tính tiền
+ *   PROMISE    hứa bỏ thêm một món — treo lại, KIỂM lúc đưa bánh
+ *   STEP_ASIDE bảo họ dạt qua cho người sau — họ nghe hay không là chuyện của họ
+ *   REFUSE     không bán nữa; khách đi ngay
+ *
+ * Mọi `act` đều phải có đường THẤT BẠI thật: hứa mà không làm → `BROKEN_PROMISE`;
+ * bảo dạt qua mà người ta không chịu → mình đứng đó với một người đang quạu.
+ */
+export type TalkAct =
+  | { kind: "PAY"; vnd: number; note: string }
+  | { kind: "DISCOUNT"; vnd: number }
+  | { kind: "FREE_LOAF" }
+  | { kind: "PROMISE"; item: string }
+  | { kind: "STEP_ASIDE" }
+  | { kind: "REFUSE" };
+
 export type TalkNode = TalkEffect & {
+  /** Hành động thật câu này gây ra ở thế giới. */
+  act?: TalkAct;
+  /** Ẩn nút nếu két không đủ ngần này tiền — không hứa được cái mình không trả nổi. */
+  needCash?: number;
   /** Câu người chơi nói. Ngắn — nó nằm trên một cái nút. */
   say: string;
   tone: TalkTone;
@@ -254,9 +284,17 @@ export function pickTalk(all: readonly Talk[], c: TalkCtx, rng: Rng): Talk | nul
   return list[list.length - 1];
 }
 
-/** Lựa chọn nào được hiện ở nhịp này (lọc `need`). Luôn trả về ít nhất một đường ra. */
-export function visibleOptions(nodes: readonly TalkNode[], flags: TalkCtx["flags"]): TalkNode[] {
-  const out = nodes.filter((o) => !o.need || !!flags[o.need]);
+/** Điều kiện hiện một lựa chọn: cờ chuyện + tiền trong két. */
+export type TalkGate = { flags: TalkCtx["flags"]; cash?: number };
+
+/**
+ * Lựa chọn nào được hiện ở nhịp này. Luôn trả về ít nhất một đường ra — lọc sạch hết
+ * thì bảng không còn nút nào bấm và người chơi kẹt giữa buổi bán.
+ */
+export function visibleOptions(nodes: readonly TalkNode[], gate: TalkGate): TalkNode[] {
+  const out = nodes.filter((o) =>
+    (!o.need || !!gate.flags[o.need])
+    && (o.needCash === undefined || (gate.cash ?? Infinity) >= o.needCash));
   return out.length ? out : nodes.slice(0, 1);
 }
 
@@ -291,9 +329,9 @@ export class TalkSession {
    * Người chơi chọn lựa chọn thứ `i` của nhịp hiện tại (đã lọc `need`).
    * Trả câu khách đáp + chính cái nút đã chọn, và tự đi xuống nhánh con của nó.
    */
-  choose(i: number, flags: TalkCtx["flags"]): { node: TalkNode; reply?: string; done: boolean } | null {
+  choose(i: number, gate: TalkGate): { node: TalkNode; reply?: string; done: boolean } | null {
     if (!this.here || this.done) return null;
-    const opts = visibleOptions(this.here, flags);
+    const opts = visibleOptions(this.here, gate);
     const n = opts[Math.max(0, Math.min(opts.length - 1, i))];
     this.picked.push({ say: n.say, tone: n.tone });
 
