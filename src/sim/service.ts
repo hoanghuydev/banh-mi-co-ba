@@ -9,9 +9,9 @@ import type { Bus } from "../core/eventbus";
 import type { CustomerSlot, LeaveReason as BusLeaveReason, RelTier, StimId } from "../core/types";
 import { newNpcState, type NpcState } from "../core/save";
 import { orderDefectKey } from "../core/stimid";
-import { Customer, DEFAULT_PATIENCE_SEC, LEAVE_AT, TEA, type LeaveReason } from "./customer";
+import { Customer, DEFAULT_PATIENCE_SEC, LEAVE_AT, TEA, teaSuspectAtCup, type LeaveReason } from "./customer";
 import {
-  diffDish, generosityOf, makeUsual, mkDefect, sameOrder, sayOrder,
+  INGREDIENTS, diffDish, generosityOf, makeUsual, mkDefect, sameOrder, sayOrder,
   type Defect, type Ingredient, type OrderSpec,
 } from "./order";
 import {
@@ -24,6 +24,7 @@ import { SILENT_ABSENCE, record, servedWell, visitProbabilityMul, type BaseKind,
 import { CLAIM, activeHeard, disprove, nameOf, poolOf, witness, type GossipState } from "./gossip";
 import { beginDay, displayName, logNote, logOrder, nameCheck, type Notebook } from "./notebook";
 import { CAL, crowdMul, isRain, loafPriceVnd, tasteThreshold, tierOf, weatherOf } from "./econ";
+import { peakCap } from "./season";
 import { has, walkInMul as equipWalkIn, type EquipState } from "./equipment";
 import {
   SHORT_OF_CASH_RATE, makeChange, openDebtOf, recalledAmount, viaOf, viaRoundUp, viaWalkInMul,
@@ -31,7 +32,7 @@ import {
 } from "./till";
 import { moodBaseFace, moodPatienceMul, moodTipMul, rollMood } from "./mood";
 import { faceHoldSec, isSilentGrudge, reactionDelay } from "./personality";
-import { GROUP_OF, faceFor, poseFor, type Intensity, type PoseId } from "./reaction";
+import { GROUP_OF, faceFor, poseFor, type Group, type Intensity, type PoseId } from "./reaction";
 import { CRUST } from "./oven";
 import { satisfaction, servedVector, tasteOf } from "./taste";
 import { arcToday, extraVisits, usualOf as authoredUsual, type ArcCtx, type Line } from "../content/arcs";
@@ -80,6 +81,68 @@ export const ASK_COOLDOWN = 60;
 
 /** P1-04 §2.9: bong bóng sống `clamp(1600 + 45·số ký tự, 1600, 4500)` ms. */
 export const bubbleLife = (text: string) => Math.min(4.5, Math.max(1.6, 1.6 + 0.045 * text.length));
+
+/** Nhân mặn (`kind: "nhan"`) — thứ làm nên ổ bánh. Rau / ớt / tương chỉ là đồ kèm. */
+const NHAN_IDS: ReadonlySet<Ingredient> = new Set(INGREDIENTS.filter((i) => i.kind === "nhan").map((i) => i.id));
+
+/**
+ * Ổ RỖNG — P3-03 §2.5 (thực đơn) đọc chung với P1-03 §2.12.
+ *
+ * §2.12 cấm TRỪ TIỀN BÁNH vì lỗi kẹp: quên đồ chua, ít rau, lệch tỉ lệ, thiếu một
+ * trong hai nhân — ổ vẫn là món khách gọi, giá vẫn nguyên, hình phạt nằm ở tiền boa
+ * và ở trí nhớ. Nhưng một ổ KHÔNG CÓ MIẾNG NHÂN MẶN NÀO thì không còn là món đó: nó
+ * đúng nghĩa là "bánh mì không" — một DÒNG KHÁC của thực đơn (10.000₫, P4-03 SK-31).
+ * Vẫn tính đủ tiền ổ đầy đủ cho nó là bán thứ chưa hề đưa ra, và là lỗ hổng CANON §8:
+ * chỉ mua bánh thì tiền chợ rụng ~70% mà doanh thu không đổi.
+ *
+ * Vì sao ngưỡng là "không một miếng nhân mặn nào":
+ *  · thiếu MỘT trong hai nhân vẫn là ổ bánh mì thịt → giá cũ, §2.12 nguyên vẹn
+ *  · để ngưỡng ở "ổ trống trơn" thì lách được bằng một cọng rau (333₫/ổ, vẫn rẻ hơn
+ *    nhân mặn 12×) — đóng lỗ hổng bằng ngưỡng đó là không đóng gì cả
+ *  · ngưỡng này khớp ĐÚNG định nghĩa bậc `khong` của `tierOf`: n = 0 nhân
+ *
+ * Đơn vốn KHÔNG gọi nhân mặn ("cho một ổ bánh mì không") đã là bậc `khong` sẵn — hàm
+ * này không đụng tới, cũng không phạt ai gọi ổ chay.
+ */
+/**
+ * Gọi người chưa biết tên bằng HÌNH DÁNG — P2-05 (xem `Service.label`).
+ *
+ * Suy thẳng từ `body`, theo đúng thứ tự dấu hiệu BÓNG HÌNH mà `content/npcs.ts` nói là
+ * thứ đọc được ở 64 px — nón → kính → TÓC (thứ nằm ngay cạnh mặt) → tạp dề → giỏ → dáng,
+ * nên cái người chơi ĐỌC khớp cái họ THẤY. Thứ tự này cũng là thứ duy nhất tách được
+ * chị Lan (tóc ngang vai) với chị Hạnh (tóc đuôi ngựa) — hai người cùng xách giỏ.
+ * Xưng hô lấy ở chữ đầu của tên; "Thầy" thành "ông" vì nghề nghiệp là thứ phải quen mới
+ * biết, không phải thứ nhìn là ra.
+ *
+ * ⚠️ TẠM: chỗ đúng của mấy chuỗi này là một trường do người viết nội dung đặt trong
+ * `content/npcs.ts` (hiện 12 NPC chưa có trường mô tả hình dáng nào). Ở đây suy máy móc
+ * để không còn một dòng "—" nào lọt ra màn hình; thay bằng bản viết tay thì tốt hơn.
+ */
+const XUNG_HO: Record<string, string> = {
+  "Bà": "bà", "Ông": "ông", "Chú": "chú", "Cô": "cô",
+  "Anh": "anh", "Chị": "chị", "Bé": "nhỏ", "Thầy": "ông",
+};
+const HAT_VI: Record<string, string> = { nonla: "nón lá", helmet: "nón bảo hiểm", cap: "nón lưỡi trai" };
+const HAIR_VI: Record<string, string> = { bun: "tóc búi", ponytail: "tóc đuôi ngựa", bob: "tóc ngang vai" };
+
+export function shapeOf(npc: NpcDef): string {
+  const b = npc.body;
+  const xh = XUNG_HO[npc.name.split(" ")[0]] ?? "khách";
+  const net = (b.hat ? HAT_VI[b.hat] : undefined)
+    ?? (b.glasses ? "đeo kính" : undefined)
+    ?? (b.hairStyle ? HAIR_VI[b.hairStyle] : undefined)
+    ?? (b.apron !== undefined ? "mang tạp dề" : undefined)
+    ?? (b.bag !== undefined ? "xách giỏ" : undefined)
+    ?? (b.stoop ? "lưng còng" : undefined)
+    ?? (b.build === "round" ? "to con" : undefined);
+  return net ? `${xh} ${net}` : xh;
+}
+
+export function isHollowLoaf(spec: OrderSpec, dish: readonly Ingredient[]) {
+  if (dish.some((i) => NHAN_IDS.has(i))) return false;
+  for (const i of NHAN_IDS) if ((spec.levels[i] ?? 0) > 0) return true;
+  return false;
+}
 
 export type ServiceEvent =
   | { kind: "log"; text: string }
@@ -181,6 +244,8 @@ export class Service {
   private nowSec = 0;
   private stimSeq = 0;
   private freeExtraToday = new Map<string, number>();
+  /** Ly trà đã mời cho từng người HÔM NAY — trần và mức nhỏ dần đếm theo ngày (§8i). */
+  private teaToday = new Map<string, number>();
   private devSeq = 0;
   /** Ly trà còn lại hôm nay. */
   teaLeft = TEA_PER_DAY;
@@ -380,11 +445,29 @@ export class Service {
   private spawn(v: Visit, nowMin: number) {
     const npc = v.npc;
     const plan = v.plan ?? null;
-    // P4-02 §4 — chế độ không giới hạn thời gian: MỘT khách một lượt (kịch bản không đổi một chữ)
-    if (this.deps.noTimePressure && !plan?.pass && this.customers.some((x) => x.phase !== "leaving" && !x.pass)) {
-      this.schedule.unshift({ ...v, at: nowMin + 1 });
-      this.schedule.sort((a, b) => a.at - b.at);
-      return;
+    /*
+     * Trần thông lượng — P4-02 §2.7 + §4.
+     *
+     * `days.json` viết tay `target.peak` cho từng ngày: tối đa mấy khách VÃNG LAI cùng
+     * đứng ở quầy (2 suốt Hồi I, 4 ở ba ngày đỉnh sau clip bé Su, 2 lại ở những ngày
+     * vắng). Con số đó là ĐƯỜNG CONG ÁP LỰC của cả mùa — không áp thì ngày nào cũng có
+     * thể dồn tới 6 người và cái đường cong ấy không còn nghĩa gì. `peakCap` trước giờ
+     * không ai gọi; đây là chỗ nối.
+     *
+     * Chỉ đếm khách vãng lai: người có tên tới theo lịch sinh hoạt của họ (P2-03 §2.9),
+     * dời giờ ghé của họ là đổi kịch bản. Chế độ không giới hạn thời gian ép trần về 1
+     * và đếm MỌI người — MỘT khách một lượt (§4), kịch bản 40 ngày không đổi một chữ.
+     *
+     * Quá trần thì lượt ghé đó DỜI LẠI một phút, không mất: hàng chờ dãn ra thôi.
+     */
+    const unlimited = !!this.deps.noTimePressure;
+    if (!plan?.pass && (unlimited || !npc)) {
+      const standing = this.customers.filter((x) => x.phase !== "leaving" && !x.pass && (unlimited || !x.npc));
+      if (standing.length >= peakCap(this.deps.day, unlimited)) {
+        this.schedule.unshift({ ...v, at: nowMin + 1 });
+        this.schedule.sort((a, b) => a.at - b.at);
+        return;
+      }
     }
     if (!npc && this.via !== 0 && this.deps.hub.derive(`via:${v.seq}`).next() > viaWalkInMul(this.via)) return;
     // Mỗi lượt ghé có dòng số RIÊNG, sinh từ (ngày, số thứ tự lượt).
@@ -531,10 +614,13 @@ export class Service {
    * Kênh 1 + 2 — P2-02 §3.1–§3.2. Mặt đổi sau `reactionDelay` (0,20–0,65 s, điềm đạm chậm
    * hơn); không hai người nào phản ứng trong cùng 60 ms (§5.3 luật phụ 1). Luật 35% im
    * lặng KHÔNG đụng tới đây: im lặng là không NÓI, không phải không phản ứng.
+   *
+   * `group` chỉ để ép nhóm bảng mặt khi chuyện xảy ra không có kích thích riêng của nó
+   * (vd. từ chối ly trà: mặt ngượng của nhóm NAME, không phải mặt chê món).
    */
-  private react(c: Customer, id: StimId, i: Intensity, pose?: PoseId) {
+  private react(c: Customer, id: StimId, i: Intensity, pose?: PoseId, group?: Group) {
     const p = c.personality;
-    const g = GROUP_OF[id];
+    const g = group ?? GROUP_OF[id];
     let face = faceFor(g, p, i);
     // `M1` (mím chặt) là CHỮ KÝ của chị Lan — gần như chỉ dùng M1 khi có chuyện không vừa ý
     // (P2-02 §3.1 quy ước 1). Người chơi học nó từ chị, rồi rùng mình khi thấy trên mặt ai khác.
@@ -1001,6 +1087,9 @@ export class Service {
       const r2 = diffDish({ ...c.order!, levels: { ...c.order!.levels, ...alt } }, dish);
       if (!r2.length) { raw = r2; viaAlt = true; }
     }
+    // Ổ không có miếng nhân mặn nào → đưa ra là một ổ BÁNH MÌ KHÔNG, tính tiền theo đó
+    // (xem `isHollowLoaf`). Đọc `levels` gốc: khẩu vị ẩn chỉ đụng ớt/tương, không đụng nhân.
+    const hollow = isHollowLoaf(c.order!, dish);
     // P1-01 §2.4: warmth < 0,55 lúc đưa. Kích thích BURNT_OR_COLD do scene phát đúng lúc đưa.
     if (opts.cold) raw.push(mkDefect("WRONG_TEMP", null));
     // P3-03 §2.3: đồ trong kho đã xuống — người soi nếm ra sớm hơn (chị Lan chỉ chịu lệch 0,09)
@@ -1110,7 +1199,12 @@ export class Service {
       // SK-02 · đổi hàng với bà Sáu — không qua tiền: một chén tàu hũ lấy một ổ bánh (BARTER)
       this.out.push({ kind: "log", text: `${this.label(c)} đổi một chén tàu hũ lấy ổ bánh.` });
       this.noteOpening({ complained: false, paidExact: true, smiled: true, noChange: false, friend: true });
-    } else this.settlePayment(c, loafPriceVnd(tierOf(c.order!.intent)), tip, !!spoken);
+    } else {
+      // Ổ rỗng: đưa ra cái gì thì tính tiền cái đó — bánh mì không (xem `isHollowLoaf`).
+      // Ổ vẫn được TRẢ TIỀN BÁNH, chỉ không được tính tiền nhân chưa hề bỏ vô.
+      if (hollow) this.out.push({ kind: "log", text: `${this.label(c)} trả tiền một ổ bánh mì không — trong ổ không có gì.` });
+      this.settlePayment(c, loafPriceVnd(hollow ? "khong" : tierOf(c.order!.intent)), tip, !!spoken);
+    }
     if (nb) nb.today.served++;
     if (this.deps.story) {
       const ok = defects.length === 0;
@@ -1216,22 +1310,27 @@ export class Service {
    * nên cũng là công cụ dễ phá game nhất. Các khoá:
    *  · VẬT LÝ — khách còn cầm ly thì không nhận ly nữa
    *  · cooldown 45 s mỗi người: ly trong cooldown chỉ được cái gật đầu, KHÔNG cúi uống
-   *  · CARED_FOR_THEM nhỏ dần 1,0 / 0,6 / 0,25
-   *  · người soi ≥ 0,7 nhận tới ly thứ 3 → bắt bài mua chuộc, không nhận nữa
+   *  · CARED_FOR_THEM nhỏ dần 1,0 / 0,6 / 0,25 — đếm theo NGÀY, không theo lượt ghé
+   *  · trần theo `soi` áp cho MỌI khách (`teaSuspectAtCup`): ly 3 với người soi ≥ 0,7,
+   *    trễ nhất là ly 6 với người xuề xoà nhất. Bắt bài rồi thì thôi CẢ MÙA — cái đó
+   *    nằm trong trí nhớ của người ta (`teaSuspect`), không phải trong một lượt ghé.
    *  · trà là MỜI: mỗi ly tốn tiền, có hạn 18 ly/ngày
    */
   serveTea(): { ok: boolean; reason?: string } {
     const c = this.front;
     if (!c || c.phase === "leaving") return { ok: false, reason: "chưa có ai để mời" };
     if (c.holdingTea) return { ok: false, reason: `${this.label(c)} còn cầm ly kia` };
-    if (c.suspectBribery) return { ok: false, reason: `${this.label(c)} không nhận nữa` };
+    if (this.teaSuspect(c)) return this.refuseTea(c);
     if (this.teaLeft <= 0) return { ok: false, reason: "hết đá rồi" };
 
-    if (c.teaCount + 1 >= TEA.suspectAtCup && c.personality.soi >= TEA.suspectSoi) {
-      c.suspectBribery = true;
-      this.speakConcept(c, "INTERACT", { interaction: "TEA_SUSPECT" }, 70, true);
-      return { ok: false, reason: `${this.label(c)} không nhận nữa` };
+    // Ly thứ mấy TRONG NGÀY của người này — ghé lần hai không làm bộ đếm về 0.
+    const cup = (this.teaToday.get(c.memKey) ?? 0) + 1;
+    if (cup >= teaSuspectAtCup(c.personality.soi)) {
+      const m = this.mem(c.memKey);
+      (m.seen ??= {}).teaSuspect = this.deps.day;
+      return this.refuseTea(c);
     }
+    this.teaToday.set(c.memKey, cup);
 
     this.teaLeft--;
     this.out.push({ kind: "cost", amount: TEA_COST, item: "tea" });
@@ -1240,7 +1339,7 @@ export class Service {
       for (const s of r.say) c.script.push({ at: this.nowSec + (s.delay ?? 1), text: s.text, by: s.by && s.by !== c.memKey ? s.by : undefined });
       if (r.say.length && c.holdLeft > 0) c.holdLeft = Math.min(c.holdLeft, 6);   // kể xong rồi gọi món
     }
-    const mul = c.takeTea();
+    const mul = c.takeTea(cup);
     if (mul > 0) {
       this.speakConcept(c, "INTERACT", { interaction: "TEA" }, 40, true);
       this.emitStim("CARED_FOR_THEM", { salience: SALIENCE.CARED_FOR_THEM * mul, target: c.id });
@@ -1250,6 +1349,30 @@ export class Service {
       this.speakConcept(c, "INTERACT", { interaction: "TEA_NOD" }, 20);
     }
     return { ok: true };
+  }
+
+  /**
+   * "Bắt bài chuyện mua chuộc" — CANON §8(i). Sống trong TRÍ NHỚ của người đó
+   * (`NpcState.seen.teaSuspect` = ngày bắt bài), nên nó qua được lượt ghé sau, qua đêm
+   * và qua save: "từ chối vĩnh viễn" mới thật là vĩnh viễn. Trước đây cờ này là thuộc
+   * tính của một lượt ghé nên chính người đó ghé lại là bộ đếm về 0.
+   *
+   * ⚠️ Khách vãng lai dùng chung `memKey` theo KIỂU NGƯỜI (`walkin0..7`) — y như
+   * `freebies` và `visits` đã làm — nên cờ này cũng dính cho cả kiểu người đó.
+   */
+  private teaSuspect(c: Customer) {
+    return !!this.mem(c.memKey).seen?.teaSuspect;
+  }
+
+  /**
+   * Bị từ chối: KHÔNG tốn ly nào (ly còn trên tay người bán), nhưng cũng không được
+   * phép chỉ là một dòng log. Khách nói ra câu của mình (TEA_SUSPECT) và đổi mặt —
+   * nhóm NAME của bảng P2-02 §3.1: cái ngượng xã giao, không phải chê món.
+   */
+  private refuseTea(c: Customer): { ok: false; reason: string } {
+    this.speakConcept(c, "INTERACT", { interaction: "TEA_SUSPECT" }, 70, true);
+    this.react(c, "CARED_FOR_THEM", 2, undefined, "NAME");
+    return { ok: false, reason: `${this.label(c)} không nhận nữa` };
   }
 
   /**
@@ -1373,11 +1496,16 @@ export class Service {
   }
 
   /**
-   * Tên hiện ra với người chơi (nhật ký, phiếu, lý do) — P2-05: tên người chơi tự ghi trong
-   * sổ, chưa ghi thì "—". Khách vãng lai giữ mô tả hình dáng ("cô nón lá").
+   * Tên hiện ra với người chơi (nhật ký, phiếu, lý do) — P2-05: tên là thứ người chơi TỰ
+   * GHI vô sổ, chưa ghi thì chưa được gọi tên. Nhưng "chưa gọi tên" không có nghĩa là gọi
+   * người ta bằng một gạch ngang: quyền tự ghi tên mở tận ngày 11, nên suốt mười ngày đầu
+   * mọi dòng hệ thống đều là "—", ba người bỏ đi ra ba dòng giống hệt nhau, và người QUEN
+   * hoá ra khó nhận mặt hơn người lạ (khách vãng lai vốn đã có "cô xách giỏ", "anh chạy xe").
+   * Chưa biết tên thì gọi bằng HÌNH DÁNG, đúng như với khách lạ (`shapeOf`).
    */
   label(c: Customer) {
-    return displayName(this.deps.notebook, c.memKey, c.name);
+    if (!c.npc) return displayName(this.deps.notebook, c.memKey, c.name);
+    return this.deps.notebook?.pages[c.npc.id]?.name?.trim() || shapeOf(c.npc);
   }
 
   /**

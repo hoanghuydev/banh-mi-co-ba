@@ -4,16 +4,15 @@
     "Ngày 17 (SK-08 anh Bảo ngẩng đầu) hạ từ −− xuống −: sự kiện không ghi memory tiêu cực (P4-03 SK-08) và giữ −− thì bảng P4-02 tự vi phạm luật N2 (17–18 liền nhau).",
     "Ngày 23 (chị Lan rạn #2 + clip xấu CÓ ĐIỀU KIỆN) hạ từ −− xuống −: phần kịch bản bắt buộc chỉ là tín hiệu hành vi; giữ −− thì 23–24–25 ba ngày −− liền (N2).",
     "Ngày 26 nâng SK-29 (ông Hải vẽ bảng) lên ++: P4-02 §2.6 dặn 'nếu Hồi III fail thì TĂNG tích cực ở ngày 26 hoặc 32' — không có ++ nào trong ±2 ngày quanh 25 thì luật N3 fail.",
-    "Ông Hải thêm tín hiệu ngày 36 (lời nói): bảng B-E ghi 3 tín hiệu 27/34/38 nhưng 27 nằm ngoài cửa sổ 8 ngày của luật B1."
+    "Ông Hải thêm tín hiệu ngày 36 (lời nói): bảng B-E ghi 3 tín hiệu 27/34/38 nhưng 27 nằm ngoài cửa sổ 8 ngày của luật B1.",
+    "`unlocks.qr` và `unlocks.evening` (cùng ngày 14) đã bỏ khỏi file này: cổng thật của bảng QR và đèn ca tối là `unlock.minDay` trong econ/equipment.json, và để hai con số cùng nghĩa ở hai file thì sớm muộn chúng lệch nhau. Giá trị không đổi (vẫn 14) — có test giữ.",
+    "`unlocks.supplierTiers: 12` đã bỏ: P3-02 §2.6.2 chốt mối quen chạy theo `streak` (≥4 ngày mua liên tiếp mới bớt giá), KHÔNG theo ngày trong mùa, nên ngày 12 không có ai thi hành. Khác biệt này là CÓ CHỦ Ý (bớt giá theo hành vi mua chứ không theo lịch); ghi ở đây để đừng ai tưởng nó là bug rồi nối bừa vào."
   ],
   "unlocks": {
-    "_note": "P4-02 §2.2 — ai mở, không phải popup. Đồn thổi: ngày ≥ 9 HOẶC ≥ 90 phút chơi thật (P4-02 §2.3, CANON §12.6).",
+    "_note": "P4-02 §2.2 — ai mở, không phải popup. Đồn thổi: ngày ≥ 9 HOẶC ≥ 90 phút chơi thật (P4-02 §2.3, CANON §12.6). ⚠️ CHỈ những cổng mà sim/season.ts THẬT SỰ đọc mới được để ở đây — có test chặn (tests/p4-unlocks) vì khoá chết ở một file tự xưng 'nguồn duy nhất' là bẫy lệch dữ liệu. Cổng mở khoá của THIẾT BỊ (bảng QR ngày 14, đèn ca tối ngày 14) nằm ở econ/equipment.json `unlock.minDay` — đó mới là nguồn của chúng.",
     "gossip": { "day": 9, "playMinutes": 90 },
     "creditBook": 9,
     "notebookWrite": 11,
-    "supplierTiers": 12,
-    "qr": 14,
-    "evening": 14,
     "stands": 16
   },
   "departures": [

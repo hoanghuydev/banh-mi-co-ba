@@ -11,6 +11,7 @@
  */
 import EQUIP_JSON from "../content/econ/equipment.json";
 import { ECON } from "./econ";
+import type { EconBook } from "./obligations";
 
 export type EquipId = "LO_THAN" | "THUNG_XOP" | "LO_GAS" | "DAO_BEN" | "THOT_RIENG" | "KEP_GAP" | "TU_MAT" | "NOI_U"
   | "LONG_BAN" | "VOI_BON" | "THUNG_RAC" | "KHAN_3_MAU" | "GHE_BAN" | "DU_CHE" | "BINH_TRA" | "BANG_QR" | "LOA_RAO"
@@ -79,14 +80,23 @@ export function whyNot(id: EquipId, e: EquipState, cash: number, day: number, fl
   return null;
 }
 
-export function buyEquip(id: EquipId, e: EquipState, m: { cash: number }): boolean {
+/**
+ * `book` = sổ hôm nay (`world.econ`): mua/bán đồ nghề là tiền ra/vào két nên phải có một
+ * dòng ở `today.tools` (dương = chi ra). Để trống chỉ khi gọi từ test.
+ */
+export function buyEquip(id: EquipId, e: EquipState, m: { cash: number }, book?: EconBook): boolean {
   const d = EQUIP[id];
   const v = priceVnd(id);
   if (m.cash < v || has(e, id)) return false;
   m.cash -= v;
+  if (book) book.today.tools += v;
   if (d.replaces && has(e, d.replaces)) {
     // đồ cũ đổi đi: thùng xốp bán lại được, lò than của cô Ba thì không (cô giữ)
-    if (EQUIP[d.replaces].resellable) m.cash += resaleVnd(d.replaces);
+    if (EQUIP[d.replaces].resellable) {
+      const back = resaleVnd(d.replaces);
+      m.cash += back;
+      if (book) book.today.tools -= back;
+    }
     e.owned = e.owned.filter((x) => x !== d.replaces);
   }
   e.owned.push(id);
@@ -94,10 +104,11 @@ export function buyEquip(id: EquipId, e: EquipState, m: { cash: number }): boole
   return true;
 }
 
-export function sellEquip(id: EquipId, e: EquipState, m: { cash: number }, share = 1): number {
+export function sellEquip(id: EquipId, e: EquipState, m: { cash: number }, share = 1, book?: EconBook): number {
   if (!has(e, id) || EQUIP[id].resellable === false || EQUIP[id].starting && !EQUIP[id].resellable) return 0;
   const v = Math.round((resaleVnd(id) * share) / 1000) * 1000;
   m.cash += v;
+  if (book) book.today.tools -= v;                 // tiền VÔ — dòng đồ nghề hôm nay thành âm
   e.owned = e.owned.filter((x) => x !== id);
   // bán lò gas thì lò than của cô Ba vẫn còn đó; bán tủ mát thì lại xài thùng xốp
   const d = EQUIP[id];

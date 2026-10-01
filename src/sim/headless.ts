@@ -185,7 +185,7 @@ export class HeadlessStall {
     const w = this.ctx.world;
     for (const ev of this.service.drain()) {
       if (ev.kind === "log") continue;
-      if (ev.kind === "cost") { w.money.cash -= ev.amount; continue; }
+      if (ev.kind === "cost") { w.money.cash -= ev.amount; w.econ.today.fixed += ev.amount; continue; }
       // bot ghi sổ nợ theo chính sách (mặc định: ghi hết)
       if (ev.kind === "credit") { w.progress.today.served++; if (this.bot.next() < (this.policy.writeDebts ?? 1)) ev.record.playerWrote = ev.record.trueAmount; continue; }
       if (ev.kind === "repay") { w.money.cash += ev.amount; w.progress.today.revenue += ev.amount; continue; }
@@ -230,7 +230,7 @@ export class HeadlessStall {
       if (d > w.progress.dayIndex || has(w.equipment, id)) continue;
       if (w.money.cash - priceVnd(id) < 250_000) break;
       if (whyNot(id, w.equipment, w.money.cash, w.progress.dayIndex, w.flags)) continue;
-      buyEquip(id, w.equipment, w.money);
+      buyEquip(id, w.equipment, w.money, w.econ);
       if (EQUIP[id].costsMorning) w.flags.lateOpenDay = w.progress.dayIndex + 1;
     }
     const t = w.progress.today;

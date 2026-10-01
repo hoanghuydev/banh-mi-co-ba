@@ -1,5 +1,7 @@
 import Phaser from "phaser";
-import { dawn } from "../sim/day";
+import { bedtime, dawn, eveningCounting, neighborTick } from "../sim/day";
+import { settleNight } from "../sim/night";
+import { duesOpen, pay } from "../sim/obligations";
 import { bus, type EventKey, type EventMap } from "../core/eventbus";
 import { GameContext } from "../core/context";
 import { DAY_START_MIN } from "../core/clock";
@@ -106,7 +108,17 @@ export class DayScene extends Phaser.Scene {
     const p = ctx.world.progress;
     ctx.rng.fromJSON(ctx.world.saveId, p.dayIndex, ctx.world.rng.counters);
     ctx.clock.reset(p.gameMinutes);
-    const at: Record<string, Child> = { Market: "market", Stall: "stall", Evening: "evening" };
+    // Save từ bản dựng cũ ghi màn kết dưới key "Evening" (lúc đó `SceneKey` chưa có "Ending").
+    // Nhánh dưới cứu đúng những save đó; save mới đi thẳng qua bảng `at`.
+    // Thiếu nhánh này thì reload giữa màn kết rơi vào CẢNH TỐI của ngày 40 — đúng cái cảnh
+    // P4-04 cấm — và người chơi mất màn kết vĩnh viễn.
+    // Vế thứ hai là để cứu save cũ: ngày 40 không bao giờ có cảnh tối hợp lệ, nên save nào
+    // ghi "Evening" ở ngày 40 là save của bản dựng lỗi trước đó — cũng trả về màn kết.
+    if (ctx.world.flags.endingReached || (p.dayIndex >= SEASON_DAYS && p.scene === "Evening")) {
+      this.open("ending", { resume: true });
+      return;
+    }
+    const at: Record<string, Child> = { Market: "market", Stall: "stall", Evening: "evening", Ending: "ending" };
     this.open(at[p.scene] ?? "market", { resume: true });
   }
 
@@ -121,6 +133,28 @@ export class DayScene extends Phaser.Scene {
     return true;
   }
 
+  /**
+   * Khép sổ ngày 40 — P4-04 cấm CẢNH tối của ngày 40, không cấm việc QUYẾT TOÁN ngày 40.
+   * Bỏ hẳn bước này thì sổ cái thiếu hẳn dòng ngày 40, và hụi kỳ 8 (đáo hạn đúng ngày 40,
+   * `lastGraceDays: 0`) rơi vào khoảng trống: không góp được mà cũng không vỡ được.
+   *
+   * Thứ tự y hệt cảnh tối (EveningScene) và y hệt `nextDay()` của sim headless, để 40 ngày
+   * chạy trong Node ra đúng cái người chơi thấy (P0-02 §2.5).
+   */
+  private settleFinalDay() {
+    const w = this.ctx.world;
+    const day = w.progress.dayIndex;
+    eveningCounting(w);                       // chi phí cố định + rút về nhà (một lần mỗi tối)
+    neighborTick(w);
+    // Không có cảnh tối = không có cái nút nào để góp. Khoản BẮT BUỘC hết hạn ĐÚNG HÔM NAY
+    // được trả giùm nếu két đủ — fail mềm (P3-06) phải là hệ quả của một lựa chọn, không phải
+    // của việc game không đưa ra lựa chọn nào.
+    for (const d of duesOpen(w.econ, day)) if (d.mandatory && d.lastDay <= day) pay(w.econ, w.money, d, day);
+    bedtime(w);
+    settleNight(w, bus);
+    eveningCounting(w);                       // ghi lại dòng sổ cái SAU khi đã trả nghĩa vụ
+  }
+
   /** Lưu ngay rồi về sảnh. */
   quitToMenu() {
     this.ctx.save.flushNow("QUIT");
@@ -131,7 +165,9 @@ export class DayScene extends Phaser.Scene {
 
   private open(child: Child, extra: Record<string, unknown> = {}) {
     this.closeChildren();
-    const key = ({ market: "Market", stall: "Stall", evening: "Evening", ending: "Evening" } as const)[child];
+    // Màn kết có `SceneKey` riêng ("Ending"), nên reload giữa màn kết quay lại đúng chỗ.
+    // Cờ `endingReached` giữ lại làm lưới đỡ cho save ghi bởi bản dựng cũ.
+    const key = ({ market: "Market", stall: "Stall", evening: "Evening", ending: "Ending" } as const)[child];
     this.ctx.setScene(key);
     this.scene.launch(child, { ctx: this.ctx, day: this, ...extra });
   }
@@ -153,8 +189,17 @@ export class DayScene extends Phaser.Scene {
         dayIndex: w.progress.dayIndex,
         summary: { served: p.served, lost: p.lost, revenue: p.revenue },
       });
-      // P4-04: ngày 40 không có cảnh tối — sau khoảng lặng là màn kết
-      if (w.progress.dayIndex >= SEASON_DAYS) { w.flags.seasonOver = true; this.open("ending"); ctx.save.flushNow("SCENE_CHANGE"); return; }
+      // P4-04: ngày 40 không có cảnh tối — sau khoảng lặng là màn kết.
+      // `endingReached` ≠ `seasonOver`: mùa chỉ "đã kết" khi người chơi xem HẾT màn kết và tự bấm
+      // về sảnh (EndingScene). Đặt `seasonOver` ở đây thì reload giữa màn kết sẽ khoá luôn
+      // "Chơi tiếp" (MenuScene) trong khi màn kết còn chưa được xem.
+      if (w.progress.dayIndex >= SEASON_DAYS) {
+        this.settleFinalDay();
+        w.flags.endingReached = true;
+        this.open("ending");
+        ctx.save.flushNow("SCENE_CHANGE");
+        return;
+      }
       this.open("evening");
       ctx.save.request("SCENE_CHANGE");
     });

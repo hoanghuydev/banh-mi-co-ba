@@ -11,6 +11,7 @@
  */
 import type { RelTier } from "../core/types";
 import { ECON, weekdayIdx, type GoodId } from "./econ";
+import type { EconBook } from "./obligations";
 
 export type SupplierId = "LO_BA_TAM" | "CO_NHUNG" | "CHU_CHIN" | "DI_NAM" | "CO_MAI";
 
@@ -110,11 +111,16 @@ export function borrow(s: SupplierState, amount: number, day: number) {
   s.dueDay ??= dueSunday(day);
 }
 
-/** Trả nợ. Trả TRƯỚC hạn là một lần `PAID_EARLY` — đường lên "thân". */
-export function repay(s: SupplierState, m: { cash: number }, day: number): number {
+/**
+ * Trả nợ. Trả TRƯỚC hạn là một lần `PAID_EARLY` — đường lên "thân".
+ * `book` = sổ hôm nay (`world.econ`): tiền ra khỏi két thì phải có một dòng, nếu không thì
+ * tối cộng lại không khớp. Để trống chỉ khi gọi từ test.
+ */
+export function repay(s: SupplierState, m: { cash: number }, day: number, book?: EconBook): number {
   const v = Math.min(s.owed, m.cash);
   if (v <= 0) return 0;
   m.cash -= v;
+  if (book) book.today.debtRepay += v;
   s.owed -= v;
   if (s.owed === 0) {
     if (s.dueDay !== null && day < s.dueDay) s.paidEarly++;

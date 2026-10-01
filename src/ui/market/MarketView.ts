@@ -1,11 +1,12 @@
 import type Phaser from "phaser";
 import type { SaveFile } from "../../core/save";
 import {
-  CAL, GOODS, GOOD_IDS, SELLERS, WEEKDAY_VI, buy, coldSlotCap, coldSlotsUsed, lotQuality, priceOf,
-  vnd, weatherOf, weekdayIdx, type GoodId,
+  CAL, GOODS, GOOD_IDS, SELLERS, WEEKDAY_VI, buy, coldSlotCap, coldSlotsUsed, lotQuality,
+  weatherOf, weekdayIdx, type GoodId,
 } from "../../sim/econ";
-import { basketCost, fmtUnits, forcedSell, unitPriceVnd } from "../../sim/day";
-import { EQUIP, priceVnd, resellable } from "../../sim/equipment";
+import { basketCost, fmtUnits, forcedSell, noteBasketLoaves, quenMat, unitPriceVnd } from "../../sim/day";
+import { moment } from "../../sim/story";
+import { EQUIP, priceVnd, resaleVnd, resellable, type EquipId } from "../../sim/equipment";
 import { STANDS, alleyRumours, standClosed } from "../../sim/stands";
 import {
   SUPPLIERS, afterMarket, borrow, creditCeiling, greetingOf, isClosed, repay, state, type SupplierId,
@@ -51,6 +52,13 @@ const STYLE = `
 `;
 
 const money = (v: number) => `${Math.round(v).toLocaleString("vi-VN")}₫`;
+
+/**
+ * Bán ép ở màn "phải xoay cho đủ" — gương của `forcedSell` trong sim/day.ts, nó gọi
+ * `sellEquip(id, …, 0,5/0,6)`: bán lại thường được sáu phần mười, bán gấp chỉ còn năm.
+ */
+const FORCED_SELL_SHARE = 0.5 / 0.6;
+const forcedSellVnd = (id: EquipId) => Math.round(resaleVnd(id) * FORCED_SELL_SHARE / 1000) * 1000;
 
 /** Lời người ta nói ở chợ về sự kiện sắp tới — NÓI RA, không có banner (Đừng-1). */
 function rumours(day: number): string[] {
@@ -133,7 +141,9 @@ export class MarketView {
       const line = this.el("div", "mk-sub", `còn nợ ${SUPPLIERS[id].name} ${money(s.owed)} — hẹn cuối tuần `);
       const b = this.el("button", "mk-btn", "trả");
       b.disabled = w.money.cash <= 0;
-      b.onclick = () => { repay(s, w.money, day); this.render(); };
+      // `w.econ` là cuốn sổ hôm nay: trả nợ mối là tiền ra khỏi két, phải để lại một dòng
+      // (`today.debtRepay`) — không thì tối đếm tiền hụt mà không biết vì đâu
+      b.onclick = () => { repay(s, w.money, day, w.econ); this.render(); };
       line.append(b);
       head.append(line);
     }
@@ -158,6 +168,10 @@ export class MarketView {
       card.append(this.el("div", "mk-seller", closed ? `${SELLERS[sid]?.name} — nghỉ giỗ, lấy đỡ lò khác` : SELLERS[sid]?.name ?? sid));
       // quan hệ đọc qua CÁCH GỌI, không qua thanh số (P3-02 §2.6.4)
       if (sup && !closed) card.append(this.el("div", "mk-blurb", `"${greetingOf(sid as SupplierId, state(w.suppliers ??= {}, sid as SupplierId))}"`));
+      // Nghỉ giỗ KHÔNG phải là hết hàng: calendar.json `lo_ba_tam_nghi` (ngày 28–30) định
+      // giá sẵn cho lò khác — bánh 4,2 ngàn thay vì 3,5 và ruột xấu hơn (breadQ0 0,90). Cái
+      // sai là tấm blurb cũ ("giá không bao giờ đổi") nói ngược với con số ngay dưới nó.
+      else if (closed) card.append(this.el("div", "mk-blurb", "lò khác bán đỡ mấy bữa — bánh đắt hơn, ruột cũng không bằng"));
       else card.append(this.el("div", "mk-blurb", SELLERS[sid]?.blurb ?? ""));
       for (const g of goods) card.append(this.row(g));
       body.append(card);
@@ -183,15 +197,23 @@ export class MarketView {
       ok.onclick = () => this.finish();
       foot.append(back, ok);
     } else {
+      // P3-03 §2.8 — "đổi bạc lớn lấy bạc nhỏ": đổi tiền MÌNH ĐANG CÓ, không phải in thêm.
+      // Vào chợ với 30 ngàn mà bấm 300k thì hộp lẻ tự đẻ ra gấp mười lần tiền thật có.
       const fl = this.el("span", "mk-cash", "tiền lẻ: ");
       for (const v of [100, 200, 300]) {
         const b = this.el("button", `mk-btn${this.float === v ? " primary" : ""}`, `${v}k`);
+        b.disabled = v * 1000 > w.money.cash;
         b.setAttribute("aria-pressed", String(this.float === v));
         b.onclick = () => { this.float = v; this.render(); };
         fl.append(b);
       }
+      if (this.float * 1000 > w.money.cash) fl.append(this.el("span", "mk-have", ` (trong ống có ${money(w.money.cash)} — đổi được bấy nhiêu thôi)`));
       foot.append(fl);
       const same = this.el("button", "mk-btn", "Mua như hôm qua");
+      // Ngày 1 `lastBasket` là rổ CÔ BA đã đi mua từ bốn giờ sáng — hàng đã nằm trong thùng
+      // rồi. Chép lại là mua đúp: thùng xốp lập tức 8,8/8 ô, bấm gì cũng không checkout được.
+      same.disabled = day === 1;
+      if (day === 1) same.title = "Đồ của bữa nay cô Ba mua sẵn rồi — con coi thiếu gì mua thêm thôi.";
       same.onclick = () => { this.basket = { ...w.inventory.lastBasket }; this.msg = ""; this.render(); };
       const clear = this.el("button", "mk-btn", "Bỏ hết");
       clear.onclick = () => { this.basket = {}; this.render(); };
@@ -220,16 +242,32 @@ export class MarketView {
     head.append(this.el("div", "mk-sub", "Tiền học của em không chờ được nữa."));
     book.append(head);
     const body = this.el("div", "mk-body");
-    for (const id of resellable(w.equipment)) {
+    const items = resellable(w.equipment).filter((id) => forcedSellVnd(id) > 0);
+    for (const id of items) {
       const card = this.el("div", "mk-card");
       card.append(this.el("div", "mk-seller", EQUIP[id].name));
-      card.append(this.el("div", "mk-price", `mua ${money(priceVnd(id))} · bán ${money(Math.round(priceVnd(id) * 0.5 / 1000) * 1000)}`));
+      // con số phải là con số người chơi NHẬN — `forcedSell` bán qua `sellEquip(…, 0,5/0,6)`,
+      // tức 50% giá mua tính TRÊN giá bán lại, không phải 50% giá mua tính thẳng. Hai công
+      // thức hiện ra cùng kết quả cho mọi món đang bán được, nhưng món nào có `resale_k`
+      // riêng (thùng xốp) là lệch ngay — nên tính từ đúng cái hàm bán.
+      card.append(this.el("div", "mk-price", `mua ${money(priceVnd(id))} · bán ${money(forcedSellVnd(id))}`));
       const b = this.el("button", "mk-btn primary", "bán cái này");
       b.onclick = () => { forcedSell(w, id); this.render(); };
       card.append(b);
       body.append(card);
     }
     book.append(body);
+    // P3-06 §2.4 nói màn này KHÔNG có nút thoát — nhưng "không có lối ra" chỉ đúng khi còn
+    // cái để bán. Trên xe không còn món nào đáng đồng nào thì không có lựa chọn nào để bắt
+    // người chơi chọn, và màn hình chỉ còn một cái tiêu đề với không một cái nút.
+    if (!items.length) {
+      const foot = this.el("div", "mk-foot");
+      foot.append(this.el("span", "mk-msg", "Trên xe không còn món nào bán được nữa."));
+      const out = this.el("button", "mk-btn primary", "Đẩy xe đi bán");
+      out.onclick = () => { w.econ.mustSell = false; this.render(); };
+      foot.append(out);
+      book.append(foot);
+    }
     return book;
   }
 
@@ -248,10 +286,14 @@ export class MarketView {
     const left = this.el("div");
     left.append(this.el("div", "mk-name", d.label));
     const pr = this.el("div", "mk-price", `${money(unitPriceVnd(g, day, this.w.suppliers))}/${d.unit}`);
-    if (day > 1) pr.append(this.el("span", "mk-y", `hôm qua ${money(vnd(priceOf(g, day - 1)))}`));
+    // dòng mờ này để học pattern "thứ Hai đắt, thứ Năm rẻ" BẰNG MẮT, nên hai con số phải
+    // CÙNG MỘT LOẠI giá. Giá trần hôm qua so với giá đã bớt mối quen hôm nay thì dạy ngược:
+    // ngày 20, bà Tám streak 9 → "43.000₫ · hôm qua 44.000₫" trong khi thật ra hôm qua trả
+    // 39.500₫, tức giá TĂNG. Mối càng thân sai càng nặng.
+    if (day > 1) pr.append(this.el("span", "mk-y", `hôm qua ${money(unitPriceVnd(g, day - 1, this.w.suppliers))}`));
     left.append(pr, this.el("div", "mk-have", `trong thùng: ${this.haveText(g)}`));
-    const step = this.el("div", "mk-step");
     const n = this.basket[g] ?? 0;
+    const step = this.el("div", "mk-step");
     const minus = this.el("button", "", "−"), plus = this.el("button", "", "+");
     minus.setAttribute("aria-label", `bớt ${d.label}`); plus.setAttribute("aria-label", `thêm ${d.label}`);
     minus.disabled = n <= 0;
@@ -289,17 +331,28 @@ export class MarketView {
     if (total > w.money.cash + plan.credit) return;
     for (const [id, v] of plan.by) borrow(state(w.suppliers, id), v, day);
     w.money.cash -= total - plan.credit;
-    w.econ.today.market += total;
-    // tiền lẻ: đổi bạc lớn lấy bạc nhỏ — không mất tiền, chỉ là có sẵn để thối
-    w.econ.float = w.econ.floatLeft = this.float * 1000;
+    // sổ ghi tiền RA KHỎI KÉT, không ghi giá trị giỏ hàng: phần ghi nợ mối chưa trả đồng nào
+    // (nó sẽ thành dòng `debtRepay` hôm mình trả). Ghi cả `total` thì mua chịu 38 ngàn với 20
+    // ngàn tiền mặt mà sổ ghi "chợ sáng −58.000₫".
+    w.econ.today.market += total - plan.credit;
+    // tiền lẻ: đổi bạc lớn lấy bạc nhỏ — không mất tiền, chỉ là có sẵn để thối. Đổi được
+    // nhiều nhất là đúng số đang có trong ống sau khi trả tiền hàng.
+    w.econ.float = w.econ.floatLeft = Math.max(0, Math.min(this.float * 1000, w.money.cash));
     afterMarket(w.suppliers, new Set(Object.entries(this.basket).filter(([, n]) => n).map(([g]) => GOODS[g as GoodId].seller as SupplierId)), day);
     const bought: MarketResult["bought"] = [];
     for (const [g, n] of Object.entries(this.basket)) {
       if (!n) continue;
+      // `unitPriceVnd` ĐÃ tính người chơi khoản tăng giá của mối quen mất mặt, nên mốc
+      // chuyện cũng phải được ghi — nếu không thì nó chỉ tồn tại ở đường bot (P4-04 §2.3).
+      if (w.story && quenMat(g as GoodId, day, w.suppliers)) moment(w.story, "QUEN_MAT_DAT_HANG");
       buy(w.inventory, g as GoodId, n, day);
       bought.push({ good: g as GoodId, units: n });
     }
     w.inventory.lastBasket = { ...this.basket };
+    // P4-04 §2.3 — "còn cái xe… con tính sao thì tính": ngày 35–39 người chơi trả lời bằng
+    // việc MUA HÀNG. `buyBasket` (bot) ghi sẵn; người thật đi qua đây, không ghi thì nhánh
+    // kết đó chết với mọi người chơi thật.
+    if (w.story) noteBasketLoaves(w.story, day, this.basket.BANH ?? 0);
     w.econ.notices = [];
     this.close();
     this.opts.onDone({ spent: total, bought });

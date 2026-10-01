@@ -20,7 +20,7 @@ import { GossipCorner } from "../ui/stall/GossipCorner";
 import { NotebookView } from "../ui/notebook/NotebookView";
 import { logNote } from "../sim/notebook";
 import { CLAIM } from "../sim/gossip";
-import { dishQuality, portionsFor, stockOf, take } from "../sim/econ";
+import { dishQuality, portionsFor, stockOf, take, goodsFor } from "../sim/econ";
 import { RITUAL_LINES, RITUAL_PRAYER, RITUAL_STEPS } from "../sim/till";
 import { dirtMul, has } from "../sim/equipment";
 import { labelOf } from "../sim/order";
@@ -41,7 +41,8 @@ import {
   STATIONS, blockedReason, stationAtTile, stationNear, type Station,
 } from "../world/stations";
 import {
-  BASE, FX, TILE, buildTextures, createSign, floorTextureAt, footY, textureForTile,
+  BASE, FX, HELD, TILE, buildTextures, createSign, floorTextureAt, footY, preloadArt,
+  textureForTile,
 } from "../art";
 import { Player } from "../entities/Player";
 import { Hud } from "../ui/Hud";
@@ -60,6 +61,16 @@ const HUSH_ON: ReadonlySet<StimId> = new Set<StimId>(["BURNT_OR_COLD", "DROPPED_
 
 /** Nhạc dừng bao nhiêu giây sau một sự kiện tiêu cực (P5-03 §6.5 #2). */
 const HUSH_SECONDS = 6;
+
+/** Khoảng lặng ngày 40 dài bao nhiêu giây THẬT, và sau bao lâu mới cho bấm bỏ qua. */
+const FINALE_SECONDS = 40;
+const SKIP_AFTER = 1.5;
+
+/**
+ * Giữ C = xoay người che tay (P1-02 §2.8 Công cụ 3). Hệ số occluder 0,45 không được
+ * miễn phí: mọi thao tác chậm 1,3× và không chạy được — đúng cái giá doc ghi.
+ */
+const COVER_SLOW = 1.3;
 
 /**
  * Quán bánh mì ở góc hẻm — scene này chỉ ĐIỀU PHỐI.
@@ -87,7 +98,10 @@ export class StallScene extends Phaser.Scene {
   private overhearTier: Tier = 0;
   /** Sổ tay mở giữa ngày (Tab) — pause HOÀN TOÀN, kể cả kiên nhẫn của khách (CANON §15.2). */
   private notebook: NotebookView | null = null;
-  /** Chất lượng ổ bánh mì vừa lấy ở kệ, và của ổ vừa gói (P3-03 dishQuality) — người chơi không thấy số này. */
+  /**
+   * Chất lượng lô bánh của ổ ĐANG CẦM TRÊN TAY, và của ổ vừa gói (P3-03 dishQuality) —
+   * người chơi không thấy số này. Đi theo ổ suốt kệ → lò → thớt → khách: xem `handCrust`.
+   */
   private breadQ = 1;
   /** Khách vừa mua chịu — còn vài giây để bấm G ghi sổ. */
   private ritualOffered = false;
@@ -96,6 +110,8 @@ export class StallScene extends Phaser.Scene {
   /** Lúc gói xong ổ đang cầm — để biết người chơi có làm TRƯỚC khi khách gọi không (T-B). */
   private dishReadyAt = 0;
   private pendingDebt: { record: import("../sim/till").DebtRecord; name: string; until: number } | null = null;
+  /** Bấm G lúc tay còn bận nhận tiền: NHỚ lại, ghi ngay khi rảnh — không vứt cú bấm đi. */
+  private debtQueued = false;
   private dishQ = 1;
 
   private near: Station | null = null;
@@ -111,13 +127,28 @@ export class StallScene extends Phaser.Scene {
    * đi rót trà, canh lò, rồi quay lại kẹp tiếp.
    */
   private boardLoaf: Ingredient[] | null = null;
-  /** `warmth` của ổ trên tay và ổ gác trên thớt — P1-01 §2.4, 1 = vừa ra lò. */
+  /**
+   * MỖI Ổ MANG THÔNG SỐ CỦA CHÍNH NÓ — P1-01 §2.4. Ba số đi thành một bộ và phải đi
+   * cùng nhau qua mọi chặng: kệ → lò (`OvenLoaf`) → tay → thớt → khách.
+   *
+   *   warmth  1 = vừa ra lò, tụt dần (`sim/loaf.ts`)
+   *   crust   độ giòn lúc rút khỏi lò — `serveDish` đọc để biết ổ non hay tới
+   *   q       chất lượng lô bánh lấy ở kệ (`breadQ`) — vào `dishQuality`
+   *
+   * Trước đây chỉ `warmth` có bản riêng cho thớt: `crust` và `q` là biến dùng chung,
+   * nên gác ổ A trên thớt rồi nướng ổ B là ổ A bị chấm bằng thông số của ổ B.
+   */
   private handWarmth = 0;
   private boardWarmth = 0;
   private handSteam!: Steam;
   private boardSteam!: Steam;
-  /** Độ giòn của ổ đang cầm (P1-01 §2.4). */
+  /** Ổ đang gác trên thớt, vẽ thật trong thế giới — khói tắt khi nguội, ổ thì không. */
+  private boardLoafImg!: Phaser.GameObjects.Image;
+  /** Thân người xoay che tay khi giữ C — occluder phải NHÌN THẤY (CANON §5). */
+  private coverGfx!: Phaser.GameObjects.Graphics;
   private handCrust = 0;
+  private boardCrust = 0;
+  private boardQ = 1;
   /** Lò 3 slot chạy nền — bỏ ổ vào rồi đi làm việc khác được. */
   private oven = new Oven();
   private ovenGfx!: Phaser.GameObjects.Graphics;
@@ -177,10 +208,20 @@ export class StallScene extends Phaser.Scene {
     this.handWarmth = 0;
     this.boardWarmth = 0;
     this.handCrust = 0;
+    this.boardCrust = 0;
+    this.breadQ = 1;
+    this.boardQ = 1;
+    this.finaleAt = -1;
+    this.pendingDebt = null;
+    this.debtQueued = false;
     this.oven = new Oven();
     this.grip = new Grip();
     // P3-04 — đồ nghề đổi CẢM GIÁC thao tác, không bỏ thao tác nào (TB-2)
-    if (has(this.world.equipment, "LO_GAS")) { this.oven.rateMul = 1.35; this.oven.burnAt = 1.25; }
+    // ⚖️ CÂN BẰNG — `burnAt` lò gas 1,25 → 1,70, đi kèm `CRUST.BURNT` 1,00 → 1,30 (xem
+    // `sim/oven.ts`). P3-04 A1 hứa lò gas "nướng nhanh hơn, và cửa sổ trước khi cháy RỘNG
+    // HƠN"; vì `rateMul` 1,35 bóp mọi cửa sổ lại 1/1,35, ngưỡng cháy phải nới theo mới
+    // giữ được lời hứa: READY→BURNT 12,7 s (lò gas) so với 11,7 s (lò than).
+    if (has(this.world.equipment, "LO_GAS")) { this.oven.rateMul = 1.35; this.oven.burnAt = 1.7; }
     if (has(this.world.equipment, "KHUNG_GIA_CO")) this.grip.lossMul = 0.85;
     this.handsBusyUntil = 0;
     this.hands = "CLEAN";
@@ -191,6 +232,9 @@ export class StallScene extends Phaser.Scene {
     this.off = [];
     // Reload giữa buổi: đồng hồ đã được DayScene đặt về đúng giờ đã lưu.
     this.resumed = !!data.resume;
+    // Phaser dùng lại instance scene, nên field initializer KHÔNG chạy lại giữa hai ngày.
+    // Quên reset là nghi thức đốt vía chỉ mời được đúng một lần cả mùa.
+    this.ritualOffered = false;
     if (!this.resumed) this.clock.reset();
     this.clock.paused = false;
     // CANON §15.2 / P0-02 §2.2: đồng hồ VẪN trôi, chỉ chậm một nửa.
@@ -198,6 +242,11 @@ export class StallScene extends Phaser.Scene {
   }
 
   private get world() { return this.ctx.world; }
+
+  /** Vào thẳng scene này (dev, test) mà chưa qua BootScene thì tự tải lấy ảnh. */
+  preload() {
+    preloadArt(this);
+  }
 
   create() {
     // Vỡ ngay nếu ai đó vừa sửa bản đồ mà chặn mất cổng khách hay chỗ xếp hàng.
@@ -217,6 +266,11 @@ export class StallScene extends Phaser.Scene {
     this.hud = new Hud(this, this.settings, () => (this.paused ? this.resume() : this.pause()));
     this.handSteam = new Steam(this);
     this.boardSteam = new Steam(this);
+    // Ổ gác trên thớt phải THẤY được. Trước đây chỉ có khói, mà khói tắt hẳn khi ổ nguội
+    // — đúng lúc người chơi quên ổ lâu nhất thì trên thớt lại chẳng còn gì để nhắc.
+    this.boardLoafImg = this.add.image(0, 0, HELD.key("loaf_hot"))
+      .setOrigin(0.5, 0.5).setDepth(LABEL_DEPTH - 2).setVisible(false);
+    this.coverGfx = this.add.graphics();
     this.ovenGfx = this.add.graphics().setDepth(LABEL_DEPTH + 2);
     this.gripGfx = this.add.graphics();
     this.dirtGfx = this.add.graphics().setDepth(LABEL_DEPTH - 3);
@@ -249,9 +303,16 @@ export class StallScene extends Phaser.Scene {
       (id) => this.intents.push(() => this.onPlace(id)),
       (i) => this.usePreset(i),
       (id, stack) => {
-        const inStack = stack.filter((x) => x === id).length;
+        // Đếm theo HÀNG TRONG KHO, không theo id nguyên liệu: `dualeo` và `hanhngo`
+        // cùng rút từ một hàng RAU (`goods.json → ingredientGood`). Đếm theo id thì
+        // còn 2 phần rau vẫn đặt được 2+2, rồi `take()` lúc gói trả rỗng trong im lặng
+        // — luật "hết là hết" (P3-03 KH-3) thủng đúng ở chỗ đồ dùng chung.
+        const mine = new Set(goodsFor(id));
+        const inStack = stack.filter((x) => goodsFor(x).some((g) => mine.has(g))).length;
         return portionsFor(this.world.inventory, id, this.world.progress.dayIndex) > inStack ? null : `hết ${labelOf(id)} rồi`;
       },
+      () => this.orderIsEmptyLoaf(),
+      (i) => this.consumePreset(i),
     );
     if (has(this.world.equipment, "DAO_BEN")) this.assembly.wrapTol = 0.30;
     if (has(this.world.equipment, "KEP_GAP")) this.assembly.addCooldownMs = 350;
@@ -278,9 +339,34 @@ export class StallScene extends Phaser.Scene {
       };
     }
 
+    // Vào lại giữa buổi: dựng lại ổ dở đúng như lúc rời đi. Ngày mới thì dọn sổ.
+    {
+      const st = w.stall;
+      if (this.resumed) {
+        if (st.board) {
+          this.boardLoaf = st.board.dish as Ingredient[];
+          this.boardWarmth = st.board.warmth; this.boardCrust = st.board.crust; this.boardQ = st.board.q;
+        }
+        if (st.hand) {
+          this.player.hand = st.hand.item as Player["hand"];
+          this.handWarmth = st.hand.warmth; this.handCrust = st.hand.crust; this.breadQ = st.hand.q;
+        }
+      }
+      st.board = null; st.hand = null;
+    }
+
     music.duck(false);
     this.syncMusic();
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      // Ổ đang dở phải sống qua lần thoát: bánh đã bị trừ khỏi kho từ lúc lấy ở kệ, nên
+      // quên lưu là mỗi lần về sảnh bốc hơi một ổ (P0-02 §2.8).
+      const st = this.world.stall;
+      st.board = this.boardLoaf
+        ? { dish: [...this.boardLoaf], warmth: this.boardWarmth, crust: this.boardCrust, q: this.boardQ }
+        : null;
+      st.hand = this.player.hand !== "empty"
+        ? { item: this.player.hand, warmth: this.handWarmth, crust: this.handCrust, q: this.breadQ }
+        : null;
       // Rời quầy giữa lúc pause ("Lưu và về sảnh", "Chơi lại ngày này"): nhạc đang bị hạ
       // −12 dB phải trả về, và phải báo hết pause cho telemetry.
       if (this.paused && !this.closed) {
@@ -373,7 +459,9 @@ export class StallScene extends Phaser.Scene {
           isCounterEnd: code === "Q" && (tileAt(tx - 1, ty) !== "Q" || tileAt(tx + 1, ty) !== "Q"),
           isStation: stationAtTile(tx, ty) !== null,
         });
-        if (!key) continue;
+        // Vật CHỈ CÓ ẢNH THẬT (bảng gỗ, bình chữa cháy) mà ảnh chưa tải về thì
+        // bỏ qua hẳn — thà thiếu một món đạo cụ còn hơn một ô vuông xanh lè.
+        if (!key || !this.textures.exists(key)) continue;
 
         const img = this.addAt(key, tx, ty);
         placed.push(img);
@@ -478,7 +566,8 @@ export class StallScene extends Phaser.Scene {
           down: this.keys.S.isDown || this.keys.DOWN.isDown,
           left: this.keys.A.isDown || this.keys.LEFT.isDown,
           right: this.keys.D.isDown || this.keys.RIGHT.isDown,
-          run: this.keys.SHIFT.isDown,
+          // Xoay người che tay thì không chạy được — một nửa cái giá của Công cụ 3.
+          run: this.keys.SHIFT.isDown && !this.keys.C.isDown,
         }, dt);
         this.near = stationNear(this.player.x, this.player.y);
         // Đi khỏi thớt khi bảng đang mở = gác ổ lại, không phải bỏ ổ.
@@ -488,6 +577,7 @@ export class StallScene extends Phaser.Scene {
       },
       craft: (dt) => {
         for (const act of this.intents.splice(0)) act();
+        this.tickDebt();
         this.tickStation(dt * 1000);
         for (const _ of this.oven.tick(dt)) {
           // cháy trong lò: có MÙI — cả hàng cùng biết, kể cả người đang bấm điện thoại
@@ -512,7 +602,6 @@ export class StallScene extends Phaser.Scene {
       perception: (dt) => {
         this.elapsed += dt;
         this.service.ovenHot = this.oven.busy || this.service.servedCount > 0;
-        this.tickFinale();
         this.service.perceive(dt, this.elapsed, this.occluders());
       },
       npc: (dt) => {
@@ -531,8 +620,13 @@ export class StallScene extends Phaser.Scene {
     this.tickVia();
         this.drainService();
         telemetry.dialogDeferred = this.service.dialogDeferred;
+        // Khoảng lặng ngày 40 phải được quyền mở TRƯỚC cú đóng quầy theo đồng hồ, và
+        // trong CÙNG frame mà khách cuối vừa biến mất — bước `npc` ngay trên vừa set
+        // `lanLeft`. Chạy nó ở bước `perception` (trước `npc`) thì frame nào đồng hồ đã
+        // qua 11h00 là `close` cướp mất cả 40 giây.
+        this.tickFinale();
         // Hết giờ thì khách đang chờ được mời về (`closed`); đợi họ đi khuất mới đóng quầy.
-        if (this.clock.isOver && !this.service.busy) this.close("CLOCK");
+        if (this.clock.isOver && !this.service.busy && this.finaleAt < 0 && !this.hasFinale) this.close("CLOCK");
       },
       render: () => this.renderSync(),
       renderPaused: () => this.renderSync(),
@@ -580,13 +674,14 @@ export class StallScene extends Phaser.Scene {
   private renderSync() {
     this.syncActors();
     this.syncMusic();
-    this.player.draw(this.settings.reducedMotion);
+    this.player.draw(this.settings.reducedMotion, this.keys.C.isDown);
     for (const a of this.actors.values()) a.draw(this.settings.reducedMotion, this.time.now, this.zonePoint, this.elapsed);
     this.drawRing();
     this.drawSteam();
     this.drawOven();
     this.drawGrip();
     this.drawDirt();
+    this.drawCover();
     this.corner?.draw(this.overhearTier, this.clock.minutes, this.time.now, this.settings.reducedMotion);
     const ticket = this.frontTicket();
     this.hud.dockFeed(this.assembly.isOpen);
@@ -599,15 +694,7 @@ export class StallScene extends Phaser.Scene {
       ticket: ticket,
       carry: this.player.hand === "loaf_filled" ? this.dish : null,
       hands: this.hands,
-      prompt: this.pendingDebt && this.elapsed <= this.pendingDebt.until ? `G — ghi sổ nợ: ${this.pendingDebt.name} ${this.pendingDebt.record.trueAmount.toLocaleString("vi-VN")}₫`
-        : this.handsBusy ? "tay đang bận…"
-        : this.near?.id === "oven" ? this.ovenPrompt()
-        : this.near?.id === "board" && !this.boardLoaf && this.player.hand === "empty" ? "thớt — bấm E để lau thớt"
-        : this.near?.id === "board" && this.boardLoaf
-        ? (this.player.hand === "empty"
-          ? `thớt — bấm E để kẹp tiếp (${this.boardLoaf.length} phần đã kẹp)`
-          : "thớt — đang có ổ kẹp dở, tay phải rảnh mới kẹp tiếp")
-        : null,
+      prompt: this.promptLine(),
     });
   }
 
@@ -629,6 +716,26 @@ export class StallScene extends Phaser.Scene {
     const { sx, sy } = toScreen(st.tx + 0.5, st.ty + 0.5);
     return { x: sx, y: footY(sy) - 30 };
   };
+
+  /**
+   * MỘT chỗ duy nhất quyết dòng nhắc dưới màn hình. Thứ tự ưu tiên là thứ tự "việc gấp
+   * nhất trước", và mỗi dòng phải là việc BẤM ĐƯỢC ngay lúc đó (P1-04 §2.4 mục 7).
+   */
+  private promptLine(): string | null {
+    const d = this.pendingDebt;
+    if (d && this.elapsed <= d.until) {
+      const amt = d.record.trueAmount.toLocaleString("vi-VN");
+      // Tay còn bận thì cú G vẫn được NHỚ (xem `writeDebt`) — nói rõ chứ không câm.
+      return `G — ghi sổ nợ: ${d.name} ${amt}₫${this.debtQueued ? " (ghi ngay khi rảnh tay)" : ""}`;
+    }
+    // P4-04 §2.2 — khoảng lặng ngày 40: một dòng nhắc kín đáo, không panel, không đếm ngược.
+    if (this.finaleAt >= 0 && this.elapsed - this.finaleAt > SKIP_AFTER) return "Enter — thôi, dọn hàng";
+    if (this.handsBusy) return "tay đang bận…";
+    if (this.keys.C.isDown) return "che tay — chậm 1,3× và không chạy được";
+    if (this.near?.id === "oven") return this.ovenPrompt();
+    if (this.near?.id === "board") return this.boardPrompt() ?? (this.player.hand === "empty" ? "thớt — bấm E để lau thớt" : null);
+    return null;
+  }
 
   private ovenPrompt(): string {
     const h = this.player.hand, n = this.oven.count;
@@ -672,6 +779,8 @@ export class StallScene extends Phaser.Scene {
       const w = this.world;
       if (ev.kind === "cost") {                        // trà là MỜI: tốn tiền, không phải bán
         w.money.cash -= ev.amount;
+        // Phải vào sổ, không thì cột "đếm tiền" buổi tối lệch đúng bội số của TEA_COST.
+        w.econ.today.fixed += ev.amount;
         bus.emit("money:changed", { delta: -ev.amount, balance: w.money.cash, reason: "TEA" });
         continue;
       }
@@ -680,7 +789,11 @@ export class StallScene extends Phaser.Scene {
         w.progress.today.served++;
         // P4-03 SK-20: cuốn sổ caro là cô Mai đưa NGÀY 9 — trước đó bán chịu thì chỉ nhớ trong đầu
         if (creditBookOpen(w.progress.dayIndex)) {
-          this.pendingDebt = { record: ev.record, name: ev.name, until: this.elapsed + 4 };
+          // Cửa sổ MỜI phải trùng cửa sổ NHẬN: cú bán vừa xong khoá tay 2,0 s
+          // (TAKE_MONEY), nên 4 giây ghi sổ đếm TỪ LÚC RẢNH TAY. Trước đây nó đếm ngay
+          // trong frame nhận tiền, HUD mời 4 s mà hệ chỉ nhận được 2 s cuối.
+          this.pendingDebt = { record: ev.record, name: ev.name, until: Math.max(this.elapsed, this.handsBusyUntil) + 4 };
+          this.debtQueued = false;
           this.hud.log(`${ev.name} mua chịu ${ev.record.trueAmount.toLocaleString("vi-VN")}₫ — bấm G để ghi sổ`);
         } else this.hud.log(`${ev.name} mua chịu ${ev.record.trueAmount.toLocaleString("vi-VN")}₫ — chưa có sổ, nhớ trong đầu`);
         continue;
@@ -699,15 +812,31 @@ export class StallScene extends Phaser.Scene {
     }
   }
 
-  /** G — ghi sổ nợ cho khách vừa mua chịu (2 giây tay, P3-03 §2.6). */
+  /**
+   * G — ghi sổ nợ cho khách vừa mua chịu (2 giây tay, P3-03 §2.6).
+   * Bấm sớm (tay còn bận nhận tiền) thì cú bấm được XẾP HÀNG, không bị vứt: `tickDebt`
+   * ghi giúp ngay khi tay rảnh. Vứt cú bấm đi là dạy người chơi rằng phím này hên xui.
+   */
   private writeDebt() {
     const p = this.pendingDebt;
     if (!p || this.elapsed > p.until) return;
-    if (this.handsBusy) { this.hud.log("tay đang bận"); return; }
+    if (this.handsBusy) { this.debtQueued = true; return; }
     p.record.playerWrote = p.record.trueAmount;
     this.pendingDebt = null;
-    this.handsBusyUntil = this.elapsed + 2.0;
+    this.debtQueued = false;
+    this.handsBusyUntil = this.elapsed + this.workSeconds(2.0);
     this.hud.log(`đã ghi sổ: ${p.name} ${p.record.trueAmount.toLocaleString("vi-VN")}₫`);
+  }
+
+  /** Cú G bấm sớm: giữ lại tới đúng lúc tay rảnh rồi mới ghi. */
+  private tickDebt() {
+    if (this.pendingDebt && this.elapsed > this.pendingDebt.until) { this.pendingDebt = null; this.debtQueued = false; }
+    if (this.debtQueued && !this.handsBusy) this.writeDebt();
+  }
+
+  /** Giữ C (xoay người che tay) thì thao tác chậm 1,3× — P1-02 §2.8 Công cụ 3. */
+  private workSeconds(s: number) {
+    return this.keys.C.isDown ? s * COVER_SLOW : s;
   }
 
   /** Thao tác giữ phím. Lò là chỗ duy nhất có "quá tay" — vạch đỏ luôn nhìn thấy (CANON T5). */
@@ -727,7 +856,9 @@ export class StallScene extends Phaser.Scene {
     }
 
     if (!this.busy || this.busy.st.id !== st!.id) this.busy = { st: st!, ms: 0 };
-    this.busy.ms += dtMs;
+    // Giữ C: thao tác chậm 1,3× (P1-02 §2.8 Công cụ 3) — thanh tiến trình bò chậm lại,
+    // nhìn thấy được ngay chứ không phải một hệ số giấu sau lưng.
+    this.busy.ms += this.keys.C.isDown ? dtMs / COVER_SLOW : dtMs;
 
     if (st!.overcookMs) {
       if (this.busy.ms >= st!.overcookMs) {              // giữ quá tay: cháy, không cứu được
@@ -756,10 +887,14 @@ export class StallScene extends Phaser.Scene {
     if (this.handsBusy) { this.hud.log("tay đang bận"); return; }
     const st = this.near;
     if (st?.id === "oven") { this.pressOven(); return; }
-    if (st?.id === "board" && this.boardLoaf && this.player.hand === "empty") { this.openBoard(); return; }
-    // thớt trống, tay không: lau thớt — WIPE_BOARD 2,5 s, −0,15 độ bẩn (P1-02 §2.10)
-    if (st?.id === "board" && !this.boardLoaf && this.player.hand === "empty") {
-      this.handsBusyUntil = this.elapsed + (has(this.world.equipment, "KHAN_3_MAU") ? 1.2 : 2.5);
+    if (st?.id === "board" && this.player.hand === "empty") {
+      // Ổ gác đã NGUỘI và chưa kẹp gì: việc đúng lúc này không phải kẹp nhân vào một ổ
+      // nguội ngắt, mà là cầm nó ra lò nướng lại (`Oven.put` giữ nguyên phần vỏ đã có,
+      // nên nướng lại không phải nút reset độ giòn miễn phí).
+      if (this.boardLoaf?.length === 0 && !isWarm(this.boardWarmth)) { this.liftBoardLoaf(); return; }
+      if (this.boardLoaf) { this.openBoard(); return; }
+      // thớt trống, tay không: lau thớt — WIPE_BOARD 2,5 s, −0,15 độ bẩn (P1-02 §2.10)
+      this.handsBusyUntil = this.elapsed + this.workSeconds(has(this.world.equipment, "KHAN_3_MAU") ? 1.2 : 2.5);
       this.addDirt(-0.15);
       this.hud.log("lau thớt");
       return;
@@ -767,14 +902,41 @@ export class StallScene extends Phaser.Scene {
     if (st && st.holdMs === 0 && !blockedReason(st, this.player.hand)) this.finish(st);
   }
 
+  /** Cầm ổ đang gác trên thớt lên tay — cả bộ thông số của nó đi theo. Thớt sạch trở lại. */
+  private liftBoardLoaf() {
+    this.boardLoaf = null;
+    this.pickUp(isWarm(this.boardWarmth) ? "loaf_hot" : "loaf_cold");
+    this.handWarmth = this.boardWarmth;
+    this.handCrust = this.boardCrust;
+    this.breadQ = this.boardQ;
+    this.hud.log("cầm ổ trên thớt lên");
+  }
+
+  /**
+   * Dòng nhắc ở thớt — phải nói ĐÚNG việc bấm phím sẽ làm, và luôn có ít nhất một
+   * đường ra. Trước đây ổ gác + tay cầm ổ nóng chỉ trả một dòng "kẹp xong ổ đó đã"
+   * mãi mãi, mà không phím nào làm được việc đó.
+   */
+  private boardPrompt(): string | null {
+    if (!this.boardLoaf) return null;
+    if (this.player.hand !== "empty") return "thớt — đang có ổ gác · Q bỏ ổ đang cầm vô thùng";
+    if (this.boardLoaf.length === 0 && !isWarm(this.boardWarmth)) {
+      return "thớt — ổ nguội rồi · E cầm lên nướng lại · Q bỏ vô thùng";
+    }
+    return `thớt — E kẹp tiếp (${this.boardLoaf.length} phần đã kẹp) · Q bỏ ổ vô thùng`;
+  }
+
   private finish(st: Station) {
     switch (st.id) {
       case "board":                                     // T2: mở bảng CHỌN NGUYÊN LIỆU
         // Đặt ổ nóng xuống thớt: tay rảnh, ổ nằm trên thớt cho tới khi gói.
-        if (this.boardLoaf) { this.hud.log("thớt đang có ổ kẹp dở — kẹp xong ổ đó đã"); return; }
+        // Thớt đã có ổ thì nói luôn đường ra, đừng chỉ nói "không được" (xem `boardPrompt`).
+        if (this.boardLoaf) { this.hud.log("thớt đang có ổ — bấm Q bỏ ổ đang cầm vô thùng"); return; }
         this.player.hand = "empty";
         this.boardLoaf = [];
-        this.boardWarmth = this.handWarmth;                    // ổ mang theo độ ấm của nó
+        this.boardWarmth = this.handWarmth;                    // ổ mang theo cả bộ thông số của nó
+        this.boardCrust = this.handCrust;
+        this.boardQ = this.breadQ;
         this.openBoard();
         return;
 
@@ -795,6 +957,7 @@ export class StallScene extends Phaser.Scene {
           const q = take(this.world.inventory, "bread", 1, this.world.progress.dayIndex);
           if (!q.length) { this.hud.log("hết bánh mì rồi — mai mua thêm"); return; }
           this.breadQ = q[0];
+          this.handCrust = 0;                            // ổ mới lấy ở kệ: chưa nướng
         }
         this.pickUp(st.gives);
     }
@@ -816,7 +979,10 @@ export class StallScene extends Phaser.Scene {
   private finishDish(dish: Ingredient[], evenWrap = false) {
     this.boardLoaf = null;
     this.grip.reset();                                 // cầm ổ mới gói lên: tay chắc lại từ đầu
+    // Ổ rời thớt lên tay thì cả bộ thông số của NÓ đi theo — không phải của ổ nào khác.
     this.handWarmth = this.boardWarmth;
+    this.handCrust = this.boardCrust;
+    this.breadQ = this.boardQ;
     this.dish = dish;
     this.dishReadyAt = this.elapsed;
     this.player.hand = "loaf_filled";
@@ -888,7 +1054,7 @@ export class StallScene extends Phaser.Scene {
     // TAKE_MONEY (P1-01 §2.11): 2,0 s nhận tiền — và tay dính tiền cho tới khi rửa.
     if (wasDish) {
       this.hands = "MONEY";
-      this.handsBusyUntil = this.elapsed + 2.0;
+      this.handsBusyUntil = this.elapsed + this.workSeconds(2.0);
     }
     // Autosave sau mỗi khách: DayScene nghe `npc:left` (P0-02 §2.6).
   }
@@ -927,13 +1093,32 @@ export class StallScene extends Phaser.Scene {
     st.cleanliness = Math.max(0, Math.min(1, st.cleanliness - d));
   }
 
-  /** Preset P1/P2/P3 (P1-01 §2.6): trả danh sách phần, trừ một phần chia sẵn. */
+  /**
+   * Preset P1/P2/P3 (P1-01 §2.6): CHỈ trả danh sách phần — thuần tuý, không trừ gì.
+   * Bảng kẹp nhân có thể từ chối áp preset (kho hết một món giữa chừng); trừ ngay ở đây
+   * là mất một phần chia sẵn mà ổ bánh không nhận được gì.
+   */
   private usePreset(i: number) {
     const p = this.world.stall.presets[i] as Preset | undefined;
     if (!p || p.prepped <= 0) return null;
+    return presetDish(p);
+  }
+
+  /** Ổ đã GÓI XONG bằng preset thứ i — giờ mới trừ phần chia sẵn. */
+  private consumePreset(i: number) {
+    const p = this.world.stall.presets[i] as Preset | undefined;
+    if (!p || p.prepped <= 0) return;
     p.prepped--;
     this.assembly.setPresets(this.world.stall.presets);
-    return presetDish(p);
+  }
+
+  /**
+   * Đơn hiện tại có phải "cho một ổ bánh mì không" (P4-05 §2.7 A) — chỉ lúc đó bảng kẹp
+   * nhân mới cho gói một ổ TRỐNG. Không có nhánh này thì ổ trống là ngõ cụt.
+   */
+  private orderIsEmptyLoaf() {
+    const it = this.service.front?.order?.intent;
+    return !!it && !it.nhan.length && !it.dayDu && it.rau === "khong";
   }
 
   /**
@@ -942,13 +1127,23 @@ export class StallScene extends Phaser.Scene {
    * một nút bấm. Đồ hỏng (bánh cháy) BẮT BUỘC bỏ — không có nút nhặt lên dùng tiếp (§7.2).
    */
   private discard() {
-    if (this.paused || this.player.hand === "empty") return;
+    if (this.paused) return;
     if (this.handsBusy) { this.hud.log("tay đang bận"); return; }
+    // Tay không mà đứng ở thớt: Q dọn ổ đang GÁC. Không có đường này thì một ổ gác với
+    // stack rỗng là ngõ cụt vĩnh viễn — không gói được, không lau thớt được, không bỏ
+    // được, mà dòng gợi ý vẫn mời "bấm E để kẹp tiếp".
+    if (this.player.hand === "empty") {
+      if (this.near?.id !== "board" || !this.boardLoaf) return;
+      this.boardLoaf = null;
+      this.handsBusyUntil = this.elapsed + this.workSeconds(1.0);
+      this.hud.log("bỏ ổ trên thớt vô thùng");
+      return;
+    }
     const wasBurnt = this.player.hand === "loaf_burnt";
     this.player.hand = "empty";
     this.dish = [];
     this.busy = null;
-    this.handsBusyUntil = this.elapsed + 1.0;
+    this.handsBusyUntil = this.elapsed + this.workSeconds(1.0);
     if (wasBurnt) { this.hud.log("cô Ba: \"bánh đó con để cô ăn.\""); moment(this.world.story, "BANH_DO_CON_DE_CO_AN"); }   // CANON §7.4: cô buồn chứ không la
   }
 
@@ -959,18 +1154,22 @@ export class StallScene extends Phaser.Scene {
   private pressOven() {
     const h = this.player.hand;
     if (h === "loaf_cold") {
-      if (!this.oven.put()) { this.hud.log("lò đầy rồi"); return; }
+      // Ổ mang cả chất lượng lô lẫn phần vỏ đã nướng dở vào lò (nướng lại ổ đã nguội).
+      if (!this.oven.put(this.breadQ, this.handCrust)) { this.hud.log("lò đầy rồi"); return; }
       this.player.hand = "empty";
+      this.handCrust = 0;
       return;
     }
     if (h !== "empty") { this.hud.log("tay đang cầm đồ"); return; }
     const l = this.oven.take();
     if (!l) { this.hud.log("lò đang trống"); return; }
-    const band = bandOfCrust(l.crust);
+    const band = bandOfCrust(l.crust, this.oven.burnAt);
     this.pickUp(band === "BURNT" ? "loaf_burnt" : "loaf_hot");
     this.handWarmth = 1;
     this.handCrust = l.crust;
+    this.breadQ = l.q;
     if (band === "RAW") this.hud.log("ổ này chưa giòn");
+    if (band === "SINGED") this.hud.log("ổ này sém cạnh rồi");
   }
 
   /** Hỏi chuyện khách đang đứng trước quầy (ASK_QUESTION) — tay bận ~2,5 s. */
@@ -979,7 +1178,7 @@ export class StallScene extends Phaser.Scene {
     const res = this.service.ask();
     if (!res.ok) { this.hud.log(res.reason ?? ""); return; }
     this.hud.log(`con: "${res.line}"`);
-    this.handsBusyUntil = this.elapsed + 2.5;
+    this.handsBusyUntil = this.elapsed + this.workSeconds(2.5);
   }
 
   /**
@@ -1024,15 +1223,18 @@ export class StallScene extends Phaser.Scene {
       g.fillStyle(0x1b2429, 0.9).fillCircle(cx, baseY, R + 3);
       g.lineStyle(2, 0x6d7b84, 1).strokeCircle(cx, baseY, R);
       if (!l) continue;
-      const band = bandOfCrust(l.crust);
+      // Vòng chia theo `burnAt` THẬT của lò này, không theo hằng số: lò gas có ngưỡng
+      // cháy riêng, lấy hằng số thì vòng đầy trước khi ổ cháy — vạch đỏ nói dối.
+      const burnAt = this.oven.burnAt;
+      const band = bandOfCrust(l.crust, burnAt);
       const col = band === "RAW" ? 0xe8e2d4 : band === "CRISP" ? 0xd9a441 : band === "SINGED" ? 0xa0582c : 0x3a2a22;
-      const frac = Math.min(1, l.crust / CRUST.BURNT);
+      const frac = Math.min(1, l.crust / burnAt);
       g.lineStyle(4, col, 1);
       g.beginPath();
       g.arc(cx, baseY, R, -Math.PI / 2, -Math.PI / 2 + frac * Math.PI * 2);
       g.strokePath();
       for (const n of [CRUST.READY, CRUST.SINGED]) {
-        const a = -Math.PI / 2 + (n / CRUST.BURNT) * Math.PI * 2;
+        const a = -Math.PI / 2 + (n / burnAt) * Math.PI * 2;
         g.lineStyle(2, 0xffffff, 0.9);
         g.lineBetween(cx + Math.cos(a) * (R - 4), baseY + Math.sin(a) * (R - 4), cx + Math.cos(a) * (R + 4), baseY + Math.sin(a) * (R + 4));
       }
@@ -1085,7 +1287,10 @@ export class StallScene extends Phaser.Scene {
     });
   }
 
-  /** Hơi khói trên ổ đang cầm và ổ gác trên thớt. Tắt khói = ổ đã nguội. */
+  /**
+   * Ổ gác trên thớt + hơi khói trên hai ổ (tay và thớt). Tắt khói = ổ đã nguội —
+   * nhưng bản thân Ổ thì vẫn nằm đó, thấy được, và mờ đi một chút để đọc ra "nguội".
+   */
   private drawSteam() {
     const rm = this.settings.reducedMotion, t = this.time.now;
     const held = this.player.heldSprite;
@@ -1094,9 +1299,36 @@ export class StallScene extends Phaser.Scene {
 
     const board = STATIONS.find((s) => s.id === "board")!;
     const { sx, sy } = toScreen(board.tx + 0.5, board.ty + 0.5);
-    this.boardSteam.draw(sx, footY(sy) - 44, LABEL_DEPTH - 1, t,
-      !!this.boardLoaf && !this.assembly.isOpen && isWarm(this.boardWarmth), rm);
-    if (this.assembly.isOpen) this.assembly.setWarm(isWarm(this.boardWarmth), t, rm);
+    const parked = !!this.boardLoaf && !this.assembly.isOpen;
+    const warm = isWarm(this.boardWarmth);
+    this.boardLoafImg.setVisible(parked).setPosition(sx, footY(sy) - 34).setAlpha(warm ? 1 : 0.72);
+    this.boardSteam.draw(sx, footY(sy) - 44, LABEL_DEPTH - 1, t, parked && warm, rm);
+    if (this.assembly.isOpen) this.assembly.setWarm(warm, t, rm);
+  }
+
+  /**
+   * Giữ C = xoay người che tay (P1-02 §2.8 Công cụ 3). Hệ số occluder 0,45 chỉ được
+   * tồn tại nếu người chơi THẤY mình đang che: CANON §5 "không có hoạt ảnh thì không
+   * có trạng thái". Đây là mảng thân người chắn giữa khách và món trên tay, cộng bóng
+   * đổ xuống thớt — vẽ tĩnh nên `reducedMotion` không phải tắt gì.
+   *
+   * CÒN THIẾU (cần sửa `entities/Player.ts`, file của người khác): tư thế xoay nghiêng
+   * 40° của chính nhân vật.
+   */
+  private drawCover() {
+    const g = this.coverGfx;
+    g.clear();
+    if (!this.keys.C.isDown || this.paused || this.closed) return;
+    const held = this.player.heldSprite;
+    const at = held.visible ? { x: held.x, y: held.y } : this.zonePoint("HANDS");
+    g.setDepth((held.visible ? held.depth : LABEL_DEPTH) + 2);
+    g.fillStyle(0x1b2429, 0.55).fillEllipse(at.x + 5, at.y + 3, 44, 30);   // lưng quay ra phía khách
+    g.lineStyle(3, 0xcdbb96, 0.85);                                        // cẳng tay vòng qua trước món
+    g.beginPath();
+    g.arc(at.x + 3, at.y + 5, 19, -2.7, -0.5);
+    g.strokePath();
+    const b = this.zonePoint("BOARD");
+    g.fillStyle(0x1b2429, 0.3).fillEllipse(b.x, b.y + 10, 66, 26);
   }
 
   /** Vòng sáng dưới chân trạm đang với tới được — người chơi không phải đoán. */
@@ -1152,8 +1384,44 @@ export class StallScene extends Phaser.Scene {
       ["Tiếp tục bán", () => this.resume()],
       ["Chơi lại ngày này", () => this.confirmReplay()],
       ["Dẹp hàng sớm", () => this.close("PLAYER")],
-      ["Lưu và về sảnh", () => this.day.quitToMenu()],
+      ["Lưu và về sảnh", () => this.confirmQuit()],
     ]);
+  }
+
+  /**
+   * "Lưu và về sảnh" giữa lúc còn người đứng chờ.
+   *
+   * P0-02 §2.8 ghi rõ "thoát bất cứ lúc nào, vào lại đúng chỗ" là TRỢ NĂNG, không được
+   * phạt — nên nút vẫn ở đó, vẫn bấm một cái là đi. Nhưng CANON §8e cũng không cho phép
+   * cú thoát đó XOÁ hậu quả đang lơ lửng: hiện tại ba người đang chờ biến mất sạch,
+   * `lost` không nhích, không ai nhớ gì, và `resumeAt` tua lịch qua luôn — tức là bỏ đi
+   * đúng lúc sắp bị bắt là thoát trắng án.
+   *
+   * Người đang chờ KHÔNG lưu được (SaveFile chưa có chỗ cho khách sống — xem báo cáo),
+   * nên chọn vế còn lại: họ tính là khách VỀ KHÔNG. Đi qua `tickNpcs(dayOver)` để
+   * `Service.leave(..., "closed")` chạy đủ: `onUnserved`, `npc:left` → autosave ghi
+   * TRƯỚC khi rời scene. Nói trước một câu để người chơi không bị mất ba người trong im lặng.
+   */
+  private confirmQuit() {
+    const waiting = this.service.customers.filter((c) => c.phase !== "leaving").length;
+    if (!waiting) { this.day.quitToMenu(); return; }
+    this.overlay?.destroy(true);
+    this.overlay = this.modal("Về sảnh bây giờ?", [
+      ["Bán nốt đã", () => this.showPauseMenu("Tạm dừng")],
+      ["Dẹp, về sảnh", () => this.quitWithCustomers()],
+    ], `Còn ${waiting} người đang đứng chờ. Về bây giờ là dọn hàng trước mặt họ:\nhọ về không, và họ có nhớ. Vào lại vẫn đúng giờ này.`);
+    this.overlayBack = () => this.showPauseMenu("Tạm dừng");
+  }
+
+  private quitWithCustomers() {
+    const waiting = this.service.customers.filter((c) => c.phase !== "leaving").length;
+    // dayOver: true → mỗi người còn đứng chờ được `leave(c, "closed")` đúng một lần.
+    this.service.tickNpcs(0, {
+      minutes: this.clock.minutes, pressure: !this.settings.noTimePressure, dayOver: true,
+    });
+    this.world.progress.today.lost += waiting;
+    this.drainService();
+    this.day.quitToMenu();
   }
 
   /**
@@ -1246,17 +1514,35 @@ export class StallScene extends Phaser.Scene {
    * Người chơi vẫn đi lại, dọn quầy được — bấm phím bất kỳ (E/Space/Enter) là qua màn kết.
    * Không nhạc, không swell (P4-03 §2.5).
    */
+  /** Ngày cuối mùa mới có khoảng lặng — ngoài ngày đó, đồng hồ đóng quầy như thường. */
+  private get hasFinale() {
+    return this.world.progress.dayIndex >= SEASON_DAYS;
+  }
+
   private tickFinale() {
-    if (this.world.progress.dayIndex < 40 || this.closed) return;
-    if (this.finaleAt < 0 && this.service.lanLeft && !this.service.busy) {
+    if (!this.hasFinale || this.closed) return;
+    // Chị Lan đi rồi là mở khoảng lặng. Hết giờ mà chị Lan chưa từng tới (vào lại giữa
+    // buổi thì lịch của chị đã bị `resumeAt` cắt mất) thì đồng hồ mở thay — không có
+    // nhánh nào để ngày 40 kết thúc mà KHÔNG có khoảng lặng.
+    if (this.finaleAt < 0 && (this.service.lanLeft || this.clock.isOver) && !this.service.busy) {
       this.finaleAt = this.elapsed;
       this.hud.log("Cô Ba: Hết rồi hả con.");
       music.duck(true);
-      const skip = () => { if (this.finaleAt >= 0 && this.elapsed - this.finaleAt > 1.5) this.close("PLAYER"); };
-      this.input.keyboard?.once("keydown-ENTER", skip);
-      this.input.keyboard?.once("keydown-SPACE", skip);
+      // `once` tự tiêu ngay lần bấm ĐẦU TIÊN, kể cả cú bấm trong 1,5 giây đầu lúc `skip`
+      // cố ý không làm gì — bấm sớm một cái là phím bỏ qua chết hẳn. Dùng `on`, và chỉ
+      // gỡ tay nghe khi đã thật sự bỏ qua.
+      const kb = this.input.keyboard;
+      const skip = () => {
+        if (this.finaleAt < 0 || this.elapsed - this.finaleAt <= SKIP_AFTER) return;
+        off();
+        this.close("PLAYER");
+      };
+      const off = () => { kb?.off("keydown-ENTER", skip); kb?.off("keydown-SPACE", skip); };
+      kb?.on("keydown-ENTER", skip);
+      kb?.on("keydown-SPACE", skip);
+      this.off.push(off);
     }
-    if (this.finaleAt >= 0 && this.elapsed - this.finaleAt >= 40) this.close("PLAYER");
+    if (this.finaleAt >= 0 && this.elapsed - this.finaleAt >= FINALE_SECONDS) this.close("PLAYER");
   }
 
   /** Tab — sổ tay giữa ngày. Mở sổ = pause hoàn toàn; đóng sổ = bán tiếp. */

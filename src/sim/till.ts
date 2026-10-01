@@ -66,6 +66,12 @@ export type ChangeOutcome = { ok: true; need: number } | { ok: false; need: numb
  * Thối tiền: 35% khách đưa vừa đủ, 40% đưa tờ chẵn chục, 25% đưa tờ 50k (trung bình ~8k
  * tiền thối mỗi lượt — P3-03 §2.8). Thiếu lẻ ≤ 5k thì làm tròn xuống; thiếu hơn thì chạy qua
  * cô Mai đổi (khách phải đứng chờ).
+ *
+ * Khách đưa vừa đủ thì mình CÓ THÊM lẻ (20k + 5k vô hộp) — đó là `SMALL_NOTE_RECOVERY = 0,35`
+ * của P3-03 §2.8, không phải tiền từ không khí. Đo 300 mùa × 40 ngày × 18 khách: mang 100k
+ * thì 29% số ngày có lúc hết lẻ, 200k còn 1%, 300k thì không bao giờ — đúng bảng "đủ cho
+ * ~19 / ~38 / ~58 giao dịch" của doc. Giá của 300k là 300k nằm trong hộp, không mua hàng
+ * được — chỗ đó phải do màn chợ thu (trừ vào két), không phải do chỉnh hệ số ở đây.
  */
 export function makeChange(price: number, float: { floatLeft: number }, roll: number): ChangeOutcome {
   const paid = roll < 0.35 ? price : roll < 0.75 ? Math.ceil(price / 10000) * 10000 : Math.max(50000, Math.ceil(price / 50000) * 50000);

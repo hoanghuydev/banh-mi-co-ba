@@ -12,7 +12,9 @@
  *             kéo ghế. Một ô là không lọt: thân người rộng 0,6 ô nên khe 1 ô chỉ đi
  *             được khi canh chính giữa, chơi rất ức chế.
  *   y5..y6    chỗ khách đứng gọi món, trong quán
- *   y7..y8    vỉa hè
+ *   y7..y8    vỉa hè — đồ đạc dồn hết về ĐẦU HẺM (x < 11). Khúc vỉa hè trước mặt quầy
+             (x = 11..17) để TRỐNG: đó là chỗ hàng khách đứng và chỗ khách đi từ
+             cổng vào, kê một cái ghế ra giữa đó là chắn ngay lối người ta đi.
  *   y9..y11   lòng đường
  *
  * Bốn cột ngoài cùng mỗi bên là khối nhà hàng xóm — đặc, không đi vào được.
@@ -21,14 +23,14 @@
  */
 export const MAP = [
   "NN###D############NN",  // y0  nhà hàng xóm · tường sau quán có CỬA ở x=5 · nhà hàng xóm
-  "###.K..O.....T.WP###",  // y1  kệ nguyên liệu · lò than · thùng trà đá · bồn rửa tay · chậu cây (góc trong cùng)
+  "###XK..O.....T.WP###",  // y1  bình chữa cháy · kệ nguyên liệu · lò than · thùng trà đá · bồn rửa tay · chậu cây
   "###..............##N",  // y2  lối đi sau quầy
   "###..............###",  // y3  lối đi sau quầy
   "###QQQQQQQQQQQQ..###",  // y4  QUẦY (thớt x=7, chỗ đưa hàng x=12) — lối ra 2 ô ở x=15,16
   "###..............##N",  // y5  chỗ khách đứng — FRONT_CENTER của bảng visibility
   "###..............###",  // y6  trong quán, sát mặt tiền
   "....................",  // y7  vỉa hè
-  ".Cs....b.MM...s...V.",  // y8  két nước · ghế nhựa · bàn có hũ đũa · xe máy dựng · ghế · thùng rác
+  ".Css.A.b.MM.......V.",  // y8  két nước · hai ghế nhựa · bảng gỗ · bàn có hũ đũa · xe máy dựng · thùng rác
   "....................",  // y9  lòng đường
   "....................",  // y10 lòng đường
   "....................",  // y11 lòng đường
@@ -40,7 +42,7 @@ export const WORLD_H = MAP.length;
 /** Ký tự bản đồ. Mỗi ký tự ứng với đúng một texture, tra ở `art/index.ts`. */
 export type TileCode =
   | "." | "#" | "N" | "D" | "Q" | "O" | "T" | "K" | "s" | "b" | "M" | "P"
-  | "C" | "V" | "W";
+  | "C" | "V" | "W" | "A" | "X";
 
 export function tileAt(tx: number, ty: number): TileCode {
   if (tx < 0 || ty < 0 || tx >= WORLD_W || ty >= WORLD_H) return "#";
@@ -63,6 +65,14 @@ export function floorAt(_tx: number, ty: number): Floor {
   if (ty <= 8) return "walk";
   return "road";
 }
+
+/**
+ * Hàng nào của lòng đường có vạch sơn giữa đường.
+ * Là DỮ KIỆN BẢN ĐỒ chứ không phải chuyện của lớp vẽ: vạch sơn chạy thành một
+ * đường liền, nên nó phải nằm ở một hàng cố định. Rắc theo hàm băm như ô sàn
+ * thường là ra mấy vệt trắng lốm đốm giữa đường, nhìn ra ngay là lỗi.
+ */
+export const ROAD_LANE_Y = 10;
 
 /** Bán kính va chạm của người chơi, tính theo ô. */
 export const BODY_RADIUS = 0.3;

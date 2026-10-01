@@ -5,8 +5,13 @@
  */
 export const PAL = {
   // ── ba loại mặt sàn: trong quán / vỉa hè / lòng đường
-  shopFloor: [0xd9d2c2, 0xd3ccbb, 0xdcd6c7, 0xcec7b6] as const,
-  shopJoint: 0xb0a794,
+  //
+  // Sàn quán là GẠCH MEN TRẮNG, không hoa văn. Đây là chỗ duy nhất trong game cố ý
+  // để trống hẳn: nó là phông cho khoảnh khắc lõi — khách đứng nhìn tay mình làm
+  // (T1). Sàn có hoa văn thì cái nền rối hơn chính thứ đứng trên nó. Vẫn giữ 4 sắc
+  // độ chênh nhau một chút để mặt sàn không phẳng lì như tờ giấy.
+  shopFloor: [0xf1efe9, 0xeceae3, 0xf4f2ed, 0xe8e6df] as const,
+  shopJoint: 0xd0cdc4,
   walkFloor: [0x9fa9ab, 0x99a4a7, 0xa5aeb0, 0x95a0a3] as const,
   walkJoint: 0x7a878b,
   roadFloor: [0x5f696e, 0x5b656a, 0x646e73, 0x586268] as const,

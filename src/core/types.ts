@@ -30,7 +30,7 @@ export type Slot = StallZone;
 export type CustomerSlot = "FRONT_CENTER" | "FRONT_SIDE" | "QUEUE_2" | "QUEUE_3" | "SEATED_FAR";
 export type ObsState = "UNAWARE" | "GLIMPSED" | "NOTICED" | "CONFIRMED";
 export type RelTier = "RIVAL" | "ACQUAINTANCE" | "FRIEND";
-export type SceneKey = "Boot" | "Menu" | "Day" | "Market" | "Stall" | "Evening";
+export type SceneKey = "Boot" | "Menu" | "Day" | "Market" | "Stall" | "Evening" | "Ending";
 export type AttentionTool = "TRA_DA" | "ASK_QUESTION" | "OCCLUDE_BODY" | "SWITCH_SIDE" | "CO_BA";
 
 /**

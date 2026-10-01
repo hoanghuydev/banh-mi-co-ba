@@ -22,6 +22,7 @@ npm run gates            # cổng P0: không phaser trong sim/, không Math.rand
 npm run validate:rules   # R001–R014 cho rule DB (P0-03 §2.3a)
 npm run lint:lines       # L001–L013 cho thoại tiếng Việt, `-- --fix` sửa NFC / kiểu dấu / viết hoa
 npm run content:stats    # đếm dòng/từ, đối chiếu mốc CANON §11
+python3 tools/prep-art.py       # rửa lại ảnh artist: art-raw/ -> public/art/ (cần Pillow)
 npm run sim -- --days 40 --policy newbie   # chạy 40 ngày không render (< 3 s)
 ```
 
@@ -194,11 +195,14 @@ src/
                luật chơi, không đụng Phaser — chạy headless được
   content/     npcs (§9) · lines/*.json (§11) · days/ · rules/ · redlines.json   dữ liệu viết tay
   art/         palette · canvas · tiles · building · counter · sign · props · character · fx · index
+               photo        art v2 — ảnh artist đè lên bản vẽ code (xem "Art v2" bên dưới)
   entities/    Player · CustomerActor                     vị trí, va chạm, sprite, bong bóng thoại
   ui/          theme · Hud · AssemblyPanel · stall/BubblePool   lớp thông tin + bảng kẹp nhân
   scenes/      Boot · Menu · Day (thường trực, sở hữu GameContext) → Market → Stall → Evening
   dev/         overlay F1–F8 + console — chỉ có ở dev build, tree-shake khỏi bản phát hành
 tools/         sim · validate-rules · lint-lines · content-stats · check-gates   (Node, qua tsx)
+               prep-art.py  rửa ảnh artist art-raw/ -> public/art/   (Python + Pillow)
+art-raw/       ảnh artist gửi, nguyên bản — KHÔNG đi vào bản build
 tests/         node:test
 ```
 
@@ -212,19 +216,34 @@ Nhìn từ ngoài đường vào: tường sau có cửa ra vào, hai bên là m
 trước quán là vỉa hè rồi tới lòng đường. Người chơi đứng sau quầy, có chừa một lối
 đi rộng 2 ô ở đầu quầy để còn ra ngoài dọn bàn, kéo ghế.
 
-### Điểm nối để thay art (v2)
+### Art v2 — ảnh thật của artist
 
-Toàn bộ hình ảnh v1 vẽ bằng `Phaser.Graphics` rồi nướng thành texture.
-Mọi thứ đi qua **một cửa duy nhất**: `src/art/index.ts`.
+Art v1 vẽ bằng `Phaser.Graphics` rồi nướng thành texture. **Art v2 KHÔNG thay thế v1
+mà ĐÈ LÊN nó**: `src/art/photo.ts` ghi đè đúng những key texture mà artist đã có ảnh,
+chạy ở cuối `buildTextures()`. Nhờ vậy món nào artist chưa vẽ (quầy tủ kính, tường,
+nhà hàng xóm, nhân vật, két nước, dưa leo, tương ớt) tự khắc còn nguyên bản vẽ code —
+không thủng lỗ, và không một file nào trong `core/`, `world/`, `entities/`, `scenes/`
+phải sửa: chúng chỉ biết TÊN texture, không biết texture ấy sinh ra bằng cách nào.
 
-Khi artist giao spritesheet:
+```
+art-raw/            ảnh artist gửi, NGUYÊN BẢN. Nằm ngoài public/ là cố ý: vite chép
+                    nguyên si public/ vào dist/, mà bộ ảnh gốc nặng ~10 MB
+  |  python3 tools/prep-art.py     chạy lại mỗi khi artist gửi file mới
+  v
+public/art/         ảnh đã rửa: tách nền đen, cắt sát alpha, XOAY ổ bánh về nằm ngang
+                    (ổ bánh nằm trên tay người chơi thì phải ngang), và ép ô sàn về
+                    hình thoi 2:1 đúng cỡ texture game
+  |  src/art/photo.ts              bảng chỗ đặt: cao bao nhiêu px, lệch trái phải bao nhiêu
+  v
+texture game        TILE.floor · PROP.* · HELD.key · FOOD.icon / big / loaf
+```
 
-1. Đổi `buildTextures()` trong `art/index.ts` thành `scene.load.atlas(...)`.
-2. Giữ nguyên bảng tên texture (`TILE`, `BUILD`, `COUNTER`, `PROP`, `FX`, `textureFor`).
-3. Xoá `art/tiles.ts`, `art/building.ts`, `art/counter.ts`, `art/props.ts`, `art/character.ts`.
+Hai file hai việc, không chồng lấn: **`prep-art.py` chỉ RỬA ảnh**, **`photo.ts` chỉ ĐẶT ảnh**.
+Muốn cái lò cao hơn thì sửa bảng `STANDING` trong `photo.ts`, không đụng script Python.
 
-Không file nào trong `core/`, `world/`, `entities/`, `scenes/` phải sửa —
-chúng chỉ biết tên texture, không biết texture được tạo ra bằng cách nào.
+Lưu ý cho lần artist vẽ tiếp — CANON §15 bắt icon nhân phải khác nhau về **hình dáng**
+chứ không chỉ khác màu: ảnh thịt nguội và chả lụa hiện đều là lát tròn hồng, in đen
+trắng ra là lẫn nhau. Bản vẽ code cũ cố tình cho thịt nguội hình vuông bo góc.
 
 ### Ba luật vẽ (đọc trước khi thêm đạo cụ) — ghi ở đầu `art/canvas.ts`
 

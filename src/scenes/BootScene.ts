@@ -1,9 +1,18 @@
 import Phaser from "phaser";
-import { buildTextures } from "../art";
+import { buildTextures, preloadArt } from "../art";
 
-/** Nướng texture + đợi font rồi sang menu. Không có asset ngoài nên gần như tức thì. */
+/**
+ * Tải ảnh artist + nướng texture + đợi font rồi sang menu.
+ *
+ * Ảnh phải tải XONG trước `buildTextures`, vì art v2 (`art/photo.ts`) đè lên art v1
+ * ngay trong đó. Ảnh chưa về kịp thì cảnh vẫn dựng được, chỉ là ra bản vẽ code.
+ */
 export class BootScene extends Phaser.Scene {
   constructor() { super("boot"); }
+
+  preload() {
+    preloadArt(this);
+  }
 
   async create() {
     buildTextures(this);

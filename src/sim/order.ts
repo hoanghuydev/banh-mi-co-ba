@@ -112,6 +112,15 @@ export type OrderSpec = {
 
 export function levelsOf(it: OrderIntent): Partial<Record<Ingredient, number>> {
   const lv: Partial<Record<Ingredient, number>> = {};
+  /**
+   * Nhân KHÔNG được gọi tên = mức 0, KHÔNG phải "khách không nhắc tới".
+   * Gọi tên nhân chính là cách nói ra cả hai vế: "cho một ổ pate" đã nói rằng ổ đó không
+   * có chả lụa, y như "cho một ổ bánh mì không" nói rằng ổ đó không có gì hết. Để mức
+   * `undefined` thì `diffDish` bỏ qua, và bỏ đại một miếng pate vào ổ bánh mì không vẫn
+   * được chấm hoàn hảo — T2 ("câu nói quyết định ổ bánh") chết ngay chỗ đó.
+   * Rau/sốt không cần dòng này: `veg`/`ot`/`tuong` bên dưới đã gán mức cho đủ cả năm thứ.
+   */
+  for (const n of NHAN) lv[n] = 0;
   for (const n of it.nhan) lv[n] = it.nhieu === n ? 3 : 2;
   const veg = it.rau === "day-du" ? 2 : it.rau === "it" ? 1 : 0;
   lv.dochua = veg; lv.dualeo = veg; lv.hanhngo = veg;
@@ -169,7 +178,19 @@ export function sayOrder(spec: OrderSpec): string {
     : `Cho một ổ ${it.nhan.map((n) => (it.nhieu === n ? `nhiều ${labelOf(n)}` : labelOf(n))).join(" với ")}`];
   if (it.rau === "it") parts.push("cho ít rau");
   else if (it.rau === "khong") parts.push("không rau");
-  for (const b of it.bo ?? []) if (b === "hanhngo") parts.push("không hành");
+  // Mọi thứ khách CẤM đều phải thành lời: mức 0 mà không ai nói ra thì bỏ vô là một khoản
+  // phạt UNWANTED câm — đúng thứ T2 cấm. Chỉ bỏ qua những thứ CÂU NÀY đã nói rồi:
+  // nhân không được kể tên (đã hàm ý mức 0), "không rau", "không ớt", "không tương".
+  const spoken = new Set<Ingredient>(it.nhan);
+  for (const i of INGREDIENTS) if (i.kind === "nhan" && !it.nhan.includes(i.id)) spoken.add(i.id);
+  if (it.rau === "khong") { spoken.add("dochua"); spoken.add("dualeo"); spoken.add("hanhngo"); }
+  if (it.ot === 0) spoken.add("ot");
+  if (it.tuong === 0) spoken.add("tuongot");
+  for (const b of it.bo ?? []) {
+    if (spoken.has(b)) continue;
+    spoken.add(b);
+    parts.push(b === "hanhngo" ? "không hành" : `không ${labelOf(b)}`);
+  }
   if (it.ot === 3) parts.push("nhiều ớt");
   else if (it.ot === 0) parts.push("không ớt");
   if (it.tuong === 3) parts.push("nhiều tương");
@@ -247,8 +268,9 @@ export function portionsOf(dish: readonly Ingredient[]) {
  *  · MISSING   — thứ khách gọi mà ổ không có
  *  · UNWANTED  — thứ khách đã NÓI không muốn ("không ớt") mà vẫn có
  *  · WRONG_RATIO — lệch mức quá dung sai ±0,25
- * Thứ khách KHÔNG nhắc tới (thêm một nhân khách không gọi) không phải lỗi đơn —
- * chỉ lời khách nói ra mới là ràng buộc cứng (CANON Đ3).
+ * Chỉ lời khách nói ra mới là ràng buộc cứng (CANON Đ3) — nhưng KỂ TÊN NHÂN cũng là nói:
+ * "cho một ổ pate" đồng thời nói rằng ổ đó không có chả lụa (xem `levelsOf`). Thứ thật sự
+ * không ai nhắc tới thì `spec.levels` để trống và vòng lặp dưới bỏ qua.
  * Kết quả xếp theo điểm giảm dần: phần tử đầu là ứng viên của `take(1)`.
  */
 export function diffDish(spec: OrderSpec, dish: readonly Ingredient[]): Defect[] {

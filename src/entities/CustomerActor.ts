@@ -45,6 +45,51 @@ const RAY_DEPTH = 9_450_000;
 
 export type ZonePoint = (slot: Slot) => { x: number; y: number };
 
+/**
+ * Chip tên: ở CHÂN, không ở trên đầu — xem `CustomerActor.draw`.
+ * 12 px dưới bàn chân là ngay dưới bóng đổ, chưa chạm tới đầu người đứng sau.
+ */
+const TAG_BELOW_FEET = 12;
+/** Mép an toàn khi kẹp overlay trong khung nhìn. */
+const EDGE = 6;
+/** Khe hở tối thiểu giữa hai bong bóng đã né nhau. */
+const BUBBLE_GAP = 6;
+
+type Box = { x0: number; y0: number; x1: number; y1: number };
+const overlaps = (a: Box, b: Box) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
+
+/**
+ * Ô thật của một bong bóng. `Container.getBounds()` chỉ gộp con nào CÓ `getBounds` —
+ * Graphics của Phaser thì không có, nên nó trả về đúng ô CHỮ, nhỏ hơn hẳn cái nền giấy.
+ * Nở ra theo đúng hình học của `BubblePool.setText`/`place`: nền rộng
+ * `max(chữ + 22, 60)`, cao `chữ + 14`, cái đuôi thò thêm 9 px, bóng đổ +2/+3.
+ */
+function bubbleBox(root: Phaser.GameObjects.Container, scale: number): Box {
+  const t = root.getBounds();
+  const w = Math.max(t.width / scale + 22, 60) * scale;
+  const h = (t.height / scale + 14) * scale;
+  return {
+    x0: t.centerX - w / 2, x1: t.centerX + w / 2 + 2 * scale,
+    y0: t.centerY - h / 2, y1: t.centerY + h / 2 + 9 * scale,
+  };
+}
+
+/**
+ * Sổ bố cục bong bóng của MỘT frame — P1-04 §2.9.
+ *
+ * Hai chỗ đứng trong hàng chờ cách nhau đúng (Δx+Δy)·TH/2 ≈ 34,5 px trên màn hình, mà
+ * một bong bóng hai dòng đã cao ~54 px. Hai người xếp sát nhau cùng nói thì bong bóng
+ * CHẮC CHẮN chồng nhau (~20 px với câu hai dòng, ~35 px với ba dòng — chữ bị cắt mất).
+ * Đây là hình học, không phải xui: chờ may là không bao giờ hết.
+ *
+ * Mỗi actor đặt xong thì ghi ô của mình vào đây; actor sau đọc và né. Ai đứng TRƯỚC
+ * (sy nhỏ hơn, gần quầy hơn) thì trồi LÊN, ai đứng SAU thì lùi XUỐNG — giữ nguyên thứ
+ * tự hàng chờ, nên bong bóng không bao giờ rời khỏi chủ của nó.
+ * `stamp` là `time` của scene: frame mới thì sổ tự trắng, không cần ai dọn.
+ */
+let bubbleStamp = -1;
+const bubbleBoxes: { sy: number; box: Box }[] = [];
+
 /** Lò xo của kênh dáng (P2-02 §3.2): K cứng, DAMP giảm chấn — cao thì "chắc", thấp thì "nhão". */
 const K = 120, DAMP = 14;
 type Spring = { v: number; x: number };
@@ -76,8 +121,8 @@ export class CustomerActor {
   private lastY: number;
   private bob = 0;
 
-  constructor(scene: Phaser.Scene, private c: Customer, private bubbles: BubblePool, textScale = 1,
-    /** P2-05: tên người chơi ghi trong sổ, hoặc "—". */
+  constructor(private scene: Phaser.Scene, private c: Customer, private bubbles: BubblePool, textScale = 1,
+    /** P2-05: tên người chơi ghi trong sổ, chưa ghi thì mô tả hình dáng. */
     private label: (c: Customer) => string = (x) => x.name) {
     // Texture nướng theo `memKey` (dáng người), không theo `id` (duy nhất mỗi lượt ghé).
     if (!scene.textures.exists(`${c.memKey}_s`)) buildBody(scene, c.memKey, c.body);
@@ -154,8 +199,17 @@ export class CustomerActor {
     const headX = sx + fidget, headY = footY(sy) - BODY_H + 12 - hop;
     const name = this.label(c);
     if (this.tag.text !== name) this.tag.setText(name);
-    this.tag.setPosition(sx, sy - BODY_H - 8).setDepth(depth + 1)
+    // Chip tên ở CHÂN, không ở trên đầu.
+    //
+    // Trên đầu thì chip của người đứng sau rơi thẳng vào thân — có khi vào cằm — của
+    // người đứng trước: hai chỗ đứng chỉ cách nhau 34,5 px màn hình mà một chip tên rộng
+    // gần 90 px, và chip của người ở quầy thì đè luôn nhãn trạm "quầy gọi món" ngay trên
+    // đầu họ. Ở chân thì chip đi theo đúng nhịp hàng chờ (cũng 34,5 px một bậc) nên hai
+    // chip KHÔNG BAO GIỜ chồng nhau, và không chip nào che mặt ai — mặt là kênh 1, thứ
+    // người chơi phải đọc được (CANON §5).
+    this.tag.setPosition(sx, footY(sy) + TAG_BELOW_FEET).setDepth(OVERLAY_DEPTH)
       .setAlpha(c.phase === "leaving" ? 0.45 : 0.9);
+    this.clampInView(this.tag);
 
     const g = this.fx;
     g.clear();
@@ -200,10 +254,45 @@ export class CustomerActor {
     if (c.say) {
       const b = this.bubbles.acquire(c.id);
       b.setText(c.say);
-      b.place(sx, sy - BODY_H - 46, OVERLAY_DEPTH + 2, c.slot > 0 ? 0.85 : 1, reducedMotion);
+      const scale = c.slot > 0 ? 0.85 : 1;
+      const depthB = OVERLAY_DEPTH + 2;
+      let bx = sx, by = sy - BODY_H - 46;
+      b.place(bx, by, depthB, scale, reducedMotion);
+
+      if (time !== bubbleStamp) { bubbleStamp = time; bubbleBoxes.length = 0; }
+      const box = bubbleBox(b.root, scale);
+      // né những bong bóng đã đặt trong frame này (xem `bubbleBoxes`)
+      for (const o of bubbleBoxes) {
+        if (!overlaps(box, o.box)) continue;
+        const dy = sy < o.sy ? o.box.y0 - BUBBLE_GAP - box.y1 : o.box.y1 + BUBBLE_GAP - box.y0;
+        by += dy; box.y0 += dy; box.y1 += dy;
+      }
+      // rồi kẹp trong mép khung nhìn — bong bóng mọc LÊN nên chỉ có mép trên là chạm được
+      const v = this.scene.cameras.main.worldView;
+      let dx = 0;
+      if (box.x1 > v.right - EDGE) dx = v.right - EDGE - box.x1;
+      if (box.x0 + dx < v.left + EDGE) dx = v.left + EDGE - box.x0;
+      let dy = 0;
+      if (box.y0 < v.top + EDGE) dy = v.top + EDGE - box.y0;
+      if (dx || dy) {
+        bx += dx; by += dy;
+        box.x0 += dx; box.x1 += dx; box.y0 += dy; box.y1 += dy;
+      }
+      if (bx !== sx || by !== sy - BODY_H - 46) b.place(bx, by, depthB, scale, reducedMotion);
+      bubbleBoxes.push({ sy, box });
     } else {
       this.bubbles.release(c.id, reducedMotion);
     }
+  }
+
+  /** Kéo một overlay vào trong khung nhìn — chữ chạy ra ngoài mép là chữ mất. */
+  private clampInView(t: Phaser.GameObjects.Text) {
+    const v = this.scene.cameras.main.worldView;
+    const hw = t.displayWidth / 2, hh = t.displayHeight / 2;
+    t.setPosition(
+      Math.min(Math.max(t.x, v.left + EDGE + hw), v.right - EDGE - hw),
+      Math.min(Math.max(t.y, v.top + EDGE + hh), v.bottom - EDGE - hh),
+    );
   }
 
   /**

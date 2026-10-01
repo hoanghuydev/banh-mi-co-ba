@@ -24,16 +24,26 @@ import {
  */
 const STYLE = `
 .ev-root{position:fixed;inset:0;z-index:8990;display:flex;align-items:center;justify-content:center;background:rgba(14,18,22,.4);font-family:"Be Vietnam Pro",system-ui,sans-serif;color:#2b2f31}
-.ev-book{width:min(760px,94vw);max-height:94vh;display:grid;grid-template-columns:1fr 1fr;background:#efe6d2;border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.45);overflow:hidden}
+/* hai hàng RÕ RÀNG: hàng sổ co được (minmax(0,1fr) — không có nó thì hàng tự phình theo nội
+   dung, đẩy chân trang ra ngoài max-height và overflow:auto của .ev-col không bao giờ chạy),
+   hàng chân trang đúng bằng nội dung. MarketView dùng flex cũng là cùng một ý. */
+.ev-book{width:min(760px,94vw);max-height:94vh;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:minmax(0,1fr) auto;background:#efe6d2;border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.45);overflow:hidden}
 .ev-col{padding:14px 18px;overflow:auto;min-height:0}
-.ev-left{border-right:2px solid #cdbf9f;font-family:ui-monospace,Consolas,monospace;font-size:.92em}
+/* index.html §CANON 15: CHỈ dùng font đã nạp VÀ có dấu. Be Vietnam Pro (9 face: 3 nét ×
+   latin / latin-ext / vietnamese) là font duy nhất bản dựng nạp. Consolas / "Segoe Print"
+   không có bảng tiếng Việt → trình duyệt ghép dấu rời: "tiêǹ chô˜", "gưỉ vê nhà".
+   Cảm giác máy đánh giữ bằng cột số đều (tabular-nums) + giãn chữ, không bằng font thiếu dấu. */
+.ev-left{border-right:2px solid #cdbf9f;font-size:.92em;letter-spacing:.02em;font-variant-numeric:tabular-nums}
 .ev-right{background:#f6f0e1}
 .ev-h{font-weight:700;font-size:1.08em;margin:0 0 8px;font-family:"Be Vietnam Pro",system-ui,sans-serif}
 .ev-r{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px dashed #d8cdb3}
+.ev-r span+span{white-space:nowrap;font-variant-numeric:tabular-nums}
 .ev-cash{margin-top:8px;font-weight:700}
 .ev-note{font-size:.85em;color:#6d624e;margin-top:6px}
 .ev-say{font-style:italic;color:#4a5a6a;margin:6px 0;font-size:.92em}
-.ev-ink{font-family:"Segoe Print","Comic Sans MS",cursive;color:#2f5d8a}
+/* "chữ viết tay": mực xanh + nghiêng + giãn chữ. Không có face viết tay nào có dấu tiếng
+   Việt được nạp, mà chữ vỡ dấu thì đọc còn tệ hơn là không có nét viết tay. */
+.ev-ink{font-style:italic;letter-spacing:.015em;color:#2f5d8a}
 .ev-due{padding:6px 0;border-bottom:1px dashed #d8cdb3}
 .ev-due .btns{display:flex;gap:6px;margin-top:4px}
 .ev-btn{font:inherit;font-size:.88em;padding:6px 12px;border-radius:6px;border:1px solid #b8ab8e;background:#fbf7ec;color:#2b2f31;cursor:pointer;min-height:32px}
@@ -44,6 +54,26 @@ const STYLE = `
 `;
 
 const money = (v: number) => `${Math.round(v).toLocaleString("vi-VN")}₫`;
+/** Dòng sổ ròng: quy ước của `EconToday` là DƯƠNG = tiền RA khỏi két. */
+const signed = (v: number) => `${v < 0 ? "+" : "−"}${money(Math.abs(v))}`;
+
+/**
+ * Biên con số ghi được vào sổ bán chịu (P3-03 §2.6 "bịt ăn gian (h)").
+ *
+ * Ghi rồi thì con số ghi LUÔN THẮNG: `recalledAmount` trả thẳng `playerWrote`, và `debtGap`
+ * bỏ qua mọi record đã ghi nên đối sổ với cô Ba cũng không cãi. Ô trống không kẹp = máy in
+ * tiền (gõ 9999 cho một ổ 25 ngàn thì mai khách trả 9.999.000₫).
+ *
+ * KHÔNG ép bằng đúng `trueAmount`: nhớ nhầm là cơ chế P3-02, ghi sai vài ngàn phải được.
+ * Biên ±50% (tối thiểu ±10 ngàn cho khoản nhỏ) chọn theo chính mức khách tự nhớ lệch ở
+ * `recalledAmount`: bias ±0,11 + drift 0,04/ngày × trần 10 ngày ≈ ±0,5 ở 2σ. Rộng bằng đó
+ * thì không cắt mất cái nhớ nhầm thật — mà người chơi ghi NGAY TỐI HÔM ĐÓ còn nhớ rõ hơn
+ * khách nhớ sau mười ngày — chỉ cắt con số phi lý.
+ */
+const WRITE_SLACK = 0.5, WRITE_SLACK_MIN = 10_000;
+const writeSlack = (t: number) => Math.max(t * WRITE_SLACK, WRITE_SLACK_MIN);
+const writeFloor = (t: number) => Math.max(1000, Math.round((t - writeSlack(t)) / 1000) * 1000);
+const writeCeil = (t: number) => Math.round((t + writeSlack(t)) / 1000) * 1000;
 
 const DUE_TEXT: Record<Due["kind"], (d: Due) => string> = {
   HUI: (d) => `ngày ${d.dueDay} · góp hụi kỳ ${d.id.split("_")[1]} (cô Mai) · ${money(d.amount)}`,
@@ -90,12 +120,23 @@ export class EveningView {
     const L = this.el("div", "ev-col ev-left");
     L.append(this.el("div", "ev-h", `Tối ngày ${day} — ${WEEKDAY_VI[weekdayIdx(day)]}`));
     const row = (a: string, b: string) => { const r = this.el("div", "ev-r"); r.append(this.el("span", "", a), this.el("span", "", b)); L.append(r); };
+    // Sổ phải cộng lại ĐÚNG bằng cái két: mỗi đồng ra/vào hôm nay có một dòng, không gộp,
+    // không giấu. Thứ tự theo lúc tiền đi trong ngày (chợ sáng → tiền chỗ → tối đếm).
     row(`bán được ${t.served} ổ`, `+${money(t.revenue)}`);
     if (et.market) row("chợ sáng", `−${money(et.market)}`);
+    if (et.debtRepay) row("trả nợ mối ở chợ", `−${money(et.debtRepay)}`);
     if (et.rent) row("tiền chỗ", `−${money(et.rent)}`);
+    if (et.deposit) row(et.deposit < 0 ? "cọc chỗ cũ trả lại" : "cọc chỗ mới", signed(et.deposit));
+    if (et.tools) row(et.tools < 0 ? "bán đồ nghề" : "sắm đồ nghề", signed(et.tools));
+    if (et.story) row("chuyện trong hẻm", `−${money(et.story)}`);
+    if (et.hui) row(et.hui < 0 ? "hốt hụi" : "góp hụi", signed(et.hui));
+    if (et.obligations) row("tiền học, tiền thuốc", `−${money(et.obligations)}`);
+    // than/đá: `fixed` chỉ là phần két trả nổi — phần cô Ba bù ghi riêng, không trừ vào két
     row("than, đá, túi, xăng", `−${money(et.fixed)}`);
-    row(et.sendHomeShort ? "gửi về nhà (gửi thiếu)" : "gửi về nhà", `−${money(et.sendHome)}`);
-    if (et.obligations) row("trả nợ, góp hụi", `−${money(et.obligations)}`);
+    if (et.coBaCovered) row("cô Ba bù giùm", `(${money(et.coBaCovered)})`);
+    // "gửi thiếu −0₫" đọc như lỗi hiển thị, mà số thiếu THẬT thì không hiện ở đâu
+    row("gửi về nhà", et.sendHome ? `−${money(et.sendHome)}` : "chưa gửi được");
+    if (et.sendHomeShort) row("còn thiếu", `(${money(et.sendHomeShort)})`);
     L.append(this.el("div", "ev-cash", `trong ống: ${money(w.money.cash)}`));
     if (e.coBaCovered.includes(day)) L.append(this.el("div", "ev-say", `Cô Ba: "Két không đủ tiền than, cô bù rồi. Kệ, mai bán."`));
     if (t.lost) L.append(this.el("div", "ev-note", "có người đợi không nổi rồi về"));
@@ -118,7 +159,9 @@ export class EveningView {
         const b = this.el("button", "ev-btn", a.costVnd ? `${a.label} (${money(a.costVnd)})` : a.label);
         b.disabled = (a.costVnd ?? 0) > w.money.cash;
         b.onclick = () => {
-          if (a.costVnd) w.money.cash -= a.costVnd;
+          // tiền ra khỏi két thì phải có một dòng trong sổ tối — nếu không thì sáng mai
+          // hụt tiền mà không biết vì đâu (`today.story`, quy ước dương = tiền ra)
+          if (a.costVnd) { w.money.cash -= a.costVnd; e.today.story += a.costVnd; }
           this.msg = doAction(w.story, a.id, day);
           this.render();
         };
@@ -157,7 +200,7 @@ export class EveningView {
     }
     // hốt hụi — cảnh, không phải menu; hai lựa chọn: hốt / để kỳ sau (P3-06 §2.3)
     const period = canTakeHui(e, day);
-    if (period) {
+    if (period && !this.deferred.has(`hui_take_${period}`)) {
       const now = huiPayoutVnd(period), next = huiPayoutVnd(period + 1);
       const box = this.el("div", "ev-due");
       box.append(this.el("div", "ev-say", next
@@ -169,7 +212,9 @@ export class EveningView {
       btns.append(take);
       if (next) {
         const wait = this.el("button", "ev-btn", "để kỳ sau");
-        wait.onclick = () => box.remove();
+        // gỡ mỗi cái khung thì đổi qua trang Đồ nghề rồi quay lại là lời mời hiện lại y
+        // nguyên. Nhớ như "để mai" của nghĩa vụ.
+        wait.onclick = () => { this.deferred.add(`hui_take_${period}`); this.render(); };
         btns.append(wait);
       }
       box.append(btns);
@@ -187,12 +232,21 @@ export class EveningView {
       const hm = `${Math.floor(d.minute / 60)}h${String(d.minute % 60).padStart(2, "0")}`;
       box.append(this.el("div", "ev-ink", `${displayName(w.notebook, d.npcId, "khách")} · lúc ${hm} · bao nhiêu?`));
       const btns = this.el("div", "btns");
+      const lo = writeFloor(d.trueAmount), hi = writeCeil(d.trueAmount);
       const inp = this.el("input") as HTMLInputElement;
-      inp.type = "number"; inp.min = "0"; inp.step = "1"; inp.placeholder = "nghìn";
+      inp.type = "number"; inp.step = "1"; inp.placeholder = "nghìn";
+      inp.min = String(lo / 1000); inp.max = String(hi / 1000);
       inp.setAttribute("aria-label", "số tiền (nghìn đồng)");
       inp.style.cssText = "width:90px;font:inherit;padding:4px";
       const ok = this.el("button", "ev-btn", "ghi");
-      ok.onclick = () => { const v = Number(inp.value); if (v > 0) { d.playerWrote = Math.round(v) * 1000; this.render(); } };
+      ok.onclick = () => {
+        const v = Math.round(Number(inp.value)) * 1000;
+        if (!(v > 0)) return;
+        d.playerWrote = Math.min(Math.max(v, lo), hi);
+        // nhớ nhầm thì im (đó là cơ chế); chỉ nói khi con số vượt hẳn ra ngoài đời thật
+        this.msg = v === d.playerWrote ? "" : "Con ghi lộn tay rồi — sổ ghi lại theo cỡ ổ bánh mì.";
+        this.render();
+      };
       btns.append(inp, ok);
       box.append(btns);
       R.append(box);
@@ -277,7 +331,8 @@ export class EveningView {
       if (own) {
         if (d.resellable !== false && !d.starting) {
           const sell = this.el("button", "ev-btn", `bán lại ${money(resaleVnd(id))}`);
-          sell.onclick = () => { sellEquip(id, e, w.money); this.msg = `đã bán ${d.name} — lấy lại sáu phần mười`; this.render(); };
+          // `w.econ` là cuốn sổ hôm nay — bán đồ nghề là tiền VÔ, phải có một dòng (`today.tools`)
+          sell.onclick = () => { sellEquip(id, e, w.money, 1, w.econ); this.msg = `đã bán ${d.name} — lấy lại sáu phần mười`; this.render(); };
           btns.append(sell);
         }
       } else {
@@ -343,7 +398,7 @@ export class EveningView {
 
   private buy(id: EquipId) {
     const w = this.w;
-    if (!buyEquip(id, w.equipment, w.money)) return;
+    if (!buyEquip(id, w.equipment, w.money, w.econ)) return;
     // không popup, không toast: món mới cứ thế có mặt trên xe sáng mai (P3-04 §2.7)
     if (EQUIP[id].costsMorning) { w.flags.lateOpenDay = w.progress.dayIndex + 1; this.msg = 'Cô Mai: "Mai con đi làm giấy ngân hàng với cô, trưa về bán."'; }
     else this.msg = "";

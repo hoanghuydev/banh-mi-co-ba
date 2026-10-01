@@ -94,8 +94,17 @@ export class Player {
     this.bob += dt * 11;
   }
 
-  /** Vẽ lại. `reducedMotion` tắt nhịp nhún (CANON §15.3). */
-  draw(reducedMotion: boolean) {
+  /**
+   * Vẽ lại. `reducedMotion` tắt nhịp nhún (CANON §15.3).
+   *
+   * `covering` — người chơi đang giữ C để nghiêng người che tay (P1-02 §2.8 Công cụ 3).
+   * Doc viết "xoay nghiêng 40°", nhưng `Facing` chỉ có bốn hướng (`world/iso`), một nấc
+   * đã là 90° — quá nhiều, và thêm frame sprite thì phạm CANON §16 Đừng-4. Nên cái
+   * nghiêng đó nói bằng đúng thành ngữ file này vẫn dùng: squash ngang + dồn trọng tâm,
+   * và món trên tay bị đẩy RA SAU THÂN ở mọi hướng — đó mới là thứ làm hệ số occluder
+   * 0,45 đọc được bằng mắt.
+   */
+  draw(reducedMotion: boolean, covering = false) {
     const { sx, sy } = toScreen(this.x, this.y);
     const depth = depthOf(this.x, this.y);
 
@@ -108,12 +117,15 @@ export class Player {
     // CANON §16 Đừng-4: nhún bằng squash/stretch, không thêm một frame sprite nào
     const amp = reducedMotion ? 0 : 1;
     const hop = Math.abs(Math.sin(this.bob)) * 2.4 * amp;
-    this.body.setPosition(sx, footY(sy) - hop).setDepth(depth);
-    this.body.setScale(1, 1 + Math.sin(this.bob * 2) * 0.022 * amp);
+    // Nghiêng người che tay: thu hẹp bóng dáng lại và dồn người về một bên. Vẽ tĩnh,
+    // nên `reducedMotion` không phải tắt gì thêm.
+    const lean = covering ? 5 : 0;
+    this.body.setPosition(sx + lean, footY(sy) - hop).setDepth(depth);
+    this.body.setScale(covering ? 0.92 : 1, 1 + Math.sin(this.bob * 2) * 0.022 * amp);
 
     // Bóng đổ nằm ĐÚNG tại điểm chạm đất (tâm ô), không phải ở đáy texture —
     // lệch chỗ này là nhân vật trông như đang lơ lửng.
-    this.shadow.setPosition(sx, sy).setDepth(depth - 1).setScale(1 - hop * 0.04);
+    this.shadow.setPosition(sx + lean, sy).setDepth(depth - 1).setScale(1 - hop * 0.04);
 
     if (!carrying) {
       this.held.setVisible(false);
@@ -127,9 +139,10 @@ export class Player {
     const feet = footY(sy) - (1 + BASE + TH / 2);
     this.held
       .setTexture(HELD.key(this.hand))
-      .setPosition(sx + a.x, feet - hop - a.y)
+      // Che tay: kéo món về sát thân rồi giấu ra sau lưng, bất kể đang quay hướng nào.
+      .setPosition(sx + lean + (covering ? a.x * 0.35 : a.x), feet - hop - a.y)
       // Quay lưng thì món khuất sau thân; mọi hướng khác thì nằm trong lòng hai bàn tay.
-      .setDepth(depth + (a.behind ? -0.5 : 1))
+      .setDepth(depth + (covering || a.behind ? -0.5 : 1))
       .setVisible(true);
   }
 

@@ -28,6 +28,46 @@ export type Due = {
   lastDay: number;
 };
 
+/**
+ * Sổ hôm nay — MỌI đường tiền ra/vào két phải đi qua đúng MỘT dòng ở đây. Không có tổng trên
+ * UI (P3-06 §3), nhưng các dòng phải cộng lại đúng bằng chênh lệch `money.cash` trong ngày,
+ * nếu không thì trang tối nói dối người chơi.
+ *
+ * Quy ước dấu: DƯƠNG = tiền RA khỏi két. Bán đồ nghề, hốt hụi, lấy lại cọc là ÂM.
+ */
+export type EconToday = {
+  day: number;
+  /** Đi chợ. */
+  market: number;
+  /** Than, đá, túi, xăng — CHỈ phần két trả nổi (phần cô Ba bù nằm ở `coBaCovered`). */
+  fixed: number;
+  /** Phần chi phí cố định cô Ba bù giùm — KHÔNG trừ vào két, chỉ để trang tối nói thật. */
+  coBaCovered: number;
+  /** Tiền chỗ sáng nay. */
+  rent: number;
+  /** Cọc chỗ đứng, RÒNG (âm = lấy lại cọc chỗ cũ nhiều hơn cọc chỗ mới). */
+  deposit: number;
+  sendHome: number;
+  sendHomeShort: number;
+  /** Tiền học + tiền thuốc đã đóng (hụi có dòng riêng). */
+  obligations: number;
+  /** Góp/hốt hụi, RÒNG (âm = hốt được nhiều hơn góp). */
+  hui: number;
+  /** Mua/bán đồ nghề, RÒNG (âm = bán được tiền). */
+  tools: number;
+  /** Trả nợ mối. */
+  debtRepay: number;
+  /** Chi phí "chuyện trong hẻm" (P4-03 — cảnh tối ghi vào). */
+  story: number;
+  wasted: string[];
+  soldOut: number;
+  counted: boolean;
+  closedAtMin: number | null;
+};
+
+/** Chỗ ghi sổ — nhận cả `EconState` lẫn một `{ today }` rời (để test / gọi từ hệ khác). */
+export type EconBook = { today: EconToday };
+
 export type EconState = {
   /** Mã chỗ đứng (P3-05). Vỡ tiền thuê thì bị đẩy về L5 — góc khuất. */
   stand: "L1" | "L2" | "L3" | "L4" | "L5";
@@ -43,8 +83,7 @@ export type EconState = {
   /** Ngày cô Ba phải bù tiền chợ / chi phí vì két không đủ — chỉ để trang tối nói một câu. */
   coBaCovered: number[];
   /** Sổ sách hôm nay — tối đếm tiền. */
-  today: { day: number; market: number; fixed: number; rent: number; sendHome: number; sendHomeShort: number; obligations: number;
-    wasted: string[]; soldOut: number; counted: boolean; closedAtMin: number | null };
+  today: EconToday;
   /** Số preset kẹp sẵn tối đa — xe cũ còn 2 chỗ sau CART_DOWNGRADED. */
   presetSlots: number;
   /** Chuyện xảy ra đêm qua (fail mềm) — sáng nay người ta nói ra một câu. */
@@ -80,8 +119,9 @@ export const newEconState = (): EconState => ({
   morningLines: [], float: 0, floatLeft: 0, ritualSkips: 0, neighborAnnoyance: 0, loaOffUntil: 0, mustSell: false,
   movePlan: null, followers: null, lastMoveDay: -99, scouted: ["L1", "L5"], deposit: 0,
 });
-export const newToday = (day: number): EconState["today"] =>
-  ({ day, market: 0, fixed: 0, rent: 0, sendHome: 0, sendHomeShort: 0, obligations: 0, wasted: [], soldOut: 0, counted: false, closedAtMin: null });
+export const newToday = (day: number): EconToday =>
+  ({ day, market: 0, fixed: 0, coBaCovered: 0, rent: 0, deposit: 0, sendHome: 0, sendHomeShort: 0, obligations: 0,
+    hui: 0, tools: 0, debtRepay: 0, story: 0, wasted: [], soldOut: 0, counted: false, closedAtMin: null });
 
 export const rentVnd = (stand: EconState["stand"]) => scaledVnd(ECON.rent_k[stand]);
 /** Hệ số khách vãng lai theo chỗ đứng (P3-05 §2.2 `standLocationMul`). Đợt D mở đủ 5 chỗ. */
@@ -132,8 +172,10 @@ export function pay(e: EconState, m: Money, d: Due, day: number): boolean {
   if (m.cash < d.amount || e.paid[d.id]) return false;
   m.cash -= d.amount;
   e.paid[d.id] = day;
-  e.today.obligations += d.amount;
-  if (d.kind === "HUI") e.huiContributed += d.amount;
+  // hụi có dòng sổ RIÊNG (`today.hui`) vì còn có chiều ngược lại — hốt hụi. Cộng vào
+  // `obligations` nữa là đếm hai lần, tối cộng lại không khớp với cái két.
+  if (d.kind === "HUI") { e.today.hui += d.amount; e.huiContributed += d.amount; }
+  else e.today.obligations += d.amount;
   return true;
 }
 
@@ -154,6 +196,7 @@ export function takeHui(e: EconState, m: Money, day: number): number {
   const v = huiPayoutVnd(p);
   e.huiTakenPeriod = p;
   m.cash += v;
+  e.today.hui -= v;                                // tiền VÔ — dòng hụi hôm nay thành âm
   return v;
 }
 
@@ -193,10 +236,12 @@ export type NightOutcome = { defaulted: { due: Due; loss: PermanentLossKind | "H
 export function eveningCount(e: EconState, m: Money, day: number, fixed: number) {
   if (e.today.counted) return;
   e.today.counted = true;
-  const f = Math.min(m.cash, fixed);
+  const f = Math.max(0, Math.min(m.cash, fixed));
   m.cash -= f;
-  e.today.fixed += fixed;
-  if (f < fixed) e.coBaCovered.push(day);
+  // sổ chỉ ghi phần KÉT thật sự trả; phần cô Ba bù đi dòng riêng — ghi đủ vào `fixed` thì
+  // trang tối in "−40.000₫" rồi kết bằng "trong ống: 0₫", tức là nói dối (P3-06 §3)
+  e.today.fixed += f;
+  if (f < fixed) { e.coBaCovered.push(day); e.today.coBaCovered += fixed - f; }
   const home = sendHomeVnd();
   const h = Math.min(m.cash, home);
   m.cash -= h;
@@ -216,7 +261,9 @@ export function processDefaults(e: EconState, m: Money, day: number, hasResellab
         out.defaulted.push({ due: d, loss: "HUI_UNG" });
       } else {
         e.huiExpelled = true;
-        m.cash += Math.round(e.huiContributed * 0.55 / 1000) * 1000;
+        const back = Math.round(e.huiContributed * 0.55 / 1000) * 1000;
+        m.cash += back;
+        e.today.hui -= back;                       // "tiền góp cô trả lại con một phần" — cũng phải có dòng
         if (!e.losses.includes("HUI_EXPELLED")) e.losses.push("HUI_EXPELLED");
         out.defaulted.push({ due: d, loss: "HUI_EXPELLED" });
       }

@@ -61,6 +61,10 @@ export function followChance(npc: string, tier: RelTier, thanThien: number, from
  * Ngày dời: rút ai đi theo (tất định theo mùa). Người không đi theo thì không ghé chỗ mới — lần
  * ghé bị lỡ vẫn tính (quan hệ nguội dần). Dời mà KHÔNG báo trước: người im lặng (chị Lan) mất
  * hẳn — đứng ở chỗ cái xe từng đậu, nhìn một lúc, rồi đi (P3-05 §2.3).
+ *
+ * `noticeDays === 0` = tờ giấy chưa từng được dán ngày nào. Ba nút ở màn tối đều dán giấy
+ * (1/2/4 ngày) nên nhánh này KHÔNG phải cái người chơi bấm nhầm phải — nó là luật canon,
+ * để dành cho đường dời không qua `postMove`.
  */
 export function resolveFollowers(saveId: string, day: number, from: StandId, to: StandId, noticeDays: number,
   tierOf: (id: string) => RelTier, gone: (id: string) => boolean) {

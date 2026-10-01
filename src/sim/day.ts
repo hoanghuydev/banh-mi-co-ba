@@ -13,7 +13,7 @@ import {
 import { duesOpen, eveningCount, morningRent, newEconState, newToday, pay, processDefaults, rentVnd } from "./obligations";
 import { CAL, ECON, fixedCostVnd, isRain } from "./econ";
 import { extraDailyVnd, has, newEquipState, resellable, sellEquip, type EquipId } from "./equipment";
-import { moment, morningLines } from "./story";
+import { moment, morningLines, type StoryState } from "./story";
 import { resolveFollowers, standClosed, standDayMul, MOVE, STANDS, type StandId } from "./stands";
 import { LATE_LINE, SUPPLIERS, afterMarket, dawnCheck, discounted, state, type SupplierId, type SupplierState } from "./suppliers";
 
@@ -56,12 +56,21 @@ export function dawn(w: SaveFile) {
   const plan = w.econ.movePlan;
   if (plan && plan.moveDay === day) {
     const from = w.econ.stand;
-    const notice = Math.max(0, plan.moveDay - plan.postedDay - 1);
+    // P3-05 §2.3: `noticeDays` = SỐ NGÀY TỜ GIẤY ĐƯỢC DÁN. Dán hôm postedDay, đẩy xe hôm
+    // moveDay → khách đọc thấy nó các ngày postedDay…moveDay−1, tức `moveDay − postedDay`
+    // ngày. Trừ thêm 1 thì nút "mai dời" ra 0 = "dời không báo ai" — và chị Lan mất hẳn.
+    const notice = Math.max(0, plan.moveDay - plan.postedDay);
     const r = resolveFollowers(w.saveId, day, from, plan.to, notice, (id) => w.npcs[id]?.tier ?? "ACQUAINTANCE", (id) => !!w.npcs[id]?.gone);
     // cọc = 3 ngày tiền thuê ở chỗ mới; cọc chỗ cũ chủ cũ trả lại (P3-05 §2.3, CANON §13.1)
-    w.money.cash += w.econ.deposit ?? 0;
-    w.econ.deposit = rentVnd(plan.to) * ECON.rent_k.depositDays;
-    w.money.cash = Math.max(0, w.money.cash - w.econ.deposit);
+    const back = w.econ.deposit ?? 0;
+    w.money.cash += back;
+    // chỉ ghi nhận số cọc THẬT SỰ đóng được — ghi đủ mà trả thiếu thì lần dời sau hoàn đủ,
+    // tức là cái két tự đẻ ra tiền
+    const want = rentVnd(plan.to) * ECON.rent_k.depositDays;
+    const put = Math.max(0, Math.min(w.money.cash, want));
+    w.money.cash -= put;
+    w.econ.deposit = put;
+    w.econ.today.deposit += put - back;
     w.econ.stand = plan.to;
     w.econ.followers = plan.to === "L1" ? null : r.followers;
     w.econ.lastMoveDay = day;
@@ -120,6 +129,19 @@ export function basketCost(b: Partial<Record<GoodId, number>>, day: number, supp
   return s;
 }
 
+/**
+ * Ghi số ổ bánh mua trong một buổi chợ — P4-04 §2.3 "trả lời bằng cách mua hàng".
+ *
+ * Ngày 35–39 cô Ba hỏi "còn cái xe… con tính sao thì tính" và người chơi trả lời bằng việc
+ * mua bao nhiêu bánh cho ngày mai, không bằng một nút chọn (`ending.playerStaysOf`). Mọi
+ * đường đi chợ — bot, "mua như hôm qua", và màn chợ của người thật — phải gọi đúng hàm này,
+ * nếu không thì màn kết đọc một cuốn sổ trắng.
+ */
+export function noteBasketLoaves(story: StoryState, day: number, loaves: number): void {
+  if (loaves <= 0) return;
+  story.basketLoaves[day] = (story.basketLoaves[day] ?? 0) + loaves;
+}
+
 /** Mua cả giỏ (bot / "mua như hôm qua"). Thiếu tiền thì bớt dần món cuối cho vừa két. */
 export function buyBasket(w: SaveFile, b: Partial<Record<GoodId, number>>) {
   const day = w.progress.dayIndex;
@@ -134,8 +156,7 @@ export function buyBasket(w: SaveFile, b: Partial<Record<GoodId, number>>) {
   const cost = basketCost(basket, day, w.suppliers);
   w.money.cash -= cost;
   w.econ.today.market += cost;
-  // P4-04 §2.3 — "còn cái xe... con tính sao thì tính": ngày 35–39 người chơi trả lời bằng việc MUA HÀNG
-  if (w.story) w.story.basketLoaves[day] = (w.story.basketLoaves[day] ?? 0) + (basket.BANH ?? 0);
+  if (w.story) noteBasketLoaves(w.story, day, basket.BANH ?? 0);
   // biết mình bị báo giá cao mà vẫn mua ở mối quen
   if (w.story && (basket.PATE_NHA ?? 0) > 0 && quenMat("PATE_NHA", day, w.suppliers)) moment(w.story, "QUEN_MAT_DAT_HANG");
   for (const [g, n] of Object.entries(basket)) if (n) buy(w.inventory, g as GoodId, n, day);
@@ -152,7 +173,9 @@ export function eveningCounting(w: SaveFile) {
   // chi phí cố định + tiền "nuôi" đồ nghề mới (gas, điện tủ mát, đá bình trà…) — chạy cả ngày nghỉ
   eveningCount(w.econ, w.money, day, fixedCostVnd(day) + extraDailyVnd(w.equipment ?? newEquipState()));
   const e = w.econ.today, t = w.progress.today;
-  const cost = e.market + e.rent + e.fixed + e.sendHome + e.obligations;
+  // mọi dòng tiền RA của hôm nay (âm = tiền vô: bán đồ nghề, hốt hụi, lấy lại cọc)
+  const cost = e.market + e.rent + e.deposit + e.fixed + e.sendHome + e.obligations
+    + e.hui + e.tools + e.debtRepay + e.story;
   const row = { day, revenue: t.revenue, cost, served: t.served, lost: t.lost };
   const i = w.ledger.findIndex((r) => r.day === day);
   if (i >= 0) w.ledger[i] = row; else w.ledger.push(row);
@@ -193,10 +216,22 @@ export function neighborTick(w: SaveFile) {
   return lines;
 }
 
-/** Fail mềm SOLD_EQUIPMENT: bán một món ở giá 50%, tiền đi thẳng vào tiền học (P3-06 §2.4). */
+/**
+ * Fail mềm SOLD_EQUIPMENT: bán một món ở giá 50%, tiền đi THẲNG vào tiền học (P3-06 §2.4).
+ *
+ * "Đi thẳng vào tiền học" nghĩa là tiền có thật rồi đi mất, không phải là tiền bốc hơi:
+ * trước đây tiền bán rơi vào một object rác nên màn "Phải xoay cho đủ" ghi "bán 36.000₫"
+ * mà két vẫn 0₫. `processDefaults` đã đánh dấu khoản học là xong mà chưa trừ đồng nào, nên
+ * đây chính là chỗ nó được trả — hai dòng sổ, cộng lại bằng 0 đúng như cái két.
+ */
 export function forcedSell(w: SaveFile, id: EquipId) {
   if (!w.econ.mustSell) return 0;
-  const v = sellEquip(id, w.equipment, { cash: 0 }, 0.5 / 0.6);
+  const v = sellEquip(id, w.equipment, w.money, 0.5 / 0.6);
+  if (v > 0) {
+    w.money.cash -= v;
+    w.econ.today.tools -= v;                       // bán đồ nghề: tiền vô
+    w.econ.today.obligations += v;                 // …rồi đi thẳng qua tiền học
+  }
   w.econ.mustSell = false;
   return v;
 }
@@ -211,7 +246,10 @@ export function canMoveTo(w: SaveFile, to: StandId): string | null {
   return null;
 }
 
-/** Dán tờ giấy báo dời lên xe. `inDays` = mấy ngày nữa dời (số ngày tờ giấy dán TRƯỚC khi dời mới là báo trước). */
+/**
+ * Dán tờ giấy báo dời lên xe. `inDays` = mấy ngày nữa đẩy xe đi — và cũng chính là số ngày
+ * tờ giấy được dán, tức `noticeDays` (P3-05 §2.3). Ba nút ở màn tối 1/2/4 → báo trước 1/2/4.
+ */
 export function postMove(w: SaveFile, to: StandId, inDays: number) {
   const day = w.progress.dayIndex;
   w.econ.movePlan = { to, postedDay: day, moveDay: day + Math.max(1, inDays) };

@@ -56,8 +56,11 @@ export class Hud {
     this.right = stat(GAME_W - 26, 1);
 
     this.promptBg = fixed(scene.add.graphics());
+    // Hộp tự giãn theo chữ, và không bao giờ rộng hơn khung (CANON §15.1): dòng nhắc dài
+    // nhất ở cỡ chữ 200% đo được 783 px / 1024 — nhưng câu mới thì cứ xuống dòng, đừng tràn.
     this.prompt = fixed(scene.add.text(GAME_W / 2, GAME_H - 66, "", {
       fontFamily: FONT, fontSize: fs(15), fontStyle: "500", color: UI.ink, align: "center",
+      wordWrap: { width: GAME_W - 80 },
     }).setOrigin(0.5), DEPTH + 100);
 
     this.bar = fixed(scene.add.graphics(), DEPTH + 50);
@@ -78,10 +81,15 @@ export class Hud {
       wordWrap: { width: 380 },
     }).setOrigin(0, 1), DEPTH + 100);
 
-    this.help = fixed(scene.add.text(GAME_W / 2, GAME_H - 22,
+    // CANON §15.1 / P1-04: ở cỡ chữ 200% dòng này dài 1131 px so với khung 1024 — tràn
+    // hẳn ra ngoài hai mép. Cho nó XUỐNG DÒNG theo bề ngang khung (ngắt đúng dấu "·" vì
+    // hai bên dấu đều có khoảng trắng) và neo ở ĐÁY màn hình, rồi `drawPrompt` đẩy dòng
+    // nhắc lên trên nó — không cắt chữ, không thu nhỏ chữ của người cần chữ to.
+    this.help = fixed(scene.add.text(GAME_W / 2, GAME_H - 8,
       "WASD đi · Shift chạy · E làm việc · F hỏi chuyện · giữ C che tay · Q bỏ vô thùng · Tab sổ tay · P/Esc tạm dừng", {
       fontFamily: FONT, fontSize: fs(11), color: "#f2efe9", stroke: "#1b2429", strokeThickness: 3,
-    }).setOrigin(0.5), DEPTH + 100);
+      align: "center", wordWrap: { width: GAME_W - 32 },
+    }).setOrigin(0.5, 1), DEPTH + 100);
 
     this.carryBg = fixed(scene.add.graphics());
 
@@ -244,18 +252,28 @@ export class Hud {
     });
   }
 
+  /**
+   * Mép trên của dòng hướng dẫn phím — dòng nhắc và thanh tiến trình xếp NGƯỢC LÊN từ
+   * đây. Ở cỡ chữ 200% dòng hướng dẫn chiếm hai dòng, đặt cứng `GAME_H − 66` là đè lên.
+   */
+  private get stackTop() {
+    return this.help.visible ? this.help.getBounds().top - 8 : GAME_H - 48;
+  }
+
+  /** `override` không cần trạm: khoảng lặng ngày 40 nhắc phím bỏ qua giữa hẻm trống. */
   private drawPrompt(st: Station | null, hand: Hand, frozen: boolean, override: string | null) {
     this.promptBg.clear();
-    if (!st || frozen) { this.prompt.setText(""); return; }
+    if (frozen || (!st && !override)) { this.prompt.setText(""); return; }
 
-    const why = override ? null : blockedReason(st, hand);
-    const keyHint = st.holdMs === 0 ? "bấm E" : "giữ E";
+    const why = override || !st ? null : blockedReason(st, hand);
+    const keyHint = st && st.holdMs === 0 ? "bấm E" : "giữ E";
     this.prompt.setText(override ?? (why
-      ? `${st.name} — ${why}`
-      : `${st.name} — ${keyHint} để ${st.verb}`));
+      ? `${st!.name} — ${why}`
+      : `${st!.name} — ${keyHint} để ${st!.verb}`));
 
     const w = this.prompt.width + 34, h = this.prompt.height + 16;
-    const x = GAME_W / 2 - w / 2, y = GAME_H - 66 - h / 2;
+    const x = GAME_W / 2 - w / 2, y = this.stackTop - h;
+    this.prompt.setPosition(GAME_W / 2, y + h / 2);
     this.promptBg.fillStyle(0x0d1216, 0.22);
     this.promptBg.fillRoundedRect(x, y + 3, w, h, 10);
     this.promptBg.fillStyle(why ? 0xe7e0d2 : UI.paper, 1);
@@ -267,7 +285,8 @@ export class Hud {
     this.bar.clear();
     if (!busy) return;
     const { st, ms } = busy;
-    const W = 200, H = 10, x = GAME_W / 2 - W / 2, y = GAME_H - 106;
+    const promptH = this.prompt.text ? this.prompt.height + 16 : 0;
+    const W = 200, H = 10, x = GAME_W / 2 - W / 2, y = this.stackTop - promptH - H - 12;
     this.bar.fillStyle(0x1b2429, 0.55);
     this.bar.fillRoundedRect(x - 2, y - 2, W + 4, H + 4, 6);
     this.bar.fillStyle(ms >= st.holdMs ? 0x6fbf8a : 0xe8c27a, 1);

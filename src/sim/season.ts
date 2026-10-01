@@ -28,8 +28,13 @@ export type DaySpec = {
   note?: string;
 };
 
-type Unlocks = { gossip: { day: number; playMinutes: number }; creditBook: number; notebookWrite: number;
-  supplierTiers: number; qr: number; evening: number; stands: number };
+/**
+ * Chỉ những cổng có hàm thi hành ở dưới. Cổng thiết bị (bảng QR, đèn ca tối — đều ngày 14
+ * của P4-02 §2.2) sống ở `econ/equipment.json` `unlock.minDay`; mối hàng nhiều mức giá chạy
+ * theo `streak` chứ không theo ngày (P3-02 §2.6.2). Thêm khoá vào đây mà không thi hành là
+ * dựng một nguồn sự thật giả — `tests/p4-unlocks` chặn.
+ */
+type Unlocks = { gossip: { day: number; playMinutes: number }; creditBook: number; notebookWrite: number; stands: number };
 
 const J = SEASON as unknown as { days: DaySpec[]; unlocks: Unlocks; departures: { npc: string; departureDay: number; result: string }[] };
 
@@ -79,5 +84,9 @@ export function signalsOf(npc: string) {
 /**
  * Áp lực thông lượng (§2.7): tối đa mấy khách VÃNG LAI cùng đứng ở quầy. Chế độ không
  * giới hạn thời gian ép về 1 — kịch bản 40 ngày không đổi một chữ (P4-02 §4).
+ *
+ * ⚠️ CHƯA NỐI: chỗ sinh lịch khách vãng lai là `Service.buildSchedule` (sim/service.ts, vòng
+ * `while (t < DAY_END_MIN - 10)`), nó chỉ rút theo `keep` chứ không đếm mấy người đang đứng.
+ * Trần `target.peak` viết tay trong days.json vì vậy chưa có tác dụng.
  */
 export const peakCap = (day: number, noTimePressure: boolean) => (noTimePressure ? 1 : daySpec(day).target.peak);

@@ -17,6 +17,20 @@ export const FOOD = {
   loaf: "loaf_open",
   ICON: 36,
   BIG_SCALE: 1.7,
+
+  // ── hình học ổ bánh mở, NGUỒN DUY NHẤT cho cả `loaf()` dưới đây, cho ảnh thật
+  //    trong `photo.ts`, lẫn cho chỗ xếp nhân trong `ui/AssemblyPanel.ts`.
+  //    Trước đây bề ngang ruột bánh bị chép tay sang AssemblyPanel kèm một dòng
+  //    chú thích "xem loaf() trong food.ts" — đúng kiểu hằng số sẽ lệch âm thầm
+  //    ngay lần đầu ai đó đổi cỡ ổ bánh.
+  LOAF_W: 300,
+  LOAF_H: 136,
+  /** Bề ngang phần RUỘT — nhân xếp trong khoảng này, quá thì tràn ra vỏ. */
+  CRUMB_W: 214,
+  /** Tâm lòng máng nằm dưới tâm ảnh bao nhiêu px (vì nắp chiếm phần trên). */
+  CRUMB_DY: 16,
+  /** Nắp lật ra sau ló lên trên mép máng bao nhiêu px. */
+  LID_PEEK: 30,
 } as const;
 
 type Draw = (g: Pen, cx: number, cy: number, s: number) => void;
@@ -194,9 +208,9 @@ const DRAWERS: Record<Ingredient, Draw> = {
  * ra cái pizza ngay.
  */
 function loaf(scene: Phaser.Scene) {
-  const W = 300, H = 118;
+  const W = FOOD.LOAF_W, H = FOOD.LOAF_H;
   const g = scene.make.graphics({ x: 0, y: 0 }, false);
-  const cx = W / 2, cy = H / 2 + 10;
+  const cx = W / 2, cy = H / 2 + FOOD.CRUMB_DY;
 
   g.fillStyle(0x1a2228, 0.1);                          // bóng dưới ổ
   g.fillEllipse(cx, cy + 30, 250, 16);

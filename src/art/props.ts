@@ -25,6 +25,10 @@ export const PROP = {
   oven: "oven", tea: "tea", shelf: "shelf",
   stool: "stool", table: "table", bike: "bike", pothos: "pothos",
   crate: "crate", bin: "bin", sink: "sink",
+  // Ba vật CHỈ CÓ ẢNH THẬT, không có bản vẽ code (xem `art/photo.ts`): chiếc Vespa
+  // đậu cạnh xe số cho hai chiếc xe không giống hệt nhau, tấm bảng gỗ dựng ngoài vỉa
+  // hè, và bình chữa cháy treo cạnh lò than — lò than là rủi ro có thật của game này.
+  scooter: "scooter", sign: "sign", fire: "fire",
 } as const;
 
 // ───────────────────────────────────────────────────────────── mẩu dùng nhiều nơi

@@ -127,6 +127,15 @@ export type SaveFile = {
   stall: {
     cleanliness: number; layoutSide: "LEFT" | "RIGHT"
     presets: { id: string; name: string; dish: Record<string, number>; prepped: number }[];
+    /**
+     * Ổ đang gác trên thớt và ổ đang cầm trên tay lúc rời quầy giữa buổi (P0-02 §2.8:
+     * "thoát bất cứ lúc nào, vào lại đúng chỗ"). Không lưu thì một ổ bánh bốc hơi mỗi
+     * lần thoát — bánh đã trừ khỏi kho ở kệ rồi. `dish` là id nguyên liệu (`sim/order`),
+     * để nguyên `string[]` cho `core/` khỏi phải biết kiểu của `sim/`.
+     * Thiếu trường (save cũ) = không có ổ nào, nên không cần bước migrate riêng.
+     */
+    board?: { dish: string[]; warmth: number; crust: number; q: number } | null;
+    hand?: { item: string; warmth: number; crust: number; q: number } | null;
   };
 
   /** 40 dòng, để vẽ biểu đồ cuối mùa. */
@@ -184,7 +193,7 @@ export function newGame(name: string, saveId = uuid()): SaveFile {
     shuffleBags: {},
     dialogState: { spokenOnce: [], norepeat: {}, appliedContext: [], barkCooldowns: {} },
     notebook: newNotebook(),
-    stall: { cleanliness: 1, layoutSide: "LEFT", presets: [] },
+    stall: { cleanliness: 1, layoutSide: "LEFT", presets: [], board: null, hand: null },
     ledger: [],
     a11y: { ...DEFAULT_SETTINGS, ...loadSettings() },
     telemetry: { optedIn: false, sessionCount: 0, totalPlayMs: 0 },
@@ -351,9 +360,15 @@ export class SaveService {
     }
   }
 
-  /** Ghi đồng bộ, ép ngay — dùng lúc thoát, mất focus, chuyển cảnh lớn. */
+  /**
+   * Ghi đồng bộ, ép ngay — dùng lúc thoát, mất focus, chuyển cảnh lớn.
+   *
+   * LUÔN chụp lại: một `request()` trước đó có thể còn nằm chờ (idle timeout tới 3 s) với
+   * bản chụp CŨ hơn hiện tại. Giữ bản cũ đó = mất mọi thứ xảy ra sau nó, đúng lúc người chơi
+   * đóng tab — trái hẳn ý của §2.6 ("ghi đúng khoảnh khắc này").
+   */
   flushNow(reason: AutosaveReason = "QUIT") {
-    if (!this.pending) this.pending = this.snapshot();
+    this.pending = this.snapshot();
     this.bus.emit("save:autosaveRequested", { reason });
     this.flush();
   }

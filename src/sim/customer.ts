@@ -36,12 +36,28 @@ export const TEA = {
   sipDelay: 0.6,
   /** Ly thứ hai trong vòng 45 s chỉ được cái gật đầu — không cúi uống, không CARED_FOR_THEM. */
   cooldown: 45,
-  /** CARED_FOR_THEM nhỏ dần: ly 1 / 2 / 3+. */
+  /** CARED_FOR_THEM nhỏ dần: ly 1 / 2 / 3+ — đếm theo NGÀY, không theo lượt ghé. */
   diminish: [1.0, 0.6, 0.25] as const,
   /** Người soi ≥ 0,7 nhận tới ly thứ 3 là bắt bài chuyện mua chuộc. */
   suspectSoi: 0.7,
   suspectAtCup: 3,
+  /** Người xuề xoà bắt bài trễ hơn — nhưng AI CŨNG bắt bài (xem `teaSuspectAtCup`). */
+  suspectSpan: 4,
 };
+
+/**
+ * Ly thứ mấy TRONG NGÀY thì người này bắt bài chuyện mua chuộc — CANON §8(i).
+ *
+ * Trước đây chỉ người soi ≥ 0,7 mới có trần; khách xuề xoà không có trần nào ngoài
+ * 18 ly/ngày của cả quán, nên nhồi được cả chục ly cho một người, mỗi ly một mục trí
+ * nhớ CARED_FOR_THEM — đúng lỗ hổng §8(i) cấm. Nay trần áp cho MỌI khách:
+ *  · soi ≥ 0,7 → ly 3 (giữ nguyên con số cũ, không ai bị siết thêm)
+ *  · soi 0,5   → ly 4 · soi 0,2 → ly 5 · soi 0 → ly 6
+ * Trần đếm theo NGÀY (như FREE_EXTRA), không theo lượt ghé: ghé lần hai trong ngày
+ * không làm bộ đếm về 0.
+ */
+export const teaSuspectAtCup = (soi: number) =>
+  TEA.suspectAtCup + Math.round(Math.max(0, TEA.suspectSoi - soi) * TEA.suspectSpan);
 
 /** Kịch bản một lượt ghé = ngày của arc + (khách đặc biệt) tên, tờ tiền đưa. */
 export type VisitPlan = ArcDay & { key?: string; name?: string; style?: number; paysWith?: number };
@@ -80,12 +96,14 @@ export class Customer implements Observer {
   waitStage = 0;
 
   // ── trà đá ─────────────────────────────────────────────────────────────────
+  /** Số ly đã nhận trong LƯỢT GHÉ này (chỉ để xem; trần và mức nhỏ dần đếm theo NGÀY). */
   teaCount = 0;
   private holdingTeaFor = 0;
   private sipIn = -1;
   private lastTeaAt = -Infinity;
-  /** Bắt bài chuyện mua chuộc (CANON §8i) → không nhận nữa trong lượt này. */
-  suspectBribery = false;
+  // "Bắt bài chuyện mua chuộc" KHÔNG sống ở đây: nó là chuyện người đó NHỚ, nên nằm
+  // trong `NpcState` (Service.teaSuspect) và đi qua save — không phải thuộc tính của
+  // một lượt ghé, nếu không thì ghé lại là quên sạch.
 
   // ── hỏi chuyện (ASK_QUESTION) ─────────────────────────────────────────────
   private questionPending = false;
@@ -206,17 +224,19 @@ export class Customer implements Observer {
   get teaOnCooldown() { return this.clock - this.lastTeaAt < TEA.cooldown; }
 
   /**
-   * Nhận ly trà. Trả hệ số CARED_FOR_THEM (0 = chỉ gật đầu). Cửa sổ hạ gaze chỉ có
-   * khi ngoài cooldown — cửa sổ attention phải ngắn và KHÔNG farm được (§8a).
+   * Nhận ly trà. `cupNo` = ly thứ mấy TRONG NGÀY của người này (Service đếm — mức nhỏ
+   * dần là chuyện của cả ngày, không phải của một lượt ghé: §8i).
+   * Trả hệ số CARED_FOR_THEM (0 = chỉ gật đầu). Cửa sổ hạ gaze chỉ có khi ngoài
+   * cooldown — cửa sổ attention phải ngắn và KHÔNG farm được (§8a).
    */
-  takeTea(): number {
+  takeTea(cupNo: number): number {
     const onCd = this.teaOnCooldown;
     this.teaCount++;
     this.holdingTeaFor = 7;
     if (onCd) return 0;
     this.lastTeaAt = this.clock;
     this.sipIn = TEA.sipDelay;
-    return TEA.diminish[Math.min(this.teaCount - 1, TEA.diminish.length - 1)];
+    return TEA.diminish[Math.min(Math.max(1, cupNo) - 1, TEA.diminish.length - 1)];
   }
 
   /** Người chơi hỏi chuyện → nhìn mặt người chơi thay vì nhìn tay (P1-02 §2.8). */

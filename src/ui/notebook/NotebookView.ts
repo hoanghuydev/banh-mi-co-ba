@@ -24,11 +24,23 @@ import { CLAIM } from "../../sim/gossip";
 /** "6h47" — cách người trong hẻm nói giờ, không phải "06:47". */
 const hm = (m: number) => `${Math.floor(m / 60)}h${String(Math.floor(m % 60)).padStart(2, "0")}`;
 
+/**
+ * 🔴 FONT: chỉ được dùng những face `index.html` đã nạp — **Be Vietnam Pro** (400/500/700,
+ * mỗi cỡ ba subset, latin · latin-ext · vietnamese). `ui-monospace / Consolas / "Segoe
+ * Print" / "Comic Sans MS"` KHÔNG có bộ chữ Việt: "Sổ ghi" ra "Sô᾿ ghi", "không sửa được"
+ * ra "không sưả được" — đúng thứ quy tắc ở `index.html:11` cấm.
+ *
+ * Giữ cảm giác mà không mất dấu:
+ *  · cột trái "máy ghi"  → số đều cột (`tabular-nums`) + giãn chữ, trên nền giấy kẻ dòng
+ *  · cột phải "con ghi"  → mực xanh + nghiêng (`--tay`), trên nền có lằn lề đỏ
+ */
+const TAY = 'font-family:"Be Vietnam Pro",system-ui,sans-serif;font-style:italic;letter-spacing:.01em';
+
 const STYLE = `
 .nb-root{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;background:rgba(18,22,26,.62);font-family:"Be Vietnam Pro",system-ui,sans-serif;color:#2b2f31}
 .nb-book{width:min(1000px,96vw);height:min(560px,94vh);display:grid;grid-template-columns:1fr 1fr;background:#efe6d2;border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.45);overflow:hidden}
 .nb-col{display:flex;flex-direction:column;min-height:0;padding:14px 18px}
-.nb-left{background:repeating-linear-gradient(#ece2cb 0 27px,#e2d6bb 27px 28px);border-right:2px solid #cdbf9f;font-family:ui-monospace,Consolas,monospace}
+.nb-left{background:repeating-linear-gradient(#ece2cb 0 27px,#e2d6bb 27px 28px);border-right:2px solid #cdbf9f;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;letter-spacing:.015em}
 .nb-right{background:#f6f0e1 linear-gradient(90deg,transparent 30px,#e8a9a0 30px 31px,transparent 31px);padding-left:44px}
 .nb-h{display:flex;align-items:center;gap:8px;font-weight:700;font-size:1.05em;margin-bottom:6px}
 .nb-sub{font-weight:400;font-size:.78em;color:#7a6f5b}
@@ -38,7 +50,7 @@ const STYLE = `
 .nb-t{font-size:.8em;color:#6d624e}
 .nb-q{font-size:.92em}
 .nb-note{font-size:.8em;color:#4a5a6a}
-.nb-red{font-family:"Segoe Script","Comic Sans MS",cursive;color:#b0342a;font-size:.98em;line-height:1.5;margin:6px 0 10px;padding:8px 10px;border-left:3px solid #b0342a;background:rgba(176,52,42,.06)}
+.nb-red{${TAY};color:#b0342a;font-size:.98em;line-height:1.5;margin:6px 0 10px;padding:8px 10px;border-left:3px solid #b0342a;background:rgba(176,52,42,.06)}
 .nb-red div{margin:2px 0}
 .nb-abs{margin-top:8px;padding-top:6px;border-top:2px solid #cdbf9f}
 .nb-abs .row{display:flex;align-items:center;gap:8px;margin:4px 0}
@@ -46,9 +58,9 @@ const STYLE = `
 .nb-face{cursor:pointer;border:2px solid transparent;border-radius:50%;padding:1px;background:none}
 .nb-face.on{border-color:#2f5d8a}
 .nb-face:focus-visible,.nb-btn:focus-visible{outline:2px solid #2f5d8a;outline-offset:2px}
-.nb-ink{font-family:"Segoe Print","Comic Sans MS",cursive;color:#2f5d8a}
-.nb-in{width:100%;box-sizing:border-box;font:inherit;font-size:1.05em;padding:4px 6px;border:none;border-bottom:1px solid #b8ab8e;background:transparent;color:#2f5d8a;font-family:"Segoe Print","Comic Sans MS",cursive}
-.nb-ta{width:100%;box-sizing:border-box;min-height:90px;resize:vertical;font:inherit;padding:6px;border:1px solid #d8cdb3;background:rgba(255,255,255,.35);color:#2f5d8a;font-family:"Segoe Print","Comic Sans MS",cursive;line-height:1.6}
+.nb-ink{${TAY};color:#2f5d8a}
+.nb-in{width:100%;box-sizing:border-box;font:inherit;font-size:1.05em;padding:4px 6px;border:none;border-bottom:1px solid #b8ab8e;background:transparent;color:#2f5d8a;${TAY}}
+.nb-ta{width:100%;box-sizing:border-box;min-height:90px;resize:vertical;font:inherit;padding:6px;border:1px solid #d8cdb3;background:rgba(255,255,255,.35);color:#2f5d8a;${TAY};line-height:1.6}
 .nb-guess{margin-top:8px;border:1px solid #cdbf9f;border-radius:6px;padding:6px 8px;background:rgba(255,255,255,.3)}
 .nb-g{display:grid;grid-template-columns:18px 104px 1fr;align-items:center;gap:6px;margin:3px 0;font-size:.9em}
 .nb-g select{font:inherit;padding:2px;background:#fbf7ec;border:1px solid #cdbf9f;color:#2f5d8a}
@@ -71,18 +83,37 @@ export type NotebookOpts = {
 
 export class NotebookView {
   private root: HTMLDivElement;
+  /** Hai nửa trang đôi, dựng một lần rồi chỉ thay ruột từng nửa — xem `render()`. */
+  private colL!: HTMLDivElement;
+  private colR!: HTMLDivElement;
   private day: number;
   private sel: NpcId | null = null;
   private msg = "";
   private faces = new Map<string, string>();
   private keyGuard = (ev: KeyboardEvent) => {
-    // Phím gõ trong sổ không được lọt xuống game (WASD, E, Q…). Tab / Esc đóng sổ.
-    if (ev.code === "Tab" || ev.code === "Escape") {
-      ev.preventDefault();
-      this.close();
-    }
+    // Phím gõ trong sổ không được lọt xuống game (WASD, E, Q…).
+    //
+    // Tab NHẢY Ô, không đóng sổ: ô tên, vùng ghi chú và sáu ô "Cô đoán" là chỗ duy nhất
+    // trong game phải gõ bằng bàn phím — Tab mà đóng sổ thì cả trang chỉ dùng được bằng
+    // chuột, và người chơi bị ném thẳng về cái quầy đang bán. Esc vẫn đóng.
+    if (ev.code === "Escape") { ev.preventDefault(); this.close(); }
+    else if (ev.code === "Tab") this.cycleFocus(ev);
     ev.stopPropagation();
   };
+
+  /**
+   * Vòng tiêu điểm khép kín trong sổ: Tab từ ô cuối quay về ô đầu (Shift+Tab thì ngược).
+   * Tự lo chứ không để trình duyệt lo, vì phía sau sổ còn cái canvas của game.
+   */
+  private cycleFocus(ev: KeyboardEvent) {
+    const all = [...this.root.querySelectorAll<HTMLElement>("button,input,textarea,select,[tabindex]")]
+      .filter((e) => !(e as HTMLButtonElement).disabled && e.tabIndex >= 0);
+    if (!all.length) return;
+    ev.preventDefault();
+    const at = all.indexOf(document.activeElement as HTMLElement);
+    const next = at < 0 ? 0 : (at + (ev.shiftKey ? -1 : 1) + all.length) % all.length;
+    all[next].focus();
+  }
 
   constructor(private game: Phaser.Game, private scene: Phaser.Scene, private w: SaveFile, private opts: NotebookOpts) {
     this.day = w.progress.dayIndex;
@@ -139,32 +170,58 @@ export class NotebookView {
     return e;
   }
 
+  /**
+   * HAI cột dựng RIÊNG, và chỉ dựng lại cột nào thật sự đổi.
+   *
+   * Dựng lại cả cây cho một thay đổi giá trị là cách chắc chắn nhất để nuốt chữ người
+   * chơi: mousedown vào ô ghi chú làm ô tên mất tiêu điểm → `change` → render → cái
+   * textarea vừa bấm bị huỷ giữa chừng, mouseup rơi vào phần tử mới và KHÔNG AI được
+   * tiêu điểm. Gõ 140 ký tự vào không một chữ nào lọt, không báo lỗi gì.
+   * Đổi tên chỉ đụng cột trái (tên hiện trong từng dòng máy ghi) — cột phải không rụng.
+   */
   private render() {
-    const r = this.root;
-    const scrollL = r.querySelector(".nb-left .nb-scroll")?.scrollTop ?? -1;
-    r.replaceChildren();
+    this.root.replaceChildren();
     const book = this.el("div", "nb-book");
-    book.append(this.left(), this.right());
-    r.append(book);
-    const ls = r.querySelector(".nb-left .nb-scroll") as HTMLElement | null;
-    if (ls) ls.scrollTop = scrollL >= 0 ? scrollL : ls.scrollHeight;
+    this.colL = this.el("div", "nb-col nb-left");
+    this.colR = this.el("div", "nb-col nb-right");
+    book.append(this.colL, this.colR);
+    this.root.append(book);
+    this.renderLeft(true);
+    this.renderRight();
+  }
+
+  /** Thay ruột một cột, giữ nguyên chỗ đang cuộn (đổi một ô "Cô đoán" không được nhảy trang). */
+  private swap(col: HTMLElement, parts: HTMLElement[], toBottom = false) {
+    const keep = col.querySelector(".nb-scroll")?.scrollTop ?? -1;
+    col.replaceChildren(...parts);
+    const sc = col.querySelector(".nb-scroll") as HTMLElement | null;
+    if (sc) sc.scrollTop = keep >= 0 && !toBottom ? keep : sc.scrollHeight;
+  }
+
+  private renderLeft(toBottom = false) { this.swap(this.colL, this.left(), toBottom); }
+
+  private renderRight() {
+    const focused = (document.activeElement as HTMLElement | null)?.dataset?.nbSlot;
+    this.swap(this.colR, this.right());
+    // Đổi một ô "Cô đoán" xong thì tiêu điểm phải ở lại ĐÚNG ô đó, không rơi về body.
+    if (focused) this.colR.querySelector<HTMLElement>(`[data-nb-slot="${focused}"]`)?.focus();
   }
 
   // ───────────────────────────────────────────────── cột trái — máy ghi
 
-  private left() {
-    const col = this.el("div", "nb-col nb-left");
+  private left(): HTMLElement[] {
+    const col: HTMLElement[] = [];
     const h = this.el("div", "nb-h");
     const prev = this.el("button", "nb-btn", "‹");
     const next = this.el("button", "nb-btn", "›");
     prev.setAttribute("aria-label", "ngày trước");
     next.setAttribute("aria-label", "ngày sau");
-    prev.onclick = () => { this.day = Math.max(1, this.day - 1); this.render(); };
-    next.onclick = () => { this.day = Math.min(this.w.progress.dayIndex, this.day + 1); this.render(); };
+    prev.onclick = () => { this.day = Math.max(1, this.day - 1); this.renderLeft(); };
+    next.onclick = () => { this.day = Math.min(this.w.progress.dayIndex, this.day + 1); this.renderLeft(); };
     const title = this.el("span", "", `Sổ ghi — ngày ${this.day}`);
     title.append(this.el("span", "nb-sub", "  (cô Ba ghi giùm)"));
     h.append(prev, title, next);
-    col.append(h);
+    col.push(h);
 
     const sc = this.el("div", "nb-scroll");
     // trang cuối ngày của cô Ba — mực đỏ, 2–3 dòng, không phán đúng sai
@@ -195,13 +252,13 @@ export class NotebookView {
         sc.append(box);
       }
     }
-    col.append(sc);
+    col.push(sc);
 
     const bar = this.el("div", "nb-bar");
     const csv = this.el("button", "nb-btn", "Xuất CSV");
     csv.onclick = () => this.exportCsv();
     bar.append(csv, this.el("span", "nb-t", "máy ghi — không sửa được"));
-    col.append(bar);
+    col.push(bar);
     return col;
   }
 
@@ -223,18 +280,18 @@ export class NotebookView {
     if (n?.t === "ABSENT_STREAK") extra.push(`lâu rồi không ghé (${n.missed} bữa)`);
     if (extra.length) body.append(this.el("div", "nb-note", extra.join(" · ")));
     row.append(body);
-    if (e.npcId !== "KHACH_LA") { row.style.cursor = "pointer"; row.onclick = () => { this.sel = e.npcId; this.msg = ""; this.render(); }; }
+    if (e.npcId !== "KHACH_LA") { row.style.cursor = "pointer"; row.onclick = () => { this.sel = e.npcId; this.msg = ""; this.renderRight(); }; }
     return row;
   }
 
   // ───────────────────────────────────────────────── cột phải — con ghi
 
-  private right() {
-    const col = this.el("div", "nb-col nb-right");
+  private right(): HTMLElement[] {
+    const col: HTMLElement[] = [];
     const nb = this.nb;
     const h = this.el("div", "nb-h");
     h.append(this.el("span", "", "Người trong hẻm"), this.el("span", "nb-sub", "  (con ghi)"));
-    col.append(h);
+    col.push(h);
     const faces = this.el("div", "nb-faces");
     for (const id of nb.met) {
       const b = this.el("button", `nb-face${id === this.sel ? " on" : ""}`);
@@ -242,22 +299,22 @@ export class NotebookView {
       img.src = this.face(id); img.alt = this.who(id);
       b.title = this.who(id);
       b.append(img);
-      b.onclick = () => { this.sel = id; this.msg = ""; this.render(); };
+      b.onclick = () => { this.sel = id; this.msg = ""; this.renderRight(); };
       faces.append(b);
     }
-    col.append(faces);
+    col.push(faces);
     const sc = this.el("div", "nb-scroll");
     if (!this.sel) {
       sc.append(this.el("div", "nb-empty", "chưa gặp ai. Mở hàng rồi hẵng ghi."));
     } else sc.append(this.pageView(this.sel));
-    col.append(sc);
+    col.push(sc);
 
     const bar = this.el("div", "nb-bar");
-    bar.append(this.el("span", "nb-t", this.opts.mode === "evening" ? "đóng sổ rồi đi ngủ" : "Tab / Esc để đóng — trong lúc mở sổ, quầy đứng yên"));
+    bar.append(this.el("span", "nb-t", this.opts.mode === "evening" ? "đóng sổ rồi đi ngủ" : "Tab nhảy ô · Esc để đóng — trong lúc mở sổ, quầy đứng yên"));
     const close = this.el("button", "nb-btn primary", "Đóng sổ");
     close.onclick = () => this.close();
     bar.append(close);
-    col.append(bar);
+    col.push(bar);
     return col;
   }
 
@@ -282,7 +339,12 @@ export class NotebookView {
     name.maxLength = 32;
     name.setAttribute("aria-label", "tên người này");
     name.oninput = () => { p.name = name.value; };
-    name.onchange = () => this.render();
+    // CHỈ cột trái: dựng lại cột phải ở đây là huỷ đúng cái ô người chơi vừa bấm sang.
+    name.onchange = () => {
+      this.renderLeft();
+      const b = this.colR.querySelectorAll<HTMLButtonElement>(".nb-face")[this.nb.met.indexOf(id)];
+      if (b) { b.title = this.who(id); b.querySelector("img")?.setAttribute("alt", this.who(id)); }
+    };
     top.append(img, name);
     wrap.append(top);
     wrap.append(this.el("div", "nb-t", `gặp lần đầu ngày ${p.firstSeenDay}`));
@@ -326,10 +388,11 @@ export class NotebookView {
     }
     sel.value = h?.value ?? "";
     sel.disabled = !opts.length;
+    sel.dataset.nbSlot = slot;
     sel.onchange = () => {
       if (!sel.value) { unguess(this.nb, id, slot); this.msg = ""; }
       else this.msg = guess(this.nb, id, slot, sel.value, day) ?? "";
-      this.render();
+      this.renderRight();
     };
     row.append(sel);
     return row;

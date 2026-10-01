@@ -13,12 +13,20 @@ import { CREDITS, DEBT_LINE, coBaLastLine, computeEnding, type EndingState } fro
  * Trợ năng (§4): text không tự chạy tiếp · chữ viết tay có công tắc "dùng font thường" ·
  * giảm chuyển động tắt hiệu ứng gõ chữ · nền đục · cỡ chữ theo cài đặt.
  */
+/**
+ * 🔴 FONT: `index.html` chỉ nạp **Be Vietnam Pro** (400/500/700 × latin · latin-ext ·
+ * vietnamese). `"Segoe Print" / "Comic Sans MS" / cursive` KHÔNG có bộ chữ Việt —
+ * "Cho bà ổ thịt" hiện ra "Cho bà ô'thịt", đúng thứ `index.html:11` cấm. Chữ viết tay ở
+ * đây là Be Vietnam Pro NGHIÊNG, mực xanh, trên nền giấy — giữ cảm giác, giữ luôn dấu.
+ */
+const TAY = 'font-family:"Be Vietnam Pro",system-ui,sans-serif;font-style:italic;letter-spacing:.01em';
+
 const STYLE = `
 .en-root{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;background:#141a20;font-family:"Be Vietnam Pro",system-ui,sans-serif;color:#2b2f31}
 .en-page{width:min(760px,94vw);max-height:94vh;overflow:auto;background:#efe6d2;border-radius:10px;padding:22px 26px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
 .en-alley{position:relative;height:260px;border-radius:8px;background:linear-gradient(#c3cbce,#e8ebe9 55%,#9faab0 56%,#8a969c);overflow:hidden}
 .en-sign{position:absolute;left:50%;top:22px;transform:translateX(-50%);padding:6px 16px;background:#9b2b22;color:#f2c14e;font-weight:800;letter-spacing:.04em;border-radius:4px;font-size:1.25em}
-.en-sign.tay{font-family:"Segoe Print","Comic Sans MS",cursive;transform:translateX(-50%) rotate(-1.2deg)}
+.en-sign.tay{${TAY};transform:translateX(-50%) rotate(-1.2deg)}
 .en-sign.cu{opacity:.75;filter:saturate(.6)}
 .en-people{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
 .en-p{width:64px;height:84px;object-fit:cover;object-position:50% 0;image-rendering:pixelated}
@@ -27,8 +35,8 @@ const STYLE = `
 .en-h{font-weight:700;margin:14px 0 8px}
 .en-nb{background:#f6f0e1;border-radius:6px;padding:12px 14px;min-height:120px}
 .en-nb .d{font-size:.82em;color:#6d624e}
-.en-ink{font-family:"Segoe Print","Comic Sans MS",cursive;color:#2f5d8a;white-space:pre-wrap;line-height:1.7}
-.en-plain .en-ink{font-family:"Be Vietnam Pro",system-ui,sans-serif;color:#2b2f31}
+.en-ink{${TAY};color:#2f5d8a;white-space:pre-wrap;line-height:1.7}
+.en-plain .en-ink{font-family:"Be Vietnam Pro",system-ui,sans-serif;font-style:normal;letter-spacing:normal;color:#2b2f31}
 .en-say{font-style:italic;color:#4a5a6a;margin:8px 0}
 .en-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:16px}
 .en-btn{font:inherit;font-size:.9em;padding:7px 14px;border-radius:6px;border:1px solid #b8ab8e;background:#fbf7ec;color:#2b2f31;cursor:pointer;min-height:34px}
@@ -89,18 +97,25 @@ export class EndingView {
 
   private next(to: Part) { this.part = to; this.render(); }
 
-  private bar(page: HTMLElement, onNext: () => void, label = "tiếp") {
+  /**
+   * Thanh nút cuối mỗi màn. MÀN NÀO CŨNG phải đi qua đây: công tắc "dùng font thường"
+   * (§4 trợ năng) không được thiếu ở màn nào — nhất là màn chữ viết tay dày nhất.
+   */
+  private bar(page: HTMLElement, onNext: () => void, label = "tiếp", extra?: HTMLElement) {
     const bar = this.el("div", "en-bar");
     const font = this.el("button", "en-btn", this.plain ? "dùng chữ viết tay" : "dùng font thường");
     font.onclick = () => { this.plain = !this.plain; this.render(); };
     const go = this.el("button", "en-btn primary", label);
     go.onclick = onNext;
-    bar.append(font, go);
+    bar.append(font, ...(extra ? [extra] : []), go);
     page.append(bar);
     queueMicrotask(() => go.focus());
   }
 
   private render() {
+    // Dựng lại trang là bỏ luôn cái <div> mà đồng hồ gõ chữ đang ghi vào — không dừng
+    // đồng hồ ở đây thì bấm "dùng font thường" giữa lúc chữ đang chạy là chữ đứng hình.
+    if (this.timer !== null) { window.clearInterval(this.timer); this.timer = null; }
     this.root.replaceChildren();
     const page = this.el("div", `en-page${this.plain ? " en-plain" : ""}`);
     this.root.append(page);
@@ -192,14 +207,9 @@ export class EndingView {
         }, 400);
       }
     }
-    const bar = this.el("div", "en-bar");
     const now = this.el("button", "en-btn", "hiện hết");
     now.onclick = full;
-    const go = this.el("button", "en-btn primary", "đóng sổ");
-    go.onclick = () => { full(); this.next("photo"); };
-    bar.append(now, go);
-    page.append(bar);
-    queueMicrotask(() => go.focus());
+    this.bar(page, () => { full(); this.next("photo"); }, "đóng sổ", now);
   }
 
   /** Tấm ảnh chị Hạnh chụp bằng máy film ngày 40 — hoặc ảnh cô Ba chụp điện thoại, mờ, lệch. Không chữ giải thích. */
@@ -207,7 +217,7 @@ export class EndingView {
     const ph = this.el("div", "en-photo");
     if (this.e.finalPhoto === "co_ba_dien_thoai") ph.style.transform = "rotate(2.5deg)", ph.style.filter = "grayscale(.4) blur(.6px)";
     const sg = this.el("div", "sg", "BÁNH MÌ CÔ BA");
-    if (this.e.signboard === "ve_tay_run") sg.style.fontFamily = '"Segoe Print","Comic Sans MS",cursive';
+    if (this.e.signboard === "ve_tay_run") sg.style.fontStyle = "italic";
     ph.append(sg, this.el("div", "cart"));
     page.append(ph);
     // không dịch — kể cả ở bản tiếng Anh (P4-05 §2.9 C)

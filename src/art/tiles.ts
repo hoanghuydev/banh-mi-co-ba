@@ -34,7 +34,10 @@ function floorTile(scene: Phaser.Scene, key: string, spec: FloorSpec, top: numbe
     isoBox(g, cx, cy, BASE, top);
     joints(g, cx, cy, spec.joint);
 
-    g.fillStyle(PAL.floorStain, 0.22);                 // vết loang, cố định theo variant
+    // Vết loang cho mặt sàn khỏi phẳng lì. RẤT nhạt: từ khi vỉa hè và lòng đường
+    // dùng ảnh thật, hàm này chỉ còn vẽ SÀN QUÁN — mà sàn quán là gạch men trắng,
+    // vết loang 0,22 trên nền trắng đọc ra là mấy vũng xám bẩn chứ không ra chất men.
+    g.fillStyle(PAL.floorStain, 0.075);                // cố định theo variant
     for (let i = 0; i < 3; i++) {
       const u = (((i * 7 + variant * 3) % 9) / 9 - 0.5) * 0.66;
       const v = (((i * 5 + variant * 2) % 7) / 7 - 0.5) * 0.66;

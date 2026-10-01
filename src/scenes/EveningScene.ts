@@ -67,6 +67,10 @@ export class EveningScene extends Phaser.Scene {
     // Đi ngủ: khoản bắt buộc quá ân hạn thành fail mềm (P3-06) — ghi lại để sáng mai nói ra
     const out = bedtime(this.ctx.world);
     this.ctx.world.econ.notices = out.defaulted.map((d) => d.loss);
+    // Dòng sổ cái chốt lúc RỜI cảnh tối, không phải lúc vào: mọi khoản người chơi tiêu trong
+    // đêm (góp hụi, tiền học, đồ nghề…) đều nằm ở `econ.today` và chỉ đủ mặt ở đây. Gọi lại
+    // `eveningCounting` là an toàn — phần đếm tiền có cờ `today.counted`, chỉ dòng sổ được ghi đè.
+    eveningCounting(this.ctx.world);
     this.view?.close();
     bus.emit("evening:done", { dayIndex: this.ctx.world.progress.dayIndex });
   }

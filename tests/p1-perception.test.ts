@@ -127,9 +127,26 @@ test("không bao giờ trừ tiền bánh: tệ nhất là không có boa", () =
   const bus = new Bus();
   const h = new HeadlessStall(newGame("t", "tip-1"), { ...POLICIES.greedy, workSec: [1e9, 1e9] }, { bus });
   h.run({ until: (x) => x.service.front?.phase === "waiting" });
-  h.service.serveDish([]);                        // đưa một ổ trống trơn
+  const dish = dishFor(h.service.front!.order!);
+  h.service.serveDish(dish.slice(0, -1));         // thiếu MỘT thứ — vẫn là món khách gọi
   const paid = h.service.drain().find((e) => e.kind === "paid");
   assert.ok(paid && paid.kind === "paid" && paid.amount >= 25_000 && paid.tip === 0);
+});
+
+/**
+ * Ranh giới của luật trên. §2.12 là mục TIỀN BOA: "không có cơ chế trừ tiền, tệ nhất là
+ * không tip" — nó không nói ổ nào cũng bán bằng giá món khách gọi. Ổ không có một miếng
+ * nhân mặn nào THẬT SỰ là bánh mì không, nên tính đúng bậc `khong` của thực đơn
+ * (P3-03 §2.5). Boa vẫn 0, không âm. Thiếu bao nhiêu thứ đi nữa mà còn nhân mặn thì
+ * vẫn giá cũ — test ngay trên giữ chỗ đó.
+ */
+test("ổ không có miếng nhân mặn nào = bánh mì không, 10.000₫ (P3-03 §2.5)", () => {
+  const bus = new Bus();
+  const h = new HeadlessStall(newGame("t", "tip-1"), { ...POLICIES.greedy, workSec: [1e9, 1e9] }, { bus });
+  h.run({ until: (x) => x.service.front?.phase === "waiting" });
+  h.service.serveDish([]);
+  const paid = h.service.drain().find((e) => e.kind === "paid");
+  assert.ok(paid && paid.kind === "paid" && paid.amount === 10_000 && paid.tip === 0);
 });
 
 test("ANTICIPATED khi đứng nhìn thẳng lúc gói, DISCOVERED khi không ai kịp thấy", () => {
