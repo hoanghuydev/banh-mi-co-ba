@@ -1,5 +1,5 @@
 {
-  "_note": "Bé Su — học sinh cấp 2, 13 tuổi. Gọi người chơi là 'cô', tự xưng 'con'. KHÔNG được hỏi nó chuyện đi làm, lương, chồng con, nhậu. Nó quay TikTok, giỏi toán thật, thanThien 1,0 — nói nhiều nhất hẻm, và nó MANG DRAMA TỚI: drama trên mạng, drama trong lớp, chuyện nó nghe lỏm người lớn. Nó kể hết, không giữ được cái gì.",
+  "_note": "Bé Su — học sinh cấp 2, 13 tuổi. Gọi người chơi là 'cô', tự xưng 'con'. KHÔNG được hỏi nó chuyện đi làm, lương, chồng con, nhậu. Nó quay clip đăng mạng, giỏi toán thật, thanThien 1,0 — nói nhiều nhất hẻm, và nó MANG DRAMA TỚI: drama trên mạng, drama trong lớp, chuyện nó nghe lỏm người lớn. Nó kể hết, không giữ được cái gì.",
   "talks": [
     {
       "id": "su.quay",
@@ -9,7 +9,8 @@
       "weight": 14,
       "ignore": {
         "reply": "Ủa… thôi con hổng quay nữa đâu cô.",
-        "rel": -2
+        "rel": -2,
+        "mood": "LANH"
       },
       "shared": {
         "chao": [
@@ -27,7 +28,8 @@
               "kind": "CARED_FOR_THEM",
               "intensity": 40
             },
-            "reply": "Dạ! Chiều con gửi cô coi. Cô đừng cười con nha."
+            "reply": "Dạ! Chiều con gửi cô coi. Cô đừng cười con nha.",
+            "mood": "THUONG"
           },
           {
             "say": "Thôi đủ rồi con, cô mỏi tay.",
@@ -53,7 +55,8 @@
                   "say": "Hai ngàn người lận hả? Dữ vậy con.",
                   "tone": "DUA",
                   "rel": 3,
-                  "reply": "Dạ chút xíu hà cô. Mà quay cô là con lên liền á."
+                  "reply": "Dạ chút xíu hà cô. Mà quay cô là con lên liền á.",
+                  "mood": "CUOI"
                 },
                 {
                   "say": "Con quay hẻm mình chi, có gì đâu mà coi.",
@@ -76,7 +79,8 @@
                     "kind": "CARED_FOR_THEM",
                     "intensity": 45
                   },
-                  "reply": "Thiệt hả cô! Dạ, mai con quay nha cô."
+                  "reply": "Thiệt hả cô! Dạ, mai con quay nha cô.",
+                  "mood": "NGAC_NHIEN"
                 }
               ]
             },
@@ -92,7 +96,8 @@
               "tone": "DUA",
               "rel": 3,
               "reply": "Vậy cô nhớ chia con một ổ đầy đủ nha cô!",
-              "ref": "chao"
+              "ref": "chao",
+              "mood": "CUOI"
             },
             {
               "say": "Đứng xa cái lò ra con, nóng.",
@@ -100,7 +105,8 @@
               "rel": 2,
               "reply": "Dạ dạ. Con lùi nè cô."
             }
-          ]
+          ],
+          "mood": "CUOI"
         },
         {
           "say": "Quay gì mà quay. Lo ăn đi con.",
@@ -111,7 +117,8 @@
               "say": "Ăn xong rồi quay nghen, cô hổng cấm.",
               "tone": "AM",
               "rel": 3,
-              "reply": "Dạ! Cô dễ thương ghê á cô."
+              "reply": "Dạ! Cô dễ thương ghê á cô.",
+              "mood": "CUOI"
             },
             {
               "say": "Ăn xong đi học, đừng la cà.",
@@ -128,7 +135,8 @@
                 "kind": "RUDE_TO_THEM",
                 "intensity": 50
               },
-              "silent": true
+              "silent": true,
+              "mood": "BUC"
             }
           ]
         },
@@ -142,7 +150,8 @@
               "say": "Nói dóc. Đẹp nhất hẻm là cô Mai chớ.",
               "tone": "DUA",
               "rel": 3,
-              "reply": "Cô Mai đẹp kiểu cô Mai. Cô đẹp kiểu bánh mì nóng á cô."
+              "reply": "Cô Mai đẹp kiểu cô Mai. Cô đẹp kiểu bánh mì nóng á cô.",
+              "mood": "CUOI"
             },
             {
               "say": "Ừ, quay đi con.",
@@ -169,7 +178,8 @@
               "say": "Hổng phải tại con đâu. Cô ngại thôi.",
               "tone": "AM",
               "rel": 3,
-              "reply": "Dạ. Con hổng buồn đâu cô. Con quay cái xe thôi được hông?"
+              "reply": "Dạ. Con hổng buồn đâu cô. Con quay cái xe thôi được hông?",
+              "mood": "CUOI"
             },
             {
               "say": "Ừ.",
@@ -179,7 +189,8 @@
             }
           ]
         }
-      ]
+      ],
+      "openMood": "CUOI_TUOI"
     },
     {
       "id": "su.drama.mang",
@@ -196,7 +207,8 @@
       "weight": 12,
       "ignore": {
         "reply": "Dạ thôi… cô bận con kể sau.",
-        "rel": -1
+        "rel": -1,
+        "mood": "LANH"
       },
       "shared": {
         "ket": [
@@ -225,7 +237,7 @@
           "say": "Chè Vườn Chuối sao con?",
           "tone": "AM",
           "rel": 1,
-          "reply": "Có người quay được con ruồi trong ly chè. Clip bốn triệu view đó cô. Quán đóng cửa luôn rồi.",
+          "reply": "Có người quay được con ruồi trong ly chè. Bốn triệu view. Quán đóng cửa luôn.",
           "then": [
             {
               "say": "Trời. Một con ruồi mà dẹp luôn cái quán hả con.",
@@ -241,13 +253,15 @@
                     "kind": "REMEMBERED_STORY",
                     "intensity": 40
                   },
-                  "reply": "Dạ con nghĩ vậy. Mà con nói ở lớp hổng ai tin con hết."
+                  "reply": "Dạ con nghĩ vậy. Mà con nói ở lớp hổng ai tin con hết.",
+                  "mood": "THUONG"
                 },
                 {
                   "say": "Con coi kỹ dữ ha. Con làm thám tử luôn đi.",
                   "tone": "DUA",
                   "rel": 3,
-                  "reply": "Dạ con coi tới hai chục lần lận cô. Con rảnh quá mà."
+                  "reply": "Dạ con coi tới hai chục lần lận cô. Con rảnh quá mà.",
+                  "mood": "CUOI"
                 },
                 {
                   "say": "Con đừng có nói ra nghen, mệt lắm.",
@@ -306,7 +320,8 @@
               "say": "Ai cũng xấu hả? Con nói cô nghe coi.",
               "tone": "AM",
               "rel": 3,
-              "reply": "Dạ… tại lên đó người ta chỉ đăng lúc người ta chửi nhau thôi á cô."
+              "reply": "Dạ… tại lên đó người ta chỉ đăng lúc người ta chửi nhau thôi á cô.",
+              "mood": "CUOI"
             },
             {
               "say": "Vậy bớt coi lại đi con.",
@@ -332,7 +347,8 @@
               "say": "Bà Bảy mà nghe câu đó là con chết nghen.",
               "tone": "DUA",
               "rel": 3,
-              "reply": "Cô đừng méc bà nha cô! Con lạy cô á."
+              "reply": "Cô đừng méc bà nha cô! Con lạy cô á.",
+              "mood": "CUOI"
             },
             {
               "say": "Con nói xấu người lớn vậy hả con.",
@@ -349,7 +365,8 @@
                 "kind": "RUDE_TO_THEM",
                 "intensity": 45
               },
-              "silent": true
+              "silent": true,
+              "mood": "BUC"
             }
           ]
         },
@@ -359,7 +376,8 @@
           "rel": -1,
           "reply": "Dạ."
         }
-      ]
+      ],
+      "openMood": "CUOI_TUOI"
     },
     {
       "id": "su.buon",
@@ -384,7 +402,8 @@
         "mem": {
           "kind": "RUDE_TO_THEM",
           "intensity": 35
-        }
+        },
+        "mood": "BUON"
       },
       "shared": {
         "ui": [
@@ -396,7 +415,8 @@
               "kind": "CARED_FOR_THEM",
               "intensity": 55
             },
-            "reply": "Dạ. Con thương hẻm mình mà cô. Con mới quay chớ."
+            "reply": "Dạ. Con thương hẻm mình mà cô. Con mới quay chớ.",
+            "mood": "THUONG"
           },
           {
             "say": "Mai con quay tiếp. Cô lau quầy sạch cho con.",
@@ -407,7 +427,8 @@
               "kind": "CARED_FOR_THEM",
               "intensity": 50
             },
-            "reply": "Thiệt hả cô! Dạ, mai con quay nha cô."
+            "reply": "Thiệt hả cô! Dạ, mai con quay nha cô.",
+            "mood": "NGAC_NHIEN"
           },
           {
             "say": "Thôi nghỉ quay đi con, đỡ mệt.",
@@ -441,14 +462,16 @@
                   "tone": "THANG",
                   "rel": 3,
                   "reply": "Dạ… mà sao con vẫn buồn cô.",
-                  "ref": "ui"
+                  "ref": "ui",
+                  "mood": "CUOI"
                 },
                 {
                   "say": "Con đọc mấy cái đó chi cho khổ con.",
                   "tone": "AM",
                   "rel": 3,
                   "reply": "Con hổng đọc hổng được cô. Nó cứ hiện lên á.",
-                  "ref": "ui"
+                  "ref": "ui",
+                  "mood": "CUOI"
                 },
                 {
                   "say": "Vậy thì đừng đăng nữa. Đơn giản mà.",
@@ -466,7 +489,8 @@
                     "kind": "RUDE_TO_THEM",
                     "intensity": 75
                   },
-                  "silent": true
+                  "silent": true,
+                  "mood": "GIAN"
                 }
               ]
             },
@@ -480,7 +504,8 @@
               },
               "reply": "Dạ… con ngồi chút xíu thôi nha cô.",
               "ref": "ui",
-              "calm": 28
+              "calm": 28,
+              "mood": "THUONG"
             },
             {
               "say": "Ai làm gì con? Nói cô nghe.",
@@ -489,7 +514,8 @@
               "reply": "Hổng ai hết cô. Người trên mạng à. Mà đau thiệt đó cô.",
               "ref": "ui"
             }
-          ]
+          ],
+          "mood": "CUOI"
         },
         {
           "say": "Hứng gì mà hứng. Ăn đi con.",
@@ -501,7 +527,8 @@
               "tone": "AM",
               "rel": 3,
               "reply": "Dạ… con bị người ta chửi trên mạng á cô.",
-              "ref": "ui"
+              "ref": "ui",
+              "mood": "CUOI"
             },
             {
               "say": "Ăn lẹ đi, trễ học rồi.",
@@ -517,7 +544,8 @@
                 "kind": "RUDE_TO_THEM",
                 "intensity": 65
               },
-              "silent": true
+              "silent": true,
+              "mood": "BUC"
             }
           ]
         },
@@ -530,9 +558,543 @@
             "kind": "RUDE_TO_THEM",
             "intensity": 55
           },
-          "reply": "Dạ. Con về."
+          "reply": "Dạ. Con về.",
+          "mood": "BUC"
         }
-      ]
+      ],
+      "openMood": "BUON"
+    },
+    {
+      "id": "su.thaygia",
+      "npc": "BE_SU",
+      "topic": "thaygia",
+      "when": {
+        "day": [
+          14,
+          40
+        ],
+        "minVisits": 5,
+        "needFlag": "phucThayBeSu"
+      },
+      "weight": 12,
+      "opener": "Cô ơi. Cái ông già hay ngồi ăn ở ghế đó, ổng hỏi con một bài toán á cô.",
+      "shared": {
+        "ket": [
+          {
+            "say": "Con đi học đi, trễ rồi đó.",
+            "tone": "THUONG",
+            "rel": 1,
+            "reply": "Dạ! Con dạ con đi nè cô."
+          },
+          {
+            "say": "Mai con kể cô nghe tiếp nghen.",
+            "tone": "AM",
+            "rel": 3,
+            "reply": "Dạ! Mai con kể. Con có nhiều chuyện lắm cô ơi.",
+            "mood": "CUOI"
+          },
+          {
+            "say": "Ừ.",
+            "tone": "LANH",
+            "rel": -1,
+            "silent": true
+          }
+        ]
+      },
+      "tree": [
+        {
+          "say": "Thầy Phúc hả con? Rồi con làm ra không?",
+          "tone": "AM",
+          "rel": 3,
+          "reply": "Dạ ra. Mà con nói con hổng biết. Con nói đại một số trật lất luôn.",
+          "then": [
+            {
+              "say": "Ủa sao vậy con? Con làm ra mà.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "Tại con sợ. Năm ngoái con làm ra một bài là bị bắt đi thi. Cực thấy mồ cô.",
+              "then": [
+                {
+                  "say": "Vậy con sợ bị bắt đi thi nữa hả con?",
+                  "tone": "AM",
+                  "rel": 4,
+                  "flag": "suSoThi",
+                  "mem": {
+                    "kind": "REMEMBERED_STORY",
+                    "intensity": 55
+                  },
+                  "reply": "Dạ… Đi thi là nghỉ quay, nghỉ chơi, ngồi ôn tới chín giờ tối. Con hổng thích.",
+                  "mood": "THUONG"
+                },
+                {
+                  "say": "Mà con nói trật, thầy có tin không con?",
+                  "tone": "DUA",
+                  "rel": 3,
+                  "reply": "Hổng tin cô ơi! Ổng nhìn con, ổng cười cười, ổng nói \"ừ\" rồi ổng đi. Quê thấy mồ.",
+                  "mood": "CUOI"
+                },
+                {
+                  "say": "Giỏi mà giấu uổng lắm con.",
+                  "tone": "THANG",
+                  "rel": 1,
+                  "reply": "Dạ… ai cũng nói vậy. Mà hổng ai hỏi con có thích không hết á cô."
+                },
+                {
+                  "say": "Ừ. Chuyện của con.",
+                  "tone": "LANH",
+                  "rel": -2,
+                  "silent": true
+                }
+              ],
+              "mood": "CUOI"
+            },
+            {
+              "say": "Thầy đó hồi xưa dạy toán đó con.",
+              "tone": "THUONG",
+              "rel": 2,
+              "reply": "Hả?! Trời ơi. Vậy là ổng biết con xạo rồi. Thôi chết con.",
+              "ref": "ket",
+              "mood": "NGAC_NHIEN"
+            },
+            {
+              "say": "Lần sau con cứ nói thiệt đi con, hổng ai bắt con đâu.",
+              "tone": "AM",
+              "rel": 3,
+              "mem": {
+                "kind": "CARED_FOR_THEM",
+                "intensity": 45
+              },
+              "reply": "Dạ… cô nói vậy thôi. Người lớn hay nói vậy rồi người lớn bắt à.",
+              "ref": "ket",
+              "mood": "THUONG"
+            }
+          ],
+          "mood": "CUOI"
+        },
+        {
+          "say": "Bài gì mà khó dữ vậy con?",
+          "tone": "AM",
+          "rel": 2,
+          "reply": "Hổng khó cô. Ổng hỏi hai cái vòi nước chảy vô cái hồ á. Con tính nhẩm được mà.",
+          "then": [
+            {
+              "say": "Con nhẩm được thiệt hả? Cô tính giấy còn sai nữa.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "Dạ được. Con hổng biết sao nữa, nó tự ra trong đầu con á cô.",
+              "then": [
+                {
+                  "say": "Cái đó là giỏi đó con. Giỏi thiệt chớ hổng phải giỡn.",
+                  "tone": "AM",
+                  "rel": 4,
+                  "flag": "suDuocKhen",
+                  "mem": {
+                    "kind": "CARED_FOR_THEM",
+                    "intensity": 60
+                  },
+                  "reply": "Dạ… cô là người thứ hai nói vậy. Người thứ nhất là ổng.",
+                  "mood": "THUONG"
+                },
+                {
+                  "say": "Vậy chút nữa con tính tiền giùm cô luôn nghen.",
+                  "tone": "DUA",
+                  "rel": 3,
+                  "reply": "Dạ được! Cô đưa đây con tính. Cô tính chậm thấy mồ cô ơi.",
+                  "mood": "CUOI"
+                },
+                {
+                  "say": "Ừ, hay. Mà con đi học đi.",
+                  "tone": "LANH",
+                  "rel": -1,
+                  "silent": true
+                }
+              ],
+              "mood": "CUOI"
+            },
+            {
+              "say": "Vậy con trả lời ổng đại cái gì?",
+              "tone": "DUA",
+              "rel": 2,
+              "reply": "Con nói \"dạ ba tiếng\". Mà đúng ra là một tiếng hai mươi. Con nói xong con muốn độn thổ.",
+              "ref": "ket",
+              "mood": "NGUONG"
+            },
+            {
+              "say": "Ừ.",
+              "tone": "LANH",
+              "rel": -1,
+              "silent": true
+            }
+          ]
+        },
+        {
+          "say": "Cô đang đông khách nè con. Chút nữa nghen.",
+          "tone": "LANH",
+          "rel": -2,
+          "reply": "Dạ… dạ con đứng đây con đợi cũng được mà cô."
+        }
+      ],
+      "openMood": "NGUONG"
+    },
+    {
+      "id": "su.toan",
+      "npc": "BE_SU",
+      "topic": "toan",
+      "when": {
+        "day": [
+          5,
+          40
+        ]
+      },
+      "weight": 13,
+      "opener": "Cô ơi cô thối dư con hai ngàn nè cô. Đúng ra là năm ngàn à.",
+      "shared": {
+        "ket": [
+          {
+            "say": "Ừ. Cảm ơn con nghen.",
+            "tone": "AM",
+            "rel": 3,
+            "reply": "Dạ! Hổng có gì cô.",
+            "mood": "CUOI"
+          },
+          {
+            "say": "Ừ, con đi học đi.",
+            "tone": "THUONG",
+            "rel": 1,
+            "reply": "Dạ con đi nè cô."
+          },
+          {
+            "say": "Ừ.",
+            "tone": "LANH",
+            "rel": -1,
+            "silent": true
+          }
+        ]
+      },
+      "tree": [
+        {
+          "say": "Ủa thiệt hả con? Cô đưa con rồi mà.",
+          "tone": "THANG",
+          "reply": "Dạ thiệt. Hai ngàn nè cô. Con trả cô nè.",
+          "then": [
+            {
+              "say": "Con tính nhanh ghê. Cô chưa kịp nghĩ nữa.",
+              "tone": "AM",
+              "rel": 4,
+              "mem": {
+                "kind": "CARED_FOR_THEM",
+                "intensity": 50
+              },
+              "reply": "Dạ con tính trong đầu á cô. Con nhìn cái con biết liền.",
+              "then": [
+                {
+                  "say": "Vậy từ mai con đứng đây tính tiền giùm cô luôn nghen.",
+                  "tone": "DUA",
+                  "rel": 3,
+                  "flag": "suGiuTien",
+                  "reply": "Dạ! Mà cô trả con bằng gì? Con hổng lấy tiền đâu, con lấy bánh mì không.",
+                  "mood": "CUOI"
+                },
+                {
+                  "say": "Hai ngàn đó cô cho con. Con giữ đi.",
+                  "tone": "AM",
+                  "rel": 3,
+                  "act": {
+                    "kind": "DISCOUNT",
+                    "vnd": 2000
+                  },
+                  "reply": "Dạ… thiệt hả cô? Dạ con cảm ơn cô. Con để dành mua thẻ nhớ.",
+                  "mood": "CUOI"
+                },
+                {
+                  "say": "Cô già rồi con ơi. Đầu óc cô chậm.",
+                  "tone": "DUA",
+                  "rel": 2,
+                  "reply": "Cô đâu có già. Cô còn trẻ hơn mấy cô trong trường con nữa."
+                },
+                {
+                  "say": "Ừ. Cô cầm lại.",
+                  "tone": "LANH",
+                  "rel": -2,
+                  "silent": true
+                }
+              ],
+              "mood": "THUONG"
+            },
+            {
+              "say": "Thôi con cầm đi con, coi như cô gửi.",
+              "tone": "THUONG",
+              "rel": 2,
+              "act": {
+                "kind": "DISCOUNT",
+                "vnd": 2000
+              },
+              "reply": "Dạ… vậy con cảm ơn cô. Mà lần sau cô coi kỹ nghen cô, hổng phải ai cũng trả lại đâu.",
+              "ref": "ket"
+            },
+            {
+              "say": "Con trả lại cô, con ngoan ghê.",
+              "tone": "AM",
+              "rel": 3,
+              "mem": {
+                "kind": "CARED_FOR_THEM",
+                "intensity": 45
+              },
+              "reply": "Dạ má con dặn. Má nói tiền hổng phải của mình thì cầm nó nặng tay lắm.",
+              "ref": "ket",
+              "mood": "THUONG"
+            }
+          ]
+        },
+        {
+          "say": "Con tính lại coi, cô thấy cô đưa đúng mà.",
+          "tone": "THANG",
+          "reply": "Cô ơi, hai lăm trừ hai chục là năm. Cô đưa bảy. Dư hai á cô.",
+          "then": [
+            {
+              "say": "…Ừ ha. Cô sai thiệt. Cô xin lỗi con.",
+              "tone": "AM",
+              "rel": 3,
+              "mem": {
+                "kind": "CARED_FOR_THEM",
+                "intensity": 40
+              },
+              "reply": "Dạ hổng sao đâu cô. Cô làm nhiều việc một lúc quá mà.",
+              "then": [
+                {
+                  "say": "Con nói nghe lọt tai ghê. Ai dạy con nói vậy?",
+                  "tone": "AM",
+                  "rel": 3,
+                  "reply": "Hổng ai dạy hết. Con coi clip riết rồi con nói y mấy người trong clip á cô.",
+                  "mood": "CUOI"
+                },
+                {
+                  "say": "Mai mốt cô sai nữa con nhắc cô nghen.",
+                  "tone": "AM",
+                  "rel": 4,
+                  "flag": "suNhacTien",
+                  "mem": {
+                    "kind": "CARED_FOR_THEM",
+                    "intensity": 55
+                  },
+                  "reply": "Dạ! Con nhắc. Mà cô đừng quê nghen cô, con nói nhỏ thôi.",
+                  "mood": "THUONG"
+                },
+                {
+                  "say": "Ừ ừ. Con đi học đi.",
+                  "tone": "LANH",
+                  "rel": -1,
+                  "silent": true
+                }
+              ],
+              "mood": "THUONG"
+            },
+            {
+              "say": "Con này tính nhanh hơn cái máy nữa.",
+              "tone": "DUA",
+              "rel": 3,
+              "reply": "Dạ cô khen con quá con mắc cỡ nè cô.",
+              "ref": "ket",
+              "mood": "NGUONG"
+            },
+            {
+              "say": "Thôi con cầm rồi đi học đi, cô bận.",
+              "tone": "LANH",
+              "rel": -2,
+              "reply": "…Dạ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Con lo chuyện tiền bạc chi vậy, đi học đi con.",
+          "tone": "GAT",
+          "rel": -5,
+          "anger": 30,
+          "mem": {
+            "kind": "RUDE_TO_THEM",
+            "intensity": 60
+          },
+          "reply": "…Dạ. Con trả cô nè. Con đi.",
+          "mood": "BUC"
+        }
+      ],
+      "openMood": "NGHIEM"
+    },
+    {
+      "id": "su.anhbao",
+      "npc": "BE_SU",
+      "topic": "anhbao",
+      "when": {
+        "day": [
+          12,
+          40
+        ],
+        "minVisits": 4
+      },
+      "weight": 11,
+      "opener": "Cô ơi con quay trúng mặt anh nón kết. Ảnh kêu con xoá.",
+      "shared": {
+        "ket": [
+          {
+            "say": "Ừ. Con làm vậy là phải đó con.",
+            "tone": "AM",
+            "rel": 3,
+            "reply": "Dạ. Con hổng muốn ai buồn vì con hết á cô.",
+            "mood": "CUOI"
+          },
+          {
+            "say": "Ừ, con đi học đi.",
+            "tone": "THUONG",
+            "rel": 1,
+            "reply": "Dạ con đi nè cô."
+          },
+          {
+            "say": "Ừ.",
+            "tone": "LANH",
+            "rel": -1,
+            "silent": true
+          }
+        ]
+      },
+      "tree": [
+        {
+          "say": "Rồi con xoá chưa con?",
+          "tone": "THANG",
+          "reply": "Dạ xoá rồi. Mà cái đoạn đó đẹp thiệt đó cô. Tiếc gần chết.",
+          "then": [
+            {
+              "say": "Con xoá liền vậy là con tử tế đó con.",
+              "tone": "AM",
+              "rel": 4,
+              "flag": "suXoaClip",
+              "mem": {
+                "kind": "CARED_FOR_THEM",
+                "intensity": 55
+              },
+              "reply": "Dạ… ảnh nói nhỏ quá cô ơi. Nghe ảnh nói con thấy kỳ kỳ sao á.",
+              "then": [
+                {
+                  "say": "Lần sau con hỏi trước rồi quay nghen con.",
+                  "tone": "AM",
+                  "rel": 3,
+                  "reply": "Dạ. Con hỏi. Mà hỏi rồi người ta làm mặt quê, hổng tự nhiên nữa cô.",
+                  "mood": "CUOI"
+                },
+                {
+                  "say": "Ảnh ngại chớ hổng phải ảnh ghét con đâu.",
+                  "tone": "AM",
+                  "rel": 3,
+                  "mem": {
+                    "kind": "REMEMBERED_STORY",
+                    "intensity": 40
+                  },
+                  "reply": "Dạ hả? …Vậy chắc ảnh hổng giận con ha cô.",
+                  "mood": "THUONG"
+                },
+                {
+                  "say": "Tiếc gì. Đoạn khác quay lại được mà con.",
+                  "tone": "THUONG",
+                  "rel": 1,
+                  "reply": "Dạ. Mà hổng giống đâu cô. Cái lúc đó nó tự nhiên lắm."
+                },
+                {
+                  "say": "Ừ. Chuyện của con.",
+                  "tone": "LANH",
+                  "rel": -2,
+                  "silent": true
+                }
+              ],
+              "mood": "THUONG"
+            },
+            {
+              "say": "Con quay người ta mà hổng xin phép là hổng được đó con.",
+              "tone": "THANG",
+              "rel": 1,
+              "reply": "Dạ… con biết rồi cô. Con quen tay quá, thấy đẹp là con bấm.",
+              "ref": "ket"
+            },
+            {
+              "say": "Đoạn đó đẹp sao con? Kể cô nghe coi.",
+              "tone": "DUA",
+              "rel": 3,
+              "reply": "Ảnh đứng đợi bánh, ảnh cầm cuốn truyện ảnh đọc, nắng rọi ngang mặt ảnh á cô. Đẹp dã man.",
+              "ref": "ket",
+              "mood": "CUOI"
+            }
+          ]
+        },
+        {
+          "say": "Ảnh nói gì với con hả con?",
+          "tone": "AM",
+          "rel": 2,
+          "reply": "Ảnh nói \"dạ… chị xoá giùm em được hông\". Ảnh xin lỗi con á cô!",
+          "then": [
+            {
+              "say": "Ảnh kiểu vậy đó con. Ảnh nói gì cũng xin lỗi trước.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "Dạ. Nghe thương thương sao á cô. Mà cũng tội ảnh.",
+              "then": [
+                {
+                  "say": "Con để ý người ta ghê ta.",
+                  "tone": "AM",
+                  "rel": 4,
+                  "flag": "suBietBao",
+                  "mem": {
+                    "kind": "CARED_FOR_THEM",
+                    "intensity": 50
+                  },
+                  "reply": "Dạ con hay nhìn người ta lắm cô. Quay riết thành quen á.",
+                  "mood": "THUONG"
+                },
+                {
+                  "say": "Bữa nào con chào ảnh một tiếng đi con.",
+                  "tone": "AM",
+                  "rel": 3,
+                  "flag": "suChaoBao",
+                  "reply": "Dạ… để con thử. Mà ảnh cắm mặt điện thoại hoài, con chào ảnh hổng nghe đâu.",
+                  "mood": "CUOI"
+                },
+                {
+                  "say": "Thôi kệ ảnh đi con.",
+                  "tone": "LANH",
+                  "rel": -2,
+                  "silent": true
+                }
+              ],
+              "mood": "CUOI"
+            },
+            {
+              "say": "Ảnh hiền mà con. Đừng chọc ảnh nghen.",
+              "tone": "THUONG",
+              "rel": 2,
+              "reply": "Dạ con hổng chọc đâu. Con chỉ quay thôi hà.",
+              "ref": "ket"
+            },
+            {
+              "say": "Con kể chuyện người ta hoài vậy con.",
+              "tone": "THANG",
+              "rel": -2,
+              "reply": "…Dạ. Con hổng kể nữa.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Con đừng quay khách của cô nữa nghen con.",
+          "tone": "GAT",
+          "rel": -5,
+          "anger": 30,
+          "mem": {
+            "kind": "RUDE_TO_THEM",
+            "intensity": 60
+          },
+          "reply": "…Dạ. Con xin lỗi cô.",
+          "mood": "BUC"
+        }
+      ],
+      "openMood": "NGUONG"
     }
   ]
 }

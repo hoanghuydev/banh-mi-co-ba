@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 44" width="72" height="44">
+  <!-- Sinh bởi tools/make-icons.ts — đừng sửa tay, chạy `npm run icons` lại. -->
+  <path fill="#c0392b" fill-rule="evenodd" d="M 2 22 Q 36 -16 70 22 Q 36 60 2 22 Z M 6.5 22 Q 36 -7.2 65.5 22 Q 36 51.2 6.5 22 Z M 25.4 22 a 10.6 10.6 0 1 0 21.2 0 a 10.6 10.6 0 1 0 -21.2 0 Z M 28.5 17.8 a 3.3 3.3 0 1 0 6.6 0 a 3.3 3.3 0 1 0 -6.6 0 Z"/>
+</svg>

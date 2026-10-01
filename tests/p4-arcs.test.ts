@@ -56,9 +56,9 @@ function read(phrase: string, base?: OrderIntent): OrderIntent {
   if (/không rau/.test(s)) it.rau = "khong";
   if (/không hành|đừng bỏ ngò/.test(s)) it.bo = ["hanhngo"];
   if (/không ớt|khỏi ớt/.test(s)) it.ot = 0;
-  if (/nhiều ớt/.test(s)) it.ot = 3;
+  if (/nhiều ớt/.test(s)) it.ot = 2;
   if (/không tương/.test(s)) it.tuong = 0;
-  if (/nhiều tương/.test(s)) it.tuong = 3;
+  if (/nhiều tương/.test(s)) it.tuong = 2;
   return it;
 }
 const sameLevels = (a: OrderSpec, it: OrderIntent) => {

@@ -23,6 +23,7 @@ npm run validate:rules   # R001–R014 cho rule DB (P0-03 §2.3a)
 npm run lint:lines       # L001–L013 cho thoại tiếng Việt, `-- --fix` sửa NFC / kiểu dấu / viết hoa
 npm run content:stats    # đếm dòng/từ, đối chiếu mốc CANON §11
 python3 tools/prep-art.py       # rửa lại ảnh artist: art-raw/ -> public/art/ (cần Pillow)
+python3 tools/cut-character.py  # cắt bảng xoay nhân vật ra 8 hướng: -> public/art/player/
 npm run sim -- --days 40 --policy newbie   # chạy 40 ngày không render (< 3 s)
 ```
 
@@ -202,6 +203,7 @@ src/
   dev/         overlay F1–F8 + console — chỉ có ở dev build, tree-shake khỏi bản phát hành
 tools/         sim · validate-rules · lint-lines · content-stats · check-gates   (Node, qua tsx)
                prep-art.py  rửa ảnh artist art-raw/ -> public/art/   (Python + Pillow)
+               cut-character.py  cắt bảng xoay nhân vật -> public/art/player/ (8 hướng)
 art-raw/       ảnh artist gửi, nguyên bản — KHÔNG đi vào bản build
 tests/         node:test
 ```
@@ -221,7 +223,7 @@ trước quán là vỉa hè rồi tới lòng đường. Người chơi đứng
 Art v1 vẽ bằng `Phaser.Graphics` rồi nướng thành texture. **Art v2 KHÔNG thay thế v1
 mà ĐÈ LÊN nó**: `src/art/photo.ts` ghi đè đúng những key texture mà artist đã có ảnh,
 chạy ở cuối `buildTextures()`. Nhờ vậy món nào artist chưa vẽ (quầy tủ kính, tường,
-nhà hàng xóm, nhân vật, két nước, dưa leo, tương ớt) tự khắc còn nguyên bản vẽ code —
+nhà hàng xóm, khách, két nước, dưa leo, tương ớt) tự khắc còn nguyên bản vẽ code —
 không thủng lỗ, và không một file nào trong `core/`, `world/`, `entities/`, `scenes/`
 phải sửa: chúng chỉ biết TÊN texture, không biết texture ấy sinh ra bằng cách nào.
 
@@ -235,11 +237,21 @@ public/art/         ảnh đã rửa: tách nền đen, cắt sát alpha, XOAY �
                     hình thoi 2:1 đúng cỡ texture game
   |  src/art/photo.ts              bảng chỗ đặt: cao bao nhiêu px, lệch trái phải bao nhiêu
   v
-texture game        TILE.floor · PROP.* · HELD.key · FOOD.icon / big / loaf
+texture game        TILE.floor · PROP.* · HELD.key · FOOD.icon / big / loaf · p_<hướng>
 ```
 
 Hai file hai việc, không chồng lấn: **`prep-art.py` chỉ RỬA ảnh**, **`photo.ts` chỉ ĐẶT ảnh**.
 Muốn cái lò cao hơn thì sửa bảng `STANDING` trong `photo.ts`, không đụng script Python.
+
+**Người chơi — tám hướng.** `tools/cut-character.py` cắt bảng xoay của artist
+(`art-raw/character_model_list.png`) ra tám file `public/art/player/p_<hướng>.png`.
+Tên hướng là hướng TRÊN MÀN HÌNH (`Facing8` ở `world/iso.ts`): `s` là đi xuống màn
+hình, `e` là sang phải — khớp đúng tám tổ hợp WASD. Tám file dùng CHUNG một khung,
+đáy khung là mặt đất và tâm ngang khung là tâm hai bàn chân, nên quay người không
+làm nhân vật nhảy lên hụp xuống hay trượt ngang. Chỉ người chơi có đủ tám hướng;
+khách vẫn là bản vẽ code ba hướng (`w` lật ngang `e`), nên `textureFor` gộp tám về
+ba cho họ — xem `markEightWay` ở `art/character.ts`. Thiếu dù chỉ một file ảnh là cả
+bộ lặng lẽ rơi về bản vẽ code, đúng luật "không thủng lỗ" ở trên.
 
 Lưu ý cho lần artist vẽ tiếp — CANON §15 bắt icon nhân phải khác nhau về **hình dáng**
 chứ không chỉ khác màu: ảnh thịt nguội và chả lụa hiện đều là lát tròn hồng, in đen
@@ -263,8 +275,15 @@ Muốn thêm một vật: `prop(scene, key, heightFor(cao), (g, cx, cy) => ...)`
 
 `Phaser.GameObjects.Container` **không depth-sort con** — chỉ `DisplayList` của scene
 mới sort. Bỏ cảnh vào Container là mọi `setDepth` mất tác dụng và vật phía sau đè lên
-vật phía trước. Nên mọi thứ nằm thẳng trên display list, còn cảnh được canh giữa bằng
-**camera scroll** (HUD miễn nhiễm nhờ `setScrollFactor(0)`).
+vật phía trước. Nên mọi thứ nằm thẳng trên display list, còn khung hình do **camera**
+lo (`world/camera.ts`).
+
+Camera thế giới có zoom, mà `setZoom` của Phaser phóng **mọi** thứ camera đó vẽ — kể cả
+object `scrollFactor(0)`. Nên UI đi một **camera riêng** không phóng: `StallCamera` xếp
+object vào camera nào dựa đúng vào `scrollFactorX === 0`, chốt ở `PRE_RENDER` (lúc đó
+mọi `setScrollFactor` và `container.add()` của frame đã chạy xong). Con của Container
+thì không đụng tới — Phaser bỏ qua cả Container khi `willRender` trả false, nên con
+thừa hưởng quyết định của cha.
 
 Thêm một đạo cụ mới = thêm ký tự vào `MAP` (`world/map.ts`) + một nhánh trong
 `textureForTile()` (`art/index.ts`) + một hàm vẽ trong `art/props.ts`.
@@ -274,9 +293,13 @@ Thêm một công đoạn mới = thêm **một dòng** vào `STATIONS` (`world/
 
 | | |
 |---|---|
-| Khung hình thiết kế | 1024 × 576, `Phaser.Scale.FIT` |
+| Khung hình thiết kế | 1024 × 576 — mọi toạ độ trong code là toạ độ này |
+| Độ phân giải render | canvas dựng ở `1024 × RENDER_SCALE` (trần 2×, theo màn hình), camera zoom bù lại — `core/render` |
+| Siêu lấy mẫu ảnh | texture ảnh thật nướng dư `ART_SS` lần (`art/photo`), sprite thu lại bằng `fitPhoto` |
 | Ô isometric | 60 × 30 (2:1) |
-| Bản đồ | 20 × 12 ô = 960 × 480 px, cả góc phố lọt gọn một khung hình (CANON T1) |
+| Bản đồ | 20 × 12 ô = 960 × 480 px |
+| Camera | zoom 1,4× · bám người chơi (deadzone 300 × 170, lerp 0,09), chặn trong hình bao cảnh — `world/camera` |
+| Lớp UI | camera RIÊNG, zoom 1: `setZoom` của Phaser phóng cả object `scrollFactor(0)` |
 | Một buổi bán | 06:00 → 11:00 giờ game, `TIME_SCALE_BASE = 30`; quầy trống ở MID/LULL thì tua 60/120 (P0-02 §2.1) — bot đo ~7,5 phút thật |
 | Khung giờ | `PRE_OPEN` 6:00 · `PEAK` 6:30–8:00 (không bao giờ tua) · `MID` · `LULL` |
 | fps | 30 (CANON §2) |
@@ -286,8 +309,12 @@ Thêm một công đoạn mới = thêm **một dòng** vào `STATIONS` (`world/
 
 ## Đã bám CANON ở những chỗ nào
 
-- **T1** — cả góc phố trong một khung hình, camera không đi lang thang; khúc quầy ở trạm
-  làm việc để **trống cố ý** để tay người chơi luôn nhìn thấy được.
+- **T1** — camera **không bao giờ cắt đi chỗ khác**: cả buổi bán nằm trong đúng một góc
+  phố, mép bản đồ chính là mép đường đi của camera, nên người chơi luôn thấy trọn một
+  lỗi từ lúc gây ra tới lúc bị phát hiện (lý do thật của T1 — xem P3-05 §Camera). Camera
+  **có** trượt theo người chơi bên trong góc phố đó, vì để cả 20 × 12 ô lọt một khung
+  1024 × 576 thì một người chỉ cao chừng 40 px — không đọc ra ai đang cau mày. Khúc quầy
+  ở trạm làm việc vẫn để **trống cố ý** để tay người chơi luôn nhìn thấy được.
 - **T5** — "quá tay" ở lò là **thanh tiến trình có vạch nhìn thấy trước**, không phải roll xúc xắc.
 - **§2 / §8e** — autosave NGAY khi sự kiện xảy ra (khách rời đi, bị bắt quả tang, chuyển cảnh,
   mất focus), double-buffer A/B + meta; seed cố định theo ngày + **6 stream RNG tách riêng**;

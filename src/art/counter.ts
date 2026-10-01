@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import { TW, TH } from "../world/iso";
 import { PAL } from "./palette";
-import { blob, diamond, heightFor, prop, shade, slab, standing, type Pen } from "./canvas";
+import { BASE, diamond, heightFor, prop, shade, slab, standing, type Pen } from "./canvas";
 
 /**
  * QUẦY bánh mì — bệ xây cố định tại chỗ, ốp gạch men, tủ kính đặt lên trên.
@@ -14,20 +14,32 @@ import { blob, diamond, heightFor, prop, shade, slab, standing, type Pen } from 
  *                   khách phải nhìn thấy tay bạn làm gì trên thớt
  *
  * ── Vì sao tủ kính có 2 biến thể ─────────────────────────────────────────────
- * Quầy dài 14 ô. Một texture tủ kính lặp 14 lần ra một dãy ô vuông đều tăm tắp,
+ * Quầy dài 18 ô (dãy `Q` ở `world/map.ts`). Một texture tủ kính lặp 18 lần ra một dãy ô vuông đều tăm tắp,
  * mắt đọc ngay là "tile lặp" chứ không phải "một tủ bánh dài". Hai biến thể khác
  * nhau ở thứ BÀY BÊN TRONG (ổ bánh / khay giò chả + bảng giá) là đủ phá nhịp,
  * mà khung nhôm vẫn trùng khít nên vẫn đọc ra MỘT cái tủ liền.
  */
+const BODY = 32;         // cao bệ quầy
+const CASE = 30;         // cao tủ kính
+
 export const COUNTER = {
   end: "counter_end",
   case: (i: number) => `counter_case${i}`,
   CASE_COUNT: 2,
   work: "counter_work",
+  /**
+   * MẶT QUẦY cao hơn ĐIỂM CHÂN của sprite khúc quầy bao nhiêu px.
+   *
+   * Ghép từ hai chỗ dựng ra nó: `prop()` đặt tâm hình thoi mặt ĐẤT ở
+   * `height − 1 − BASE − TH/2`, rồi `body()` vẽ mặt gỗ cao hơn đó `BODY`. Đo từ MÉP
+   * DƯỚI sprite thì chiều cao texture triệt tiêu — nên con số này đúng cho mọi khúc
+   * quầy, kể cả khúc quầy phóng to trang trí ở nền sảnh.
+   *
+   * Ai đặt vật lên mặt quầy cũng phải đi qua đây. Chép công thức sang file khác là
+   * kiểu hằng số sẽ lệch âm thầm ngay lần đầu có người hạ bệ quầy xuống.
+   */
+  TOP_ABOVE_FOOT: 1 + BASE + TH / 2 + BODY,
 } as const;
-
-const BODY = 32;         // cao bệ quầy
-const CASE = 30;         // cao tủ kính
 
 /** Ổ bánh mì nhìn nghiêng. Dùng lại cho cả tủ kính lẫn rổ ở đầu quầy. */
 function loaf(g: Pen, x: number, y: number, s = 1) {
@@ -68,28 +80,10 @@ function body(g: Pen, cx: number, cy: number) {
 
 function counterEnd(scene: Phaser.Scene) {
   prop(scene, COUNTER.end, heightFor(BODY + 30), (g, cx, cy) => {
+    // Rổ bánh KHÔNG vẽ ở đây nữa: nó là ảnh thật, `StallScene.addOnCounter` đặt lên
+    // mặt quầy. Nướng chung vào texture quầy thì ảnh thật chỉ có thể ĐÈ lên, mà đè
+    // trượt vài px là lòi cái rổ cũ ra sau lưng cái mới.
     body(g, cx, cy);
-    const top = cy - BODY;
-    blob(g, cx, top - 8, 38, 17, PAL.basketDark);      // rổ tre đựng bánh nóng
-    g.fillStyle(PAL.basket, 1);
-    g.fillEllipse(cx, top - 10, 31, 11);
-    g.fillStyle(shade(PAL.basket, -20), 0.45);         // nan rổ
-    for (const dx of [-10, 0, 10]) g.fillEllipse(cx + dx, top - 10, 3, 10);
-    loaf(g, cx - 7, top - 13, 0.72);
-    loaf(g, cx + 6, top - 16, 0.72);
-    loaf(g, cx, top - 19, 0.66);
-
-    // khăn vắt mép rổ — chi tiết nhỏ nhưng nó nói "bánh này mới ra lò, còn ủ nóng"
-    g.fillStyle(shade(PAL.paper, -22), 1);
-    g.fillPoints([
-      { x: cx + 9, y: top - 11 }, { x: cx + 23, y: top - 6 },
-      { x: cx + 21, y: top + 2 }, { x: cx + 8, y: top - 4 },
-    ], true);
-    g.fillStyle(PAL.paper, 1);
-    g.fillPoints([
-      { x: cx + 9, y: top - 12 }, { x: cx + 22, y: top - 7 },
-      { x: cx + 21, y: top - 1 }, { x: cx + 8, y: top - 5 },
-    ], true);
   });
 }
 

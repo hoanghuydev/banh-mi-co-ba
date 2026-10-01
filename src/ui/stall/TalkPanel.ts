@@ -1,7 +1,8 @@
 import Phaser from "phaser";
 import { GAME_H, GAME_W } from "../../core/config";
 import { FONT, UI, buttonHeight, label, panel, textScale } from "../theme";
-import type { TalkTone } from "../../sim/talk";
+import { MOOD_FACE, MOOD_LABEL, type TalkMood, type TalkTone } from "../../sim/talk";
+import { FACE_R, drawFace } from "../../entities/face";
 
 /**
  * Bảng trò chuyện — P5-01. Cái mà bấm F ra.
@@ -41,8 +42,21 @@ const TONE_TINT: Record<TalkTone, number> = {
 export type TalkPanelView = {
   name: string;
   line: string;
+  /**
+   * Khách nói câu đó bằng mặt mũi nào (P5-06). Vẽ thành huy hiệu mặt bên trái câu nói —
+   * CÙNG bộ mặt ba lớp đang chạy trên người họ, không phải một bộ icon thứ hai.
+   */
+  mood?: TalkMood;
+  skin?: number;
+  hair?: number;
   options: readonly { say: string; tone: TalkTone }[];
   done: boolean;
+};
+
+/** Mày tóc bạc vẽ lên nền da thì chìm — sậm lại, y như `CustomerActor`. */
+const browColor = (hair: number) => {
+  const r = (hair >> 16) & 255, g = (hair >> 8) & 255, b = hair & 255;
+  return 0.3 * r + 0.59 * g + 0.11 * b > 140 ? 0x5a5550 : hair;
 };
 
 export class TalkPanel {
@@ -77,13 +91,16 @@ export class TalkPanel {
 
     // Câu khách vừa nói. Đo TRƯỚC khi đặt chỗ: tiếng Việt chồng dấu, 2 dòng hay 3 dòng
     // là chênh nhau cả một hàng nút (CANON §15.1 — hộp giãn theo chữ, không đặt số cứng).
+    // Huy hiệu mặt chiếm một cột bên trái câu nói — câu phải hẹp lại đúng ngần đó, nếu
+    // không thì dòng cuối chui xuống dưới cái mặt và trông như vỡ chữ.
+    const faceCol = v.mood ? Math.round((FACE_R * 2 + 12) * sz) : 0;
     const said = this.scene.add.text(0, 0, v.line, {
       fontFamily: FONT, fontSize: `${Math.round(16 * sz)}px`, fontStyle: "500",
-      color: UI.ink, lineSpacing: Math.round(8 * sz), wordWrap: { width: w - PAD * 2 },
+      color: UI.ink, lineSpacing: Math.round(8 * sz), wordWrap: { width: w - PAD * 2 - faceCol },
     }).setOrigin(0, 0);
 
     const nameH = Math.round(20 * sz);
-    const lineH = v.line ? said.height + 10 : 0;
+    const lineH = v.line ? Math.max(said.height, v.mood ? (FACE_R * 2 + 16) * sz : 0) + 10 : 0;
     const listH = v.options.length * (rowH + 6);
     const hintH = Math.round(18 * sz) + 6;
     const h = Math.min(GAME_H * MAX_H_RATIO, PAD * 2 + nameH + lineH + listH + hintH);
@@ -94,8 +111,22 @@ export class TalkPanel {
     c.add(label(this.scene, GAME_W / 2 - w / 2 + PAD, top + PAD + nameH / 2, v.name, 13, UI.muted, "700").setOrigin(0, 0.5));
 
     if (v.line) {
-      said.setPosition(GAME_W / 2 - w / 2 + PAD, top + PAD + nameH + 2);
+      said.setPosition(GAME_W / 2 - w / 2 + PAD + faceCol, top + PAD + nameH + 2);
       c.add(said);
+      if (v.mood) {
+        const g = this.scene.add.graphics();
+        const fx = GAME_W / 2 - w / 2 + PAD + Math.round(FACE_R * sz);
+        const fy = said.y + Math.round(FACE_R * sz) + 2;
+        g.setScale(sz);
+        // `drawFace` vẽ quanh gốc toạ độ của graphics, nên đặt gốc rồi vẽ ở (0,0):
+        // scale ăn vào nét vẽ chứ không đẩy cái mặt lệch khỏi cột bên trái.
+        g.setPosition(fx, fy);
+        drawFace(g, 0, 0, MOOD_FACE[v.mood], v.skin ?? 0xe3b189, browColor(v.hair ?? 0x2b2420));
+        c.add(g);
+        // Phụ đề một chữ: huy hiệu 22 px đọc được "cười" hay "giận", nhưng "ngượng" với
+        // "rưng rưng" thì không. Chữ là lưới an toàn, không phải phần trang trí.
+        c.add(label(this.scene, fx, fy + Math.round((FACE_R + 9) * sz), MOOD_LABEL[v.mood], 10, UI.muted, "500").setOrigin(0.5));
+      }
     } else said.destroy();
 
     let y = top + PAD + nameH + lineH;

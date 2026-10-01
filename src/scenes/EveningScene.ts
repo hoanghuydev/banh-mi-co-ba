@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { fitDesignFrame } from "../core/render";
 import { GAME_W, GAME_H } from "../core/config";
 import type { GameContext } from "../core/context";
 import { bus } from "../core/eventbus";
@@ -7,6 +8,7 @@ import { NotebookView } from "../ui/notebook/NotebookView";
 import { EveningView } from "../ui/evening/EveningView";
 import { bedtime, eveningCounting, neighborTick } from "../sim/day";
 import { music } from "../audio/music";
+import { sfx } from "../audio/sfx";
 import { settleNight } from "../sim/night";
 import { eveningLines } from "../sim/story";
 import { has } from "../sim/equipment";
@@ -34,6 +36,7 @@ export class EveningScene extends Phaser.Scene {
   }
 
   create() {
+    fitDesignFrame(this.cameras.main);          // canvas phóng to, toạ độ giữ nguyên — `core/render`
     const w = this.ctx.world;
     // Vào cảnh tối = ngày đã hết: đếm tiền (P3-06) → tick đồn thổi (P2-04) → trí nhớ + quan hệ
     // (P2-03) → trang sổ tay của cô Ba (P2-05). Mỗi bước chỉ chạy một lần mỗi ngày.
@@ -41,6 +44,10 @@ export class EveningScene extends Phaser.Scene {
     const neighbor = neighborTick(w);
     settleNight(w, bus);
     music.play(this, "toi", 2200);                     // cảnh tối, đếm tiền — P5-03 §6.3 `mus_toi`
+    // Đêm Việt Nam thu thật + quạt — P5-03 §4.2 B `amb_toi_nha`. Rất khẽ: cảnh này
+    // là chỗ duy nhất trong ngày KHÔNG có gì giục, nền to lên là mất đúng cái đó.
+    sfx.loop(this, "amb_toi_nha", true, {}, 2500);
+    sfx.loop(this, "sfx_quat_may", true, {}, 2500);
     this.cameras.main.setBackgroundColor(0x1d232b);
     this.add.rectangle(GAME_W / 2, GAME_H / 2, GAME_W, GAME_H, 0x141a20, 1);
     const s = loadSettings();
@@ -48,13 +55,20 @@ export class EveningScene extends Phaser.Scene {
     const story = eveningLines(w.progress.dayIndex, w.story, { hasLamp: has(w.equipment, "DEN_CA_TOI") });
     this.view = new EveningView(w, { textScale: s.textScale, lines: [...neighbor, ...story], onBook: () => this.openBook(), onSleep: () => this.settle() });
     this.input.keyboard?.on("keydown-TAB", (ev: KeyboardEvent) => { ev.preventDefault(); this.openBook(); });
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { this.book?.close(); this.view?.close(); });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.book?.close(); this.view?.close();
+      sfx.stopLoops(900);
+    });
     // P2-05 §4.1: sổ tay TỰ MỞ cuối ngày — trừ khi tắt công tắc #4
     if (s.notebookAuto ?? true) this.openBook();
   }
 
   private openBook() {
     if (this.book?.open || this.finished) return;
+    // Mở sổ tay: tiếng lật trang + bút bi. Cảnh tối gần như im, nên hai tiếng này là
+    // phần lớn những gì nghe được ở đây — và chúng đúng là hai việc cô Ba đang làm.
+    sfx.play(this, "sfx_lat_so");
+    sfx.play(this, "sfx_viet_but", { delay: 500, volume: 0.7 });
     const s = loadSettings();
     this.book = new NotebookView(this.game, this, this.ctx.world, {
       mode: "evening", textScale: s.textScale, showEvening: s.notebookAuto ?? true, onClose: () => { this.book = null; },

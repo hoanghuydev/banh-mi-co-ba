@@ -395,6 +395,18 @@ INGREDIENTS = [
 ]
 
 
+# Vật nhỏ KHÔNG đứng trên lưới ô: con ruồi bay quanh thớt, cái thớt nằm trên mặt quầy.
+# Chỉ cắt sát mép + co nhỏ — không xoay, không ép hình thoi.
+#
+# Cắt sát mép là phần BẮT BUỘC, không phải cho nhẹ file: `art/photo.ts` suy bề cao từ
+# tỉ lệ của ẢNH, nên lề trong suốt làm vật co lại trong khung của nó rồi lơ lửng lên.
+SMALL = [
+    ("fly", "fly.png", 192),
+    ("cutting_board", "cutting_board.png", 384),
+    ("ro_banh_mi", "ro-banh-mi.png", 384),
+]
+
+
 def open_loaf():
     """
     Ổ bánh rạch đôi -> hai nửa RỜI: `loaf_lid` (nắp) và `loaf_trough` (máng).
@@ -467,6 +479,10 @@ def main():
     print("nhân")
     for key, src in INGREDIENTS:
         save(key, fit(clean(src), 224))
+
+    print("vật nhỏ")
+    for key, src, longest in SMALL:
+        save(key, fit(clean(src), longest))
 
     print("ổ bánh rạch đôi")
     lid, trough = open_loaf()

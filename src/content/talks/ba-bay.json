@@ -10,7 +10,8 @@
       "weight": 14,
       "ignore": {
         "reply": "Ờ… con bận thì thôi.",
-        "rel": -2
+        "rel": -2,
+        "mood": "LANH"
       },
       "shared": {
         "tiep": [
@@ -22,7 +23,8 @@
               "kind": "CARED_FOR_THEM",
               "intensity": 45
             },
-            "reply": "Con này được. Y chang cô Ba hồi đó."
+            "reply": "Con này được. Y chang cô Ba hồi đó.",
+            "mood": "THUONG"
           },
           {
             "say": "Dạ bà đi mạnh giỏi nghen bà.",
@@ -35,7 +37,8 @@
             "tone": "DUA",
             "rel": 3,
             "flag": "bayCaiLuongTalk",
-            "reply": "Cha. Con cũng biết nghe hả? Để bà kể cho."
+            "reply": "Cha. Con cũng biết nghe hả? Để bà kể cho.",
+            "mood": "CUOI_TUOI"
           },
           {
             "say": "Dạ.",
@@ -67,14 +70,16 @@
                 "vnd": 90000,
                 "note": "mua hết xấp vé số của bà Bảy"
               },
-              "needCash": 90000
+              "needCash": 90000,
+              "mood": "THUONG"
             },
             {
               "say": "Trúng rồi con chia bà một nửa nghen.",
               "tone": "DUA",
               "rel": 3,
               "reply": "Nhớ đó nghen. Bà có người làm chứng nè — thằng nhỏ bán hủ tiếu kìa.",
-              "ref": "tiep"
+              "ref": "tiep",
+              "mood": "CUOI"
             },
             {
               "say": "Bà bán từ mấy giờ sáng vậy bà?",
@@ -95,7 +100,8 @@
             "vnd": 20000,
             "note": "mua hai tờ vé số của bà Bảy"
           },
-          "needCash": 20000
+          "needCash": 20000,
+          "mood": "CUOI"
         },
         {
           "say": "Dạ để con coi đã bà.",
@@ -135,7 +141,8 @@
                     "kind": "REMEMBERED_STORY",
                     "intensity": 45
                   },
-                  "reply": "Từ đây xuống chợ, vòng qua bến xe. Bà đi quen rồi con."
+                  "reply": "Từ đây xuống chợ, vòng qua bến xe. Bà đi quen rồi con.",
+                  "mood": "THUONG"
                 },
                 {
                   "say": "Vậy là hơn trăm ngàn một ngày hả bà.",
@@ -158,7 +165,8 @@
                     "kind": "RUDE_TO_THEM",
                     "intensity": 50
                   },
-                  "reply": "…Ừ. Bà hỏi gì đâu mà con nói vậy."
+                  "reply": "…Ừ. Bà hỏi gì đâu mà con nói vậy.",
+                  "mood": "BUC"
                 }
               ]
             },
@@ -190,7 +198,8 @@
                     "kind": "CARED_FOR_THEM",
                     "intensity": 40
                   },
-                  "reply": "Con nói y như con gái bà hồi nó còn ở đây."
+                  "reply": "Con nói y như con gái bà hồi nó còn ở đây.",
+                  "mood": "THUONG"
                 },
                 {
                   "say": "Bà rủ con đi coi với nghen.",
@@ -201,7 +210,8 @@
                     "kind": "CARED_FOR_THEM",
                     "intensity": 45
                   },
-                  "reply": "Thiệt hả con? Ờ… ờ, để bà coi lịch."
+                  "reply": "Thiệt hả con? Ờ… ờ, để bà coi lịch.",
+                  "mood": "NGAC_NHIEN"
                 },
                 {
                   "say": "Coi hát xong rồi sao nữa bà?",
@@ -233,7 +243,8 @@
                 "kind": "RUDE_TO_THEM",
                 "intensity": 60
               },
-              "reply": "…Bà bán cái hy vọng. Con hiểu được thì hiểu."
+              "reply": "…Bà bán cái hy vọng. Con hiểu được thì hiểu.",
+              "mood": "BUC"
             },
             {
               "say": "Dạ con giỡn thôi bà.",
@@ -259,7 +270,8 @@
                 "intensity": 40
               },
               "reply": "Ngồi chi con. Ngồi rồi lười, bà đi tiếp.",
-              "calm": 28
+              "calm": 28,
+              "mood": "THUONG"
             },
             {
               "say": "Bữa khác con mua nghen bà.",
@@ -276,7 +288,8 @@
                 "kind": "RUDE_TO_THEM",
                 "intensity": 70
               },
-              "silent": true
+              "silent": true,
+              "mood": "GIAN"
             },
             {
               "say": "…",
@@ -286,7 +299,8 @@
             }
           ]
         }
-      ]
+      ],
+      "openMood": "CUOI"
     },
     {
       "id": "bay.cailuong",
@@ -302,7 +316,8 @@
       "opener": "Bà nói thiệt nghen: đào bây giờ ca không có hơi.",
       "ignore": {
         "reply": "Nói chuyện với con cái này uổng công.",
-        "rel": -2
+        "rel": -2,
+        "mood": "LANH"
       },
       "shared": {
         "chao": [
@@ -321,7 +336,8 @@
             "say": "Bà nói hoài con rối tay quá bà.",
             "tone": "THANG",
             "rel": -2,
-            "reply": "…Ừ. Bà quên con đang bán."
+            "reply": "…Ừ. Bà quên con đang bán.",
+            "mood": "LANH"
           }
         ]
       },
@@ -346,14 +362,16 @@
                   "say": "Khóc chỗ nào hả bà?",
                   "tone": "AM",
                   "rel": 3,
-                  "reply": "Chỗ con Hương nó về nhà mà hổng dám gõ cửa. Thôi, bà hổng kể nữa."
+                  "reply": "Chỗ con Hương nó về nhà mà hổng dám gõ cửa. Thôi, bà hổng kể nữa.",
+                  "mood": "CUOI"
                 },
                 {
                   "say": "Bà mở loa ngoài con nghe ké với bà.",
                   "tone": "DUA",
                   "rel": 3,
                   "flag": "bayLoaNgoai",
-                  "reply": "Cha, được. Để bà mở nhỏ thôi, sợ phiền hàng xóm."
+                  "reply": "Cha, được. Để bà mở nhỏ thôi, sợ phiền hàng xóm.",
+                  "mood": "CUOI_TUOI"
                 },
                 {
                   "say": "Khóc chi dữ vậy bà, tuồng mà.",
@@ -367,7 +385,8 @@
                   "rel": -1,
                   "silent": true
                 }
-              ]
+              ],
+              "mood": "THUONG"
             },
             {
               "say": "Bà ca thử một câu coi bà.",
@@ -389,7 +408,8 @@
               "rel": -1,
               "reply": "Ờ. Tụi nhỏ bây giờ hổng ai nghe."
             }
-          ]
+          ],
+          "mood": "CUOI"
         },
         {
           "say": "Con nghe hổng ra đâu bà, con dở lắm.",
@@ -403,7 +423,8 @@
               "rel": 3,
               "flag": "bayDayNghe",
               "reply": "Ờ. Để bữa nào vắng khách bà chỉ. Nghe cái hơi, đừng nghe lời.",
-              "ref": "chao"
+              "ref": "chao",
+              "mood": "CUOI"
             },
             {
               "say": "Chắc tại con còn trẻ quá bà ha.",
@@ -434,14 +455,16 @@
                 "intensity": 35
               },
               "reply": "Bà sống bảy mươi mấy năm chớ ít gì con.",
-              "ref": "chao"
+              "ref": "chao",
+              "mood": "CUOI"
             },
             {
               "say": "Vậy bà soi con hoài là bà thương con hả bà?",
               "tone": "DUA",
               "rel": 3,
               "reply": "Ờ đó. Con hiểu được là bà mừng rồi.",
-              "ref": "chao"
+              "ref": "chao",
+              "mood": "CUOI"
             },
             {
               "say": "Bà già rồi khó tính thôi bà.",
@@ -452,7 +475,8 @@
                 "kind": "RUDE_TO_THEM",
                 "intensity": 55
               },
-              "silent": true
+              "silent": true,
+              "mood": "BUC"
             }
           ]
         },
@@ -462,7 +486,8 @@
           "rel": -2,
           "reply": "Ờ. Bà quên con đang bán."
         }
-      ]
+      ],
+      "openMood": "NGHIEM"
     },
     {
       "id": "bay.soi",
@@ -480,7 +505,8 @@
       "ignore": {
         "reply": "Bà nói cho con biết thôi. Nghe hay không kệ con.",
         "rel": -2,
-        "anger": 10
+        "anger": 10,
+        "mood": "LANH"
       },
       "tree": [
         {
@@ -504,7 +530,8 @@
                   "tone": "AM",
                   "rel": 3,
                   "flag": "bayKhanRieng",
-                  "reply": "Ờ. Bà coi mai con có đem thiệt hông nghen."
+                  "reply": "Ờ. Bà coi mai con có đem thiệt hông nghen.",
+                  "mood": "CUOI"
                 },
                 {
                   "say": "Bà soi kỹ hơn thanh tra nữa bà.",
@@ -517,7 +544,8 @@
                   "tone": "THUONG",
                   "reply": "Ờ."
                 }
-              ]
+              ],
+              "mood": "CUOI"
             },
             {
               "say": "Cô Ba hồi đó bà có nói vậy hông bà?",
@@ -531,7 +559,8 @@
               "rel": -1,
               "silent": true
             }
-          ]
+          ],
+          "mood": "CUOI"
         },
         {
           "say": "Dạ con biết rồi bà.",
@@ -558,7 +587,8 @@
                 "kind": "RUDE_TO_THEM",
                 "intensity": 60
               },
-              "silent": true
+              "silent": true,
+              "mood": "BUC"
             }
           ]
         },
@@ -572,7 +602,8 @@
               "say": "Vậy bà soi tiếp đi bà, con nghe.",
               "tone": "AM",
               "rel": 3,
-              "reply": "Cha, con này. Thôi bà hổng nói nữa, bà đi bán."
+              "reply": "Cha, con này. Thôi bà hổng nói nữa, bà đi bán.",
+              "mood": "CUOI_TUOI"
             },
             {
               "say": "Bà làm quản lý luôn đi bà.",
@@ -597,9 +628,652 @@
             "kind": "RUDE_TO_THEM",
             "intensity": 70
           },
-          "reply": "…Ừ. Bà lo chuyện bà."
+          "reply": "…Ừ. Bà lo chuyện bà.",
+          "mood": "GIAN"
         }
-      ]
+      ],
+      "openMood": "NGHI"
+    },
+    {
+      "id": "bay.pano",
+      "npc": "BA_BAY",
+      "topic": "pano",
+      "when": {
+        "day": [
+          10,
+          40
+        ],
+        "minVisits": 4,
+        "needFlag": "haiPano"
+      },
+      "weight": 12,
+      "opener": "Hồi đó bà coi hát ở cái rạp lớn ngoài đường cái đó con.",
+      "shared": {
+        "ket": [
+          {
+            "say": "Bà kể nữa đi bà, con nghe được mà.",
+            "tone": "AM",
+            "rel": 3,
+            "reply": "Thôi. Bà kể hoài con hổng làm được gì.",
+            "mood": "CUOI"
+          },
+          {
+            "say": "Dạ ổ của bà đây bà.",
+            "tone": "THUONG",
+            "rel": 1,
+            "reply": "Ờ. Cảm ơn con nghen.",
+            "mood": "CUOI"
+          },
+          {
+            "say": "Dạ.",
+            "tone": "LANH",
+            "rel": -1,
+            "silent": true
+          }
+        ]
+      },
+      "tree": [
+        {
+          "say": "Dạ cái pano đó hả bà? Chú Hải nói hồi xưa chú vẽ mấy cái đó đó bà.",
+          "tone": "AM",
+          "rel": 3,
+          "flag": "bayHaiNoi",
+          "reply": "…Hả? Ông Hải nào? Ông hay ngồi uống ở đầu hẻm đó hả con?",
+          "then": [
+            {
+              "say": "Dạ đúng chú đó bà. Chú vẽ cái bảng hiệu xe con luôn.",
+              "tone": "AM",
+              "rel": 4,
+              "mem": {
+                "kind": "REMEMBERED_STORY",
+                "intensity": 55
+              },
+              "reply": "Trời đất. Vậy là bà đứng coi hình ổng vẽ mấy chục năm mà bà hổng biết.",
+              "then": [
+                {
+                  "say": "Bữa nào bà qua nói với chú một tiếng đi bà.",
+                  "tone": "AM",
+                  "rel": 4,
+                  "flag": "bayHaiGap",
+                  "mem": {
+                    "kind": "CARED_FOR_THEM",
+                    "intensity": 50
+                  },
+                  "reply": "…Ờ. Mà nói gì giờ. Bà với ổng có quen đâu.",
+                  "mood": "THUONG"
+                },
+                {
+                  "say": "Bà qua khen chú một câu coi, chú nở mũi liền bà.",
+                  "tone": "DUA",
+                  "rel": 3,
+                  "reply": "Cha. Con này. …Mà ờ, để bà coi.",
+                  "mood": "CUOI_TUOI"
+                },
+                {
+                  "say": "Đời nó vòng vo vậy đó bà.",
+                  "tone": "THUONG",
+                  "rel": 1,
+                  "reply": "Ờ. Vòng vo thiệt. Bảy chục năm mới gặp lại cái tay vẽ."
+                },
+                {
+                  "say": "Dạ chuyện cũ rồi bà.",
+                  "tone": "LANH",
+                  "rel": -2,
+                  "reply": "…Ờ. Cũ.",
+                  "mood": "LANH"
+                }
+              ],
+              "mood": "NGAC_NHIEN"
+            },
+            {
+              "say": "Bà còn giữ tấm vé nào hông bà?",
+              "tone": "DUA",
+              "rel": 2,
+              "reply": "Giữ chi con. Hồi đó ai mà biết sau này mình ngồi nhớ.",
+              "ref": "ket"
+            },
+            {
+              "say": "Dạ con cũng mới nghe chú nói hôm bữa thôi bà.",
+              "tone": "THANG",
+              "rel": 1,
+              "reply": "Ờ. Thì giờ bà cũng mới biết nè. Hai bà cháu cùng mới biết.",
+              "ref": "ket"
+            }
+          ],
+          "mood": "NGAC_NHIEN"
+        },
+        {
+          "say": "Tấm hình bự cỡ nào hả bà?",
+          "tone": "AM",
+          "rel": 2,
+          "reply": "Cao hơn cái mái nhà con. Vẽ cô đào mặc áo đỏ, tay cầm cây quạt.",
+          "then": [
+            {
+              "say": "Bà nhớ kỹ ghê bà.",
+              "tone": "AM",
+              "rel": 3,
+              "mem": {
+                "kind": "REMEMBERED_STORY",
+                "intensity": 40
+              },
+              "reply": "Nhớ chớ. Hồi đó bà mười chín. Đi coi với con bạn, hai đứa nhịn ăn sáng ba bữa.",
+              "then": [
+                {
+                  "say": "Nhịn ba bữa để coi một tuồng hả bà.",
+                  "tone": "AM",
+                  "rel": 3,
+                  "reply": "Đáng mà con. Bây giờ bà có tiền ăn sáng thì hổng còn rạp.",
+                  "mood": "CUOI"
+                },
+                {
+                  "say": "Con bạn bà giờ sao rồi bà?",
+                  "tone": "AM",
+                  "rel": 2,
+                  "reply": "…Nó mất năm kia rồi con. Thôi bỏ đi, bà hổng kể cái đó."
+                },
+                {
+                  "say": "Bà hồi đó chắc đẹp lắm ha bà.",
+                  "tone": "DUA",
+                  "rel": 2,
+                  "reply": "Cha chả. Nịnh bà chi vậy. …Mà ờ, bà có duyên lắm chớ bộ.",
+                  "mood": "CUOI_TUOI"
+                },
+                {
+                  "say": "Dạ con làm tiếp đây bà.",
+                  "tone": "LANH",
+                  "rel": -1,
+                  "silent": true
+                }
+              ],
+              "mood": "THUONG"
+            },
+            {
+              "say": "Rạp đó giờ còn hông bà?",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "Còn cái tên. Trong ruột người ta sửa hết trơn rồi.",
+              "ref": "ket"
+            },
+            {
+              "say": "Bà kể cái gì cũng quay về hát hò hết trơn bà.",
+              "tone": "DUA",
+              "rel": 1,
+              "reply": "Thì bà có bao nhiêu chuyện đâu con. Có nhiêu đó bà xài hoài.",
+              "ref": "ket"
+            }
+          ]
+        },
+        {
+          "say": "Dạ con sanh sau, con hổng biết cái rạp đó bà.",
+          "tone": "THUONG",
+          "reply": "Ờ ha. Bà quên. Bà cứ tưởng ai cũng đi qua cái thời đó.",
+          "then": [
+            {
+              "say": "Bà kể con nghe, con biết thì sao.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "Ờ. Con chịu nghe là bà kể tới chiều.",
+              "mood": "CUOI"
+            },
+            {
+              "say": "Dạ bà kể ngắn ngắn giùm con nghen bà.",
+              "tone": "THANG",
+              "rel": -1,
+              "reply": "…Ờ. Ngắn.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Bà ơi con đang đông khách quá bà.",
+          "tone": "LANH",
+          "rel": -2,
+          "reply": "Ờ. Bà đứng đây hoài cũng kỳ. Bà đi."
+        }
+      ],
+      "openMood": "THUONG"
+    },
+    {
+      "id": "bay.dienthoai",
+      "npc": "BA_BAY",
+      "topic": "dienthoai",
+      "when": {
+        "day": [
+          15,
+          40
+        ],
+        "minVisits": 6
+      },
+      "weight": 11,
+      "initiates": 0.22,
+      "ignore": {
+        "reply": "Ờ. Bà hỏi lãng. Con đang bán mà.",
+        "rel": -2,
+        "mood": "LANH"
+      },
+      "opener": "Con gái bà gửi cho bà cái điện thoại có hình. Bà cất hai tháng rồi.",
+      "shared": {
+        "ket": [
+          {
+            "say": "Mai bà đem ra con chỉ cho bà nghen.",
+            "tone": "AM",
+            "rel": 4,
+            "flag": "bayDienThoai",
+            "mem": {
+              "kind": "CARED_FOR_THEM",
+              "intensity": 55
+            },
+            "reply": "…Thiệt hả con. Ờ. Mai bà đem.",
+            "mood": "NGAC_NHIEN"
+          },
+          {
+            "say": "Bà hỏi con gái bà đi bà, nó chỉ cho.",
+            "tone": "THUONG",
+            "rel": 1,
+            "reply": "Hỏi rồi. Nó nói qua điện thoại. Bà nghe hổng kịp."
+          },
+          {
+            "say": "Dạ.",
+            "tone": "LANH",
+            "rel": -1,
+            "silent": true
+          }
+        ]
+      },
+      "tree": [
+        {
+          "say": "Sao bà hổng xài bà?",
+          "tone": "AM",
+          "rel": 2,
+          "reply": "Bà sợ bấm trúng cái gì nó hư. Nó mắc lắm con, mấy triệu đó.",
+          "then": [
+            {
+              "say": "Hổng hư đâu bà. Con bấm thử cho bà coi.",
+              "tone": "AM",
+              "rel": 4,
+              "mem": {
+                "kind": "CARED_FOR_THEM",
+                "intensity": 50
+              },
+              "reply": "…Ờ. Mà con đang bán mà. Thôi để bữa khác.",
+              "then": [
+                {
+                  "say": "Bữa khác thiệt nghen bà. Con nhớ đó.",
+                  "tone": "AM",
+                  "rel": 3,
+                  "flag": "bayDienThoai",
+                  "reply": "Ờ. Con nhớ thì bà đem. Bà hổng dám hẹn ai lâu.",
+                  "mood": "CUOI"
+                },
+                {
+                  "say": "Bà sợ hư máy hay bà sợ thấy mặt con gái bà hả bà?",
+                  "tone": "THANG",
+                  "rel": 2,
+                  "reply": "…Con này. Hỏi trúng chóc.",
+                  "then": [
+                    {
+                      "say": "Dạ con xin lỗi bà. Con nói đại.",
+                      "tone": "AM",
+                      "rel": 3,
+                      "reply": "Hổng sao. Nói trúng thì nghe nó nhói, chớ hổng giận.",
+                      "mood": "CUOI"
+                    },
+                    {
+                      "say": "Thấy mặt rồi bà lại nhớ, phải hông bà.",
+                      "tone": "AM",
+                      "rel": 4,
+                      "mem": {
+                        "kind": "REMEMBERED_STORY",
+                        "intensity": 55
+                      },
+                      "reply": "Ờ. Nghe tiếng thì bà chịu được. Thấy mặt là bà chịu hổng nổi.",
+                      "mood": "THUONG"
+                    },
+                    {
+                      "say": "Vậy thôi bà cứ để trong tủ đi bà.",
+                      "tone": "LANH",
+                      "rel": -2,
+                      "reply": "…Ờ. Để trong tủ.",
+                      "mood": "LANH"
+                    }
+                  ]
+                },
+                {
+                  "say": "Con mở lò rồi bà. Chút nữa nghen bà.",
+                  "tone": "THUONG",
+                  "reply": "Ờ. Chút nữa.",
+                  "ref": "ket"
+                }
+              ],
+              "mood": "THUONG"
+            },
+            {
+              "say": "Mấy triệu mà bà để trong tủ, uổng thiệt bà.",
+              "tone": "THANG",
+              "rel": -1,
+              "reply": "Thì bà biết là uổng. Biết mà bà vẫn hổng dám rớ.",
+              "ref": "ket"
+            },
+            {
+              "say": "Bà đem bán lại mua vé số bán cho rồi bà.",
+              "tone": "DUA",
+              "rel": 1,
+              "reply": "Cha. Nói nghe được đó. Mà con gái bà nó biết nó khóc.",
+              "ref": "ket",
+              "mood": "CUOI_TUOI"
+            }
+          ]
+        },
+        {
+          "say": "Con gái bà ở đâu hả bà?",
+          "tone": "AM",
+          "rel": 3,
+          "reply": "Bình Dương. Nó làm ca đêm. Tháng nó về một lần, có tháng hổng về.",
+          "then": [
+            {
+              "say": "Vậy bà ở nhà một mình hả bà?",
+              "tone": "AM",
+              "rel": 3,
+              "mem": {
+                "kind": "REMEMBERED_STORY",
+                "intensity": 45
+              },
+              "reply": "Ờ. Mà bà đi suốt. Về nhà bà ngủ chớ bà có ở nhà đâu.",
+              "then": [
+                {
+                  "say": "Vậy bà ghé con mỗi sáng là đúng rồi bà.",
+                  "tone": "AM",
+                  "rel": 4,
+                  "mem": {
+                    "kind": "CARED_FOR_THEM",
+                    "intensity": 55
+                  },
+                  "reply": "…Ờ. Bà ghé riết thành quen. Bữa nào hổng ghé bà thấy thiếu.",
+                  "mood": "RUNG_RUNG"
+                },
+                {
+                  "say": "Bà kêu nó về ở với bà đi bà.",
+                  "tone": "THUONG",
+                  "rel": 1,
+                  "reply": "Về đây nó lấy gì sống con. Thôi để nó đi."
+                },
+                {
+                  "say": "Nó cũng tệ ghê, để bà vậy.",
+                  "tone": "CHUI",
+                  "rel": -3,
+                  "anger": 20,
+                  "mem": {
+                    "kind": "RUDE_TO_THEM",
+                    "intensity": 50
+                  },
+                  "reply": "Ê. Con đừng nói con gái bà. Nó cực lắm con.",
+                  "mood": "BUC"
+                }
+              ],
+              "mood": "THUONG"
+            },
+            {
+              "say": "Ca đêm cực lắm đó bà.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Cực chớ. Mà nó nói nó quen rồi. Đứa nào cũng nói quen rồi.",
+              "ref": "ket"
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "rel": -1,
+              "silent": true
+            }
+          ],
+          "mood": "CUOI"
+        },
+        {
+          "say": "Bà đưa đây con coi thử cái máy.",
+          "tone": "THANG",
+          "rel": 1,
+          "reply": "Bà đâu có đem. Bà nói vậy thôi chớ bà có dám đem ra đường đâu.",
+          "then": [
+            {
+              "say": "Dạ bà cất kỹ cũng phải bà.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Ờ. Cất kỹ quá rồi thành hổng xài."
+            },
+            {
+              "say": "Vậy bà kể con nghe chi bà.",
+              "tone": "THANG",
+              "rel": -2,
+              "reply": "…Ờ. Bà kể lãng. Bà xin lỗi con.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Dạ con hổng rành mấy cái đó đâu bà.",
+          "tone": "LANH",
+          "rel": -1,
+          "reply": "Ờ. Thôi bà hỏi người khác."
+        }
+      ],
+      "openMood": "NGUONG"
+    },
+    {
+      "id": "bay.mua",
+      "npc": "BA_BAY",
+      "topic": "trumua",
+      "when": {
+        "day": [
+          4,
+          40
+        ],
+        "rain": true
+      },
+      "weight": 13,
+      "opener": "Mưa vầy bán ai mua con. Bà đứng ké cái mái con chút nghen.",
+      "shared": {
+        "ket": [
+          {
+            "say": "Tạnh rồi bà đi nghen bà. Đừng đi lúc còn mưa.",
+            "tone": "AM",
+            "rel": 3,
+            "mem": {
+              "kind": "CARED_FOR_THEM",
+              "intensity": 40
+            },
+            "reply": "Ờ. Bà đợi tạnh.",
+            "calm": 22,
+            "mood": "THUONG"
+          },
+          {
+            "say": "Dạ bà cứ đứng đó bà.",
+            "tone": "THUONG",
+            "rel": 1,
+            "reply": "Ờ. Cảm ơn con.",
+            "mood": "CUOI"
+          },
+          {
+            "say": "Dạ.",
+            "tone": "LANH",
+            "rel": -1,
+            "silent": true
+          }
+        ]
+      },
+      "tree": [
+        {
+          "say": "Dạ bà đứng đi bà. Vô sát trong này cho khỏi tạt.",
+          "tone": "AM",
+          "rel": 3,
+          "calm": 25,
+          "reply": "Ờ… Ủa mà cái mái con dột chỗ kia kìa. Nước nhỏ ngay thùng đá đó con.",
+          "then": [
+            {
+              "say": "Trời ơi bà. Mưa mà bà còn soi nữa bà.",
+              "tone": "DUA",
+              "rel": 3,
+              "reply": "Bà hổng soi thì bà đứng đây ngó cái gì con.",
+              "then": [
+                {
+                  "say": "Thôi bà soi tiếp đi bà, con dời cái thùng.",
+                  "tone": "AM",
+                  "rel": 3,
+                  "mem": {
+                    "kind": "CARED_FOR_THEM",
+                    "intensity": 40
+                  },
+                  "reply": "Ờ, dời qua trái chút. Nữa. Ờ, vậy đó.",
+                  "mood": "THUONG"
+                },
+                {
+                  "say": "Bà làm giám sát công trình được luôn đó bà.",
+                  "tone": "DUA",
+                  "rel": 2,
+                  "reply": "Giám sát mà đứng trú mưa. Coi cũng hổng ra gì."
+                },
+                {
+                  "say": "Dạ chút nữa con coi bà.",
+                  "tone": "THUONG",
+                  "reply": "Ờ. Chút nữa. Bà nhắc một lần thôi đó nghen."
+                }
+              ],
+              "mood": "CUOI"
+            },
+            {
+              "say": "Dạ con dời liền. Cảm ơn bà nghen.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "Ờ. Mưa mới thấy chỗ dột. Nắng thì ai biết đâu con.",
+              "ref": "ket",
+              "mood": "CUOI"
+            },
+            {
+              "say": "Bà đứng trú nhờ mà bà chê con hả bà.",
+              "tone": "GAT",
+              "rel": -5,
+              "anger": 35,
+              "mem": {
+                "kind": "RUDE_TO_THEM",
+                "intensity": 60
+              },
+              "reply": "…Ừ. Bà nói lố. Bà đứng ngoài kia cũng được.",
+              "mood": "BUC"
+            }
+          ],
+          "mood": "NGAC_NHIEN"
+        },
+        {
+          "say": "Xấp vé của bà ướt hết rồi kìa bà.",
+          "tone": "AM",
+          "rel": 2,
+          "reply": "Ướt mép thôi. Mà ướt mép là người ta chê, hổng ai lấy.",
+          "then": [
+            {
+              "say": "Dạ bà đưa đây một tờ. Ướt con cũng dò được mà.",
+              "tone": "AM",
+              "rel": 4,
+              "mem": {
+                "kind": "CARED_FOR_THEM",
+                "intensity": 55
+              },
+              "act": {
+                "kind": "PAY",
+                "vnd": 10000,
+                "note": "mua tờ vé số ướt mép của bà Bảy"
+              },
+              "needCash": 10000,
+              "reply": "…Ờ. Con là người đầu tiên bữa nay chịu lấy tờ ướt.",
+              "then": [
+                {
+                  "say": "Ướt khô rồi cũng vậy hà bà.",
+                  "tone": "DUA",
+                  "rel": 2,
+                  "reply": "Ờ. Mà người ta hổng nghĩ vậy. Người ta mua cái hên mà."
+                },
+                {
+                  "say": "Bà về sớm đi bà. Mai bán tiếp.",
+                  "tone": "AM",
+                  "rel": 3,
+                  "mem": {
+                    "kind": "CARED_FOR_THEM",
+                    "intensity": 45
+                  },
+                  "reply": "Ờ… Ờ, bà về. Bữa nay bà đi nổi nhiêu đó thôi.",
+                  "calm": 20,
+                  "mood": "THUONG"
+                },
+                {
+                  "say": "Dạ bà cất cho kỹ nghen bà.",
+                  "tone": "THUONG",
+                  "rel": 1,
+                  "reply": "Ờ. Bà có bịch ni lông nè."
+                }
+              ],
+              "mood": "RUNG_RUNG"
+            },
+            {
+              "say": "Bà bọc bịch lại đi bà.",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "Bọc rồi. Mà gió nó tạt ngang, bọc gì cho lại.",
+              "ref": "ket"
+            },
+            {
+              "say": "Trời mưa mà bà còn đi chi cho cực vậy bà.",
+              "tone": "THANG",
+              "rel": 1,
+              "reply": "Hổng đi thì bữa nay bà hổng có đồng nào con.",
+              "ref": "ket"
+            }
+          ]
+        },
+        {
+          "say": "Bà ngồi cái ghế này đi bà, con lau rồi.",
+          "tone": "AM",
+          "rel": 4,
+          "calm": 28,
+          "mem": {
+            "kind": "CARED_FOR_THEM",
+            "intensity": 50
+          },
+          "reply": "…Thôi con. Ngồi rồi lười, bà đứng.",
+          "then": [
+            {
+              "say": "Bà ngồi đi bà. Con hổng có khách đâu.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "…Ờ. Vậy bà ngồi chút. Chút thôi nghen.",
+              "mood": "CUOI"
+            },
+            {
+              "say": "Bà đứng hoài chân bà hư đó bà.",
+              "tone": "THANG",
+              "rel": 2,
+              "reply": "Hư lâu rồi con. Bác sĩ nói từ hồi nào lận."
+            },
+            {
+              "say": "Dạ bà muốn đứng thì bà đứng.",
+              "tone": "LANH",
+              "rel": -1,
+              "silent": true
+            }
+          ],
+          "mood": "THUONG"
+        },
+        {
+          "say": "Bà đứng đó khách hổng thấy xe con bà ơi.",
+          "tone": "GAT",
+          "rel": -6,
+          "anger": 45,
+          "mem": {
+            "kind": "RUDE_TO_THEM",
+            "intensity": 70
+          },
+          "reply": "…Ừ. Bà ra ngoài kia.",
+          "mood": "GIAN"
+        }
+      ],
+      "openMood": "MET"
     }
   ]
 }

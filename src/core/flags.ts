@@ -29,11 +29,44 @@ export type Settings = {
    */
   noTimePressure: boolean;
   /**
-   * CANON §15.4: bus "Nhạc", 0–100. Mặc định 55 theo P5-03 §2.1.
-   * Bốn bus còn lại (đường phố / giọng NPC / thao tác / âm báo) thêm vào đây
-   * khi có âm thanh cho chúng — mỗi bus một công tắc riêng, không gộp.
+   * CANON §15.4 — NĂM bus, NĂM công tắc riêng, 0–100. Mặc định theo P5-03 §2.1.
+   *
+   * Cố ý KHÔNG gộp thành một thanh "âm lượng": năm thứ này làm năm việc khác hẳn
+   * nhau với người chơi. Có người tắt sạch nhạc mà vẫn cần tiếng thao tác để biết
+   * tay mình vừa làm gì; có người ngược lại. Một thanh chung thì cả hai cùng thua.
    */
   musicVolume: number;
+  /** Bus `duongPho` — ambience hẻm, xe máy, còi, mưa, chó, chim, tiếng rao. */
+  streetVolume: number;
+  /** Bus `giongNPC` — tiếng người. Mặc định 100 và trần 0 dB: không gì đè lên giọng. */
+  voiceVolume: number;
+  /** Bus `thaoTac` — dao, vỏ bánh, gói giấy, tiền lẻ, bánh rớt. */
+  foleyVolume: number;
+  /** Bus `amBao` — click, chốt đơn, autosave, chuyển ngày. */
+  uiVolume: number;
+  /**
+   * CANON §15 công tắc số 5 / P5-03 §2.1 — sub-mix `crowdSubMix`, NẰM TRONG `duongPho`.
+   * Tách riêng vì người ADHD / tự kỷ thường bị chính lớp GIỌNG NÓI nền làm quá tải,
+   * chứ không phải tiếng xe. Kéo cái này về 0 vẫn còn hẻm, chỉ bớt người.
+   */
+  crowdVolume: number;
+  /**
+   * CANON §15 / P5-03 §5.5 — tắt âm "chấm điểm người chơi".
+   *
+   * Ranh giới một dòng: *âm mô tả thế giới thì giữ; âm chấm điểm người chơi thì bỏ.*
+   * Nên nó TẮT tiếng buzz "sai rồi" và tiếng hụt khi âm tiền, nhưng KHÔNG tắt tiếng
+   * bánh rớt, tiếng khét, tiếng ruồi — với người nhìn không rõ, đó là cách duy nhất
+   * biết chuyện vừa xảy ra.
+   */
+  disableNegativeAudioCues: boolean;
+  /**
+   * P5-03 §5.4 — tick gỗ trung tính khi có người để ý tới bạn. Mặc định TẮT.
+   * Cho người không đọc được nét mặt ở 72px. Cùng một âm cho chuyện tốt và xấu:
+   * nó là THÔNG TIN, không phải PHÁN XÉT. Độc lập với `disableNegativeAudioCues`.
+   */
+  a11yPerceptionPing: boolean;
+  /** P5-03 §2.4 — gộp hết về giữa. Cho người điếc một tai hoặc nghe bằng một bên. */
+  monoAudio: boolean;
   /**
    * P0-03 §2.1: telemetry CỤC BỘ, không gửi đi đâu. `null` = chưa hỏi.
    * Dev/playtest mặc định bật; bản bán ra mặc định tắt và hỏi rõ một lần.
@@ -51,6 +84,13 @@ export type Settings = {
   notebookAuto: boolean;
   /** P3-01 §2.6: "Bỏ qua nghi thức đốt vía" — minigame không bao giờ hiện, vía về 0 lúc 6h30. */
   skipRitual: boolean;
+  /**
+   * P3-03 §4 luật UI #4 — công tắc trợ năng "hiện tổng khi đang chọn". TẮT thì đi chợ không
+   * có tổng chạy, người chơi phải nhẩm, tổng chỉ hiện ở bước xác nhận. BẬT thì chân trang
+   * hiện tổng giỏ ngay lúc đang bấm +/−. Dù bật hay tắt, con số vẫn là dữ liệu thô: tổng
+   * và tiền trong ống, không gợi ý, không "còn mua được mấy ổ nữa".
+   */
+  marketRunningTotal: boolean;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -58,10 +98,19 @@ export const DEFAULT_SETTINGS: Settings = {
   reducedMotion: false,
   noTimePressure: false,
   musicVolume: 55,
+  streetVolume: 70,
+  voiceVolume: 100,
+  foleyVolume: 85,
+  uiVolume: 80,
+  crowdVolume: 60,
+  disableNegativeAudioCues: false,
+  a11yPerceptionPing: false,
+  monoAudio: false,
   telemetry: DEV_TOOLS || PLAYTEST ? true : null,
   allowFalseMemory: true,
   notebookAuto: true,
   skipRitual: false,
+  marketRunningTotal: true,
 };
 
 /** Cài đặt sống độc lập với save: đổi ở menu là có hiệu lực ngay, kể cả chưa có ván nào. */

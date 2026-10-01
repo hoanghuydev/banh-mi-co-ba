@@ -120,7 +120,8 @@ export class HeadlessStall {
       story: w.story,
       resumeAt: opts.resume || lateOpen ? this.ctx.clock.minutes : undefined,
     });
-    bus.on("npc:left", (p) => { if (p.reason === "IMPATIENT") w.progress.today.lost++; });
+    // Giống `StallScene`: ổ rớt đất bị từ chối là mất khách thật, hàng dài thì không.
+    bus.on("npc:left", (p) => { if (p.reason === "IMPATIENT" || p.reason === "SOILED_FOOD") w.progress.today.lost++; });
     // mở khoá vòi rửa (P3-04 C1): sau lần đầu có khách CHẮC CHẮN thấy tay dơ
     bus.on("perception:confirmed", (p) => { if (p.stimId === "DIRTY_HANDS") w.flags.dirtyHandsConfirmed = true; });
   }

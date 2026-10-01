@@ -37,13 +37,17 @@ export function tasteOf(npcId: string): NpcTaste | null {
 export function servedVector(dish: readonly Ingredient[], crust: number): TasteVector {
   const n = portionsOf(dish as Ingredient[]);
   const g = (id: Ingredient) => n.get(id) ?? 0;
+  // Mẫu số = TRẦN THẬT của từng trục trên thang hai nấc (`INGREDIENTS[].max` = 2):
+  // một món 2, nhóm nhân bốn món 8 nhưng không ai kẹp đủ bốn — 4 là "đã nhiều thịt",
+  // rau ba món 6. Lấy mẫu số cũ (thang bốn nấc) thì không ổ nào chạm nổi 1,0 và NPC nào
+  // cũng đọc ra là nhạt — `satisfaction` lệch vĩnh viễn về một phía.
   return {
-    pate: clamp01(g("pate") / 3),
-    meat: clamp01((g("thit") + g("chalua") + g("xiumai") + g("opla")) / 6),
-    veg: clamp01((g("dochua") + g("dualeo") + g("hanhngo")) / 9),
-    chili: clamp01(g("ot") / 3),
+    pate: clamp01(g("pate") / 2),
+    meat: clamp01((g("thit") + g("chalua") + g("xiumai") + g("opla")) / 4),
+    veg: clamp01((g("dochua") + g("dualeo") + g("hanhngo")) / 6),
+    chili: clamp01(g("ot") / 2),
     salt: 0.5,
-    sauce: clamp01(g("tuongot") / 3),
+    sauce: clamp01(g("tuongot") / 2),
     // độ giòn: vùng giòn của lò (0,45–0,88) ánh xạ quanh 0,5–0,85
     crust: clamp01(crust),
   };

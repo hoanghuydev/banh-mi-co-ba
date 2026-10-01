@@ -1,0 +1,393 @@
+{
+  "_note": "NGƯỜI QUA ĐƯỜNG (sim/passersby.ts) — người đi ngang, KHÔNG MUA GÌ cho tới khi được mời. Khác hẳn kho WALKIN: khách vãng lai là người đang MUA (trả giá, chê mắc, đòi thêm pate), còn mấy người này chưa hề hỏi mua một ổ nào. DANH XƯNG ĐỂ TRỐNG: {call} người chơi gọi họ · {me} người chơi tự xưng · {self} họ tự xưng · {you} họ gọi người chơi. Service.fill() điền theo DÁNG người đang đứng đó (sim/talk.WALKIN_ADDRESS) — tám dáng dùng chung một bộ thoại, mà bà cụ không bị gọi là 'anh'. Vì vậy MỌI câu ở đây phải đọc được với cả tám vai: đừng viết chuyện chỉ hợp với một tuổi, một nghề, một giới. KHÔNG cuộc nào có `initiates`: người ta đang đi ngang, không đứng chờ để bắt chuyện với mình.",
+  "talks": [
+    {
+      "id": "duong.hoiduong",
+      "npc": "QUA_DUONG",
+      "topic": "hoiduong",
+      "opener": "{you} ơi, hẻm 54 đi lối nào vậy?",
+      "openMood": "NGHIEM",
+      "tree": [
+        {
+          "say": "Dạ {call} đi thẳng, tới cây me quẹo phải.",
+          "tone": "THUONG",
+          "reply": "Cây me hả. Ờ, {self} nhớ rồi.",
+          "then": [
+            {
+              "say": "Dạ {call} đi mạnh giỏi nghen.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Ừ. {you} bán đắt nghen.",
+              "mood": "CUOI"
+            },
+            {
+              "say": "{call} kiếm nhà ai trong đó vậy?",
+              "tone": "THUONG",
+              "reply": "Nhà bà con. Lâu quá hổng ghé, quên đường luôn."
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "silent": true
+            }
+          ]
+        },
+        {
+          "say": "{me} cũng mới ra đây bán, hổng rành lắm {call} ơi.",
+          "tone": "THANG",
+          "reply": "Vậy hả. Thôi để {self} hỏi người khác."
+        },
+        {
+          "say": "{me} đang bận {call} ơi.",
+          "tone": "LANH",
+          "rel": -1,
+          "reply": "Ờ. Xin lỗi nghen.",
+          "mood": "NGUONG"
+        }
+      ]
+    },
+    {
+      "id": "duong.mui",
+      "npc": "QUA_DUONG",
+      "topic": "mui",
+      "opener": "Thơm dữ ta. Bánh mì hả {you}?",
+      "openMood": "NGAC_NHIEN",
+      "tree": [
+        {
+          "say": "Dạ bánh mới ra lò đó {call}.",
+          "tone": "AM",
+          "reply": "Ngửi thôi cũng đói bụng rồi.",
+          "mood": "CUOI",
+          "then": [
+            {
+              "say": "{call} ăn thử một ổ cho biết nghen?",
+              "tone": "AM",
+              "act": {
+                "kind": "INVITE",
+                "yes": "Ờ... thôi được. Cho {self} một ổ đi.",
+                "no": "Thôi, {self} ăn sáng rồi. Bữa khác nghen."
+              }
+            },
+            {
+              "say": "Dạ {call} đi đường cẩn thận nghen.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Ừ. Bán đắt nghen {you}.",
+              "mood": "CUOI"
+            },
+            {
+              "say": "Dạ.",
+              "tone": "IM",
+              "silent": true
+            }
+          ]
+        },
+        {
+          "say": "Lò mới nhen than đó {call}.",
+          "tone": "THUONG",
+          "reply": "Thảo nào. Thơm tới ngoài đường luôn."
+        },
+        {
+          "say": "Dạ.",
+          "tone": "LANH",
+          "silent": true
+        }
+      ]
+    },
+    {
+      "id": "duong.nang",
+      "npc": "QUA_DUONG",
+      "topic": "troi",
+      "when": { "rain": false },
+      "opener": "Nắng gắt quá {you} ha.",
+      "openMood": "MET",
+      "tree": [
+        {
+          "say": "Dạ. Mới sáng mà đã rát mặt rồi {call}.",
+          "tone": "THUONG",
+          "reply": "Ừ. Trưa chắc hổng ai dám ra đường."
+        },
+        {
+          "say": "{call} đứng nhờ cái dù cho mát cái đã.",
+          "tone": "AM",
+          "rel": 2,
+          "reply": "Ờ, cảm ơn {you} nghen.",
+          "mood": "CUOI",
+          "then": [
+            {
+              "say": "Nắng vầy ăn miếng bánh rồi hãy đi {call}.",
+              "tone": "AM",
+              "act": {
+                "kind": "INVITE",
+                "yes": "Ờ há. Thôi cho {self} một ổ.",
+                "no": "Thôi {you} ơi, nắng quá {self} hổng nuốt nổi."
+              }
+            },
+            {
+              "say": "Mua một ổ ủng hộ {me} đi {call}.",
+              "tone": "THANG",
+              "act": {
+                "kind": "INVITE",
+                "yes": "Ừ. Một ổ nghen.",
+                "no": "Bữa khác nghen. {self} đang vội."
+              }
+            },
+            {
+              "say": "Dạ {call} đứng nghỉ chút đi.",
+              "tone": "THUONG",
+              "reply": "Ừ. Đứng chút rồi {self} đi."
+            }
+          ]
+        },
+        {
+          "say": "Dạ.",
+          "tone": "LANH",
+          "silent": true
+        }
+      ]
+    },
+    {
+      "id": "duong.mua",
+      "npc": "QUA_DUONG",
+      "topic": "troi",
+      "when": { "rain": true },
+      "opener": "Mưa lớn quá. Cho {self} đứng nhờ chút nghen.",
+      "openMood": "NGUONG",
+      "tree": [
+        {
+          "say": "Dạ {call} đứng vô trong cho khỏi ướt.",
+          "tone": "AM",
+          "rel": 3,
+          "reply": "Cảm ơn {you}. Mưa vầy đi hổng nổi.",
+          "then": [
+            {
+              "say": "{call} đi đâu mà gặp mưa vậy?",
+              "tone": "THUONG",
+              "reply": "Đi có chút chuyện. Mưa gió gì cũng phải đi."
+            },
+            {
+              "say": "Mưa này chút là tạnh hà {call}.",
+              "tone": "AM",
+              "rel": 1,
+              "reply": "Ờ. Mong vậy. Ướt hết đồ rồi nè."
+            },
+            {
+              "say": "Dạ.",
+              "tone": "IM",
+              "silent": true
+            }
+          ]
+        },
+        {
+          "say": "Dạ {call} đứng đại đi.",
+          "tone": "THUONG",
+          "reply": "Ờ. Cảm ơn nghen."
+        },
+        {
+          "say": "Chỗ này chật lắm {call} ơi.",
+          "tone": "LANH",
+          "rel": -1,
+          "reply": "Ờ... vậy thôi. {self} đi đại.",
+          "mood": "BUC"
+        }
+      ]
+    },
+    {
+      "id": "duong.voi",
+      "npc": "QUA_DUONG",
+      "topic": "voi",
+      "when": { "slot": ["PEAK"] },
+      "opener": "Mấy giờ rồi {you} ơi?",
+      "openMood": "NGHIEM",
+      "tree": [
+        {
+          "say": "Dạ gần bảy giờ rồi {call}.",
+          "tone": "THUONG",
+          "reply": "Chết rồi. Trễ giờ nữa rồi.",
+          "mood": "BUC",
+          "then": [
+            {
+              "say": "{call} cầm một ổ ăn dọc đường cho kịp.",
+              "tone": "AM",
+              "act": {
+                "kind": "INVITE",
+                "yes": "Ờ, phải đó. Cho {self} một ổ lẹ giùm.",
+                "no": "Thôi khỏi, {self} trễ quá rồi."
+              }
+            },
+            {
+              "say": "Bữa nào cũng trễ hả {call}?",
+              "tone": "DUA",
+              "rel": -1,
+              "reply": "{you} này nói chuyện ngang à nghen.",
+              "mood": "BUC"
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "silent": true
+            }
+          ]
+        },
+        {
+          "say": "{me} hổng có đồng hồ {call} ơi.",
+          "tone": "THANG",
+          "reply": "Vậy hả. Thôi để {self} coi điện thoại."
+        },
+        {
+          "say": "Dạ.",
+          "tone": "IM",
+          "silent": true
+        }
+      ]
+    },
+    {
+      "id": "duong.hem",
+      "npc": "QUA_DUONG",
+      "topic": "hem",
+      "opener": "Hồi xưa chỗ này tiệm sửa xe mà ha {you}.",
+      "openMood": "NGHI",
+      "tree": [
+        {
+          "say": "Dạ. Chú Sáu dọn đi hai năm rồi {call}.",
+          "tone": "THUONG",
+          "reply": "Ờ há. Lâu quá {self} hổng có ghé lại."
+        },
+        {
+          "say": "{me} cũng mới ra đây bán thôi {call}.",
+          "tone": "AM",
+          "reply": "Vậy hả. Bán được hông {you}?",
+          "then": [
+            {
+              "say": "Dạ cũng đắp đổi. {call} ăn thử ổ nghen?",
+              "tone": "AM",
+              "act": {
+                "kind": "INVITE",
+                "yes": "Ờ. Mở hàng giùm {you} một ổ vậy.",
+                "no": "Hồi khác nghen. {self} vừa ăn rồi."
+              }
+            },
+            {
+              "say": "Dạ đông khách lắm {call}.",
+              "tone": "DUA",
+              "rel": -1,
+              "reply": "Cha. Nói nghe sướng lỗ tai ghê.",
+              "mood": "CUOI_KHAN"
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "silent": true
+            }
+          ]
+        },
+        {
+          "say": "Dạ.",
+          "tone": "LANH",
+          "silent": true
+        }
+      ]
+    },
+    {
+      "id": "duong.cuoibuoi",
+      "npc": "QUA_DUONG",
+      "topic": "cuoibuoi",
+      "when": { "slot": ["LULL"] },
+      "opener": "Giờ này còn bán hả {you}?",
+      "openMood": "NGAC_NHIEN",
+      "tree": [
+        {
+          "say": "Dạ còn mấy ổ cuối {call}.",
+          "tone": "THUONG",
+          "reply": "Ờ. Chắc bữa nay ế hả {you}.",
+          "mood": "NGHI",
+          "then": [
+            {
+              "say": "Dạ cũng thường thôi {call}.",
+              "tone": "LANH",
+              "reply": "Ừ. Bữa đực bữa cái mà."
+            },
+            {
+              "say": "Sáng bán hết rồi, đây là mẻ sau {call}.",
+              "tone": "THANG",
+              "reply": "Vậy hả. Vậy là được đó chớ."
+            },
+            {
+              "say": "{call} ăn giùm {me} ổ cuối nghen.",
+              "tone": "DUA",
+              "rel": 1,
+              "act": {
+                "kind": "INVITE",
+                "yes": "Thôi được. Lấy giùm {you} một ổ.",
+                "no": "Thôi để bữa khác. {self} ăn cơm rồi."
+              }
+            }
+          ]
+        },
+        {
+          "say": "Dạ hết rồi {call} ơi.",
+          "tone": "THANG",
+          "reply": "Tiếc dữ. Thôi mai {self} ghé sớm."
+        },
+        {
+          "say": "Dạ.",
+          "tone": "LANH",
+          "silent": true
+        }
+      ]
+    },
+    {
+      "id": "duong.ngo",
+      "npc": "QUA_DUONG",
+      "topic": "ngo",
+      "opener": "{self} ngó chút thôi, hổng có mua đâu nghen.",
+      "openMood": "NGUONG",
+      "tree": [
+        {
+          "say": "Dạ {call} cứ ngó thoải mái.",
+          "tone": "AM",
+          "rel": 2,
+          "reply": "{you} này dễ thương ghê.",
+          "mood": "CUOI",
+          "then": [
+            {
+              "say": "{call} cầm một ổ cho chắc bụng.",
+              "tone": "AM",
+              "act": {
+                "kind": "INVITE",
+                "yes": "Ừ, nói vậy chắc {self} lấy một ổ.",
+                "no": "Thôi. Bữa nào rảnh {self} ghé."
+              }
+            },
+            {
+              "say": "Ngó rồi mua luôn cho rồi {call}.",
+              "tone": "DUA",
+              "act": {
+                "kind": "INVITE",
+                "yes": "Cha, {you} này. Thôi được, một ổ.",
+                "no": "Để coi đã {you} ơi."
+              }
+            },
+            {
+              "say": "Dạ {call} đi mạnh giỏi.",
+              "tone": "THUONG",
+              "reply": "Ừ. Cảm ơn {you} nghen."
+            }
+          ]
+        },
+        {
+          "say": "Hổng mua thì ngó chi {call}.",
+          "tone": "GAT",
+          "rel": -3,
+          "reply": "Ủa. Thôi {self} đi.",
+          "mood": "BUC"
+        },
+        {
+          "say": "Dạ.",
+          "tone": "LANH",
+          "silent": true
+        }
+      ]
+    }
+  ]
+}

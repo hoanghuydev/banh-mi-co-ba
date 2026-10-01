@@ -34,6 +34,7 @@ const LOADERS: Record<string, () => Promise<{ default: unknown }>> = {
   BA_SAU: () => import("./ba-sau.json"),
   CHU_KIET: () => import("./chu-kiet.json"),
   WALKIN: () => import("./walkin.json"),
+  QUA_DUONG: () => import("./qua-duong.json"),
 };
 
 /**

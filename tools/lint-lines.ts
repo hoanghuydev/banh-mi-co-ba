@@ -12,9 +12,21 @@ import { pathToFileURL } from "node:url";
 import { ROOT, Report, readJson, similarity, walk } from "./lib";
 
 export const LINE_MAX_CHARS = 90;
+/** Chỗ trống danh xưng trong cây hội thoại — xem `sim/service.fill`. */
+const ADDRESS_VARS = ["call", "me", "self", "you"];
 export const LINE_SIMILARITY_MAX = 0.85;
 /** Bong bóng thoại ở fontScale 2: rộng 285 px, chữ 24 px (xem ui/stall/BubblePool). */
 const BUBBLE_PX = 285, FONT_PX_AT_2X = 24, MAX_LINES_AT_2X = 3;
+/**
+ * Khung CHỮ của một dòng. Mặc định là bong bóng — nhưng thân cây hội thoại KHÔNG đi
+ * qua bong bóng: nó hiện trong `ui/stall/TalkPanel` rộng 620 px, chữ 16 px, và bảng
+ * cao tới 56% màn hình. Lint cả hai bằng một cái thước là bắt sai: 95 dòng bị kêu
+ * "bong bóng quá cao" trong khi chúng chưa bao giờ nằm trong bong bóng nào.
+ */
+type Box = { px: number; font: number; maxLines: number };
+const BUBBLE: Box = { px: BUBBLE_PX, font: FONT_PX_AT_2X, maxLines: MAX_LINES_AT_2X };
+/** 620 px bảng − 32 px lề − ~34 px cột huy hiệu mặt, chữ 16 px ở cỡ 1,15. */
+const PANEL: Box = { px: 520, font: 19, maxLines: 4 };
 
 type Red = {
   war: string[]; demeaning: string[];
@@ -25,7 +37,15 @@ type Red = {
 /** Một "túi" thoại cần lint: biến thể + biến được phép + ai nói. */
 type Bag = { file: string; where: string; vi: string[]; en?: string[]; vars: string[]; npc?: string; set: (vi: string[]) => void
   /** L014 — biến BẮT BUỘC có mặt ở mọi dòng (tin đồn: tên nguồn). */
-  mustHave?: string };
+  mustHave?: string;
+  /**
+   * L012 tắt. Túi của một CUỘC TRÒ CHUYỆN không phải một pool biến thể thay nhau được:
+   * nó là cả cuộc nói chuyện, và "Dạ." với "Dạ, con biết rồi." giống nhau 85% là đúng
+   * như đời, không phải biến thể giả.
+   */
+  noVariants?: boolean;
+  /** Khung chữ của túi này. Vắng = bong bóng. */
+  box?: Box };
 
 // ── bảng chữ ────────────────────────────────────────────────────────────────
 const VN_VOWELS = "aàáảãạăằắẳẵặâầấẩẫậeèéẻẽẹêềếểễệiìíỉĩịoòóỏõọôồốổỗộơờớởỡợuùúủũụưừứửữựyỳýỷỹỵ";
@@ -51,13 +71,13 @@ function sentenceCase(s: string) {
   return low.charAt(0).toUpperCase() + low.slice(1);
 }
 
-/** Số dòng khi bọc chữ ở fontScale 2 — ước lượng bề ngang ký tự như trình duyệt. */
-function wrappedLines(s: string) {
-  const w = (ch: string) => (/[mwMWđĐ]/.test(ch) ? 0.8 : /[iljtf.,'!:;|]/.test(ch) ? 0.3 : ch === " " ? 0.28 : 0.56) * FONT_PX_AT_2X;
+/** Số dòng khi bọc chữ trong một khung — ước lượng bề ngang ký tự như trình duyệt. */
+function wrappedLines(s: string, box: Box = BUBBLE) {
+  const w = (ch: string) => (/[mwMWđĐ]/.test(ch) ? 0.8 : /[iljtf.,'!:;|]/.test(ch) ? 0.3 : ch === " " ? 0.28 : 0.56) * box.font;
   let lines = 1, cur = 0;
   for (const word of s.split(" ")) {
     const ww = [...word].reduce((a, ch) => a + w(ch), 0);
-    if (cur > 0 && cur + w(" ") + ww > BUBBLE_PX) { lines++; cur = ww; }
+    if (cur > 0 && cur + w(" ") + ww > box.px) { lines++; cur = ww; }
     else cur += (cur > 0 ? w(" ") : 0) + ww;
   }
   return lines;
@@ -99,16 +119,40 @@ function collect(contentDir: string): { bags: Bag[]; save: () => void } {
   for (const f of walk(join(contentDir, "talks"), [".json"])) {
     const data = readJson<{ talks: any[] }>(f);
     for (const t of data.talks ?? []) {
-      const npcLines: string[] = [t.opener, ...(t.ignore?.reply ? [t.ignore.reply] : [])];
+      /*
+       * ⚠️ Cũ đọc `t.beats` — trường đó chết từ hồi P5-01 đổi sang CÂY (`tree` + `shared`),
+       * nên linter chạy xanh suốt mà chưa từng soi một dòng nào trong cây. Đi đúng cây ở
+       * đây, cắt ở MAX_DEPTH để `ref` quay vòng không treo lệnh build.
+       */
+      // Hai khung khác nhau: câu MỞ LỜI (khách tự bắt chuyện) và câu làm thinh bay ra
+      // bong bóng trên đầu họ; mọi dòng trong cây nằm trong bảng F.
+      const bubbleLines: string[] = [t.opener, ...(t.ignore?.reply ? [t.ignore.reply] : [])];
+      const npcLines: string[] = [];
       const sayLines: string[] = [];
-      for (const b of t.beats ?? []) {
-        for (const o of b.options ?? []) {
+      const seen = new Set<any>();
+      const go = (nodes: any[], depth: number) => {
+        if (depth > 6) return;
+        for (const o of nodes ?? []) {
+          if (!o || seen.has(o)) continue;
+          seen.add(o);
           sayLines.push(o.say);
           if (o.reply) npcLines.push(o.reply);
+          // P6 act INVITE: hai câu đáp do CÁI ROLL chọn, không do lựa chọn. Chúng hiện
+          // ra đúng chỗ `reply` hiện, nên phải chịu đúng cái thước đó — bỏ sót thì có
+          // hai câu thoại NPC cả game không ai soi.
+          for (const k of ["yes", "no"] as const) if (o.act?.[k]) npcLines.push(o.act[k]);
+          const kids = o.then?.length ? o.then : o.ref ? t.shared?.[o.ref] : null;
+          if (kids) go(kids, depth + 1);
         }
-      }
-      bags.push({ file: f, where: `talk ${t.id}.npc`, vi: npcLines, vars: [], npc: t.npc, set: () => {} });
-      bags.push({ file: f, where: `talk ${t.id}.say`, vi: sayLines, vars: [], set: () => {} });
+      };
+      go(t.tree ?? [], 1);
+      for (const sub of Object.values(t.shared ?? {})) go(sub as any[], 1);
+      // Chỗ trống DANH XƯNG (sim/talk.WALKIN_ADDRESS, điền ở `Service.fill`): một bộ
+      // thoại dùng chung cho tám dáng người thì không viết cứng "anh" vào được.
+      const vars = ADDRESS_VARS;
+      bags.push({ file: f, where: `talk ${t.id}.bong-bong`, vi: bubbleLines, vars, npc: t.npc, noVariants: true, set: () => {} });
+      bags.push({ file: f, where: `talk ${t.id}.npc`, vi: npcLines, vars, npc: t.npc, noVariants: true, box: PANEL, set: () => {} });
+      bags.push({ file: f, where: `talk ${t.id}.say`, vi: sayLines, vars, noVariants: true, box: PANEL, set: () => {} });
     }
   }
   for (const f of walk(join(contentDir, "rules"), [".json"])) {
@@ -168,8 +212,11 @@ export function lintLines(contentDir: string, opts: { fix?: boolean } = {}): Rep
 
       // L003 — độ dài
       const shown = s.replace(/\{\w+\}/g, "xxxxxxxx");
+      const box = b.box ?? BUBBLE;
       if (shown.length > LINE_MAX_CHARS) r.add("L003", "WARN", b.file, where, `${shown.length} ký tự > ${LINE_MAX_CHARS}`);
-      else if (wrappedLines(shown) > MAX_LINES_AT_2X) r.add("L003", "WARN", b.file, where, `${wrappedLines(shown)} dòng ở cỡ chữ 200% — bong bóng quá cao`);
+      else if (wrappedLines(shown, box) > box.maxLines) {
+        r.add("L003", "WARN", b.file, where, `${wrappedLines(shown, box)} dòng trong khung ${box.px} px — hộp quá cao`);
+      }
 
       // L006 — mất dấu
       const words = s.split(/\s+/).filter(Boolean);
@@ -217,6 +264,7 @@ export function lintLines(contentDir: string, opts: { fix?: boolean } = {}): Rep
     if (enCount < b.vi.length) r.add("L011", "WARN", b.file, b.where, `thiếu phụ đề tiếng Anh (${enCount}/${b.vi.length})`);
 
     // L012 — biến thể giả
+    if (b.noVariants) continue;
     for (let i = 0; i < fixed.length; i++) {
       for (let j = i + 1; j < fixed.length; j++) {
         const sim = similarity(fixed[i].toLowerCase(), fixed[j].toLowerCase());

@@ -1,13 +1,15 @@
 import Phaser from "phaser";
 import { PAL } from "./palette";
 import { blob, heightFor, prop, shade, slab, type Pen } from "./canvas";
-import type { Facing } from "../world/iso";
+import type { Facing8 } from "../world/iso";
 
 /**
  * Thân người — dùng chung cho người chơi lẫn khách.
  *
- * v1 vẽ bằng code nhưng vẽ cho tử tế; v2 artist thay bằng spritesheet.
- * Mỗi nhân vật chỉ nướng 3 hướng: hướng "w" là bản lật ngang của "e" (xem `textureFor`).
+ * v1 vẽ bằng code nhưng vẽ cho tử tế; v2 artist thay bằng ảnh thật.
+ * Mỗi nhân vật chỉ NƯỚNG 3 hướng: hướng "w" là bản lật ngang của "e" (xem `textureFor`).
+ * Ai được `art/photo.ts` sơn đè đủ ẢNH tám hướng thì dùng tám file rời, không lật —
+ * hiện là mỗi người chơi, xem `markEightWay`.
  *
  * Bàn chân đứng ĐÚNG ở `cy` — tâm hình thoi của ô, tức mặt đất.
  * Neo sai chỗ này là nhân vật bị nhấc lên và bóng đổ rơi lệch hẳn xuống chân.
@@ -70,14 +72,51 @@ export const PLAYER_STYLE: BodyStyle = {
 const DIRS = ["s", "n", "e"] as const;
 type Dir = (typeof DIRS)[number];
 
-function keyOf(who: string, dir: Dir, pose: Pose) {
+function keyOf(who: string, dir: string, pose: Pose) {
   return pose === "carry" ? `${who}_${dir}_c` : `${who}_${dir}`;
 }
 
-/** Tên texture của một nhân vật theo hướng nhìn. "w" dùng lại "e" rồi lật ngang. */
-export function textureFor(facing: Facing, who = "p", pose: Pose = "idle") {
-  const dir = (facing === "w" ? "e" : facing) as Dir;
-  return { key: keyOf(who, dir, pose), flip: facing === "w" };
+/**
+ * Nhân vật nào có ĐỦ ẢNH THẬT tám hướng. `art/photo.ts` ghi tên vào đây sau khi
+ * sơn xong — và chỉ khi sơn đủ cả tám, nên thiếu một file ảnh là cả bộ lặng lẽ
+ * rơi về bản vẽ code, không ai thủng texture (đúng lời hứa ở đầu `art/index.ts`).
+ *
+ * Phải là một cái sổ ĐĂNG KÝ chứ không phải cờ cứng: bản vẽ code chỉ nướng ba
+ * hướng, nên `textureFor` không thể đoán bừa rằng `p_se` có tồn tại hay không.
+ */
+const EIGHT = new Set<string>();
+
+export function markEightWay(who: string) {
+  EIGHT.add(who);
+}
+
+/**
+ * Gộp tám hướng về ba bản vẽ code. Hướng chéo lấy hình NGHIÊNG: nhân vật đi chéo
+ * mà đứng chính diện thì nhìn như đang trượt ngang, còn nghiêng thì chỉ là hơi
+ * quá đà. Nửa phía tây lật ngang bản "e", đúng quy ước cũ.
+ */
+const FOLD: Record<Facing8, { dir: Dir; flip: boolean }> = {
+  s: { dir: "s", flip: false },
+  n: { dir: "n", flip: false },
+  e: { dir: "e", flip: false },
+  w: { dir: "e", flip: true },
+  se: { dir: "e", flip: false },
+  ne: { dir: "e", flip: false },
+  sw: { dir: "e", flip: true },
+  nw: { dir: "e", flip: true },
+};
+
+/**
+ * Tên texture của một nhân vật theo hướng nhìn.
+ *
+ * Có ảnh thật tám hướng thì mỗi hướng một file, KHÔNG lật ngang cái nào — lật là
+ * chữ "Bánh Mì" trên tạp dề soi gương, và hai nửa người đổi chỗ cho nhau.
+ * Chưa có ảnh thì gộp về ba bản vẽ code theo `FOLD`.
+ */
+export function textureFor(facing: Facing8, who = "p", pose: Pose = "idle") {
+  if (EIGHT.has(who)) return { key: keyOf(who, facing, pose), flip: false };
+  const f = FOLD[facing];
+  return { key: keyOf(who, f.dir, pose), flip: f.flip };
 }
 
 // ─────────────────────────────────────────────────────────────── kích thước thân
@@ -107,17 +146,23 @@ function bodyWidth(dir: Dir, st: BodyStyle) {
  * ở đây thì sửa đúng bảng này, không file nào khác phải biết. Toạ độ khớp với chỗ
  * hai cẳng tay của tư thế `carry` gặp nhau — xem `arms()`.
  */
-const HOLD_ANCHOR: Record<Dir, { x: number; y: number }> = {
+const HOLD_ANCHOR: Record<Facing8, { x: number; y: number }> = {
   s: { x: 0, y: 23 },
-  n: { x: 0, y: 23 },
+  se: { x: 5, y: 22 },
   e: { x: 8, y: 22 },
+  ne: { x: 5, y: 22 },
+  n: { x: 0, y: 23 },
+  nw: { x: -5, y: 22 },
+  w: { x: -8, y: 22 },
+  sw: { x: -5, y: 22 },
 };
 
-export function holdAnchor(facing: Facing) {
-  const dir = (facing === "w" ? "e" : facing) as Dir;
-  const a = HOLD_ANCHOR[dir];
-  // Quay lưng thì món nằm KHUẤT sau thân — `behind` để `Player` hạ depth xuống.
-  return { x: facing === "w" ? -a.x : a.x, y: a.y, behind: dir === "n" };
+/** Ba hướng NGOẢNH LƯNG: món nằm khuất sau thân, `Player` phải hạ depth xuống. */
+const BEHIND = new Set<Facing8>(["n", "ne", "nw"]);
+
+export function holdAnchor(facing: Facing8) {
+  const a = HOLD_ANCHOR[facing];
+  return { x: a.x, y: a.y, behind: BEHIND.has(facing) };
 }
 
 // ──────────────────────────────────────────────────────────────────────── cái đầu

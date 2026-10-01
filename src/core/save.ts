@@ -143,6 +143,19 @@ export type SaveFile = {
      */
     board?: { dish: string[]; warmth: number; crust: number; q: number } | null;
     hand?: { item: string; warmth: number; crust: number; q: number } | null;
+    /**
+     * Ổ đang để ở CHỖ ĐỂ BÁNH trên quầy — trơn hay đã gói đều được (gói sẵn lúc vắng
+     * rồi bán nhanh lúc đông). Cùng luật với `board`: thiếu trường = chỗ đó trống.
+     */
+    basket?: {
+      hand?: string; warmth: number; crust: number; q: number; soiled?: boolean;
+      dish?: string[]; dishQ?: number; readyAt?: number;
+    }[] | null;
+    /** Món đang nằm dưới sàn (phím Q) — save cũ thiếu trường = sàn sạch. */
+    floor?: { x: number; y: number; hand: string; warmth: number; crust: number; q: number; soiled?: boolean; dish: string[] }[] | null;
+    /** Ổ đang cầm / đang gác đã từng chạm đất chưa. */
+    handSoiled?: boolean;
+    boardSoiled?: boolean;
   };
 
   /** 40 dòng, để vẽ biểu đồ cuối mùa. */

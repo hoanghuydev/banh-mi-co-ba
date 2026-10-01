@@ -39,6 +39,7 @@ import type { Rng } from "../core/rng";
 import { record, talkPoints, type BaseKind, type RelState } from "./memory";
 import { weekdayOf, type Weekday } from "./schedule";
 import type { TimeBand } from "../core/clock";
+import type { Face, PoseId } from "./reaction";
 
 /**
  * Giọng của một lựa chọn. Dùng để (a) tô mép nút, (b) kiểm nội dung: một nhịp mà cả 4
@@ -105,9 +106,11 @@ export type TalkEffect = {
  *   PROMISE    hứa bỏ thêm một món — treo lại, KIỂM lúc đưa bánh
  *   STEP_ASIDE bảo họ dạt qua cho người sau — họ nghe hay không là chuyện của họ
  *   REFUSE     không bán nữa; khách đi ngay
+ *   INVITE     MỜI một người đang đi ngang ghé vô mua — họ vô hay không là chuyện của họ
  *
  * Mọi `act` đều phải có đường THẤT BẠI thật: hứa mà không làm → `BROKEN_PROMISE`;
- * bảo dạt qua mà người ta không chịu → mình đứng đó với một người đang quạu.
+ * bảo dạt qua mà người ta không chịu → mình đứng đó với một người đang quạu; mời mà
+ * người ta từ chối → mình vừa đứng ngoài đường nói với một cái lưng.
  */
 export type TalkAct =
   | { kind: "PAY"; vnd: number; note: string }
@@ -115,7 +118,80 @@ export type TalkAct =
   | { kind: "FREE_LOAF" }
   | { kind: "PROMISE"; item: string }
   | { kind: "STEP_ASIDE" }
-  | { kind: "REFUSE" };
+  | { kind: "REFUSE" }
+  /**
+   * Mời khách — quán vắng thì bước ra mời người đi ngang một câu.
+   *
+   * Người viết phải khai CẢ HAI câu đáp, vì người chơi không điều khiển được cái kết:
+   * `yes` lúc người ta chịu ghé vô, `no` lúc người ta đi tiếp. Đó là điểm của act này —
+   * "mời khéo" chỉ làm cái cửa RỘNG RA, không bao giờ mở toang nó. Xác suất ở
+   * `sim/passersby.inviteChance`: ai đã ngoái nhìn cái xe, ai dễ tính, mình vừa nói
+   * mấy câu tử tế hay vừa nói trống không, và quan trọng nhất — ngoài quầy đang có mấy
+   * người đứng (không ai được mời mà chịu xếp vào một cái hàng dài).
+   */
+  | { kind: "INVITE"; yes: string; no: string };
+
+
+/**
+ * CẢM XÚC của câu đáp — P5-06.
+ *
+ * Trước bản này, mặt khách lúc trò chuyện được SUY RA từ con số: `rel` ≥ 3 thì "cảm động",
+ * `anger` > 0 thì "khó chịu". Nên hai câu đáp rất khác nhau — "Cha, con này!" (cười phá)
+ * và "…Ờ. Cảm ơn con." (rưng rưng) — cùng +3 điểm thì ra CÙNG một khuôn mặt. Người viết
+ * không có cách nào nói "chỗ này bà cười", và người chơi mất đúng cái nửa quan trọng
+ * của một câu nói: nó được nói ra bằng mặt mũi nào.
+ *
+ * `mood` là chỗ người viết nói ra điều đó, và nó đi vào ĐÚNG hệ mặt sẵn có của P2-02
+ * (3 lớp mày/mắt/miệng) — không phải một lớp icon dán đè. Bảng dưới là bản dịch sang
+ * ba lớp đó, cộng cái dáng người hay đi kèm cảm xúc ấy.
+ *
+ * KHÔNG dùng emoji: bảng glyph của game (linter L013) chỉ có chữ Việt và dấu câu, một
+ * ký tự ngoài bảng là một ô vuông trắng trên màn hình.
+ */
+export type TalkMood =
+  | "CUOI_TUOI" | "CUOI" | "CUOI_KHAN" | "THUONG" | "NGAC_NHIEN" | "NGUONG"
+  | "BUON" | "RUNG_RUNG" | "GIAN" | "BUC" | "NGHI" | "LANH" | "MET" | "NGHIEM";
+
+/** Tên tiếng Việt — nhật ký cuối ngày và tooltip dev đọc. */
+export const MOOD_LABEL: Record<TalkMood, string> = {
+  CUOI_TUOI: "cười lớn", CUOI: "cười nhẹ", CUOI_KHAN: "cười gượng", THUONG: "thương",
+  NGAC_NHIEN: "ngạc nhiên", NGUONG: "ngượng", BUON: "buồn", RUNG_RUNG: "rưng rưng",
+  GIAN: "giận", BUC: "bực", NGHI: "nghi", LANH: "lạnh", MET: "mệt", NGHIEM: "nghiêm",
+};
+
+/**
+ * Mỗi cảm xúc → một bộ ba (mày, mắt, miệng) của `entities/face.ts`.
+ *   Mày  0 thường · 1 nhíu nhẹ · 2 nhíu sâu · 3 nhướn · 4 lệch · 5 xuôi
+ *   Mắt  0 thường · 1 nheo · 2 mở to · 3 liếc ngang · 4 nhắm · 5 cười
+ *   Miệng 0 thường · 1 mím · 2 cười nhẹ · 3 cười tươi · 4 méo · 5 há
+ */
+export const MOOD_FACE: Record<TalkMood, Face> = {
+  CUOI_TUOI:  [3, 5, 3],
+  CUOI:       [0, 5, 2],
+  CUOI_KHAN:  [4, 0, 2],
+  THUONG:     [5, 5, 2],
+  NGAC_NHIEN: [3, 2, 5],
+  NGUONG:     [3, 4, 2],
+  BUON:       [5, 4, 0],
+  RUNG_RUNG:  [5, 2, 1],
+  GIAN:       [2, 1, 4],
+  BUC:        [1, 3, 1],
+  NGHI:       [1, 1, 0],
+  LANH:       [0, 0, 1],
+  MET:        [5, 4, 1],
+  NGHIEM:     [1, 0, 1],
+};
+
+/** Dáng đi kèm. Cảm xúc không chỉ nằm trên mặt — người ta ngả tới hay lùi ra theo. */
+export const MOOD_POSE: Record<TalkMood, PoseId> = {
+  CUOI_TUOI: "LEAN_IN", CUOI: "NOD", CUOI_KHAN: "SHRUG", THUONG: "SETTLE_IN",
+  NGAC_NHIEN: "STEP_BACK_HALF", NGUONG: "TURN_AWAY_QUARTER", BUON: "IDLE", RUNG_RUNG: "SETTLE_IN",
+  GIAN: "LEAN_IN", BUC: "ARMS_CROSS", NGHI: "PEEK_OVER", LANH: "FREEZE", MET: "SETTLE_IN",
+  NGHIEM: "TILT_HEAD",
+};
+
+/** Cảm xúc nào là ÂM — test đòi câu `GAT` không được đáp bằng mặt cười. */
+export const MOOD_NEGATIVE: ReadonlySet<TalkMood> = new Set<TalkMood>(["GIAN", "BUC", "LANH", "BUON", "MET", "NGHI"]);
 
 export type TalkNode = TalkEffect & {
   /** Hành động thật câu này gây ra ở thế giới. */
@@ -127,6 +203,11 @@ export type TalkNode = TalkEffect & {
   tone: TalkTone;
   /** Câu khách đáp ĐÚNG lựa chọn này. */
   reply?: string;
+  /**
+   * Khách đáp câu này bằng MẶT MŨI nào. Vắng = để `applyTalkOption` suy ra như cũ.
+   * Có khai thì nó THẮNG: người viết biết rõ hơn con số.
+   */
+  mood?: TalkMood;
   /**
    * Khách KHÔNG đáp — cố ý. Khác với quên viết `reply`: `silent` là một nước đi của nhân
    * vật (người nóng tính, người đang giận, người thấy câu đó không đáng trả lời), và test
@@ -163,6 +244,8 @@ export type Talk = {
   topic: string;
   /** Câu khách nói trước. Bấm F = người chơi gợi chuyện, khách mở lời bằng câu này. */
   opener: string;
+  /** Mặt khách lúc nói `opener`. */
+  openMood?: TalkMood;
   /**
    * Khách TỰ bắt chuyện (không cần F): 0..0,6, roll khi họ đứng chờ. Người chơi làm lơ
    * được — và làm lơ có giá, xem `ignore`.
@@ -172,7 +255,7 @@ export type Talk = {
    * Người chơi đóng bảng mà không chọn gì (Esc). Mặc định (không khai): coi như
    * `{ rel: -1 }` — làm thinh với người đang nói chuyện với mình thì nguội đi một chút.
    */
-  ignore?: { reply?: string; rel?: number; anger?: number; mem?: TalkEffect["mem"] };
+  ignore?: { reply?: string; rel?: number; anger?: number; mem?: TalkEffect["mem"]; mood?: TalkMood };
   when?: TalkWhen;
   /** Trọng số khi nhiều cuộc cùng đủ điều kiện. Mặc định 10. */
   weight?: number;
@@ -198,6 +281,20 @@ export type TalkFile = { talks: Talk[] };
  */
 export type Address = { self: string; you: string; call: string; me: string };
 
+/**
+ * Khoá kho thoại KHÔNG gắn với một người cố định.
+ *
+ *   WALKIN     khách vãng lai — người đang mua, chỉ khác là mình chưa biết tên
+ *   QUA_DUONG  người chỉ đi ngang (`sim/passersby.ts`) — KHÔNG mua gì
+ *   ANY        cuộc dùng chung, ai cũng nói được
+ *
+ * Hai cái đầu đổi vai mỗi lượt (hôm nay là "anh chạy xe", mai là "bà cụ"), nên lưới
+ * danh xưng với họ chỉ đòi người chơi gọi bằng MỘT trong mấy vai ở `WALKIN_CALLS` —
+ * không đòi đúng một từ như với 12 người có tên.
+ */
+export const ANON_TALK_POOLS = ["WALKIN", "QUA_DUONG"] as const;
+export const EXTRA_TALK_POOLS = [...ANON_TALK_POOLS, "ANY"] as const;
+
 export const ADDRESS: Record<string, Address> = {
   BA_BAY:    { self: "bà",   you: "con", call: "bà",   me: "con" },
   CHU_TU:    { self: "chú",  you: "con", call: "chú",  me: "con" },
@@ -212,12 +309,39 @@ export const ADDRESS: Record<string, Address> = {
   BA_SAU:    { self: "tui",  you: "con", call: "bà",   me: "con" },
   CHU_KIET:  { self: "tao",  you: "mày", call: "chú",  me: "tui" },
   WALKIN:    { self: "tui",  you: "em",  call: "anh",  me: "em" },
+  QUA_DUONG: { self: "tui",  you: "cô",  call: "anh",  me: "em" },
 };
 
 /**
- * Khách vãng lai không có MỘT vai cố định: hôm nay là "anh chạy xe", mai là "bà cụ",
- * mốt là "chị đeo khẩu trang" (xem `WALKIN_NAMES`). Nên lưới danh xưng với họ chỉ đòi
- * người chơi gọi bằng MỘT trong mấy vai này — chứ không đòi đúng một từ.
+ * DANH XƯNG CỦA NGƯỜI LẠ, theo DÁNG NGƯỜI — khớp 1–1 theo chỉ số với `WALKIN_STYLES`
+ * (và vì vậy với `WALKIN_NAMES` / `PASSER_NAMES`).
+ *
+ * `ADDRESS.WALKIN` một mình là sai, và sai theo kiểu nhìn ra ngay: nó nói người chơi gọi
+ * khách lạ bằng "anh" và tự xưng "em" — trong khi dáng người số 3 là MỘT BÀ CỤ. Gọi một
+ * bà cụ bằng "anh" không phải một lỗi nhỏ về giọng văn, ở tiếng Việt nó là một câu nói
+ * không tồn tại. Mà `ADDRESS` không thể sửa được chuyện đó: nó tra theo KHO thoại, mà
+ * cả tám dáng người dùng chung một kho.
+ *
+ * Nên bảng này tra theo DÁNG. Nội dung viết `{call}` / `{me}` / `{self}` / `{you}` và
+ * `Service.fill()` thay vào đúng vai của người đang đứng đó — xem `sim/service.fill`.
+ * Một bộ thoại dùng chung cho cả tám người, mà không ai bị gọi sai.
+ */
+export const WALKIN_ADDRESS: readonly Address[] = [
+  { self: "tui", you: "cô",  call: "anh", me: "em" },   // 0 tóc ngắn — anh
+  { self: "tui", you: "em",  call: "chị", me: "em" },   // 1 đuôi gà, khẩu trang — chị
+  { self: "tui", you: "cô",  call: "cô",  me: "em" },   // 2 tóc bob, xách giỏ — cô
+  { self: "tui", you: "con", call: "bà",  me: "con" },  // 3 tóc búi bạc, lưng còng — bà cụ
+  { self: "tui", you: "con", call: "cô",  me: "con" },  // 4 nón lá — cô
+  { self: "tui", you: "cô",  call: "anh", me: "em" },   // 5 nón bảo hiểm — anh chạy xe
+  { self: "tui", you: "em",  call: "chị", me: "em" },   // 6 đuôi gà, áo hồng — chị
+  { self: "tui", you: "con", call: "chú", me: "con" },  // 7 đeo kính, tóc ngắn — chú
+];
+
+/**
+ * Người lạ không có MỘT vai cố định: hôm nay là "anh chạy xe", mai là "bà cụ", mốt là
+ * "chị đeo khẩu trang" (xem `WALKIN_NAMES`, `PASSER_NAMES`). Nên lưới danh xưng với họ —
+ * cả `WALKIN` lẫn `QUA_DUONG`, xem `ANON_TALK_POOLS` — chỉ đòi người chơi gọi bằng MỘT
+ * trong mấy vai này, chứ không đòi đúng một từ.
  */
 export const WALKIN_CALLS = ["anh", "chị", "cô", "chú", "bà", "ông", "em"];
 

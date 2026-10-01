@@ -108,7 +108,7 @@ export function usualOf(npcId: string, c: ArcCtx, atMin = 0): OrderSpec | null {
       return withAlt(spec({ nhan: ["thit"], rau: "it" }, "Cho bà ổ thịt, ít rau thôi con, bà nhai không nổi.", "Ổ của bà đó con."), { ot: 0 }); // short: viết thêm
     case "CHU_TU":
       // ML-02: từ ngày 23 chú bớt ớt mà không nói — tự bớt thì chú nhìn lên một giây
-      return withAlt(spec({ dayDu: true, nhan: ["pate", "thit", "chalua"], ot: 3 }, "Cho chú ổ đầy đủ, nhiều ớt, cho xin bịch.", "Như mọi bữa nghen con."), d >= 23 ? { ot: 0 } : undefined);
+      return withAlt(spec({ dayDu: true, nhan: ["pate", "thit", "chalua"], ot: 2 }, "Cho chú ổ đầy đủ, nhiều ớt, cho xin bịch.", "Như mọi bữa nghen con."), d >= 23 ? { ot: 0 } : undefined);
     case "ANH_DUNG":
       // ML-08: không nước sốt nhiều — anh chỉ lau tay vào quần
       return withAlt(spec({ nhan: ["xiumai"] }, "Ổ xíu mại, gói lẹ giùm anh, anh có cuốc.", "Như cũ nghen em, anh có cuốc."), { tuongot: 0 }); // short: viết thêm
@@ -126,7 +126,7 @@ export function usualOf(npcId: string, c: ArcCtx, atMin = 0): OrderSpec | null {
     case "CO_MAI":
       if (d >= 30) return spec({ dayDu: true, nhan: ["pate", "thit", "chalua"], bo: NO_HANH, usual: true }, undefined, "Cho cô một ổ.");
       // ML-06: ổ đầy đủ là của con Hương — và Hương ăn cay
-      return withAlt(spec({ dayDu: true, nhan: ["pate", "thit", "chalua"] }, "Cho cô hai ổ, một đầy đủ một không hành. Cô ăn với con Hương.", "Như mọi bữa nghen con, hai ổ."), { ot: 3 }); // short: viết thêm
+      return withAlt(spec({ dayDu: true, nhan: ["pate", "thit", "chalua"] }, "Cho cô hai ổ, một đầy đủ một không hành. Cô ăn với con Hương.", "Như mọi bữa nghen con, hai ổ."), { ot: 2 }); // short: viết thêm
     case "THAY_PHUC":
       return spec({ nhan: ["pate"], rau: "it", bo: NO_HANH }, "Cho thầy ổ pate, ít rau, đừng bỏ ngò. Ăn tại chỗ.", "Như mọi bữa nghen con.");
     case "CHI_HANH": {
@@ -140,9 +140,9 @@ export function usualOf(npcId: string, c: ArcCtx, atMin = 0): OrderSpec | null {
     }
     case "ANH_BAO":
       // ML-11: người chơi TỰ bỏ thêm ớt 4 lần → anh tự nói "cho em nhiều ớt chút"
-      if (c.flags.baoAsksChili) return spec({ dayDu: true, nhan: ["pate", "thit", "chalua"], ot: 3 }, "Dạ... ổ đầy đủ, cho em nhiều ớt chút. Dạ.");
+      if (c.flags.baoAsksChili) return spec({ dayDu: true, nhan: ["pate", "thit", "chalua"], ot: 2 }, "Dạ... ổ đầy đủ, cho em nhiều ớt chút. Dạ.");
       // ML-11: anh ăn cay được hơn anh gọi — anh không biết mình được phép xin
-      return withAlt(spec({ dayDu: true, nhan: ["pate", "thit", "chalua"] }, "Dạ... ổ đầy đủ. Dạ.", "Dạ... như mọi bữa. Dạ."), { ot: 3 }); // short: viết thêm
+      return withAlt(spec({ dayDu: true, nhan: ["pate", "thit", "chalua"] }, "Dạ... ổ đầy đủ. Dạ.", "Dạ... như mọi bữa. Dạ."), { ot: 2 }); // short: viết thêm
     case "BA_SAU":
       return spec({ ...KHONG, usual: false }, "Đổi hôn con? Chén tàu hũ lấy ổ bánh không.");
     default:
@@ -360,8 +360,8 @@ export function extraVisits(c: ArcCtx): ExtraVisit[] {
   const wifeDay = c.flags.leaveMessages ? 30 : 33;
   if (d === wifeDay) out.push({
     key: "sk33", npcId: null, at: at(7), style: 3, name: "cô lạ", tag: "SK-33",
-    order: spec({ dayDu: true, nhan: ["pate", "thit", "chalua"], ot: 3 }, "Cho cô hai ổ đầy đủ, nhiều ớt."),
-    more: [spec({ dayDu: true, nhan: ["pate", "thit", "chalua"], ot: 3 }, "Ổ nữa đầy đủ, nhiều ớt, y vậy con.")],
+    order: spec({ dayDu: true, nhan: ["pate", "thit", "chalua"], ot: 2 }, "Cho cô hai ổ đầy đủ, nhiều ớt."),
+    more: [spec({ dayDu: true, nhan: ["pate", "thit", "chalua"], ot: 2 }, "Ổ nữa đầy đủ, nhiều ớt, y vậy con.")],
     after: [{ text: wifeDay === 30 ? "Ổng gửi con nè: \"Chú đi làm chỗ mới. Xa quá con ơi. Cảm ơn con 30 bữa cơm sáng.\"" : "Ổng gửi lời hỏi thăm con. Ổng đi làm xa, sáu giờ đã phải ra bến xe rồi.", delay: 2.5 }],
     served: { ok: [{ text: "Ờ. Ổng nói con nhớ.", delay: 1 }] },
   });

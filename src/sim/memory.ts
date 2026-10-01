@@ -19,9 +19,16 @@ import type { Personality } from "../content/npcs";
 import type { RelTier } from "../core/types";
 import { decayMul, relGainMul } from "./personality";
 
+/**
+ * `MISSED_EXTRA` — cái hụt của một THÓI QUEN, không phải một sự kiện CANON §3. Nó không
+ * có `StimId` và không bao giờ có: không ai NHÌN THẤY được chuyện "mấy bữa trước có mà
+ * bữa nay không", vì nó chỉ tồn tại trong đầu người đã quen được cho thêm. Cũng vì vậy
+ * nó không đi tin đồn (`witness` bỏ qua kind không có TRUE_CLAIM) — y như `BROKEN_PROMISE`
+ * và `RUDE_TO_THEM` đã nằm sẵn trong danh sách này mà không phải kích thích.
+ */
 export type BaseKind =
   | "WRONG_NAME" | "MADE_THEM_WAIT" | "BURNT_OR_COLD" | "DROPPED_FOOD" | "ORDER_DEFECT" | "DIRTY_HANDS"
-  | "RUDE_TO_THEM" | "BROKEN_PROMISE"
+  | "RUDE_TO_THEM" | "BROKEN_PROMISE" | "MISSED_EXTRA"
   | "REMEMBERED_USUAL" | "REMEMBERED_STORY" | "CARED_FOR_THEM" | "FREE_EXTRA" | "FLOURISH";
 export type HealableKind = "WRONG_NAME" | "DROPPED_FOOD" | "DIRTY_HANDS" | "BURNT_OR_COLD" | "ORDER_DEFECT" | "RUDE_TO_THEM" | "BROKEN_PROMISE";
 export type MemoryKind = BaseKind | `HEALED_${HealableKind}`;
@@ -73,6 +80,15 @@ export type RelState = {
   heavyDay: number;
   /** "Vắng n ngày" — hệ quả trễ của người im lặng (P2-02 §4.6). */
   absentUntil: number;
+  /**
+   * Số lượt ghé LIÊN TIẾP gần đây được cho thêm — nền của thói quen "cho thêm" (§8i đọc
+   * ngược: cho hoài thì người ta QUEN, và cái quen đó là một món nợ). Đếm theo LƯỢT GHÉ
+   * chứ không theo ngày: mười hai người trong hẻm không ai ghé đủ bốn mươi ngày.
+   *
+   * Không bắt buộc có: save cũ thiếu trường này đọc ra 0 = "chưa có thói quen nào",
+   * đúng thứ mình muốn (không bịa ra một thói quen chưa từng xảy ra). Xem `extraHabit`.
+   */
+  extraStreak?: number;
   memory: { short: Memory[]; long: Memory[]; core: Memory | null };
   memSeq: number;
 };
@@ -97,7 +113,7 @@ export const SERVED_WELL_PTS = 1.0;
 
 export const VALENCE: Record<BaseKind, -1 | 1> = {
   WRONG_NAME: -1, MADE_THEM_WAIT: -1, BURNT_OR_COLD: -1, DROPPED_FOOD: -1, ORDER_DEFECT: -1, DIRTY_HANDS: -1,
-  RUDE_TO_THEM: -1, BROKEN_PROMISE: -1,
+  RUDE_TO_THEM: -1, BROKEN_PROMISE: -1, MISSED_EXTRA: -1,
   REMEMBERED_USUAL: 1, REMEMBERED_STORY: 1, CARED_FOR_THEM: 1, FREE_EXTRA: 1, FLOURISH: 1,
 };
 
@@ -115,6 +131,10 @@ export const DECAY: Record<BaseKind, { hold: number; taper: number; floor: numbe
   // nặng còn đổ cho lúc nóng được; "nó nói nó cho mà nó không cho" thì không đổ cho đâu.
   BROKEN_PROMISE:   { hold: 3, taper: 16, floor: 30 },
   ORDER_DEFECT:     { hold: 1, taper: 5,  floor: 0 },
+  // Cái hụt của thói quen phai gần như nhanh nhất, và sàn 0: nó là một cái chưng hửng,
+  // không phải một vết thương. Nhỉnh hơn FREE_EXTRA (taper 4) một nhịp vì cái mất bao giờ
+  // cũng ở lại lâu hơn cái được — nhưng qua đôi ba bữa có lại thì coi như chưa có gì.
+  MISSED_EXTRA:     { hold: 0, taper: 5,  floor: 0 },
   REMEMBERED_USUAL: { hold: 3, taper: 20, floor: 15 },
   REMEMBERED_STORY: { hold: 3, taper: 16, floor: 10 },
   CARED_FOR_THEM:   { hold: 2, taper: 12, floor: 5 },
@@ -141,6 +161,9 @@ export const REDEEM: Partial<Record<BaseKind, RedeemSpec>> = {
 export const SALIENCE_OF: Record<BaseKind, number> = {
   WRONG_NAME: 100, MADE_THEM_WAIT: 100, BURNT_OR_COLD: 80, DROPPED_FOOD: 75, ORDER_DEFECT: 100, DIRTY_HANDS: 40,
   RUDE_TO_THEM: 65, BROKEN_PROMISE: 85,
+  // Soi đúng bằng FREE_EXTRA (25): cái hụt không được phép "to" hơn chính món quà sinh ra
+  // nó. Nằm dưới mốc 75 của `heavyToday` nên hụt một bữa không bao giờ góp vào HEAVY_DAY.
+  MISSED_EXTRA: 25,
   REMEMBERED_USUAL: 90, REMEMBERED_STORY: 70, CARED_FOR_THEM: 50, FREE_EXTRA: 25, FLOURISH: 15,
 };
 
@@ -152,9 +175,61 @@ export function newRelState(): RelState {
     missStreak: 0, expectedDay: 0, lastServedDay: 0,
     trustCeiling: 100, burnCount: 0, burnHistory: [],
     wasRivalOnDay: null, pointsAtRival: 0, missStreakSinceRival: 0,
-    heavyToday: 0, heavyDay: 0, absentUntil: 0,
+    heavyToday: 0, heavyDay: 0, absentUntil: 0, extraStreak: 0,
     memory: { short: [], long: [], core: null }, memSeq: 0,
   };
+}
+
+// ───────────────────────────────────────────────── thói quen "cho thêm" (§8i đọc ngược)
+
+/**
+ * Ba lượt ghé là chỗ một chuyện thôi còn là tình cờ và bắt đầu là NẾP. Hai lần thì
+ * người ta chưa dám trông; ba lần thì lần thứ tư người ta đã đưa tay ra sẵn. Cùng con
+ * số với `PROMOTE_AFTER_DAYS` (ký ức sống qua 3 ngày mới thành dài hạn) và với mốc
+ * "lần thứ 3 trong ngày" mà CANON §8i dùng để bắt bài mua chuộc — một hẻm, một nhịp.
+ */
+export const HABIT_VISITS = 3;
+/**
+ * Thói quen dài hơn thì hụt đau hơn, nhưng chỉ tới đây. 6 = `FRIEND_MIN_VISITS`: quá
+ * mốc đó thì với người ta đã là "lúc nào cũng vậy", thêm một lượt nữa không đổi gì.
+ */
+export const HABIT_STREAK_CAP = 6;
+/**
+ * Cường độ cái hụt. Nhỏ hơn `FREE_EXTRA_BASE` (25) — món quà vẫn phải to hơn cái hụt,
+ * không thì chuỗi "cho ba bữa rồi nghỉ một bữa" hoá ra lỗ, và người chơi học được đúng
+ * một bài: đừng bao giờ cho thêm. Nhưng ×REL_K_NEG (0,2) nó vẫn ăn 3,6 điểm, hơn 3,0
+ * điểm mà MỘT lần cho thêm kiếm được — vì cái mất bao giờ cũng nặng hơn cái được.
+ */
+export const MISSED_EXTRA_BASE = 18;
+/** Mỗi lượt ghé vượt ngưỡng cộng thêm 12% — chuỗi 6 lượt đau gấp ~1,36 lần chuỗi 3 lượt. */
+export const MISSED_EXTRA_STEP = 0.12;
+
+/**
+ * Một lượt ghé đã giao xong đứng ở đâu với cái nếp "cho thêm":
+ *   GAVE    — có cho thêm và người ta nhận
+ *   NONE    — ổ đúng đơn, không có gì thêm
+ *   REFUSED — có cho, nhưng người ta vừa nói "thôi đừng cho nữa" (CANON §8i phản tác dụng)
+ */
+export type ExtraVisit = "GAVE" | "NONE" | "REFUSED";
+
+/**
+ * Cập nhật chuỗi "cho thêm" cho MỘT lượt ghé, trả về cường độ của cái hụt (0 = không có
+ * gì để nói).
+ *
+ * Nếp gãy ĐÚNG MỘT LẦN: chuỗi về 0 ngay tại đây nên lượt sau không còn gì để gãy nữa —
+ * chưng hửng là chuyện của lần đầu tiên, bữa nào cũng cằn nhằn thì là người khó tính,
+ * không phải người hụt hẫng.
+ *
+ * REFUSED cũng xoá nếp nhưng KHÔNG phạt: người vừa đẩy ly trà ra không có tư cách đòi
+ * ly trà bữa sau. Không có nhánh này thì §8i quay ngược thành bẫy — bị chê "cho nhiều
+ * quá" xong bữa sau nhịn cho, lại bị trừ tiếp.
+ */
+export function extraHabit(s: RelState, kind: ExtraVisit): number {
+  const streak = s.extraStreak ?? 0;
+  if (kind === "GAVE") { s.extraStreak = Math.min(streak + 1, HABIT_STREAK_CAP); return 0; }
+  s.extraStreak = 0;
+  if (kind === "REFUSED" || streak < HABIT_VISITS) return 0;
+  return MISSED_EXTRA_BASE * (1 + MISSED_EXTRA_STEP * (Math.min(streak, HABIT_STREAK_CAP) - HABIT_VISITS));
 }
 
 // ─────────────────────────────────────────────────────────────── slot + decay

@@ -69,6 +69,9 @@ const BUS_CEILING = 0.5;
 /** Mức hạ khi mở menu tạm dừng: −12 dB (P5-03 §6.5 #8). */
 const DUCK_GAIN = 0.25;
 
+/** Mức hạ khi có giọng NPC đang nói: −14 dB (P5-03 §2.3). */
+const VOICE_DUCK_GAIN = 0.2;
+
 type Track = {
   sound: Phaser.Sound.BaseSound & { setVolume(v: number): unknown };
   /** Âm lượng tương đối 0..1 của riêng track này, trước khi nhân với bus. */
@@ -89,6 +92,9 @@ class MusicDirector {
   private volume = 0.55;
   /** Hệ số ducking khi mở menu (P5-03 §6.5 #8). */
   private duckGain = 1;
+  /** Hệ số ducking khi có giọng người (P5-03 §2.3). Tách khỏi `duckGain` vì hai
+   *  cái chồng được lên nhau: mở pause ĐÚNG LÚC khách đang nói thì hạ cả hai. */
+  private voiceDuckGain = 1;
   /** Còn bao nhiêu giây phải im hẳn (P5-03 §6.5). */
   private hushLeft = 0;
 
@@ -146,6 +152,17 @@ class MusicDirector {
    */
   duck(on: boolean) {
     this.duckGain = on ? DUCK_GAIN : 1;
+    this.refreshGains();
+  }
+
+  /**
+   * Hạ nhạc xuống −14 dB trong lúc có giọng NPC — P5-03 §2.3.
+   * Gọi từ `audio/sfx.ts`, KHÔNG gọi từ scene: scene không biết khi nào giọng tắt.
+   */
+  voiceDuck(on: boolean) {
+    const g = on ? VOICE_DUCK_GAIN : 1;
+    if (g === this.voiceDuckGain) return;
+    this.voiceDuckGain = g;
     this.refreshGains();
   }
 
@@ -217,10 +234,10 @@ class MusicDirector {
     }
   }
 
-  /** Âm lượng thật = level của track × cài đặt × trần bus × ducking × im lặng. */
+  /** Âm lượng thật = level của track × cài đặt × trần bus × 2 tầng ducking × im lặng. */
   private applyGain(t: Track) {
     const hushed = this.hushLeft > 0 ? 0 : 1;
-    t.sound.setVolume(t.level * this.volume * BUS_CEILING * this.duckGain * hushed);
+    t.sound.setVolume(t.level * this.volume * BUS_CEILING * this.duckGain * this.voiceDuckGain * hushed);
   }
 
   private refreshGains() {

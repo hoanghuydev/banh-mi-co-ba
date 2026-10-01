@@ -1,11 +1,22 @@
 import Phaser from "phaser";
-import { TH, depthOf, toScreen, facingOf, type Facing } from "../world/iso";
+import { artScale, fitPhoto } from "../art/photo";
+import { TH, depthOf, toScreen, facingOf8, type Facing8 } from "../world/iso";
 import { hitsWall, SPAWN } from "../world/map";
 import { BASE, FX, HELD, footY, holdAnchor, textureFor } from "../art";
+import { heldTexture } from "../art/held";
 import { type Hand } from "../world/stations";
 
-/** Người chơi đi bao nhiêu ô mỗi giây. */
-export const SPEED = 3.4;
+/**
+ * Người chơi đi bao nhiêu ô mỗi giây.
+ *
+ * 3,4 → 2,6. Ở 3,4 thì đi hết chiều dài quầy (18 ô, ~540 px màn hình) mất có 5 giây, mà
+ * chạy thì 3,7 — nhanh hơn cả con người thật trên một cái vỉa hè rộng ba bước. Nó làm
+ * hỏng đúng thứ cả trò chơi dựng lên: cái quán phải có KÍCH THƯỚC, đi từ lò ra chỗ đưa
+ * hàng phải TỐN một quãng, nếu không thì chẳng có gì để sắp xếp và chẳng có lý do nào để
+ * đặt ổ bánh xuống. Chậm lại một phần tư thì khoảng cách trong quán trở lại có nghĩa, mà
+ * vẫn chưa tới mức phải chờ nhân vật lê chân.
+ */
+export const SPEED = 2.6;
 
 /** Giữ Shift để chạy: nhanh hơn, nhưng cầm đồ mà chạy là tay lỏng dần (P1-01 §2.7, grip). */
 export const RUN_MUL = 1.45;
@@ -33,8 +44,18 @@ export type MoveInput = { up: boolean; down: boolean; left: boolean; right: bool
 export class Player {
   x = SPAWN.x;
   y = SPAWN.y;
-  facing: Facing = "s";
+  facing: Facing8 = "s";
   hand: Hand = "empty";
+
+  /**
+   * Độ giòn của ổ đang cầm (`sim/oven.crust`), CHỈ để chọn hình — không ai tính
+   * điểm từ biến này. Scene giữ bản gốc (`handCrust`) và gán xuống đây mỗi khi
+   * `hand` đổi; quên gán thì tệ nhất là ổ hiện ra như chưa nướng, không gãy gì.
+   *
+   * Vì sao không đọc thẳng từ scene: `Player` cố ý không biết gì về `StallScene`
+   * (xem docstring lớp) — một con số đi vào thì rẻ hơn một tham chiếu ngược.
+   */
+  heldCrust = 0;
 
   /** Có đang bước không — dùng cho nhịp nhún và cho việc huỷ thao tác khi rời trạm. */
   moving = false;
@@ -59,6 +80,7 @@ export class Player {
     this.y = SPAWN.y;
     this.facing = "s";
     this.hand = "empty";
+    this.heldCrust = 0;
     this.moving = false;
     this.bob = 0;
   }
@@ -90,7 +112,7 @@ export class Player {
     // va thẳng vào thứ gì đó (không trượt được trục nào) = cú va
     this.bumped = (bx || wx === 0) && (by || wy === 0);
 
-    this.facing = facingOf(wx, wy);
+    this.facing = facingOf8(wx, wy);
     this.bob += dt * 11;
   }
 
@@ -121,7 +143,11 @@ export class Player {
     // nên `reducedMotion` không phải tắt gì thêm.
     const lean = covering ? 5 : 0;
     this.body.setPosition(sx + lean, footY(sy) - hop).setDepth(depth);
-    this.body.setScale(covering ? 0.92 : 1, 1 + Math.sin(this.bob * 2) * 0.022 * amp);
+    // Phải chia lại hệ số siêu lấy mẫu sau mỗi `setTexture` (xem `art/photo.fitPhoto`):
+    // tám hướng người chơi là ẢNH THẬT nướng dư pixel, còn tư thế nào artist chưa gửi
+    // thì rơi về bản vẽ code tỉ lệ 1:1 — không chia là cô to gấp đôi ở đúng hướng đó.
+    const k = 1 / artScale(tex.key);
+    this.body.setScale(k * (covering ? 0.92 : 1), k * (1 + Math.sin(this.bob * 2) * 0.022 * amp));
 
     // Bóng đổ nằm ĐÚNG tại điểm chạm đất (tâm ô), không phải ở đáy texture —
     // lệch chỗ này là nhân vật trông như đang lơ lửng.
@@ -137,8 +163,11 @@ export class Player {
     // dùng thẳng footY là món rơi xuống ngang dép. Trừ `hop` để món nhún cùng nhịp.
     const a = holdAnchor(this.facing);
     const feet = footY(sy) - (1 + BASE + TH / 2);
-    this.held
-      .setTexture(HELD.key(this.hand))
+    // Hình ổ bánh tra theo CẢ độ giòn, không chỉ theo tay đang cầm gì: ổ nướng dở để
+    // nguội vẫn là `loaf_cold`, mà vẽ nó bằng hình bột sống là xoá mất công nướng
+    // trước mắt người chơi. `fitPhoto` phải gọi lại sau mỗi `setTexture` — hệ số siêu
+    // lấy mẫu thuộc về texture, mà hai hình này một bên có ảnh thật, một bên vẽ code.
+    fitPhoto(this.held.setTexture(heldTexture(this.hand, this.heldCrust)))
       // Che tay: kéo món về sát thân rồi giấu ra sau lưng, bất kể đang quay hướng nào.
       .setPosition(sx + lean + (covering ? a.x * 0.35 : a.x), feet - hop - a.y)
       // Quay lưng thì món khuất sau thân; mọi hướng khác thì nằm trong lòng hai bàn tay.

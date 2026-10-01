@@ -153,7 +153,11 @@ export function onServed(st: StoryState, s: ServedInfo): StoryOut {
   if (s.npcId === "ONG_HAI" && s.atMin >= 10 * 60) st.flags.haiPmDay = s.day;
   if (s.barter && s.npcId === "BA_SAU") bump(st, "barterAccepted");
   // ML-11 · anh Bảo — tự bỏ thêm ớt, bốn lần, anh tự nói "cho em nhiều ớt chút"
-  if (s.npcId === "ANH_BAO" && !st.flags.baoAsksChili && count("ot") >= (s.order.levels.ot ?? 1) + 2) {
+  //
+  // `+ 1` chứ không `+ 2`: thang phần ăn chỉ còn hai nấc (`INGREDIENTS[].max` = 2), nên
+  // `+ 2` là một ngưỡng KHÔNG BAO GIỜ với tới được — cả nhánh truyện chết lặng lẽ.
+  // Trên thang mới, "cho hơn mức anh xin một nấc" đã là hết cỡ hào phóng rồi.
+  if (s.npcId === "ANH_BAO" && !st.flags.baoAsksChili && count("ot") >= (s.order.levels.ot ?? 1) + 1) {
     if (bump(st, "baoChili") >= 4) st.flags.baoAsksChili = s.day;
   }
   // ML-05 · thầy Phúc và cọng ngò — bỏ nhầm thì hôm sau ông nói lại đủ câu (mất quyền nói tắt)

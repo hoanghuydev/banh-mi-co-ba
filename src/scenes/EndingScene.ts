@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { fitDesignFrame } from "../core/render";
 import { GAME_W, GAME_H } from "../core/config";
 import type { GameContext } from "../core/context";
 import { bus } from "../core/eventbus";
@@ -24,6 +25,7 @@ export class EndingScene extends Phaser.Scene {
   }
 
   create() {
+    fitDesignFrame(this.cameras.main);          // canvas phóng to, toạ độ giữ nguyên — `core/render`
     const w = this.ctx.world;
     this.cameras.main.setBackgroundColor(0x141a20);
     this.add.rectangle(GAME_W / 2, GAME_H / 2, GAME_W, GAME_H, 0x141a20, 1);

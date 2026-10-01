@@ -7,7 +7,7 @@ import { HOLD_TIME, observe, stateOf, traitMulFrom, type ActiveStim, type Observ
 import { GazeMachine } from "../src/sim/gaze";
 import { Rng } from "../src/core/rng";
 import { orderDefectKey } from "../src/core/stimid";
-import { diffDish, dishFor, sayOrder, specOf, mkDefect } from "../src/sim/order";
+import { diffDish, dishFor, generosityOf, sayOrder, specOf, mkDefect, type Ingredient } from "../src/sim/order";
 import { Bus } from "../src/core/eventbus";
 import { newGame } from "../src/core/save";
 import { HeadlessStall, POLICIES } from "../src/sim/headless";
@@ -104,7 +104,7 @@ test("câu gọi món TỰ NÓ quyết định ổ bánh: làm theo câu là 0 l
     const spec = specOf({
       nhan: [rng.pick(["pate", "thit", "chalua", "xiumai", "opla"] as const)],
       rau: rng.next() < 0.5 ? "it" : "day-du",
-      ot: rng.pick([0, 1, 3] as const), tuong: rng.pick([0, 1, 3] as const), usual: false,
+      ot: rng.pick([0, 1, 2] as const), tuong: rng.pick([0, 1, 2] as const), usual: false,
     });
     assert.deepEqual(diffDish(spec, dishFor(spec)), [], sayOrder(spec));
   }
@@ -114,6 +114,71 @@ test("'cho ít rau' là rau MỘT NỬA, không cấm hành ngò (P1-03 §2.3 lu
   const spec = specOf({ nhan: ["pate"], rau: "it", ot: 1, tuong: 1, usual: false });
   assert.equal(spec.levels.hanhngo, 1);
   assert.ok(!sayOrder(spec).includes("đầy đủ"));
+});
+
+test("thang hai nấc: kể tên là một phần, 'nhiều' là hai phần — không còn nấc nào khác", () => {
+  const spec = specOf({ nhan: ["pate", "thit"], nhieu: "thit", rau: "day-du", ot: 2, tuong: 1, usual: false });
+  assert.equal(spec.levels.pate, 1);
+  assert.equal(spec.levels.thit, 2);
+  assert.equal(spec.levels.dochua, 2);
+  assert.equal(spec.levels.ot, 2);
+  assert.ok(sayOrder(spec).includes("nhiều thịt nguội") && sayOrder(spec).includes("nhiều ớt"));
+  assert.deepEqual(diffDish(spec, dishFor(spec)), []);
+});
+
+/**
+ * Thang ngắn lại thì lệch một nấc là lệch NỬA ổ thứ đó, không còn là một phần ba —
+ * nó phải nặng hơn hồi bốn nấc, và tuyệt đối không được tụt xuống "trong dung sai".
+ */
+test("lệch một nấc vẫn là WRONG_RATIO, cả thiếu lẫn thừa", () => {
+  const spec = specOf({ nhan: ["pate"], nhieu: "pate", rau: "day-du", ot: 1, tuong: 1, usual: false });
+  const thieu = dishFor(spec).filter((x, i) => !(x === "pate" && i === 0));   // pate 2 → 1
+  const d1 = diffDish(spec, thieu);
+  assert.equal(d1.length, 1);
+  assert.equal(d1[0].kind, "WRONG_RATIO");
+  assert.equal(d1[0].item, "pate");
+  assert.equal(d1[0].dir, "under");
+  assert.ok(d1[0].magnitude > 0.25, "nặng hơn mức lệch một nấc của thang bốn nấc");
+
+  const nheo = specOf({ nhan: ["pate"], rau: "day-du", ot: 1, tuong: 1, usual: false });
+  const thua = [...dishFor(nheo), "pate" as Ingredient];                      // pate 1 → 2
+  const d2 = diffDish(nheo, thua);
+  assert.equal(d2.length, 1);
+  assert.equal(d2[0].kind, "WRONG_RATIO");
+  assert.equal(d2[0].dir, "over");
+  // nhưng vẫn nhẹ hơn hẳn chuyện quên hẳn miếng pate
+  assert.ok(d2[0].sCounter * d2[0].magnitude < mkDefect("MISSING", "pate").sCounter);
+});
+
+/**
+ * CANON §3.2: cho thêm đồ chua / ớt / tương / ngò là sự kiện TÍCH CỰC. Trần còn hai phần
+ * nên "khách xin một, mình bỏ hai" là lần cho thêm DUY NHẤT còn làm được — nó phải vừa
+ * không thành lỗi, vừa còn đếm được, không thì `Service.freeExtra()` không bao giờ bắn.
+ */
+test("cho thêm một phần đồ chua / ớt: không phải lỗi, và vẫn đếm là hào phóng", () => {
+  const spec = specOf({ nhan: ["pate"], rau: "it", ot: 1, tuong: 1, usual: false });
+  const hao = [...dishFor(spec), "dochua" as Ingredient, "ot" as Ingredient];
+  assert.deepEqual(diffDish(spec, hao), []);
+  assert.ok(generosityOf(spec, hao) > 0, "Service.freeExtra() sống bằng dấu > 0 này");
+  // dưa leo không nằm trong nhóm "dễ thương": bỏ dư là ẩu, không phải hào phóng
+  const au = [...dishFor(spec), "dualeo" as Ingredient];
+  assert.equal(diffDish(spec, au)[0]?.kind, "WRONG_RATIO");
+  assert.equal(generosityOf(spec, au), 0);
+});
+
+/**
+ * §8(i) — hào phóng phải TỐN. Tính bằng số phần thì ớt với tương là cách cày thiện cảm
+ * rẻ nhất trong game; tính bằng giá chợ thì không ai cày nổi.
+ */
+test("hào phóng tính theo giá chợ: ớt rẻ hơn đồ chua, và cho hết cỡ vẫn chưa bằng một lát thịt", () => {
+  const spec = specOf({ nhan: ["pate"], rau: "it", ot: 1, tuong: 1, usual: false });
+  const them = (id: Ingredient) => generosityOf(spec, [...dishFor(spec), id]);
+  assert.ok(them("ot") < them("dochua"), "một nhúm ớt 0,35k không bằng một gắp đồ chua 0,44k");
+  assert.ok(them("hanhngo") < them("tuongot"));
+  // cho dư TẤT CẢ những gì cho dư được trong một ổ
+  const hetco = [...dishFor(spec), "dochua", "hanhngo", "ot", "tuongot"] as Ingredient[];
+  assert.deepEqual(diffDish(spec, hetco), [], "cho thêm hết cỡ vẫn không phải lỗi");
+  assert.ok(generosityOf(spec, hetco) < 1, "cả ổ cho thêm còn rẻ hơn một lát thịt nguội");
 });
 
 test("salience lỗi theo doc: MISSING đồ chua 20 tại quầy / 100 lúc ăn; thiếu pate nặng hơn thiếu ngò", () => {

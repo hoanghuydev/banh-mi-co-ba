@@ -34,12 +34,13 @@
 <div id="host"></div>
 <script type="module">
 import Phaser from "phaser";
-import { buildTextures, TILE, BUILD, COUNTER, PROP, HELD, holdAnchor, BODY_H } from "./src/art/index.ts";
+import { buildTextures, preloadArt, TILE, BUILD, COUNTER, PROP, HELD, holdAnchor, BODY_H, textureFor } from "./src/art/index.ts";
 import { BASE } from "./src/art/canvas.ts";
 import { TH } from "./src/world/iso.ts";
 import { buildBody } from "./src/art/character.ts";
 import { WALKIN_STYLES, WALKIN_NAMES, NPCS } from "./src/content/npcs.ts";
 import { PAL } from "./src/art/palette.ts";
+import { artScale } from "./src/art/photo.ts";
 
 /**
  * Dàn nhân vật để soi — lấy THẲNG từ `content/npcs.ts` chứ không chép lại,
@@ -57,6 +58,9 @@ new Phaser.Game({
   type: Phaser.AUTO, parent: "host", width: 8, height: 8,
   render: { antialias: true },
   scene: {
+    // Ảnh thật phải tải XONG trước `buildTextures`, y như `BootScene` — không thì
+    // bảng này soi ra bản vẽ code trong khi game chạy bằng ảnh, tức soi nhầm thứ.
+    preload() { preloadArt(this); },
     create() {
       buildTextures(this);
       BODIES.forEach(([, style], i) => buildBody(this, `s${i}`, style, ["idle", "carry"]));
@@ -70,11 +74,15 @@ new Phaser.Game({
         for (const [caption, key] of entries) {
           if (!this.textures.exists(key)) continue;
           const src = this.textures.get(key).getSourceImage();
+          // Ảnh thật nướng DƯ pixel (xem `art/photo.ART_SS`), hình vẽ code thì 1:1.
+          // Chia lại hệ số đó ra thì mọi ô trong bảng mới cùng một thước — không thì
+          // cái lò bên ảnh thật to gấp ba cái tường vẽ bằng code đứng ngay cạnh.
+          const z = ZOOM / artScale(key);
           const c = document.createElement("canvas");
-          c.width = src.width * ZOOM;
-          c.height = src.height * ZOOM;
+          c.width = Math.round(src.width * z);
+          c.height = Math.round(src.height * z);
           const ctx = c.getContext("2d");
-          ctx.imageSmoothingEnabled = false;
+          ctx.imageSmoothingEnabled = artScale(key) > 1;
           ctx.drawImage(src, 0, 0, c.width, c.height);
           const fig = document.createElement("figure");
           fig.append(c, Object.assign(document.createElement("figcaption"), { textContent: caption }));
@@ -121,6 +129,12 @@ new Phaser.Game({
         }
         void BODY_H;
       };
+
+      // Người chơi có ĐỦ ẢNH tám hướng (`art/photo.ts`), nên soi riêng một hàng:
+      // tám tấm phải xếp thành một vòng quay liền mạch, và chân phải đứng yên
+      // một chỗ khi lướt mắt ngang hàng — lệch là lệch luôn trong game.
+      section("người chơi — ảnh thật, 8 hướng", ["s", "se", "e", "ne", "n", "nw", "w", "sw"]
+        .map((d) => [d, textureFor(d, "p").key]));
 
       BODIES.forEach(([name], i) =>
         section(`nhân vật — ${name}`, [

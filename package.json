@@ -12,6 +12,7 @@
     "check": "tsc --noEmit",
     "test": "node --import tsx --test \"tests/**/*.test.ts\"",
     "gates": "tsx tools/check-gates.ts",
+    "icons": "tsx tools/make-icons.ts",
     "validate:rules": "tsx tools/validate-rules.ts",
     "lint:lines": "tsx tools/lint-lines.ts",
     "content:stats": "tsx tools/content-stats.ts",

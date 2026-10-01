@@ -374,19 +374,23 @@ function bike(scene: Phaser.Scene) {
  * vì ở góc iso này không có gì phía trên để mắt hiểu là nó treo vào đâu.
  */
 function pothos(scene: Phaser.Scene) {
-  const POT = 20;
-  prop(scene, PROP.pothos, heightFor(POT + 34), (g, cx, cy) => {
+  // Cả bụi thu về `S` lần: ở cỡ cũ nó cao gần bằng cái bồn rửa đứng ngay cạnh, đọc
+  // ra như cây cảnh sảnh khách sạn chứ không phải chậu trầu bà để nền. Giữ nguyên
+  // một con số ở đây để bản vẽ này và ảnh thật (`photo.ts`) cùng một tầm cao.
+  const S = 0.68;
+  const POT = 20 * S;
+  prop(scene, PROP.pothos, heightFor(POT + 34 * S), (g, cx, cy) => {
     g.fillStyle(PAL.potDark, 1);                       // chậu đất nung
     g.fillPoints([
-      { x: cx - 15, y: cy - POT }, { x: cx + 15, y: cy - POT },
-      { x: cx + 11, y: cy }, { x: cx - 11, y: cy },
+      { x: cx - 15 * S, y: cy - POT }, { x: cx + 15 * S, y: cy - POT },
+      { x: cx + 11 * S, y: cy }, { x: cx - 11 * S, y: cy },
     ], true);
     g.fillStyle(PAL.pot, 1);
-    g.fillEllipse(cx, cy - POT, 30, 10);
+    g.fillEllipse(cx, cy - POT, 30 * S, 10 * S);
     g.fillStyle(shade(PAL.pot, 16), 0.5);              // gờ miệng chậu
-    g.fillRect(cx - 14, cy - POT - 1, 28, 2);
+    g.fillRect(cx - 14 * S, cy - POT - 1, 28 * S, 2);
     g.fillStyle(0x4a3a2c, 1);
-    g.fillEllipse(cx, cy - POT, 22, 6);
+    g.fillEllipse(cx, cy - POT, 22 * S, 6 * S);
 
     const rim = cy - POT;
     const bush: [number, number, number][] = [         // bụi lá xoè lên rồi rủ xuống
@@ -395,11 +399,11 @@ function pothos(scene: Phaser.Scene) {
       [-6, -26, 0.7], [6, -25, 0.7],
     ];
     bush.forEach(([dx, dy, s], i) =>
-      leaf(g, cx + dx, rim + dy, i % 3 === 0 ? PAL.leafDark : PAL.leaf, s));
+      leaf(g, cx + dx * S, rim + dy * S, i % 3 === 0 ? PAL.leafDark : PAL.leaf, s * S));
 
     g.lineStyle(1.4, PAL.leafDark, 0.85);              // một nhánh rủ xuống thành chậu
-    g.lineBetween(cx + 14, rim - 2, cx + 19, rim + 12);
-    leaf(g, cx + 20, rim + 15, PAL.leaf, 0.55);
+    g.lineBetween(cx + 14 * S, rim - 2 * S, cx + 19 * S, rim + 12 * S);
+    leaf(g, cx + 20 * S, rim + 15 * S, PAL.leaf, 0.55 * S);
   });
 }
 

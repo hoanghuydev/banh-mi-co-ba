@@ -58,7 +58,12 @@ export function bandOfCrust(c: number, burnAt: number = CRUST.BURNT): CrustBand 
 }
 
 /** `q` = chất lượng lô bánh mì ổ này lấy ở kệ (P3-03) — đi theo ổ, không phải theo scene. */
-export type OvenLoaf = { crust: number; burntFired: boolean; q: number };
+/**
+ * `soiled` = ổ này đã từng nằm dưới đất. Lò GIỮ NGUYÊN cờ đó chứ không đốt sạch nó:
+ * nếu nướng lại tẩy được lý lịch ổ bánh thì có ngay một mẹo rửa sạch mọi cú rớt, mà
+ * cái người chơi phải cân nhắc chính là "liều đưa hay chịu mất một ổ".
+ */
+export type OvenLoaf = { crust: number; burntFired: boolean; q: number; soiled: boolean };
 
 export class Oven {
   slots: (OvenLoaf | null)[] = Array(OVEN_SLOTS).fill(null);
@@ -80,11 +85,11 @@ export class Oven {
    * cho nguội rồi cầm ra lò): nướng lại KHÔNG xoá vỏ đã có, nếu không thì gác-rồi-nướng
    * thành nút reset độ giòn miễn phí.
    */
-  put(q = 1, crust = 0): boolean {
+  put(q = 1, crust = 0, soiled = false): boolean {
     const i = this.slots.indexOf(null);
     if (i < 0) return false;
     this.openDoor();
-    this.slots[i] = { crust, burntFired: crust > this.burnAt, q };
+    this.slots[i] = { crust, burntFired: crust > this.burnAt, q, soiled };
     return true;
   }
 

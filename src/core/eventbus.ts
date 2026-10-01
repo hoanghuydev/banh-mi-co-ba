@@ -74,6 +74,19 @@ export type EventMap = {
   "memory:promoted":          { npcId: NpcId; memoryId: string };
   "memory:decayed":           { npcId: NpcId; memoryId: string; from: number; to: number };
   "relationship:tierChanged": { npcId: NpcId; from: RelTier; to: RelTier };
+  /**
+   * Quan hệ với một người vừa NHÍCH vì việc người chơi vừa làm — để HUD nói cho họ biết
+   * việc đó có ăn thua gì không (xem `Hud.toast`).
+   *
+   * T3 (CANON §T3 / L2) vẫn nguyên vẹn: payload KHÔNG mang con số, KHÔNG mang tổng, và
+   * không ai được suy ra `relationPoints` từ nó. Chỉ có HƯỚNG (`dir`), ĐẬM/NHẠT
+   * (`strength`) và một mẩu lý do bằng chữ (`note`, kiểu "cho thêm đồ chua") — đúng ba
+   * thứ người chơi cần để học luật chơi, không hơn.
+   *
+   * Phát MỘT lần cho MỘT khoảnh khắc người chơi nhận ra được (đưa xong một ổ, chọn xong
+   * một câu nói), không phát cho từng lần `record()` bên trong.
+   */
+  "relationship:moved":       { npcId: NpcId; dir: "UP" | "DOWN"; strength: "NHE" | "RO"; note: string };
   /** Khách nhắc ở quầy một chuyện NGHE KỂ — luôn kèm tên nguồn (P2-04 RB3). P2-05 ghi nhật ký. */
   "gossip:mentioned":         { npcId: NpcId; claim: string; source: NpcId | null; pool: "hearsay" | "belief" | "conviction" };
   /** Người chơi nghe lỏm ở góc hẻm — `tier` là mức nghe được (0 hình · 1 nội dung · 2 cả nguồn). */

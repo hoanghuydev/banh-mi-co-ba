@@ -6,6 +6,7 @@
     {"id": "lan.im.farewell", "concept": "FAREWELL", "when": {"npcSoi": ">=70", "npcNongTinh": "<=30", "npcThanThien": "<=40"}, "silent": true, "say": []},
     {"id": "lan.del.ok", "concept": "DELIVERY", "when": {"npcId": "CHI_LAN", "defectCount": 0}, "silent": true, "say": []},
     {"id": "lan.del.usual", "concept": "DELIVERY", "when": {"npcId": "CHI_LAN", "defectCount": 0, "orderIsUsual": true}, "say": ["…Cảm ơn em."]},
+    {"id": "lan.del.nohabit", "concept": "DELIVERY", "when": {"npcId": "CHI_LAN", "defectCount": 0, "extraHabitBroken": true, "freeExtraTooMuch": false}, "silent": true, "say": [], "_note": "Nếp 'cho thêm' gãy: chị thấy, và chị không nói một chữ. Điểm 4 nên thắng dòng gen.del.nohabit — đúng luật tính cách của ô số 8, không phải quên viết thoại. Người chơi chỉ còn một đường biết: nét mặt, và dòng HUD của relationship:moved."},
     {"id": "lan.del.toomuch", "concept": "DELIVERY", "when": {"npcId": "CHI_LAN", "defectCount": 0, "freeExtraTooMuch": true}, "say": ["Em không cần làm vậy đâu."]},
     {"id": "lan.tea", "concept": "INTERACT", "when": {"npcId": "CHI_LAN", "interaction": "TEA"}, "say": ["Dạ, cảm ơn em."]},
     {"id": "lan.tea.suspect", "concept": "INTERACT", "when": {"npcId": "CHI_LAN", "interaction": "TEA_SUSPECT"}, "say": ["…Sao bữa nay em tử tế dữ vậy?"]}

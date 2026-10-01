@@ -49,7 +49,18 @@ export type NpcId = string;
 export type Weather = "NANG_GAT" | "MAT" | "AM_U" | "MUA_RAO" | "MUA_DAM" | "OI";
 export type StandPointId = "DAU_HEM" | string;
 
-export type LeaveReason = "SERVED" | "IMPATIENT" | "SILENT_EXIT" | "SOLD_OUT" | "REFUSED" | "CLOSED";
+/**
+ * Vì sao người đó quay lưng. `BALKED` ≠ `IMPATIENT`, và đừng bao giờ gộp hai cái lại:
+ *  · `IMPATIENT` — đã đứng vào hàng, đã chờ quá 1,6 lần sức chờ. Lỗi của người bán.
+ *  · `BALKED`    — ngó thấy hàng dài rồi QUAY ĐẦU, chưa từng xếp vào. Không ai làm gì sai;
+ *    người bán chỉ đang bận. Vì vậy nó KHÔNG tính vào `DaySummary.lost` (xem sim/service.ts).
+ *  · `REFUSED`      — NGƯỜI BÁN mời đi (P5-02 act REFUSE).
+ *  · `SOILED_FOOD`  — ngược lại: KHÁCH từ chối ổ bánh, vì chính mắt họ thấy nó rớt xuống
+ *    đất rồi được nhặt lên đưa cho họ. Đây là cái mất khách đắt nhất trong game, và là
+ *    cái duy nhất người chơi CỐ Ý gây ra.
+ */
+export type LeaveReason =
+  | "SERVED" | "IMPATIENT" | "SILENT_EXIT" | "SOLD_OUT" | "REFUSED" | "CLOSED" | "BALKED" | "SOILED_FOOD";
 export type StallCloseReason = "CLOCK" | "SOLD_OUT" | "PLAYER";
 export type AutosaveReason = "CUSTOMER_DONE" | "EVENT" | "SCENE_CHANGE" | "QUIT";
 

@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { loadSettings } from "../core/save";
+import { sfx } from "../audio/sfx";
 
 /**
  * Bộ UI tối thiểu dùng chung cho menu + HUD.
@@ -150,6 +151,10 @@ export function button(
       scene.input.setDefaultCursor("default");
       if (!pressed) return;
       pressed = false;
+      // Click gắn ở ĐÂY chứ không ở từng chỗ gọi: mọi nút trong game đều đi qua hàm
+      // này, nên gắn một lần là không bao giờ có cái nút nào bấm mà im. Âm báo nằm ở
+      // bus `amBao`, có công tắc riêng — ai không muốn nghe thì kéo kênh đó về 0.
+      sfx.play(scene, "ui_click");
       onClick();
     });
   }
@@ -165,13 +170,13 @@ export function button(
  */
 export function toggle(
   scene: Phaser.Scene, x: number, y: number, text: string,
-  get: () => string, onClick: () => void, width = 300,
+  get: () => string, onClick: () => void, width = 300, hint?: string,
 ) {
   let txt: Phaser.GameObjects.Text;
   const c = button(scene, x, y, `${text}:  ${get()}`, () => {
     onClick();
     if (txt.scene) txt.setText(`${text}:  ${get()}`);
-  }, { width });
+  }, { width, hint });
   txt = c.list.find((o) => o instanceof Phaser.GameObjects.Text) as Phaser.GameObjects.Text;
   return c;
 }

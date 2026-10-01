@@ -26,8 +26,11 @@ export type CustomerPhase =
 /**
  * `refused`  người chơi mời đi (P5-02 act REFUSE)
  * `insulted` bị nói nặng tới mức bỏ về — KHÔNG mua nữa, và không phải "chờ lâu quá"
+ * `balked`   ngó thấy hàng dài quá nên không vào — xem `balking` bên dưới
+ * `soiled`   THẤY ổ bánh rớt xuống đất mà vẫn được đưa cho mình → không nhận, bỏ về
  */
-export type LeaveReason = "served" | "impatient" | "closed" | "soldout" | "refused" | "insulted";
+export type LeaveReason =
+  | "served" | "impatient" | "closed" | "soldout" | "refused" | "insulted" | "balked" | "soiled";
 
 /** P1-02 §2.7: sức chờ mặc định (giây thật tới mốc MADE_THEM_WAIT). */
 export const DEFAULT_PATIENCE_SEC = 50;
@@ -146,8 +149,38 @@ export class Customer implements Observer {
   more: OrderSpec[] = [];
   /** Câu nói có hẹn giờ (giây của service) — ai nói (`by` = người khác trong hàng). */
   script: { at: number; text: string; by?: string }[] = [];
-  /** Chỉ đi ngang (chú Kiệt gật đầu, bà Sáu rao): đứng lại `stay` giây ở chỗ dừng rồi đi. */
-  pass: { stay: number; until: number; nod?: boolean } | null = null;
+  /**
+   * Chỉ đi ngang (chú Kiệt gật đầu, bà Sáu rao): đứng lại `stay` giây ở chỗ dừng rồi đi.
+   *
+   * `spot` chỗ dừng (vắng = `PASS_SPOT`, chỗ dừng của người có kịch bản) · `exit` chỗ đi
+   * khuất (vắng = cổng khách, tức quay lại đúng đầu hẻm họ vừa vào). Người qua đường
+   * (`ambient`) khai cả hai, vì họ đi XUYÊN cái hẻm chứ không vào rồi ra cùng một đầu.
+   */
+  pass: {
+    stay: number; until: number; nod?: boolean;
+    spot?: { x: number; y: number }; exit?: { x: number; y: number }; speed?: number;
+  } | null = null;
+  /**
+   * NGƯỜI QUA ĐƯỜNG — xem `sim/passersby.ts`. Chỉ là cái nền của con hẻm: không gọi món,
+   * không xếp hàng, không tính vào bất cứ con số nào của buổi bán. Cờ này là chỗ DUY NHẤT
+   * phân biệt họ với người đi ngang CÓ KỊCH BẢN (chú Kiệt gật đầu, bà Sáu rao) — hai thứ
+   * dùng chung đường đi `pass` nhưng người có kịch bản thì có chuyện để kể, còn mấy người
+   * này thì không, và đó mới là điểm của họ.
+   */
+  ambient = false;
+  /**
+   * "Đông quá thôi để bữa khác" — người này đã quyết KHÔNG xếp vào hàng, và quyết LÚC
+   * VỪA TỚI đầu hẻm (`Service.balkChance`), trước khi đứng chờ một giây nào.
+   *
+   * ⚠ Đừng nhầm với `waitSec`/`LEAVE_AT`, và nhất là đừng nhầm với `queuePatienceMul`:
+   * cái kia nói rằng người ĐÃ xếp vào hàng dài thì chờ được LÂU HƠN, và đó là hợp đồng
+   * có test riêng (tests/p1-queue-patience.test.ts). Hai luật ngược chiều nhau là CỐ Ý:
+   * hàng dài làm người ta ngại VÀO, nhưng vào rồi thì cái hàng ấy chính là lý do để ở lại.
+   * Vì vậy `balking` chỉ được bật ở `phase === "arriving"` và không bao giờ bật lại sau đó.
+   */
+  balking = false;
+  /** Lúc dừng lại ngó cái hàng (giây của khách), trước khi quay lưng. −1 = chưa tới chỗ ngó. */
+  balkAt = -1;
   /** Ngồi im trước khi gọi (anh Dũng ngày 11) — không tính vào thời gian chờ. */
   holdLeft = 0;
   /** Lời thoại đang hiện trên bong bóng, và còn hiện bao lâu. */

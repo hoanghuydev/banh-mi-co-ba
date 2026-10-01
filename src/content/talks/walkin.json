@@ -29,7 +29,8 @@
                   "say": "Ngon thì anh ghé nữa nghen anh.",
                   "tone": "AM",
                   "rel": 3,
-                  "reply": "Để coi. Mà ừ, ổ này được thiệt."
+                  "reply": "Để coi. Mà ừ, ổ này được thiệt.",
+                  "mood": "CUOI"
                 },
                 {
                   "say": "Thấy chưa. Mười lăm làm gì có cái này.",
@@ -47,14 +48,16 @@
               "tone": "LANH",
               "rel": -1,
               "anger": 20,
-              "reply": "Ờ. Tui qua. Làm gì dữ vậy."
+              "reply": "Ờ. Tui qua. Làm gì dữ vậy.",
+              "mood": "BUC"
             },
             {
               "say": "Anh chê thì anh đừng mua, nói nhiều.",
               "tone": "GAT",
               "rel": -3,
               "anger": 60,
-              "silent": true
+              "silent": true,
+              "mood": "GIAN"
             }
           ]
         },
@@ -68,7 +71,8 @@
               "say": "Chú Kiệt bán cũng đàng hoàng mà anh.",
               "tone": "AM",
               "rel": 3,
-              "reply": "Ừ. Thôi lấy một ổ của chị đi. Chị nói tui nghe lọt."
+              "reply": "Ừ. Thôi lấy một ổ của chị đi. Chị nói tui nghe lọt.",
+              "mood": "CUOI"
             },
             {
               "say": "Anh ăn bên nào cũng được mà anh.",
@@ -88,9 +92,11 @@
           "tone": "GAT",
           "rel": -2,
           "anger": 45,
-          "reply": "Chèn ơi. Bán hàng gì kỳ vậy."
+          "reply": "Chèn ơi. Bán hàng gì kỳ vậy.",
+          "mood": "GIAN"
         }
-      ]
+      ],
+      "openMood": "NGHI"
     },
     {
       "id": "walkin.quayclip",
@@ -136,7 +142,8 @@
                   "say": "Dạ em cảm ơn anh.",
                   "tone": "AM",
                   "rel": 3,
-                  "reply": "Có gì đâu. Tui cũng ghét bị quay mà tui đi quay người ta."
+                  "reply": "Có gì đâu. Tui cũng ghét bị quay mà tui đi quay người ta.",
+                  "mood": "CUOI"
                 },
                 {
                   "say": "Anh quay xong gửi em coi với nghen.",
@@ -162,7 +169,8 @@
               "tone": "GAT",
               "rel": -3,
               "anger": 55,
-              "silent": true
+              "silent": true,
+              "mood": "GIAN"
             }
           ]
         },
@@ -188,7 +196,8 @@
               "tone": "GAT",
               "rel": -2,
               "anger": 60,
-              "silent": true
+              "silent": true,
+              "mood": "GIAN"
             },
             {
               "say": "…",
@@ -197,7 +206,8 @@
               "reply": "Ờ, thôi. Tui đi chỗ khác.",
               "ref": "di"
             }
-          ]
+          ],
+          "mood": "NGAC_NHIEN"
         },
         {
           "say": "Dạ được anh. Anh quay đi.",
@@ -209,7 +219,8 @@
               "say": "Dạ em cười hổng được đâu anh.",
               "tone": "DUA",
               "rel": 2,
-              "reply": "Ha. Vậy chị cứ làm việc đi, vậy mới thật."
+              "reply": "Ha. Vậy chị cứ làm việc đi, vậy mới thật.",
+              "mood": "CUOI_TUOI"
             },
             {
               "say": "Dạ anh quay lẹ giùm em nghen.",
@@ -219,7 +230,8 @@
             }
           ]
         }
-      ]
+      ],
+      "openMood": "CUOI"
     },
     {
       "id": "walkin.cau",
@@ -245,7 +257,8 @@
             "tone": "AM",
             "rel": 2,
             "reply": "…Ừ. Thôi.",
-            "calm": 18
+            "calm": 18,
+            "mood": "MET"
           }
         ]
       },
@@ -266,7 +279,8 @@
                   "say": "Vậy chắc anh mệt lắm rồi.",
                   "tone": "AM",
                   "rel": 3,
-                  "reply": "…Ừ. Em là người đầu tiên hôm nay nói chuyện tử tế với tui."
+                  "reply": "…Ừ. Em là người đầu tiên hôm nay nói chuyện tử tế với tui.",
+                  "mood": "CUOI"
                 },
                 {
                   "say": "Sếp gì mà chửi nhân viên trước mặt người ta.",
@@ -283,25 +297,30 @@
                   "act": {
                     "kind": "STEP_ASIDE"
                   },
-                  "calm": 30
+                  "calm": 30,
+                  "mood": "THUONG"
                 },
                 {
                   "say": "Thì anh về anh chửi lại sếp anh đi.",
                   "tone": "DUA",
                   "rel": -2,
-                  "reply": "…Nói dễ ghê."
+                  "reply": "…Nói dễ ghê.",
+                  "mood": "LANH"
                 }
-              ]
+              ],
+              "mood": "CUOI"
             },
             {
               "say": "Dạ anh đợi em một phút nữa thôi.",
               "tone": "THUONG",
               "reply": "Ừ. Một phút thôi nghen.",
               "ref": "di",
-              "calm": 12
+              "calm": 12,
+              "mood": "MET"
             }
           ],
-          "calm": 25
+          "calm": 25,
+          "mood": "MET"
         },
         {
           "say": "Dạ anh mới đứng có một phút à anh.",
@@ -315,20 +334,23 @@
               "rel": 2,
               "reply": "…Ờ. Thôi, em làm đi.",
               "ref": "di",
-              "calm": 20
+              "calm": 20,
+              "mood": "MET"
             },
             {
               "say": "Dạ ai cũng phải chờ hết anh à.",
               "tone": "THANG",
               "anger": 25,
-              "reply": "Ờ. Thì tui chờ."
+              "reply": "Ờ. Thì tui chờ.",
+              "mood": "BUC"
             },
             {
               "say": "Anh gấp thì anh đi chỗ khác đi anh.",
               "tone": "GAT",
               "rel": -3,
               "anger": 70,
-              "silent": true
+              "silent": true,
+              "mood": "GIAN"
             }
           ]
         },
@@ -336,9 +358,11 @@
           "say": "…",
           "tone": "IM",
           "anger": 20,
-          "reply": "Ủa. Nói cũng không thèm nói luôn hả."
+          "reply": "Ủa. Nói cũng không thèm nói luôn hả.",
+          "mood": "BUC"
         }
-      ]
+      ],
+      "openMood": "BUC"
     },
     {
       "id": "walkin.traigia",
@@ -357,7 +381,8 @@
               "say": "Dạ cô ghé nữa nghen cô.",
               "tone": "AM",
               "rel": 3,
-              "reply": "Ừ. Tui ở ngay đầu hẻm mà."
+              "reply": "Ừ. Tui ở ngay đầu hẻm mà.",
+              "mood": "CUOI"
             },
             {
               "say": "Dạ cô nhớ ghé thiệt đó nghen.",
@@ -374,7 +399,8 @@
           "act": {
             "kind": "DISCOUNT",
             "vnd": 5000
-          }
+          },
+          "mood": "CUOI"
         },
         {
           "say": "Dạ em bán đúng giá cô à.",
@@ -408,7 +434,8 @@
                   "tone": "GAT",
                   "rel": -3,
                   "anger": 65,
-                  "silent": true
+                  "silent": true,
+                  "mood": "GIAN"
                 }
               ]
             },
@@ -419,7 +446,8 @@
               "reply": "Chèn ơi. Hỏi một câu mà.",
               "act": {
                 "kind": "REFUSE"
-              }
+              },
+              "mood": "BUC"
             }
           ]
         },
@@ -428,6 +456,333 @@
           "tone": "LANH",
           "anger": 15,
           "reply": "Ờ. Thôi lấy ba ổ."
+        }
+      ],
+      "openMood": "CUOI"
+    },
+    {
+      "id": "walkin.nhamquan",
+      "npc": "WALKIN",
+      "topic": "nham",
+      "weight": 12,
+      "opener": "Cho tui tô hủ tiếu, ít hành nghen.",
+      "openMood": "LANH",
+      "shared": {
+        "ket": [
+          {
+            "say": "Dạ ổ của anh đây anh. Anh đi mạnh giỏi nghen.",
+            "tone": "THUONG",
+            "rel": 1,
+            "reply": "Ờ. Cảm ơn em.",
+            "mood": "CUOI"
+          },
+          {
+            "say": "Dạ bữa sau anh ghé nữa nghen anh.",
+            "tone": "AM",
+            "rel": 2,
+            "reply": "Ờ. Để coi. Mà chắc có.",
+            "mood": "CUOI"
+          }
+        ]
+      },
+      "tree": [
+        {
+          "say": "Dạ anh ơi, đây bán bánh mì anh.",
+          "tone": "THUONG",
+          "reply": "Hả? …Ủa. Trời ơi. Tui cắm mặt vô điện thoại tui hổng ngó.",
+          "mood": "NGAC_NHIEN",
+          "then": [
+            {
+              "say": "Dạ hổng sao anh. Ngày nào cũng có người nhầm hà.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "Thiệt hả. Vậy tui đỡ quê. …Thôi, cho tui ổ bánh mì luôn đi.",
+              "mood": "CUOI_KHAN",
+              "then": [
+                {
+                  "say": "Dạ anh ăn gì anh? Đầy đủ nghen anh?",
+                  "tone": "THUONG",
+                  "rel": 1,
+                  "reply": "Ờ, đầy đủ. Mà thôi khỏi hành, hồi nãy tui kêu ít hành rồi mà.",
+                  "mood": "CUOI"
+                },
+                {
+                  "say": "Anh ăn bánh mì rồi chút qua hủ tiếu cũng được anh.",
+                  "tone": "DUA",
+                  "rel": 2,
+                  "reply": "Ha! Em bán hàng mà em chỉ tui qua quán khác hả.",
+                  "mood": "CUOI_TUOI"
+                },
+                {
+                  "say": "Dạ hủ tiếu đầu hẻm kìa anh, anh đi thẳng chút là tới.",
+                  "tone": "AM",
+                  "rel": 2,
+                  "reply": "…Ờ. Em chỉ đường cho tui luôn. Thôi tui ăn đây, khỏi đi đâu hết.",
+                  "mood": "THUONG",
+                  "ref": "ket"
+                }
+              ]
+            },
+            {
+              "say": "Dạ anh coi lại cái bảng hiệu giùm em anh.",
+              "tone": "THANG",
+              "anger": 15,
+              "reply": "…Ờ. Tui có lỗi. Mà em nói kiểu đó nghe nó cũng…",
+              "mood": "BUC",
+              "then": [
+                {
+                  "say": "Dạ em xin lỗi anh. Em nói nhanh quá.",
+                  "tone": "AM",
+                  "rel": 2,
+                  "calm": 20,
+                  "reply": "Ờ. Thôi. Cho tui ổ đầy đủ.",
+                  "mood": "MET",
+                  "ref": "ket"
+                },
+                {
+                  "say": "Dạ cái bảng to chình ình kìa anh.",
+                  "tone": "DUA",
+                  "rel": -1,
+                  "anger": 25,
+                  "reply": "Thôi. Tui đi quán khác.",
+                  "mood": "GIAN",
+                  "act": {
+                    "kind": "REFUSE"
+                  }
+                }
+              ]
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "rel": -1,
+              "anger": 10,
+              "silent": true,
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Dạ hủ tiếu hết rồi anh, còn mỗi bánh mì hà.",
+          "tone": "DUA",
+          "rel": 1,
+          "reply": "Hết rồi hả? …Ủa mà quán em có bán hủ tiếu hồi nào?",
+          "mood": "NGHI",
+          "then": [
+            {
+              "say": "Dạ hổng có. Em giỡn với anh thôi anh.",
+              "tone": "DUA",
+              "rel": 2,
+              "reply": "Ha ha. Con nhỏ này. Thôi cho tui ổ bánh mì, em làm tui cười sáng giờ.",
+              "mood": "CUOI_TUOI",
+              "ref": "ket"
+            },
+            {
+              "say": "Dạ em giỡn anh. Đây bán bánh mì không hà anh.",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "Ờ. Em giỡn kiểu đó sáng sớm tui hổng theo kịp.",
+              "mood": "CUOI_KHAN",
+              "ref": "ket"
+            },
+            {
+              "say": "Dạ anh đọc bảng đi anh.",
+              "tone": "LANH",
+              "rel": -2,
+              "anger": 25,
+              "reply": "Ờ. Tui nhầm.",
+              "mood": "BUC"
+            }
+          ]
+        },
+        {
+          "say": "Anh đi chỗ khác mua giùm em, chỗ em bán bánh mì.",
+          "tone": "LANH",
+          "rel": -2,
+          "anger": 20,
+          "act": {
+            "kind": "REFUSE"
+          },
+          "reply": "…Ờ. Tao nhầm.",
+          "mood": "LANH"
+        }
+      ]
+    },
+    {
+      "id": "walkin.donvp",
+      "npc": "WALKIN",
+      "topic": "donvp",
+      "when": {
+        "day": [
+          4,
+          40
+        ]
+      },
+      "weight": 12,
+      "opener": "Chị ơi cho em tám ổ. Đợi em chút, em hỏi lại cả phòng cái đã.",
+      "openMood": "NGUONG",
+      "shared": {
+        "ket": [
+          {
+            "say": "Dạ tám ổ của em đây nghen.",
+            "tone": "THUONG",
+            "rel": 1,
+            "reply": "Dạ em cảm ơn chị nhiều nghen chị.",
+            "mood": "CUOI"
+          },
+          {
+            "say": "Bữa sau em chốt đơn rồi hẵng qua nghen em.",
+            "tone": "AM",
+            "rel": 2,
+            "reply": "Dạ… dạ em biết rồi. Em quê quá chị ơi.",
+            "mood": "NGUONG"
+          }
+        ]
+      },
+      "tree": [
+        {
+          "say": "Dạ em cứ hỏi đi, chị làm mấy ổ chắc chắn trước.",
+          "tone": "AM",
+          "rel": 3,
+          "calm": 18,
+          "reply": "Dạ chị làm giùm em năm ổ đầy đủ trước đi. Ba ổ kia em hỏi lại.",
+          "mood": "CUOI",
+          "then": [
+            {
+              "say": "Em đứng qua bên này chút cho người ta mua nghen em.",
+              "tone": "THANG",
+              "rel": 1,
+              "act": {
+                "kind": "STEP_ASIDE"
+              },
+              "reply": "Dạ dạ. Em xin lỗi chị. Em đứng chắn nãy giờ.",
+              "mood": "NGUONG",
+              "then": [
+                {
+                  "say": "Hổng sao em. Đông quá thôi.",
+                  "tone": "AM",
+                  "rel": 3,
+                  "reply": "Dạ. Chị dễ chịu ghê. Chỗ khác người ta quạu em rồi.",
+                  "mood": "THUONG"
+                },
+                {
+                  "say": "Phòng em ăn sáng trễ dữ ha em.",
+                  "tone": "DUA",
+                  "rel": 2,
+                  "reply": "Ha. Tụi em ngủ gục hết. Em là đứa bị sai đi mua đó chị.",
+                  "mood": "CUOI_TUOI"
+                },
+                {
+                  "say": "Em hỏi lẹ giùm chị, chị còn hàng.",
+                  "tone": "LANH",
+                  "rel": -1,
+                  "reply": "Dạ dạ. Em hỏi liền.",
+                  "mood": "MET"
+                }
+              ]
+            },
+            {
+              "say": "Phòng em mấy người vậy em?",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Dạ tám. Mà một chị ăn chay, một anh hổng ăn pate, một đứa chưa trả lời em.",
+              "mood": "MET",
+              "then": [
+                {
+                  "say": "Vậy chị làm một ổ chay, một ổ không pate nghen.",
+                  "tone": "AM",
+                  "rel": 4,
+                  "reply": "Dạ?! Chị nhớ liền luôn hả chị. Em ghi giấy em còn lộn.",
+                  "mood": "NGAC_NHIEN",
+                  "then": [
+                    {
+                      "say": "Chị bán mấy năm rồi em.",
+                      "tone": "THUONG",
+                      "rel": 1,
+                      "reply": "Dạ. Hèn gì. Lần sau em qua chị nữa.",
+                      "mood": "CUOI"
+                    },
+                    {
+                      "say": "Chị ghi vô sổ đây nè em, khỏi lộn.",
+                      "tone": "AM",
+                      "rel": 3,
+                      "reply": "Dạ. Chị kỹ ghê. …Chị cho em xin số chị được hông chị, lần sau em đặt trước.",
+                      "mood": "CUOI_TUOI",
+                      "flag": "vpDatTruoc"
+                    },
+                    {
+                      "say": "Em ghi giấy mà em còn lộn hả em.",
+                      "tone": "DUA",
+                      "rel": 1,
+                      "reply": "Dạ… em lộn hoài. Phòng em chửi em suốt.",
+                      "mood": "NGUONG"
+                    }
+                  ]
+                },
+                {
+                  "say": "Đứa chưa trả lời thì khỏi mua cho nó em.",
+                  "tone": "DUA",
+                  "rel": 2,
+                  "reply": "Ha ha. Dạ. Để nó nhịn cho chừa.",
+                  "mood": "CUOI_TUOI",
+                  "ref": "ket"
+                },
+                {
+                  "say": "Em gọi lại đi em, chị chờ.",
+                  "tone": "THUONG",
+                  "rel": 1,
+                  "reply": "Dạ. Em gọi liền.",
+                  "mood": "CUOI",
+                  "ref": "ket"
+                }
+              ]
+            },
+            {
+              "say": "Dạ em đứng đó chờ chút nghen em.",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "Dạ.",
+              "mood": "CUOI",
+              "ref": "ket"
+            }
+          ]
+        },
+        {
+          "say": "Em chốt đơn rồi hẵng kêu nghen em. Chị làm rồi hổng đổi được.",
+          "tone": "THANG",
+          "anger": 15,
+          "reply": "Dạ… dạ. Em xin lỗi chị. Dạ em chốt liền.",
+          "mood": "NGUONG",
+          "then": [
+            {
+              "say": "Chị nói vậy thôi. Em cứ hỏi đi em.",
+              "tone": "AM",
+              "rel": 3,
+              "calm": 22,
+              "reply": "Dạ. Chị nói nghe sợ mà chị hiền ghê.",
+              "mood": "CUOI_KHAN",
+              "ref": "ket"
+            },
+            {
+              "say": "Ừ. Chốt rồi kêu chị.",
+              "tone": "LANH",
+              "rel": -1,
+              "anger": 15,
+              "reply": "Dạ.",
+              "mood": "BUON"
+            }
+          ]
+        },
+        {
+          "say": "Tám ổ mà em còn chưa biết ăn gì hả em. Qua chỗ khác đi em.",
+          "tone": "GAT",
+          "rel": -3,
+          "anger": 60,
+          "act": {
+            "kind": "REFUSE"
+          },
+          "reply": "…Dạ. Em xin lỗi chị.",
+          "mood": "BUON"
         }
       ]
     }

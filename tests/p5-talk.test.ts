@@ -13,11 +13,14 @@ import { NPCS } from "../src/content/npcs";
 import { Rng } from "../src/core/rng";
 import { DECAY, REDEEM, newRelState } from "../src/sim/memory";
 import {
-  ADDRESS, DEFAULT_IGNORE_REL, FORBIDDEN_SELF, MAX_DEPTH, TalkSession, angerToWaitSec, applyTalk,
+  ADDRESS, ANON_TALK_POOLS, DEFAULT_IGNORE_REL, EXTRA_TALK_POOLS, FORBIDDEN_SELF, MAX_DEPTH,
+  MOOD_FACE, MOOD_LABEL, MOOD_NEGATIVE,
+  MOOD_POSE, TalkSession, angerToWaitSec, applyTalk,
   childrenOf, eligible, linesOf, pickTalk, visibleOptions, walkNodes, WALKIN_CALLS,
-  type Talk, type TalkCtx, type TalkNode,
+  type Talk, type TalkCtx, type TalkMood, type TalkNode,
 } from "../src/sim/talk";
 import { TALK_NPC_IDS, TalkStore } from "../src/content/talks";
+import { INVITE_MAX, INVITE_TONE, inviteChance } from "../src/sim/passersby";
 import { newGame } from "../src/core/save";
 import { HeadlessStall, POLICIES } from "../src/sim/headless";
 import { Customer } from "../src/sim/customer";
@@ -193,7 +196,7 @@ test("T-13 file thoại thiếu KHÔNG được làm sập buổi bán", async (
 
 test("L-1 id duy nhất, npc có thật, `ref` trỏ tới cây con có thật", () => {
   const ids = new Set<string>();
-  const known = new Set([...NPCS.map((n) => n.id), "WALKIN", "ANY"]);
+  const known = new Set<string>([...NPCS.map((n) => n.id), ...EXTRA_TALK_POOLS]);
   for (const t of TALKS) {
     assert.ok(!ids.has(t.id), `id trùng: ${t.id}`);
     ids.add(t.id);
@@ -249,6 +252,8 @@ test("L-4 câu GẮT luôn có giá, câu ẤM không bị phạt, câu CHỬI �
 test("L-5 không có `reply` thì phải khai `silent` — phân biệt im CÓ Ý với quên viết", () => {
   for (const t of TALKS) {
     for (const { node } of walkNodes(t)) {
+      // Lời MỜI khai câu đáp ở `act.yes`/`act.no` (cái roll chọn một) — xem A-6.
+      if (node.act?.kind === "INVITE") continue;
       assert.ok(node.reply || node.silent, `${t.id}: "${node.say}" không có câu đáp mà cũng không khai \`silent\``);
     }
   }
@@ -278,10 +283,14 @@ test("L-7 DANH XƯNG: lời người chơi gọi khách đúng vai, ít nhất m
     const a = ADDRESS[t.npc];
     if (!a) continue;
     const says = linesOf(t).player.join(" ");
-    // Khách vãng lai đổi vai mỗi lượt — chấp nhận bất kỳ vai nào, miễn là CÓ gọi.
-    const calls = t.npc === "WALKIN" ? WALKIN_CALLS : [a.call];
+    // Người lạ (khách vãng lai, người qua đường) đổi vai mỗi lượt — chấp nhận bất kỳ vai
+    // nào, miễn là CÓ gọi. `{call}` là chỗ trống để `Service.fill` điền đúng vai theo
+    // DÁNG người đang đứng đó, nên nó luôn hợp lệ — và an toàn hơn mọi từ viết cứng.
+    const anon = (ANON_TALK_POOLS as readonly string[]).includes(t.npc);
+    const calls = anon ? WALKIN_CALLS : [a.call];
     assert.ok(
-      calls.some((w) => new RegExp(`(^|[^\\p{L}])${w}([^\\p{L}]|$)`, "iu").test(says)),
+      (anon && says.includes("{call}"))
+      || calls.some((w) => new RegExp(`(^|[^\\p{L}])${w}([^\\p{L}]|$)`, "iu").test(says)),
       `${t.id}: cả cuộc không ai gọi ${t.npc} là "${calls.join("/")}" — người chơi đang nói với ai?`,
     );
   }
@@ -367,6 +376,59 @@ test("A-3 két rỗng thì lựa chọn tốn tiền BIẾN MẤT, mà vẫn cò
   assert.equal(broke[0].say, "thôi bà");
   // cash không khai = không chặn (test cũ, sim headless)
   assert.equal(visibleOptions(nodes, { flags: {} }).length, 2);
+});
+
+test("A-6 lời MỜI khai cả hai cái kết, và là câu CUỐI của nhánh", () => {
+  /**
+   * `INVITE` là act duy nhất mà cái kết KHÔNG do người chơi quyết: họ bấm một lựa chọn,
+   * rồi cái roll nói người ta có ghé vô hay không (`sim/passersby.inviteChance`). Nên:
+   *
+   *  · phải có CẢ HAI câu đáp, và hai câu đó phải khác nhau — cùng một câu cho cả hai
+   *    kết là nói dối người chơi về chuyện vừa xảy ra;
+   *  · phải là LÁ. Viết tiếp `then` sau một lời mời là viết một nhịp chung cho hai thế
+   *    giới khác hẳn nhau (người ta đang xếp hàng / người ta đã đi mất).
+   *  · giọng phải là một giọng MỜI được. Mời bằng giọng gắt hay giọng lạnh thì
+   *    `inviteChance` trả thẳng 0, tức cái nút đó là một cái nút chết.
+   */
+  const CAN_INVITE = new Set(Object.keys(INVITE_TONE));
+  let seen = 0;
+  for (const t of TALKS) {
+    for (const { node } of walkNodes(t)) {
+      if (node.act?.kind !== "INVITE") continue;
+      seen++;
+      assert.ok(node.act.yes && node.act.no, `${t.id}: "${node.say}" mời mà thiếu câu đáp`);
+      assert.notEqual(node.act.yes, node.act.no, `${t.id}: "${node.say}" chịu hay không cũng một câu`);
+      assert.ok(!node.then && !node.ref, `${t.id}: "${node.say}" mời xong còn viết tiếp`);
+      assert.ok(CAN_INVITE.has(node.tone), `${t.id}: "${node.say}" mời bằng giọng ${node.tone} — nút chết`);
+      // Người có tên không được mời: họ tới theo lịch sinh hoạt của họ (P2-03 §2.9).
+      assert.ok(ANON_TALK_POOLS.includes(t.npc as never), `${t.id}: mời một người có tên`);
+    }
+  }
+  assert.ok(seen >= 4, `mới có ${seen} lời mời — quán vắng vẫn không có gì để làm`);
+});
+
+test("A-7 mời KHÉO mở cửa rộng ra, nhưng không bao giờ mở toang", () => {
+  const base = {
+    person: { soi: 0.5, deTha: 0.5, thanThien: 0.5 },
+    glanced: false, tone: "AM", warmth: 0, ahead: 0, slots: 6, soldOut: false,
+  };
+  const at = (over: Partial<typeof base>) => inviteChance({ ...base, ...over });
+  // không bao giờ chắc ăn, không bao giờ vô vọng — "cũng tuỳ khách"
+  assert.ok(at({}) > 0 && at({}) < 1);
+  assert.ok(at({ glanced: true, warmth: 10, person: { soi: 0, deTha: 1, thanThien: 1 } }) <= INVITE_MAX);
+  // mời khéo ăn thua: ngoái nhìn sẵn, nói mấy câu tử tế trước, giọng ấm
+  assert.ok(at({ glanced: true }) > at({}), "ngoái nhìn sẵn mà mời vẫn khó y như người đi thẳng");
+  assert.ok(at({ warmth: 5 }) > at({}), "nói tử tế trước rồi mời mà không hơn gì");
+  assert.ok(at({ tone: "AM" }) > at({ tone: "THANG" }), "mời ngọt không hơn mời cộc");
+  // gắt / lạnh không phải một lời mời
+  for (const tone of ["GAT", "LANH", "IM", "CHUI"]) assert.equal(at({ tone }), 0, `giọng ${tone}`);
+  // hàng chờ ăn mạnh nhất, và hết chỗ thì không còn chuyện mời
+  assert.ok(at({ ahead: 1 }) < at({ ahead: 0 }));
+  assert.equal(at({ ahead: 6 }), 0, "hết chỗ đứng mà vẫn mời được người ta vô");
+  assert.equal(at({ soldOut: true }), 0, "mời người ta vô rồi nói hết bánh");
+  // tính cách: người xuề xoà dễ ghé hơn người kỹ tính
+  assert.ok(at({ person: { soi: 0.1, deTha: 0.9, thanThien: 0.9 } })
+    > at({ person: { soi: 0.9, deTha: 0.1, thanThien: 0.1 } }));
 });
 
 test("A-4 nuốt lời đau hơn bỏ nhầm món, và cả hai đều đau hơn một câu nói nặng", () => {
@@ -509,4 +571,91 @@ test("P-3 không câu `calm` nào quá 30 — nếu không thì chọc rồi d�
   }
   const soothing = TALKS.flatMap((t) => walkNodes(t)).filter((x) => x.node.calm);
   assert.ok(soothing.length >= 8, `mới có ${soothing.length} câu dỗ — quá ít để người chơi tìm ra`);
+});
+
+// ───────────────────────────────── M — cảm xúc của câu đáp (P5-06)
+
+test("M-1 mỗi cuộc có ÍT NHẤT SÁU cuộc cho mỗi người, và cuộc nào cũng khai mặt lúc mở lời", () => {
+  /**
+   * Hai chuyện một lưới, vì chúng cùng một gốc: bảng F mở ra mà lần nào cũng ra một
+   * trong ba cuộc thì nó là cái máy phát lại, không phải người. Và câu mở lời là câu
+   * DUY NHẤT người chơi chắc chắn đọc — không có mặt ở đó thì cả cuộc bắt đầu bằng
+   * một khuôn mặt trung tính.
+   */
+  const byNpc = new Map<string, Talk[]>();
+  for (const t of TALKS) (byNpc.get(t.npc) ?? byNpc.set(t.npc, []).get(t.npc)!).push(t);
+  for (const [npc, list] of byNpc) {
+    assert.ok(list.length >= 6, `${npc}: mới có ${list.length} cuộc — doc đòi 6`);
+    for (const t of list) assert.ok(t.openMood, `${t.id}: câu mở lời không khai openMood`);
+  }
+});
+
+test("M-2 mọi `mood` đều có thật trong bảng mặt, bảng dáng và bảng tên", () => {
+  const known = new Set(Object.keys(MOOD_FACE) as TalkMood[]);
+  assert.deepEqual(new Set(Object.keys(MOOD_POSE)), known, "bảng dáng lệch bảng mặt");
+  assert.deepEqual(new Set(Object.keys(MOOD_LABEL)), known, "bảng tên lệch bảng mặt");
+  for (const m of known) {
+    const f = MOOD_FACE[m];
+    assert.equal(f.length, 3, `${m}: mặt không đủ ba lớp`);
+    // `entities/face.ts` chỉ vẽ 6 biến thể mỗi lớp — số 6 là một ô vuông trắng.
+    for (const v of f) assert.ok(Number.isInteger(v) && v >= 0 && v <= 5, `${m}: lớp mặt ${v} ngoài 0–5`);
+  }
+  const used = new Set<string>();
+  for (const t of TALKS) {
+    if (t.openMood) { assert.ok(known.has(t.openMood), `${t.id}: openMood lạ`); used.add(t.openMood); }
+    if (t.ignore?.mood) assert.ok(known.has(t.ignore.mood), `${t.id}: ignore.mood lạ`);
+    for (const { node } of walkNodes(t)) {
+      if (!node.mood) continue;
+      assert.ok(known.has(node.mood), `${t.id}: "${node.say}" mood lạ "${node.mood}"`);
+      used.add(node.mood);
+    }
+  }
+  assert.ok(used.size >= 10, `mới xài ${used.size} cảm xúc — bảng 14 ô mà nội dung chỉ chạm ngần đó`);
+});
+
+test("M-3 cảm xúc KHỚP với hệ quả: chọc người ta mà họ cười là viết lỗi", () => {
+  const warm = new Set<TalkMood>(["CUOI_TUOI", "CUOI", "THUONG", "RUNG_RUNG"]);
+  for (const t of TALKS) {
+    for (const { node: o } of walkNodes(t)) {
+      if (!o.mood) continue;
+      if ((o.anger ?? 0) >= 25) {
+        assert.ok(!warm.has(o.mood), `${t.id}: "${o.say}" chọc giận mà mặt "${MOOD_LABEL[o.mood]}"`);
+      }
+      // Dỗ người ta xong mà mặt họ đanh lại thì cái `calm` kia không có nghĩa gì.
+      if (o.calm) assert.ok(!MOOD_NEGATIVE.has(o.mood) || o.mood === "MET",
+        `${t.id}: "${o.say}" dỗ mà mặt "${MOOD_LABEL[o.mood]}"`);
+      if (o.mem?.kind === "RUDE_TO_THEM" && (o.mem.intensity ?? 0) >= 60) {
+        assert.ok(!warm.has(o.mood), `${t.id}: "${o.say}" để lại vết RUDE_TO_THEM mà mặt vui`);
+      }
+    }
+  }
+});
+
+test("M-4 quá nửa số câu đáp phải có mặt — không thì bảng F vẫn là chữ chạy", () => {
+  const nodes = TALKS.flatMap((t) => walkNodes(t).map((x) => x.node));
+  const share = nodes.filter((n) => n.mood).length / nodes.length;
+  assert.ok(share >= 0.4, `mới ${(share * 100).toFixed(0)}% số nút khai cảm xúc`);
+});
+
+test("M-5 cờ chuyện bắc cầu GIỮA hai người — chuyện chú A phải tới tai bé B", () => {
+  /**
+   * Đây là lưới cho yêu cầu "chuyện của người này dính tới người kia": một cuộc mở ra
+   * nhờ `needFlag` mà cái cờ đó chỉ do một NGƯỜI KHÁC đặt. Mất liên kết này thì mười
+   * hai người lại thành mười hai cái hộp thoại rời nhau.
+   */
+  const setBy = new Map<string, Set<string>>();
+  for (const t of TALKS) {
+    for (const { node } of walkNodes(t)) {
+      if (node.flag) (setBy.get(node.flag) ?? setBy.set(node.flag, new Set()).get(node.flag)!).add(t.npc);
+    }
+  }
+  const cross: string[] = [];
+  for (const t of TALKS) {
+    const need = t.when?.needFlag;
+    if (!need) continue;
+    const owners = setBy.get(need);
+    assert.ok(owners?.size, `${t.id}: cần cờ "${need}" mà không cuộc nào đặt được nó`);
+    if ([...owners!].some((npc) => npc !== t.npc)) cross.push(`${t.id}←${need}`);
+  }
+  assert.ok(cross.length >= 4, `mới có ${cross.length} cuộc mở ra nhờ chuyện của người khác`);
 });

@@ -257,7 +257,7 @@ export class NotebookView {
     const bar = this.el("div", "nb-bar");
     const csv = this.el("button", "nb-btn", "Xuất CSV");
     csv.onclick = () => this.exportCsv();
-    bar.append(csv, this.el("span", "nb-t", "máy ghi — không sửa được"));
+    bar.append(csv, this.el("span", "nb-t", "tự ghi, không sửa được"));
     col.push(bar);
     return col;
   }
@@ -310,7 +310,7 @@ export class NotebookView {
     col.push(sc);
 
     const bar = this.el("div", "nb-bar");
-    bar.append(this.el("span", "nb-t", this.opts.mode === "evening" ? "đóng sổ rồi đi ngủ" : "Tab nhảy ô · Esc để đóng — trong lúc mở sổ, quầy đứng yên"));
+    bar.append(this.el("span", "nb-t", this.opts.mode === "evening" ? "đóng sổ rồi đi ngủ" : "Tab nhảy ô · Esc đóng sổ · quầy đứng yên trong lúc này"));
     const close = this.el("button", "nb-btn primary", "Đóng sổ");
     close.onclick = () => this.close();
     bar.append(close);
@@ -330,7 +330,7 @@ export class NotebookView {
       top.append(img);
       wrap.append(top);
       wrap.append(this.el("div", "nb-t", `gặp lần đầu ngày ${p.firstSeenDay}`));
-      wrap.append(this.el("div", "nb-empty", "chưa có cây bút — con nhớ trong đầu đã."));
+      wrap.append(this.el("div", "nb-empty", "chưa có cây bút, con nhớ trong đầu đã."));
       return wrap;
     }
     const name = this.el("input", "nb-in");
@@ -350,7 +350,7 @@ export class NotebookView {
     wrap.append(this.el("div", "nb-t", `gặp lần đầu ngày ${p.firstSeenDay}`));
 
     const ta = this.el("textarea", "nb-ta");
-    ta.placeholder = "ghi gì cũng được — ai, hay ghé lúc nào, thích gì…";
+    ta.placeholder = "ghi gì cũng được: ai, hay ghé lúc nào, thích gì…";
     ta.value = p.freeLines;
     ta.setAttribute("aria-label", "ghi chú của con");
     ta.oninput = () => { p.freeLines = ta.value; };

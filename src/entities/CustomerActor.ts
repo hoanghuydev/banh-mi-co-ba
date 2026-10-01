@@ -3,13 +3,13 @@ import { depthOf, facingOf, toScreen, type Facing } from "../world/iso";
 import { BODY_H, FX, buildBody, footY, textureFor } from "../art";
 import type { Customer } from "../sim/customer";
 import { nowState } from "../sim/perception";
-import type { ObsState, Slot } from "../core/types";
 import { FONT } from "../ui/theme";
 import type { BubblePool } from "../ui/stall/BubblePool";
 import { NEUTRAL, POSES } from "../sim/reaction";
 import { intensityMul } from "../sim/personality";
 import { drawFace } from "./face";
 import { STREET_BIN } from "../world/map";
+import { passerAlpha } from "../sim/passersby";
 
 /**
  * Phần NHÌN THẤY của một người khách.
@@ -17,7 +17,9 @@ import { STREET_BIN } from "../world/map";
  * T5 — attention phải NHÌN THẤY ĐƯỢC, bằng HÌNH chứ không bằng số:
  *  · Dấu trên đầu, ba HÌNH DẠNG khác nhau (không phân biệt bằng màu — P1-04 §4.1):
  *      GLIMPSED `?` · NOTICED cặp mày nhíu · CONFIRMED `!`
- *  · Tia nhìn (P1-04 §2.5, PA-B) từ mắt khách tới đúng vùng họ đang để ý, bốn bậc rời rạc.
+ *  · "Có người nhìn" KHÔNG vẽ ở đây nữa — xem `Hud.drawEye`, một con mắt ở đỉnh màn hình.
+ *    Tia nhìn cũ (P1-04 §2.5, PA-B) kẻ từ mắt từng khách tới vùng quầy đã bỏ: năm người
+ *    xếp hàng là năm sợi dây cắt ngang đúng chỗ tay mình đang làm.
  *  · Trạng thái ÁNH NHÌN có đạo cụ riêng (P1-02 §2.5.3 "không hoạt ảnh = không trạng thái"):
  *      điện thoại sáng xanh · ly trà che mặt · liếc đồng hồ tay.
  *    Người chơi phải thấy VÌ SAO khách không thấy mình làm rớt bánh.
@@ -33,14 +35,6 @@ import { STREET_BIN } from "../world/map";
  *   · `certainty`, quan hệ, khẩu vị vẫn TUYỆT ĐỐI không có thanh nào — L2 còn nguyên
  * Bỏ vòng này đi thì xoá `drawPatience` và lời gọi của nó, không còn gì dính.
  */
-
-/** P1-04 §2.5 — bảng tia nhìn. Màu tia cố ý KHÔNG vàng / đỏ. */
-const GAZE_RAY: Record<Exclude<ObsState, "UNAWARE">, { width: number; alpha: number; dash: [number, number] | null }> = {
-  GLIMPSED:  { width: 2, alpha: 0.15, dash: [6, 8] },
-  NOTICED:   { width: 4, alpha: 0.38, dash: [10, 4] },
-  CONFIRMED: { width: 7, alpha: 0.70, dash: null },
-};
-const RAY_COLOR = 0xcfd8da;
 
 /**
  * Vòng kiên nhẫn — P5-05. Xanh dương → vàng → đỏ, nội suy liên tục chứ không nhảy bậc:
@@ -77,19 +71,16 @@ function patienceColor(frac: number) {
     ? mixRgb(yellow, blue, (frac - 0.5) * 2)
     : mixRgb(red, yellow, frac * 2);
 }
-const RING_COLOR = 0xc4342a;
 const MARK_INK = "#f2efe9";
 const MARK_STROKE = "#2b2f31";
 /**
  * Dấu trên đầu + bong bóng: trên NHÃN TRẠM (8.000.000) — nhãn đục "quầy gọi món" nằm
  * đúng chỗ đầu người khách đứng trước quầy, để dưới là mất hết dấu `?`/`!` của người quan
- * trọng nhất. Tia nhìn: trên cả bảng kẹp nhân (9.400.000) — lúc kẹp là lúc khách nhìn tay
- * mình kỹ nhất, tia phải chỉ thẳng vào ổ bánh trong bảng.
+ * trọng nhất. Lớp hiệu ứng (đạo cụ ánh nhìn, vòng kiên nhẫn, nét mặt): trên cả bảng kẹp
+ * nhân (9.400.000) — lúc kẹp là lúc khách nhìn tay mình kỹ nhất, đừng để bảng che mất.
  */
 const OVERLAY_DEPTH = 8_100_000;
-const RAY_DEPTH = 9_450_000;
-
-export type ZonePoint = (slot: Slot) => { x: number; y: number };
+const FX_DEPTH = 9_450_000;
 
 /**
  * Chip tên: ở CHÂN, không ở trên đầu — xem `CustomerActor.draw`.
@@ -98,6 +89,19 @@ export type ZonePoint = (slot: Slot) => { x: number; y: number };
 const TAG_BELOW_FEET = 12;
 /** Mép an toàn khi kẹp overlay trong khung nhìn. */
 const EDGE = 6;
+/**
+ * NGƯỜI QUA ĐƯỜNG mờ dần trong ngần này pixel sát MÉP KHUNG NHÌN.
+ *
+ * `passerAlpha` một mình không đủ, và đây là chỗ nó hụt: nó mờ ở hai ĐẦU DẢI, tính theo
+ * toạ độ thế giới. Nhưng phép chiếu iso kéo một dải ngang thành một đường CHÉO, nên
+ * camera cắt ngang dải đó ở GIỮA chứ không ở hai đầu — dải lòng đường chỉ nhìn thấy
+ * được quãng x ≈ 5,6…20,4 trong khi nó chạy từ 0,6 tới 25,4. Kết quả: người ta hiện ra
+ * và biến mất ngay giữa màn hình, ở alpha 1. Đó đúng là cái "NPC hay bị tàng hình".
+ *
+ * Mép khung nhìn thì luôn đúng, kể cả khi camera trượt theo người chơi. 48 px ≈ một
+ * giây đi bộ, đủ để mắt đọc ra "người ta đi khuất" chứ không phải "người ta biến mất".
+ */
+const PASSER_EDGE_FADE = 48;
 /** Khe hở tối thiểu giữa hai bong bóng đã né nhau. */
 const BUBBLE_GAP = 6;
 
@@ -188,14 +192,14 @@ export class CustomerActor {
       fontFamily: FONT, fontSize: "18px", fontStyle: "700", color: MARK_INK,
       stroke: MARK_STROKE, strokeThickness: 4,
     }).setOrigin(0.5);
-    this.fx = scene.add.graphics().setDepth(RAY_DEPTH);
+    this.fx = scene.add.graphics().setDepth(FX_DEPTH);
     this.propFx = scene.add.graphics();
 
     this.lastX = c.x;
     this.lastY = c.y;
   }
 
-  draw(reducedMotion: boolean, time: number, zonePoint: ZonePoint, nowSec: number) {
+  draw(reducedMotion: boolean, time: number, nowSec: number) {
     const c = this.c;
     const moved = Math.hypot(c.x - this.lastX, c.y - this.lastY);
     if (moved > 0.002) this.facing = facingOf(c.x - this.lastX, c.y - this.lastY);
@@ -237,12 +241,22 @@ export class CustomerActor {
     const len = Math.hypot(b.sx - a.sx, b.sy - a.sy) || 1;
     const fx = ((b.sx - a.sx) / len) * this.sp.fwd.x, fy = ((b.sy - a.sy) / len) * this.sp.fwd.x * 0.5;
 
+    /*
+     * NGƯỜI QUA ĐƯỜNG mờ dần ở hai đầu đường — `sim/passersby.passerAlpha`.
+     *
+     * Hai đầu dải họ đi nằm ngoài khung nhìn ở PHẦN LỚN vị trí camera, nhưng không phải
+     * mọi vị trí: người chơi đứng ở đầu quầy bên trái là mép khung liếm tới đúng chỗ
+     * người ta sinh ra. Một người bật ra giữa vỉa hè thì nhìn ra ngay là lỗi, mà nó lại
+     * là thứ xảy ra vài chục lần một buổi.
+     */
+    const fade = c.ambient ? Math.min(passerAlpha(c.x), this.edgeFade(sx, footY(sy))) : 1;
+
     const tex = textureFor(this.facing, c.memKey);
-    this.body.setTexture(tex.key).setFlipX(tex.flip);
+    this.body.setTexture(tex.key).setFlipX(tex.flip).setAlpha(fade);
     this.body.setPosition(sx + fidget + fx, footY(sy) - hop + fy - this.sp.up.x).setDepth(depth);
     this.body.setAngle(this.sp.rot.x * (tex.flip ? -1 : 1));
     this.body.setScale(1, this.sp.sy.x + Math.sin(this.bob * 2) * 0.02 * amp);
-    this.shadow.setPosition(sx, sy).setDepth(depth - 1);
+    this.shadow.setPosition(sx, sy).setDepth(depth - 1).setAlpha(fade);
 
     const headX = sx + fidget, headY = footY(sy) - BODY_H + 12 - hop;
     const name = this.label(c);
@@ -255,6 +269,11 @@ export class CustomerActor {
     // đầu họ. Ở chân thì chip đi theo đúng nhịp hàng chờ (cũng 34,5 px một bậc) nên hai
     // chip KHÔNG BAO GIỜ chồng nhau, và không chip nào che mặt ai — mặt là kênh 1, thứ
     // người chơi phải đọc được (CANON §5).
+    //
+    // Người QUA ĐƯỜNG không có chip tên: một con đường mà ai đi ngang cũng đeo bảng tên
+    // thì không còn là con đường, nó là một danh sách. Tên họ chỉ hiện lúc người chơi
+    // thật sự bắt chuyện (bảng F) — đúng như ngoài đời.
+    this.tag.setVisible(!c.ambient);
     this.tag.setPosition(sx, footY(sy) + TAG_BELOW_FEET).setDepth(OVERLAY_DEPTH)
       .setAlpha(c.phase === "leaving" ? 0.45 : 0.9);
     this.clampInView(this.tag);
@@ -263,15 +282,16 @@ export class CustomerActor {
     g.clear();
     const watching = c.phase !== "leaving" && c.phase !== "arriving";
 
-    // ── tia nhìn + dấu trên đầu ────────────────────────────────────────────
+    // ── dấu trên đầu ───────────────────────────────────────────────────────
+    //
+    // KHÔNG còn tia nhìn kẻ từ mắt khách tới vùng quầy, cũng không còn vòng tròn ở đích:
+    // lúc đông khách màn hình thành một nắm dây nhợ chằng chịt, che đúng cái người chơi
+    // cần nhìn (tay mình, ổ bánh). Việc "đang có người nhìn" giờ gom về MỘT con mắt ở
+    // đỉnh màn hình (`Hud.drawEye`) — một chỗ để liếc, không phải năm sợi dây để lần.
+    // Dấu `?`/`!`/cặp mày vẫn ở trên đầu từng người: nó nói AI đã thấy, con mắt chỉ nói
+    // CÓ NGƯỜI ĐANG NHÌN.
     const st = watching ? nowState(c, nowSec) : null;
     const markY = sy - BODY_H - 24;
-    if (st && st.state !== "UNAWARE") {
-      const r = GAZE_RAY[st.state];
-      const to = zonePoint(st.slot);
-      ray(g, headX, headY, to.x, to.y, r.width, r.alpha, r.dash);
-      if (st.state === "CONFIRMED") g.lineStyle(3, RING_COLOR, 0.9).strokeCircle(to.x, to.y, 16);
-    }
     if (st?.state === "NOTICED") {
       // cặp mày nhíu — hình dạng khác hẳn `?` và `!`
       g.lineStyle(4, 0x2b2f31, 1);
@@ -300,6 +320,8 @@ export class CustomerActor {
     }
 
     this.drawBodyProps(sx + fidget + fx, footY(sy) - hop + fy - this.sp.up.x, depth, time, reducedMotion);
+    g.setAlpha(fade);
+    this.propFx.setAlpha(fade);
 
     // Bong bóng lấy từ pool (P0-01 §2.6c) — không tạo, không huỷ object nào ở đây.
     // Người xếp hàng phía sau: bong bóng nhỏ hơn 15%, mờ hơn (P1-04 §2.9).
@@ -335,6 +357,13 @@ export class CustomerActor {
     } else {
       this.bubbles.release(c.id, reducedMotion);
     }
+  }
+
+  /** 0 ở sát mép khung nhìn, 1 khi đã vào hẳn trong khung — xem `PASSER_EDGE_FADE`. */
+  private edgeFade(sx: number, sy: number) {
+    const v = this.scene.cameras.main.worldView;
+    const d = Math.min(sx - v.left, v.right - sx, sy - v.top, v.bottom - sy);
+    return Math.max(0, Math.min(1, d / PASSER_EDGE_FADE));
   }
 
   /** Kéo một overlay vào trong khung nhìn — chữ chạy ra ngoài mép là chữ mất. */
@@ -468,18 +497,5 @@ export class CustomerActor {
     this.fx.destroy();
     this.propFx.destroy();
     this.bubbles.release(this.c.id, true);           // người đã khuất: tắt ngay, không mờ dần
-  }
-}
-
-/** Tia nhìn: vệt mềm, không phải tia laser. Nét đứt ở hai bậc thấp. */
-function ray(g: Phaser.GameObjects.Graphics, x1: number, y1: number, x2: number, y2: number,
-  width: number, alpha: number, dash: [number, number] | null) {
-  g.lineStyle(width, RAY_COLOR, alpha);
-  if (!dash) { g.lineBetween(x1, y1, x2, y2); return; }
-  const len = Math.hypot(x2 - x1, y2 - y1);
-  const ux = (x2 - x1) / len, uy = (y2 - y1) / len;
-  for (let d = 0; d < len; d += dash[0] + dash[1]) {
-    const e = Math.min(len, d + dash[0]);
-    g.lineBetween(x1 + ux * d, y1 + uy * d, x1 + ux * e, y1 + uy * e);
   }
 }

@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { fitDesignFrame } from "../core/render";
 import { bedtime, dawn, eveningCounting, neighborTick } from "../sim/day";
 import { settleNight } from "../sim/night";
 import { duesOpen, pay } from "../sim/obligations";
@@ -10,6 +11,7 @@ import { gcBags } from "../core/rng";
 import { DEV_TOOLS } from "../core/flags";
 import { dev } from "../dev/registry";
 import { refillPresets } from "../sim/presets";
+import { sfx } from "../audio/sfx";
 
 /**
  * KHUNG NGÀY — P0-01 §2.3. Scene thường trực: chạy suốt từ lúc vào ván tới lúc về
@@ -41,6 +43,7 @@ export class DayScene extends Phaser.Scene {
   constructor() { super("day"); }
 
   create(data: DayStart = { mode: "continue" }) {
+    fitDesignFrame(this.cameras.main);          // canvas phóng to, toạ độ giữ nguyên — `core/render`
     const probe = new SaveService(bus, () => { throw new Error("probe"); });
     let world: SaveFile | null = null;
     if (data.mode === "continue") {
@@ -98,6 +101,11 @@ export class DayScene extends Phaser.Scene {
     ctx.sync();
     w.progress.dayStartSnapshotRef = ctx.save.writeDayStart(ctx.snapshot());
     bus.emit("day:started", { dayIndex: w.progress.dayIndex, daySeed: ctx.rng.daySeed, weather: w.progress.weather });
+    // Ngày mới: một tiếng chuông khẽ + cửa cuốn kéo lên. §4.2 B gọi cửa cuốn là
+    // "âm mở đầu ngày" — nó nằm ở ĐÂY chứ không ở `StallScene`, vì ngày bắt đầu
+    // từ lúc đi chợ, và cảnh quán còn bị mở lại khi "chơi lại ngày này".
+    sfx.play(this, "ui_chuyen_ngay");
+    sfx.play(this, "sfx_cua_cuon", { delay: 450, volume: 0.8 });
     this.open("market");
     ctx.save.request("SCENE_CHANGE");
   }
@@ -204,6 +212,10 @@ export class DayScene extends Phaser.Scene {
       ctx.save.request("SCENE_CHANGE");
     });
     on("ending:done", () => this.quitToMenu());
+    // Doanh thu ngày ÂM — P5-03 §4.2 C: công tắc `disableNegativeAudioCues` tắt hẳn
+    // tiếng này (`sfx.ts` lo, không phải chỗ này). Nó là lời phán xét của giao diện,
+    // nên nó nằm trong danh sách tắt được; tiếng bánh rớt thì không.
+    on("day:ended", (p) => { if (p.summary.revenue < 0) sfx.play(this, "ui_ngay_am_tien"); });
     on("evening:done", () => {
       const w = ctx.world;
       if (w.progress.dayIndex >= SEASON_DAYS) {

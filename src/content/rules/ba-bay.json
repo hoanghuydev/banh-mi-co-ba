@@ -55,6 +55,14 @@
       "say": ["Thôi con lo cho khách đi, chút cô kể tiếp."] },
     { "id": "bay.cailuong.4", "concept": "SMALLTALK_CAILUONG_4",
       "when": { "npcId": "BA_BAY", "queueLength": "<=2", "ctxKhachMoiToi": "absent" },
-      "say": ["Đào bây giờ mặt đẹp thiệt, mà hát tới câu vọng cổ là hụt hơi. Cô nói thiệt đó."] }
+      "say": ["Đào bây giờ mặt đẹp thiệt, mà hát tới câu vọng cổ là hụt hơi. Cô nói thiệt đó."] },
+    { "id": "bay.bye.waited", "concept": "FAREWELL",
+      "_note": "Soi nhất hẻm mà dễ tha nhất: chờ mỏi chưn vẫn đứng tới cùng, rồi đi ra còn dặn một câu. Đây là chỗ người chơi học được rằng soi không có nghĩa là khó.",
+      "when": { "npcId": "BA_BAY", "leaveReason": "SERVED", "serveOutcome": "WAITED" }, "odds": 80,
+      "say": ["Lâu thì lâu, mà con làm kỹ là cô chịu rồi.", "Cô đứng nãy giờ đó nghen. Thôi, mai làm lẹ chút.", "Hồi nãy đông quá ha. Cô hiểu mà con."] },
+    { "id": "bay.del.nohabit", "concept": "DELIVERY",
+      "_note": "Người soi nhất hẻm là người đầu tiên thấy cái nếp gãy — và cũng là người nói thẳng ra. Bốn criterion nên thắng dòng gen.del.nohabit.",
+      "when": { "npcId": "BA_BAY", "defectCount": 0, "extraHabitBroken": true, "freeExtraTooMuch": false },
+      "say": ["Mấy bữa con cho cô thêm miếng, bữa nay hết rồi hả?", "Ủa, bữa nay khác mọi bữa à nghen con.", "Cô quen có thêm rồi đó con."] }
   ]
 }

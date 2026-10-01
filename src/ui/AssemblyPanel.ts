@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { fitPhoto } from "../art/photo";
 import { GAME_H } from "../core/config";
 import { FOOD, buildFood } from "../art/food";
 import { CAPACITY, INGREDIENTS, labelOf, portionsOf, type Ingredient } from "../sim/order";
@@ -200,7 +201,7 @@ export class AssemblyPanel {
 
   /** Ổ bánh + vùng thả. Bấm vào một miếng đã kẹp thì gỡ nó ra. */
   private buildLoaf(x: number, y: number) {
-    this.loafImg = this.scene.add.image(x, y, FOOD.loaf).setScrollFactor(0);
+    this.loafImg = fitPhoto(this.scene.add.image(x, y, FOOD.loaf)).setScrollFactor(0);
     this.fillLayer = this.scene.add.container(0, 0).setScrollFactor(0);
     this.steam = new Steam(this.scene, true);
     this.root.add([this.loafImg, this.fillLayer, this.steam.graphics]);
@@ -264,7 +265,7 @@ export class AssemblyPanel {
     // Ảnh nguyên liệu nướng sẵn ở 36 px — phóng vừa phải thôi, quá tay là bể hạt.
     const si = Math.min(this.s, 1.2);
     const iconX = -TW / 2 + Math.round(16 + 14 * si);
-    const icon = this.scene.add.image(iconX, 0, FOOD.icon(id)).setScale(si).setScrollFactor(0);
+    const icon = fitPhoto(this.scene.add.image(iconX, 0, FOOD.icon(id)), si).setScrollFactor(0);
     // Tên phải TỰ XUỐNG DÒNG: không có bề ngang cố định thì ở cỡ chữ lớn "trứng ốp la"
     // chạy thẳng ra khỏi ô (và trước đây còn chui xuống dưới huy hiệu ×N).
     const nameX = -TW / 2 + Math.round(30 + 24 * si);
@@ -309,8 +310,8 @@ export class AssemblyPanel {
 
     c.on("dragstart", (p: Phaser.Input.Pointer) => {
       this.dragging = true;
-      this.ghost = this.scene.add.image(p.x, p.y, FOOD.icon(id))
-        .setScrollFactor(0).setDepth(9_450_000).setScale(1.15 * si).setAlpha(0.95);
+      this.ghost = fitPhoto(this.scene.add.image(p.x, p.y, FOOD.icon(id)), 1.15 * si)
+        .setScrollFactor(0).setDepth(9_450_000).setAlpha(0.95);
     });
     c.on("drag", (p: Phaser.Input.Pointer) => {
       this.ghost?.setPosition(p.x, p.y);
@@ -329,7 +330,11 @@ export class AssemblyPanel {
     return c;
   }
 
-  /** Trần mỗi loại — không ai kẹp bốn lát chả vào một ổ (xem `INGREDIENTS[].max`). */
+  /**
+   * Trần mỗi loại. Thang phần ăn chỉ có HAI nấc (`INGREDIENTS[].max` = 2): một phần là
+   * mặc định, hai phần là "nhiều". Không có nấc thứ ba — bảng này tự theo con số đó,
+   * nên huy hiệu ×N cũng dừng ở ×2.
+   */
   private maxOf(id: Ingredient) {
     return INGREDIENTS.find((i) => i.id === id)!.max;
   }
@@ -358,7 +363,7 @@ export class AssemblyPanel {
     if (!this.open) return;                             // kéo dở mà bảng đã đóng (đi khỏi thớt)
     const have = portionsOf(this.stack).get(id) ?? 0;
     if (have >= this.maxOf(id)) { this.flash(`${labelOf(id)} hết chỗ rồi`); return; }
-    if (this.stack.length >= CAPACITY) { this.flash("ổ bánh đầy rồi, kẹp không lại"); return; }
+    if (this.stack.length >= CAPACITY) { this.flash("ổ đầy rồi, kẹp không vô nữa"); return; }
     const out = this.canAdd(id, this.stack);
     if (out) { this.flash(out); return; }
     const now = this.scene.time.now;
@@ -416,7 +421,7 @@ export class AssemblyPanel {
       return;
     }
     const dish = this.onPreset(i);
-    if (!dish) { this.presetArm = null; this.flash("preset đó hết phần chia sẵn rồi"); return; }
+    if (!dish) { this.presetArm = null; this.flash("phần chia sẵn đó hết rồi"); return; }
     const probe: Ingredient[] = [];
     for (const id of dish) {
       const out = this.canAdd(id, probe);
@@ -439,7 +444,7 @@ export class AssemblyPanel {
     // đổi chén tàu hũ lấy ổ không, và SK-31 ngày 29 (bắt buộc) có hẳn nhánh "làm đúng ổ
     // bánh mì không". Đơn nào cho phép thì scene nói qua `allowEmptyLoaf`.
     if (!this.stack.length && !this.allowEmptyLoaf()) {
-      this.flash("ổ còn trống — kẹp nhân trước đã");
+      this.flash("ổ còn trống, kẹp nhân trước đã");
       return;
     }
     // Gói liền tay sau miếng cuối = khéo. Ổ chưa đặt miếng nào trong phiên này
@@ -491,7 +496,7 @@ export class AssemblyPanel {
       const n = counts.get(ing.id) ?? 0;
       for (let k = 0; k < n; k++, i++) {
         const x = this.loafImg.x + (i - (total - 1) / 2) * STEP;     // canh giữa lòng máng
-        const img = this.scene.add.image(x, baseY, FOOD.big(ing.id))
+        const img = fitPhoto(this.scene.add.image(x, baseY, FOOD.big(ing.id)))
           .setScrollFactor(0);
         img.setInteractive({ useHandCursor: true });
         img.on("pointerup", () => this.removeOne(ing.id));

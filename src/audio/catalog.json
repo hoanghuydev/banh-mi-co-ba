@@ -1,0 +1,573 @@
+{
+ "a11y_ping_glimpsed": {
+  "bus": "amBao",
+  "desc": "tick go trung tinh cho tro nang (mac dinh TAT)",
+  "files": [
+   "audio/sfx/a11y_ping_glimpsed.0.mp3"
+  ]
+ },
+ "amb_cho": {
+  "bus": "duongPho",
+  "desc": "ambience cho sang — cho Ben Thanh, TP.HCM",
+  "files": [
+   "audio/sfx/amb_cho.0.mp3"
+  ]
+ },
+ "amb_crowd": {
+  "bus": "duongPho",
+  "desc": "tieng nguoi lao xao — giong Viet that (crowdSubMix)",
+  "files": [
+   "audio/sfx/amb_crowd.0.mp3"
+  ]
+ },
+ "amb_hem_chieu": {
+  "bus": "duongPho",
+  "desc": "ambience chieu — duong pho HCMC, dong hon",
+  "files": [
+   "audio/sfx/amb_hem_chieu.0.mp3"
+  ]
+ },
+ "amb_hem_sang": {
+  "bus": "duongPho",
+  "desc": "ambience hem buoi sang — giao thong HCMC that + chim",
+  "files": [
+   "audio/sfx/amb_hem_sang.0.mp3"
+  ]
+ },
+ "amb_hem_trua": {
+  "bus": "duongPho",
+  "desc": "ambience nang dung — ngoai o HCMC, thua xe hon",
+  "files": [
+   "audio/sfx/amb_hem_trua.0.mp3"
+  ]
+ },
+ "amb_mua_mai_ton": {
+  "bus": "duongPho",
+  "desc": "mua tren mai ton",
+  "files": [
+   "audio/sfx/amb_mua_mai_ton.0.mp3"
+  ]
+ },
+ "amb_mua_nen": {
+  "bus": "duongPho",
+  "desc": "mua nen nhe",
+  "files": [
+   "audio/sfx/amb_mua_nen.0.mp3"
+  ]
+ },
+ "amb_toi_nha": {
+  "bus": "duongPho",
+  "desc": "ambience toi trong nha — dem Viet Nam + quat",
+  "files": [
+   "audio/sfx/amb_toi_nha.0.mp3"
+  ]
+ },
+ "sfx_bich_nilon": {
+  "bus": "thaoTac",
+  "desc": "mo / sot soat bich nilon",
+  "files": [
+   "audio/sfx/sfx_bich_nilon.0.mp3",
+   "audio/sfx/sfx_bich_nilon.1.mp3"
+  ]
+ },
+ "sfx_buoc_chan": {
+  "bus": "duongPho",
+  "desc": "buoc chan khach den / di",
+  "files": [
+   "audio/sfx/sfx_buoc_chan.0.mp3",
+   "audio/sfx/sfx_buoc_chan.1.mp3",
+   "audio/sfx/sfx_buoc_chan.2.mp3",
+   "audio/sfx/sfx_buoc_chan.3.mp3"
+  ]
+ },
+ "sfx_buoc_co_ba": {
+  "bus": "thaoTac",
+  "desc": "buoc chan co Ba tren nen xi mang trong quay",
+  "files": [
+   "audio/sfx/sfx_buoc_co_ba.0.mp3",
+   "audio/sfx/sfx_buoc_co_ba.1.mp3",
+   "audio/sfx/sfx_buoc_co_ba.2.mp3",
+   "audio/sfx/sfx_buoc_co_ba.3.mp3",
+   "audio/sfx/sfx_buoc_co_ba.4.mp3",
+   "audio/sfx/sfx_buoc_co_ba.5.mp3"
+  ]
+ },
+ "sfx_chim_se": {
+  "bus": "duongPho",
+  "desc": "chim se",
+  "files": [
+   "audio/sfx/sfx_chim_se.0.mp3",
+   "audio/sfx/sfx_chim_se.1.mp3"
+  ]
+ },
+ "sfx_cho_sua": {
+  "bus": "duongPho",
+  "desc": "cho sua xa",
+  "files": [
+   "audio/sfx/sfx_cho_sua.0.mp3",
+   "audio/sfx/sfx_cho_sua.1.mp3",
+   "audio/sfx/sfx_cho_sua.2.mp3",
+   "audio/sfx/sfx_cho_sua.3.mp3"
+  ]
+ },
+ "sfx_choi_quet": {
+  "bus": "duongPho",
+  "desc": "choi quet san",
+  "files": [
+   "audio/sfx/sfx_choi_quet.0.mp3",
+   "audio/sfx/sfx_choi_quet.1.mp3",
+   "audio/sfx/sfx_choi_quet.2.mp3"
+  ]
+ },
+ "sfx_coi_xe": {
+  "bus": "duongPho",
+  "desc": "coi xe (co gioi han rieng o sfx.ts)",
+  "files": [
+   "audio/sfx/sfx_coi_xe.0.mp3",
+   "audio/sfx/sfx_coi_xe.1.mp3",
+   "audio/sfx/sfx_coi_xe.2.mp3"
+  ]
+ },
+ "sfx_cua_cuon": {
+  "bus": "duongPho",
+  "desc": "cua cuon keo len / ha xuong — am mo dau ngay",
+  "files": [
+   "audio/sfx/sfx_cua_cuon.0.mp3"
+  ]
+ },
+ "sfx_cua_lo": {
+  "bus": "thaoTac",
+  "desc": "cua lo mo / dong",
+  "files": [
+   "audio/sfx/sfx_cua_lo.0.mp3",
+   "audio/sfx/sfx_cua_lo.1.mp3"
+  ]
+ },
+ "sfx_dao_rach": {
+  "bus": "thaoTac",
+  "desc": "dao rach doc o banh",
+  "files": [
+   "audio/sfx/sfx_dao_rach.0.mp3",
+   "audio/sfx/sfx_dao_rach.1.mp3",
+   "audio/sfx/sfx_dao_rach.2.mp3",
+   "audio/sfx/sfx_dao_rach.3.mp3"
+  ]
+ },
+ "sfx_dat_ly": {
+  "bus": "thaoTac",
+  "desc": "dat ly xuong mat ban",
+  "files": [
+   "audio/sfx/sfx_dat_ly.0.mp3",
+   "audio/sfx/sfx_dat_ly.1.mp3",
+   "audio/sfx/sfx_dat_ly.2.mp3"
+  ]
+ },
+ "sfx_dat_thot": {
+  "bus": "thaoTac",
+  "desc": "dat banh / nguyen lieu xuong thot",
+  "files": [
+   "audio/sfx/sfx_dat_thot.0.mp3",
+   "audio/sfx/sfx_dat_thot.1.mp3",
+   "audio/sfx/sfx_dat_thot.2.mp3"
+  ]
+ },
+ "sfx_do_roi_dat": {
+  "bus": "thaoTac",
+  "desc": "o banh / nguyen lieu rot xuong dat — SU KIEN, khong bi tat boi cong tac am bao tieu cuc",
+  "files": [
+   "audio/sfx/sfx_do_roi_dat.0.mp3",
+   "audio/sfx/sfx_do_roi_dat.1.mp3",
+   "audio/sfx/sfx_do_roi_dat.2.mp3",
+   "audio/sfx/sfx_do_roi_dat.3.mp3"
+  ]
+ },
+ "sfx_ga_gay": {
+  "bus": "duongPho",
+  "desc": "ga gay xa — chi TO_MO",
+  "files": [
+   "audio/sfx/sfx_ga_gay.0.mp3",
+   "audio/sfx/sfx_ga_gay.1.mp3",
+   "audio/sfx/sfx_ga_gay.2.mp3"
+  ]
+ },
+ "sfx_goi_giay": {
+  "bus": "thaoTac",
+  "desc": "goi giay bao quanh o banh",
+  "files": [
+   "audio/sfx/sfx_goi_giay.0.mp3",
+   "audio/sfx/sfx_goi_giay.1.mp3",
+   "audio/sfx/sfx_goi_giay.2.mp3",
+   "audio/sfx/sfx_goi_giay.3.mp3"
+  ]
+ },
+ "sfx_keo_ghe": {
+  "bus": "duongPho",
+  "desc": "keo ghe nhua tren nen xi mang",
+  "files": [
+   "audio/sfx/sfx_keo_ghe.0.mp3",
+   "audio/sfx/sfx_keo_ghe.1.mp3"
+  ]
+ },
+ "sfx_kep_gap": {
+  "bus": "thaoTac",
+  "desc": "kep gap kim loai",
+  "files": [
+   "audio/sfx/sfx_kep_gap.0.mp3",
+   "audio/sfx/sfx_kep_gap.1.mp3",
+   "audio/sfx/sfx_kep_gap.2.mp3",
+   "audio/sfx/sfx_kep_gap.3.mp3"
+  ]
+ },
+ "sfx_khet": {
+  "bus": "thaoTac",
+  "desc": "banh chay — khet no lach tach (ganh vai 'co mui' cua BURNT_OR_COLD)",
+  "files": [
+   "audio/sfx/sfx_khet.0.mp3"
+  ]
+ },
+ "sfx_lat_so": {
+  "bus": "thaoTac",
+  "desc": "lat trang so no / so tay",
+  "files": [
+   "audio/sfx/sfx_lat_so.0.mp3",
+   "audio/sfx/sfx_lat_so.1.mp3",
+   "audio/sfx/sfx_lat_so.2.mp3",
+   "audio/sfx/sfx_lat_so.3.mp3"
+  ]
+ },
+ "sfx_lau_khan": {
+  "bus": "thaoTac",
+  "desc": "lau khan len mat xe / thot",
+  "files": [
+   "audio/sfx/sfx_lau_khan.0.mp3",
+   "audio/sfx/sfx_lau_khan.1.mp3",
+   "audio/sfx/sfx_lau_khan.2.mp3",
+   "audio/sfx/sfx_lau_khan.3.mp3"
+  ]
+ },
+ "sfx_lo_bed": {
+  "bus": "thaoTac",
+  "desc": "lo than chay — nen chay vong",
+  "files": [
+   "audio/sfx/sfx_lo_bed.0.mp3",
+   "audio/sfx/sfx_lo_bed.1.mp3"
+  ]
+ },
+ "sfx_mo_tu_mat": {
+  "bus": "thaoTac",
+  "desc": "mo / dong tu mat (ke nguyen lieu)",
+  "files": [
+   "audio/sfx/sfx_mo_tu_mat.0.mp3",
+   "audio/sfx/sfx_mo_tu_mat.1.mp3",
+   "audio/sfx/sfx_mo_tu_mat.2.mp3"
+  ]
+ },
+ "sfx_ngan_keo": {
+  "bus": "thaoTac",
+  "desc": "mo khay tien",
+  "files": [
+   "audio/sfx/sfx_ngan_keo.0.mp3",
+   "audio/sfx/sfx_ngan_keo.1.mp3"
+  ]
+ },
+ "sfx_quat_may": {
+  "bus": "duongPho",
+  "desc": "quat may cu (chay vong)",
+  "files": [
+   "audio/sfx/sfx_quat_may.0.mp3"
+  ]
+ },
+ "sfx_quet_pate": {
+  "bus": "thaoTac",
+  "desc": "quet pate len ruot banh",
+  "files": [
+   "audio/sfx/sfx_quet_pate.0.mp3",
+   "audio/sfx/sfx_quet_pate.1.mp3",
+   "audio/sfx/sfx_quet_pate.2.mp3"
+  ]
+ },
+ "sfx_rac_tieu": {
+  "bus": "thaoTac",
+  "desc": "rac muoi tieu",
+  "files": [
+   "audio/sfx/sfx_rac_tieu.0.mp3",
+   "audio/sfx/sfx_rac_tieu.1.mp3"
+  ]
+ },
+ "sfx_rot_tra_da": {
+  "bus": "thaoTac",
+  "desc": "rot tra da, da va thanh ly — am cua CARED_FOR_THEM",
+  "files": [
+   "audio/sfx/sfx_rot_tra_da.0.mp3",
+   "audio/sfx/sfx_rot_tra_da.1.mp3",
+   "audio/sfx/sfx_rot_tra_da.2.mp3",
+   "audio/sfx/sfx_rot_tra_da.3.mp3"
+  ]
+ },
+ "sfx_rua_tay": {
+  "bus": "thaoTac",
+  "desc": "rua tay o bon — nen chay vong trong luc giu phim",
+  "files": [
+   "audio/sfx/sfx_rua_tay.0.mp3",
+   "audio/sfx/sfx_rua_tay.1.mp3"
+  ]
+ },
+ "sfx_ruoi": {
+  "bus": "duongPho",
+  "desc": "ruoi bay — chi so do ban cua quay, dang nghe duoc",
+  "files": [
+   "audio/sfx/sfx_ruoi.0.mp3",
+   "audio/sfx/sfx_ruoi.1.mp3"
+  ]
+ },
+ "sfx_ruoi_sot": {
+  "bus": "thaoTac",
+  "desc": "ruoi nuoc sot",
+  "files": [
+   "audio/sfx/sfx_ruoi_sot.0.mp3",
+   "audio/sfx/sfx_ruoi_sot.1.mp3",
+   "audio/sfx/sfx_ruoi_sot.2.mp3"
+  ]
+ },
+ "sfx_than_no": {
+  "bus": "thaoTac",
+  "desc": "than no lach tach",
+  "files": [
+   "audio/sfx/sfx_than_no.0.mp3",
+   "audio/sfx/sfx_than_no.1.mp3",
+   "audio/sfx/sfx_than_no.2.mp3",
+   "audio/sfx/sfx_than_no.3.mp3"
+  ]
+ },
+ "sfx_thung_rac": {
+  "bus": "thaoTac",
+  "desc": "bo do vao thung rac",
+  "files": [
+   "audio/sfx/sfx_thung_rac.0.mp3",
+   "audio/sfx/sfx_thung_rac.1.mp3"
+  ]
+ },
+ "sfx_tien_le": {
+  "bus": "thaoTac",
+  "desc": "dua / dem tien giay",
+  "files": [
+   "audio/sfx/sfx_tien_le.0.mp3",
+   "audio/sfx/sfx_tien_le.1.mp3",
+   "audio/sfx/sfx_tien_le.2.mp3",
+   "audio/sfx/sfx_tien_le.3.mp3"
+  ]
+ },
+ "sfx_viet_but": {
+  "bus": "thaoTac",
+  "desc": "viet but bi len giay — canh toi, so tay",
+  "files": [
+   "audio/sfx/sfx_viet_but.0.mp3",
+   "audio/sfx/sfx_viet_but.1.mp3",
+   "audio/sfx/sfx_viet_but.2.mp3"
+  ]
+ },
+ "sfx_vo_gion": {
+  "bus": "thaoTac",
+  "desc": "vo banh nut / bop nghe gion",
+  "files": [
+   "audio/sfx/sfx_vo_gion.0.mp3",
+   "audio/sfx/sfx_vo_gion.1.mp3",
+   "audio/sfx/sfx_vo_gion.2.mp3",
+   "audio/sfx/sfx_vo_gion.3.mp3"
+  ]
+ },
+ "sfx_xe_may_qua": {
+  "bus": "duongPho",
+  "desc": "xe may chay qua",
+  "files": [
+   "audio/sfx/sfx_xe_may_qua.0.mp3",
+   "audio/sfx/sfx_xe_may_qua.1.mp3",
+   "audio/sfx/sfx_xe_may_qua.2.mp3",
+   "audio/sfx/sfx_xe_may_qua.3.mp3"
+  ]
+ },
+ "sfx_xu": {
+  "bus": "thaoTac",
+  "desc": "tien xu le",
+  "files": [
+   "audio/sfx/sfx_xu.0.mp3",
+   "audio/sfx/sfx_xu.1.mp3",
+   "audio/sfx/sfx_xu.2.mp3"
+  ]
+ },
+ "ui_autosave": {
+  "bus": "amBao",
+  "desc": "autosave — rat nhe",
+  "files": [
+   "audio/sfx/ui_autosave.0.mp3"
+  ]
+ },
+ "ui_chon_nguyen_lieu": {
+  "bus": "amBao",
+  "desc": "chon nguyen lieu (tap-to-place)",
+  "files": [
+   "audio/sfx/ui_chon_nguyen_lieu.0.mp3",
+   "audio/sfx/ui_chon_nguyen_lieu.1.mp3"
+  ]
+ },
+ "ui_chot_don": {
+  "bus": "amBao",
+  "desc": "chot don (sau buoc xac nhan)",
+  "files": [
+   "audio/sfx/ui_chot_don.0.mp3"
+  ]
+ },
+ "ui_chuyen_ngay": {
+  "bus": "amBao",
+  "desc": "chuyen sang ngay moi",
+  "files": [
+   "audio/sfx/ui_chuyen_ngay.0.mp3"
+  ]
+ },
+ "ui_click": {
+  "bus": "amBao",
+  "desc": "click nut",
+  "files": [
+   "audio/sfx/ui_click.0.mp3",
+   "audio/sfx/ui_click.1.mp3",
+   "audio/sfx/ui_click.2.mp3"
+  ]
+ },
+ "ui_click_go": {
+  "bus": "amBao",
+  "desc": "click go trung tinh — ban thay cho ui_khong_hop_le",
+  "files": [
+   "audio/sfx/ui_click_go.0.mp3",
+   "audio/sfx/ui_click_go.1.mp3"
+  ]
+ },
+ "ui_dat_thanh_cong": {
+  "bus": "amBao",
+  "desc": "dat hop le",
+  "files": [
+   "audio/sfx/ui_dat_thanh_cong.0.mp3",
+   "audio/sfx/ui_dat_thanh_cong.1.mp3"
+  ]
+ },
+ "ui_dong_menu": {
+  "bus": "amBao",
+  "desc": "dong menu",
+  "files": [
+   "audio/sfx/ui_dong_menu.0.mp3"
+  ]
+ },
+ "ui_khong_hop_le": {
+  "bus": "amBao",
+  "desc": "thao tac khong hop le (TAT duoc)",
+  "files": [
+   "audio/sfx/ui_khong_hop_le.0.mp3",
+   "audio/sfx/ui_khong_hop_le.1.mp3"
+  ]
+ },
+ "ui_mo_menu": {
+  "bus": "amBao",
+  "desc": "mo menu",
+  "files": [
+   "audio/sfx/ui_mo_menu.0.mp3"
+  ]
+ },
+ "ui_mo_so_tay": {
+  "bus": "amBao",
+  "desc": "mo so tay",
+  "files": [
+   "audio/sfx/ui_mo_so_tay.0.mp3"
+  ]
+ },
+ "ui_ngay_am_tien": {
+  "bus": "amBao",
+  "desc": "doanh thu ngay am (TAT duoc -> im lang)",
+  "files": [
+   "audio/sfx/ui_ngay_am_tien.0.mp3"
+  ]
+ },
+ "ui_qr_beep": {
+  "bus": "amBao",
+  "desc": "beep may QR",
+  "files": [
+   "audio/sfx/ui_qr_beep.0.mp3",
+   "audio/sfx/ui_qr_beep.1.mp3"
+  ]
+ },
+ "vox_a_ra": {
+  "bus": "giongNPC",
+  "desc": "'A…' / 'Ua…' — bark tier-3",
+  "files": [
+   "audio/sfx/vox_a_ra.0.mp3",
+   "audio/sfx/vox_a_ra.1.mp3",
+   "audio/sfx/vox_a_ra.2.mp3",
+   "audio/sfx/vox_a_ra.3.mp3"
+  ]
+ },
+ "vox_blip": {
+  "bus": "giongNPC",
+  "desc": "am tiet ngan tu 12 giong nguoi that — thoai kieu chibi, TAM cho toi khi co VO",
+  "files": [
+   "audio/sfx/vox_blip.0.mp3",
+   "audio/sfx/vox_blip.1.mp3",
+   "audio/sfx/vox_blip.2.mp3",
+   "audio/sfx/vox_blip.3.mp3",
+   "audio/sfx/vox_blip.4.mp3",
+   "audio/sfx/vox_blip.5.mp3",
+   "audio/sfx/vox_blip.6.mp3",
+   "audio/sfx/vox_blip.7.mp3",
+   "audio/sfx/vox_blip.8.mp3",
+   "audio/sfx/vox_blip.9.mp3",
+   "audio/sfx/vox_blip.10.mp3",
+   "audio/sfx/vox_blip.11.mp3"
+  ]
+ },
+ "vox_chep_mieng": {
+  "bus": "giongNPC",
+  "desc": "chep mieng — rat Viet Nam",
+  "files": [
+   "audio/sfx/vox_chep_mieng.0.mp3",
+   "audio/sfx/vox_chep_mieng.1.mp3",
+   "audio/sfx/vox_chep_mieng.2.mp3",
+   "audio/sfx/vox_chep_mieng.3.mp3"
+  ]
+ },
+ "vox_cuoi_nhe": {
+  "bus": "giongNPC",
+  "desc": "cuoi nhe",
+  "files": [
+   "audio/sfx/vox_cuoi_nhe.0.mp3",
+   "audio/sfx/vox_cuoi_nhe.1.mp3",
+   "audio/sfx/vox_cuoi_nhe.2.mp3",
+   "audio/sfx/vox_cuoi_nhe.3.mp3"
+  ]
+ },
+ "vox_hm_glimpsed": {
+  "bus": "giongNPC",
+  "desc": "tieng 'hm?' rat nhe — tin hieu GLIMPSED",
+  "files": [
+   "audio/sfx/vox_hm_glimpsed.0.mp3",
+   "audio/sfx/vox_hm_glimpsed.1.mp3",
+   "audio/sfx/vox_hm_glimpsed.2.mp3",
+   "audio/sfx/vox_hm_glimpsed.3.mp3"
+  ]
+ },
+ "vox_hum": {
+  "bus": "giongNPC",
+  "desc": "'Hum.' — luoi an toan bark tier-3",
+  "files": [
+   "audio/sfx/vox_hum.0.mp3",
+   "audio/sfx/vox_hum.1.mp3",
+   "audio/sfx/vox_hum.2.mp3"
+  ]
+ },
+ "vox_tho_dai": {
+  "bus": "giongNPC",
+  "desc": "tho dai",
+  "files": [
+   "audio/sfx/vox_tho_dai.0.mp3",
+   "audio/sfx/vox_tho_dai.1.mp3",
+   "audio/sfx/vox_tho_dai.2.mp3",
+   "audio/sfx/vox_tho_dai.3.mp3"
+  ]
+ }
+}

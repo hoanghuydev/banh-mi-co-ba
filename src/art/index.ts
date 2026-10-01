@@ -26,14 +26,37 @@ export {
   textureFor, buildBody, holdAnchor, BODY_H, PLAYER_STYLE,
   type BodyStyle, type Pose,
 } from "./character";
-export { HELD } from "./held";
+export { HELD, heldTexture, heldFootPad, type HeldLook } from "./held";
+export { opaqueBox, opaqueEdges, spriteEdges, type Edges, type OpaqueBox, type SpriteBox } from "./opaque";
 export { createSign } from "./sign";
 export { FX } from "./fx";
 export { TILE, BUILD, COUNTER, PROP };
 
-/** Ảnh thật của artist. Gọi trong `preload()` của scene nào dựng cảnh. */
+/**
+ * Icon vector của HUD (sinh bởi `tools/make-icons.ts`, xem `npm run icons`).
+ *
+ * SVG chứ không phải PNG: khung 1024×576 được Phaser FIT phóng lên full-HD, icon PNG
+ * đúng cỡ sẽ nhoè. Nướng ở GẤP ĐÔI cỡ hiển thị rồi thu lại — Phaser rasterise SVG đúng
+ * một lần lúc tải, không phải mỗi frame, nên to hơn không tốn gì lúc chạy.
+ */
+export const ICON = { eyeInk: "icon:eye-ink", eyeRed: "icon:eye-red" } as const;
+const SVGS: Record<string, { file: string; w: number; h: number }> = {
+  [ICON.eyeInk]: { file: "art/eye-ink.svg", w: 144, h: 88 },
+  [ICON.eyeRed]: { file: "art/eye-red.svg", w: 144, h: 88 },
+};
+const askedSvg = new Set<string>();
+
+/** Ảnh thật của artist + icon HUD. Gọi trong `preload()` của scene nào dựng cảnh. */
 export function preloadArt(scene: Phaser.Scene) {
   preloadPhotos(scene);
+  // Cùng lý do với `preloadPhotos`: StallScene dựng lại mỗi ngày, mà lúc lượt tải còn
+  // đang bay thì `textures.exists` vẫn false — xin tải hai lần là Phaser chửi
+  // "Texture key already in use". Một cái tên chỉ được xin đúng một lần cho cả ván.
+  for (const [key, svg] of Object.entries(SVGS)) {
+    if (askedSvg.has(key) || scene.textures.exists(key)) continue;
+    askedSvg.add(key);
+    scene.load.svg(key, svg.file, { width: svg.w, height: svg.h });
+  }
 }
 
 export function buildTextures(scene: Phaser.Scene) {
