@@ -1,0 +1,162 @@
+{
+  "_note": "Thầy Phúc — giáo viên hưu trí, 68 tuổi. soi 0,8 nongTinh 0,2: để ý kỹ mà không bao giờ gắt. Gọi người chơi 'con', tự xưng 'thầy'. Cà phê phin cực đoan (cân tiểu ly 22 gam), đạp xe 40 km cuối tuần. Thầy KHÔNG hóng drama — ai kể chuyện người khác là thầy lái đi chỗ khác. Thầy nói ít, nói chậm, và hay hỏi ngược lại.",
+  "talks": [
+    {
+      "id": "phuc.caphe",
+      "npc": "THAY_PHUC",
+      "topic": "caphe",
+      "when": { "day": [3, 40] },
+      "opener": "Con pha cà phê hả? Thầy ngửi thấy mùi từ đầu hẻm.",
+      "weight": 11,
+      "shared": {
+        "ket": [
+          { "say": "Dạ bữa nào thầy chỉ con pha đi thầy.", "tone": "AM", "rel": 3, "flag": "phucDayPha", "reply": "Được. Mà con phải chịu khó cân. Không cân thì đừng pha." },
+          { "say": "Dạ con làm tiếp đây thầy.", "tone": "THUONG", "reply": "Ừ. Thầy đứng thầy ngửi ké thôi." }
+        ]
+      },
+      "tree": [
+        {
+          "say": "Dạ con pha vội thôi thầy, hổng có ngon đâu.",
+          "tone": "THUONG",
+          "rel": 1,
+          "reply": "Vội thì vội. Nhưng con có cân không? Hai mươi hai gam. Không hơn không kém.",
+          "then": [
+            {
+              "say": "Hai mươi hai gam lận hả thầy?",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Ừ. Thầy có cái cân tiểu ly. Vợ thầy nói thầy khùng. Mà thầy uống thầy biết.",
+              "then": [
+                { "say": "Thầy cân cà phê mà vợ thầy chịu nổi hả thầy.", "tone": "DUA", "rel": 3, "reply": "Bà ấy chịu bốn mươi năm rồi con. Chắc quen." },
+                { "say": "Khác nhiều hông thầy, hai mươi với hai mươi hai?", "tone": "AM", "rel": 3, "mem": { "kind": "REMEMBERED_STORY", "intensity": 40 }, "reply": "Khác chớ. Người ta nói thầy tưởng tượng. Thầy kệ. Thầy uống cho thầy mà." },
+                { "say": "Dạ con thấy cũng vậy thôi thầy.", "tone": "THANG", "rel": -1, "reply": "Ừ. Mỗi người một kiểu, con à." },
+                { "say": "Thầy rảnh quá thầy ơi.", "tone": "GAT", "rel": -4, "anger": 20, "mem": { "kind": "RUDE_TO_THEM", "intensity": 50 }, "silent": true }
+              ]
+            },
+            { "say": "Dạ con đong bằng muỗng hà thầy.", "tone": "THUONG", "rel": 1, "reply": "Muỗng thì bữa đậm bữa lạt. Con biết vậy là được rồi.", "ref": "ket" },
+            { "say": "Thầy kỹ ghê thầy.", "tone": "AM", "rel": 2, "reply": "Già rồi, còn mỗi cái đó để kỹ.", "ref": "ket" }
+          ]
+        },
+        {
+          "say": "Thầy uống thử một ly đi thầy, con mời.",
+          "tone": "AM",
+          "rel": 3,
+          "mem": { "kind": "CARED_FOR_THEM", "intensity": 45 },
+          "reply": "Ừ… thầy uống. Mà thầy nói trước, thầy khó tính lắm nghen.",
+          "then": [
+            { "say": "Dạ thầy chê thẳng đi thầy, con sửa.", "tone": "THANG", "rel": 3, "reply": "Đậm quá. Mà được. Lần sau bớt một muỗng." },
+            { "say": "Thầy chê là con hổng mời nữa đó thầy.", "tone": "DUA", "rel": 2, "reply": "Vậy thầy khen. Ngon. Ha." },
+            { "say": "Dạ thầy uống đi thầy.", "tone": "THUONG", "reply": "Ừ." }
+          ]
+        },
+        {
+          "say": "Dạ con đang bận thầy ơi.",
+          "tone": "LANH",
+          "rel": -1,
+          "reply": "Ừ. Con làm đi. Thầy đứng đây được."
+        }
+      ]
+    },
+    {
+      "id": "phuc.hocsinh",
+      "npc": "THAY_PHUC",
+      "topic": "hocsinh",
+      "when": { "day": [9, 40], "minVisits": 4 },
+      "opener": "Hôm qua có đứa học trò cũ nhắn tin cho thầy. Ba mươi năm rồi.",
+      "initiates": 0.2,
+      "ignore": { "reply": "Ừ. Chuyện cũ, kể làm gì.", "rel": -2 },
+      "shared": {
+        "ket": [
+          { "say": "Thầy kể con nghe nữa đi thầy.", "tone": "AM", "rel": 3, "reply": "Thôi. Để bữa khác. Con còn bán hàng." },
+          { "say": "Dạ hay quá thầy.", "tone": "THUONG", "rel": 1, "reply": "Ừ." }
+        ]
+      },
+      "tree": [
+        {
+          "say": "Nó nhắn gì hả thầy?",
+          "tone": "AM",
+          "rel": 3,
+          "reply": "Nó nói nhờ thầy mà nó không bỏ học. Thầy đọc xong thầy ngồi im nửa tiếng.",
+          "then": [
+            {
+              "say": "Thầy có nhớ nó hông thầy?",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "Không. Thầy dạy ba mươi mấy năm, mấy ngàn đứa. Thầy không nhớ nổi.",
+              "then": [
+                { "say": "Vậy chắc thầy buồn hả thầy?", "tone": "AM", "rel": 3, "mem": { "kind": "REMEMBERED_STORY", "intensity": 50 }, "reply": "Ừ. Mình quên mà người ta nhớ. Thấy mình mắc nợ sao đó con." },
+                { "say": "Thầy làm gì cho nó mà nó nhớ dữ vậy thầy?", "tone": "AM", "rel": 3, "reply": "Nó nói thầy cho nó mượn tiền đóng học phí. Thầy không nhớ luôn." },
+                { "say": "Thầy nhắn lại chưa thầy?", "tone": "THUONG", "rel": 2, "reply": "Chưa. Thầy không biết viết gì. Viết 'thầy nhớ con' thì thầy nói dối." },
+                { "say": "Chuyện nhỏ mà thầy, nghĩ chi cho mệt.", "tone": "LANH", "rel": -2, "reply": "Ừ. Với con thì nhỏ." }
+              ]
+            },
+            { "say": "Thầy cứ nhắn thiệt đi thầy. Quên thì nói quên.", "tone": "THANG", "rel": 4, "mem": { "kind": "CARED_FOR_THEM", "intensity": 50 }, "flag": "phucNhanLai", "reply": "…Ừ. Nói thật thì không bao giờ sai. Thầy quên mất điều đó." },
+            { "say": "Ba mươi năm mà còn nhớ thầy, thầy giỏi thiệt.", "tone": "AM", "rel": 3, "reply": "Không phải giỏi đâu con. Chỉ là lúc đó thầy rảnh hơn bây giờ.", "ref": "ket" }
+          ]
+        },
+        {
+          "say": "Dạ ba mươi năm lận hả thầy?",
+          "tone": "THUONG",
+          "rel": 1,
+          "reply": "Ừ. Lúc thầy dạy nó, nó bằng bé Su bây giờ.",
+          "then": [
+            { "say": "Giờ nó làm gì hả thầy?", "tone": "AM", "rel": 2, "reply": "Nó nói nó dạy học. Ở Cần Thơ.", "ref": "ket" },
+            { "say": "Dạ.", "tone": "LANH", "rel": -1, "silent": true }
+          ]
+        },
+        {
+          "say": "Dạ con đang đông khách thầy ơi.",
+          "tone": "LANH",
+          "rel": -2,
+          "reply": "Ừ, thầy xin lỗi. Thầy đứng thầy đợi."
+        }
+      ]
+    },
+    {
+      "id": "phuc.khongnoi",
+      "npc": "THAY_PHUC",
+      "topic": "drama",
+      "when": { "day": [11, 40] },
+      "opener": "Thầy nghe nói bên kia hẻm có chuyện gì phải không con?",
+      "weight": 9,
+      "tree": [
+        {
+          "say": "Dạ cô Mai có kể con nghe đó thầy.",
+          "tone": "THUONG",
+          "reply": "Ừ. Thôi con đừng kể lại thầy nghe. Thầy hỏi là thầy sai rồi.",
+          "then": [
+            { "say": "Dạ. Con cũng thấy kỳ khi nghe thầy.", "tone": "AM", "rel": 4, "mem": { "kind": "CARED_FOR_THEM", "intensity": 50 }, "reply": "Ừ. Cái gì mình nghe mà thấy kỳ thì đừng kể lại. Nhớ nghen con." },
+            { "say": "Thầy hỏi rồi thầy không nghe, kỳ ghê thầy.", "tone": "DUA", "rel": 1, "reply": "Ha. Thầy cũng là người mà con." },
+            { "say": "Dạ con kể thầy nghe nè thầy.", "tone": "THANG", "rel": -2, "reply": "Thôi con. Thầy không muốn biết nữa." }
+          ]
+        },
+        {
+          "say": "Dạ con hổng biết gì đâu thầy.",
+          "tone": "AM",
+          "rel": 3,
+          "reply": "Vậy tốt. Thầy hỏi vậy thôi, thầy cũng không nên hỏi.",
+          "then": [
+            { "say": "Thầy hỏi cũng bình thường mà thầy.", "tone": "THUONG", "rel": 1, "reply": "Ừ. Bình thường. Mà bình thường quá nên mới phiền người ta." },
+            { "say": "Dạ.", "tone": "LANH", "reply": "Ừ." }
+          ]
+        },
+        {
+          "say": "Dạ chuyện đó con hổng muốn nhắc thầy ơi.",
+          "tone": "LANH",
+          "rel": 1,
+          "reply": "Ừ. Vậy là con hơn thầy rồi đó."
+        },
+        {
+          "say": "Thầy mà cũng hóng chuyện hả thầy.",
+          "tone": "DUA",
+          "rel": 1,
+          "reply": "…Ừ. Con nói đúng. Thầy quê rồi đó.",
+          "then": [
+            { "say": "Con giỡn thôi thầy.", "tone": "AM", "rel": 2, "reply": "Thầy biết. Mà con nói đúng thật." },
+            { "say": "Thầy giáo mà vậy đó thầy.", "tone": "GAT", "rel": -4, "anger": 20, "mem": { "kind": "RUDE_TO_THEM", "intensity": 55 }, "silent": true }
+          ]
+        }
+      ]
+    }
+  ]
+}

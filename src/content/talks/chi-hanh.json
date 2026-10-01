@@ -1,0 +1,167 @@
+{
+  "_note": "Chị Hạnh — người Bắc mới vô Sài Gòn. ĐƯỢC MIỄN luật giọng Bắc (L008): 'vào', 'bát', 'mẹ', 'bố', 'thế', 'nhé', 'đấy' là ĐẶC ĐIỂM NHÂN VẬT, không phải lỗi. Lời NGƯỜI CHƠI thì vẫn giọng Nam. Gọi người chơi 'em', tự xưng 'chị'. Sưu tầm và sửa máy ảnh film, tự tráng đen trắng trong nhà tắm — chụp rồi cất, không đăng. Ngày 8 bị khách vãng lai nhại giọng (SK-18), nên chuyện giọng là chỗ đau.",
+  "talks": [
+    {
+      "id": "hanh.giong",
+      "npc": "CHI_HANH",
+      "topic": "giong",
+      "when": { "day": [4, 40] },
+      "opener": "Em ơi, chị nói thế này người trong đây có hiểu không em?",
+      "weight": 12,
+      "shared": {
+        "ket": [
+          { "say": "Chị nói sao cũng được chị. Em hiểu hết.", "tone": "AM", "rel": 3, "reply": "Thế thì chị yên tâm. Cảm ơn em nhé." },
+          { "say": "Dạ ổ chị đây chị.", "tone": "THUONG", "reply": "Vâng. Cảm ơn em." }
+        ]
+      },
+      "tree": [
+        {
+          "say": "Dạ em hiểu hết mà chị.",
+          "tone": "AM",
+          "rel": 2,
+          "reply": "Thật à? Hôm qua chị gọi 'bát' người ta nhìn chị như người ngoài hành tinh.",
+          "then": [
+            {
+              "say": "Trong này kêu là chén chị ơi.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "Chén. Ừ, chén. Chị ghi vào sổ rồi mà cứ quên.",
+              "then": [
+                { "say": "Chị ghi vô sổ luôn hả chị?", "tone": "AM", "rel": 3, "mem": { "kind": "REMEMBERED_STORY", "intensity": 45 }, "reply": "Có chứ. Chị ghi được bốn chục từ rồi đấy. Buồn cười lắm." },
+                { "say": "Chị cứ nói giọng chị đi, mắc gì phải đổi.", "tone": "THANG", "rel": 3, "reply": "…Ừ. Em nói thế chị nhẹ cả người." },
+                { "say": "Chị ở đây lâu rồi quen hà chị.", "tone": "THUONG", "rel": 1, "reply": "Vâng. Chị cũng mong thế." },
+                { "say": "Chị nói vậy ai mà hiểu được chị.", "tone": "GAT", "rel": -5, "anger": 30, "mem": { "kind": "RUDE_TO_THEM", "intensity": 70 }, "silent": true }
+              ]
+            },
+            { "say": "Người ta nhìn vậy thôi chớ hổng có ý gì đâu chị.", "tone": "AM", "rel": 2, "reply": "Chị biết. Mà đứng giữa chợ bị nhìn thế cũng ngại em ạ.", "ref": "ket" },
+            { "say": "Chị vô đây lâu chưa chị?", "tone": "THUONG", "rel": 1, "reply": "Bảy tháng. Chị vẫn chưa quen được cái nắng.", "ref": "ket" }
+          ]
+        },
+        {
+          "say": "Dạ có mấy từ em hổng hiểu chị à.",
+          "tone": "THANG",
+          "rel": 1,
+          "reply": "Ừ chị biết. Em cứ nói chị, chị đổi.",
+          "then": [
+            { "say": "Chị khỏi đổi. Em học từ của chị cũng được mà.", "tone": "AM", "rel": 4, "mem": { "kind": "CARED_FOR_THEM", "intensity": 55 }, "flag": "hanhGiuGiong", "reply": "…Em là người đầu tiên nói với chị câu đó đấy." },
+            { "say": "Dạ chị nói chậm chậm là em hiểu chị.", "tone": "THUONG", "rel": 1, "reply": "Ừ. Chị nói nhanh quá hả. Chị sửa.", "ref": "ket" },
+            { "say": "Dạ.", "tone": "LANH", "rel": -1, "silent": true }
+          ]
+        },
+        {
+          "say": "Dạ em đang làm chị ơi.",
+          "tone": "LANH",
+          "rel": -2,
+          "reply": "Vâng. Xin lỗi em."
+        }
+      ]
+    },
+    {
+      "id": "hanh.mayanh",
+      "npc": "CHI_HANH",
+      "topic": "mayanh",
+      "when": { "day": [10, 40], "minVisits": 4 },
+      "opener": "Em có thấy chị cầm cái máy ảnh cũ hôm thứ Bảy không?",
+      "weight": 10,
+      "tree": [
+        {
+          "say": "Có chị. Máy phim hả chị?",
+          "tone": "AM",
+          "rel": 3,
+          "reply": "Ừ. Chị sửa máy cũ. Cái đấy chị nhặt ở chợ Nhật Tảo, hỏng tiệt.",
+          "then": [
+            {
+              "say": "Chị tự sửa được luôn hả chị?",
+              "tone": "AM",
+              "rel": 3,
+              "mem": { "kind": "REMEMBERED_STORY", "intensity": 50 },
+              "reply": "Được. Chị tháo hết ra, lau, lắp lại. Có cái mất ba tháng.",
+              "then": [
+                { "say": "Chị chụp rồi chị đăng ở đâu chị?", "tone": "THUONG", "rel": 1, "reply": "Chị không đăng. Chị tráng ra rồi chị cất. Chỉ chị xem thôi." },
+                { "say": "Ủa sao chị không cho ai coi hết chị?", "tone": "AM", "rel": 3, "reply": "…Chị chụp cho chị. Đăng lên là nó thành của người khác mất rồi." },
+                { "say": "Chị chụp cái xe của em một tấm đi chị.", "tone": "AM", "rel": 4, "flag": "hanhChupXe", "mem": { "kind": "CARED_FOR_THEM", "intensity": 50 }, "reply": "Thật à? Thế thì để chị chụp. Chị thích cái xe này lâu rồi." },
+                { "say": "Chụp rồi cất thì chụp chi vậy chị.", "tone": "THANG", "rel": -2, "reply": "…Ừ. Nhiều người hỏi chị thế lắm." }
+              ]
+            },
+            { "say": "Chị tráng phim ở đâu chị?", "tone": "THUONG", "rel": 1, "reply": "Chị tự tráng. Trong nhà tắm, tối om. Nhà trọ chị bé lắm em." },
+            { "say": "Dạ em hổng rành máy ảnh chị ơi.", "tone": "LANH", "reply": "Vâng. Chị nói nhiều quá." }
+          ]
+        },
+        {
+          "say": "Em có thấy mà em tưởng máy hư chị.",
+          "tone": "DUA",
+          "rel": 1,
+          "reply": "Hỏng thật đấy. Chị mua về chị sửa mà.",
+          "then": [
+            { "say": "Chị hay ghê chị.", "tone": "AM", "rel": 3, "reply": "Có gì đâu em. Chị làm cho đỡ nhớ nhà thôi." },
+            { "say": "Chị mua đồ hư chi cho mất công chị.", "tone": "THANG", "rel": -1, "reply": "Vì đồ lành thì đắt, em ạ. Với lại sửa được nó vui." }
+          ]
+        },
+        {
+          "say": "Dạ em hổng để ý chị à.",
+          "tone": "LANH",
+          "rel": -1,
+          "reply": "Vâng. Không sao đâu em."
+        }
+      ]
+    },
+    {
+      "id": "hanh.nhonha",
+      "npc": "CHI_HANH",
+      "topic": "nhonha",
+      "when": { "day": [12, 40], "minVisits": 5 },
+      "opener": "Em ạ… hôm nay mẹ chị gọi. Chị nghe xong chị không nói được câu nào.",
+      "initiates": 0.2,
+      "ignore": { "reply": "Vâng… thôi chị không kể nữa.", "rel": -3 },
+      "shared": {
+        "ket": [
+          { "say": "Chị ăn đi chị, nguội mất.", "tone": "THUONG", "rel": 1, "reply": "Vâng. Cảm ơn em." },
+          { "say": "Bữa nào chị kể em nghe tiếp nghen chị.", "tone": "AM", "rel": 3, "reply": "Ừ. Chị kể em nghe chị thấy đỡ thật đấy." }
+        ]
+      },
+      "tree": [
+        {
+          "say": "Bác có sao hông chị?",
+          "tone": "AM",
+          "rel": 3,
+          "reply": "Không sao. Bà ấy chỉ hỏi chị ăn uống thế nào. Thế mà chị nghẹn.",
+          "then": [
+            {
+              "say": "Chị nhớ nhà hả chị?",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "Ừ. Mà chị không dám nói. Nói là mẹ chị lại bảo chị về.",
+              "then": [
+                { "say": "Chị về chơi mấy bữa đi chị.", "tone": "AM", "rel": 3, "reply": "Vé máy bay đắt lắm em. Với lại về rồi chị lại không muốn đi nữa.", "ref": "ket" },
+                { "say": "Chị khóc được thì chị khóc đi chị.", "tone": "AM", "rel": 4, "mem": { "kind": "CARED_FOR_THEM", "intensity": 60 }, "reply": "…Thôi em. Chị khóc ở đây thì ngại chết." },
+                { "say": "Ai xa nhà cũng vậy hết chị ơi.", "tone": "THUONG", "reply": "Ừ. Chị biết. Biết mà vẫn thế.", "ref": "ket" },
+                { "say": "Vậy chị về quê đi, ở đây chi cho khổ.", "tone": "THANG", "rel": -3, "reply": "…Em nói nghe dễ nhỉ." }
+              ]
+            },
+            { "say": "Chị kể em nghe nè, em nghe được mà.", "tone": "AM", "rel": 3, "reply": "Ừ… chị cũng chẳng có ai để kể ở đây cả.", "ref": "ket" },
+            { "say": "Dạ.", "tone": "LANH", "rel": -2, "silent": true }
+          ]
+        },
+        {
+          "say": "Dạ chị đứng nghỉ chút đi chị.",
+          "tone": "AM",
+          "rel": 3,
+          "mem": { "kind": "CARED_FOR_THEM", "intensity": 45 },
+          "reply": "Vâng… chị đứng một tí thôi.",
+          "then": [
+            { "say": "Chị đứng bao lâu cũng được chị.", "tone": "AM", "rel": 3, "reply": "Cảm ơn em. Thật đấy." },
+            { "say": "Dạ.", "tone": "LANH", "silent": true }
+          ]
+        },
+        {
+          "say": "Chị kể chuyện nhà chi với em vậy chị.",
+          "tone": "GAT",
+          "rel": -6,
+          "anger": 30,
+          "mem": { "kind": "RUDE_TO_THEM", "intensity": 75 },
+          "silent": true
+        }
+      ]
+    }
+  ]
+}

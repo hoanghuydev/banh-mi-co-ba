@@ -49,13 +49,17 @@ import type { TimeBand } from "../core/clock";
  *   DUA    giỡn, chọc — hợp người này thì ăn, trật người thì mất điểm
  *   THANG  nói thẳng, không vòng vo — không hỗn, nhưng không dịu
  *   LANH   lạnh, cho qua chuyện
- *   GAT    gắt, hỗn, chửi — luôn có giá
+ *   GAT    gắt với CHÍNH người đang đứng đây — hỗn, chửi vô mặt. LUÔN có giá.
+ *   CHUI   chửi NGƯỜI THỨ BA cùng với họ ("thằng đó mất dạy thiệt"). KHÔNG phải GAT:
+ *          với ông Hải thì đây là bắt được tần số, với chị Lan thì đây là mất điểm.
+ *          Nó không bao giờ trung tính — người ta luôn thấy mình vừa nghe thấy gì.
  *   IM     không nói gì
  */
-export type TalkTone = "AM" | "THUONG" | "DUA" | "THANG" | "LANH" | "GAT" | "IM";
+export type TalkTone = "AM" | "THUONG" | "DUA" | "THANG" | "LANH" | "GAT" | "CHUI" | "IM";
 
 export const TONE_LABEL: Record<TalkTone, string> = {
-  AM: "ấm", THUONG: "thường", DUA: "giỡn", THANG: "thẳng", LANH: "lạnh", GAT: "gắt", IM: "im",
+  AM: "ấm", THUONG: "thường", DUA: "giỡn", THANG: "thẳng",
+  LANH: "lạnh", GAT: "gắt", CHUI: "chửi đổng", IM: "im",
 };
 
 /** Cây sâu quá ngần này là viết lỗi (hoặc `ref` quay vòng) — runtime cắt, test bắt. */
@@ -173,7 +177,14 @@ export const ADDRESS: Record<string, Address> = {
 };
 
 /**
- * Đại từ CẤM trong lời của từng người (lưới L-5 của test).
+ * Khách vãng lai không có MỘT vai cố định: hôm nay là "anh chạy xe", mai là "bà cụ",
+ * mốt là "chị đeo khẩu trang" (xem `WALKIN_NAMES`). Nên lưới danh xưng với họ chỉ đòi
+ * người chơi gọi bằng MỘT trong mấy vai này — chứ không đòi đúng một từ.
+ */
+export const WALKIN_CALLS = ["anh", "chị", "cô", "chú", "bà", "ông", "em"];
+
+/**
+ * Đại từ CẤM trong lời của từng người (lưới L-6 của test).
  *
  * Không suy ra được từ `ADDRESS` vì chiều ngược lại mới là chỗ sai hay gặp: bé Su mà
  * gọi người chơi là "em" thì nó thành một đứa khác, dù "em" vẫn là từ hợp lệ ở bảng trên.

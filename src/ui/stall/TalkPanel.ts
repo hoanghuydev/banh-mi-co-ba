@@ -34,6 +34,7 @@ const TONE_TINT: Record<TalkTone, number> = {
   THANG: 0x4a6f8c,
   LANH: 0x7d8a93,
   GAT: 0xc0392b,
+  CHUI: 0x9b4a2f,
   IM: 0x6a7680,
 };
 

@@ -1,0 +1,204 @@
+{
+  "_note": "Ông Hải — nongTinh 0,9, cao nhất hẻm. HAI con người: bản sáng (T3·T5·T7·CN 7h30) tử tế, hay giúp; bản 'sau 10 giờ' (T2·T4·T6 10h40) đã có vài ly — gắt, chửi, nói chuyện lớn tiếng, rồi hôm sau hổng nhớ. Gọi người chơi 'con', tự xưng 'chú', hay kêu 'bây'. Viết bảng hiệu tay suốt thập niên 90 — chữ trên xe cô Ba là của ông. Con gái kêu lên chung cư ở.",
+  "talks": [
+    {
+      "id": "hai.bienhieu",
+      "npc": "ONG_HAI",
+      "topic": "bienhieu",
+      "when": { "day": [6, 40], "slot": ["PEAK", "MID"] },
+      "opener": "Cái bảng hiệu xe con đó. Con biết ai viết hông?",
+      "weight": 12,
+      "tree": [
+        {
+          "say": "Dạ con hổng biết chú. Ai viết vậy chú?",
+          "tone": "AM",
+          "rel": 2,
+          "reply": "Chú. Năm chín mươi ba. Hồi đó chú viết bảng hiệu nguyên con đường này.",
+          "then": [
+            {
+              "say": "Thiệt hả chú? Chú viết đẹp quá trời.",
+              "tone": "AM",
+              "rel": 3,
+              "mem": { "kind": "REMEMBERED_STORY", "intensity": 50 },
+              "reply": "Hồi đó chú viết tay hết. Giờ người ta in máy. Nhanh, mà nhìn nó trơ trơ.",
+              "then": [
+                { "say": "Chú viết lại cho con cái bảng mới đi chú.", "tone": "AM", "rel": 4, "flag": "haiVietBang", "mem": { "kind": "CARED_FOR_THEM", "intensity": 55 }, "reply": "…Lâu quá chú hổng cầm cọ. Tay chú run rồi con." },
+                { "say": "Sao chú nghỉ viết vậy chú?", "tone": "AM", "rel": 3, "reply": "Hổng ai mướn nữa. Một bữa chú ngồi không nguyên ngày, chú hiểu rồi." },
+                { "say": "In máy nhanh mà rẻ hơn chú.", "tone": "THANG", "rel": -2, "reply": "Ờ. Rẻ. Cái gì bây giờ cũng rẻ hết." },
+                { "say": "Dạ.", "tone": "LANH", "rel": -1, "silent": true }
+              ]
+            },
+            { "say": "Hèn gì chữ nó khác mấy xe kia chú ha.", "tone": "THUONG", "rel": 2, "reply": "Ờ. Chú viết chữ đứng, viền vàng. Hồi đó chú có kiểu riêng." },
+            { "say": "Chú nói dóc hoài chú.", "tone": "DUA", "rel": -1, "reply": "Bây hổng tin thì thôi. Chú có nói với ai đâu." }
+          ]
+        },
+        {
+          "say": "Dạ chắc cô Ba thuê người ta viết chú.",
+          "tone": "THUONG",
+          "reply": "Thuê gì. Chú viết. Chú hổng lấy đồng nào của bả hết.",
+          "then": [
+            { "say": "Ủa. Sao chú hổng lấy tiền chú?", "tone": "AM", "rel": 3, "reply": "Bả cho chú ăn bánh mì nguyên năm chú thất nghiệp. Tính sao cho hết." },
+            { "say": "Vậy là chú với cô Ba thân lắm hả chú?", "tone": "AM", "rel": 3, "mem": { "kind": "REMEMBERED_STORY", "intensity": 45 }, "reply": "Thân. Mà bả đi rồi. Thôi hổng nói nữa, nói nữa chú lại kỳ." },
+            { "say": "Dạ.", "tone": "LANH", "rel": -1, "silent": true }
+          ]
+        },
+        {
+          "say": "Chú kể chuyện hồi xưa hoài chú.",
+          "tone": "GAT",
+          "rel": -4,
+          "anger": 30,
+          "mem": { "kind": "RUDE_TO_THEM", "intensity": 55 },
+          "reply": "…Ờ. Già rồi có cái đó kể thôi con."
+        }
+      ]
+    },
+    {
+      "id": "hai.congai",
+      "npc": "ONG_HAI",
+      "topic": "congai",
+      "when": { "day": [14, 40], "minVisits": 5, "slot": ["PEAK", "MID"] },
+      "opener": "Con gái chú gọi hoài. Kêu chú lên chung cư ở với tụi nó.",
+      "initiates": 0.25,
+      "ignore": { "reply": "Ờ. Chuyện của chú mà, kể làm chi.", "rel": -2 },
+      "shared": {
+        "ket": [
+          { "say": "Chú nghĩ kỹ đi chú. Hổng gấp đâu.", "tone": "AM", "rel": 3, "reply": "Ờ. Chú còn nghĩ. Nghĩ hoài mà hổng ra." },
+          { "say": "Dạ. Chú ăn đi chú, nguội.", "tone": "THUONG", "rel": 1, "reply": "Ờ." }
+        ]
+      },
+      "tree": [
+        {
+          "say": "Vậy chú tính sao chú?",
+          "tone": "AM",
+          "rel": 2,
+          "reply": "Chú chưa biết. Lên trển chú quen ai đâu con.",
+          "then": [
+            {
+              "say": "Chung cư gần đây hông chú?",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "Bên quận 7. Xa. Mà nó nói nó lo hết, chú khỏi lo gì.",
+              "then": [
+                { "say": "Nó thương chú nó mới kêu đó chú.", "tone": "AM", "rel": 3, "reply": "Ờ… chú biết. Tại chú ở đây quen quá rồi." },
+                { "say": "Ở đây chú có ai không chú?", "tone": "AM", "rel": 3, "mem": { "kind": "REMEMBERED_STORY", "intensity": 50 }, "reply": "Có cái hẻm này. Sáng ra thấy mặt mấy người quen là chú đủ rồi." },
+                { "say": "Quận 7 sướng mà chú. Đi đi chú.", "tone": "THANG", "rel": -1, "reply": "Sướng cái gì. Lên đó chú ngồi nhìn tường hả con." },
+                { "say": "Chú đi thì ai uống rượu với ai ngoài này.", "tone": "DUA", "rel": -2, "anger": 15, "reply": "…Bây nói câu đó chú nghe hổng vô đâu nghen." }
+              ]
+            },
+            { "say": "Chú ở lại đây được hông chú?", "tone": "AM", "rel": 3, "reply": "Được. Mà được tới chừng nào thì chú hổng biết.", "ref": "ket" },
+            { "say": "Chú kể chuyện nhà chi với con chú.", "tone": "LANH", "rel": -3, "anger": 20, "mem": { "kind": "RUDE_TO_THEM", "intensity": 50 }, "silent": true }
+          ]
+        },
+        {
+          "say": "Chú đi thì hẻm này buồn lắm chú.",
+          "tone": "AM",
+          "rel": 4,
+          "mem": { "kind": "CARED_FOR_THEM", "intensity": 55 },
+          "reply": "…Ờ. Nghe bây nói chú thấy nặng ngực.",
+          "then": [
+            { "say": "Con nói thiệt mà chú.", "tone": "AM", "rel": 3, "reply": "Chú biết. Thôi, hổng nói nữa.", "ref": "ket" },
+            { "say": "Mà chú đi cũng phải thôi chú.", "tone": "THUONG", "reply": "Ờ. Ai rồi cũng phải đi đâu đó.", "ref": "ket" }
+          ]
+        },
+        {
+          "say": "Dạ.",
+          "tone": "LANH",
+          "rel": -2,
+          "silent": true
+        }
+      ]
+    },
+    {
+      "id": "hai.say",
+      "npc": "ONG_HAI",
+      "topic": "say",
+      "when": { "day": [4, 38], "slot": ["LULL"] },
+      "opener": "Ê! Bánh mì! Làm chú một ổ coi. Mà làm cho lẹ nghen.",
+      "weight": 13,
+      "ignore": { "reply": "Ủa. Bây làm thinh với chú hả?", "rel": -2, "anger": 25 },
+      "shared": {
+        "xuong": [
+          { "say": "Dạ chú ngồi xuống ghế đi chú, con làm liền.", "tone": "AM", "rel": 2, "reply": "Ờ… ờ. Ngồi thì ngồi." },
+          { "say": "Dạ chú đợi con chút.", "tone": "THUONG", "reply": "Nhanh nghen." }
+        ]
+      },
+      "tree": [
+        {
+          "say": "Dạ chú đợi con chút xíu nghen chú.",
+          "tone": "THUONG",
+          "reply": "Chút xíu là bao lâu? Chú đứng đây nãy giờ nè!",
+          "then": [
+            {
+              "say": "Dạ con xin lỗi chú. Con làm liền nè.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "…Ờ. Chú nói lớn quá hả. Chú xin lỗi.",
+              "then": [
+                { "say": "Hổng sao đâu chú. Chú mệt rồi.", "tone": "AM", "rel": 3, "mem": { "kind": "CARED_FOR_THEM", "intensity": 40 }, "reply": "Ờ. Bây tử tế. Chú nhớ." },
+                { "say": "Chú uống chút nước đi chú.", "tone": "AM", "rel": 3, "reply": "Ờ. Cho chú ly trà. Chú khát thiệt." },
+                { "say": "Mai chú tỉnh rồi hẵng ghé chú.", "tone": "THANG", "rel": -2, "reply": "…Bây nói vậy là sao." }
+              ]
+            },
+            { "say": "Chú đứng có hai phút hà chú.", "tone": "THANG", "rel": -1, "anger": 20, "reply": "Hai phút với chú là hai phút! Bây đếm giùm chú hả?" },
+            { "say": "Chú la nhỏ lại giùm con chú.", "tone": "THANG", "rel": -1, "anger": 15, "reply": "Chú có la đâu! …Ờ, chú lớn tiếng. Ờ." },
+            { "say": "Chú say rồi chú về đi, con hổng bán.", "tone": "GAT", "rel": -7, "anger": 60, "mem": { "kind": "RUDE_TO_THEM", "intensity": 80 }, "silent": true }
+          ]
+        },
+        {
+          "say": "Chú nhậu về hả chú?",
+          "tone": "THANG",
+          "reply": "Có nhiêu đâu. Mấy ông bạn ép chú chớ chú đâu có muốn.",
+          "then": [
+            { "say": "Dạ con biết chú. Chú ngồi nghỉ chút đi.", "tone": "AM", "rel": 3, "reply": "Ờ… bây nói chuyện được. Chú ngồi.", "ref": "xuong" },
+            { "say": "Chú về ngủ đi chú, mai con để phần cho.", "tone": "AM", "rel": 3, "mem": { "kind": "CARED_FOR_THEM", "intensity": 45 }, "reply": "…Ờ. Thôi chú về. Bây nói đúng." },
+            { "say": "Ép gì. Chú ham chớ ai ép chú.", "tone": "GAT", "rel": -6, "anger": 45, "mem": { "kind": "RUDE_TO_THEM", "intensity": 70 }, "silent": true }
+          ]
+        },
+        {
+          "say": "…",
+          "tone": "IM",
+          "rel": -1,
+          "anger": 20,
+          "reply": "Ủa? Bây hổng nói gì hả? Thôi được, chú đứng chú đợi."
+        }
+      ]
+    },
+    {
+      "id": "hai.bongda",
+      "npc": "ONG_HAI",
+      "topic": "bongda",
+      "when": { "day": [3, 40], "slot": ["PEAK", "MID"] },
+      "opener": "Tối qua có coi đá banh hông con? Trọng tài đó ăn tiền chớ gì nữa.",
+      "weight": 10,
+      "tree": [
+        {
+          "say": "Dạ con hổng có coi chú.",
+          "tone": "THUONG",
+          "reply": "Uổng! Phút chín mươi lận. Chú la muốn bể nhà.",
+          "then": [
+            { "say": "Chú la vậy bà con hàng xóm chịu nổi hông chú.", "tone": "DUA", "rel": 3, "reply": "Hổng nổi! Bà Tư nhà trên gõ tường ba cái. Ha ha." },
+            { "say": "Chú kể con nghe đi chú.", "tone": "AM", "rel": 3, "reply": "Thằng số mười nó sút một phát, vô góc. Đẹp thiệt con ơi." },
+            { "say": "Dạ con bận lắm chú.", "tone": "LANH", "rel": -1, "reply": "Ờ. Làm đi." }
+          ]
+        },
+        {
+          "say": "Có chú. Trọng tài đó thổi kỳ thiệt.",
+          "tone": "AM",
+          "rel": 3,
+          "reply": "Thấy chưa! Chú nói có người hiểu mà. Đáng lẽ phải cho thẻ đỏ.",
+          "then": [
+            { "say": "Chú rành dữ ha chú.", "tone": "DUA", "rel": 2, "reply": "Chú coi từ hồi bây chưa đẻ. Rành chớ." },
+            { "say": "Thôi thua rồi chú ơi, kệ đi chú.", "tone": "THUONG", "rel": 1, "reply": "Ờ. Mà tức. Tức là tức vậy đó." },
+            { "say": "Chú nói vậy chớ chú có biết luật đâu.", "tone": "GAT", "rel": -4, "anger": 35, "mem": { "kind": "RUDE_TO_THEM", "intensity": 55 }, "silent": true }
+          ]
+        },
+        {
+          "say": "Dạ.",
+          "tone": "LANH",
+          "rel": -1,
+          "reply": "Ờ. Chú nói một mình vậy."
+        }
+      ]
+    }
+  ]
+}

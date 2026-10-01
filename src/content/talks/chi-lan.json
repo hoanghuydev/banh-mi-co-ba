@@ -1,0 +1,156 @@
+{
+  "_note": "Chị Lan — soi 0,9 nongTinh 0,1 deTha 0,2 thanThien 0,3. Ô 'im lặng rồi biến mất' DUY NHẤT của CANON §4. Gọi người chơi 'em', tự xưng 'em' (lối văn phòng, hạ mình). Người chơi gọi 'chị'. Cuộc của chị NGẮN, câu CỤT, nhiều `silent` — chị không cãi bao giờ, chị chỉ thôi tới. Móc len, một cái chăn hai năm chưa xong. Drama công ty của chị kể rất khẽ, và chị tiếc ngay sau khi kể.",
+  "talks": [
+    {
+      "id": "lan.sep",
+      "npc": "CHI_LAN",
+      "topic": "sep",
+      "when": { "day": [12, 23], "minVisits": 6 },
+      "opener": "…Em hỏi khí không phải. Ở chỗ em có chuyện, em kể được không.",
+      "initiates": 0.2,
+      "ignore": { "reply": "…Vâng. Không có gì đâu.", "rel": -3, "mem": { "kind": "RUDE_TO_THEM", "intensity": 45 } },
+      "shared": {
+        "ket": [
+          { "say": "Chị kể là em nghe thôi. Em không nói ai đâu.", "tone": "AM", "rel": 4, "mem": { "kind": "CARED_FOR_THEM", "intensity": 55 }, "reply": "…Em tin em mới kể. Thôi, em đi làm." },
+          { "say": "Dạ. Ổ chị đây chị.", "tone": "THUONG", "reply": "Vâng. Cảm ơn em." }
+        ]
+      },
+      "tree": [
+        {
+          "say": "Chị kể đi chị. Em nghe.",
+          "tone": "AM",
+          "rel": 3,
+          "reply": "…Có chị kế toán mới vô. Sếp em với chị đó. Cả phòng biết hết, không ai nói.",
+          "then": [
+            {
+              "say": "Rồi chị tính sao chị?",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Em không tính gì cả. Em chỉ thấy mệt khi phải giả vờ không biết.",
+              "then": [
+                { "say": "Chị không cần giả vờ với em đâu chị.", "tone": "AM", "rel": 4, "mem": { "kind": "CARED_FOR_THEM", "intensity": 60 }, "flag": "lanTinCay", "reply": "…Vâng. Chỗ này em không phải giả vờ. Nên em mới ghé." },
+                { "say": "Chị nói ra đi chị. Im riết mệt lắm.", "tone": "THANG", "rel": 1, "reply": "Nói ra thì em mất việc. Em còn mẹ em ở quê." },
+                { "say": "Chị kệ đi chị. Chuyện người ta.", "tone": "LANH", "rel": -2, "silent": true },
+                { "say": "Mấy người đó sống kiểu gì không biết.", "tone": "CHUI", "rel": -2, "reply": "…Em không muốn nói nặng ai cả. Em chỉ mệt thôi." }
+              ]
+            },
+            { "say": "Cả phòng biết mà không ai nói gì hả chị?", "tone": "THUONG", "rel": 1, "reply": "Vâng. Em cũng không nói. Em cũng là một trong số đó.", "ref": "ket" },
+            { "say": "Chuyện này chị kể ai nữa chưa chị?", "tone": "THANG", "rel": 1, "reply": "…Không ai. Em kể em lại thấy tiếc rồi.", "ref": "ket" }
+          ]
+        },
+        {
+          "say": "Dạ chị cứ nói, em đang rảnh tay.",
+          "tone": "THUONG",
+          "rel": 1,
+          "reply": "…Thôi. Để hôm khác. Em thấy em kỳ quá.",
+          "then": [
+            { "say": "Không kỳ đâu chị. Hôm nào chị muốn thì kể.", "tone": "AM", "rel": 3, "reply": "…Vâng. Cảm ơn em." },
+            { "say": "Dạ.", "tone": "LANH", "rel": -1, "silent": true }
+          ]
+        },
+        {
+          "say": "Chị kể nhanh giùm em, em đang đông khách.",
+          "tone": "LANH",
+          "rel": -4,
+          "mem": { "kind": "RUDE_TO_THEM", "intensity": 55 },
+          "silent": true
+        }
+      ]
+    },
+    {
+      "id": "lan.len",
+      "npc": "CHI_LAN",
+      "topic": "len",
+      "when": { "day": [8, 23], "minVisits": 4 },
+      "opener": "…Em hỏi cái này hơi lạ. Em có biết chỗ nào bán len không.",
+      "weight": 10,
+      "tree": [
+        {
+          "say": "Chị móc len hả chị?",
+          "tone": "AM",
+          "rel": 3,
+          "reply": "Vâng. Em làm cái chăn. Hai năm rồi chưa xong.",
+          "then": [
+            {
+              "say": "Hai năm lận hả chị?",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Em làm chậm. Mỗi tối một chút. Em không vội.",
+              "then": [
+                { "say": "Chị làm cho ai vậy chị?", "tone": "AM", "rel": 3, "mem": { "kind": "REMEMBERED_STORY", "intensity": 50 }, "reply": "…Em chưa biết. Em làm trước, rồi tính sau." },
+                { "say": "Hai năm thì mua cái chăn cho rồi chị.", "tone": "THANG", "rel": -2, "reply": "…Vâng. Mua thì nhanh hơn thật." },
+                { "say": "Em thích cái kiểu không vội của chị.", "tone": "AM", "rel": 4, "mem": { "kind": "CARED_FOR_THEM", "intensity": 50 }, "reply": "…Ít ai nói thế với em." },
+                { "say": "Dạ.", "tone": "LANH", "rel": -1, "silent": true }
+              ]
+            },
+            { "say": "Cô Mai bên kia có bán đó chị.", "tone": "THUONG", "rel": 2, "reply": "Vâng, em biết tiệm đó. Em ngại hỏi." },
+            { "say": "Chị móc cho em cái gì đi chị.", "tone": "DUA", "rel": 1, "reply": "…Để em xem. Em làm chậm lắm." }
+          ]
+        },
+        {
+          "say": "Dạ em không biết chị ơi.",
+          "tone": "THUONG",
+          "reply": "Vâng. Không sao.",
+          "then": [
+            { "say": "Để em hỏi giùm chị nghen.", "tone": "AM", "rel": 3, "mem": { "kind": "CARED_FOR_THEM", "intensity": 40 }, "reply": "…Thế thì phiền em quá. Cảm ơn em." },
+            { "say": "Dạ.", "tone": "LANH", "rel": -1, "silent": true }
+          ]
+        },
+        {
+          "say": "Chị hỏi gì kỳ vậy chị, đây bán bánh mì mà.",
+          "tone": "GAT",
+          "rel": -6,
+          "anger": 30,
+          "mem": { "kind": "RUDE_TO_THEM", "intensity": 75 },
+          "silent": true
+        }
+      ]
+    },
+    {
+      "id": "lan.imlang",
+      "npc": "CHI_LAN",
+      "topic": "imlang",
+      "when": { "day": [4, 23] },
+      "opener": "…",
+      "weight": 9,
+      "tree": [
+        {
+          "say": "Chị hôm nay ổn không chị?",
+          "tone": "AM",
+          "rel": 3,
+          "reply": "…Vâng. Em ổn.",
+          "then": [
+            {
+              "say": "Chị nói ổn mà mặt chị không ổn chị ơi.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "…Em không khóc ở ngoài đường được đâu em.",
+              "then": [
+                { "say": "Vậy chị đứng đây chút đi. Em không hỏi nữa.", "tone": "AM", "rel": 4, "mem": { "kind": "CARED_FOR_THEM", "intensity": 60 }, "reply": "…Vâng." },
+                { "say": "Chị uống ly trà đá đi chị.", "tone": "AM", "rel": 3, "reply": "…Vâng. Cảm ơn em." },
+                { "say": "Chị nói ra cho nhẹ đi chị.", "tone": "THANG", "rel": -1, "silent": true }
+              ]
+            },
+            { "say": "Dạ. Ổ chả lụa không ớt không hành của chị đây.", "tone": "AM", "rel": 3, "mem": { "kind": "REMEMBERED_USUAL", "intensity": 50 }, "reply": "…Vâng. Em cảm ơn." },
+            { "say": "Dạ vậy thì tốt chị.", "tone": "THUONG", "reply": "Vâng." }
+          ]
+        },
+        {
+          "say": "Chị đứng đó nãy giờ mà không nói gì chị.",
+          "tone": "THANG",
+          "reply": "…Em xin lỗi. Em quen rồi.",
+          "then": [
+            { "say": "Không sao đâu chị. Em cũng hay vậy.", "tone": "AM", "rel": 3, "reply": "…Vâng." },
+            { "say": "Chị kỳ ghê.", "tone": "GAT", "rel": -6, "anger": 25, "mem": { "kind": "RUDE_TO_THEM", "intensity": 75 }, "silent": true }
+          ]
+        },
+        {
+          "say": "…",
+          "tone": "IM",
+          "rel": 1,
+          "reply": "…Em thích chỗ này. Không ai bắt em phải nói."
+        }
+      ]
+    }
+  ]
+}

@@ -23,6 +23,17 @@ import type { Talk, TalkFile } from "../../sim/talk";
 const LOADERS: Record<string, () => Promise<{ default: unknown }>> = {
   BA_BAY: () => import("./ba-bay.json"),
   BE_SU: () => import("./be-su.json"),
+  CO_MAI: () => import("./co-mai.json"),
+  ONG_HAI: () => import("./ong-hai.json"),
+  CHU_TU: () => import("./chu-tu.json"),
+  ANH_DUNG: () => import("./anh-dung.json"),
+  CHI_LAN: () => import("./chi-lan.json"),
+  THAY_PHUC: () => import("./thay-phuc.json"),
+  CHI_HANH: () => import("./chi-hanh.json"),
+  ANH_BAO: () => import("./anh-bao.json"),
+  BA_SAU: () => import("./ba-sau.json"),
+  CHU_KIET: () => import("./chu-kiet.json"),
+  WALKIN: () => import("./walkin.json"),
 };
 
 /**

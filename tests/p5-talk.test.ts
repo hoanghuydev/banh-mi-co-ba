@@ -13,7 +13,8 @@ import { Rng } from "../src/core/rng";
 import { newRelState } from "../src/sim/memory";
 import {
   ADDRESS, DEFAULT_IGNORE_REL, FORBIDDEN_SELF, MAX_DEPTH, TalkSession, angerToWaitSec, applyTalk,
-  childrenOf, eligible, linesOf, pickTalk, visibleOptions, walkNodes, type Talk, type TalkCtx, type TalkNode,
+  childrenOf, eligible, linesOf, pickTalk, visibleOptions, walkNodes, WALKIN_CALLS,
+  type Talk, type TalkCtx, type TalkNode,
 } from "../src/sim/talk";
 import { TALK_NPC_IDS, TalkStore } from "../src/content/talks";
 
@@ -218,13 +219,19 @@ test("L-3 mỗi cuộc có đường từ chối ngay ở nhịp đầu — ngư
   }
 });
 
-test("L-4 câu GẮT luôn có giá, câu ẤM không bao giờ bị phạt", () => {
+test("L-4 câu GẮT luôn có giá, câu ẤM không bị phạt, câu CHỬI ĐỔNG không trung tính", () => {
   for (const t of TALKS) {
     for (const { node: o } of walkNodes(t)) {
+      // GẮT là hỗn với CHÍNH người đang đứng đây — không có đường nào miễn phí.
       if (o.tone === "GAT") {
         assert.ok((o.rel ?? 0) < 0 || (o.anger ?? 0) > 0 || o.mem, `${t.id}: "${o.say}" gắt mà miễn phí`);
       }
       if (o.tone === "AM") assert.ok((o.rel ?? 0) >= 0, `${t.id}: "${o.say}" tử tế mà bị trừ điểm`);
+      // Chửi đổng người thứ ba: ăn hay trật tuỳ người, nhưng không bao giờ là con số 0 —
+      // hùa theo một câu chửi luôn nói điều gì đó về mình.
+      if (o.tone === "CHUI") {
+        assert.notEqual(o.rel ?? 0, 0, `${t.id}: "${o.say}" chửi đổng mà không ai thấy gì`);
+      }
     }
   }
 });
@@ -238,15 +245,19 @@ test("L-5 không có `reply` thì phải khai `silent` — phân biệt im CÓ �
 });
 
 test("L-6 DANH XƯNG: không ai tự xưng bằng từ của người khác", () => {
+  /**
+   * "bà Bảy", "cô Mai", "chú Tư" là GỌI TÊN người khác, không phải tự xưng — nên bỏ qua
+   * khi ngay sau từ đó là một tên riêng (chữ hoa). Thiếu cái cửa này thì cô Mai không
+   * được phép nhắc tới bà Bảy, mà cô Mai là cái loa của cả hẻm.
+   */
+  const usedAsPronoun = (line: string, w: string) =>
+    new RegExp(`(^|[^\\p{L}])${w}(?!\\s+\\p{Lu})([^\\p{L}]|$)`, "iu").test(line);
   for (const t of TALKS) {
     const forbidden = FORBIDDEN_SELF[t.npc];
     if (!forbidden) continue;
     for (const l of linesOf(t).npc) {
       for (const w of forbidden) {
-        assert.ok(
-          !new RegExp(`(^|[^\\p{L}])${w}([^\\p{L}]|$)`, "iu").test(l),
-          `${t.id}: ${t.npc} nói "${l}" — "${w}" không phải từ của người này`,
-        );
+        assert.ok(!usedAsPronoun(l, w), `${t.id}: ${t.npc} nói "${l}" — "${w}" không phải từ của người này`);
       }
     }
   }
@@ -257,9 +268,11 @@ test("L-7 DANH XƯNG: lời người chơi gọi khách đúng vai, ít nhất m
     const a = ADDRESS[t.npc];
     if (!a) continue;
     const says = linesOf(t).player.join(" ");
+    // Khách vãng lai đổi vai mỗi lượt — chấp nhận bất kỳ vai nào, miễn là CÓ gọi.
+    const calls = t.npc === "WALKIN" ? WALKIN_CALLS : [a.call];
     assert.ok(
-      new RegExp(`(^|[^\\p{L}])${a.call}([^\\p{L}]|$)`, "iu").test(says),
-      `${t.id}: cả cuộc không ai gọi ${t.npc} là "${a.call}" — người chơi đang nói với ai?`,
+      calls.some((w) => new RegExp(`(^|[^\\p{L}])${w}([^\\p{L}]|$)`, "iu").test(says)),
+      `${t.id}: cả cuộc không ai gọi ${t.npc} là "${calls.join("/")}" — người chơi đang nói với ai?`,
     );
   }
 });

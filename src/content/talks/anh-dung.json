@@ -1,0 +1,165 @@
+{
+  "_note": "Anh Dũng — tài xế công nghệ, sức chờ 28 s, THẤP NHẤT hẻm. Luôn vội. Gọi người chơi 'em', tự xưng 'anh'. Nuôi và lai cá lia thia — 14 hũ, nói về màu cá bằng giọng khác hẳn. Từ ngày 18 anh chạy đêm, biến mất khỏi buổi sáng. Drama của anh là drama NGHỀ: app cắt chiết khấu, khách đặt rồi tắt máy, group tài xế chửi nhau, đánh giá một sao.",
+  "talks": [
+    {
+      "id": "dung.app",
+      "npc": "ANH_DUNG",
+      "topic": "app",
+      "when": { "day": [3, 17] },
+      "opener": "Em biết không, cái app nó mới nâng chiết khấu lên ba mươi hai phần trăm.",
+      "weight": 13,
+      "shared": {
+        "ket": [
+          { "say": "Thôi anh chạy đi, em làm lẹ nè.", "tone": "THUONG", "rel": 1, "reply": "Ừ. Cảm ơn em." },
+          { "say": "Anh chạy cẩn thận nghen anh.", "tone": "AM", "rel": 3, "reply": "Ừ… ít ai nói anh câu đó lắm." }
+        ]
+      },
+      "tree": [
+        {
+          "say": "Ba mươi hai phần trăm lận hả anh?",
+          "tone": "AM",
+          "rel": 2,
+          "reply": "Ừ. Cuốc năm chục nó ăn mười sáu. Xăng anh chịu, xe anh chịu, té anh chịu.",
+          "then": [
+            {
+              "say": "Vậy anh còn lại nhiêu một ngày anh?",
+              "tone": "THANG",
+              "rel": 1,
+              "reply": "Chạy mười hai tiếng được ba trăm mấy. Trừ xăng còn hai trăm rưỡi.",
+              "then": [
+                { "say": "Mười hai tiếng lận anh. Anh ngủ lúc nào?", "tone": "AM", "rel": 3, "mem": { "kind": "CARED_FOR_THEM", "intensity": 45 }, "reply": "Ngủ trưa trong hẻm, gục trên xe. Quen rồi em." },
+                { "say": "Sao anh không chuyển qua app khác anh?", "tone": "THANG", "rel": 1, "reply": "App nào cũng vậy hết em ơi. Tụi nó giống nhau cả." },
+                { "say": "Tụi nó ăn dày thiệt chớ.", "tone": "CHUI", "rel": 2, "reply": "Dày! Mà mình chửi thì chửi, mai vẫn mở app." },
+                { "say": "Thì anh nghỉ đi, ai bắt anh chạy.", "tone": "GAT", "rel": -5, "anger": 35, "mem": { "kind": "RUDE_TO_THEM", "intensity": 60 }, "silent": true }
+              ]
+            },
+            { "say": "Anh làm bao lâu rồi anh?", "tone": "AM", "rel": 2, "reply": "Bốn năm. Hồi đầu chiết khấu có mười lăm. Hồi đó sống được.", "ref": "ket" },
+            { "say": "Đâu có ai bắt anh làm đâu anh.", "tone": "THANG", "rel": -2, "reply": "Ừ. Hổng ai bắt. Anh tự nguyện khổ." }
+          ]
+        },
+        {
+          "say": "Em bán bánh mì em cũng đâu có khá gì anh.",
+          "tone": "THUONG",
+          "rel": 1,
+          "reply": "Ừ ha. Ít ra em bán là tiền em cầm. Anh thì nó trừ trước rồi mới tới anh.",
+          "then": [
+            { "say": "Nói vậy chớ em cũng trừ đủ thứ anh ơi.", "tone": "DUA", "rel": 2, "reply": "Ha. Thôi hai anh em mình cùng khổ.", "ref": "ket" },
+            { "say": "Anh ráng nghen anh.", "tone": "AM", "rel": 3, "reply": "Ừ. Em cũng ráng.", "ref": "ket" },
+            { "say": "Dạ.", "tone": "LANH", "rel": -1, "silent": true }
+          ]
+        },
+        {
+          "say": "Anh ơi em đang gấp nè.",
+          "tone": "LANH",
+          "rel": -1,
+          "reply": "Ờ ờ. Anh cũng gấp. Thôi làm lẹ giùm anh."
+        }
+      ]
+    },
+    {
+      "id": "dung.ca",
+      "npc": "ANH_DUNG",
+      "topic": "ca",
+      "when": { "day": [7, 17], "minVisits": 3 },
+      "opener": "Hũ số bảy nhà anh nó lên màu rồi em. Xanh ánh đỏ luôn.",
+      "weight": 11,
+      "tree": [
+        {
+          "say": "Hũ số bảy là gì vậy anh?",
+          "tone": "AM",
+          "rel": 2,
+          "reply": "Cá lia thia. Anh nuôi mười bốn hũ. Hũ bảy là anh tự lai đó em.",
+          "then": [
+            {
+              "say": "Anh tự lai được luôn hả anh?",
+              "tone": "AM",
+              "rel": 3,
+              "mem": { "kind": "REMEMBERED_STORY", "intensity": 50 },
+              "reply": "Ừ. Con mái anh lựa kỹ lắm. Ba lứa mới ra được một con coi được.",
+              "then": [
+                { "say": "Anh nói chuyện cá mà giọng anh khác hẳn luôn anh.", "tone": "AM", "rel": 4, "mem": { "kind": "CARED_FOR_THEM", "intensity": 50 }, "reply": "…Ừ ha. Chắc tại đó là thứ duy nhất trong ngày hổng ai hối anh." },
+                { "say": "Anh bán được nhiêu một con anh?", "tone": "THANG", "rel": 1, "reply": "Anh hổng bán. Anh nuôi chơi. Bán rồi còn gì nữa em." },
+                { "say": "Bữa nào anh cho em coi với anh.", "tone": "AM", "rel": 3, "flag": "dungKhoeCa", "reply": "Được! Mai anh chụp hình anh đưa em coi." },
+                { "say": "Nuôi cá chi cho mất thời gian anh.", "tone": "GAT", "rel": -5, "anger": 30, "mem": { "kind": "RUDE_TO_THEM", "intensity": 60 }, "silent": true }
+              ]
+            },
+            { "say": "Mười bốn hũ để đâu cho hết anh?", "tone": "DUA", "rel": 2, "reply": "Xếp dọc hành lang. Bà chủ trọ cằn nhằn hoài mà anh kệ." },
+            { "say": "Dạ em hổng rành cá anh ơi.", "tone": "LANH", "reply": "Ừ. Anh nói nhiều." }
+          ]
+        },
+        {
+          "say": "Xanh ánh đỏ là đẹp hả anh?",
+          "tone": "THUONG",
+          "rel": 1,
+          "reply": "Đẹp chớ! Lên màu đó là phải đủ nắng đủ nước. Cực lắm em.",
+          "then": [
+            { "say": "Anh chăm dữ ha anh.", "tone": "AM", "rel": 3, "reply": "Ừ. Cái gì anh thương anh chăm kỹ." },
+            { "say": "Anh chăm cá kỹ hơn chăm anh đó anh.", "tone": "DUA", "rel": 2, "reply": "…Ừ ha. Em nói trúng rồi đó." },
+            { "say": "Dạ anh đợi chút nghen.", "tone": "LANH", "reply": "Ừ, lẹ giùm anh." }
+          ]
+        },
+        {
+          "say": "Dạ.",
+          "tone": "LANH",
+          "rel": -1,
+          "silent": true
+        }
+      ]
+    },
+    {
+      "id": "dung.mottsao",
+      "npc": "ANH_DUNG",
+      "topic": "mottsao",
+      "when": { "day": [5, 17] },
+      "opener": "Sáng nay anh bị một sao em ơi. Khách đặt rồi tắt máy luôn.",
+      "initiates": 0.25,
+      "ignore": { "reply": "Ờ. Thôi anh kể ai nghe làm gì.", "rel": -2, "anger": 15 },
+      "shared": {
+        "ket": [
+          { "say": "Thôi bỏ qua đi anh. Ngày còn dài.", "tone": "THUONG", "rel": 1, "reply": "Ừ. Anh biết. Mà tức." },
+          { "say": "Anh ăn đi rồi chạy tiếp anh.", "tone": "AM", "rel": 2, "reply": "Ừ. Cảm ơn em." }
+        ]
+      },
+      "tree": [
+        {
+          "say": "Tắt máy là sao anh?",
+          "tone": "AM",
+          "rel": 2,
+          "reply": "Nó đặt hai trăm tiền đồ ăn. Anh ứng tiền mua. Tới nơi nó tắt máy.",
+          "then": [
+            {
+              "say": "Vậy hai trăm đó anh chịu hả anh?",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Ừ. App nói anh tự chịu rủi ro. Rồi nó còn cho anh một sao nữa.",
+              "then": [
+                { "say": "Vậy là mất tiền mà còn mang tiếng hả anh.", "tone": "AM", "rel": 3, "mem": { "kind": "CARED_FOR_THEM", "intensity": 45 }, "reply": "Ừ đó. Em hiểu là anh đỡ rồi." },
+                { "say": "Thằng đó khốn nạn thiệt.", "tone": "CHUI", "rel": 2, "reply": "Ừ! Mà thôi. Chửi nó cũng hổng lấy lại được hai trăm." },
+                { "say": "Anh khiếu nại đi anh, có bằng chứng mà.", "tone": "THANG", "rel": 2, "reply": "Khiếu rồi. Chờ bảy ngày. Bảy ngày anh chạy được bao nhiêu cuốc rồi em." },
+                { "say": "Anh hổng kiểm tra trước là anh dở rồi anh.", "tone": "GAT", "rel": -5, "anger": 40, "mem": { "kind": "RUDE_TO_THEM", "intensity": 65 }, "silent": true }
+              ]
+            },
+            { "say": "Đồ ăn đó giờ anh để đâu anh?", "tone": "THUONG", "rel": 1, "reply": "Anh cho mấy đứa nhỏ dưới chân cầu. Chớ anh ăn sao hết hai trăm.", "ref": "ket" },
+            { "say": "Hai trăm là anh chạy mấy cuốc hả anh?", "tone": "THANG", "rel": 1, "reply": "Sáu cuốc. Nguyên buổi sáng của anh đó em.", "ref": "ket" }
+          ]
+        },
+        {
+          "say": "Ngày nào anh cũng có chuyện hết anh ha.",
+          "tone": "THANG",
+          "reply": "Ừ. Mà hôm nay nặng hơn mọi bữa.",
+          "then": [
+            { "say": "Em xin lỗi anh. Em nói hơi vô duyên.", "tone": "AM", "rel": 3, "reply": "Hổng sao. Anh biết em hổng có ý." },
+            { "say": "Thì đời nó vậy anh ơi.", "tone": "LANH", "rel": -2, "reply": "Ừ. Đời nó vậy." }
+          ]
+        },
+        {
+          "say": "Dạ em đang làm anh ơi.",
+          "tone": "LANH",
+          "rel": -2,
+          "anger": 10,
+          "reply": "Ừ. Anh biết."
+        }
+      ]
+    }
+  ]
+}
