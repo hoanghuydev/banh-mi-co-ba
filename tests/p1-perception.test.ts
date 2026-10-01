@@ -13,6 +13,19 @@ import { newGame } from "../src/core/save";
 import { HeadlessStall, POLICIES } from "../src/sim/headless";
 import { Oven, CRUST, bandOfCrust } from "../src/sim/oven";
 import { Grip } from "../src/sim/grip";
+import type { Customer } from "../src/sim/customer";
+import type { Personality } from "../src/content/npcs";
+
+/**
+ * Người này CHỊU CẦM một ổ chưa có nhân (`sim/service.ts: takesHollowLoaf`) — vừa điềm
+ * đạm vừa dễ tha. Mấy bài dưới đây nói về GIÁ và về tầng nhận thấy, không phải về chuyện
+ * ai lắc đầu với ổ trống, nên chúng phải dựng đúng người cầm cho xong. Gán một object
+ * MỚI chứ không sửa `c.personality` tại chỗ: object đó là của `content/npcs.ts`, sửa nó
+ * là sửa luôn tính cách của người đó cho cả mấy bài sau trong file.
+ */
+function takesAnything(c: Customer) {
+  (c as { personality: Personality }).personality = { ...c.personality, nongTinh: 0.2, deTha: 0.9 };
+}
 
 function observer(zone: Observer["zone"], gaze: number, trait = 1): Observer {
   return { zone, gaze, occluder: 1, traitMul: trait, observations: new Map(), id: "v1" };
@@ -209,6 +222,7 @@ test("ổ không có miếng nhân mặn nào = bánh mì không, 10.000₫ (P3-
   const bus = new Bus();
   const h = new HeadlessStall(newGame("t", "tip-1"), { ...POLICIES.greedy, workSec: [1e9, 1e9] }, { bus });
   h.run({ until: (x) => x.service.front?.phase === "waiting" });
+  takesAnything(h.service.front!);
   h.service.serveDish([]);
   const paid = h.service.drain().find((e) => e.kind === "paid");
   assert.ok(paid && paid.kind === "paid" && paid.amount === 10_000 && paid.tip === 0);
@@ -221,6 +235,7 @@ test("ANTICIPATED khi đứng nhìn thẳng lúc gói, DISCOVERED khi không ai 
     h.run({ until: (x) => x.service.front?.phase === "waiting" });
     const c = h.service.front!;
     c.gazeOverride = gaze;
+    takesAnything(c);                              // quên hẳn nhân chính = ổ trống, xem HOLLOW_REFUSED
     const dish = dishFor(c.order!);
     const drop = dish.indexOf(c.order!.intent.nhan[0]);
     dish.splice(drop, 2);                          // quên hẳn nhân chính

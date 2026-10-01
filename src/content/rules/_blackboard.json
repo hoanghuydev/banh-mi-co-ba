@@ -1,6 +1,6 @@
 {
   "_note": "Danh mục FACT của rule DB — P2-01 §2.3.1. Nguồn DUY NHẤT: runtime (dialog/facts.ts) và validator (tools/validate-rules.ts) cùng đọc file này. Thêm fact ở đây TRƯỚC, viết rule sau. Kiểu: enum (so bằng ==, chuỗi → symbol) · ordinal (enum có thứ tự, so >= <= được, mã hoá bằng chỉ số) · number (số nguyên; số thực ×100) · bool (0/1). Fact vắng mặt trong query = rule có criterion trên nó BỊ LOẠI (luật loại trừ của Ruskin), trừ khi criterion là 'absent'. ⚠ = có điều kiện (chỉ có mặt trong một số tình huống).",
-  "concepts": ["GREET", "ORDER", "SMALLTALK", "NOTICE_EVENT", "NOTICE_FOLLOW", "DELIVERY", "PAY", "FAREWELL", "INTERACT", "GOSSIP_TELL", "GOSSIP_HEAR", "IDLE", "ARC", "CO_BA", "SMALLTALK_CAILUONG_2", "SMALLTALK_CAILUONG_3", "SMALLTALK_CAILUONG_4"],
+  "concepts": ["GREET", "ORDER", "SMALLTALK", "NOTICE_EVENT", "NOTICE_FOLLOW", "DELIVERY", "HOLLOW_LOAF", "PAY", "FAREWELL", "INTERACT", "GOSSIP_TELL", "GOSSIP_HEAR", "IDLE", "ARC", "CO_BA", "SMALLTALK_CAILUONG_2", "SMALLTALK_CAILUONG_3", "SMALLTALK_CAILUONG_4"],
   "facts": {
     "day":                 { "scope": "Global", "type": "number", "min": 1, "max": 40 },
     "hour":                { "scope": "Global", "type": "number", "min": 600, "max": 1100, "_note": "giờ·100 + phút: 6h43 → 643" },
@@ -48,6 +48,7 @@
     "defectWasSeen":       { "scope": "Session", "type": "bool", "conditional": true },
     "defectCount":         { "scope": "Session", "type": "number", "min": 0, "conditional": true },
     "dishUnderdone":       { "scope": "Session", "type": "bool", "conditional": true, "_note": "ổ rút khỏi lò trước CRUST.READY. Từ P5 nó là một LỖI thật (mượn defectKind WRONG_TEMP), nên fact này chỉ còn việc tách 'bánh non' khỏi 'bánh nguội' — hai thứ cùng một kind, hai câu khác hẳn nhau." },
+    "dishRefused":         { "scope": "Session", "type": "bool", "conditional": true, "_note": "concept HOLLOW_LOAF — khách có LẮC ĐẦU không nhận ổ chưa có nhân hay cầm cho xong (sim/service.ts: takesHollowLoaf). true = ổ ở lại trong tay người chơi, câu nói là câu bắt làm lại; false = họ vẫn trả tiền một ổ bánh mì không, câu nói chỉ là một câu chưng hửng. Chỉ có mặt ở HOLLOW_LOAF." },
     "freeExtraTooMuch":    { "scope": "Session", "type": "bool", "conditional": true },
     "extraHabitBroken":    { "scope": "Session", "type": "bool", "conditional": true, "_note": "mấy lượt ghé trước đều được cho thêm, lượt này không — CANON §8i đọc ngược (sim/memory.ts: extraHabit). Chỉ có mặt ở nhánh DELIVERY không lỗi." },
     "waitTier":            { "scope": "Session", "type": "ordinal", "values": ["NHANH", "VUA", "LAU", "QUA_LAU"] },

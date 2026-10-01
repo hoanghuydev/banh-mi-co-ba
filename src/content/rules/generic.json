@@ -45,6 +45,32 @@
     {"id": "gen.mood.vui", "concept": "GREET", "when": {"npcMoodCause": "TIN_VUI"}, "say": ["Bữa nay vui quá con ơi!", "Có chuyện vui, bữa nay ăn ngon một bữa."]},
     {"id": "gen.greet.friend", "concept": "GREET", "when": {"npcRelTier": "FRIEND", "npcMoodCause": "NONE"}, "say": ["Nay khoẻ hông con?", "Bữa nay đông hông con?", "Sáng nay con dậy sớm ha.", "Ủa con, hôm qua bán được hông?", "Nay trời mát ha con.", "Con ăn sáng chưa đó?"], "_note": "P2-03 §2.11 tín hiệu #1: chỉ Friend mới hỏi han. Không có dòng nào nói ra quan hệ."},
     {"id": "gen.del.taste", "concept": "DELIVERY", "when": {"defectKind": "TASTE_OFF"}, "say": ["Ủa… bữa nay ăn thấy lạ lạ con.", "Pate bữa nay sao hơi chua chua.", "Ủa, đồ chua này để lâu rồi hả con?", "Bữa nay ăn không giống mọi bữa."]},
+
+    {"id": "gen.hollow.refuse", "concept": "HOLLOW_LOAF",
+     "when": {"dishRefused": true},
+     "say": [
+       "Ủa con, ổ này chưa có gì trong đó hết. Kẹp nhân giùm nghen con.",
+       "Con ơi, {mon} đâu? Ổ này trơn trơn vậy mà.",
+       "Thôi con làm lại giùm đi, ổ này còn trống trơn.",
+       "Chưa thấy {mon} đâu hết con ơi, chờ thêm chút cũng được.",
+       "Con ơi, cái ổ này trống không à. Bỏ nhân vô đã rồi tính.",
+       "Khỏi, con bỏ {mon} vô trước đi. Đứng đây chờ cũng được."
+     ],
+     "emote": "NGAC_NHIEN",
+     "_note": "Pool DÙNG CHUNG nên câu không có đại từ tự xưng (không 'cô', không 'bà'): bà Bảy tự gọi mình là 'bà', chị Lan là 'em' — một câu có 'cô' đứng trong miệng ai cũng nói là một câu hơi lệch, mà ổ trống thì mọi người đều nói. Muốn đúng giọng từng người thì viết dòng riêng có npcId (score cao hơn, tự thắng). Khách LẮC ĐẦU, ổ ở lại trong tay người chơi (sim/service.ts: HOLLOW_REFUSED). Câu phải là câu BẮT LÀM LẠI, không phải câu trách: ổ trống sửa được ngay tại chỗ, và cái giá người chơi trả là mấy giây đứng kẹp nhân trước mặt người ta. Giọng vẫn là giọng hẻm — không ai gắt lên vì một ổ bánh quên nhân."},
+
+    {"id": "gen.hollow.take", "concept": "HOLLOW_LOAF",
+     "when": {"dishRefused": false},
+     "say": [
+       "Ủa… trong ổ hổng có gì hả con? Thôi, cầm vậy cũng được.",
+       "Bữa nay ăn bánh mì không ha. Ừ, cũng được.",
+       "Ổ trơn vậy thôi hả con? Ừ… đưa đây đi.",
+       "Hổng có {mon} gì hết, mà thôi. Hổng nói gì đâu.",
+       "Thôi con, mang về chấm sữa cũng xong.",
+       "Ừ… bữa nay vậy ha. Gởi tiền bánh không nghen."
+     ],
+     "_note": "Người VỪA điềm đạm VỪA dễ tha (takesHollowLoaf): họ cầm cho xong, trả tiền một ổ bánh mì không, không boa — nhưng sổ nhớ của họ vẫn ghi đủ. Câu nói phải nghe ra được chuyện đó: chưng hửng, không giận, và KHÔNG tha. Đây là cửa duy nhất người chơi mới nghe được rằng mình vừa đưa ra một ổ trống, nên nó không bao giờ im (xem pickSpoken force)."},
+
     {"id": "gen.bye.soldout", "concept": "FAREWELL", "when": {"leaveReason": "SOLD_OUT"}, "say": ["Ủa hết bánh rồi hả? Thôi bữa khác.", "Hết rồi hả con. Thôi để mai.", "Trời, hết sớm vậy. Thôi, tui qua chỗ khác.", "Ủa… hết rồi hả. Ừ, thôi."]},
     {"id": "tu.bye.soldout", "concept": "FAREWELL", "when": {"npcId": "CHU_TU", "leaveReason": "SOLD_OUT"}, "say": ["Ờ... thôi bữa khác con. Chú qua bển vậy."]},
     {"id": "gen.bye.balked", "concept": "FAREWELL", "when": {"leaveReason": "BALKED"}, "odds": 70, "say": ["Hôm nay đông quá, thôi để bữa khác.", "Trời, hàng dài dữ ta. Thôi tui qua chỗ khác.", "Chèn ơi, cả đống người. Thôi khỏi.", "Đứng chi cho mỏi chưn. Bữa nào vắng tui ghé.", "Hổng kịp rồi. Bữa khác nghen con.", "Chà, bán chạy ha. Thôi tui dìa.", "Ui, xếp hàng nữa hả. Thôi.", "Bữa nay người ta ghé quá trời. Mai tui tới sớm hơn."], "_note": "Lưới của nhánh BALKED. Câu nói với CHÍNH MÌNH trên đường quay ra, không phải câu trách người bán — người này chưa chờ một giây nào và cũng chưa kịp gọi món. odds 70: còn lại khoảng một phần ba số người chỉ liếc cái hàng rồi lặng lẽ quay đi, và cái im đó cũng là một biến thể."},

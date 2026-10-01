@@ -347,6 +347,17 @@ export function isHollowLoaf(spec: OrderSpec, dish: readonly Ingredient[]) {
   return false;
 }
 
+/**
+ * Miếng nhân ĐẦU TIÊN mà người ta gọi — chỗ trống `{mon}` của câu nói về ổ chưa có nhân.
+ * Thứ tự `INGREDIENTS` là thứ tự xếp lớp trong ổ, nên cái đầu tiên cũng là cái lẽ ra
+ * phải quết vô trước hết ("ổ này chưa thấy pate đâu hết con"). Gọi hai ba nhân thì chỉ
+ * kể một — câu nói của một người, không phải cái phiếu kiểm.
+ */
+export function hollowWantLabel(spec: OrderSpec) {
+  const first = INGREDIENTS.find((i) => NHAN_IDS.has(i.id) && (spec.levels[i.id] ?? 0) > 0);
+  return first ? first.label : "nhân";
+}
+
 export type ServiceEvent =
   | { kind: "log"; text: string }
   /** Khách quên tiền, mua chịu — scene hỏi người chơi có GHI sổ không (P3-03 §2.6). */
@@ -515,6 +526,50 @@ const SOILED_GRIT = 30;
 const SOILED_REFUSE_TOAST = "khách thấy ổ đó rớt rồi";
 
 /**
+ * Ổ CHƯA CÓ NHÂN — đưa một ổ bánh trống cho người vừa gọi pate (xem `isHollowLoaf`).
+ *
+ * Chuyện này KHÔNG cùng họ với mấy lỗi đơn hàng khác, dù `diffDish` xếp nó thành một
+ * chồng `MISSING`. Thiếu một miếng đồ chua là tay làm sai; đưa ra ổ bánh không có gì
+ * trong đó là CHƯA LÀM. Người ta không cần soi, không cần cắn thử, không cần nhớ mình
+ * đã gọi gì: cầm lên là biết. Nên nó không được đi qua hai cái cửa vốn dành cho lỗi:
+ *
+ *  1. KHÔNG qua túi im lặng (`barks.speaks`, 7/20). Túi im lặng là để khách đôi khi
+ *     tha cho một ổ ít rau — nó không được phép tha cho một ổ trống, vì khi nó tha thì
+ *     người chơi MỚI không nhận được một tín hiệu nào: không câu nói, không mặt, chỉ
+ *     có tiền vô ống. Lỗ hổng đó là lỗ hổng dạy sai, nặng hơn lỗ hổng tiền.
+ *  2. KHÔNG nói bằng câu DELIVERY ("Ủa… pate đâu con?"). Câu đó là câu của người vừa
+ *     nhìn vô ổ bánh và thấy thiếu MỘT thứ. Ở đây có concept riêng `HOLLOW_LOAF`.
+ *
+ * ── Ai LẮC ĐẦU, ai nhận ────────────────────────────────────────────────────
+ * Không phải chuyện `soi` — ổ trống thì ai cũng thấy. Chuyện ở đây là có BẮT LÀM LẠI
+ * hay không, và đó là hai nét khác: dễ nổi (`nongTinh`) thì nói ngay, còn `deTha` cao
+ * thì thôi cầm cho xong. Nên chỉ người VỪA điềm đạm VỪA dễ tha mới nhận:
+ *   nhận  — chú Tư · thầy Phúc · bé Su · anh Bảo · bà Sáu   (5/12)
+ *   trả lại — bà Bảy · chị Lan · ông Hải · cô Mai · chị Hạnh · anh Dũng · chú Kiệt
+ * Người nhận KHÔNG phải người không bị gì: họ trả tiền một ổ bánh mì không, không boa,
+ * và `diffDish` vẫn ghi đủ `MISSING` vô sổ nhớ của họ. Họ chỉ không làm mình làm mẩy.
+ *
+ * ── Trả lại thì mất gì ─────────────────────────────────────────────────────
+ * Ổ bánh Ở LẠI TRONG TAY người chơi (`res.ok === false`), nên đường ra là đem nó về
+ * thớt kẹp nhân cho đủ rồi đưa lại — ĐÚNG việc lẽ ra phải làm. Khách vẫn đứng đó
+ * (`phase` không đổi), nghĩa là đồng hồ chờ vẫn chạy: trả lại hai ba lần là
+ * `MADE_THEM_WAIT`, rồi tới `LEAVE_AT` là mất khách. Cái giá nằm ở thời gian, chỗ
+ * người chơi thiếu nhất, chứ không nằm ở một khoản phạt mới.
+ *
+ * `HOLLOW_REFUSED` 55: nặng hơn một lỗi đơn tại quầy (`ORDER_DEFECT` 20 × trọng số
+ * món ≈ 28) vì nó là chuyện không thể nhìn lầm, nhưng NHẸ hơn hẳn `SOILED_CAUGHT` 95 —
+ * ổ nhặt dưới đất là cố ý và che giấu, ổ trống thì không che gì cả và sửa được ngay
+ * tại chỗ. Ghi ĐÚNG MỘT LẦN mỗi lượt ghé (`hollowShown`): người chơi thử đưa lần nữa
+ * là mất thêm thời gian, không phải chồng thêm một vết nhớ.
+ */
+const HOLLOW_REFUSED = 55;
+/** Toast cho `res.ok === false` — ngắn, vì nó hiện ngay trên đầu người vừa lắc đầu. */
+const HOLLOW_REFUSE_TOAST = "khách không nhận — ổ chưa có nhân";
+
+/** Xem khối `HOLLOW_REFUSED`. Chỉ người vừa điềm đạm vừa dễ tha mới cầm ổ trống cho xong. */
+export const takesHollowLoaf = (p: Personality) => p.nongTinh <= 0.4 && p.deTha >= 0.7;
+
+/**
  * Ổ NƯỚNG CHƯA TỚI — P1-01 §2.4 đọc chung với P1-03 §2.6.
  *
  * Trước đây chuyện này chỉ là một con số trừ 10 giấu trong nhánh "không lỗi", và chỉ
@@ -606,6 +661,11 @@ export class Service {
    * Chỉ sống trong buổi bán: reload giữa một lượt ghé hai ổ là chuyện không đáng lưu.
    */
   private habitSettled = new Set<string>();
+  /**
+   * Lượt ghé đã bị lắc đầu vì ổ chưa có nhân (theo `customer.id`) — xem `HOLLOW_REFUSED`.
+   * Vết nhớ và câu nói ghi đúng một lần; lần đưa thứ hai chỉ còn tốn thời gian.
+   */
+  private hollowShown = new Set<string>();
   /** Lượt ghé nào đi ra sao (theo `customer.id`) — `farewell()` đọc rồi xoá. */
   private serveOutcome = new Map<string, ServeOutcome>();
   /**
@@ -1547,6 +1607,7 @@ export class Service {
     }
     this.pledges.delete(c.id);
     this.habitSettled.delete(c.id);
+    this.hollowShown.delete(c.id);
     // `farewell()` đã rút rồi thì xoá này là vô hại; cần cho nhánh mua ổ thứ hai rồi bỏ
     // đi giữa chừng — lượt đó có `serveOutcome` mà không bao giờ có câu chào để xài nó.
     if (reason !== "served") this.serveOutcome.delete(c.id);
@@ -1819,6 +1880,31 @@ export class Service {
     /** Ổ dưới đất mà người ta KHÔNG thấy: vẫn bán được, và vẫn có giá — `SOILED_GRIT`. */
     const grit = !!opts.soiled;
 
+    /*
+     * Ổ CHƯA CÓ MIẾNG NHÂN NÀO, mà người này không phải người cầm cho xong — xem khối
+     * `HOLLOW_REFUSED`. Chặn TRƯỚC `nameCheck` và trước `diffDish`: lượt giao này không
+     * xảy ra, nên không có chuyện gọi tên (gọi sai tên bị ghi lại ở lần đưa THẬT, chứ
+     * không ghi thêm một lần cho mỗi lần bị trả lại), không `order:delivered`, không
+     * tiền, không `serveOutcome`. Lắc đầu là lắc đầu.
+     *
+     * `hollow` tính một lần ở đây rồi dùng lại cho cả nhánh khách NHẬN ở dưới — chỗ nó
+     * quyết định giá (ổ trống thì tính tiền một ổ bánh mì không). Đọc `levels` GỐC chứ
+     * không đọc khẩu vị ẩn: `alt` chỉ đụng ớt/tương, không bao giờ đụng nhân mặn.
+     */
+    const hollow = isHollowLoaf(c.order!, dish);
+    if (hollow && !takesHollowLoaf(c.personality)) {
+      if (!this.hollowShown.has(c.id)) {
+        this.hollowShown.add(c.id);
+        const mon = hollowWantLabel(c.order!);
+        this.remember(c, "ORDER_DEFECT", HOLLOW_REFUSED, { missingIngredient: mon });
+        this.noteRel("đưa ổ chưa có nhân", HOLLOW_REFUSED);
+        this.react(c, "ORDER_DEFECT", 2);
+        this.speakConcept(c, "HOLLOW_LOAF", { dishRefused: true }, 92, true, { mon });
+        this.settleRelMoved(c, relBefore);
+      }
+      return { ok: false, reason: HOLLOW_REFUSE_TOAST };
+    }
+
     // P2-05 — người chơi gọi khách bằng tên đã ghi trong sổ. Gọi SAI là WRONG_NAME (salience
     // 100, bỏ qua gaze: là âm thanh nhắm thẳng vào người đó). Chưa ghi tên = không gọi tên.
     const nb = this.deps.notebook;
@@ -1839,9 +1925,6 @@ export class Service {
       const r2 = diffDish({ ...c.order!, levels: { ...c.order!.levels, ...alt } }, dish);
       if (!r2.length) { raw = r2; viaAlt = true; }
     }
-    // Ổ không có miếng nhân mặn nào → đưa ra là một ổ BÁNH MÌ KHÔNG, tính tiền theo đó
-    // (xem `isHollowLoaf`). Đọc `levels` gốc: khẩu vị ẩn chỉ đụng ớt/tương, không đụng nhân.
-    const hollow = isHollowLoaf(c.order!, dish);
     // P1-01 §2.4: warmth < 0,55 lúc đưa. Kích thích BURNT_OR_COLD do scene phát đúng lúc đưa.
     if (opts.cold) raw.push(mkDefect("WRONG_TEMP", null));
     // …và ổ rút khỏi lò sớm, cùng một đường (xem khối UNDERDONE_FLOOR ở đầu file).
@@ -1856,7 +1939,9 @@ export class Service {
     });
     bus.emit("order:delivered", { npcId: c.memKey, dish: [...dish], waitedSec: this.nowSec - c.orderedAt });
 
-    const spoken = this.pickSpoken(c, defects);
+    // `hollow` (tính ở đầu hàm): tới được đây nghĩa là người này CẦM CHO XONG. Họ vẫn
+    // nói một câu — ổ trống không đi qua túi im lặng, xem khối `HOLLOW_REFUSED`.
+    const spoken = this.pickSpoken(c, defects, hollow);
     let positive = 0;
     let tb = false;
     /**
@@ -1886,6 +1971,12 @@ export class Service {
       this.speakConcept(c, "DELIVERY", {
         defectCount: 0, orderIsUsual: remembered, freeExtraTooMuch: extra < 0, extraHabitBroken: habitBroke > 0,
       }, habitBroke > 0 || extra < 0 ? 70 : 60, true);
+    } else if (hollow) {
+      // Người cầm cho xong vẫn phải NÓI RA chuyện ổ bánh không có gì trong đó, và nói
+      // bằng câu của chính chuyện đó — không phải câu "ủa thiếu pate" của một ổ thiếu
+      // một thứ. Xem khối `HOLLOW_REFUSED`.
+      positive += this.settlePledge(c, dish);
+      this.speakConcept(c, "HOLLOW_LOAF", { dishRefused: false }, 90, true, { mon: hollowWantLabel(c.order!) });
     } else if (spoken) {
       positive += this.settlePledge(c, dish);
       this.speakConcept(c, "DELIVERY", {
@@ -1982,7 +2073,7 @@ export class Service {
     } else {
       // Ổ rỗng: đưa ra cái gì thì tính tiền cái đó — bánh mì không (xem `isHollowLoaf`).
       // Ổ vẫn được TRẢ TIỀN BÁNH, chỉ không được tính tiền nhân chưa hề bỏ vô.
-      if (hollow) this.out.push({ kind: "log", text: `${this.label(c)} trả tiền một ổ bánh mì không — trong ổ không có gì.` });
+      if (hollow) this.out.push({ kind: "log", text: `${this.label(c)} cầm ổ chưa có nhân — tính tiền bánh mì không.` });
       this.settlePayment(c, this.pricedAfterPledge(c, loafPriceVnd(hollow ? "khong" : tierOf(c.order!.intent))), tip, !!spoken);
     }
     if (nb) nb.today.served++;
@@ -2037,14 +2128,16 @@ export class Service {
    *  2. có lỗi ĐÃ THẤY mà thua lỗi đứng đầu chưa tới 15 điểm → nói lỗi đã thấy
    *  3. túi im lặng theo người (7/20) → không nói gì
    */
-  private pickSpoken(c: Customer, defects: DiffedDefect[]): DiffedDefect | null {
+  private pickSpoken(c: Customer, defects: DiffedDefect[], force = false): DiffedDefect | null {
     if (!defects.length) return null;
     const score = (d: DiffedDefect) => (d.witness === "DISCOVERED" ? d.sEat : d.sCounter) * d.magnitude;
     const sorted = [...defects].sort((a, b) => score(b) - score(a));
     let top = sorted[0];
     const ant = sorted.find((d) => d.witness === "ANTICIPATED");
     if (ant && score(top) - score(ant) < 15) top = ant;
-    if (!this.barks.speaks(c.memKey)) return null;
+    // `force`: ổ chưa có nhân không được túi im lặng tha (xem khối `HOLLOW_REFUSED`). Và
+    // KHÔNG rút vé: để dành cả 20 vé cho mấy lỗi mà im lặng còn có nghĩa lý.
+    if (!force && !this.barks.speaks(c.memKey)) return null;
     return top;
   }
 

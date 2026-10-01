@@ -81,6 +81,8 @@ export class HeadlessStall {
   /** false = chế độ không giới hạn thời gian (CANON §15.2). */
   private pressure: boolean;
   private work: { left: number; forVisit: string; dropped: boolean; dish: Ingredient[]; wrapped: boolean } | null = null;
+  /** Lượt ghé mà khách đã lắc đầu không nhận ổ bánh — xem chỗ đọc trong `act()`. */
+  private refused = new Set<string>();
 
   constructor(
     world: SaveFile,
@@ -137,6 +139,13 @@ export class HeadlessStall {
     const s = this.service;
     const c = s.front;
     if (!c || c.phase !== "waiting" || !c.order) { this.work = null; return; }
+    // Lượt mà khách đã LẮC ĐẦU một lần thì bỏ luôn, đừng lấy ổ bánh khác ra làm lại.
+    // Chỗ này xảy ra khi kho hết nhân: ổ nào gói ra cũng là ổ chưa có nhân, mà 7 trong
+    // 12 người không nhận (`service.takesHollowLoaf`). Con bot không có nước đi nào khác
+    // — nó không "xin lỗi chú, hết pate rồi" được — nên nếu cứ làm lại thì nó đốt sạch
+    // kệ bánh vào một người không bao giờ nhận, và `npm run sim` đọc ra một ngày sai hẳn.
+    // Người đó đứng hết kiên nhẫn rồi về: ĐÚNG hình dạng của chuyện hết hàng giữa buổi.
+    if (this.refused.has(c.id)) { this.work = null; return; }
     const p = this.policy;
     const inv = this.ctx.world.inventory, day = this.ctx.world.progress.dayIndex;
     if (!this.work || this.work.forVisit !== c.id) {
@@ -178,8 +187,9 @@ export class HeadlessStall {
     }
     // làm sẵn ổ quen trước khi khách mở miệng (T-B, P4-01 "chuẩn bị ổ chú Tư từ 6h42")
     const known = c.npc && (this.ctx.world.npcs[c.memKey]?.heard ?? 0) >= 3 && this.bot.next() < (p.anticipate ?? 0);
-    s.serveDish(served, { quality: dishQuality(this.breadQ, parts), readyAt: known ? c.orderedAt - 1 : undefined });
+    const res = s.serveDish(served, { quality: dishQuality(this.breadQ, parts), readyAt: known ? c.orderedAt - 1 : undefined });
     this.work = null;
+    if (!res.ok) this.refused.add(c.id);
   }
 
   private drain() {
