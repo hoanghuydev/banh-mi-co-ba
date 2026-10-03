@@ -4,25 +4,18 @@ import { blob, heightFor, prop, shade, slab, type Pen } from "./canvas";
 import type { Facing8 } from "../world/iso";
 
 /**
- * Thân người — dùng chung cho người chơi lẫn khách.
+ * Thân người — dùng chung cho người chơi lẫn khách. v1 vẽ bằng code nhưng vẽ cho tử tế; v2 artist
+ * thay bằng ảnh thật.
  *
- * v1 vẽ bằng code nhưng vẽ cho tử tế; v2 artist thay bằng ảnh thật.
- * Mỗi nhân vật chỉ NƯỚNG 3 hướng: hướng "w" là bản lật ngang của "e" (xem `textureFor`).
- * Ai được `art/photo.ts` sơn đè đủ ẢNH tám hướng thì dùng tám file rời, không lật —
- * hiện là mỗi người chơi, xem `markEightWay`.
+ * Mỗi nhân vật chỉ NƯỚNG 3 hướng, hướng "w" là bản lật ngang của "e". Ai được `art/photo.ts` sơn
+ * đè đủ ẢNH tám hướng thì dùng tám file rời, không lật (xem `markEightWay`).
  *
- * Bàn chân đứng ĐÚNG ở `cy` — tâm hình thoi của ô, tức mặt đất.
- * Neo sai chỗ này là nhân vật bị nhấc lên và bóng đổ rơi lệch hẳn xuống chân.
+ * ⚠️ Bàn chân đứng ĐÚNG ở `cy` — tâm hình thoi của ô. Neo sai chỗ này là nhân vật bị nhấc lên và
+ * bóng đổ rơi lệch hẳn xuống chân.
  *
- * CANON §16 (Đừng-4): KHÔNG frame-by-frame. Nhịp bước lấy từ squash/stretch
- * ở `entities/`, không phải từ việc thêm file sprite.
- *
- * ── Vì sao tỉ lệ lại "đầu to" ──────────────────────────────────────────────────
- * Đầu chiếm ~38% chiều cao (bán kính 12 px trên 64 px). Không phải để cho dễ
- * thương suông: ở góc iso này nhân vật chỉ cao 64 px trên màn 1024×576, mà CANON
- * §5 bắt buộc người chơi phải ĐỌC ĐƯỢC mức nhận thấy của khách qua NÉT MẶT.
- * Đầu nhỏ theo tỉ lệ thật thì mắt chỉ còn 2 px — không biểu cảm nào sống sót.
- * Đầu to là quyết định chức năng, phần "cute" là hệ quả đi kèm.
+ * Đầu chiếm ~38% chiều cao, và đó là quyết định CHỨC NĂNG chứ không phải cho dễ thương: nhân vật
+ * chỉ cao 64 px trên màn 1024×576, mà CANON §5 bắt người chơi phải ĐỌC ĐƯỢC mức nhận thấy qua NÉT
+ * MẶT — đầu đúng tỉ lệ thật thì mắt chỉ còn 2 px.
  */
 export const BODY_H = 64;
 
@@ -77,12 +70,11 @@ function keyOf(who: string, dir: string, pose: Pose) {
 }
 
 /**
- * Nhân vật nào có ĐỦ ẢNH THẬT tám hướng. `art/photo.ts` ghi tên vào đây sau khi
- * sơn xong — và chỉ khi sơn đủ cả tám, nên thiếu một file ảnh là cả bộ lặng lẽ
- * rơi về bản vẽ code, không ai thủng texture (đúng lời hứa ở đầu `art/index.ts`).
+ * Nhân vật nào có ĐỦ ẢNH THẬT tám hướng. `art/photo.ts` ghi tên vào đây sau khi sơn xong, và chỉ
+ * khi sơn đủ cả tám — thiếu một file ảnh là cả bộ lặng lẽ rơi về bản vẽ code.
  *
- * Phải là một cái sổ ĐĂNG KÝ chứ không phải cờ cứng: bản vẽ code chỉ nướng ba
- * hướng, nên `textureFor` không thể đoán bừa rằng `p_se` có tồn tại hay không.
+ * Phải là một cái sổ ĐĂNG KÝ chứ không phải cờ cứng: bản vẽ code chỉ nướng ba hướng nên
+ * `textureFor` không thể đoán bừa rằng `p_se` có tồn tại hay không.
  */
 const EIGHT = new Set<string>();
 

@@ -6,7 +6,7 @@
   "description": "Bánh Mì Cô Ba — a game about being watched while you work",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && npm run gates && vite build && npm run gates -- --dist",
+    "build": "tsc --noEmit && npm run gates && npm run validate:talks && vite build && npm run gates -- --dist",
     "build:playtest": "tsc --noEmit && vite build --mode playtest --outDir dist-playtest",
     "preview": "vite preview",
     "check": "tsc --noEmit",
@@ -17,7 +17,17 @@
     "lint:lines": "tsx tools/lint-lines.ts",
     "content:stats": "tsx tools/content-stats.ts",
     "sim": "tsx tools/sim.ts",
-    "ci": "npm run check && npm run gates && npm run validate:rules && npm run lint:lines && npm test"
+    "ci": "npm run check && npm run gates && npm run validate:rules && npm run validate:talks && npm run lint:lines && npm test",
+    "validate:talks": "tsx tools/validate-talks.ts",
+    "probe:p209": "tsx tools/probe-p209.ts",
+    "show:talk": "tsx tools/show-talk.ts",
+    "probe:talk": "tsx tools/probe-talk.ts",
+    "play:passers": "tsx tools/play-passers.ts",
+    "probe:score": "tsx tools/probe-score.ts",
+    "probe:invite": "tsx tools/probe-invite.ts",
+    "play:deep": "tsx tools/play-deep.ts",
+    "probe:facts": "tsx tools/probe-facts.ts",
+    "probe:offer": "tsx tools/probe-offer.ts"
   },
   "dependencies": {
     "phaser": "^3.90.0"

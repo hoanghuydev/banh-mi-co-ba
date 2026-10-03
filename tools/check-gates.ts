@@ -46,6 +46,34 @@ if (existsSync(join(ROOT, "src/econ/ledger.ts"))) {
   const hits = read(join(ROOT, "src/econ/ledger.ts")).split("\n").filter((l) => /\brng\b/.test(l));
   gates.push({ name: "econ/ledger.ts không dùng rng", hits });
 }
+/*
+ * P0-02 §2.3 — DÒNG SỐ DÙNG CHUNG KHÔNG ĐƯỢC RÚT CÓ ĐIỀU KIỆN.
+ *
+ * `spawn()` nhận một `rng` dùng chung cho cả lượt khách. Rút thêm một số từ nó **chỉ
+ * trong một số trường hợp** là kiểu lệch tệ nhất: nó dịch mọi lần rút sau đó, nhưng chỉ
+ * ở một số lượt, nên golden không vỡ ngay mà vỡ lệch pha vài ngày sau.
+ *
+ * Đã xảy ra thật: `maybeCutLine` nhận `rng` của `spawn` rồi `rng.next()` chỉ khi đã có
+ * người đứng trước — `tests/p1-hollow` bỗng gặp một NPC khác hẳn ở quầy và `takesHollowLoaf`
+ * ra kết quả ngược. Mất một buổi để truy. Cách đúng: `hub.derive("<việc>:<ngày>:<id>")`,
+ * y như `invite` và `askStepAside`.
+ *
+ * Cổng này bắt chữ ký `(..., rng: Rng)` ở mấy hàm KHÔNG nằm trên đường spawn/plan —
+ * chúng phải tự derive, không nhận dòng chung vào.
+ */
+{
+  const src = read(join(ROOT, "src/sim/service.ts"));
+  const ALLOW = /^(spawn|spawnPasser|devSpawn|rollOrder|plan\w*)$/;
+  const hits: string[] = [];
+  // Bắt cả ba dạng khai: `private foo(`, `foo(`, `function foo(`.
+  const DECL = new RegExp(String.raw`^\s*(?:export\s+)?(?:private\s+|function\s+)?(\w+)\s*\(([^)]*)\)`, "gm");
+  for (const m of src.matchAll(DECL)) {
+    if (!/\brng:\s*Rng\b/.test(m[2])) continue;
+    if (!ALLOW.test(m[1])) hits.push(`service.ts: ${m[1]}() nhận \`rng\` dùng chung — dùng hub.derive()`);
+  }
+  gates.push({ name: "không hàm nào ngoài spawn/plan nhận `rng` dùng chung", hits });
+}
+
 // P0-01 §2.1 — không còn netcode.
 scan("không colyseus", ["src"], /colyseus/i);
 if (/colyseus/i.test(read(join(ROOT, "package.json")))) gates.push({ name: "package.json không có colyseus", hits: ["package.json"] });

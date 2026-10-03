@@ -1,0 +1,1380 @@
+{
+  "_note": "MỤC ĐÍCH × TÂM TRẠNG — P2-07 §5. Mỗi người đi ngang hẻm phải có MỘT lý do để đi, chứ không phải là một hình di chuyển. 60 mục đích · 34 tâm trạng. `states` của mỗi mục đích là DANH SÁCH TRẮNG: cặp nào không khai ở đây thì KHÔNG BAO GIỜ ghép được — đó là chỗ luật 'trúng số có thể vui, có thể lo vì số tiền lớn, nhưng không thể buồn hay giận' sống. `face` phải là một khoá của MOOD_FACE và `pose` là một PoseId có thật (sim/talk.ts, sim/reaction.ts) — tên sai là một ô vuông trắng trên màn hình. `buyable` là cái HÃM: nó NHÂN vào inviteChance mà trần đã là INVITE_MAX = 0,8, nên nó chỉ kéo xuống, không bao giờ đẩy lên. Ngày game chỉ chạy 06:00–11:00 (content/days/day_index.json) nên mọi mục đích ở đây đều là chuyện của BUỔI SÁNG — không có tan sở, không có đi nhậu tối. ⚠️ Số `weight`/`buyable`/`hurry` là của bản dựng, cần người thiết kế duyệt.",
+  "states": [
+    {
+      "id": "VUI",
+      "label": "vui",
+      "face": "CUOI",
+      "pose": "NOD",
+      "patienceMul": 1.15,
+      "angerMul": 0.8,
+      "inviteMul": 1.2
+    },
+    {
+      "id": "HON_HO",
+      "label": "hớn hở",
+      "face": "CUOI_TUOI",
+      "pose": "LEAN_IN",
+      "patienceMul": 1.2,
+      "angerMul": 0.7,
+      "inviteMul": 1.35
+    },
+    {
+      "id": "NHE_NHOM",
+      "label": "nhẹ nhõm",
+      "face": "CUOI",
+      "pose": "SETTLE_IN",
+      "patienceMul": 1.3,
+      "angerMul": 0.7,
+      "inviteMul": 1.25
+    },
+    {
+      "id": "THONG_THA",
+      "label": "thong thả",
+      "face": "CUOI_KHAN",
+      "pose": "IDLE",
+      "patienceMul": 1.4,
+      "angerMul": 0.75,
+      "inviteMul": 1.3
+    },
+    {
+      "id": "THU_THAI",
+      "label": "thư thái",
+      "face": "THUONG",
+      "pose": "SETTLE_IN",
+      "patienceMul": 1.45,
+      "angerMul": 0.7,
+      "inviteMul": 1.3
+    },
+    {
+      "id": "HAO_HUC",
+      "label": "háo hức",
+      "face": "CUOI_TUOI",
+      "pose": "PEEK_OVER",
+      "patienceMul": 1.1,
+      "angerMul": 0.8,
+      "inviteMul": 1.3
+    },
+    {
+      "id": "TU_HAO",
+      "label": "tự hào",
+      "face": "CUOI",
+      "pose": "LEAN_BACK",
+      "patienceMul": 1.2,
+      "angerMul": 0.8,
+      "inviteMul": 1.15
+    },
+    {
+      "id": "BIET_ON",
+      "label": "biết ơn",
+      "face": "THUONG",
+      "pose": "NOD",
+      "patienceMul": 1.3,
+      "angerMul": 0.65,
+      "inviteMul": 1.25
+    },
+    {
+      "id": "TRIU_MEN",
+      "label": "trìu mến",
+      "face": "THUONG",
+      "pose": "SETTLE_IN",
+      "patienceMul": 1.35,
+      "angerMul": 0.6,
+      "inviteMul": 1.2
+    },
+    {
+      "id": "NGAI_NGUNG",
+      "label": "ngại ngùng",
+      "face": "NGUONG",
+      "pose": "TURN_AWAY_QUARTER",
+      "patienceMul": 1.05,
+      "angerMul": 0.8,
+      "inviteMul": 0.8
+    },
+    {
+      "id": "BINH_THAN",
+      "label": "bình thản",
+      "face": "NGHIEM",
+      "pose": "IDLE",
+      "patienceMul": 1.1,
+      "angerMul": 0.9,
+      "inviteMul": 0.95
+    },
+    {
+      "id": "TO_MO",
+      "label": "tò mò",
+      "face": "NGAC_NHIEN",
+      "pose": "PEEK_OVER",
+      "patienceMul": 1.1,
+      "angerMul": 0.85,
+      "inviteMul": 1.35
+    },
+    {
+      "id": "LO",
+      "label": "lo",
+      "face": "NGHI",
+      "pose": "SHIFT_WEIGHT",
+      "patienceMul": 0.85,
+      "angerMul": 1.05,
+      "inviteMul": 0.75
+    },
+    {
+      "id": "LO_TIEN",
+      "label": "lo tiền",
+      "face": "NGHI",
+      "pose": "ARMS_CROSS",
+      "patienceMul": 0.8,
+      "angerMul": 1.1,
+      "inviteMul": 0.5
+    },
+    {
+      "id": "HOI_HOP",
+      "label": "hồi hộp",
+      "face": "NGAC_NHIEN",
+      "pose": "SHIFT_WEIGHT",
+      "patienceMul": 0.8,
+      "angerMul": 1.0,
+      "inviteMul": 0.6
+    },
+    {
+      "id": "SO",
+      "label": "sợ",
+      "face": "NGAC_NHIEN",
+      "pose": "STEP_BACK_HALF",
+      "patienceMul": 0.7,
+      "angerMul": 1.1,
+      "inviteMul": 0.45
+    },
+    {
+      "id": "ROI_TRI",
+      "label": "rối trí",
+      "face": "NGHI",
+      "pose": "TILT_HEAD",
+      "patienceMul": 0.85,
+      "angerMul": 1.05,
+      "inviteMul": 0.6
+    },
+    {
+      "id": "BAN_TAM",
+      "label": "bận tâm",
+      "face": "NGHI",
+      "pose": "PHONE_DOWN",
+      "patienceMul": 0.9,
+      "angerMul": 1.0,
+      "inviteMul": 0.6
+    },
+    {
+      "id": "SOT_RUOT",
+      "label": "sốt ruột",
+      "face": "NGHI",
+      "pose": "CHECK_TIME",
+      "patienceMul": 0.65,
+      "angerMul": 1.2,
+      "inviteMul": 0.45
+    },
+    {
+      "id": "NON_NONG",
+      "label": "nôn nóng",
+      "face": "BUC",
+      "pose": "CHECK_TIME",
+      "patienceMul": 0.55,
+      "angerMul": 1.3,
+      "inviteMul": 0.35
+    },
+    {
+      "id": "CUONG",
+      "label": "cuống",
+      "face": "NGAC_NHIEN",
+      "pose": "CHECK_TIME",
+      "patienceMul": 0.4,
+      "angerMul": 1.4,
+      "inviteMul": 0.2
+    },
+    {
+      "id": "BUC",
+      "label": "bực",
+      "face": "BUC",
+      "pose": "ARMS_CROSS",
+      "patienceMul": 0.6,
+      "angerMul": 1.45,
+      "inviteMul": 0.5
+    },
+    {
+      "id": "CAU_GAT",
+      "label": "cáu gắt",
+      "face": "BUC",
+      "pose": "SHAKE_SLOW",
+      "patienceMul": 0.5,
+      "angerMul": 1.6,
+      "inviteMul": 0.35
+    },
+    {
+      "id": "UC_CHE",
+      "label": "ức chế",
+      "face": "BUC",
+      "pose": "TURN_AWAY_QUARTER",
+      "patienceMul": 0.6,
+      "angerMul": 1.4,
+      "inviteMul": 0.45
+    },
+    {
+      "id": "GIAN",
+      "label": "giận",
+      "face": "GIAN",
+      "pose": "LEAN_IN",
+      "patienceMul": 0.45,
+      "angerMul": 1.7,
+      "inviteMul": 0.3
+    },
+    {
+      "id": "BUON",
+      "label": "buồn",
+      "face": "BUON",
+      "pose": "IDLE",
+      "patienceMul": 1.0,
+      "angerMul": 0.9,
+      "inviteMul": 0.6
+    },
+    {
+      "id": "NAO_LONG",
+      "label": "nặng lòng",
+      "face": "RUNG_RUNG",
+      "pose": "SETTLE_IN",
+      "patienceMul": 1.05,
+      "angerMul": 0.85,
+      "inviteMul": 0.5
+    },
+    {
+      "id": "TUI_THAN",
+      "label": "tủi thân",
+      "face": "RUNG_RUNG",
+      "pose": "TURN_AWAY_QUARTER",
+      "patienceMul": 0.95,
+      "angerMul": 1.0,
+      "inviteMul": 0.5
+    },
+    {
+      "id": "MET",
+      "label": "mệt",
+      "face": "MET",
+      "pose": "SHIFT_WEIGHT",
+      "patienceMul": 0.85,
+      "angerMul": 1.15,
+      "inviteMul": 0.85
+    },
+    {
+      "id": "RA_ROI",
+      "label": "rã rời",
+      "face": "MET",
+      "pose": "SETTLE_IN",
+      "patienceMul": 0.9,
+      "angerMul": 1.1,
+      "inviteMul": 1.0
+    },
+    {
+      "id": "BUON_NGU",
+      "label": "buồn ngủ",
+      "face": "MET",
+      "pose": "IDLE",
+      "patienceMul": 1.0,
+      "angerMul": 1.0,
+      "inviteMul": 0.85
+    },
+    {
+      "id": "DUNG_DUNG",
+      "label": "dửng dưng",
+      "face": "LANH",
+      "pose": "IDLE",
+      "patienceMul": 1.0,
+      "angerMul": 1.0,
+      "inviteMul": 0.55
+    },
+    {
+      "id": "LANH_LUNG",
+      "label": "lạnh lùng",
+      "face": "LANH",
+      "pose": "FREEZE",
+      "patienceMul": 0.9,
+      "angerMul": 1.1,
+      "inviteMul": 0.3
+    },
+    {
+      "id": "NGHIEM_TUC",
+      "label": "nghiêm túc",
+      "face": "NGHIEM",
+      "pose": "ARMS_CROSS",
+      "patienceMul": 1.0,
+      "angerMul": 1.0,
+      "inviteMul": 0.5
+    }
+  ],
+  "purposes": [
+    {
+      "id": "DI_TAP_THE_DUC",
+      "label": "đi tập thể dục",
+      "buyable": 0.3,
+      "hurry": 0.15,
+      "states": [
+        "THU_THAI",
+        "BINH_THAN",
+        "HAO_HUC"
+      ],
+      "bands": [
+        "PRE_OPEN"
+      ],
+      "weight": 6,
+      "note": "đi tập mà ăn trước thì tập gì nữa — ngó thì ngó, mua thì để lát về"
+    },
+    {
+      "id": "TAP_VE",
+      "label": "đi tập về",
+      "buyable": 0.85,
+      "hurry": 0.1,
+      "states": [
+        "THU_THAI",
+        "VUI",
+        "MET",
+        "THONG_THA"
+      ],
+      "bands": [
+        "PRE_OPEN",
+        "MID"
+      ],
+      "weight": 8,
+      "note": "đói, rảnh, mồ hôi chưa ráo — người dễ mời nhất buổi sáng"
+    },
+    {
+      "id": "DI_LE_CHUA",
+      "label": "đi lễ chùa",
+      "buyable": 0.3,
+      "hurry": 0.25,
+      "states": [
+        "BINH_THAN",
+        "THONG_THA",
+        "BIET_ON",
+        "LO"
+      ],
+      "bands": [
+        "PRE_OPEN",
+        "MID"
+      ],
+      "weight": 4,
+      "note": "nhiều người ăn chay bữa đó, và chưa lễ xong thì chưa ăn"
+    },
+    {
+      "id": "MO_SAP_CHO",
+      "label": "đi mở sạp ngoài chợ",
+      "buyable": 0.25,
+      "hurry": 0.55,
+      "states": [
+        "BINH_THAN",
+        "BUON_NGU",
+        "MET",
+        "SOT_RUOT"
+      ],
+      "bands": [
+        "PRE_OPEN"
+      ],
+      "weight": 6,
+      "note": "ra trễ là mất mối sáng — nhưng sạp mình cũng bán đồ ăn, mua ở đây là lạ Hạ 0,45 → 0,25: người bán ở chợ ăn sáng tại chợ, hiếm khi mua ở hẻm."
+    },
+    {
+      "id": "DI_LAM_CA_SOM",
+      "label": "đi làm ca sớm",
+      "buyable": 0.5,
+      "hurry": 0.55,
+      "states": [
+        "BUON_NGU",
+        "MET",
+        "BINH_THAN"
+      ],
+      "bands": [
+        "PRE_OPEN"
+      ],
+      "weight": 6,
+      "note": "công nhân, bảo vệ, y tá — còn sớm nên còn kịp, nhưng mắt chưa mở ra"
+    },
+    {
+      "id": "TAN_CA_DEM",
+      "label": "tan ca đêm về",
+      "buyable": 0.8,
+      "hurry": 0.2,
+      "states": [
+        "RA_ROI",
+        "MET",
+        "NHE_NHOM",
+        "BUON_NGU"
+      ],
+      "bands": [
+        "PRE_OPEN"
+      ],
+      "weight": 5,
+      "note": "hết ca rồi thì không ai giục nữa — đói và không vội, chỉ muốn ngồi xuống"
+    },
+    {
+      "id": "DAT_CHO_DI_DAO",
+      "label": "dắt chó đi dạo",
+      "buyable": 0.4,
+      "hurry": 0.15,
+      "states": [
+        "THONG_THA",
+        "VUI",
+        "BINH_THAN"
+      ],
+      "bands": [
+        "PRE_OPEN",
+        "LULL"
+      ],
+      "weight": 4,
+      "note": "rảnh thật, nhưng còn dắt con chó nên không đứng lâu được"
+    },
+    {
+      "id": "RA_BEN_XE_SOM",
+      "label": "ra bến xe về quê",
+      "buyable": 0.45,
+      "hurry": 0.6,
+      "states": [
+        "SOT_RUOT",
+        "BUON_NGU",
+        "HAO_HUC",
+        "LO"
+      ],
+      "bands": [
+        "PRE_OPEN",
+        "PEAK"
+      ],
+      "weight": 5,
+      "note": "xe chạy là chạy — nhưng ổ bánh cầm theo lên xe là chuyện rất thật"
+    },
+    {
+      "id": "DI_CUNG_RAM",
+      "label": "đi mua đồ cúng rằm",
+      "buyable": 0.5,
+      "hurry": 0.3,
+      "states": [
+        "BINH_THAN",
+        "THONG_THA",
+        "TRIU_MEN"
+      ],
+      "bands": [
+        "PRE_OPEN",
+        "MID"
+      ],
+      "weight": 4,
+      "note": "mua cho bàn thờ trước, phần mình tính sau"
+    },
+    {
+      "id": "DI_TIEN_NGUOI_NHA",
+      "label": "đi tiễn người nhà về quê",
+      "buyable": 0.4,
+      "hurry": 0.4,
+      "states": [
+        "NAO_LONG",
+        "BUON",
+        "TRIU_MEN",
+        "SOT_RUOT"
+      ],
+      "bands": [
+        "PRE_OPEN",
+        "MID"
+      ],
+      "weight": 3,
+      "note": "mua ổ bánh dúi vô tay người đi — mua cho NGƯỜI KHÁC, không phải cho mình"
+    },
+    {
+      "id": "DI_DON_NGUOI_NHA",
+      "label": "đi đón người nhà ở bến xe",
+      "buyable": 0.5,
+      "hurry": 0.45,
+      "states": [
+        "HAO_HUC",
+        "SOT_RUOT",
+        "BINH_THAN",
+        "VUI"
+      ],
+      "bands": [
+        "PRE_OPEN",
+        "PEAK",
+        "MID"
+      ],
+      "weight": 4,
+      "note": "đón xong còn phải lo chỗ ăn cho khách — nhớ chỗ này là có thể quay lại"
+    },
+    {
+      "id": "MUA_THUOC_GAP",
+      "label": "chạy đi mua thuốc gấp",
+      "buyable": 0.08,
+      "hurry": 0.95,
+      "states": [
+        "CUONG",
+        "LO",
+        "SO"
+      ],
+      "bands": [
+        "PRE_OPEN",
+        "PEAK",
+        "MID",
+        "LULL"
+      ],
+      "weight": 3,
+      "note": "nhà có người đang nằm — mời người này là đọc sai mặt người ta"
+    },
+    {
+      "id": "DI_LAM_TRE",
+      "label": "đi làm trễ",
+      "buyable": 0.12,
+      "hurry": 0.95,
+      "states": [
+        "NON_NONG",
+        "CUONG",
+        "BUC"
+      ],
+      "bands": [
+        "PEAK"
+      ],
+      "weight": 12,
+      "note": "trễ giờ chấm công — gần như không dừng, mà dừng thì cũng cuống"
+    },
+    {
+      "id": "DI_LAM",
+      "label": "đi làm",
+      "buyable": 0.5,
+      "hurry": 0.5,
+      "states": [
+        "BINH_THAN",
+        "BUON_NGU",
+        "SOT_RUOT",
+        "MET"
+      ],
+      "bands": [
+        "PEAK"
+      ],
+      "weight": 14,
+      "note": "cái dòng chính của giờ cao điểm — còn kịp thì ghé, mà không ghé cũng không sao"
+    },
+    {
+      "id": "DUA_CON_DI_HOC",
+      "label": "đưa con đi học",
+      "buyable": 0.45,
+      "hurry": 0.65,
+      "states": [
+        "SOT_RUOT",
+        "BINH_THAN",
+        "TRIU_MEN",
+        "NON_NONG"
+      ],
+      "bands": [
+        "PEAK"
+      ],
+      "weight": 11,
+      "note": "mua là mua cho đứa nhỏ ăn dọc đường, không phải cho mình"
+    },
+    {
+      "id": "DI_HOC",
+      "label": "đi học",
+      "buyable": 0.4,
+      "hurry": 0.6,
+      "states": [
+        "BUON_NGU",
+        "HAO_HUC",
+        "SOT_RUOT",
+        "BINH_THAN"
+      ],
+      "bands": [
+        "PEAK"
+      ],
+      "weight": 8,
+      "note": "tiền trong túi ít, nên mời khéo cỡ nào cũng tuỳ bữa đó mẹ cho bao nhiêu"
+    },
+    {
+      "id": "DI_HOC_TRE",
+      "label": "đi học trễ",
+      "buyable": 0.1,
+      "hurry": 0.95,
+      "states": [
+        "CUONG",
+        "NON_NONG",
+        "SO"
+      ],
+      "bands": [
+        "PEAK"
+      ],
+      "weight": 5,
+      "note": "cổng trường sắp đóng — sợ thầy giám thị hơn sợ đói"
+    },
+    {
+      "id": "GIAO_HANG",
+      "label": "đi giao hàng",
+      "buyable": 0.3,
+      "hurry": 0.85,
+      "states": [
+        "NON_NONG",
+        "BINH_THAN",
+        "SOT_RUOT",
+        "BUC"
+      ],
+      "bands": [
+        "PEAK",
+        "MID",
+        "LULL"
+      ],
+      "weight": 10,
+      "note": "mỗi phút là một đơn — ăn đứng ăn vội thì được, ngồi lại thì không"
+    },
+    {
+      "id": "SHIP_DO_AN",
+      "label": "đi giao đồ ăn sáng",
+      "buyable": 0.2,
+      "hurry": 0.9,
+      "states": [
+        "NON_NONG",
+        "CUONG",
+        "BUC",
+        "BINH_THAN"
+      ],
+      "bands": [
+        "PEAK",
+        "MID"
+      ],
+      "weight": 7,
+      "note": "đang ôm phần ăn của người khác mà ghé ăn là chuyện khó xảy ra"
+    },
+    {
+      "id": "CHAY_XE_OM",
+      "label": "chạy xe ôm chờ cuốc",
+      "buyable": 0.7,
+      "hurry": 0.2,
+      "states": [
+        "THONG_THA",
+        "DUNG_DUNG",
+        "SOT_RUOT",
+        "MET"
+      ],
+      "bands": [
+        "PEAK",
+        "MID",
+        "LULL"
+      ],
+      "weight": 7,
+      "note": "đứng không chờ app nổ — người dễ bắt chuyện nhất hẻm"
+    },
+    {
+      "id": "MUA_DO_AN_SANG",
+      "label": "đi mua đồ ăn sáng cho cả nhà",
+      "buyable": 0.95,
+      "hurry": 0.4,
+      "states": [
+        "BINH_THAN",
+        "SOT_RUOT",
+        "TRIU_MEN",
+        "VUI"
+      ],
+      "bands": [
+        "PEAK",
+        "MID"
+      ],
+      "weight": 9,
+      "note": "người duy nhất đang ĐI TÌM đúng thứ mình bán — không mời cũng ghé"
+    },
+    {
+      "id": "DI_CHO",
+      "label": "đi chợ",
+      "buyable": 0.35,
+      "hurry": 0.3,
+      "states": [
+        "BINH_THAN",
+        "THONG_THA",
+        "SOT_RUOT",
+        "LO_TIEN"
+      ],
+      "bands": [
+        "PEAK",
+        "MID"
+      ],
+      "weight": 10,
+      "note": "đi chợ thì tiền đã tính sẵn cho mớ rau con cá — ổ bánh là khoản phát sinh Hạ 0,55 → 0,35: tiền đã tính sẵn cho mớ rau con cá; người ta mua bánh lúc VỀ, không phải lúc đi."
+    },
+    {
+      "id": "DI_CHO_VE",
+      "label": "đi chợ về",
+      "buyable": 0.8,
+      "hurry": 0.25,
+      "states": [
+        "MET",
+        "THONG_THA",
+        "VUI",
+        "BINH_THAN"
+      ],
+      "bands": [
+        "MID",
+        "LULL"
+      ],
+      "weight": 10,
+      "note": "xong việc, xách giỏ nặng, chân mỏi — dừng một chút là hợp lý"
+    },
+    {
+      "id": "GUI_CON_CHO_BA",
+      "label": "đi gửi con cho bà ngoại",
+      "buyable": 0.45,
+      "hurry": 0.6,
+      "states": [
+        "SOT_RUOT",
+        "NON_NONG",
+        "TRIU_MEN",
+        "BINH_THAN"
+      ],
+      "bands": [
+        "PEAK"
+      ],
+      "weight": 4,
+      "note": "gửi con xong còn phải quay đầu đi làm — hai chặng dồn vào một buổi sáng"
+    },
+    {
+      "id": "DI_PHONG_VAN",
+      "label": "đi phỏng vấn",
+      "buyable": 0.2,
+      "hurry": 0.7,
+      "states": [
+        "HOI_HOP",
+        "LO",
+        "NGHIEM_TUC"
+      ],
+      "bands": [
+        "PEAK",
+        "MID"
+      ],
+      "weight": 5,
+      "note": "áo trắng mới ủi — không ai dám cầm ổ bánh dầu mỡ trước giờ phỏng vấn"
+    },
+    {
+      "id": "DI_NOP_HO_SO",
+      "label": "đi nộp hồ sơ",
+      "buyable": 0.35,
+      "hurry": 0.55,
+      "states": [
+        "HOI_HOP",
+        "SOT_RUOT",
+        "BINH_THAN",
+        "LO"
+      ],
+      "bands": [
+        "PEAK",
+        "MID"
+      ],
+      "weight": 5,
+      "note": "sợ nộp trễ hạn hơn là sợ đói, nhưng nộp xong thì bụng mới lên tiếng"
+    },
+    {
+      "id": "DI_KHAM_BENH",
+      "label": "đi khám bệnh",
+      "buyable": 0.2,
+      "hurry": 0.5,
+      "states": [
+        "LO",
+        "HOI_HOP",
+        "MET",
+        "SO"
+      ],
+      "bands": [
+        "PEAK",
+        "MID"
+      ],
+      "weight": 6,
+      "note": "nhịn ăn để xét nghiệm — lý do rất thật để từ chối một lời mời rất khéo"
+    },
+    {
+      "id": "DUA_ME_DI_KHAM",
+      "label": "đưa mẹ đi khám",
+      "buyable": 0.25,
+      "hurry": 0.55,
+      "states": [
+        "LO",
+        "SOT_RUOT",
+        "TRIU_MEN"
+      ],
+      "bands": [
+        "PEAK",
+        "MID"
+      ],
+      "weight": 5,
+      "note": "còn dìu một người nữa, và số thứ tự đang nhích"
+    },
+    {
+      "id": "LAY_THUOC_CHO_ME",
+      "label": "đi lấy thuốc cho mẹ",
+      "buyable": 0.35,
+      "hurry": 0.5,
+      "states": [
+        "LO",
+        "BINH_THAN",
+        "TRIU_MEN",
+        "MET"
+      ],
+      "bands": [
+        "PEAK",
+        "MID",
+        "LULL"
+      ],
+      "weight": 5,
+      "note": "lấy thuốc là việc quen tay, lo thì vẫn lo nhưng không cuống"
+    },
+    {
+      "id": "DI_THAM_BENH",
+      "label": "đi thăm người bệnh",
+      "buyable": 0.35,
+      "hurry": 0.4,
+      "states": [
+        "LO",
+        "NAO_LONG",
+        "TRIU_MEN",
+        "BINH_THAN"
+      ],
+      "bands": [
+        "MID",
+        "LULL"
+      ],
+      "weight": 4,
+      "note": "mua đem vô cho người nằm viện — bán được hai ổ nhưng không ai ngồi lại"
+    },
+    {
+      "id": "DI_DAM_TANG",
+      "label": "đi đám tang",
+      "buyable": 0.1,
+      "hurry": 0.4,
+      "states": [
+        "NAO_LONG",
+        "BUON",
+        "NGHIEM_TUC"
+      ],
+      "bands": [
+        "MID",
+        "LULL"
+      ],
+      "weight": 3,
+      "note": "áo đen, không ai mời ăn người đang đi đám — mời là một cái sai đọc ra ngay"
+    },
+    {
+      "id": "DI_DAM_GIO",
+      "label": "đi đám giỗ",
+      "buyable": 0.3,
+      "hurry": 0.35,
+      "states": [
+        "BINH_THAN",
+        "TRIU_MEN",
+        "NAO_LONG",
+        "THONG_THA"
+      ],
+      "bands": [
+        "MID",
+        "LULL"
+      ],
+      "weight": 4,
+      "note": "tới đó là có mâm — ăn ở đây là phí bụng, nhưng chuyện thì nói được cả buổi"
+    },
+    {
+      "id": "DI_AN_CUOI",
+      "label": "đi ăn cưới",
+      "buyable": 0.25,
+      "hurry": 0.4,
+      "states": [
+        "VUI",
+        "HON_HO",
+        "NGAI_NGUNG",
+        "TU_HAO"
+      ],
+      "bands": [
+        "PRE_OPEN",
+        "LULL"
+      ],
+      "weight": 3,
+      "note": "đồ đẹp, tóc mới làm, và đằng kia có nguyên một bàn tiệc đang chờ Thêm PRE_OPEN: rước dâu ở Sài Gòn rất sớm, 5–6 giờ."
+    },
+    {
+      "id": "DI_LANH_LUONG",
+      "label": "đi lãnh lương",
+      "buyable": 0.7,
+      "hurry": 0.35,
+      "states": [
+        "HON_HO",
+        "VUI",
+        "NHE_NHOM",
+        "TU_HAO"
+      ],
+      "bands": [
+        "MID",
+        "LULL"
+      ],
+      "weight": 5,
+      "note": "ngày trong túi có tiền là ngày người ta rộng tay nhất"
+    },
+    {
+      "id": "DI_TRA_NO",
+      "label": "đi trả nợ",
+      "buyable": 0.2,
+      "hurry": 0.5,
+      "states": [
+        "LO_TIEN",
+        "UC_CHE",
+        "NAO_LONG",
+        "NGHIEM_TUC"
+      ],
+      "bands": [
+        "MID",
+        "LULL"
+      ],
+      "weight": 4,
+      "note": "tiền trong túi đã có tên người khác — tiêu một đồng là thiếu một đồng"
+    },
+    {
+      "id": "DI_DOI_NO",
+      "label": "đi đòi nợ",
+      "buyable": 0.25,
+      "hurry": 0.45,
+      "states": [
+        "BUC",
+        "NGHIEM_TUC",
+        "LANH_LUNG",
+        "UC_CHE"
+      ],
+      "bands": [
+        "MID",
+        "LULL"
+      ],
+      "weight": 3,
+      "note": "đang lên gân cho ra dáng — dừng lại ăn là xìu mất cái gân đó"
+    },
+    {
+      "id": "DI_VAY_TIEN",
+      "label": "đi hỏi vay tiền",
+      "buyable": 0.15,
+      "hurry": 0.5,
+      "states": [
+        "NGAI_NGUNG",
+        "LO_TIEN",
+        "TUI_THAN"
+      ],
+      "bands": [
+        "MID",
+        "LULL"
+      ],
+      "weight": 3,
+      "note": "đi vay mà ngồi ăn dọc đường, người ta thấy thì còn mặt mũi nào"
+    },
+    {
+      "id": "TRUNG_SO",
+      "label": "vừa trúng số",
+      "buyable": 0.9,
+      "hurry": 0.2,
+      "states": [
+        "HON_HO",
+        "VUI",
+        "LO_TIEN",
+        "HOI_HOP"
+      ],
+      "bands": [
+        "MID",
+        "LULL"
+      ],
+      "weight": 1,
+      "note": "vui thì có vui, mà ôm số tiền lớn đi ngoài đường thì cũng có cái lo của nó — tuyệt đối không buồn, không giận Hạ weight 2 → 1: ở weight 2 thì cả mùa 40 ngày gặp quá nhiều người trúng số, và cái hiếm hết hiếm."
+    },
+    {
+      "id": "MAT_XE",
+      "label": "vừa mất xe",
+      "buyable": 0.05,
+      "hurry": 0.8,
+      "states": [
+        "CUONG",
+        "GIAN",
+        "NAO_LONG",
+        "SO"
+      ],
+      "bands": [
+        "PEAK",
+        "MID",
+        "LULL"
+      ],
+      "weight": 2,
+      "note": "cả cái cần câu cơm vừa biến mất — người này không nghe thấy lời mời nào hết"
+    },
+    {
+      "id": "CAI_NHAU_VOI_CHONG",
+      "label": "vừa cãi nhau với chồng",
+      "buyable": 0.35,
+      "hurry": 0.45,
+      "states": [
+        "UC_CHE",
+        "GIAN",
+        "TUI_THAN",
+        "CAU_GAT"
+      ],
+      "bands": [
+        "MID",
+        "LULL"
+      ],
+      "weight": 4,
+      "note": "bỏ nhà ra phố cho hạ hoả — mời đúng lúc thì được nghe cả câu chuyện, mời sai thì ăn gắt"
+    },
+    {
+      "id": "DI_CHO_NGUOI_HEN",
+      "label": "đi chờ người ta tới",
+      "buyable": 0.9,
+      "hurry": 0.05,
+      "states": [
+        "SOT_RUOT",
+        "BINH_THAN",
+        "HAO_HUC",
+        "BUC"
+      ],
+      "bands": [
+        "MID",
+        "LULL"
+      ],
+      "weight": 6,
+      "note": "người rảnh nhất và đói nhất — chờ ai đó thì phải đứng đâu đó, đứng đây cũng được"
+    },
+    {
+      "id": "DI_GAP_NGUOI_YEU_CU",
+      "label": "đi gặp người yêu cũ",
+      "buyable": 0.2,
+      "hurry": 0.4,
+      "states": [
+        "HOI_HOP",
+        "NAO_LONG",
+        "NGAI_NGUNG",
+        "LO"
+      ],
+      "bands": [
+        "MID",
+        "LULL"
+      ],
+      "weight": 2,
+      "note": "bụng đang thắt lại, ăn không vô — và không muốn ai nhìn mặt mình lúc này"
+    },
+    {
+      "id": "DI_UONG_CA_PHE",
+      "label": "đi uống cà phê với bạn",
+      "buyable": 0.55,
+      "hurry": 0.15,
+      "states": [
+        "THONG_THA",
+        "VUI",
+        "BINH_THAN",
+        "HAO_HUC"
+      ],
+      "bands": [
+        "MID",
+        "LULL"
+      ],
+      "weight": 6,
+      "note": "cà phê thì đằng kia, nhưng ổ bánh mang theo quán là chuyện quá thường"
+    },
+    {
+      "id": "DI_COI_MAT_BANG",
+      "label": "đi coi mặt bằng",
+      "buyable": 0.6,
+      "hurry": 0.3,
+      "states": [
+        "TO_MO",
+        "HOI_HOP",
+        "NGHIEM_TUC",
+        "LO_TIEN"
+      ],
+      "bands": [
+        "MID",
+        "LULL"
+      ],
+      "weight": 3,
+      "note": "đang nhìn cái hẻm này bằng con mắt người sắp mở quán — ngó quầy mình rất kỹ"
+    },
+    {
+      "id": "DI_COI_PHONG_TRO",
+      "label": "đi coi phòng trọ",
+      "buyable": 0.55,
+      "hurry": 0.35,
+      "states": [
+        "TO_MO",
+        "LO_TIEN",
+        "MET",
+        "BINH_THAN"
+      ],
+      "bands": [
+        "MID",
+        "LULL"
+      ],
+      "weight": 4,
+      "note": "coi phòng thì phải coi luôn quanh đây ăn uống cỡ nào — mình là một phần của câu trả lời"
+    },
+    {
+      "id": "DAY_XE_DI_SUA",
+      "label": "đẩy xe đi sửa",
+      "buyable": 0.3,
+      "hurry": 0.6,
+      "states": [
+        "BUC",
+        "UC_CHE",
+        "MET",
+        "SOT_RUOT"
+      ],
+      "bands": [
+        "PEAK",
+        "MID",
+        "LULL"
+      ],
+      "weight": 5,
+      "note": "hai tay đang bận cái xe, mà sáng nay coi như hỏng"
+    },
+    {
+      "id": "DI_LAY_XE",
+      "label": "đi lấy xe ở tiệm",
+      "buyable": 0.6,
+      "hurry": 0.3,
+      "states": [
+        "NHE_NHOM",
+        "BINH_THAN",
+        "SOT_RUOT"
+      ],
+      "bands": [
+        "MID",
+        "LULL"
+      ],
+      "weight": 4,
+      "note": "xong một chuyện phiền — tay không, chân không, bụng thì trống"
+    },
+    {
+      "id": "DI_DONG_TIEN_DIEN",
+      "label": "đi đóng tiền điện nước",
+      "buyable": 0.5,
+      "hurry": 0.4,
+      "states": [
+        "BINH_THAN",
+        "LO_TIEN",
+        "SOT_RUOT",
+        "THONG_THA"
+      ],
+      "bands": [
+        "MID",
+        "LULL"
+      ],
+      "weight": 5,
+      "note": "việc vặt đầu tháng — vừa đi vừa tính tháng này sao nó cao vậy"
+    },
+    {
+      "id": "DI_LAM_GIAY_TO",
+      "label": "đi làm giấy tờ trên phường",
+      "buyable": 0.4,
+      "hurry": 0.45,
+      "states": [
+        "SOT_RUOT",
+        "BUC",
+        "BINH_THAN",
+        "UC_CHE"
+      ],
+      "bands": [
+        "MID",
+        "LULL"
+      ],
+      "weight": 5,
+      "note": "đi lần thứ ba vì thiếu một tờ giấy — bực sẵn trong người rồi"
+    },
+    {
+      "id": "DI_NHAN_HANG",
+      "label": "đi nhận hàng đặt trên mạng",
+      "buyable": 0.65,
+      "hurry": 0.3,
+      "states": [
+        "HAO_HUC",
+        "VUI",
+        "BINH_THAN",
+        "TO_MO"
+      ],
+      "bands": [
+        "MID",
+        "LULL"
+      ],
+      "weight": 5,
+      "note": "đi vài chục mét, tâm trạng nhẹ, về ngang qua đây lần nữa"
+    },
+    {
+      "id": "DI_HOT_TOC",
+      "label": "đi hớt tóc",
+      "buyable": 0.5,
+      "hurry": 0.2,
+      "states": [
+        "THONG_THA",
+        "BINH_THAN",
+        "VUI"
+      ],
+      "bands": [
+        "MID",
+        "LULL"
+      ],
+      "weight": 4,
+      "note": "tiệm đằng kia chắc còn phải chờ — ăn trước cũng được"
+    },
+    {
+      "id": "HOT_TOC_VE",
+      "label": "hớt tóc xong về",
+      "buyable": 0.75,
+      "hurry": 0.15,
+      "states": [
+        "VUI",
+        "THONG_THA",
+        "NHE_NHOM",
+        "NGAI_NGUNG"
+      ],
+      "bands": [
+        "MID",
+        "LULL"
+      ],
+      "weight": 3,
+      "note": "đầu mới, bụng đói, và hơi ngượng khi ai cũng nhìn cái đầu đó"
+    },
+    {
+      "id": "DI_BAN_VE_SO",
+      "label": "đi bán vé số",
+      "buyable": 0.45,
+      "hurry": 0.2,
+      "states": [
+        "MET",
+        "BINH_THAN",
+        "THONG_THA",
+        "BIET_ON"
+      ],
+      "bands": [
+        "PEAK",
+        "MID",
+        "LULL"
+      ],
+      "weight": 6,
+      "note": "đi cả buổi, ghé đâu cũng được, nhưng ghé là để mời LẠI mình mua vé"
+    },
+    {
+      "id": "DI_LUOM_VE_CHAI",
+      "label": "đi lượm ve chai",
+      "buyable": 0.35,
+      "hurry": 0.2,
+      "states": [
+        "MET",
+        "BINH_THAN",
+        "TUI_THAN",
+        "RA_ROI"
+      ],
+      "bands": [
+        "MID",
+        "LULL"
+      ],
+      "weight": 5,
+      "note": "rảnh giờ nhưng không rảnh tiền — mời thì nhận, mà nhận rồi thì mình thành người cho"
+    },
+    {
+      "id": "DI_KIEM_VIEC",
+      "label": "đi kiếm việc",
+      "buyable": 0.3,
+      "hurry": 0.4,
+      "states": [
+        "LO_TIEN",
+        "HOI_HOP",
+        "MET",
+        "NGAI_NGUNG"
+      ],
+      "bands": [
+        "MID",
+        "LULL"
+      ],
+      "weight": 4,
+      "note": "đi từ sáng, chỗ nào cũng lắc đầu — đếm từng đồng trong túi"
+    },
+    {
+      "id": "DAO_MOT_VONG",
+      "label": "đi lòng vòng cho khuây",
+      "buyable": 0.6,
+      "hurry": 0.1,
+      "states": [
+        "THONG_THA",
+        "BUON",
+        "DUNG_DUNG",
+        "BAN_TAM"
+      ],
+      "bands": [
+        "MID",
+        "LULL"
+      ],
+      "weight": 5,
+      "note": "không có đích nào hết, nên chỗ nào cũng có thể thành đích"
+    },
+    {
+      "id": "LAC_DUONG",
+      "label": "đi tìm địa chỉ trong hẻm",
+      "buyable": 0.45,
+      "hurry": 0.4,
+      "states": [
+        "ROI_TRI",
+        "TO_MO",
+        "NGAI_NGUNG",
+        "BINH_THAN"
+      ],
+      "bands": [
+        "PEAK",
+        "MID",
+        "LULL"
+      ],
+      "weight": 3,
+      "note": "người lạ trong hẻm — chỉ đường cho họ là cách mở miệng rẻ nhất"
+    },
+    {
+      "id": "DI_THAM_BA_CON",
+      "label": "đi thăm bà con",
+      "buyable": 0.5,
+      "hurry": 0.25,
+      "states": [
+        "VUI",
+        "THONG_THA",
+        "TRIU_MEN",
+        "BINH_THAN"
+      ],
+      "bands": [
+        "MID",
+        "LULL"
+      ],
+      "weight": 4,
+      "note": "tới nhà người ta thì thể nào cũng bị ép ăn — mua là mua xách theo làm quà"
+    },
+    {
+      "id": "QUAY_VE_LAY_DO_QUEN",
+      "label": "quay về lấy đồ bỏ quên",
+      "buyable": 0.45,
+      "hurry": 0.75,
+      "states": [
+        "CAU_GAT",
+        "SOT_RUOT",
+        "ROI_TRI",
+        "BUC"
+      ],
+      "bands": [
+        "PEAK",
+        "MID"
+      ],
+      "weight": 4,
+      "note": "đi ngang hẻm này lần thứ hai trong mười lăm phút, và đang quạu với chính mình"
+    },
+    {
+      "id": "DI_TRA_DO_MUON",
+      "label": "đi trả đồ mượn hàng xóm",
+      "buyable": 0.6,
+      "hurry": 0.2,
+      "states": [
+        "BINH_THAN",
+        "NGAI_NGUNG",
+        "VUI",
+        "THONG_THA"
+      ],
+      "bands": [
+        "MID",
+        "LULL"
+      ],
+      "weight": 4,
+      "note": "đi vài căn nhà, về tay không, và quen mặt cả hẻm"
+    }
+  ]
+}

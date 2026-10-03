@@ -8,29 +8,22 @@ import { PROP } from "./props";
 import { HELD, type HeldLook } from "./held";
 import { FOOD } from "./food";
 import { FX, FLY_W, FLY_BOX } from "./fx";
-import { markEightWay, textureFor } from "./character";
+import { BODY_H, markEightWay, textureFor, type Pose } from "./character";
 import type { Facing8 } from "../world/iso";
 
 /**
  * ART V2 — ẢNH THẬT CỦA ARTIST ĐÈ LÊN HÌNH VẼ BẰNG CODE.
  *
- * `art/index.ts` vẫn nướng đủ bộ texture bằng Graphics như cũ, RỒI file này ghi đè
- * lên đúng những key mà artist đã có ảnh. Làm vậy vì hai lẽ:
- *  · bảng tên texture không đổi -> không một file gameplay nào phải sửa (đúng lời
- *    hứa ở đầu `art/index.ts`);
- *  · ảnh nào artist chưa vẽ (dưa leo, tương ớt, két nước, tường, quầy, nhân vật)
- *    thì tự khắc còn nguyên bản vẽ code, không thủng lỗ.
+ * `art/index.ts` vẫn nướng đủ bộ texture bằng Graphics như cũ, RỒI file này ghi đè lên đúng
+ * những key artist đã có ảnh. Bảng tên texture không đổi nên không file gameplay nào phải sửa,
+ * và ảnh nào chưa vẽ thì tự khắc còn nguyên bản vẽ code.
  *
- * File PNG nằm ở `public/art/`, do `tools/prep-art.py` rửa ra từ `public/image-raw/`
- * (tách nền, cắt sát mép, XOAY ổ bánh về nằm ngang, ép ô sàn về hình thoi 2:1).
+ * PNG nằm ở `public/art/`, do `tools/prep-art.py` rửa ra từ `public/image-raw/`.
  *
- * ── Luật đặt ảnh vào ô ───────────────────────────────────────────────────────
- * Y hệt luật của `canvas.ts`, không có ngoại lệ nào cho ảnh:
- *   origin (0.5, 1) đặt tại `footY(sy)`, và ĐIỂM CHẠM ĐẤT nằm ở local y =
- *   H − 1 − BASE − TH/2 chứ không phải đáy texture.
- * Nên cỡ texture ở đây được TÍNH RA từ chiều cao muốn có, không phải gõ tay:
- * xem `standing()` bên dưới. Gõ tay là y như rằng có vật lơ lửng, và bóng đổ
- * rơi lệch xuống dưới chân — đúng cái bẫy mà `canvas.ts` đã cảnh báo.
+ * ⚠️ Luật đặt ảnh vào ô y hệt `canvas.ts`, không ngoại lệ: origin (0.5, 1) tại `footY(sy)`, và
+ * ĐIỂM CHẠM ĐẤT ở local y = H − 1 − BASE − TH/2 chứ không phải đáy texture. Nên cỡ texture được
+ * TÍNH RA từ chiều cao muốn có (`standing()`), không gõ tay — gõ tay là y như rằng có vật lơ
+ * lửng và bóng đổ rơi lệch xuống dưới chân.
  */
 
 /** Tiền tố cho ảnh gốc vừa tải về, để không đụng tên với texture của game. */
@@ -40,15 +33,11 @@ const SRC = "photo/";
 const FLY = "fly";
 
 /**
- * Thớt gỗ nằm trên mặt quầy.
+ * Thớt gỗ nằm trên mặt quầy. KHÔNG có bản vẽ code đi kèm: ảnh chưa về thì `StallScene` bỏ qua
+ * hẳn, mặt quầy gỗ sẵn có vẫn đọc ra là chỗ làm bánh.
  *
- * KHÔNG có bản vẽ code đi kèm: ảnh chưa về thì `StallScene` bỏ qua hẳn, mặt quầy gỗ
- * sẵn có vẫn đọc ra là chỗ làm bánh. Giống bảng gỗ và bình chữa cháy.
- *
- * Ảnh phải chụp ở góc ngẩng 30°, tức MẶT TRÊN rộng gấp đúng đôi bề cao của nó — đó là
- * tỉ lệ mà phép chiếu trong `world/iso.ts` ép mọi mặt phẳng nằm ngang về. Sai tỉ lệ đó
- * thì thớt hoặc dựng đứng, hoặc bẹp thành cái thau; không ép méo ở code cứu được, vì
- * ép méo thì vành thớt méo theo.
+ * ⚠️ Ảnh phải chụp ở góc ngẩng 30°, tức MẶT TRÊN rộng gấp đúng đôi bề cao — đó là tỉ lệ mà
+ * `world/iso.ts` ép mọi mặt phẳng nằm ngang về. Sai tỉ lệ thì ép méo ở code cũng không cứu được.
  */
 export const BOARD_TEX = "cut_board";
 const BOARD = "cutting_board";
@@ -69,25 +58,19 @@ export const BASKET_W = 23;
 /**
  * SIÊU LẤY MẪU — bao nhiêu pixel texture cho một pixel thiết kế.
  *
- * `standing()` nướng ảnh về đúng chiều cao vật trong thế giới: chiếc Vespa cao 78 px.
- * Mà ảnh nguồn cao 342 px, nên 77% chi tiết bị vứt NGAY Ở BƯỚC NÀY — artist gửi ảnh
- * 4K cũng không cứu được. Rồi chỗ 78 px còn lại bị camera thế giới phóng
- * `ZOOM × RENDER_SCALE` lần mới lên tới màn hình: vẽ ~218 px bằng 78 px thông tin.
+ * `standing()` nướng ảnh về đúng chiều cao vật trong thế giới, rồi camera còn phóng
+ * `ZOOM × RENDER_SCALE` lần nữa — nên phải nướng dư ra đúng bằng hệ số phóng cuối cùng.
  *
- * Nên nướng dư ra đúng bằng hệ số phóng cuối cùng. 1,4 là `world/camera.ZOOM` —
- * viết thẳng số ở đây thay vì import, vì `art/` không nên phụ thuộc vào camera;
- * lệch nhau một chút cũng chỉ hơi dư hoặc hơi thiếu pixel, không gãy gì.
- *
- * Trần 3 để texture không phình quá: diện tích tăng theo BÌNH PHƯƠNG hệ số này.
+ * 1,4 là `world/camera.ZOOM`, viết thẳng số thay vì import vì `art/` không nên phụ thuộc camera.
+ * Trần 3 để texture không phình: diện tích tăng theo BÌNH PHƯƠNG hệ số này.
  */
 export const ART_SS = Math.min(3, Math.max(1, RENDER_SCALE * 1.4));
 
 /**
  * Hệ số siêu lấy mẫu của từng texture, để người VẼ biết phải thu nhỏ sprite bao nhiêu.
  *
- * Không thể suy ra từ cỡ texture được: `art/index.ts` nướng cả một bộ texture bằng
- * Graphics ở tỉ lệ 1:1 và chúng dùng chung bảng tên với ảnh thật. Thu nhỏ nhầm một
- * bức tường vẽ-bằng-code là tường co lại còn một nửa.
+ * ⚠️ Không suy ra từ cỡ texture được: `art/index.ts` nướng cả một bộ texture bằng Graphics ở tỉ
+ * lệ 1:1 và chúng dùng chung bảng tên với ảnh thật.
  */
 const ssOf = new Map<string, number>();
 
@@ -97,14 +80,43 @@ export function artScale(key: string) {
 }
 
 /**
- * Thu một sprite về đúng cỡ THIẾT KẾ của nó, bù lại phần texture đã nướng dư.
+ * Bề cao ô cắt chân dung, tính theo thân người. 0,55 là đầu + một chút vai: cái cổ rơi
+ * vào khoảng 27–43% chiều cao thân tuỳ người (bà Bảy thấp nhất, cô Ba cao nhất), nên
+ * cắt rộng hơn mốc cao nhất một nhịp thì ai cũng còn vai, không ai bị cắt ngang cằm.
+ */
+const FACE_CROP = 0.55;
+
+/**
+ * Chân dung VUÔNG quanh cái đầu, trả về data-URL cho thẻ `<img>` của sổ tay.
  *
- * `extra` là hệ số phóng của riêng chỗ gọi (icon nguyên liệu 0,62; ảnh kéo-thả 1,15…) —
- * nhân vào chứ không thay thế, nên chỗ gọi vẫn nói bằng con số nó vẫn luôn nói.
+ * ⚠️ Cắt bằng HÌNH HỌC chứ không giao cho CSS `object-fit: cover`: người vẽ bằng code chừa 16 px
+ * trống trên đỉnh đầu, người đã có ảnh thật thì `standing()` cắt sát đỉnh đầu. Cùng luật `cover`
+ * trên hai tỉ lệ khung khác nhau ra hai kiểu ảnh khác hẳn.
  *
- * Phải gọi LẠI sau mỗi `setTexture`: hệ số thuộc về texture chứ không thuộc sprite, mà
- * cùng một sprite có thể đổi qua lại giữa ảnh thật (dư pixel) và hình vẽ code (1:1) —
- * ổ bánh trên tay là đúng kiểu đó.
+ * Hai mốc dưới đây đúng cho CẢ HAI loại: chân chạm đất ở `H − 1 − BASE − TH/2`, đỉnh đầu cách
+ * chỗ đó đúng một thân người.
+ */
+export function faceCrop(scene: Phaser.Scene, key: string): string {
+  const src = scene.textures.get(key).getSourceImage() as CanvasImageSource & { width: number; height: number };
+  const ss = artScale(key);
+  const headTop = src.height / ss - 1 - BASE - TH / 2 - BODY_H;
+  const side = Math.round(BODY_H * FACE_CROP * ss);
+  const out = document.createElement("canvas");
+  out.width = out.height = side;
+  const ctx = out.getContext("2d");
+  if (!ctx) return "";
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(src, Math.round((src.width - side) / 2), Math.round(headTop * ss), side, side, 0, 0, side, side);
+  return out.toDataURL();
+}
+
+/**
+ * Thu một sprite về đúng cỡ THIẾT KẾ của nó, bù lại phần texture đã nướng dư. `extra` là hệ số
+ * phóng của riêng chỗ gọi, nhân vào chứ không thay thế.
+ *
+ * ⚠️ Phải gọi LẠI sau mỗi `setTexture`: hệ số thuộc về texture chứ không thuộc sprite, mà cùng
+ * một sprite có thể đổi qua lại giữa ảnh thật (dư pixel) và hình vẽ code (1:1).
  */
 export function fitPhoto<T extends Phaser.GameObjects.Image>(img: T, extra = 1): T {
   img.setScale(extra / artScale(img.texture.key));
@@ -114,12 +126,11 @@ export function fitPhoto<T extends Phaser.GameObjects.Image>(img: T, extra = 1):
 // ─────────────────────────────────────────────────────────────────────── ô sàn
 
 /**
- * Ảnh ô sàn đã được `prep-art.py` cắt sẵn ĐÚNG cỡ texture game (62×38, tâm hình
- * thoi đúng chỗ), nên ở đây chỉ việc nhận nguyên ảnh làm texture — không vẽ lại.
+ * Ảnh ô sàn đã được `prep-art.py` cắt sẵn ĐÚNG cỡ texture game (62×38, tâm hình thoi đúng chỗ),
+ * nên ở đây chỉ việc nhận nguyên ảnh làm texture.
  *
- * KHÔNG có sàn quán (`shop`): tấm gạch bông hoa văn quá dày, lát kín sàn quán thì
- * nền rối hơn thứ đứng trên nó — mà sàn quán là phông của khoảnh khắc quan trọng
- * nhất game (khách nhìn tay mình làm, T1). Sàn quán để trắng, dùng `art/tiles.ts`.
+ * KHÔNG có sàn quán (`shop`): tấm gạch bông hoa văn quá dày, lát kín thì nền rối hơn thứ đứng
+ * trên nó — mà sàn quán là phông của khoảnh khắc quan trọng nhất game (T1).
  */
 const FLOORS = ["walk", "road"] as const;
 
@@ -135,16 +146,11 @@ type Standing = {
 };
 
 /**
- * ── VÌ SAO ẢNH PHẢI HẠ XUỐNG, KHÔNG ĐỂ ĐÚNG TÂM Ô ────────────────────────────
+ * VÌ SAO ẢNH PHẢI HẠ XUỐNG, KHÔNG ĐỂ ĐÚNG TÂM Ô: đạo cụ vẽ bằng code có đáy là HÌNH THOI trùng
+ * khít mặt ô, còn ảnh chụp thì đáy là một ĐƯỜNG THẲNG NGANG. Đặt đường đó đúng tâm hình thoi thì
+ * nửa trước của ô lộ ra trống và cái lò trông như treo lơ lửng.
  *
- * Đạo cụ vẽ bằng code đứng bằng `standing()`: đáy khối là một HÌNH THOI trùng khít
- * mặt ô, nên nó phủ từ đỉnh sau (tâm − TH/2) tới đỉnh trước (tâm + TH/2) — mắt đọc
- * ra ngay là "vật này nằm trên ô này".
- *
- * Ảnh chụp thì đáy là một ĐƯỜNG THẲNG NGANG. Đặt đường đó đúng vào tâm hình thoi
- * thì nửa trước của ô lộ ra trống dưới chân vật, và cái lò trông như treo lơ lửng
- * cách sàn mấy px. Nên mọi ảnh đều tụt xuống `SIT` px: đáy ảnh rơi vào khoảng hai
- * phần ba về phía đỉnh trước của ô, đúng chỗ mặt trước của vật thật sự chạm đất.
+ * Nên mọi ảnh tụt xuống `SIT` px: đáy ảnh rơi vào khoảng hai phần ba về phía đỉnh trước của ô.
  */
 const SIT = 10;
 
@@ -177,47 +183,64 @@ const STANDING: Record<string, [src: string, o: Standing]> = {
 // ──────────────────────────────────────────────────────────── người chơi 8 hướng
 
 /**
- * Tám hướng của cô bán bánh, cắt từ bảng xoay của artist bằng `tools/cut-character.py`.
+ * Tám hướng của một bảng xoay, cắt ra bằng `tools/cut-character.py`. Tên file là tên HƯỚNG TRÊN
+ * MÀN HÌNH (`world/iso.Facing8`) nên bảng này chỉ là danh sách.
  *
- * Tên file là tên HƯỚNG TRÊN MÀN HÌNH (`world/iso.Facing8`), nên bảng này chỉ là
- * danh sách — không có chỗ nào phải ánh xạ tên nọ sang tên kia.
- *
- * Tám file CÙNG MỘT KHUNG, đáy khung là mặt đất và tâm ngang khung là tâm hai bàn
- * chân (cut-character.py lo việc đó). Nhờ vậy đổi hướng là đổi đúng tấm hình, nhân
- * vật không nhảy lên hụp xuống hay trượt ngang — thứ duy nhất `photo.ts` cần biết
- * là CHIỀU CAO, một con số cho cả tám.
+ * Tám file CÙNG MỘT KHUNG, đáy khung là mặt đất và tâm ngang khung là tâm hai bàn chân — nhờ vậy
+ * đổi hướng là đổi đúng tấm hình, nhân vật không nhảy lên hụp xuống hay trượt ngang.
  */
-const PLAYER_DIRS: readonly Facing8[] = ["s", "se", "e", "ne", "n", "nw", "w", "sw"];
+const DIRS8: readonly Facing8[] = ["s", "se", "e", "ne", "n", "nw", "w", "sw"];
 
 const PLAYER_SRC = (d: Facing8) => `player/p_${d}`;
 
 /**
- * Chiều cao khung chung, px thiết kế. 65 chứ không phải `BODY_H` = 64: khung cao
- * bằng hướng có BÚI TÓC CAO NHẤT, mà hướng chính diện thấp hơn thế một chút — nới
- * ra đúng tỉ lệ đó thì cô đứng chính diện mới cao đúng bằng người vẽ bằng code
- * đứng cạnh. `tools/cut-character.py` in sẵn con số này mỗi lần cắt lại.
+ * Chiều cao khung chung, px thiết kế. 65 chứ không phải `BODY_H` = 64: khung cao bằng hướng có
+ * BÚI TÓC CAO NHẤT, mà hướng chính diện thấp hơn thế một chút. `tools/cut-character.py` in sẵn
+ * con số này mỗi lần cắt lại.
  */
 const PLAYER_H = 65;
+
+/**
+ * Khách đã có bảng xoay ảnh thật. Khoá là `memKey` của khách — tức `id` trong `content/npcs.ts`,
+ * cũng chính là tiền tố texture mà `CustomerActor` đang dùng, nên sơn đè xong là xong. Ai chưa
+ * có ảnh thì KHÔNG có dòng ở đây và vẫn là người vẽ bằng code.
+ *
+ * Mỗi người một THƯ MỤC RIÊNG trong `public/art/npc/`, file đặt tên bằng đúng tên hướng — chung
+ * thư mục rồi phân biệt bằng tiền tố là có ngày đặt trùng tên, mà trùng tên thì ảnh người này
+ * lặng lẽ đè lên người kia, không lỗi nào nổ ra.
+ *
+ * ⚠️ BA BẢNG ĐỀU LỆCH VỚI `content/npcs.ts` ở phần phụ kiện (bà Bảy thiếu kính lão và lưng còng;
+ * anh Bảo có kính nhưng thiếu nón kết). KHÔNG sửa `npcs.ts` theo ảnh — bảng dáng người bên đó là
+ * dữ liệu CANON §9, và từ lúc có ảnh thật thì `body` của mấy người này chỉ còn dùng để lấy MÀU
+ * cho huy hiệu nét mặt. Chỗ cần sửa là bảng xoay, lần artist vẽ tiếp.
+ */
+const NPC_PHOTOS: Record<string, { src: (d: Facing8) => string; h: number }> = {
+  // Anh Dũng — nón bảo hiểm nửa đầu, áo khoác xanh lá. Bảng `anh-dung-list.png`:
+  // bảng DUY NHẤT đủ tám hướng, không hướng nào phải lật ngang. (Bản render đầu,
+  // `driver_char_list.png`, có hai ô nghiêng mới xoay ~70° nên `e`/`w` đọc ra thành
+  // `se`/`sw`; artist render lại, bảng cũ còn trong `art-raw/` nhưng không dùng.)
+  ANH_DUNG: { src: (d) => `npc/anh-dung/${d}`, h: 64 },
+  // Bà Bảy — tóc búi bạc, áo tím nhạt, đi chân đất. Bảng `ba-bay-list.png`.
+  // Ảnh thiếu kính lão và lưng còng (`npcs.ts` có cả hai): còn tóc búi bạc làm dấu,
+  // vẫn đủ tách khỏi người kế bên, nhưng mất hai trong ba tín hiệu tuổi tác.
+  BA_BAY: { src: (d) => `npc/ba-bay/${d}`, h: 64 },
+  // Anh Bảo — sinh viên, kính tròn gọng đen, cardigan xám. Bảng `anh-bao-list.png`.
+  // Ảnh có KÍNH mà không có NÓN KẾT, `npcs.ts` ghi ngược lại. Đổi một dấu lấy một
+  // dấu nên vẫn không lẫn với ai; cái kính tròn to là thứ nhận ra nhanh nhất.
+  ANH_BAO: { src: (d) => `npc/anh-bao/${d}`, h: 65 },
+};
 
 // ──────────────────────────────────────────────────────────────── món trên tay
 
 /**
- * Bốn ổ bánh NẰM NGANG (prep-art.py đã xoay theo trục chính) và một ly trà ĐỨNG —
- * đúng bài kiểm tra bóng hình của `held.ts`: nhìn đen trắng vẫn phải phân biệt được.
- * `w` là bề ngang muốn có; ly trà đo theo chiều cao nên ghi `h`.
+ * Bốn ổ bánh NẰM NGANG (prep-art.py đã xoay theo trục chính) và một ly trà ĐỨNG — đúng bài kiểm
+ * tra bóng hình của `held.ts`. `w` là bề ngang muốn có; ly trà đo theo chiều cao nên ghi `h`.
  *
- * ── Tỉ lệ, đo theo cái gì ────────────────────────────────────────────────────
- * Người cao `BODY_H` = 64 px, tủ bánh (`PROP.shelf`) cao 86 px. Ổ bánh 30 px nằm
- * ngang là gần nửa chiều cao người và hơn 1/3 cái tủ — một ổ bánh mì Sài Gòn dài
- * chừng 25 cm bên cạnh người 1,65 m thì KHÔNG thể to như vậy. 21 px đưa nó về đúng
- * một phần ba người, nhìn ra ngay là ổ bánh chứ không phải khúc gỗ.
- * Ổ đã gói nhỉnh hơn (giấy bọc), ly trà hạ theo cùng một nhịp cho đồng bộ.
+ * Tỉ lệ đo theo người cao `BODY_H` = 64 px: ổ bánh 21 px là đúng một phần ba người, nhìn ra ngay
+ * là ổ bánh chứ không phải khúc gỗ. Ổ đã gói nhỉnh hơn (giấy bọc).
  *
- * THIẾU một ổ: `held_loaf_baked` (ổ đã nướng mà đã nguội, xem `held.ts`) chưa có ảnh
- * nào trong `public/art/`, nên cố ý không có dòng ở đây — y như dưa leo và tương ớt
- * bên `FILLINGS`, nó rơi về bản vẽ code. Artist gửi ảnh thì chỉ việc thêm một dòng.
- * Đừng mượn tạm ảnh ổ nóng: mượn xong là ổ nguội và ổ nóng giống hệt nhau, tức đúng
- * cái lỗi "art nói dối sim" mà ổ này sinh ra để vá.
+ * ⚠️ THIẾU `held_loaf_baked` (ổ đã nướng mà đã nguội) — cố ý không có dòng, nó rơi về bản vẽ
+ * code. Đừng mượn tạm ảnh ổ nóng: mượn xong là ổ nguội và ổ nóng giống hệt nhau.
  */
 const CARRIED: Partial<Record<HeldLook, [src: string, size: Fit]>> = {
   loaf_cold: ["held_loaf_cold", { w: 21 }],
@@ -230,12 +253,11 @@ const CARRIED: Partial<Record<HeldLook, [src: string, size: Fit]>> = {
 // ──────────────────────────────────────────────────────────────────────── nhân
 
 /**
- * Tám món artist đã vẽ. Hai món còn thiếu — `dualeo` (dưa leo) và `tuongot`
- * (tương ớt) — cố ý KHÔNG có trong bảng: chúng rơi về hình vẽ code của `food.ts`.
+ * Tám món artist đã vẽ. `dualeo` và `tuongot` cố ý KHÔNG có trong bảng — chúng rơi về hình vẽ
+ * code của `food.ts`.
  *
- * Lưu ý cho lần artist vẽ tiếp (CANON §15): thịt nguội và chả lụa giờ đều là
- * LÁT TRÒN HỒNG, chỉ khác sắc độ. Bản vẽ code cũ cố tình cho thịt nguội hình
- * vuông bo góc để nhìn đen trắng vẫn tách được hai món.
+ * ⚠️ Lưu ý cho lần vẽ tiếp: thịt nguội và chả lụa giờ đều là LÁT TRÒN HỒNG, chỉ khác sắc độ. Bản
+ * vẽ code cũ cố tình cho thịt nguội hình vuông bo góc để nhìn đen trắng vẫn tách được hai món.
  */
 const FILLINGS: Partial<Record<Ingredient, [src: string, fill?: number, inLoaf?: number]>> = {
   pate: ["ing_pate"],
@@ -245,12 +267,10 @@ const FILLINGS: Partial<Record<Ingredient, [src: string, fill?: number, inLoaf?:
   opla: ["ing_opla"],
   dochua: ["ing_dochua"],
   hanhngo: ["ing_hanhngo"],
-  // Trái ớt chiếm gần kín khung ảnh của nó, trong khi mấy món khác còn chừa lề.
-  // Cho đầy ô như nhau thì ớt to lấn át cả đĩa — nó là GIA VỊ, không phải miếng nhân.
-  //
-  // Số thứ BA là cỡ lúc NẰM TRONG Ổ, nhỏ hơn hẳn cỡ icon trong khay. Trong khay ớt
-  // phải đủ to để bấm trúng và nhận ra; nằm trên ổ bánh cạnh lát chả, miếng xíu mại
-  // thì nó là vài lát gia vị rắc lên, to bằng miếng nhân là đọc sai món ngay.
+  // Trái ớt chiếm gần kín khung ảnh của nó trong khi mấy món khác còn chừa lề, nên cho đầy ô
+  // như nhau thì ớt lấn át cả đĩa — nó là GIA VỊ, không phải miếng nhân.
+  // Số thứ BA là cỡ lúc NẰM TRONG Ổ: trong khay ớt phải đủ to để bấm trúng, nằm trên ổ bánh thì
+  // nó chỉ là vài lát rắc lên.
   ot: ["ing_ot", 0.62, 0.40],
 };
 
@@ -260,12 +280,11 @@ const OPEN_LOAF = ["loaf_lid", "loaf_trough"] as const;
 // ─────────────────────────────────────────────────────────────────────── tải về
 
 /**
- * Ảnh đã XIN tải rồi — nhớ ở mức module, không phải mức scene.
+ * Ảnh đã XIN tải rồi — nhớ ở mức module, không phải mức scene, vì cả BootScene lẫn StallScene
+ * đều gọi `preloadPhotos` và StallScene thì dựng lại mỗi ngày.
  *
- * Cả BootScene lẫn StallScene đều gọi `preloadPhotos`, mà StallScene thì dựng lại
- * mỗi ngày. Hỏi `textures.exists` là chưa đủ: lúc một lượt tải còn đang bay thì
- * texture chưa có, nên lượt sau xin tải lại, và Phaser chửi "Texture key already
- * in use" khi cả hai cùng về. Một cái tên chỉ được xin đúng một lần cho cả ván.
+ * ⚠️ Hỏi `textures.exists` là chưa đủ: lúc một lượt tải còn đang bay thì texture chưa có, nên
+ * lượt sau xin tải lại và Phaser chửi "Texture key already in use" khi cả hai cùng về.
  */
 const asked = new Set<string>();
 
@@ -277,7 +296,8 @@ export function preloadPhotos(scene: Phaser.Scene) {
     ...Object.values(CARRIED).map(([src]) => src),
     ...Object.values(FILLINGS).map(([src]) => src),
     ...OPEN_LOAF,
-    ...PLAYER_DIRS.map(PLAYER_SRC),
+    ...DIRS8.map(PLAYER_SRC),
+    ...Object.values(NPC_PHOTOS).flatMap((o) => DIRS8.map(o.src)),
     FLY,
     BOARD,
     BASKET,
@@ -301,10 +321,8 @@ function source(scene: Phaser.Scene, name: string): HTMLImageElement | null {
 /**
  * Thu ảnh về cỡ `w × h` bằng cách CHIA ĐÔI nhiều nhịp rồi mới về cỡ cuối.
  *
- * `drawImage` thu một phát từ 384 px xuống 70 px là trình duyệt chỉ lấy mẫu song
- * tuyến tính: mỗi điểm đích đọc 4 điểm nguồn trong khi đáng ra phải gộp ~30 điểm.
- * Kết quả là ảnh vừa rỗ vừa bệt — đúng cái "mờ hơn hẳn ảnh gốc" mà mắt bắt được
- * ngay. Chia đôi từng nhịp thì mỗi nhịp gộp đủ 4 điểm, không mất mẫu nào.
+ * `drawImage` thu một phát từ 384 px xuống 70 px là trình duyệt chỉ lấy mẫu song tuyến tính: mỗi
+ * điểm đích đọc 4 điểm nguồn trong khi đáng ra phải gộp ~30 điểm, ra ảnh vừa rỗ vừa bệt.
  */
 function shrink(img: HTMLImageElement, w: number, h: number): CanvasImageSource {
   let src: CanvasImageSource = img;
@@ -326,10 +344,8 @@ function shrink(img: HTMLImageElement, w: number, h: number): CanvasImageSource 
 
 /** Mở một texture canvas trắng, xoá bản cũ nếu có. Gọi lúc boot, chưa sprite nào dùng. */
 /**
- * Canvas trắng để vẽ texture lên.
- *
- * `ss` > 1 thì canvas thật to gấp `ss` lần NHƯNG context được scale sẵn — nên mọi
- * lệnh vẽ phía sau vẫn viết bằng toạ độ thiết kế, không chỗ nào phải nhân tay.
+ * Canvas trắng để vẽ texture lên. `ss` > 1 thì canvas to gấp `ss` lần NHƯNG context được scale
+ * sẵn — mọi lệnh vẽ phía sau vẫn viết bằng toạ độ thiết kế, không chỗ nào phải nhân tay.
  */
 /**
  * Vật NẰM TRÊN MẶT QUẦY: texture ôm sát ảnh, không đệm thêm gì.
@@ -420,29 +436,53 @@ function floors(scene: Phaser.Scene) {
 }
 
 /**
- * Sơn ảnh thật lên bộ texture nhân vật người chơi — CẢ tư thế buông tay lẫn tư thế
- * bưng đồ, bằng cùng một tấm hình.
+ * Sơn ảnh thật lên bộ texture của MỘT nhân vật, tám hướng.
+ *
+ * Thiếu DÙ CHỈ MỘT hướng thì không sơn gì cả và không ghi tên vào sổ tám hướng:
+ * trộn ảnh thật với bản vẽ code giữa chừng là người đổi hình hài mỗi lần quay.
+ * Nhờ vậy bảng xoay về được nửa chừng vẫn chạy — cả bộ lặng lẽ ở lại art v1.
+ */
+function eightWay(
+  scene: Phaser.Scene, who: string,
+  src: (d: Facing8) => string, h: number, poses: readonly Pose[],
+) {
+  if (DIRS8.some((d) => !source(scene, src(d)))) return;
+  // Ghi sổ TRƯỚC khi sơn, không phải sau: chính `textureFor` dưới đây tra cái sổ đó
+  // để ra tên tám hướng. Ghi sau là nó còn đang gộp về ba hướng, và cả tám tấm ảnh
+  // đè lên nhau trên đúng ba cái tên.
+  markEightWay(who);
+  for (const dir of DIRS8) {
+    for (const pose of poses) {
+      // Chân nhân vật đứng ĐÚNG tâm hình thoi (`dy: 0`), không tụt `SIT` px như đạo
+      // cụ: đáy ảnh đây là đế giày, không phải mặt trước của một cái khối.
+      standing(scene, textureFor(dir, who, pose).key, src(dir), { h, dy: 0 });
+    }
+  }
+}
+
+/**
+ * Người chơi — sơn CẢ tư thế buông tay lẫn tư thế bưng đồ, bằng cùng một tấm hình.
  *
  * Artist chưa render tư thế bưng, mà sơn mỗi tư thế buông tay thì cứ cầm ổ bánh lên
  * là cô hoá lại thành hình vẽ code rồi buông tay ra lại thành người thật — cái nháy
  * đó lộ hơn hẳn chuyện hai tay buông thõng. Món vẫn nằm đúng tầm tay nhờ `holdAnchor`
  * (ngang hông, hơi chếch ra trước), nên nhìn ra là đang xách đồ.
- *
- * Thiếu DÙ CHỈ MỘT hướng thì không sơn gì cả và không ghi tên vào sổ tám hướng:
- * trộn ảnh thật với bản vẽ code giữa chừng là cô đổi hình hài mỗi lần quay người.
  */
 function player(scene: Phaser.Scene) {
-  if (PLAYER_DIRS.some((d) => !source(scene, PLAYER_SRC(d)))) return;
-  // Ghi sổ TRƯỚC khi sơn, không phải sau: chính `textureFor` dưới đây tra cái sổ đó
-  // để ra tên tám hướng. Ghi sau là nó còn đang gộp về ba hướng, và cả tám tấm ảnh
-  // đè lên nhau trên đúng ba cái tên.
-  markEightWay("p");
-  for (const dir of PLAYER_DIRS) {
-    for (const pose of ["idle", "carry"] as const) {
-      // Chân nhân vật đứng ĐÚNG tâm hình thoi (`dy: 0`), không tụt `SIT` px như đạo
-      // cụ: đáy ảnh đây là đế giày, không phải mặt trước của một cái khối.
-      standing(scene, textureFor(dir, "p", pose).key, PLAYER_SRC(dir), { h: PLAYER_H, dy: 0 });
-    }
+  eightWay(scene, "p", PLAYER_SRC, PLAYER_H, ["idle", "carry"]);
+}
+
+/**
+ * Khách có ảnh thật. Chỉ tư thế buông tay: khách không bưng gì, nên `character.ts`
+ * cũng chỉ nướng mỗi `idle` cho họ — nướng thêm `carry` là tám texture nằm không.
+ *
+ * Sơn ở đây, lúc boot, nên tên `ANH_DUNG_s` có sẵn trước khi `CustomerActor` kịp
+ * hỏi — mà chỗ đó chỉ gọi `buildBody` khi CHƯA có tên đó. Người có ảnh thì không
+ * ai vẽ lại bằng code nữa, người chưa có ảnh vẫn được vẽ như cũ.
+ */
+function npcPhotos(scene: Phaser.Scene) {
+  for (const [who, o] of Object.entries(NPC_PHOTOS)) {
+    eightWay(scene, who, o.src, o.h, ["idle"]);
   }
 }
 
@@ -497,6 +537,7 @@ export function paintPhotos(scene: Phaser.Scene) {
   onCounter(scene, BASKET_TEX, BASKET, BASKET_W);
   for (const [key, [src, o]] of Object.entries(STANDING)) standing(scene, key, src, o);
   player(scene);
+  npcPhotos(scene);
   for (const [hand, [src, fit]] of Object.entries(CARRIED) as [HeldLook, [string, Fit]][]) {
     boxed(scene, HELD.key(hand), src, HELD.W, fit);
   }

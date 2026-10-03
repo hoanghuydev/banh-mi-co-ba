@@ -310,6 +310,10 @@ export class MenuScene extends Phaser.Scene {
       () => this.show("audio"), "nhạc · hẻm · giọng người · thao tác · âm báo");
     tg("Giảm chuyển động", () => (s.reducedMotion ? "bật" : "tắt"), () => put({ reducedMotion: !s.reducedMotion }),
       "tắt xe chạy qua, lá bay, rung màn hình");
+    // Cô Ba không có bảng tên dưới chân như khách — không có mũi tên thì người chơi mới
+    // vào phải bấm thử một phím mới biết mình là ai trong đám người đứng quanh quầy.
+    tg("Mũi tên trên đầu mình", () => (s.playerMarker ? "bật" : "tắt"), () => put({ playerMarker: !s.playerMarker }),
+      "tự mờ đi khi đang đi, sáng lại lúc đứng yên");
     tg("Bỏ giới hạn thời gian", () => (s.noTimePressure ? "bật" : "tắt"), () => put({ noTimePressure: !s.noTimePressure }),
       "khách bỏ đi vì mình làm sai, không vì mình chậm");
     // CANON §15 công tắc số 1 (P2-04 RB6): tắt thì tin vẫn lan, chỉ là luôn đúng

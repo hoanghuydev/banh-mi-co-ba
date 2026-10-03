@@ -23,7 +23,7 @@
 | # | Trụ cột | Hệ quả bắt buộc |
 |---|---|---|
 | **T1** | **Khách chấm QUÁ TRÌNH, không chỉ chấm kết quả** | Mọi sai sót phải xảy ra **trước mặt khách**, trong tầm nhìn có thể đọc được |
-| **T2** | **Món ăn LÀ lựa chọn hội thoại** | **Không có dialogue tree.** Người chơi không bao giờ chọn câu nói. Họ chọn nguyên liệu |
+| **T2** | **Món ăn LÀ lựa chọn hội thoại** | **Khi có người đang chờ bánh, món ăn là câu trả lời DUY NHẤT** — không một dòng chữ nào để bấm, chỉ có nguyên liệu. Lựa chọn bằng lời tồn tại ĐÚNG MỘT CHỖ: khi **không ai đang chờ** (quầy trống, người đã nhận bánh còn nán lại, người đi ngang). Trần **2 cuộc sâu/ngày**, **0 trong khung PEAK**, và **không bao giờ đóng băng đồng hồ**. Chi tiết: `phase-2-he-npc/P2-06-flow-tro-chuyen.md` |
 | **T3** | **Không hiện chỉ số quan hệ** | Không `+3 trust`, không thanh tình cảm, không màu tên. Chỉ mặt, lời, dáng, hành động, hệ quả trễ |
 | **T4** | **Một mùa có điểm kết** | 40 ngày. Ship trọn vẹn. **Không** Early Access, **không** daily login, **không** stamina, **không** cây chết khi offline |
 | **T5** | **Attention phải NHÌN THẤY ĐƯỢC** | Không roll xúc xắc. Certainty tích luỹ. Người chơi phải đọc được rủi ro **trước** khi hành động |
@@ -270,11 +270,34 @@ Người chơi là **cháu của cô Ba**, đang trông xe giúp cô. Cô Ba xu�
 
 ## 11. Số dòng thoại và kiến trúc thoại
 
-| Mốc | Dòng | Từ | Đối chiếu thật |
+| Mốc | **Từ** (đơn vị chốt) | Dòng (tham khảo) | Đối chiếu thật |
 |---|---|---|---|
-| **v1 / demo** | **~520** | ~5.000 | 1/10 Firewatch · 1 writer × 2–3 tuần |
-| Beta nội bộ | ~1.200 | ~12.000 | ~20% Firewatch · 6–8 tuần |
-| **Full release** | **~2.980** | ~30.000 | 48% Firewatch · 14% Hades · 3–4 tháng |
+| **v1 / demo** | **~5.000** | ~550 | 1/10 Firewatch · 1 writer × 2–3 tuần |
+| Beta nội bộ | ~12.000 | ~1.300 | ~20% Firewatch · 6–8 tuần |
+| **Full release** | **~38.000** | ~4.200 | ~68% Firewatch · 18% Hades · 4–5 tháng |
+
+> **Nới mốc — quyết định của chủ dự án, ngày 2026-10-02.** Mốc cũ là 2.980 dòng /
+> 30.000 từ. Lý do nới: nội dung thoại là thứ người chơi THẤY, và hai đợt rà soát liên
+> tiếp đều kết luận chỗ mỏng nhất của trò chơi nằm ở nội dung chứ không ở cơ chế.
+>
+> **Và đổi ĐƠN VỊ CHỐT từ DÒNG sang TỪ.** Bảng cũ có hai cột mà không cột nào được khai
+> là cột thắng, nên chúng trôi khỏi nhau: đo thật, kho thoại ra **9,07 từ/dòng** trong
+> khi bảng cũ ngầm giả định **10,07** — tức cột *dòng* siết sớm hơn cột *từ* chừng 10%.
+> Dự án chạm trần dòng (107%) trong khi số từ mới ở 94%, và cái trần chặn lại hoá ra là
+> một con số không ai cố ý đặt.
+>
+> Từ là đơn vị đúng: nó đo **công viết**, **thời gian đọc** và **chi phí bản địa hoá**
+> cùng một lúc. Còn số dòng chỉ nói lên người viết ngắt câu thế nào — một lựa chọn văn
+> phong, không phải một chi phí. Cột dòng giữ lại để tham khảo, và việc canh độ dài câu
+> đã có `content:stats` lo bằng tỉ lệ **từ/dòng** (mục tiêu 8–12, đèn đỏ > 16).
+>
+> ⚠️ **Nới trần KHÔNG phải cây đũa thần, và đây là chỗ dễ tự lừa nhất.** Đo ở P2-06 §1:
+> mỗi cuộc viết trung bình 1.114 ký tự nhưng một lần chơi chỉ đi qua **410** — tức
+> **63% số chữ đã trả tiền không bao giờ lên màn hình**, vì cây rẽ nhánh và vì T4 không
+> có New Game+. Viết thêm 8.000 từ mà tỉ lệ đó giữ nguyên thì chỉ ~3.000 từ tới được
+> người chơi. **Đòn bẩy mạnh hơn trần là ĐỘ PHỦ**: cuộc một nhịp đọc hết 100%, cuộc bốn
+> nhịp đọc hết 37%. Ưu tiên viết RỘNG (nhiều tình huống, nhiều người) hơn SÂU (nhiều
+> tầng cho một tình huống).
 
 **Kiến trúc: rule database chấm điểm theo độ cụ thể** (Elan Ruskin, Valve, GDC 2012 — **copy nguyên, không sáng tạo**).
 
@@ -400,6 +423,8 @@ Nhân: thịt / heo quay / pate / xíu mại / chả lụa / cá / gà / ốp la
 4. **Âm thanh tách 5 kênh** (nhạc / đường phố / giọng NPC / thao tác / âm báo) + nút riêng **"tắt âm báo tiêu cực"**.
 5. **Chạm-để-đặt thay kéo-thả** + **nút Hoàn tác** + **một bước xác nhận trước khi đưa bánh**. Ba cái đi chung, không tách.
 
+7. **Không một lớp UI nào được nuốt phím tạm dừng.** Người chơi phải vào được menu tạm dừng từ **mọi** trạng thái, kể cả giữa lúc khách đang nói — đúng chữ "kể cả" của mục 2. `TalkPanel.bindKeys` từng gọi `stopPropagation()` trên **mọi** `keydown`, nên `P` không tới được `StallScene`: đó là một vi phạm §15.2, không phải một góp ý. Danh sách đi thẳng: `P`, `Tab`, `F1`–`F8`.
+
 **6 công tắc bắt buộc:** NPC nhớ nhầm/đổ oan · số khách cùng lúc (chế độ "một khách một lượt") · khách biến mất không chia tay (tuỳ chọn "họ để lại lời nhắn") · sổ tay cuối ngày · tiếng ồn đám đông riêng · hiệu ứng khi làm sai (rung, nháy đỏ).
 
 **Icon:** dưa leo / ngò / hành lá đều xanh → phải khác nhau về **HÌNH DÁNG**, không chỉ màu. Font **sans, line-height rộng** (tiếng Việt có dấu chồng dấu: ề, ộ, ỡ, ữ). **Không viết hoa toàn bộ.**
@@ -415,6 +440,8 @@ Nhân: thịt / heo quay / pate / xíu mại / chả lụa / cá / gà / ốp la
 **Đừng-2: roll xác suất mỗi frame + mô phỏng tầm nhìn chính xác.** *"Player perception should win over simulation accuracy."*
 
 **Đừng-3: cho ngẫu nhiên / tin đồn chạm vào HỆ QUẢ.** Được đổi **biến thể** của phản ứng; **không** được đổi **category** và **intensity**.
+
+**Đừng-5: hai modal full-stop trong cùng một vòng lặp.** `AssemblyPanel` (bảng kẹp nhân) **không** đóng băng đồng hồ, còn `TalkPanel` thì **có** — hai cái bảng che gần hết màn hình với hai luật thời gian ngược nhau, trong cùng một phút chơi. Đó chính là định nghĩa vận hành của chữ *"switch content"* mà người chơi báo. Một vòng lặp được phép có **một** modal; cái thứ hai phải là bong bóng / diegetic. (Đã sửa ở P2-06: thẻ trò chuyện neo cạnh người nói và đồng hồ vẫn chạy.)
 
 **Đừng-4: frame-by-frame animation.** Cuphead: >25 phút cho MỘT frame. Thay bằng **layered sprite** (6 lông mày × 6 mắt × 6 miệng = **216 trạng thái từ 18 file**) + kỹ thuật Rain World (vài node đầu/thân/tay + spring/lerp → lean, tilt, nhún vai, **không tốn thêm sprite**). Celeste: biến dạng chỉ tồn tại **1–2 frame**, chênh **một hàng pixel**.
 

@@ -1,30 +1,27 @@
 /**
- * Trí nhớ 3 tầng + quan hệ 3 bucket — P2-03. Thuần dữ liệu, không Phaser, không RNG.
- *
+ * Trí nhớ 3 tầng + quan hệ 3 bucket. Thuần dữ liệu, không Phaser, không RNG.
  *   SHORT 6–8 slot · LONG 3–4 slot (decay chậm ~3×) · CORE 1 slot (ghi một lần, không phai)
  *
  * Năm luật làm nên cảm giác "người này thật" — đừng "tối ưu" đi trong một lần refactor:
- *  1. Ghi đè cái có cường độ THẤP NHẤT, không phải cái cũ nhất (§2.2) — không spam chuyện
- *     vặt để đẩy một lỗi nặng ra khỏi đầu người ta được.
- *  2. Decay TAPERING: giữ → dốc cos mượt → sàn. Không có vách đứng kiểu RimWorld (§2.4).
- *  3. Sàn theo bucket ĐÃ ĐẠT (Stardew) + decay đếm LẦN GHÉ BỊ LỠ, không đếm ngày (§2.5, T4).
- *  4. Memory thứ n cùng kind chỉ góp 0,75^(n−1) (§2.6) — không farm được bằng một chiêu.
- *  5. Chuộc lỗi phải tốn công hơn gây lỗi, qua NHIỀU NGÀY, đúng TRỤC (§2.7).
- * Và một biến không bao giờ phục hồi: trần tin tưởng (§2.8, CANON §8d).
+ *  1. ghi đè cái có cường độ THẤP NHẤT, không phải cái cũ nhất (không spam chuyện vặt để đẩy một
+ *     lỗi nặng ra khỏi đầu người ta được)
+ *  2. decay TAPERING: giữ → dốc cos mượt → sàn, không có vách đứng
+ *  3. sàn theo bucket ĐÃ ĐẠT + decay đếm LẦN GHÉ BỊ LỠ, không đếm ngày
+ *  4. memory thứ n cùng kind chỉ góp 0,75^(n−1) — không farm được bằng một chiêu
+ *  5. chuộc lỗi phải tốn công hơn gây lỗi, qua NHIỀU NGÀY, đúng TRỤC
+ * Và một biến không bao giờ phục hồi: trần tin tưởng.
  *
- * T3: KHÔNG một con số nào ở đây được lên màn hình. Không bao giờ.
- * ⚠️ REL_K_* và điểm "phục vụ tử tế" là số của bản dựng (doc không chốt) — cần tune.
+ * T3: KHÔNG một con số nào ở đây được lên màn hình.
+ * ⚠️ `REL_K_*` và điểm "phục vụ tử tế" là số của bản dựng (doc không chốt) — cần tune.
  */
 import type { Personality } from "../content/npcs";
 import type { RelTier } from "../core/types";
 import { decayMul, relGainMul } from "./personality";
 
 /**
- * `MISSED_EXTRA` — cái hụt của một THÓI QUEN, không phải một sự kiện CANON §3. Nó không
- * có `StimId` và không bao giờ có: không ai NHÌN THẤY được chuyện "mấy bữa trước có mà
- * bữa nay không", vì nó chỉ tồn tại trong đầu người đã quen được cho thêm. Cũng vì vậy
- * nó không đi tin đồn (`witness` bỏ qua kind không có TRUE_CLAIM) — y như `BROKEN_PROMISE`
- * và `RUDE_TO_THEM` đã nằm sẵn trong danh sách này mà không phải kích thích.
+ * `MISSED_EXTRA` — cái hụt của một THÓI QUEN, không phải một sự kiện CANON §3. Nó không có
+ * `StimId` và không bao giờ có: không ai NHÌN THẤY được chuyện "mấy bữa trước có mà bữa nay
+ * không". Cũng vì vậy nó không đi tin đồn (`witness` bỏ qua kind không có TRUE_CLAIM).
  */
 export type BaseKind =
   | "WRONG_NAME" | "MADE_THEM_WAIT" | "BURNT_OR_COLD" | "DROPPED_FOOD" | "ORDER_DEFECT" | "DIRTY_HANDS"
@@ -81,14 +78,20 @@ export type RelState = {
   /** "Vắng n ngày" — hệ quả trễ của người im lặng (P2-02 §4.6). */
   absentUntil: number;
   /**
-   * Số lượt ghé LIÊN TIẾP gần đây được cho thêm — nền của thói quen "cho thêm" (§8i đọc
-   * ngược: cho hoài thì người ta QUEN, và cái quen đó là một món nợ). Đếm theo LƯỢT GHÉ
+   * Số lượt ghé LIÊN TIẾP gần đây được cho thêm — nền của thói quen "cho thêm". Đếm theo LƯỢT GHÉ
    * chứ không theo ngày: mười hai người trong hẻm không ai ghé đủ bốn mươi ngày.
    *
-   * Không bắt buộc có: save cũ thiếu trường này đọc ra 0 = "chưa có thói quen nào",
-   * đúng thứ mình muốn (không bịa ra một thói quen chưa từng xảy ra). Xem `extraHabit`.
+   * Không bắt buộc có: save cũ thiếu trường này đọc ra 0 = "chưa có thói quen nào".
    */
   extraStreak?: number;
+  /**
+   * Ngày RÚT KẾT LUẬN gần nhất (reflection). Không bắt buộc có — save cũ đọc ra `undefined` =
+   * "chưa rút lần nào".
+   *
+   * ⚠️ Ngưỡng cộng dồn TỪ MỐC NÀY, không cộng trong một ngày: một người ghé quầy mười lăm phút thì
+   * một ngày hiếm khi đủ.
+   */
+  reflectedDay?: number;
   memory: { short: Memory[]; long: Memory[]; core: Memory | null };
   memSeq: number;
 };
@@ -213,16 +216,13 @@ export const MISSED_EXTRA_STEP = 0.12;
 export type ExtraVisit = "GAVE" | "NONE" | "REFUSED";
 
 /**
- * Cập nhật chuỗi "cho thêm" cho MỘT lượt ghé, trả về cường độ của cái hụt (0 = không có
- * gì để nói).
+ * Cập nhật chuỗi "cho thêm" cho MỘT lượt ghé, trả về cường độ của cái hụt (0 = không có gì để nói).
  *
- * Nếp gãy ĐÚNG MỘT LẦN: chuỗi về 0 ngay tại đây nên lượt sau không còn gì để gãy nữa —
- * chưng hửng là chuyện của lần đầu tiên, bữa nào cũng cằn nhằn thì là người khó tính,
- * không phải người hụt hẫng.
+ * Nếp gãy ĐÚNG MỘT LẦN (chuỗi về 0 ngay tại đây): chưng hửng là chuyện của lần đầu tiên, bữa nào
+ * cũng cằn nhằn thì là người khó tính chứ không phải người hụt hẫng.
  *
- * REFUSED cũng xoá nếp nhưng KHÔNG phạt: người vừa đẩy ly trà ra không có tư cách đòi
- * ly trà bữa sau. Không có nhánh này thì §8i quay ngược thành bẫy — bị chê "cho nhiều
- * quá" xong bữa sau nhịn cho, lại bị trừ tiếp.
+ * REFUSED cũng xoá nếp nhưng KHÔNG phạt — không có nhánh này thì §8i quay ngược thành bẫy: bị chê
+ * "cho nhiều quá" xong bữa sau nhịn cho, lại bị trừ tiếp.
  */
 export function extraHabit(s: RelState, kind: ExtraVisit): number {
   const streak = s.extraStreak ?? 0;
@@ -238,9 +238,20 @@ export function slotCount(p: Personality) {
   return { short: Math.round(6 + 2 * p.soi), long: Math.round(3 + 1 * (1 - p.deTha)), core: 1 };
 }
 
-/** Âm: `0,4 + 1,6·deTha` — CÙNG con số với P2-02 §4.6 (decayMul). Dương: người mở lòng nhớ ơn lâu hơn. */
+/**
+ * Tính cách vặn ĐỘ DÀI đoạn dốc.
+ *
+ * ⚠️ NHÁNH ÂM LÀ NGHỊCH ĐẢO của `decayMul`, không phải chính nó: `decayMul = 0,4 + 1,6·deTha` là
+ * một TỐC ĐỘ QUÊN (deTha cao ⇒ số lớn), còn `taper` là một ĐỘ DÀI đoạn dốc (số lớn ⇒ phai CHẬM).
+ *
+ * Nhân thẳng tốc độ vào độ dài là lộn ngược — đo được trên bản cũ (`WRONG_NAME` 90, tạo ngày 1):
+ * tới ngày 16 chị Lan (để bụng nhất hẻm) còn 23, bé Su (mau quên nhất) còn 56. Suốt hơn hai tuần,
+ * người mau quên giận dai hơn người để bụng.
+ *
+ * Nghịch đảo bị chặn hai đầu sẵn (`decayMul` ∈ [0,4 · 2,0] ⇒ hệ số ∈ [0,5 · 2,5]).
+ */
 function temperFactor(m: Memory, p: Personality) {
-  return m.valence < 0 ? decayMul(p) : 0.8 + 0.6 * p.thanThien;
+  return m.valence < 0 ? 1 / decayMul(p) : 0.8 + 0.6 * p.thanThien;
 }
 
 /** Giữ — dốc cos — sàn; đạo hàm bằng 0 ở CẢ HAI đầu (không có góc gãy). LONG chậm hơn ~3×. */

@@ -35,7 +35,12 @@ const LOADERS: Record<string, () => Promise<{ default: unknown }>> = {
   CHU_KIET: () => import("./chu-kiet.json"),
   WALKIN: () => import("./walkin.json"),
   QUA_DUONG: () => import("./qua-duong.json"),
+  // Tầng dùng chung — `get()` ghép kho này vào MỌI người. Nạp một lần, không bao giờ thả.
+  ANY: () => import("./any.json"),
 };
+
+/** Kho dùng chung cho mọi người. `get()` luôn ghép vào, `clear()` luôn giữ lại. */
+export const SHARED_POOL = "ANY";
 
 /**
  * Giữ lại bao nhiêu người gần nhất sau khi họ đi. Chú Tư đi lúc 6h50 rồi bà Sáu tới
@@ -46,8 +51,15 @@ const KEEP_RECENT = 4;
 export class TalkStore {
   private loaded = new Map<string, Talk[]>();
   private pending = new Map<string, Promise<void>>();
-  /** Người đang đứng ở quán — không bao giờ thả. */
-  private live = new Set<string>();
+  /**
+   * Người đang đứng ở quán — không bao giờ thả. ĐẾM THAM CHIẾU, không phải `Set`.
+   *
+   * Lỗi ẩn H-12 của bản cũ: tám dáng khách lạ dùng chung khoá `WALKIN`, nên ba người
+   * cùng đứng ở quầy là ba lần `ensure("WALKIN")` nhưng chỉ cần MỘT người đi là
+   * `live.delete` trả về true và kho bị thả — hai người còn đứng đó mất sạch thoại,
+   * và `openTalk` trả "…" giữa lúc họ đang chờ được trả lời.
+   */
+  private live = new Map<string, number>();
   /** Người vừa đi, theo thứ tự đi (cũ nhất trước). */
   private recent: string[] = [];
 
@@ -58,7 +70,10 @@ export class TalkStore {
 
   /** Cuộc của người này + các cuộc dùng chung (`ANY`). Chưa nạp xong thì rỗng. */
   get(npcId: string): Talk[] {
-    return [...(this.loaded.get(npcId) ?? []), ...(this.loaded.get("ANY") ?? [])];
+    const own = this.loaded.get(npcId) ?? [];
+    // Hỏi thẳng kho dùng chung thì đừng ghép nó vào chính nó — mỗi cuộc sẽ ra hai lần,
+    // và `pickTalk` rút theo trọng số nên cuộc nào cũng tự nhân đôi cơ hội của mình.
+    return npcId === SHARED_POOL ? [...own] : [...own, ...(this.loaded.get(SHARED_POOL) ?? [])];
   }
 
   /**
@@ -66,7 +81,7 @@ export class TalkStore {
    * đi từ cổng vào quầy (vài giây thật). Gọi nhiều lần vô hại.
    */
   ensure(npcId: string): Promise<void> {
-    this.live.add(npcId);
+    this.live.set(npcId, (this.live.get(npcId) ?? 0) + 1);
     const i = this.recent.indexOf(npcId);
     if (i >= 0) this.recent.splice(i, 1);
     if (this.loaded.has(npcId)) return Promise.resolve();
@@ -85,7 +100,11 @@ export class TalkStore {
 
   /** Gọi lúc khách đi khỏi. Còn trong LRU thì chưa thả thật. */
   release(npcId: string) {
-    if (!this.live.delete(npcId)) return;
+    const n = this.live.get(npcId) ?? 0;
+    if (n <= 0) return;
+    if (n > 1) { this.live.set(npcId, n - 1); return; }     // còn người khác đang dùng
+    this.live.delete(npcId);
+    if (npcId === SHARED_POOL) return;                      // kho dùng chung không bao giờ thả
     this.recent.push(npcId);
     while (this.recent.length > KEEP_RECENT) {
       const old = this.recent.shift()!;
@@ -95,12 +114,12 @@ export class TalkStore {
 
   /** Hết buổi bán. Giữ `ANY` lại: nó dùng cho mọi người, mọi ngày. */
   clear() {
-    const any = this.loaded.get("ANY");
+    const any = this.loaded.get(SHARED_POOL);
     this.loaded.clear();
     this.pending.clear();
     this.live.clear();
     this.recent = [];
-    if (any) this.loaded.set("ANY", any);
+    if (any) this.loaded.set(SHARED_POOL, any);
   }
 
   /** Chỉ cho test / tool: nạp hết một lượt rồi trả về phẳng. */

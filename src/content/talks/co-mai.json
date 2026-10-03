@@ -5,12 +5,15 @@
       "id": "mai.tieutam",
       "npc": "CO_MAI",
       "topic": "tieutam",
+      "source": "NPC_ONLY",
+      "depth": "FULL",
       "when": {
         "day": [
           10,
           40
         ],
-        "minVisits": 4
+        "minVisits": 4,
+        "notFlag": "maiNeNguoiChoi"
       },
       "opener": "Con biết vụ nhà số 14 chưa? Cô nói nhỏ con nghe thôi nghen.",
       "initiates": 0.3,
@@ -207,14 +210,39 @@
             }
           ],
           "mood": "CUOI_TUOI"
+        },
+        {
+          "say": "Cô đứng qua bên này giùm con, khách con tới rồi cô.",
+          "tone": "AM",
+          "reply": "…Ừ ừ. Cô xích qua. Cô kể tiếp hồi nữa.",
+          "mood": "NGUONG",
+          "onKept": {
+            "rel": 1
+          },
+          "act": {
+            "kind": "STEP_ASIDE",
+            "forSec": 25
+          },
+          "while": [
+            "w.queue(1)"
+          ]
         }
       ],
-      "openMood": "CUOI_TUOI"
+      "openMood": "CUOI_TUOI",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "NAN_LAI",
+        "DOI_BANH"
+      ]
     },
     {
       "id": "mai.lan",
       "npc": "CO_MAI",
       "topic": "lan",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
       "when": {
         "day": [
           5,
@@ -249,7 +277,6 @@
                     "kind": "CARED_FOR_THEM",
                     "intensity": 50
                   },
-                  "flag": "maiGiuChuyenLan",
                   "reply": "Ừ… con đừng nói với ai nghen con. Cô quê lắm.",
                   "mood": "THUONG"
                 },
@@ -322,17 +349,34 @@
           ]
         },
         {
+          "say": "Cô ơi, quanh đây có ai cho mướn phòng nhỏ hông cô?",
+          "tone": "THANG",
+          "rel": 2,
+          "need": "lanHoiPhong",
+          "reply": "Có. Nhà bà Chín lầu hai, hai triệu. Mà con hỏi cho ai… thôi, cô hổng hỏi.",
+          "mood": "NGHI"
+        },
+        {
           "say": "Dạ con hổng rành cây cối đâu cô.",
           "tone": "LANH",
           "reply": "Ừ. Thôi cô hổng nói nữa."
         }
       ],
-      "openMood": "BUON"
+      "openMood": "BUON",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "NAN_LAI",
+        "DOI_BANH"
+      ]
     },
     {
       "id": "mai.sotay",
       "npc": "CO_MAI",
       "topic": "nono",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
       "when": {
         "day": [
           8,
@@ -431,14 +475,34 @@
           },
           "reply": "…Ừ. Cô xin lỗi.",
           "mood": "BUC"
+        },
+        {
+          "say": "Cô chờ con chạy vô lấy cuốn sổ cô chỉ con ghi.",
+          "tone": "AM",
+          "reply": "Ờ! Con lấy đi. Cô chỉ cho một lần là con ghi được cả đời.",
+          "mood": "CUOI_TUOI",
+          "onKept": {
+            "rel": 2
+          },
+          "act": {
+            "kind": "PROMISE_DEED",
+            "deed": "LAY_SO"
+          }
         }
       ],
-      "openMood": "NGHIEM"
+      "openMood": "NGHIEM",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG"
+      ]
     },
     {
       "id": "mai.chaybo",
       "npc": "CO_MAI",
       "topic": "chaybo",
+      "source": "NPC_ONLY",
+      "depth": "BARK",
       "when": {
         "weekday": [
           "MON"
@@ -467,7 +531,6 @@
               "say": "Cô dạy con chạy với đi cô.",
               "tone": "AM",
               "rel": 4,
-              "flag": "maiRuChay",
               "mem": {
                 "kind": "CARED_FOR_THEM",
                 "intensity": 45
@@ -509,14 +572,36 @@
           "tone": "LANH",
           "rel": -1,
           "silent": true
+        },
+        {
+          "say": "Cô uống miếng trà đá cho lại sức cô.",
+          "tone": "AM",
+          "reply": "Ờ! Cô khát muốn chết. Chạy năm cây mà cô quên đem nước.",
+          "mood": "MET",
+          "onKept": {
+            "rel": 2
+          },
+          "act": {
+            "kind": "OFFER_TEA",
+            "forSec": 8
+          },
+          "need": [
+            "p.hasTea",
+            "!v.gaveTea"
+          ]
         }
       ],
-      "openMood": "MET"
+      "openMood": "MET",
+      "practice": [
+        "QUAY_VANG"
+      ]
     },
     {
       "id": "mai.kelan",
       "npc": "CO_MAI",
       "topic": "kelan",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
       "when": {
         "day": [
           12,
@@ -544,13 +629,20 @@
             "say": "Dạ cô đừng kể ai nữa nghen cô.",
             "tone": "AM",
             "rel": 3,
-            "flag": "maiGiuMiengLan",
             "mem": {
               "kind": "CARED_FOR_THEM",
               "intensity": 45
             },
             "reply": "…Ờ. Con nói vậy thì cô im. Cô nói nhiều thiệt.",
             "mood": "THUONG"
+          },
+          {
+            "say": "Chị nhà số 14 bữa đó bả có đỡ hông cô?",
+            "tone": "AM",
+            "rel": 3,
+            "need": "maiQuaNha14",
+            "reply": "Đỡ. Bả cầm chục trứng bả hổng nói gì hết, mà bả nắm tay cô.",
+            "mood": "RUNG_RUNG"
           },
           {
             "say": "Dạ.",
@@ -577,7 +669,6 @@
                   "say": "Vậy cô lo thiệt thì cô đừng kể cô. Cô hỏi chị ấy một tiếng.",
                   "tone": "THANG",
                   "rel": 3,
-                  "flag": "maiHoiLan",
                   "mem": {
                     "kind": "CARED_FOR_THEM",
                     "intensity": 50
@@ -704,12 +795,20 @@
           "mood": "BUC"
         }
       ],
-      "openMood": "NGHI"
+      "openMood": "NGHI",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "DOI_BANH"
+      ]
     },
     {
       "id": "mai.sobay",
       "npc": "CO_MAI",
       "topic": "sobay",
+      "source": "NPC_ONLY",
+      "depth": "FULL",
       "when": {
         "day": [
           10,
@@ -751,7 +850,6 @@
           "say": "Trang của ai vậy cô?",
           "tone": "AM",
           "rel": 2,
-          "flag": "maiSoBay",
           "reply": "…Của người hay bán vé số ở đây nè. Bốn tháng rồi. Gạo, nước mắm, dầu gió.",
           "then": [
             {
@@ -886,7 +984,404 @@
           "mood": "BUC"
         }
       ],
-      "openMood": "NGHIEM"
+      "openMood": "NGHIEM",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "NAN_LAI"
+      ]
+    },
+    {
+      "id": "mai.moiloi",
+      "npc": "CO_MAI",
+      "topic": "moiloi",
+      "source": "PLAYER_ONLY",
+      "depth": "SHORT",
+      "weight": 25,
+      "when": {
+        "day": [
+          4,
+          40
+        ]
+      },
+      "opener": "Ơ. Con kêu cô hả con.",
+      "openMood": "NGAC_NHIEN",
+      "tree": [
+        {
+          "say": "Sáng giờ hẻm mình có gì mới hông cô?",
+          "tone": "DUA",
+          "rel": 1,
+          "reply": "Cha! Con hỏi trúng tủ cô rồi đó. Để cô kể.",
+          "mood": "CUOI_TUOI",
+          "then": [
+            {
+              "say": "Dạ cô kể đi cô.",
+              "tone": "AM",
+              "rel": 1,
+              "reply": "Nhà cuối hẻm sửa cái mái. Thợ tới từ sáu giờ, đục tới giờ chưa nghỉ.",
+              "mood": "CUOI_TUOI"
+            },
+            {
+              "say": "Cô kể mà cô đừng nêu tên người ta nghen cô.",
+              "tone": "THANG",
+              "rel": 2,
+              "reply": "…Ừ. Con nói vậy cũng phải. Thôi cô kể trỏng trỏng vậy.",
+              "mood": "NGUONG"
+            },
+            {
+              "say": "Thôi cô. Con hổng muốn nghe chuyện người ta.",
+              "tone": "LANH",
+              "reply": "…Ừ. Cô im.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Hàng họ cô sao rồi cô? Có thiếu món gì hông?",
+          "tone": "THANG",
+          "rel": 1,
+          "reply": "Thiếu nước mắm. Mối nó giao trễ ba bữa rồi con.",
+          "mood": "NGHIEM",
+          "then": [
+            {
+              "say": "Thiếu ba bữa rồi mà cô chưa đổi mối hả cô?",
+              "tone": "THANG",
+              "reply": "Mối đó cô lấy hai chục năm. Người ta kẹt chớ hổng phải người ta ẩu.",
+              "mood": "NGHIEM"
+            },
+            {
+              "say": "Cô uống miếng trà đá rồi tính tiếp cô.",
+              "tone": "AM",
+              "reply": "Ờ. Cô khát thiệt. Cảm ơn con nghen.",
+              "mood": "THUONG",
+              "act": {
+                "kind": "OFFER_TEA",
+                "forSec": 8
+              },
+              "onKept": {
+                "rel": 2
+              },
+              "need": [
+                "p.hasTea",
+                "!v.gaveTea"
+              ]
+            },
+            {
+              "say": "Cô bán nước mắm mà cô hết nước mắm ha cô.",
+              "tone": "DUA",
+              "rel": 1,
+              "reply": "Ha! Con này. Cô còn hết cả muối nữa kìa, nói ai nghe.",
+              "mood": "CUOI_TUOI"
+            }
+          ]
+        },
+        {
+          "say": "Cô bớt kể chuyện người ta lại giùm con cái cô.",
+          "tone": "GAT",
+          "rel": -2,
+          "anger": 25,
+          "reply": "…Ừ. Cô nghe rồi.",
+          "mood": "BUC"
+        }
+      ],
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "NAN_LAI",
+        "DOI_BANH",
+        "DI_NGANG"
+      ]
+    },
+    {
+      "id": "mai.moiloi2",
+      "npc": "CO_MAI",
+      "topic": "moiloi2",
+      "source": "PLAYER_ONLY",
+      "depth": "SHORT",
+      "weight": 20,
+      "when": {
+        "day": [
+          11,
+          40
+        ],
+        "minVisits": 3
+      },
+      "opener": "Ủa. Chi vậy con.",
+      "openMood": "NGAC_NHIEN",
+      "tree": [
+        {
+          "say": "Tuần này cô chạy được mấy bữa rồi cô?",
+          "tone": "DUA",
+          "rel": 1,
+          "reply": "Ba bữa. Cô dậy bốn rưỡi. Mệt mà sướng con.",
+          "mood": "CUOI_TUOI",
+          "then": [
+            {
+              "say": "Cô chạy vòng nào vậy cô?",
+              "tone": "AM",
+              "rel": 1,
+              "reply": "Vòng công viên. Ba vòng là hai cây số. Cô đi bộ chớ chạy gì nổi con.",
+              "mood": "CUOI"
+            },
+            {
+              "say": "Cô dậy bốn rưỡi rồi mở tiệm luôn hả cô?",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "Ờ. Về tắm cái rồi mở cửa. Sáu giờ là có người gõ cửa mua đồ rồi.",
+              "mood": "MET"
+            },
+            {
+              "say": "Mai cô rủ con đi với cô nghen cô.",
+              "tone": "DUA",
+              "rel": 2,
+              "reply": "Rủ chớ! Mà con dậy nổi hông đó. Cô đợi năm phút thôi à.",
+              "mood": "CUOI_TUOI"
+            }
+          ]
+        },
+        {
+          "say": "Cuốn sổ nợ của cô còn trang nào chưa xoá hông cô?",
+          "tone": "THANG",
+          "rel": 1,
+          "reply": "…Còn. Một trang. Cô hổng dám xé con à.",
+          "mood": "BUON",
+          "then": [
+            {
+              "say": "Trang đó của ai vậy cô?",
+              "tone": "THANG",
+              "reply": "…Cô hổng nói. Người ta còn đi ngang đây mỗi ngày mà con.",
+              "mood": "NGHIEM"
+            },
+            {
+              "say": "Sao cô hổng xé đi cô?",
+              "tone": "AM",
+              "rel": 1,
+              "reply": "Xé rồi thì coi như cô cho. Mà cô hổng muốn người ta mang tiếng được cho.",
+              "mood": "NGHIEM"
+            },
+            {
+              "say": "Dạ. Cô giữ vậy cũng phải cô.",
+              "tone": "THUONG",
+              "rel": 2,
+              "reply": "Ờ. Con hiểu là cô mừng. Mấy đứa khác nó nói cô keo.",
+              "mood": "THUONG"
+            }
+          ]
+        },
+        {
+          "say": "Cô đứng nói chuyện mà khách con đi hết rồi cô.",
+          "tone": "GAT",
+          "rel": -2,
+          "anger": 25,
+          "reply": "…Ừ. Cô xách giỏ cô dọt. Cô xin lỗi con.",
+          "mood": "NGUONG"
+        }
+      ],
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "DI_NGANG"
+      ]
+    },
+    {
+      "id": "mai.nhochuyen",
+      "npc": "CO_MAI",
+      "topic": "nhochuyen",
+      "source": "PLAYER_ONLY",
+      "depth": "SHORT",
+      "weight": 18,
+      "when": {
+        "day": [
+          4,
+          40
+        ],
+        "minVisits": 2
+      },
+      "about": [
+        "DUOC_NHO",
+        "REMEMBERED_USUAL",
+        "REMEMBERED_STORY",
+        "TOT"
+      ],
+      "opener": "Ủa. Chi vậy con.",
+      "openMood": "NGAC_NHIEN",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "NAN_LAI",
+        "DOI_BANH",
+        "DI_NGANG"
+      ],
+      "tree": [
+        {
+          "say": "Cô còn nhớ {m.what} hông cô?",
+          "tone": "AM",
+          "rel": 2,
+          "need": [
+            "m.remembers"
+          ],
+          "reply": "Nhớ chớ! Cô bán tạp hoá hai chục năm, cô nhớ ai mua gì ngày nào luôn con.",
+          "mood": "CUOI_TUOI",
+          "then": [
+            {
+              "say": "Cô nhớ hết vậy cô có mệt đầu hông cô?",
+              "tone": "DUA",
+              "rel": 1,
+              "reply": "Mệt gì. Cô hổng nhớ thì cô ghi sổ. Cuốn sổ cô dày hơn cuốn tập con.",
+              "mood": "CUOI"
+            },
+            {
+              "say": "Cô đừng đem chuyện đó kể người ta nghen cô.",
+              "tone": "THANG",
+              "rel": 2,
+              "reply": "…Ừ. Chuyện của con thì cô giữ. Cô hứa đó.",
+              "mood": "NGHIEM"
+            },
+            {
+              "say": "Cô nhớ giùm con luôn nghen cô.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Ờ! Có gì con cứ hỏi cô. Cô là cái sổ của cả hẻm này.",
+              "mood": "CUOI_TUOI"
+            }
+          ]
+        },
+        {
+          "say": "Tiệm cô sáng giờ đông hông cô?",
+          "tone": "THUONG",
+          "rel": 1,
+          "reply": "Đông chớ. Sáng giờ cô bán được hai chục lượt rồi, toàn đồ lặt vặt.",
+          "mood": "CUOI",
+          "then": [
+            {
+              "say": "Vậy sao cô còn rảnh đứng đây cô?",
+              "tone": "DUA",
+              "rel": 1,
+              "reply": "Cô khoá cửa chạy qua mua ổ bánh. Năm phút hà con.",
+              "mood": "CUOI_TUOI"
+            },
+            {
+              "say": "Cô bán lặt vặt vậy lời được bao nhiêu cô?",
+              "tone": "THANG",
+              "reply": "Mỗi món vài trăm đồng. Cộng cả ngày cũng đủ tiền chợ.",
+              "mood": "NGHIEM"
+            },
+            {
+              "say": "Dạ cô về coi tiệm đi cô.",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "Ờ ờ. Cô dọt đây.",
+              "mood": "CUOI"
+            }
+          ]
+        },
+        {
+          "say": "Thôi cô. Con bận.",
+          "tone": "LANH",
+          "reply": "…Ừ. Cô đi.",
+          "mood": "LANH"
+        }
+      ]
+    },
+    {
+      "id": "mai.xinbich",
+      "npc": "CO_MAI",
+      "topic": "xinbich",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
+      "weight": 16,
+      "when": {
+        "day": [
+          5,
+          40
+        ]
+      },
+      "initiates": 0.3,
+      "ignore": {
+        "rel": -1
+      },
+      "opener": "Con ơi. Con có bịch nilông nào dư hông? Cô hết sạch mà mối chưa giao.",
+      "openMood": "NGAC_NHIEN",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG"
+      ],
+      "tree": [
+        {
+          "say": "Có cô. Cô chờ con lấy cho cô một xấp.",
+          "tone": "AM",
+          "act": {
+            "kind": "PROMISE_DEED",
+            "deed": "LAY_SO"
+          },
+          "onKept": {
+            "rel": 3
+          },
+          "reply": "Trời! Con cứu cô rồi. Chiều cô trả lại con nguyên xấp mới.",
+          "mood": "CUOI_TUOI",
+          "then": [
+            {
+              "say": "Thôi cô khỏi trả cô.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Hổng được. Cô ghi vô sổ rồi. Cô mà quỵt là cô mất uy tín cả hẻm.",
+              "mood": "NGHIEM"
+            },
+            {
+              "say": "Mối cô trễ hoài vậy cô?",
+              "tone": "THANG",
+              "reply": "Ba bữa rồi. Mà cô hổng đổi. Người ta kẹt chớ hổng phải người ta ẩu.",
+              "mood": "NGHIEM"
+            },
+            {
+              "say": "Dạ cô cầm đi cô.",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "Ờ. Cảm ơn con. Cô dọt về coi tiệm đây.",
+              "mood": "CUOI"
+            }
+          ]
+        },
+        {
+          "say": "Con cũng còn ít lắm cô ơi.",
+          "tone": "THANG",
+          "reply": "Vậy thôi. Cô chạy ra chợ mua. Mắc hơn mà thôi kệ.",
+          "mood": "MET",
+          "then": [
+            {
+              "say": "Cô lấy đỡ mấy cái cũng được cô.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Ờ! Mấy cái thôi cũng đỡ. Cô gói đồ cho khách chớ đâu có gì.",
+              "mood": "CUOI"
+            },
+            {
+              "say": "Ngoài chợ nó bán nhiêu vậy cô?",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "Gấp đôi mối. Mua lẻ là người ta chém, ở đâu cũng vậy con.",
+              "mood": "NGHIEM"
+            },
+            {
+              "say": "Dạ cô ra chợ đi cô.",
+              "tone": "LANH",
+              "reply": "…Ừ. Cô đi.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Dạ con hết rồi cô ơi.",
+          "tone": "LANH",
+          "reply": "…Ừ. Thôi cô đi chỗ khác.",
+          "mood": "LANH"
+        }
+      ]
     }
   ]
 }

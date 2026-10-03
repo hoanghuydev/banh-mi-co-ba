@@ -98,7 +98,7 @@ export class HeadlessStall {
     } else {
       this.ctx.rng.beginDay(w.saveId, w.progress.dayIndex);
       this.ctx.clock.reset(DAY_START_MIN);
-      w.progress.today = { served: 0, lost: 0, revenue: 0 };
+      w.progress.today = { served: 0, lost: 0, revenue: 0, talksDeep: 0, talkOffers: 0 };
       bus.emit("day:started", { dayIndex: w.progress.dayIndex, daySeed: this.ctx.rng.daySeed, weather: w.progress.weather });
     }
     this.ctx.setScene("Stall");
@@ -120,6 +120,7 @@ export class HeadlessStall {
       debts: w.money.debtsOwedToPlayer, till: w.econ, allowFalseMemory: w.a11y.allowFalseMemory ?? true,
       equip: w.equipment, loaOn: (w.econ?.loaOffUntil ?? 0) < w.progress.dayIndex,
       story: w.story,
+      todayCounters: w.progress.today,
       resumeAt: opts.resume || lateOpen ? this.ctx.clock.minutes : undefined,
     });
     // Giống `StallScene`: ổ rớt đất bị từ chối là mất khách thật, hàng dài thì không.
@@ -204,8 +205,9 @@ export class HeadlessStall {
       // bot ghi sổ nợ theo chính sách (mặc định: ghi hết)
       if (ev.kind === "credit") { w.progress.today.served++; if (this.bot.next() < (this.policy.writeDebts ?? 1)) ev.record.playerWrote = ev.record.trueAmount; continue; }
       if (ev.kind === "repay") { w.money.cash += ev.amount; w.progress.today.revenue += ev.amount; continue; }
-      // bot không trò chuyện — nó không có mắt để đọc bốn lựa chọn
-      if (ev.kind === "talkOffer") continue;
+      // bot không trò chuyện — nó không có mắt để đọc bốn lựa chọn, và không có tay
+      // để đưa ai miếng bánh (`takeHand` chỉ có nghĩa với một người chơi thật).
+      if (ev.kind === "talkOffer" || ev.kind === "takeHand") continue;
       w.money.cash += ev.amount;
       w.progress.today.revenue += ev.amount;
       w.progress.today.served++;
@@ -283,5 +285,5 @@ export function nextDay(world: SaveFile, bus?: Bus, opts: { payDues?: boolean; m
   settleNight(world, bus);
   world.progress.dayIndex++;
   world.progress.gameMinutes = DAY_START_MIN;
-  world.progress.today = { served: 0, lost: 0, revenue: 0 };
+  world.progress.today = { served: 0, lost: 0, revenue: 0, talksDeep: 0, talkOffers: 0 };
 }

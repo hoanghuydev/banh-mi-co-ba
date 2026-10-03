@@ -7,22 +7,15 @@ import { music } from "./music";
 import { sfx, type SfxId } from "./sfx";
 
 /**
- * LỚP ÂM THANH CỦA CẢNH QUÁN — chỗ duy nhất nối sự kiện game vào `audio/sfx.ts`.
+ * LỚP ÂM THANH CỦA CẢNH QUÁN — chỗ duy nhất nối sự kiện game vào `audio/sfx.ts`. Hai nhóm hook ở
+ * đây khác hẳn nhau về vòng đời:
+ *  · NGHE BUS (khách tới, có người nói, bánh rớt) — gắn một lần ở `create`, gỡ ở `shutdown`
+ *  · NỀN CHẠY VÒNG (ambience, lò than, ruồi) — hỏi lại MỖI FRAME "giờ này đáng lẽ phải nghe cái
+ *    gì". Khai báo trạng thái mong muốn chứ không bật/tắt tại chỗ xảy ra chuyện: trời chuyển mưa
+ *    giữa giờ cao điểm thì có BỐN chỗ trong scene phải nhớ đổi ambience, và sẽ có một chỗ quên.
  *
- * Tách khỏi `StallScene` vì scene đó đã 2600 dòng và vì hai nhóm hook ở đây khác
- * hẳn nhau về vòng đời:
- *
- *  · **Nghe bus** (khách tới, có người nói, bánh rớt) — gắn một lần ở `create`,
- *    gỡ ở `shutdown`. Không chỗ nào trong scene phải nhớ gọi.
- *  · **Nền chạy vòng** (ambience, lò than, ruồi) — hỏi lại MỖI FRAME "giờ này
- *    đáng lẽ phải nghe cái gì", rồi để `sfx.loop` tự biết là không có gì đổi.
- *    Viết theo kiểu "khai báo trạng thái mong muốn" chứ không phải "bật/tắt tại
- *    chỗ xảy ra chuyện": trời chuyển mưa giữa giờ cao điểm thì có BỐN chỗ trong
- *    scene phải nhớ đổi ambience, và sẽ có một chỗ quên.
- *
- * Còn mấy tiếng gắn thẳng vào thao tác tay (dao, gói giấy, rót trà) thì gọi
- * trực tiếp từ `StallScene` — chúng phải nổ ĐÚNG FRAME người chơi bấm phím, đi
- * vòng qua bus là trễ một frame và là một lớp gián tiếp không mua được gì.
+ * Mấy tiếng gắn thẳng vào thao tác tay (dao, gói giấy, rót trà) thì gọi trực tiếp từ `StallScene`
+ * — chúng phải nổ ĐÚNG FRAME người chơi bấm phím.
  */
 
 /** Mẩu một phát phải nạp SẴN — nạp lười thì cú bấm đầu tiên rơi vào im lặng. */
@@ -55,25 +48,18 @@ const BAND_BED: Record<TimeBand, SfxId> = {
 const RAINY: ReadonlySet<Weather> = new Set<Weather>(["MUA_RAO", "MUA_DAM"]);
 
 /**
- * ── NPC CHỈ LÊN TIẾNG Ở ĐÚNG HAI CHỖ ───────────────────────────────────────
+ * ⚠️ NPC CHỈ LÊN TIẾNG Ở ĐÚNG HAI CHỖ: lúc GỌI MÓN (một lần cho cả lượt ghé) và lúc BỎ ĐI VÌ GIẬN
+ * (một tiếng "hmmm" trầm hơn, dài hơn).
  *
- *   1. lúc GỌI MÓN       — một lần, đúng một lần cho cả lượt ghé
- *   2. lúc BỎ ĐI VÌ GIẬN — một tiếng "hmmm" gắt, trầm hơn và dài hơn
+ * Đã thử đúng chữ của §5.2 — 55% số lần chạm `GLIMPSED` thì khẽ "hm", cooldown 4 giây — và sai
+ * hẳn: §5.2 viết cho MỘT người khách, mà giờ cao điểm có bốn người cùng đứng và `GLIMPSED` bật
+ * tắt liên tục theo hướng nhìn, thành một dàn "hm… hm… hm…" chồng lên nhau.
  *
- * Bản đầu làm theo đúng chữ của P5-03 §5.2: 55% số lần chạm `GLIMPSED` thì NPC
- * khẽ "hm", cooldown 4 giây mỗi người. Nghe thử thì sai hẳn. §5.2 viết cho một
- * người khách; giờ cao điểm có bốn người cùng đứng, mà `GLIMPSED` thì bật tắt
- * liên tục theo hướng nhìn — thành ra một dàn "hm… hm… hm…" chồng lên nhau,
- * không ai biết tiếng nào của ai và nó nói gì.
+ * Việc "cho biết có người đang để ý" KHÔNG MẤT — nó về đúng chỗ của nó: nét mặt, và cái tick gỗ
+ * `a11yPerceptionPing` cho ai không đọc được nét mặt ở 72px.
  *
- * Mà §5.2 giao cho tiếng đó đúng một việc: cho biết CÓ NGƯỜI ĐANG ĐỂ Ý. Việc đó
- * KHÔNG MẤT — nó chuyển về đúng chỗ dành cho nó: nét mặt (CANON §5, vẫn nguyên)
- * và, cho ai không đọc được nét mặt ở 72px, cái tick gỗ `a11yPerceptionPing`
- * (§5.4) — thứ vốn sinh ra để làm đúng việc này, phát một lần mỗi lần ĐỔI
- * TRẠNG THÁI chứ không rải theo xác suất, và tắt được riêng.
- *
- * Giọng người thì đắt: nghe là phải quay sang nhìn. Tiêu nó cho mọi cái liếc
- * mắt thì tới lúc có người thật sự bỏ đi, không còn gì để nói.
+ * Giọng người thì đắt: nghe là phải quay sang nhìn. Tiêu nó cho mọi cái liếc mắt thì tới lúc có
+ * người thật sự bỏ đi, không còn gì để nói.
  */
 /** Hạ cao độ cho tiếng "hmmm" lúc bực: trầm hơn VÀ dài hơn, cùng một file. */
 const ANGRY_PITCH = 0.78;
@@ -143,12 +129,9 @@ export class StallAudio {
     this.listen("npc:arrived", (p) => this.steps(this.d.panOf(p.npcId)));
 
     /*
-     * CHỖ LÊN TIẾNG THỨ NHẤT — gọi món.
-     *
-     * Một lượt ghé đẻ ra cả chục dòng thoại (bark, trả lời, than phiền). Bám vào
-     * `dialog:spoken` thì mỗi dòng một chuỗi âm tiết, và giờ cao điểm thành cái
-     * chợ. Bám vào `order:placed` thì đúng một lần, ở đúng khoảnh khắc người chơi
-     * đang nhìn vào mặt người đó để nghe họ muốn gì.
+     * CHỖ LÊN TIẾNG THỨ NHẤT — gọi món. Bám vào `order:placed` chứ không `dialog:spoken`: một lượt
+     * ghé đẻ ra cả chục dòng thoại, bám vào đó thì giờ cao điểm thành cái chợ. Ở đây thì đúng một
+     * lần, vào đúng khoảnh khắc người chơi đang nhìn vào mặt người đó.
      */
     this.listen("order:placed", (p) => {
       if (this.spoke.has(p.npcId)) return;
@@ -157,15 +140,12 @@ export class StallAudio {
     });
 
     /*
-     * CHỖ LÊN TIẾNG THỨ HAI — bỏ đi vì bực.
+     * CHỖ LÊN TIẾNG THỨ HAI — bỏ đi vì bực. Cùng một file "hửm", hạ cao độ xuống 0,78 nên trầm hơn
+     * và DÀI HƠN: một tiếng "hmmmm" gắt thay vì "hm?" dò hỏi. Không thêm file mới — cái phải nghe
+     * ra là cùng một người đó, lúc này đang bực.
      *
-     * Cùng một file "hửm", hạ cao độ xuống 0,78: trầm hơn và DÀI HƠN (hạ rate là
-     * kéo dài file), nên nó thành một tiếng "hmmmm" gắt thay vì một tiếng "hm?"
-     * dò hỏi. Không thêm file mới — cái phải nghe ra là cùng một người đó, lúc
-     * này đang bực.
-     *
-     * `SILENT_EXIT` cố ý KHÔNG có ở đây: §6.5 #5 nói khách bỏ đi không nói gì thì
-     * không có gì cả, chỉ tiếng bước chân xa dần. Cái im lặng đó là một phản ứng.
+     * `SILENT_EXIT` cố ý KHÔNG có ở đây: khách bỏ đi không nói gì thì không có gì cả, chỉ tiếng
+     * bước chân xa dần. Cái im lặng đó là một phản ứng.
      */
     this.listen("npc:left", (p) => {
       this.spoke.delete(p.npcId);                       // lượt ghé sau được lên tiếng lại
@@ -179,13 +159,11 @@ export class StallAudio {
     });
 
     /*
-     * Tầng nhận thấy — P5-03 §5: KHÔNG CÓ STING, và từ bản này thì cũng KHÔNG CÓ
-     * GIỌNG. Lý do dài ở `ANGRY_EXITS` phía trên.
+     * Tầng nhận thấy: KHÔNG CÓ STING, và cũng KHÔNG CÓ GIỌNG (lý do dài ở `ANGRY_EXITS` phía trên).
+     * Còn lại đúng cái tick gỗ — mặc định TẮT, cùng một âm cho chuyện tốt và chuyện xấu.
      *
-     * Còn lại đúng cái tick gỗ của §5.4 — mặc định TẮT, cùng một âm cho chuyện
-     * tốt và chuyện xấu, pan theo chỗ người đó đứng nên vẫn cho biết LÀ AI.
-     * Một "ting!" phi diegetic thì không: người chơi sẽ học cách nghe tiếng ting
-     * thay vì nhìn mặt người, và thế là hỏng cả T3 lẫn T5.
+     * ⚠️ Một "ting!" phi diegetic thì không: người chơi sẽ học cách nghe tiếng ting thay vì nhìn
+     * mặt người, và thế là hỏng cả T3 lẫn T5.
      */
     this.listen("perception:stateChanged", (p) => {
       if (p.to === "GLIMPSED" || p.to === "NOTICED") sfx.perceptionPing(scene, this.d.panOf(p.npcId));
@@ -235,13 +213,11 @@ export class StallAudio {
     sfx.loop(scene, "sfx_rua_tay", s.washing, {}, 180);
 
     /*
-     * Ruồi — P5-03 §4.2 B: chỉ số `STALL_CLEANLINESS` dạng NGHE ĐƯỢC. Không có
-     * con số nào hiện ra (T3); càng bẩn thì càng nhiều con và càng to.
+     * Ruồi — chỉ số `STALL_CLEANLINESS` dạng NGHE ĐƯỢC, không con số nào hiện ra (T3).
      *
-     * Ngưỡng phải khớp ĐÚNG `FLY_DIRT_MIN` của `StallScene.drawDirt` (0,35), chỗ
-     * con ruồi đầu tiên được vẽ. Lệch hai ngưỡng thì có một quãng nghe thấy ruồi
-     * mà không thấy con nào — và người chơi sẽ đi tìm một thứ không tồn tại.
-     * Độ to bò lên theo đúng ba nấc số ruồi của `drawDirt` (1 / 3 / 5 con).
+     * ⚠️ Ngưỡng phải khớp ĐÚNG `FLY_DIRT_MIN` của `StallScene.drawDirt` (0,35): lệch hai ngưỡng
+     * thì có một quãng nghe thấy ruồi mà không thấy con nào, và người chơi đi tìm một thứ không
+     * tồn tại. Độ to bò lên theo đúng ba nấc số ruồi của `drawDirt`.
      */
     const fly = s.dirt > FLY_DIRT_MIN;
     sfx.loop(scene, "sfx_ruoi", fly, {}, 1500);
@@ -316,12 +292,9 @@ export class StallAudio {
   tea() { this.one("sfx_rot_tra_da"); }
   cup() { this.one("sfx_dat_ly"); }
   /**
-   * Lau thớt — NHIỀU nhát, trải đúng bằng lượt lau.
-   *
-   * Một nhát khăn dài 1,4 giây cho một lượt lau 2,5–5 giây (`wipeSeconds`, co giãn
-   * theo độ bẩn) thì nửa sau của lượt lau im hẳn, trong khi thanh tiến trình vẫn
-   * chạy và bụi vẫn bốc — nghe như tay đã dừng mà máy vẫn bắt chờ. Cùng một lỗi
-   * với tiếng rót trà nổ sau khi rót xong, chỉ ở đầu kia của quãng thời gian.
+   * Lau thớt — NHIỀU nhát, trải đúng bằng lượt lau. Một nhát khăn dài 1,4 giây cho một lượt lau
+   * 2,5–5 giây thì nửa sau im hẳn trong khi thanh tiến trình vẫn chạy và bụi vẫn bốc, nghe như
+   * tay đã dừng mà máy vẫn bắt chờ.
    */
   wipeFor(seconds: number) {
     const nhat = Math.max(1, Math.round(seconds / 1.3));

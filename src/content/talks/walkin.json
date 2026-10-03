@@ -1,10 +1,12 @@
 {
-  "_note": "Khách vãng lai — KHÔNG CÓ TRÍ NHỚ (P2-02 §5.1 M3′): `mem` ở đây không ghi được gì, nên hệ quả của họ chỉ nằm trong LƯỢT GHÉ NÀY (`anger`, bỏ đi). Vì vậy đây là chỗ DUY NHẤT được phép viết người tới quậy thiệt: chửi, trả giá, doạ quay clip, say xỉn. Người chơi gọi họ bằng vai nào cũng được (WALKIN_CALLS). Đa số khách lạ KHÔNG bắt chuyện — họ mua bánh mì rồi đi.",
+  "_note": "Khách vãng lai — KHÔNG CÓ TRÍ NHỚ (P2-02 §5.1 M3′): `mem` ở đây không ghi được gì, nên hệ quả của họ chỉ nằm trong LƯỢT GHÉ NÀY (`anger`, bỏ đi). Vì vậy đây là chỗ DUY NHẤT được phép viết người tới quậy thiệt: chửi, trả giá, doạ quay clip, say xỉn. Người chơi gọi họ bằng vai nào cũng được (WALKIN_CALLS). Đa số khách lạ KHÔNG bắt chuyện — họ mua bánh mì rồi đi. TẦNG `PLAYER_ONLY` (5 cuộc cuối file, thêm ở P3): trước đây kho này 0 cuộc do NGƯỜI CHƠI mở lời, nên bấm phím bắt chuyện với một người ĐANG ĐỨNG MUA chỉ rút được kho `ANY` — mà `ANY` viết cho 'gọi với một người đi ngang', đọc ra lạc hẳn. Năm cuộc đó lấp đúng chỗ đó: `opener` khai cho đủ schema chứ KHÔNG lên màn hình (`Service` chỉ phát `opener` ở đường `offerTalk`), nhịp đầu của `tree` CHÍNH LÀ câu mở lời của người chơi. Luật viết: (a) không trí nhớ nên cấm mọi câu giả định đã quen — không 'bữa trước', không 'dạo này'; (b) chuyện phải là chuyện giữa người bán và một người lạ ĐANG ĐỢI ổ bánh (khẩu vị, mới tới khu, nắng, kẹt xe, cắm mặt điện thoại, chen hàng), không phải chuyện phiếm chung; (c) mọi đại từ là chỗ trống `{call}` `{me}` `{self}` `{you}` và mọi câu phải đọc được với CẢ TÁM dáng người ở `WALKIN_ADDRESS` — bà cụ lưng còng đọc được thì anh nón bảo hiểm mới đọc được; đừng để `{you}` và `{self}` chung một mệnh đề.",
   "talks": [
     {
       "id": "walkin.chemac",
       "npc": "WALKIN",
       "topic": "gia",
+      "source": "NPC_ONLY",
+      "depth": "FULL",
       "opener": "Hai lăm ngàn? Bên kia có mười lăm à chị.",
       "weight": 14,
       "tree": [
@@ -14,7 +16,7 @@
           "reply": "Nhân nhiều gì. Tui thấy cũng vậy.",
           "then": [
             {
-              "say": "Anh ăn thử đi. Không ngon em không lấy tiền.",
+              "say": "Anh ăn thử miếng đi anh. Em mời.",
               "tone": "AM",
               "rel": 2,
               "reply": "…Ờ. Nói vậy thì tui ăn thử.",
@@ -23,25 +25,39 @@
                   "say": "Dạ anh ăn từ từ nghen.",
                   "tone": "AM",
                   "rel": 2,
-                  "reply": "…Ừ. Cũng được. Thôi tui lấy một ổ."
+                  "reply": "…Ừ. Cũng được. Thôi tui lấy một ổ.",
+                  "while": [
+                    "t.eating"
+                  ]
                 },
                 {
                   "say": "Ngon thì anh ghé nữa nghen anh.",
                   "tone": "AM",
                   "rel": 3,
                   "reply": "Để coi. Mà ừ, ổ này được thiệt.",
-                  "mood": "CUOI"
+                  "mood": "CUOI",
+                  "while": [
+                    "t.eating"
+                  ]
                 },
                 {
                   "say": "Thấy chưa. Mười lăm làm gì có cái này.",
                   "tone": "DUA",
                   "rel": -1,
-                  "reply": "Thôi thôi. Tui thua. Lấy một ổ."
+                  "reply": "Thôi thôi. Tui thua. Lấy một ổ.",
+                  "while": [
+                    "t.eating"
+                  ]
                 }
               ],
               "act": {
-                "kind": "FREE_LOAF"
-              }
+                "kind": "GIVE_BREAD",
+                "forSec": "TOI_KHI_AN_XONG"
+              },
+              "need": [
+                "!p.soldOut",
+                "p.holdsFilled"
+              ]
             },
             {
               "say": "Vậy anh qua bên kia mua đi anh.",
@@ -49,7 +65,10 @@
               "rel": -1,
               "anger": 20,
               "reply": "Ờ. Tui qua. Làm gì dữ vậy.",
-              "mood": "BUC"
+              "mood": "BUC",
+              "act": {
+                "kind": "REFUSE"
+              }
             },
             {
               "say": "Anh chê thì anh đừng mua, nói nhiều.",
@@ -57,9 +76,19 @@
               "rel": -3,
               "anger": 60,
               "silent": true,
-              "mood": "GIAN"
+              "mood": "GIAN",
+              "act": {
+                "kind": "REFUSE"
+              }
             }
-          ]
+          ],
+          "while": [
+            "t.ordering"
+          ],
+          "act": {
+            "kind": "PROMISE",
+            "item": "pate"
+          }
         },
         {
           "say": "Dạ bên kia mười lăm thiệt anh. Mà bánh khác nhau.",
@@ -68,7 +97,7 @@
           "reply": "Ờ… chị nói thiệt ghê. Mấy người kia là chê người ta liền.",
           "then": [
             {
-              "say": "Chú Kiệt bán cũng đàng hoàng mà anh.",
+              "say": "Bên kia bán cũng đàng hoàng mà anh.",
               "tone": "AM",
               "rel": 3,
               "reply": "Ừ. Thôi lấy một ổ của chị đi. Chị nói tui nghe lọt.",
@@ -96,12 +125,18 @@
           "mood": "GIAN"
         }
       ],
-      "openMood": "NGHI"
+      "openMood": "NGHI",
+      "practice": [
+        "GOI_MON",
+        "NAN_LAI"
+      ]
     },
     {
       "id": "walkin.quayclip",
       "npc": "WALKIN",
       "topic": "clip",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
       "when": {
         "day": [
           9,
@@ -116,12 +151,18 @@
             "say": "Dạ anh ăn ngon miệng nghen.",
             "tone": "THUONG",
             "rel": 1,
-            "reply": "Ờ. Cảm ơn."
+            "reply": "Ờ. Cảm ơn.",
+            "while": [
+              "t.served"
+            ]
           },
           {
-            "say": "Dạ hai lăm ngàn anh.",
+            "say": "Dạ {gia} anh.",
             "tone": "LANH",
-            "reply": "Ờ."
+            "reply": "Ờ.",
+            "while": [
+              "t.served"
+            ]
           }
         ]
       },
@@ -170,7 +211,10 @@
               "rel": -3,
               "anger": 55,
               "silent": true,
-              "mood": "GIAN"
+              "mood": "GIAN",
+              "act": {
+                "kind": "REFUSE"
+              }
             }
           ]
         },
@@ -183,7 +227,10 @@
               "say": "Dạ em bán được rồi anh, em không cần nổi tiếng.",
               "tone": "AM",
               "rel": 2,
-              "reply": "…Ờ. Nghe cũng có lý."
+              "reply": "…Ờ. Nghe cũng có lý.",
+              "need": [
+                "!p.soldOut"
+              ]
             },
             {
               "say": "Anh quay là chuyện của anh, em không ký gì hết.",
@@ -197,7 +244,10 @@
               "rel": -2,
               "anger": 60,
               "silent": true,
-              "mood": "GIAN"
+              "mood": "GIAN",
+              "act": {
+                "kind": "REFUSE"
+              }
             },
             {
               "say": "…",
@@ -226,21 +276,34 @@
               "say": "Dạ anh quay lẹ giùm em nghen.",
               "tone": "THUONG",
               "reply": "Ừ, hai phút thôi.",
-              "ref": "di"
+              "ref": "di",
+              "while": [
+                "w.queue(1)"
+              ]
             }
           ]
         }
       ],
-      "openMood": "CUOI"
+      "openMood": "CUOI",
+      "practice": [
+        "XEP_HANG",
+        "DOI_BANH",
+        "NAN_LAI"
+      ]
     },
     {
       "id": "walkin.cau",
       "npc": "WALKIN",
       "topic": "cau",
+      "source": "NPC_ONLY",
+      "depth": "FULL",
       "when": {
         "day": [
           6,
           40
+        ],
+        "world": [
+          "t.impatient"
         ]
       },
       "opener": "Sao lâu vậy em? Tui đứng đây nãy giờ nè.",
@@ -250,7 +313,14 @@
           {
             "say": "Dạ ổ của anh đây. Anh đi mạnh giỏi.",
             "tone": "THUONG",
-            "reply": "Ờ."
+            "reply": "Ờ.",
+            "need": [
+              "p.holdsFilled"
+            ],
+            "act": {
+              "kind": "GIVE_BREAD",
+              "forSec": "TOI_KHI_AN_XONG"
+            }
           },
           {
             "say": "Dạ anh thông cảm giùm em.",
@@ -258,6 +328,13 @@
             "rel": 2,
             "reply": "…Ừ. Thôi.",
             "calm": 18,
+            "mood": "MET"
+          },
+          {
+            "say": "Dạ em gói lẹ cho anh đây.",
+            "tone": "AM",
+            "rel": 1,
+            "reply": "Ừ. Nhanh giùm nghen.",
             "mood": "MET"
           }
         ]
@@ -295,10 +372,15 @@
                   "reply": "Ừ… ừ. Thôi tui ngồi.",
                   "ref": "di",
                   "act": {
-                    "kind": "STEP_ASIDE"
+                    "kind": "THEY_SIT",
+                    "forSec": 40
                   },
                   "calm": 30,
-                  "mood": "THUONG"
+                  "mood": "THUONG",
+                  "needEquip": "GHE_BAN",
+                  "while": [
+                    "w.seatFree"
+                  ]
                 },
                 {
                   "say": "Thì anh về anh chửi lại sếp anh đi.",
@@ -315,15 +397,21 @@
               "tone": "THUONG",
               "reply": "Ừ. Một phút thôi nghen.",
               "ref": "di",
-              "calm": 12,
-              "mood": "MET"
+              "mood": "MET",
+              "act": {
+                "kind": "PROMISE_DEED",
+                "deed": {
+                  "what": "DUA_BANH",
+                  "dueSec": 60
+                }
+              }
             }
           ],
           "calm": 25,
           "mood": "MET"
         },
         {
-          "say": "Dạ anh mới đứng có một phút à anh.",
+          "say": "Dạ em làm nhanh nhất có thể rồi anh.",
           "tone": "THANG",
           "anger": 15,
           "reply": "Một phút của em với một phút của tui khác nhau đó.",
@@ -342,7 +430,10 @@
               "tone": "THANG",
               "anger": 25,
               "reply": "Ờ. Thì tui chờ.",
-              "mood": "BUC"
+              "mood": "BUC",
+              "while": [
+                "w.queue(2)"
+              ]
             },
             {
               "say": "Anh gấp thì anh đi chỗ khác đi anh.",
@@ -350,7 +441,10 @@
               "rel": -3,
               "anger": 70,
               "silent": true,
-              "mood": "GIAN"
+              "mood": "GIAN",
+              "act": {
+                "kind": "REFUSE"
+              }
             }
           ]
         },
@@ -362,12 +456,17 @@
           "mood": "BUC"
         }
       ],
-      "openMood": "BUC"
+      "openMood": "BUC",
+      "practice": [
+        "DOI_BANH"
+      ]
     },
     {
       "id": "walkin.traigia",
       "npc": "WALKIN",
       "topic": "bot",
+      "source": "NPC_ONLY",
+      "depth": "FULL",
       "opener": "Cô bớt tui năm ngàn đi. Tui mua ba ổ lận.",
       "weight": 11,
       "tree": [
@@ -400,7 +499,10 @@
             "kind": "DISCOUNT",
             "vnd": 5000
           },
-          "mood": "CUOI"
+          "mood": "CUOI",
+          "need": [
+            "p.stockAtLeast(3)"
+          ]
         },
         {
           "say": "Dạ em bán đúng giá cô à.",
@@ -458,12 +560,18 @@
           "reply": "Ờ. Thôi lấy ba ổ."
         }
       ],
-      "openMood": "CUOI"
+      "openMood": "CUOI",
+      "practice": [
+        "GOI_MON",
+        "DOI_BANH"
+      ]
     },
     {
       "id": "walkin.nhamquan",
       "npc": "WALKIN",
       "topic": "nham",
+      "source": "NPC_ONLY",
+      "depth": "FULL",
       "weight": 12,
       "opener": "Cho tui tô hủ tiếu, ít hành nghen.",
       "openMood": "LANH",
@@ -474,13 +582,30 @@
             "tone": "THUONG",
             "rel": 1,
             "reply": "Ờ. Cảm ơn em.",
-            "mood": "CUOI"
+            "mood": "CUOI",
+            "need": [
+              "p.holdsFilled"
+            ],
+            "act": {
+              "kind": "GIVE_BREAD",
+              "forSec": "TOI_KHI_AN_XONG"
+            }
           },
           {
             "say": "Dạ bữa sau anh ghé nữa nghen anh.",
             "tone": "AM",
             "rel": 2,
             "reply": "Ờ. Để coi. Mà chắc có.",
+            "mood": "CUOI",
+            "while": [
+              "t.served"
+            ]
+          },
+          {
+            "say": "Dạ anh chờ em chút xíu nghen.",
+            "tone": "THUONG",
+            "rel": 1,
+            "reply": "Ừ.",
             "mood": "CUOI"
           }
         ]
@@ -504,17 +629,20 @@
                   "tone": "THUONG",
                   "rel": 1,
                   "reply": "Ờ, đầy đủ. Mà thôi khỏi hành, hồi nãy tui kêu ít hành rồi mà.",
-                  "mood": "CUOI"
+                  "mood": "CUOI",
+                  "need": [
+                    "!t.hasOrder"
+                  ]
                 },
                 {
-                  "say": "Anh ăn bánh mì rồi chút qua hủ tiếu cũng được anh.",
+                  "say": "Anh ăn ổ bánh mì cho chắc bụng cái đã anh.",
                   "tone": "DUA",
                   "rel": 2,
                   "reply": "Ha! Em bán hàng mà em chỉ tui qua quán khác hả.",
                   "mood": "CUOI_TUOI"
                 },
                 {
-                  "say": "Dạ hủ tiếu đầu hẻm kìa anh, anh đi thẳng chút là tới.",
+                  "say": "Dạ quanh đây có mấy chỗ bán hủ tiếu đó anh.",
                   "tone": "AM",
                   "rel": 2,
                   "reply": "…Ờ. Em chỉ đường cho tui luôn. Thôi tui ăn đây, khỏi đi đâu hết.",
@@ -547,7 +675,7 @@
                   "reply": "Thôi. Tui đi quán khác.",
                   "mood": "GIAN",
                   "act": {
-                    "kind": "REFUSE"
+                    "kind": "WALK_ON"
                   }
                 }
               ]
@@ -593,6 +721,9 @@
               "reply": "Ờ. Tui nhầm.",
               "mood": "BUC"
             }
+          ],
+          "need": [
+            "!p.soldOut"
           ]
         },
         {
@@ -606,16 +737,25 @@
           "reply": "…Ờ. Tao nhầm.",
           "mood": "LANH"
         }
+      ],
+      "practice": [
+        "GOI_MON",
+        "DOI_BANH"
       ]
     },
     {
       "id": "walkin.donvp",
       "npc": "WALKIN",
       "topic": "donvp",
+      "source": "NPC_ONLY",
+      "depth": "FULL",
       "when": {
         "day": [
           4,
           40
+        ],
+        "world": [
+          "p.stockAtLeast(8)"
         ]
       },
       "weight": 12,
@@ -628,14 +768,31 @@
             "tone": "THUONG",
             "rel": 1,
             "reply": "Dạ em cảm ơn chị nhiều nghen chị.",
-            "mood": "CUOI"
+            "mood": "CUOI",
+            "need": [
+              "p.holdsFilled"
+            ],
+            "act": {
+              "kind": "GIVE_BREAD",
+              "forSec": "TOI_KHI_AN_XONG"
+            }
           },
           {
             "say": "Bữa sau em chốt đơn rồi hẵng qua nghen em.",
             "tone": "AM",
             "rel": 2,
             "reply": "Dạ… dạ em biết rồi. Em quê quá chị ơi.",
-            "mood": "NGUONG"
+            "mood": "NGUONG",
+            "while": [
+              "t.served"
+            ]
+          },
+          {
+            "say": "Dạ chị gói từng ổ cho khỏi lộn nghen em.",
+            "tone": "AM",
+            "rel": 1,
+            "reply": "Dạ. Cảm ơn chị.",
+            "mood": "CUOI"
           }
         ]
       },
@@ -653,7 +810,8 @@
               "tone": "THANG",
               "rel": 1,
               "act": {
-                "kind": "STEP_ASIDE"
+                "kind": "STEP_ASIDE",
+                "forSec": "TOI_LUOT"
               },
               "reply": "Dạ dạ. Em xin lỗi chị. Em đứng chắn nãy giờ.",
               "mood": "NGUONG",
@@ -663,22 +821,35 @@
                   "tone": "AM",
                   "rel": 3,
                   "reply": "Dạ. Chị dễ chịu ghê. Chỗ khác người ta quạu em rồi.",
-                  "mood": "THUONG"
+                  "mood": "THUONG",
+                  "while": [
+                    "w.queue(2)"
+                  ]
                 },
                 {
                   "say": "Phòng em ăn sáng trễ dữ ha em.",
                   "tone": "DUA",
                   "rel": 2,
                   "reply": "Ha. Tụi em ngủ gục hết. Em là đứa bị sai đi mua đó chị.",
-                  "mood": "CUOI_TUOI"
+                  "mood": "CUOI_TUOI",
+                  "while": [
+                    "w.band(TRUA)"
+                  ]
                 },
                 {
                   "say": "Em hỏi lẹ giùm chị, chị còn hàng.",
                   "tone": "LANH",
                   "rel": -1,
                   "reply": "Dạ dạ. Em hỏi liền.",
-                  "mood": "MET"
+                  "mood": "MET",
+                  "need": [
+                    "!p.soldOut"
+                  ]
                 }
+              ],
+              "while": [
+                "w.queue(1)",
+                "w.queue(2)"
               ]
             },
             {
@@ -707,8 +878,7 @@
                       "tone": "AM",
                       "rel": 3,
                       "reply": "Dạ. Chị kỹ ghê. …Chị cho em xin số chị được hông chị, lần sau em đặt trước.",
-                      "mood": "CUOI_TUOI",
-                      "flag": "vpDatTruoc"
+                      "mood": "CUOI_TUOI"
                     },
                     {
                       "say": "Em ghi giấy mà em còn lộn hả em.",
@@ -717,7 +887,11 @@
                       "reply": "Dạ… em lộn hoài. Phòng em chửi em suốt.",
                       "mood": "NGUONG"
                     }
-                  ]
+                  ],
+                  "act": {
+                    "kind": "PROMISE",
+                    "item": "pate"
+                  }
                 },
                 {
                   "say": "Đứa chưa trả lời thì khỏi mua cho nó em.",
@@ -783,6 +957,1413 @@
           },
           "reply": "…Dạ. Em xin lỗi chị.",
           "mood": "BUON"
+        }
+      ],
+      "practice": [
+        "GOI_MON",
+        "DOI_BANH"
+      ]
+    },
+    {
+      "id": "walkin.cay",
+      "npc": "WALKIN",
+      "topic": "cay",
+      "source": "PLAYER_ONLY",
+      "depth": "SHORT",
+      "weight": 12,
+      "opener": "Dạ? {self} nghe {you}.",
+      "openMood": "NGAC_NHIEN",
+      "tree": [
+        {
+          "say": "{call} ăn cay được hông? Ớt {me} xắt sẵn nè.",
+          "tone": "AM",
+          "rel": 1,
+          "reply": "Cay được. Mà đừng nhiều quá nghen.",
+          "mood": "CUOI",
+          "then": [
+            {
+              "say": "Để {me} bỏ nguyên trái ớt hiểm cho {call} nghen.",
+              "tone": "DUA",
+              "rel": 1,
+              "reply": "Chèn ơi. Thôi thôi. Một khoanh thôi.",
+              "mood": "CUOI_TUOI",
+              "act": {
+                "kind": "PROMISE",
+                "item": "ot"
+              }
+            },
+            {
+              "say": "Ăn cay vầy chắc {call} quen từ nhỏ ha.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Quen chớ. Hổng cay là nuốt hổng vô.",
+              "mood": "CUOI"
+            },
+            {
+              "say": "Ừ. Một khoanh. {me} làm đây.",
+              "tone": "LANH",
+              "reply": "…Ờ.",
+              "mood": "LANH",
+              "act": {
+                "kind": "PROMISE",
+                "item": "ot"
+              }
+            }
+          ],
+          "need": [
+            "t.hasOrder"
+          ]
+        },
+        {
+          "say": "{call} ăn hành được hông? Nhiều người gắp ra lắm.",
+          "tone": "THANG",
+          "reply": "Được hết. {self} dễ ăn.",
+          "mood": "THUONG",
+          "then": [
+            {
+              "say": "Vậy {me} làm đầy đủ cho {call} nghen.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Ừ. Đầy đủ.",
+              "mood": "CUOI",
+              "act": {
+                "kind": "PROMISE",
+                "item": "pate"
+              }
+            },
+            {
+              "say": "Dễ ăn vầy đi đâu cũng sướng {call} ha.",
+              "tone": "DUA",
+              "rel": 1,
+              "reply": "Sướng gì. Cái gì cũng nuốt nên mập thấy mồ.",
+              "mood": "CUOI_TUOI"
+            },
+            {
+              "say": "Ừ. Vậy khỏi hỏi nữa.",
+              "tone": "LANH",
+              "reply": "…Ờ.",
+              "mood": "LANH"
+            }
+          ],
+          "need": [
+            "t.hasOrder"
+          ]
+        },
+        {
+          "say": "Ổ của {call} ra liền nè.",
+          "tone": "THUONG",
+          "rel": 1,
+          "reply": "Ừ. {self} đợi được. Xe {self} dựng ngoài kia rồi.",
+          "mood": "CUOI",
+          "then": [
+            {
+              "say": "{me} kẹp thêm miếng dưa leo cho mát nghen.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Ừ. Dưa leo nhiều chút. {self} ăn mặn hổng nổi.",
+              "mood": "CUOI"
+            },
+            {
+              "say": "Xe dựng ngoài đó coi chừng mấy ổng dán giấy {call} ơi.",
+              "tone": "DUA",
+              "rel": 1,
+              "reply": "Chèn. Để {self} ngó chừng. Tuần rồi {self} dính một cái rồi.",
+              "mood": "CUOI_KHAN"
+            },
+            {
+              "say": "Dạ. {call} chờ chút.",
+              "tone": "LANH",
+              "reply": "…Ờ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "{call} đứng chờ chút. {me} làm liền nè.",
+          "tone": "LANH",
+          "reply": "…Ờ. {self} hổng gấp.",
+          "mood": "LANH"
+        }
+      ],
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG"
+      ]
+    },
+    {
+      "id": "walkin.lame",
+      "npc": "WALKIN",
+      "topic": "lame",
+      "source": "PLAYER_ONLY",
+      "depth": "SHORT",
+      "weight": 12,
+      "opener": "Dạ? {self} nghe.",
+      "openMood": "NGHI",
+      "tree": [
+        {
+          "say": "{call} ở quanh đây hay ghé ngang vậy?",
+          "tone": "THUONG",
+          "reply": "Mới. Dọn qua bên kia cầu được mấy bữa hà.",
+          "mood": "NGAC_NHIEN",
+          "then": [
+            {
+              "say": "Vậy {call} ghé hoài nghen. {me} bán tới trưa.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Ừ. Để {self} ăn thử coi sao.",
+              "mood": "CUOI",
+              "while": [
+                "w.band(SOM)"
+              ]
+            },
+            {
+              "say": "Hẻm này hiền lắm {call}. Ở riết là quen hà.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Mong vậy. Chỗ cũ ồn thấy mồ.",
+              "mood": "THUONG"
+            },
+            {
+              "say": "Giá {me} để sẵn trên bảng đó {call}.",
+              "tone": "LANH",
+              "reply": "…Ờ. Thì {self} có hỏi giá đâu.",
+              "mood": "LANH"
+            }
+          ],
+          "while": [
+            "t.lookingInside"
+          ]
+        },
+        {
+          "say": "{call} đi làm sớm ha. Mới {gio} hà.",
+          "tone": "AM",
+          "rel": 1,
+          "reply": "Sớm gì. Bảy giờ phải có mặt rồi.",
+          "mood": "MET",
+          "then": [
+            {
+              "say": "Vậy {me} làm lẹ cho {call} nghen.",
+              "tone": "AM",
+              "reply": "Ừ. Cảm ơn {you} nghen.",
+              "mood": "CUOI",
+              "act": {
+                "kind": "PROMISE_DEED",
+                "deed": {
+                  "what": "DUA_BANH",
+                  "dueSec": 30
+                }
+              }
+            },
+            {
+              "say": "Dậy sớm riết chắc tối {call} ngủ gục sớm ha.",
+              "tone": "DUA",
+              "rel": 1,
+              "reply": "Gục chớ. Đặt lưng xuống là xong.",
+              "mood": "CUOI_TUOI"
+            },
+            {
+              "say": "…",
+              "tone": "IM",
+              "silent": true
+            }
+          ],
+          "while": [
+            "w.band(SOM)"
+          ]
+        },
+        {
+          "say": "Thôi {call}. Hổng có gì đâu.",
+          "tone": "LANH",
+          "rel": -1,
+          "reply": "…Kỳ ghê. Kêu rồi thôi.",
+          "mood": "NGAC_NHIEN"
+        }
+      ],
+      "practice": [
+        "XEP_HANG",
+        "DOI_BANH"
+      ]
+    },
+    {
+      "id": "walkin.nang",
+      "npc": "WALKIN",
+      "topic": "nang",
+      "source": "PLAYER_ONLY",
+      "depth": "SHORT",
+      "weight": 12,
+      "opener": "Nóng quá {you} ha.",
+      "openMood": "MET",
+      "tree": [
+        {
+          "say": "Nắng gắt quá {call} ha. Nhích vô trong cho đỡ.",
+          "tone": "AM",
+          "rel": 2,
+          "calm": 14,
+          "reply": "Đỡ thiệt. Ngoài kia rát mặt.",
+          "mood": "THUONG",
+          "then": [
+            {
+              "say": "{call} uống miếng trà đá cho mát cái bụng.",
+              "tone": "AM",
+              "rel": 2,
+              "calm": 12,
+              "reply": "Ừ. Mát ruột.",
+              "mood": "CUOI",
+              "need": [
+                "p.hasTea",
+                "!v.gaveTea"
+              ],
+              "act": {
+                "kind": "OFFER_TEA",
+                "forSec": 8
+              }
+            },
+            {
+              "say": "Trưa còn gắt hơn nữa {call} à.",
+              "tone": "THUONG",
+              "reply": "Biết. Trưa {self} trốn trong phòng.",
+              "mood": "MET",
+              "while": [
+                "w.band(SOM)"
+              ]
+            },
+            {
+              "say": "Nắng thì ai cũng chịu chớ riêng gì {call}.",
+              "tone": "LANH",
+              "reply": "…Ờ. Nói cũng phải.",
+              "mood": "LANH"
+            }
+          ],
+          "while": [
+            "w.shadeFree"
+          ],
+          "act": {
+            "kind": "STAND_IN_SHADE",
+            "forSec": 25
+          }
+        },
+        {
+          "say": "Ngoài ngã tư kẹt dữ hông {call}?",
+          "tone": "THANG",
+          "reply": "Kẹt cứng. Bữa nào cũng vậy. Đào lên lấp xuống hoài.",
+          "mood": "BUC",
+          "then": [
+            {
+              "say": "Đường sá dạo này đi cực thiệt {call} ha.",
+              "tone": "CHUI",
+              "rel": 2,
+              "reply": "Đó! Nói trúng ý {self} rồi đó.",
+              "mood": "CUOI_TUOI"
+            },
+            {
+              "say": "Vậy chắc {call} dậy sớm lắm mới kịp giờ.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Năm giờ. Quen rồi.",
+              "mood": "MET"
+            },
+            {
+              "say": "Đường sá vậy đó {call}. Than hoài cũng vậy hà.",
+              "tone": "LANH",
+              "reply": "…Ờ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Nóng thì nóng chung. {call} đứng chờ như người ta đi.",
+          "tone": "GAT",
+          "rel": -3,
+          "anger": 50,
+          "silent": true,
+          "mood": "GIAN",
+          "while": [
+            "t.impatient",
+            "w.queue(2)"
+          ]
+        }
+      ],
+      "practice": [
+        "XEP_HANG",
+        "DOI_BANH"
+      ],
+      "when": {
+        "rain": false,
+        "world": [
+          "w.hot"
+        ]
+      }
+    },
+    {
+      "id": "walkin.dienthoai",
+      "npc": "WALKIN",
+      "topic": "dienthoai",
+      "source": "PLAYER_ONLY",
+      "depth": "SHORT",
+      "weight": 12,
+      "opener": "Dạ? {self} nghe nè.",
+      "openMood": "NGHI",
+      "tree": [
+        {
+          "say": "Coi gì mà say sưa vậy {call}? Kể {me} nghe với.",
+          "tone": "DUA",
+          "rel": 1,
+          "reply": "Hổng có gì. Mấy cái clip tào lao hà.",
+          "mood": "NGUONG",
+          "then": [
+            {
+              "say": "Tào lao mà {call} coi quên cả ăn sáng.",
+              "tone": "DUA",
+              "rel": 1,
+              "reply": "Ha. Trúng. Coi tới đâu quên tới đó.",
+              "mood": "CUOI_TUOI"
+            },
+            {
+              "say": "Cất máy đi rồi ăn cho ngon {call}.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "…Ừ. Nói nghe cũng phải.",
+              "mood": "CUOI_KHAN",
+              "act": {
+                "kind": "LOOK_INSIDE",
+                "forSec": 8
+              }
+            },
+            {
+              "say": "Thôi. {call} coi tiếp đi.",
+              "tone": "LANH",
+              "reply": "…Ờ.",
+              "mood": "LANH"
+            }
+          ],
+          "while": [
+            "t.onPhone"
+          ]
+        },
+        {
+          "say": "{call} ngó lên cái. Nãy giờ {me} hỏi hoài.",
+          "tone": "THANG",
+          "anger": 20,
+          "reply": "…Ủa. Xin lỗi nghen. {self} hổng có nghe.",
+          "mood": "NGUONG",
+          "then": [
+            {
+              "say": "Hổng sao {call}. Cái máy nó hút hồn mà.",
+              "tone": "THUONG",
+              "rel": 1,
+              "calm": 16,
+              "reply": "Ừ. Hút thiệt.",
+              "mood": "CUOI_KHAN"
+            },
+            {
+              "say": "{call} kêu món đi. {me} còn người sau.",
+              "tone": "THANG",
+              "anger": 10,
+              "reply": "Ừ ừ. Một ổ đầy đủ.",
+              "mood": "BUC",
+              "need": [
+                "!t.hasOrder"
+              ],
+              "while": [
+                "w.queue(2)"
+              ]
+            },
+            {
+              "say": "{me} đợi {call} coi xong cũng được.",
+              "tone": "AM",
+              "rel": 1,
+              "reply": "Ờ… thôi {self} cất đây.",
+              "mood": "NGUONG"
+            },
+            {
+              "say": "Cắm mặt vô cái máy hoài. {call} có mua hông vậy?",
+              "tone": "GAT",
+              "rel": -3,
+              "anger": 60,
+              "silent": true,
+              "mood": "GIAN",
+              "need": [
+                "!t.hasOrder"
+              ],
+              "act": {
+                "kind": "REFUSE"
+              }
+            }
+          ],
+          "while": [
+            "t.onPhone"
+          ]
+        },
+        {
+          "say": "{call} coi máy đi. Xong {me} kêu.",
+          "tone": "LANH",
+          "reply": "…Ờ.",
+          "mood": "LANH",
+          "while": [
+            "t.onPhone"
+          ]
+        }
+      ],
+      "practice": [
+        "XEP_HANG",
+        "DOI_BANH"
+      ],
+      "when": {
+        "world": [
+          "t.onPhone"
+        ]
+      }
+    },
+    {
+      "id": "walkin.chen",
+      "npc": "WALKIN",
+      "topic": "chen",
+      "source": "PLAYER_ONLY",
+      "depth": "SHORT",
+      "weight": 12,
+      "opener": "Ủa? {self} nghe nè.",
+      "openMood": "NGHIEM",
+      "tree": [
+        {
+          "say": "Có người tới trước {call} đó. {me} làm theo thứ tự nghen.",
+          "tone": "THANG",
+          "anger": 15,
+          "reply": "…Ủa. Tưởng tới lượt rồi.",
+          "mood": "NGUONG",
+          "then": [
+            {
+              "say": "Hổng sao {call}. Đứng chút xíu là tới hà.",
+              "tone": "AM",
+              "rel": 2,
+              "calm": 18,
+              "reply": "Ừ. Thôi {self} đứng.",
+              "mood": "CUOI_KHAN",
+              "while": [
+                "!w.queue(3)"
+              ]
+            },
+            {
+              "say": "{call} nhớ giùm {me}. Chỗ này ai cũng phải chờ.",
+              "tone": "THANG",
+              "anger": 10,
+              "reply": "Ừ ừ. Biết rồi.",
+              "mood": "BUC",
+              "while": [
+                "w.queue(2)"
+              ]
+            },
+            {
+              "say": "Vậy {call} chờ tới lượt.",
+              "tone": "LANH",
+              "anger": 15,
+              "reply": "…Ờ.",
+              "mood": "BUC",
+              "while": [
+                "w.queue(2)"
+              ],
+              "act": {
+                "kind": "STEP_ASIDE",
+                "forSec": "TOI_LUOT"
+              }
+            }
+          ],
+          "while": [
+            "w.queue(2)"
+          ],
+          "act": {
+            "kind": "STEP_ASIDE",
+            "forSec": "TOI_LUOT"
+          }
+        },
+        {
+          "say": "{call} chen cái gì mà chen vậy? Ra sau xếp hàng đi.",
+          "tone": "GAT",
+          "rel": -3,
+          "anger": 65,
+          "silent": true,
+          "mood": "GIAN",
+          "while": [
+            "w.queue(2)"
+          ],
+          "act": {
+            "kind": "STEP_ASIDE",
+            "forSec": "TOI_LUOT"
+          }
+        },
+        {
+          "say": "Thôi. Tới đâu hay tới đó {call}.",
+          "tone": "LANH",
+          "reply": "…Ờ. Vậy lấy một ổ.",
+          "mood": "LANH",
+          "then": [
+            {
+              "say": "{call} ăn đầy đủ nghen?",
+              "tone": "THUONG",
+              "reply": "Ừ. Đầy đủ.",
+              "mood": "LANH",
+              "need": [
+                "!t.hasOrder"
+              ]
+            },
+            {
+              "say": "Thôi {call} vô trước đi, {me} làm liền.",
+              "tone": "AM",
+              "rel": 1,
+              "reply": "Ờ. Cảm ơn {you} nghen.",
+              "mood": "NGUONG"
+            },
+            {
+              "say": "Ai lẹ chân nấy được {call} ha.",
+              "tone": "DUA",
+              "rel": 1,
+              "reply": "Ha. Ở đâu mà hổng vậy.",
+              "mood": "CUOI_KHAN",
+              "while": [
+                "w.queue(2)"
+              ]
+            }
+          ],
+          "while": [
+            "w.queue(2)"
+          ]
+        }
+      ],
+      "practice": [
+        "XEP_HANG"
+      ],
+      "when": {
+        "world": [
+          "t.cutLine",
+          "w.queue(2)"
+        ]
+      }
+    },
+    {
+      "id": "walkin.thoitien",
+      "npc": "WALKIN",
+      "topic": "thoitien",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
+      "weight": 12,
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG"
+      ],
+      "opener": "{you} ơi {self} có tờ năm trăm à. Thối được hông {you}?",
+      "openMood": "NGUONG",
+      "tree": [
+        {
+          "say": "Dạ được {call}. {me} còn tiền lẻ.",
+          "tone": "AM",
+          "rel": 2,
+          "reply": "May quá. Nãy {self} hỏi ba chỗ, chỗ nào cũng lắc.",
+          "mood": "CUOI",
+          "need": [
+            "p.cash(200000)"
+          ],
+          "then": [
+            {
+              "say": "Sáng sớm ai cũng kẹt tiền lẻ hết {call} à.",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "Ừ. {self} cũng ngại. Mà rút máy ra toàn tờ lớn.",
+              "mood": "NGUONG"
+            },
+            {
+              "say": "{call} để dành tờ lẻ mai ghé {me} nghen.",
+              "tone": "DUA",
+              "rel": 1,
+              "reply": "Ha. Nhớ rồi. Mai {self} gom bạc cắc qua đây.",
+              "mood": "CUOI_TUOI"
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "reply": "…Ờ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Dạ {me} hết tiền lẻ rồi {call} ơi.",
+          "tone": "THUONG",
+          "reply": "Vậy hả. Để {self} chạy ra cây xăng đổi cái.",
+          "mood": "MET",
+          "need": [
+            "!p.cash(200000)"
+          ],
+          "then": [
+            {
+              "say": "Hay {call} lấy bánh trước, chút ghé trả cũng được.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "Thiệt hông? …Ừ, vậy {self} ghé lại liền.",
+              "mood": "NGAC_NHIEN",
+              "act": {
+                "kind": "CREDIT_LOAF"
+              },
+              "need": [
+                "!p.soldOut"
+              ]
+            },
+            {
+              "say": "Cây xăng đầu đường có đó {call}. Đi chừng hai phút.",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "Ờ. Để {self} chạy ra. Chút {self} quay lại.",
+              "mood": "THUONG"
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "reply": "…Ờ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Dạ {call} chờ {me} coi lại cái hộp tiền.",
+          "tone": "THUONG",
+          "reply": "Ừ. {self} đợi được.",
+          "mood": "THUONG",
+          "then": [
+            {
+              "say": "Dạ còn. Vừa đủ thối cho {call}.",
+              "tone": "AM",
+              "rel": 1,
+              "reply": "Vậy đưa {self} một ổ đi.",
+              "mood": "CUOI",
+              "need": [
+                "!p.soldOut"
+              ]
+            },
+            {
+              "say": "Dạ {call} có tờ nào nhỏ hơn hông?",
+              "tone": "THUONG",
+              "reply": "Để {self} coi… có tờ năm chục nè. Được hông?",
+              "mood": "THUONG"
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "reply": "…Ờ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Dạ tờ lớn vầy {me} chịu thua {call} ơi.",
+          "tone": "LANH",
+          "reply": "…Ờ. Thôi để {self} đi chỗ khác.",
+          "mood": "LANH"
+        }
+      ]
+    },
+    {
+      "id": "walkin.chiduong",
+      "npc": "WALKIN",
+      "topic": "chiduong",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
+      "weight": 12,
+      "practice": [
+        "QUAY_VANG",
+        "XEP_HANG",
+        "DI_NGANG"
+      ],
+      "opener": "{you} ơi cho hỏi, hẻm một trăm bốn hai đi lối nào vậy {you}?",
+      "openMood": "NGAC_NHIEN",
+      "tree": [
+        {
+          "say": "Dạ {call} đi thẳng, qua cái quán sửa xe rồi quẹo trái.",
+          "tone": "AM",
+          "rel": 2,
+          "reply": "Quán sửa xe ông Chín hả? Ờ, {self} biết chỗ đó.",
+          "mood": "CUOI",
+          "then": [
+            {
+              "say": "Dạ đúng rồi. Quẹo xong là thấy cái cổng xanh liền.",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "Cổng xanh. Được rồi. Cảm ơn {you} nghen.",
+              "mood": "CUOI"
+            },
+            {
+              "say": "{call} tìm nhà ai trong đó hả?",
+              "tone": "DUA",
+              "rel": 1,
+              "reply": "{self} đi giao cái máy quạt. Địa chỉ ghi mờ quá đọc hổng ra.",
+              "mood": "CUOI_KHAN"
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "reply": "…Ờ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Dạ {me} cũng mới ra đây bán, hổng rành lắm {call} ơi.",
+          "tone": "THUONG",
+          "reply": "Vậy hả. Thôi để {self} hỏi chỗ khác.",
+          "mood": "MET",
+          "need": [
+            "w.day(12)"
+          ],
+          "then": [
+            {
+              "say": "Hay {call} hỏi bà bán thuốc lá góc kia, bả ở đây lâu rồi.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Ừ, để {self} qua hỏi bả. Cảm ơn {you}.",
+              "mood": "CUOI"
+            },
+            {
+              "say": "Dạ {call} thông cảm giùm {me}.",
+              "tone": "THUONG",
+              "reply": "Có gì đâu. Ai cũng có lúc mới tới.",
+              "mood": "THUONG"
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "reply": "…Ờ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Dạ {call} hỏi ai chớ {me} đang dở tay.",
+          "tone": "LANH",
+          "rel": -1,
+          "reply": "…Ờ. Thôi.",
+          "mood": "LANH"
+        }
+      ]
+    },
+    {
+      "id": "walkin.hoigio",
+      "npc": "WALKIN",
+      "topic": "hoigio",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
+      "weight": 12,
+      "practice": [
+        "XEP_HANG",
+        "GOI_MON",
+        "QUAY_VANG"
+      ],
+      "opener": "{you} ơi mấy giờ rồi {you}? {self} để quên điện thoại ở nhà.",
+      "openMood": "NGUONG",
+      "tree": [
+        {
+          "say": "Dạ {gio} rồi {call}.",
+          "tone": "THUONG",
+          "rel": 1,
+          "reply": "Chèn ơi. Vậy {self} trễ mất rồi.",
+          "mood": "MET",
+          "then": [
+            {
+              "say": "{call} cầm ổ đi ăn dọc đường cho kịp.",
+              "tone": "AM",
+              "reply": "Ừ. Gói lẹ giùm {self} nghen.",
+              "mood": "MET",
+              "need": [
+                "!p.soldOut"
+              ],
+              "act": {
+                "kind": "PROMISE_DEED",
+                "deed": "LAM_LE"
+              },
+              "onKept": {
+                "rel": 3
+              }
+            },
+            {
+              "say": "Trễ chút thôi mà {call}. Đường giờ này thoáng rồi.",
+              "tone": "THUONG",
+              "reply": "Mong vậy. Chớ sếp {self} khó lắm.",
+              "mood": "MET"
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "reply": "…Ờ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Dạ {gio}. {call} còn kịp mà.",
+          "tone": "AM",
+          "rel": 1,
+          "reply": "Vậy hả. Thở phào. {self} tưởng trễ rồi.",
+          "mood": "CUOI",
+          "then": [
+            {
+              "say": "Vậy {call} đứng chờ {me} làm cho đàng hoàng nghen.",
+              "tone": "AM",
+              "rel": 1,
+              "reply": "Ừ. Làm từ từ. {self} còn thời gian.",
+              "mood": "CUOI"
+            },
+            {
+              "say": "Quên điện thoại ở nhà chắc {call} thấy nhẹ người ha.",
+              "tone": "DUA",
+              "rel": 1,
+              "reply": "Nhẹ chớ. Mà lát về thế nào cũng cả chục cuộc gọi nhỡ.",
+              "mood": "CUOI_TUOI"
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "reply": "…Ờ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Dạ {me} cũng hổng ngó đồng hồ {call} ơi.",
+          "tone": "LANH",
+          "reply": "…Ờ. Thôi để {self} hỏi người khác.",
+          "mood": "LANH"
+        }
+      ]
+    },
+    {
+      "id": "walkin.trumua",
+      "npc": "WALKIN",
+      "topic": "trumua",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
+      "weight": 14,
+      "when": {
+        "world": [
+          "w.rain"
+        ]
+      },
+      "practice": [
+        "QUAY_VANG",
+        "XEP_HANG",
+        "DI_NGANG"
+      ],
+      "opener": "{you} cho {self} đứng nhờ chút nghen. Mưa quá {self} chạy hổng nổi.",
+      "openMood": "MET",
+      "tree": [
+        {
+          "say": "Dạ {call} vô trong đây cho khỏi ướt.",
+          "tone": "AM",
+          "rel": 3,
+          "calm": 14,
+          "reply": "Cảm ơn {you}. Áo mưa {self} để trong cốp mà quên chìa khoá.",
+          "mood": "THUONG",
+          "while": [
+            "w.shadeFree"
+          ],
+          "act": {
+            "kind": "STAND_IN_SHADE",
+            "forSec": 60
+          },
+          "then": [
+            {
+              "say": "{call} uống miếng trà đá cho ấm bụng.",
+              "tone": "AM",
+              "rel": 2,
+              "calm": 10,
+              "reply": "Ừ. Mưa vầy uống trà đá cũng kỳ, mà thôi, cảm ơn {you}.",
+              "mood": "CUOI_KHAN",
+              "need": [
+                "p.hasTea",
+                "!v.gaveTea"
+              ],
+              "act": {
+                "kind": "OFFER_TEA",
+                "forSec": 8
+              }
+            },
+            {
+              "say": "Mưa này chừng mười lăm phút là tạnh hà {call}.",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "Mong vậy. {self} còn phải qua cầu nữa.",
+              "mood": "MET"
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "reply": "…Ờ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Dạ {call} cứ đứng. Mái này đủ hai người mà.",
+          "tone": "THUONG",
+          "rel": 2,
+          "reply": "Ừ. {self} đứng sát vô đây cho {you} còn chỗ bán.",
+          "mood": "THUONG",
+          "then": [
+            {
+              "say": "Đứng chờ vậy {call} làm một ổ cho ấm bụng luôn.",
+              "tone": "AM",
+              "rel": 1,
+              "reply": "Ờ… ừ. Cho {self} một ổ. Đằng nào cũng đứng đây.",
+              "mood": "CUOI",
+              "need": [
+                "!p.soldOut"
+              ]
+            },
+            {
+              "say": "Mưa vầy {me} ế thấy mồ {call} ơi.",
+              "tone": "THANG",
+              "reply": "Ai cũng trốn mưa hết. Lát tạnh là người ta ùa ra à.",
+              "mood": "THUONG"
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "reply": "…Ờ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Dạ {me} đang bán, {call} đứng nhờ mái bên kia giùm nghen.",
+          "tone": "LANH",
+          "rel": -1,
+          "reply": "…Ờ. Thôi {self} chạy đại vậy.",
+          "mood": "LANH"
+        }
+      ]
+    },
+    {
+      "id": "walkin.dungxe",
+      "npc": "WALKIN",
+      "topic": "dungxe",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
+      "weight": 11,
+      "practice": [
+        "GOI_MON",
+        "QUAY_VANG",
+        "XEP_HANG"
+      ],
+      "opener": "{you} ơi {self} dựng cái xe đây chút được hông {you}?",
+      "openMood": "NGAC_NHIEN",
+      "tree": [
+        {
+          "say": "Dạ {call} dựng sát lề giùm {me} là được.",
+          "tone": "THUONG",
+          "rel": 1,
+          "reply": "Ừ ừ. Để {self} đẩy vô sát.",
+          "mood": "THUONG",
+          "then": [
+            {
+              "say": "Dạ chỗ này mấy ổng hay đi ngang lắm {call}.",
+              "tone": "AM",
+              "rel": 1,
+              "reply": "Biết. Tháng trước {self} bị cẩu một lần rồi, xót tiền lắm.",
+              "mood": "MET"
+            },
+            {
+              "say": "{call} để chìa khoá trong ổ kìa.",
+              "tone": "THANG",
+              "rel": 2,
+              "reply": "Chèn ơi! Cảm ơn {you} nghen. Tật này {self} sửa hoài hổng được.",
+              "mood": "NGAC_NHIEN"
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "reply": "…Ờ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Dạ {call} dựng đi. Có {me} ngó chừng cho.",
+          "tone": "AM",
+          "rel": 2,
+          "reply": "Vậy {self} yên tâm. Cho {self} một ổ đầy đủ nghen.",
+          "mood": "CUOI",
+          "then": [
+            {
+              "say": "Dạ {me} đứng đây suốt buổi mà {call}.",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "Ừ. Bữa nào {self} cũng thấy {you} dọn từ sớm.",
+              "mood": "CUOI"
+            },
+            {
+              "say": "Ngó chừng thôi nghen, mất {me} hổng đền đâu.",
+              "tone": "DUA",
+              "reply": "Ha. Nói thiệt tình ghê. Thôi {self} khoá cổ cho chắc.",
+              "mood": "CUOI_TUOI"
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "reply": "…Ờ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Dạ chỗ này {me} ra vô, {call} dựng chỗ khác giùm.",
+          "tone": "LANH",
+          "rel": -1,
+          "reply": "…Ờ. Để {self} đẩy qua bên kia.",
+          "mood": "LANH"
+        }
+      ]
+    },
+    {
+      "id": "walkin.meraLo",
+      "npc": "WALKIN",
+      "topic": "meralo",
+      "source": "PLAYER_ONLY",
+      "depth": "SHORT",
+      "weight": 12,
+      "when": {
+        "world": [
+          "w.ovenHot"
+        ]
+      },
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG"
+      ],
+      "opener": "Dạ? {self} nghe {you}.",
+      "openMood": "NGAC_NHIEN",
+      "tree": [
+        {
+          "say": "{call} nghe mùi chưa? Mẻ {me} vừa lấy ra đó.",
+          "tone": "AM",
+          "rel": 2,
+          "reply": "Nghe chớ. Đứng ngoài kia đã nghe rồi.",
+          "mood": "CUOI",
+          "then": [
+            {
+              "say": "Vỏ còn giòn, {call} ăn liền mới ngon.",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "Ừ. {self} ăn luôn đây, khỏi đem về.",
+              "mood": "CUOI"
+            },
+            {
+              "say": "Lò này {me} nhen từ bốn giờ rưỡi sáng đó {call}.",
+              "tone": "THANG",
+              "rel": 2,
+              "reply": "Bốn rưỡi? Giờ đó {self} còn ngủ. Cực ha.",
+              "mood": "THUONG"
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "reply": "…Ờ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "{call} lấy ổ nóng hay ổ nguội?",
+          "tone": "THUONG",
+          "rel": 1,
+          "reply": "Nóng. Nguội ăn dai lắm.",
+          "mood": "THUONG",
+          "then": [
+            {
+              "say": "Dạ {me} lấy ổ trong cùng, ổ đó nóng nhất.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Ừ. {you} biết ý ghê.",
+              "mood": "CUOI"
+            },
+            {
+              "say": "Người ta toàn lựa ổ trên cùng, mà ổ đó nguội trước.",
+              "tone": "DUA",
+              "rel": 1,
+              "reply": "Ha. Vậy mà {self} lựa trật mấy năm nay.",
+              "mood": "CUOI_TUOI"
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "reply": "…Ờ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "{call} lấy ổ nào cũng được hết nghen.",
+          "tone": "LANH",
+          "rel": -1,
+          "reply": "Ừ. Cho {self} một ổ.",
+          "mood": "LANH"
+        }
+      ]
+    },
+    {
+      "id": "walkin.gukhach",
+      "npc": "WALKIN",
+      "topic": "gukhach",
+      "source": "PLAYER_ONLY",
+      "depth": "SHORT",
+      "weight": 12,
+      "when": {
+        "world": [
+          "t.hasOrder"
+        ]
+      },
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG"
+      ],
+      "opener": "Dạ {self} nghe.",
+      "openMood": "NGAC_NHIEN",
+      "tree": [
+        {
+          "say": "{call} ăn nhiều rau hay ít rau?",
+          "tone": "THUONG",
+          "rel": 1,
+          "reply": "Ít thôi. Nhiều rau {self} ăn cứ rớt ra ngoài hà.",
+          "mood": "THUONG",
+          "then": [
+            {
+              "say": "Dạ {me} kẹp chặt tay, hổng rớt đâu {call}.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Vậy cho rau bình thường đi. {self} tin {you}.",
+              "mood": "CUOI"
+            },
+            {
+              "say": "Rớt là tại người ta cắt rau dài quá đó {call}.",
+              "tone": "THANG",
+              "rel": 1,
+              "reply": "Ờ há. {self} chưa nghĩ tới chuyện đó.",
+              "mood": "NGAC_NHIEN"
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "reply": "…Ờ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "{call} ăn được đồ chua hông? {me} mới làm hũ mới.",
+          "tone": "AM",
+          "rel": 1,
+          "reply": "Được. Mà đừng chua quá, {self} đau bao tử.",
+          "mood": "THUONG",
+          "then": [
+            {
+              "say": "Dạ hũ này {me} ngâm nhạt, {call} ăn được.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Vậy cho chút xíu thôi nghen.",
+              "mood": "CUOI"
+            },
+            {
+              "say": "Đau bao tử mà ăn bánh mì sáng là {call} liều đó.",
+              "tone": "DUA",
+              "rel": 1,
+              "reply": "Ha. Biết. Mà hổng ăn thì trưa đói hơn.",
+              "mood": "CUOI_KHAN"
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "reply": "…Ờ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "{me} làm đầy đủ cho {call} nghen.",
+          "tone": "LANH",
+          "reply": "Ừ. Đầy đủ. Khỏi hỏi.",
+          "mood": "LANH"
+        }
+      ]
+    },
+    {
+      "id": "walkin.vuamieng",
+      "npc": "WALKIN",
+      "topic": "vuamieng",
+      "source": "PLAYER_ONLY",
+      "depth": "SHORT",
+      "weight": 12,
+      "when": {
+        "world": [
+          "t.served"
+        ]
+      },
+      "practice": [
+        "QUAY_VANG",
+        "DI_NGANG"
+      ],
+      "opener": "Dạ?",
+      "openMood": "NGAC_NHIEN",
+      "tree": [
+        {
+          "say": "Vừa miệng hông {call}?",
+          "tone": "THUONG",
+          "rel": 1,
+          "reply": "Được. Mà pate hơi ít so với chỗ cũ {self} hay ăn.",
+          "mood": "THUONG",
+          "then": [
+            {
+              "say": "Dạ mai {call} ghé, {me} cho thêm miếng.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Ờ, vậy mai {self} ghé. Nhớ nghen.",
+              "mood": "CUOI"
+            },
+            {
+              "say": "Chỗ cũ {call} ăn ở đâu vậy?",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "Gần công ty {self}, bên quận Ba. Mà đi làm đổi đường rồi.",
+              "mood": "THUONG"
+            },
+            {
+              "say": "Dạ pate {me} để vậy cho khỏi ngán.",
+              "tone": "THANG",
+              "reply": "…Ờ. Mỗi nhà một kiểu.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "{call} ăn còn nóng hông?",
+          "tone": "AM",
+          "rel": 1,
+          "reply": "Còn. Cầm còn ấm tay nè.",
+          "mood": "CUOI",
+          "then": [
+            {
+              "say": "Dạ {me} lấy ổ mới ra cho {call} đó.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Thảo nào. Cảm ơn {you} nghen.",
+              "mood": "CUOI"
+            },
+            {
+              "say": "{call} ăn liền đi, để nguội uổng lắm.",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "Ừ. {self} ăn dọc đường luôn.",
+              "mood": "CUOI"
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "reply": "…Ờ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Thôi {call} đi đi, {me} còn làm.",
+          "tone": "LANH",
+          "rel": -1,
+          "reply": "…Ờ.",
+          "mood": "LANH"
+        }
+      ]
+    },
+    {
+      "id": "walkin.dongkhach",
+      "npc": "WALKIN",
+      "topic": "dongkhach",
+      "source": "PLAYER_ONLY",
+      "depth": "SHORT",
+      "weight": 12,
+      "when": {
+        "world": [
+          "w.queue(1)"
+        ]
+      },
+      "practice": [
+        "XEP_HANG",
+        "GOI_MON"
+      ],
+      "opener": "Dạ? {self} nghe {you}.",
+      "openMood": "NGAC_NHIEN",
+      "tree": [
+        {
+          "say": "Bữa nay đông quá, {call} chờ {me} chút nghen.",
+          "tone": "AM",
+          "rel": 2,
+          "calm": 12,
+          "reply": "Hổng sao. {self} đứng coi {you} làm cũng vui.",
+          "mood": "THUONG",
+          "then": [
+            {
+              "say": "Coi riết rồi {call} về tự làm được luôn đó.",
+              "tone": "DUA",
+              "rel": 1,
+              "reply": "Ha. Làm ở nhà hổng ra vị này đâu.",
+              "mood": "CUOI_TUOI"
+            },
+            {
+              "say": "Dạ {me} làm nhanh. Chừng hai phút là tới {call}.",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "Ừ. {self} còn kịp chán.",
+              "mood": "THUONG"
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "reply": "…Ờ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "{call} đứng nhích vô chút cho người ta qua nghen.",
+          "tone": "THANG",
+          "rel": 1,
+          "reply": "Ờ ờ. {self} đứng choán lối hả.",
+          "mood": "NGUONG",
+          "act": {
+            "kind": "STEP_ASIDE",
+            "forSec": 25
+          },
+          "then": [
+            {
+              "say": "Dạ hổng sao, lề hẹp thôi {call}.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Ừ. Hẻm này xe cộ qua suốt.",
+              "mood": "THUONG"
+            },
+            {
+              "say": "Dạ {call} đứng phía này {me} đưa bánh cho lẹ.",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "Ừ, để {self} qua bên đó.",
+              "mood": "THUONG"
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "reply": "…Ờ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Ai cũng phải chờ hết {call} à.",
+          "tone": "LANH",
+          "rel": -1,
+          "reply": "…Ờ. {self} có nói gì đâu.",
+          "mood": "LANH"
         }
       ]
     }

@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { FX, buildBody, footY, textureFor } from "../../art";
+import { artScale } from "../../art/photo";
 import { NPCS } from "../../content/npcs";
 import { depthOf, toScreen } from "../../world/iso";
 import { GOSSIP_CORNER } from "../../world/map";
@@ -31,8 +32,11 @@ export class GossipCorner {
     const ta = textureFor("e", sc.plan.a), tb = textureFor("w", sc.plan.b);
     this.sa = scene.add.image(A.sx, A.sy, FX.shadow).setDepth(depthOf(pa.x, pa.y) - 1).setAlpha(0);
     this.sb = scene.add.image(B.sx, B.sy, FX.shadow).setDepth(depthOf(pb.x, pb.y) - 1).setAlpha(0);
-    this.a = scene.add.image(A.sx, footY(A.sy), ta.key).setOrigin(0.5, 1).setFlipX(ta.flip).setDepth(depthOf(pa.x, pa.y)).setAlpha(0);
-    this.b = scene.add.image(B.sx, footY(B.sy), tb.key).setOrigin(0.5, 1).setFlipX(tb.flip).setDepth(depthOf(pb.x, pb.y)).setAlpha(0);
+    // `setScale(1 / artScale)` cùng lý do với `Player.ts` và `CustomerActor.ts`: người
+    // đã có bảng xoay ảnh thật thì texture nướng dư pixel, người chưa có thì `artScale`
+    // trả 1. Hai người đứng tám chuyện mà cao gấp `ART_SS` lần thì che hết góc hẻm.
+    this.a = scene.add.image(A.sx, footY(A.sy), ta.key).setOrigin(0.5, 1).setFlipX(ta.flip).setDepth(depthOf(pa.x, pa.y)).setAlpha(0).setScale(1 / artScale(ta.key));
+    this.b = scene.add.image(B.sx, footY(B.sy), tb.key).setOrigin(0.5, 1).setFlipX(tb.flip).setDepth(depthOf(pb.x, pb.y)).setAlpha(0).setScale(1 / artScale(tb.key));
     this.dots = scene.add.graphics().setDepth(OVERLAY_DEPTH);
   }
 

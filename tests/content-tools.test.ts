@@ -9,6 +9,7 @@ import { mkdtempSync, mkdirSync, copyFileSync, writeFileSync, readFileSync } fro
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { validateRules } from "../tools/validate-rules";
+import { validateTalks } from "../tools/validate-talks";
 import { lintLines } from "../tools/lint-lines";
 import { ROOT } from "../tools/lib";
 
@@ -86,7 +87,12 @@ test("--fix sửa NFD, kiểu dấu, viết hoa — rồi lint lại sạch ba m
   assert.equal(text[1], "Cảm ơn con nhiều");
 });
 
-test("nội dung thật của repo: 0 ERROR ở cả hai công cụ", () => {
+test("nội dung thật của repo: 0 ERROR ở cả BA công cụ", () => {
   assert.equal(validateRules(real, join(ROOT, "src")).errors.length, 0);
   assert.equal(lintLines(real).errors.length, 0);
+  // `validateTalks` là chỗ DUY NHẤT giữ luật TĨNH/ĐỘNG của P2-07 §4.1 (lưới `T002`) và
+  // luật "một nhịp không được teo" (`T011`). Trước đây `p2-worldfacts` chép tay lại luật
+  // thứ nhất, và hai bản đã lệch nhau — giờ chỉ còn một bản, nên nó phải được chạy ở đây.
+  const r = validateTalks(real);
+  assert.deepEqual(r.errors.map((e) => `${e.code} ${e.where} ${e.detail}`), []);
 });

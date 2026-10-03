@@ -9,16 +9,26 @@
  */
 import CATALOG from "../content/rules/_blackboard.json";
 import { NPC_IDS, STIM_IDS } from "../core/types";
+import { BAND_IDS, DEED_IDS, HAND_IDS, PRACTICE_IDS, PURPOSE_IDS, STATE_IDS } from "../content/vocab";
 
 export type FactType = "enum" | "ordinal" | "number" | "bool";
 type RawFact = { scope: string; type: FactType; values?: string[] | string; min?: number; max?: number; ctx?: boolean; conditional?: boolean };
 
-const MACROS: Record<string, readonly string[]> = { "@NPC_IDS": NPC_IDS, "@STIM_IDS": STIM_IDS };
+/**
+ * Danh sách id dài thì khai bằng macro, không chép tay vào JSON — P2-09 §2.2.
+ * Nguồn của mọi macro: `content/vocab.ts` và `core/types.ts`. Validator đọc **đúng** bảng
+ * này qua `MACROS` của `tools/validate-rules.ts`; test `V-2` canh hai bên không lệch.
+ */
+export const MACROS: Record<string, readonly string[]> = {
+  "@NPC_IDS": NPC_IDS, "@STIM_IDS": STIM_IDS,
+  "@HAND_IDS": HAND_IDS, "@PRACTICE_IDS": PRACTICE_IDS, "@PURPOSE_IDS": PURPOSE_IDS,
+  "@STATE_IDS": STATE_IDS, "@DEED_IDS": DEED_IDS, "@BAND_IDS": BAND_IDS,
+};
 
 export type FactDef = { name: string; index: number; type: FactType; values: readonly string[] | null; ctx: boolean };
 
 const raw = (CATALOG as unknown as { facts: Record<string, RawFact> }).facts;
-export const FACTS: readonly FactDef[] = Object.keys(raw).sort().map((name, index) => {
+export const FACTS: readonly FactDef[] = Object.keys(raw).filter((k) => !k.startsWith("_")).sort().map((name, index) => {
   const f = raw[name];
   const values = typeof f.values === "string" ? MACROS[f.values] ?? [] : f.values ?? null;
   return { name, index, type: f.type, values, ctx: !!f.ctx };

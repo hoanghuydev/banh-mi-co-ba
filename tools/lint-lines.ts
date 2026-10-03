@@ -14,6 +14,17 @@ import { ROOT, Report, readJson, similarity, walk } from "./lib";
 export const LINE_MAX_CHARS = 90;
 /** Chỗ trống danh xưng trong cây hội thoại — xem `sim/service.fill`. */
 const ADDRESS_VARS = ["call", "me", "self", "you"];
+/**
+ * Chỗ trống KHÁC mà `Service.fill` điền được — P2-09 §2.4, §2.6.
+ *
+ *   `m.what` chuyện cũ VỪA TRUY HỒI. Người viết không gõ tên chuyện vào lời thoại; họ
+ *            để một chỗ trống và `retrieve()` điền. Không nhớ ra gì thì câu đó không
+ *            tồn tại (cổng `m.remembers`), nên chỗ trống này không bao giờ rỗng.
+ *   `gia`    giá MỘT ổ theo đúng đơn của người đang đứng đó, đọc thành lời ("sáu mươi
+ *   `giaN`   tư ngàn"). `giaN` = N ổ. Một con số gõ cứng vào câu nói là một con số sẽ
+ *            sai vào ngày ai đó chỉnh `econ.json`, và không test nào bắt được.
+ */
+const FILL_VARS = ["m.what", "gia", "gia2", "gia3", "gio"];
 export const LINE_SIMILARITY_MAX = 0.85;
 /** Bong bóng thoại ở fontScale 2: rộng 285 px, chữ 24 px (xem ui/stall/BubblePool). */
 const BUBBLE_PX = 285, FONT_PX_AT_2X = 24, MAX_LINES_AT_2X = 3;
@@ -149,7 +160,7 @@ function collect(contentDir: string): { bags: Bag[]; save: () => void } {
       for (const sub of Object.values(t.shared ?? {})) go(sub as any[], 1);
       // Chỗ trống DANH XƯNG (sim/talk.WALKIN_ADDRESS, điền ở `Service.fill`): một bộ
       // thoại dùng chung cho tám dáng người thì không viết cứng "anh" vào được.
-      const vars = ADDRESS_VARS;
+      const vars = [...ADDRESS_VARS, ...FILL_VARS];
       bags.push({ file: f, where: `talk ${t.id}.bong-bong`, vi: bubbleLines, vars, npc: t.npc, noVariants: true, set: () => {} });
       bags.push({ file: f, where: `talk ${t.id}.npc`, vi: npcLines, vars, npc: t.npc, noVariants: true, box: PANEL, set: () => {} });
       bags.push({ file: f, where: `talk ${t.id}.say`, vi: sayLines, vars, noVariants: true, box: PANEL, set: () => {} });
@@ -204,14 +215,14 @@ export function lintLines(contentDir: string, opts: { fix?: boolean } = {}): Rep
       }
 
       // L001 / L002 — biến nội suy
-      for (const m of s.matchAll(/\{(\w+)\}/g)) {
+      for (const m of s.matchAll(/\{([\w.]+)\}/g)) {
         if (b.vars.includes(m[1])) continue;
         if (allVars.has(m[1])) r.add("L002", "ERROR", b.file, where, `biến {${m[1]}} đúng tên nhưng SAI SCOPE — túi này chỉ có [${b.vars.join(", ")}]`);
         else r.add("L001", "ERROR", b.file, where, `biến {${m[1]}} chưa định nghĩa — sẽ hiện nguyên chữ "{${m[1]}}" trên màn hình`);
       }
 
       // L003 — độ dài
-      const shown = s.replace(/\{\w+\}/g, "xxxxxxxx");
+      const shown = s.replace(/\{[\w.]+\}/g, "xxxxxxxx");
       const box = b.box ?? BUBBLE;
       if (shown.length > LINE_MAX_CHARS) r.add("L003", "WARN", b.file, where, `${shown.length} ký tự > ${LINE_MAX_CHARS}`);
       else if (wrappedLines(shown, box) > box.maxLines) {
@@ -237,7 +248,12 @@ export function lintLines(contentDir: string, opts: { fix?: boolean } = {}): Rep
       }
 
       // L013 — ký tự font không vẽ được
-      for (const ch of s.replace(/\{\w+\}/g, "")) {
+      //
+      // `[\w.]+` chứ không phải `\w+`: biến có dấu chấm (`{m.what}`) thì `\w` không
+      // khớp, cặp ngoặc sót lại và báo đúng hai lỗi "{ ngoài bảng glyph" cho mỗi câu.
+      // Ba chỗ còn lại trong file này đã dùng `[\w.]+` từ đầu; chỉ chỗ này lệch, và nó
+      // nằm im cho tới khi có người đầu tiên viết `{m.what}` vào nội dung.
+      for (const ch of s.replace(/\{[\w.]+\}/g, "")) {
         const low = ch.toLowerCase();
         if (!VN_LETTERS.has(low) && !PUNCT.has(ch) && !/[a-z]/.test(low)) {
           r.add("L013", "ERROR", b.file, where, `ký tự "${ch}" (U+${ch.codePointAt(0)!.toString(16).toUpperCase().padStart(4, "0")}) ngoài bảng glyph`);

@@ -16,7 +16,9 @@ import {
   ADDRESS, ANON_TALK_POOLS, DEFAULT_IGNORE_REL, EXTRA_TALK_POOLS, FORBIDDEN_SELF, MAX_DEPTH,
   MOOD_FACE, MOOD_LABEL, MOOD_NEGATIVE,
   MOOD_POSE, TalkSession, angerToWaitSec, applyTalk,
-  childrenOf, eligible, linesOf, pickTalk, visibleOptions, walkNodes, WALKIN_CALLS,
+  childrenOf, countsAgainstDailyCap, eligible, isSharedTalk, kindOf, linesOf, okSource,
+  beatWidth, pickTalk, touchesRelationship, trimKeepingExit, visibleOptions, walkNodes,
+  TALK_CHOICES_MAX, WALKIN_CALLS,
   type Talk, type TalkCtx, type TalkMood, type TalkNode,
 } from "../src/sim/talk";
 import { TALK_NPC_IDS, TalkStore } from "../src/content/talks";
@@ -45,9 +47,14 @@ const mkCustomer = (id: string) =>
 
 test("T-1 câu đáp đi THEO lựa chọn, không rút riêng — đúng cái bug của nút F cũ", () => {
   const t = byId("bay.veso");
-  const replies = t.tree.map((o) => o.reply ?? `(im ${o.say})`);
-  assert.equal(new Set(replies).size, replies.length, "bốn lựa chọn mà đáp lại giống nhau");
-  for (const [i, o] of t.tree.entries()) {
+  // Duyệt đúng những lựa chọn HIỆN RA, không phải cả `tree`: từ P2-06 §2.6 mỗi nhịp bị
+  // cắt còn `TALK_CHOICES_MAX` dòng (ngân sách đọc), nên `tree[3]` có thể không tồn tại
+  // trên màn hình. Cái test này giữ là "câu đáp đi theo lựa chọn", không phải "có 4 nút".
+  const shown = visibleOptions(t.tree, { flags: {} });
+  assert.ok(shown.length >= 2, "nhịp đầu không còn đủ lựa chọn");
+  const replies = shown.map((o) => o.reply ?? `(im ${o.say})`);
+  assert.equal(new Set(replies).size, replies.length, "mấy lựa chọn mà đáp lại giống nhau");
+  for (const [i, o] of shown.entries()) {
     const s = new TalkSession(t, "BA_BAY");
     assert.equal(s.choose(i, { flags: {} })!.reply, o.reply, `lựa chọn ${i} nhận câu đáp của lựa chọn khác`);
   }
@@ -168,8 +175,31 @@ test("T-11 `need` ẩn lựa chọn chưa mở, mà vẫn luôn còn một đư�
     { say: "a", tone: "AM", need: "chuaCo" },
     { say: "b", tone: "LANH", need: "chuaCo" },
   ];
-  assert.equal(visibleOptions(nodes, { flags: {} }).length, 1, "lọc sạch hết thì bảng không còn nút nào bấm");
+  assert.ok(visibleOptions(nodes, { flags: {} }).length >= 1, "lọc sạch hết thì dải không còn dòng nào bấm");
   assert.equal(visibleOptions(nodes, { flags: { chuaCo: 1 } }).length, 2);
+
+  /*
+   * H-14 — đường lui KHÔNG được bỏ qua chính cái cổng vừa dựng.
+   *
+   * Bản cũ trả `nodes.slice(0, 1)`, tức nút ĐẦU, bất kể `needCash`. Nên két rỗng mà
+   * nhịp đó toàn lựa chọn tốn tiền thì người chơi vẫn bấm được "con mua giùm bà tờ vé
+   * số" — rồi `applyAct` trả `min(vnd, có)`, thoại nói đã mua xong còn két chưa trả đủ.
+   */
+  const paid: TalkNode[] = [
+    { say: "mua giùm", tone: "AM", need: "chuaCo", needCash: 20_000 },
+    { say: "thôi", tone: "LANH", need: "chuaCo" },
+  ];
+  const out = visibleOptions(paid, { flags: {}, cash: 0 });
+  assert.ok(out.length >= 1, "lọc sạch hết thì không còn đường ra");
+  assert.ok(out.every((o) => (o.needCash ?? 0) === 0), "đường lui vẫn hiện lựa chọn không trả nổi");
+
+  /* Người ta đã lắc đầu rồi thì lời mời phải BIẾN MẤT, không phải roll lại (lỗi #5). */
+  const inv: TalkNode[] = [
+    { say: "ghé vô đi", tone: "AM", act: { kind: "INVITE", yes: "ừ", no: "thôi" } },
+    { say: "dạ thôi", tone: "LANH" },
+  ];
+  assert.equal(visibleOptions(inv, { flags: {}, noInvite: true }).length, 1, "mời lại người vừa từ chối");
+  assert.equal(visibleOptions(inv, { flags: {} }).length, 2);
 });
 
 test("T-12 kho nạp theo người: `ensure` rồi mới có, `release` thì trả chỗ", async () => {
@@ -209,9 +239,17 @@ test("L-1 id duy nhất, npc có thật, `ref` trỏ tới cây con có thật",
   }
 });
 
-test("L-2 mỗi nhịp 2–4 lựa chọn và ÍT NHẤT HAI giọng — bốn dòng cùng giọng không phải lựa chọn", () => {
+/**
+ * L-2 đếm bằng `beatWidth` của `sim/talk.ts` — CÙNG một định nghĩa với lưới `T011` của
+ * `tools/validate-talks.ts`, chỉ canh đầu ngược lại. Hai chỗ đếm "một nhịp ra mấy dòng"
+ * theo hai cách là hai chỗ để lệch, và nó đã lệch một lần: L-2 đếm phần tử trong mảng
+ * còn T011 đếm nhánh, nên cùng một nhịp bị một bên khen một bên chê.
+ */
+test("L-2 mỗi nhịp 2–4 lựa chọn CÙNG HIỆN ĐƯỢC, và ít nhất hai giọng", () => {
   const check = (t: Talk, nodes: readonly TalkNode[], where: string) => {
-    assert.ok(nodes.length >= 2 && nodes.length <= 4, `${t.id} ${where}: ${nodes.length} lựa chọn`);
+    const w = beatWidth(nodes);
+    assert.ok(w.min >= 2, `${t.id} ${where}: nhánh "${w.worst}" chỉ còn ${w.min} dòng`);
+    assert.ok(w.max <= 4, `${t.id} ${where}: ${w.max} dòng cùng hiện được (mảng ${nodes.length})`);
     const tones = new Set(nodes.map((o) => o.tone));
     assert.ok(tones.size >= 2, `${t.id} ${where}: cả ${nodes.length} dòng cùng giọng ${[...tones][0]}`);
   };
@@ -468,7 +506,7 @@ test("E-1 mở bảng rồi Esc mà CHƯA nói câu nào: cuộc đó còn nguy�
   assert.equal(s.done, false);
   // Esc = chưa `choose()` lần nào → không có gì để ghi vào `talksDone`
   assert.deepEqual(s.picked, [], "chưa bấm gì mà đã tính là đã nói");
-  assert.ok(eligible(TALKS, ctx({ npcId: "BA_BAY", usedSeason: used })).some((x) => x.id === t.id));
+  assert.ok(eligible(TALKS, ctx({ npcId: "BA_BAY", usedSeason: used }), "NPC").some((x) => x.id === t.id));
 });
 
 test("E-2 chọn MỘT câu rồi Esc: cuộc đó tính là đã nghe, không nghe lại cả mùa", () => {
@@ -477,7 +515,7 @@ test("E-2 chọn MỘT câu rồi Esc: cuộc đó tính là đã nghe, không n
   s.choose(0, { flags: {} });
   assert.equal(s.picked.length, 1, "đã chọn mà không ghi lại");
   // Service gọi `markTalkUsed` đúng ở nhịp này → mô phỏng bằng usedSeason
-  assert.ok(!eligible(TALKS, ctx({ npcId: "BA_BAY", usedSeason: [t.id] })).some((x) => x.id === t.id));
+  assert.ok(!eligible(TALKS, ctx({ npcId: "BA_BAY", usedSeason: [t.id] }), "NPC").some((x) => x.id === t.id));
 });
 
 test("E-3 cơ chế hỏi chuyện CŨ đã bỏ hẳn — không còn túi `askPlayer`, không còn rule `gen.ask`", async () => {
@@ -509,12 +547,22 @@ test("E-4 trên Service THẬT: F → Esc → F lại vẫn mở được bảng
    * `HeadlessStall.run`) không bao giờ nhả, nên nội dung KHÔNG BAO GIỜ nạp xong và
    * `openTalk()` luôn trả null. Trong game thật thì rAF nhả mỗi frame nên không gặp.
    */
-  for (let round = 0; round < 400 && !svc.front; round++) {
+  /*
+   * Chờ tới lúc họ ĐỨNG VÀO CHỖ, không phải lúc họ được cấp chỗ. `front` bật lên ngay
+   * từ `phase === "arriving"` — tức là người ta còn đang bước tới. Nói chuyện với một
+   * người đang đi dở là nói với một cái lưng quay nửa chừng, nên `talkable()` loại họ ra
+   * (lỗi ẩn H-10). Test phải đợi đúng cái mốc mà người chơi thật cũng phải đợi.
+   */
+  const standing = () => {
+    const f = svc.front;
+    return f && (f.phase === "ordering" || f.phase === "waiting") ? f : null;
+  };
+  for (let round = 0; round < 400 && !standing(); round++) {
     for (let i = 0; i < 60; i++) h.step(1000 / 30);
     await Promise.resolve();
   }
-  const c = svc.front;
-  assert.ok(c, "chạy hết buổi mà không ai tới quầy");
+  const c = standing();
+  assert.ok(c, "chạy hết buổi mà không ai đứng vào quầy");
   await svc.talks.ensure(c!.npc?.id ?? "WALKIN");
 
   const first = svc.openTalk();
@@ -658,4 +706,152 @@ test("M-5 cờ chuyện bắc cầu GIỮA hai người — chuyện chú A ph�
     if ([...owners!].some((npc) => npc !== t.npc)) cross.push(`${t.id}←${need}`);
   }
   assert.ok(cross.length >= 4, `mới có ${cross.length} cuộc mở ra nhờ chuyện của người khác`);
+});
+
+// ──────────────────────── V — hai kênh và cái van (P2-06, flow trò chuyện v2)
+
+test("V-1 mọi cuộc khai `source` và `depth` — thiếu là build hỏng, không phải góp ý", () => {
+  const SRC = new Set(["NPC_ONLY", "PLAYER_ONLY", "BOTH"]);
+  const DEP = new Set(["BARK", "SHORT", "FULL"]);
+  for (const t of TALKS) {
+    assert.ok(SRC.has(t.source), `${t.id}: source lạ "${t.source}"`);
+    assert.ok(DEP.has(t.depth), `${t.id}: depth lạ "${t.depth}"`);
+  }
+});
+
+test("V-2 câu nào là ĐƠN HÀNG / YÊU CẦU của khách thì người chơi KHÔNG moi ra được", () => {
+  /**
+   * Lỗi người chơi báo #2, dựng thành lưới.
+   *
+   * `walkin.nhamquan` mở lời bằng "Cho tui tô hủ tiếu, ít hành nghen" — một người nhầm
+   * quán. Câu đó chỉ có nghĩa khi CHÍNH HỌ nói ra lúc bước tới. Bản cũ để nó nằm chung
+   * kho với mọi cuộc khác, mà `openTalk()` rút trên kho chưa lọc, nên bấm phím là ra —
+   * tức người chơi phải GỢI Ý cho khách nhầm quán. Đo được: 32,4% số lần bấm ở ngày 1–3.
+   */
+  const ORDER_LIKE = [/\bcho tui\b/i, /\bcho con\b/i, /\bcho em\b/i, /\blấy cho\b/i, /\bbán cho\b/i, /\blàm (?:chú|cô|anh|chị) một ổ\b/i];
+  for (const t of TALKS) {
+    if (!ORDER_LIKE.some((re) => re.test(t.opener))) continue;
+    assert.equal(t.source, "NPC_ONLY",
+      `${t.id}: opener là một đơn hàng ("${t.opener}") mà người chơi gợi ra được`);
+  }
+  // và cái cổng phải THẬT SỰ chặn, không chỉ là một chữ trong JSON
+  const nham = byId("walkin.nhamquan");
+  assert.equal(okSource(nham, "PLAYER"), false, "người chơi vẫn moi được câu nhầm quán ra");
+  assert.equal(okSource(nham, "NPC"), true, "chính khách cũng không nói được câu của mình");
+  assert.ok(!eligible(TALKS, ctx({ npcId: "WALKIN" }), "PLAYER").some((x) => x.id === nham.id));
+  assert.ok(eligible(TALKS, ctx({ npcId: "WALKIN" }), "NPC").some((x) => x.id === nham.id));
+});
+
+test("V-3 ĐA SỐ nội dung do NPC mở lời — không thì thế giới chỉ nói khi được hỏi", () => {
+  const npcOnly = TALKS.filter((t) => t.source === "NPC_ONLY").length;
+  assert.ok(npcOnly / TALKS.length >= 0.6,
+    `mới ${((npcOnly / TALKS.length) * 100).toFixed(0)}% số cuộc là NPC tự nói — nguyên tắc Orkin đòi cao hơn`);
+});
+
+test("V-4 tầng dùng chung KHÔNG BAO GIỜ cạn — đây là chỗ chữa 'hết chuyện để nói'", () => {
+  const shared = TALKS.filter(isSharedTalk);
+  assert.ok(shared.length >= 6, `kho dùng chung mới có ${shared.length} cuộc`);
+  for (const t of shared) {
+    assert.equal(t.source, "PLAYER_ONLY", `${t.id}: tầng dùng chung phải là đường của NGƯỜI CHƠI`);
+    assert.notEqual(t.depth, "FULL", `${t.id}: tầng dùng chung không được tiêu vào trần cuộc sâu`);
+  }
+  // đã nghe hết cả mùa rồi thì vẫn còn: chỉ `usedToday` theo chủ đề mới chặn được
+  const allIds = TALKS.map((t) => t.id);
+  const left = eligible(TALKS, ctx({ npcId: "BA_BAY", usedSeason: allIds }), "PLAYER");
+  assert.ok(left.length >= 6, "nghe hết một mùa là hết cả cách chào một người");
+  assert.ok(left.every(isSharedTalk));
+  // mà chủ đề đã đụng hôm nay thì nghỉ tới mai — không phải một cái máy phát lại
+  const topics = shared.map((t) => t.topic);
+  assert.equal(eligible(TALKS, ctx({ npcId: "BA_BAY", usedSeason: allIds, usedToday: topics }), "PLAYER").length, 0);
+});
+
+test("V-5 mỗi nhịp không bao giờ bày quá `TALK_CHOICES_MAX` dòng — ngân sách đọc", () => {
+  assert.equal(TALK_CHOICES_MAX, 3);
+  for (const t of TALKS) {
+    const beats = [t.tree, ...walkNodes(t).map((x) => childrenOf(x.node, t)).filter((x): x is TalkNode[] => !!x)];
+    for (const b of beats) {
+      assert.ok(visibleOptions(b, { flags: {} }).length <= TALK_CHOICES_MAX,
+        `${t.id}: một nhịp bày quá ${TALK_CHOICES_MAX} dòng`);
+    }
+  }
+});
+
+test("V-6 cuộc SÂU phải đủ ít để trần 2/ngày nuôi được cả mùa 40 ngày", () => {
+  /**
+   * Cái van ở §2.6 chỉ đúng nếu kho đủ sâu để nuôi nó. 86 cuộc ÷ 40 ngày = 2,15 — kho tự
+   * khai ra con số 2. Nếu ai đó đánh cả kho thành `FULL` thì trần 2/ngày biến thành một
+   * cái khoá: hết ngày thứ mười lăm là không còn cuộc nào để nói.
+   */
+  const full = TALKS.filter((t) => t.depth === "FULL").length;
+  assert.ok(full >= 40 * 0.6, `mới ${full} cuộc sâu — trần 2/ngày sẽ cạn trước ngày 40`);
+  assert.ok(full <= TALKS.length * 0.6, `${full}/${TALKS.length} cuộc là FULL — kênh lời nghẹt`);
+});
+
+test("V-7 cắt xuống 3 dòng KHÔNG được cắt mất đường từ chối", () => {
+  /**
+   * Lỗi thật, đã đo: nội dung viết cho bốn dòng và người viết luôn đặt dòng `LANH`/`IM`
+   * ở vị trí CUỐI — thói quen đúng khi còn bốn chỗ. Cắt thẳng `.slice(0, 3)` làm 51/96
+   * bộ lựa chọn mất đường ra duy nhất, 8 trong đó ở NHỊP ĐẦU. Người chơi mở thẻ ra và
+   * không còn cách nào từ chối, giữa lúc đang phải bán hàng.
+   */
+  const exits = new Set(["LANH", "IM", "GAT"]);
+  const nodes: TalkNode[] = [
+    { say: "a", tone: "AM" }, { say: "b", tone: "AM" },
+    { say: "c", tone: "THUONG" }, { say: "d", tone: "LANH" },
+  ];
+  const out = trimKeepingExit(nodes);
+  assert.equal(out.length, TALK_CHOICES_MAX);
+  assert.ok(out.some((o) => exits.has(o.tone)), "cắt mất dòng lạnh duy nhất");
+  assert.equal(out[out.length - 1].say, "d", "đường ra phải nằm ở chỗ cuối");
+
+  // và trên NỘI DUNG THẬT: mọi nhịp đầu đã qua `L-3` thì sau khi cắt vẫn phải còn đường ra
+  for (const t of TALKS) {
+    const shown = visibleOptions(t.tree, { flags: {} });
+    assert.ok(shown.some((o) => exits.has(o.tone)),
+      `${t.id}: nhịp đầu sau khi cắt không còn đường từ chối`);
+  }
+});
+
+test("V-8 BỐN LOẠI hội thoại, bốn bộ luật — mời khách không ăn vào ngân sách trò chuyện", () => {
+  /**
+   * Chủ dự án nêu: "bắt chuyện với người qua đường và với người đang mua bánh nên khác
+   * nhau chứ". Đúng, và dữ liệu đã tự nói: cả 8 cuộc `QUA_DUONG` đều sâu đúng 2 nhịp và
+   * 6/8 kết thúc bằng `INVITE` — chúng vốn là LỜI MỜI, không phải cuộc trò chuyện.
+   */
+  const byKind = new Map<string, Talk[]>();
+  for (const t of TALKS) {
+    const k = kindOf(t);
+    (byKind.get(k) ?? byKind.set(k, []).get(k)!).push(t);
+  }
+  for (const k of ["MOI", "CHAO", "MUA", "CHUYEN"]) {
+    assert.ok((byKind.get(k) ?? []).length > 0, `không có cuộc nào loại ${k}`);
+  }
+
+  // MỜI: không trí nhớ, không tiêu trần ngày — người đi ngang không có tên để mà nhớ
+  for (const t of byKind.get("MOI")!) {
+    assert.equal(t.npc, "QUA_DUONG", `${t.id}: MOI mà không phải người đi ngang`);
+    assert.equal(touchesRelationship(t), false, `${t.id}: lời mời mà ghi vào trí nhớ`);
+    assert.equal(countsAgainstDailyCap(t), false, `${t.id}: mời một người lạ mà ăn vào trần ngày`);
+  }
+  // CHUYỆN: chỉ 12 người CÓ TÊN, và chỉ chỗ này mới tiêu trần ngày
+  const named = new Set(NPCS.map((n) => n.id));
+  for (const t of byKind.get("CHUYEN")!) {
+    assert.ok(named.has(t.npc), `${t.id}: CHUYEN mà npc "${t.npc}" không có tên`);
+  }
+  const capped = TALKS.filter(countsAgainstDailyCap);
+  assert.ok(capped.every((t) => named.has(t.npc)), "có cuộc không-tên đang ăn vào trần ngày");
+
+  /*
+   * NGUỒN CUNG phải nuôi nổi 40 ngày — nhưng đo đúng thứ.
+   *
+   * Trần 2 cuộc sâu/ngày là một CÁI TRẦN, không phải một định mức phải lấp đầy: cái phải
+   * đủ là tổng số cuộc nói được với 12 người có tên, vì `SHORT` cũng là một cuộc trò
+   * chuyện thật, chỉ là không tiêu trần. Đo nhầm sang `capped` thì sẽ đi "sửa" bằng cách
+   * đôn `SHORT` lên `FULL` — tức là làm mọi cuộc dài ra để qua một cái test, đúng chiều
+   * ngược với cả tài liệu này.
+   */
+  const supply = TALKS.filter((t) => named.has(t.npc)).length;
+  assert.ok(supply >= 40, `mới ${supply} cuộc cho 12 người có tên — không đủ cho 40 ngày`);
+  assert.ok(capped.length <= TALKS.length * 0.4,
+    `${capped.length}/${TALKS.length} cuộc tiêu trần ngày — trần 2/ngày sẽ nghẹt kênh lời`);
 });

@@ -10,14 +10,23 @@ import { SALIENCE } from "../src/sim/perception";
 import { extraHabit, newRelState } from "../src/sim/memory";
 import { STATIONS, stationNear } from "../src/world/stations";
 
-test("ổ ra lò nguội sau ~26 s (P1-01 §2.4), mưa nguội nhanh hơn 1,4 lần", () => {
+/**
+ * 26 s → 60 s (xem khối ⚖️ CÂN BẰNG trong `sim/loaf.ts`). Con số được chốt bằng CÁCH
+ * CHƠI nó cho phép, không phải bằng một mốc tròn: nướng sẵn một lô ba ổ rồi gác lại
+ * phải SỐNG được qua ba vòng phục vụ. Bài này kiểm đúng điều đó, nên nó vẫn gãy nếu
+ * ai hạ `COOL_RATE` về mức cũ.
+ */
+test("ổ ra lò nguội sau 60 s, đủ cho một lô ba ổ gác sẵn; mưa nguội nhanh hơn 1,4 lần", () => {
   const tCold = (1 - WARM_OK) / COOL_RATE;
-  assert.ok(tCold > 25 && tCold < 27);
+  assert.ok(tCold > 55 && tCold < 65, `t_nguội ${tCold.toFixed(1)} s`);
   let w = 1;
-  for (let i = 0; i < 25 * 30; i++) w = cool(w, 1 / 30);
-  assert.ok(isWarm(w), "25 s vẫn còn ấm");
-  for (let i = 0; i < 2 * 30; i++) w = cool(w, 1 / 30);
-  assert.ok(!isWarm(w), "27 s đã nguội");
+  for (let i = 0; i < 55 * 30; i++) w = cool(w, 1 / 30);
+  assert.ok(isWarm(w), "55 s vẫn còn ấm");
+  for (let i = 0; i < 10 * 30; i++) w = cool(w, 1 / 30);
+  assert.ok(!isWarm(w), "65 s đã nguội");
+  // Ổ cuối của lô ba: ba vòng phục vụ ở nhịp CHẬM nhất (8,5 s) + quãng đi và ba nhịp gói.
+  const LAST_OF_BATCH = 3 * 8.5 + 6;
+  assert.ok(isWarm(cool(1, LAST_OF_BATCH)), "ổ thứ ba trong lô gác sẵn vẫn phải còn ấm");
   assert.ok(cool(1, 10, "MUA_RAO") < cool(1, 10, "NANG_GAT"));
 });
 

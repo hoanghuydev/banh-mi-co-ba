@@ -130,11 +130,19 @@ new Phaser.Game({
         void BODY_H;
       };
 
-      // Người chơi có ĐỦ ẢNH tám hướng (`art/photo.ts`), nên soi riêng một hàng:
-      // tám tấm phải xếp thành một vòng quay liền mạch, và chân phải đứng yên
-      // một chỗ khi lướt mắt ngang hàng — lệch là lệch luôn trong game.
-      section("người chơi — ảnh thật, 8 hướng", ["s", "se", "e", "ne", "n", "nw", "w", "sw"]
-        .map((d) => [d, textureFor(d, "p").key]));
+      // Ai có ĐỦ ẢNH tám hướng (`art/photo.ts`) thì soi riêng một hàng: tám tấm phải
+      // xếp thành một vòng quay liền mạch, và chân phải đứng yên một chỗ khi lướt mắt
+      // ngang hàng — lệch là lệch luôn trong game.
+      const DIRS8 = ["s", "se", "e", "ne", "n", "nw", "w", "sw"];
+      section("người chơi — ảnh thật, 8 hướng", DIRS8.map((d) => [d, textureFor(d, "p").key]));
+
+      // Khách có bảng xoay thì dò bằng chính texture: hướng chéo `_se` CHỈ tồn tại
+      // khi `photo.ts` đã sơn đủ tám tấm (bản vẽ code chỉ nướng ba hướng). Không chép
+      // lại danh sách ai-có-ảnh ở đây — chép là có ngày hai bên lệch nhau.
+      for (const n of NPCS) {
+        if (!this.textures.exists(`${n.id}_se`)) continue;
+        section(`${n.name} — ảnh thật, 8 hướng`, DIRS8.map((d) => [d, textureFor(d, n.id).key]));
+      }
 
       BODIES.forEach(([name], i) =>
         section(`nhân vật — ${name}`, [

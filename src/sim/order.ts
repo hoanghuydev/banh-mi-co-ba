@@ -3,21 +3,15 @@ import type { Rng } from "../core/rng";
 /**
  * Đơn hàng, nguyên liệu và ĐỊNH LƯỢNG.
  *
- * CANON T2: **món ăn LÀ lựa chọn hội thoại**. Người chơi không bao giờ chọn câu nói,
- * họ chọn nguyên liệu — nên tất cả "ý" của một lượt tiếp khách nằm gọn ở file này.
+ * CANON T2: món ăn LÀ lựa chọn hội thoại. Người chơi không bao giờ chọn câu nói, họ chọn nguyên
+ * liệu — nên tất cả "ý" của một lượt tiếp khách nằm gọn ở file này.
  *
- * Vì sao có định lượng chứ không phải chỉ có/không:
- *  · §3.1 xếp "sai tỉ lệ" vào `ORDER_DEFECT` — định lượng vốn đã là canon
- *  · §14 cho sẵn từ vựng: "nhiều ớt", "cho ít rau"
- *  · §8(g) coi "bớt một thứ nhỏ với 100% khách suốt 40 ngày" là lỗ hổng LỚN NHẤT;
- *    lỗ hổng đó chỉ tồn tại nếu bớt được
- *  · §3.2 có `FREE_EXTRA` (cho thêm đồ chua) là sự kiện tích cực
+ * Có định lượng chứ không phải chỉ có/không, vì "sai tỉ lệ" vốn đã là `ORDER_DEFECT` của canon,
+ * §14 cho sẵn từ vựng ("nhiều ớt", "cho ít rau"), và §8(g) coi "bớt một thứ nhỏ với 100% khách
+ * suốt 40 ngày" là lỗ hổng LỚN NHẤT — lỗ hổng đó chỉ tồn tại nếu bớt được.
  *
- * Vì sao KHÔNG cho bỏ vô hạn:
- *  · §8(i) cấm spam hành vi mua chuộc — phải có diminishing returns
- *  · và một ổ bánh mì thì kẹp không lại nếu nhồi quá — xem `CAPACITY`
- *
- * Bảng phân loại lỗi, mức nặng nhẹ và dung sai theo P1-03 §2.6.
+ * Nhưng KHÔNG cho bỏ vô hạn: §8(i) cấm spam hành vi mua chuộc, và một ổ bánh mì thì kẹp không lại
+ * nếu nhồi quá (xem `CAPACITY`).
  */
 
 export type Ingredient =
@@ -59,11 +53,9 @@ export const BY_ID = new Map(INGREDIENTS.map((i) => [i.id, i]));
 export const labelOf = (id: Ingredient) => BY_ID.get(id)!.label;
 
 /**
- * Nhồi quá là ổ bánh kẹp không lại. Đơn nặng nhất gọi được là ổ đầy đủ + xin thêm một
- * nhân + rau đầy đủ + nhiều ớt + nhiều tương = 14 phần — trần phải trên mức đó, không
- * thì có đơn không làm đúng nổi, cộng hai phần chừa cho chuyện cho thêm.
- * Trần cũng phải DƯỚI 20 (= 10 món × trần 2 phần), không thì nhồi hết cỡ vẫn lọt và
- * `STUFFED` thành luật chết.
+ * Nhồi quá là ổ bánh kẹp không lại. Đơn nặng nhất gọi được là 14 phần nên trần phải trên mức đó
+ * (cộng hai phần chừa cho chuyện cho thêm), và phải DƯỚI 20 (= 10 món × trần 2 phần) — không thì
+ * nhồi hết cỡ vẫn lọt và `STUFFED` thành luật chết.
  */
 export const CAPACITY = 16;
 
@@ -119,12 +111,11 @@ export type OrderSpec = {
 export function levelsOf(it: OrderIntent): Partial<Record<Ingredient, number>> {
   const lv: Partial<Record<Ingredient, number>> = {};
   /**
-   * Nhân KHÔNG được gọi tên = mức 0, KHÔNG phải "khách không nhắc tới".
-   * Gọi tên nhân chính là cách nói ra cả hai vế: "cho một ổ pate" đã nói rằng ổ đó không
-   * có chả lụa, y như "cho một ổ bánh mì không" nói rằng ổ đó không có gì hết. Để mức
-   * `undefined` thì `diffDish` bỏ qua, và bỏ đại một miếng pate vào ổ bánh mì không vẫn
-   * được chấm hoàn hảo — T2 ("câu nói quyết định ổ bánh") chết ngay chỗ đó.
-   * Rau/sốt không cần dòng này: `veg`/`ot`/`tuong` bên dưới đã gán mức cho đủ cả năm thứ.
+   * Nhân KHÔNG được gọi tên = mức 0, KHÔNG phải "khách không nhắc tới". Gọi tên nhân chính là cách
+   * nói ra cả hai vế: "cho một ổ pate" đã nói rằng ổ đó không có chả lụa.
+   *
+   * ⚠️ Để mức `undefined` thì `diffDish` bỏ qua, và bỏ đại một miếng pate vào ổ bánh mì không vẫn
+   * được chấm hoàn hảo — T2 chết ngay chỗ đó.
    */
   for (const n of NHAN) lv[n] = 0;
   for (const n of it.nhan) lv[n] = it.nhieu === n ? 2 : 1;
@@ -169,9 +160,9 @@ export function makeOrder(rng: Rng, usual: OrderSpec, canAskUsual: boolean): Ord
 /**
  * Câu gọi món, dùng đúng cách nói miền Nam của CANON §14.
  *
- * LUẬT: câu nói phải TỰ NÓ quyết định được ổ bánh — và phiếu đơn trên màn hình chỉ
- * được hiện ĐÚNG câu này, nguyên văn (P1-03 §2.4.3: checklist đã phân tích là giết T2).
- * Rau đầy đủ là mặc định nên không ai nói ra; chỉ nói khi muốn ít.
+ * ⚠️ Câu nói phải TỰ NÓ quyết định được ổ bánh, và phiếu đơn trên màn hình chỉ được hiện ĐÚNG câu
+ * này nguyên văn — checklist đã phân tích sẵn là giết T2. Rau đầy đủ là mặc định nên không ai nói
+ * ra; chỉ nói khi muốn ít.
  */
 export function sayOrder(spec: OrderSpec): string {
   const it = spec.intent;
@@ -245,12 +236,9 @@ const ITEM_WEIGHT: Record<Ingredient, number> = {
   dochua: 1.0, dualeo: 0.8, hanhngo: 0.7, ot: 0.8, tuongot: 1.0,
 };
 /**
- * Thang chỉ còn hai nấc, nên lệch một nấc là lệch GẤP ĐÔI hoặc còn MỘT NỬA phần —
- * tức một đơn vị tỉ lệ tròn, không phải nửa đơn vị như hồi thang bốn nấc.
- * Dung sai 0,5 là nửa nấc: không nấc nào lọt qua được (một nấc vẫn là lỗi, y như cũ),
- * nhưng nó kéo `magnitude` của lệch một nấc lên 0,5 thay vì 0,25 — đúng với chuyện
- * "ít rau quá" bây giờ là hụt nửa ổ rau chứ không còn là hụt một phần ba.
- * Vẫn nhẹ hơn hẳn `MISSING` (12 × 0,5 so với 20), nên thứ tự nặng nhẹ không đảo.
+ * Thang chỉ còn hai nấc nên lệch một nấc là lệch GẤP ĐÔI hoặc còn MỘT NỬA phần. Dung sai 0,5 là
+ * nửa nấc: không nấc nào lọt qua được, nhưng nó kéo `magnitude` của lệch một nấc lên 0,5 thay vì
+ * 0,25 — đúng với chuyện "ít rau quá" bây giờ là hụt nửa ổ rau. Vẫn nhẹ hơn hẳn `MISSING`.
  */
 const DEFAULT_TOLERANCE = 0.5;
 const LEVEL_TO_RATIO = 1;
@@ -277,13 +265,11 @@ export function portionsOf(dish: readonly Ingredient[]) {
 }
 
 /**
- * So ổ bánh đã làm với đơn đã gọi (P1-03 §2.6).
- *  · MISSING   — thứ khách gọi mà ổ không có
- *  · UNWANTED  — thứ khách đã NÓI không muốn ("không ớt") mà vẫn có
- *  · WRONG_RATIO — lệch mức quá dung sai ±0,5 (tức lệch từ một nấc trở lên)
- * Chỉ lời khách nói ra mới là ràng buộc cứng (CANON Đ3) — nhưng KỂ TÊN NHÂN cũng là nói:
- * "cho một ổ pate" đồng thời nói rằng ổ đó không có chả lụa (xem `levelsOf`). Thứ thật sự
- * không ai nhắc tới thì `spec.levels` để trống và vòng lặp dưới bỏ qua.
+ * So ổ bánh đã làm với đơn đã gọi:
+ *  · MISSING  thứ khách gọi mà ổ không có · UNWANTED  thứ khách đã NÓI không muốn mà vẫn có
+ *  · WRONG_RATIO  lệch mức quá dung sai ±0,5
+ *
+ * Chỉ lời khách nói ra mới là ràng buộc cứng — nhưng KỂ TÊN NHÂN cũng là nói (xem `levelsOf`).
  * Kết quả xếp theo điểm giảm dần: phần tử đầu là ứng viên của `take(1)`.
  */
 export function diffDish(spec: OrderSpec, dish: readonly Ingredient[]): Defect[] {
@@ -313,16 +299,14 @@ export function diffDish(spec: OrderSpec, dish: readonly Ingredient[]): Defect[]
 }
 
 /**
- * Một phần đáng bao nhiêu — theo ĐÚNG giá chợ (`econ/goods.json`: base_k ÷ perUnit),
- * lấy một phần thịt nguội (2k) làm mốc 1,0: pate thường 1k → 0,5; chả lụa 1,83k → 0,9;
- * xíu mại 1,5k → 0,75; trứng 2,5k → 1,25; đồ chua 0,44k và tương 0,44k → 0,22;
- * ớt 0,35k → 0,18; rau 0,31k → 0,16.
+ * Một phần đáng bao nhiêu — theo ĐÚNG giá chợ (`econ/goods.json`), lấy một phần thịt nguội làm
+ * mốc 1,0.
  *
- * Vì sao phải theo giá chứ không đếm số phần: một nhúm ớt và một lát thịt không phải
- * cùng một tấm lòng. Đếm phần thì ớt với tương là cách cày thiện cảm RẺ NHẤT trong game —
- * §8(i) cấm đúng chuyện đó. Bảng chép tay ở đây chứ không `import` từ `econ.ts`:
- * `order.ts` là tầng dưới (econ đọc ngược lên lấy `Ingredient`), và đây là GIÁ TRỊ TẤM
- * LÒNG chứ không phải sổ sách. Chợ đổi giá thì sửa tay ở đây.
+ * ⚠️ Phải theo giá chứ không đếm số phần: một nhúm ớt và một lát thịt không phải cùng một tấm
+ * lòng, và đếm phần thì ớt với tương là cách cày thiện cảm RẺ NHẤT trong game.
+ *
+ * Bảng chép tay ở đây chứ không `import` từ `econ.ts`: `order.ts` là tầng dưới, và đây là GIÁ TRỊ
+ * TẤM LÒNG chứ không phải sổ sách. Chợ đổi giá thì sửa tay ở đây.
  */
 const PORTION_VALUE: Record<Ingredient, number> = {
   pate: 0.5, thit: 1, chalua: 0.9, xiumai: 0.75, opla: 1.25,

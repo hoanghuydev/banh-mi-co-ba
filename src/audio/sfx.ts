@@ -5,25 +5,14 @@ import { loadSettings, type Settings } from "../core/save";
 import { music } from "./music";
 
 /**
- * TIẾNG ĐỘNG — bốn bus còn lại của CANON §15.4, luật ở P5-03 §2, §4, §5.
+ * TIẾNG ĐỘNG — bốn bus còn lại của CANON §15.4. Bus thứ năm ("Nhạc") sống riêng ở `music.ts`:
+ * nhạc là 5 cue dài tải lười và crossfade, tiếng động là ~170 mẩu ngắn bắn theo sự kiện.
  *
- * Bus thứ năm ("Nhạc") sống riêng ở `music.ts`. Hai file cố ý KHÔNG gộp: nhạc
- * là 5 cue dài tải lười và crossfade; tiếng động là ~170 mẩu ngắn bắn theo sự
- * kiện. Gộp lại thì mỗi lần sửa cách chọn biến thể lại phải đọc qua code fade
- * nhạc, và ngược lại.
+ * Điểm nối duy nhất: scene nói "vừa có chuyện này", KHÔNG scene nào tự `this.sound.play`.
  *
- * ── Điểm nối duy nhất ──────────────────────────────────────────────────────
- * Scene nói "vừa có chuyện này", KHÔNG scene nào tự `this.sound.play`. Nhờ vậy
- * thay bộ asset tạm bằng bản THU THẬT ngoài hẻm (P5-03 §4.1) chỉ là chạy lại
- * `tools/audio/fetch-sfx.py` — không file gameplay nào phải sửa.
- *
- * ── Bốn luật của P5-03 cài thẳng vào đây, không phải "nhớ rồi tự giữ" ───────
- *  · §2.1  Mỗi bus một công tắc RIÊNG + trần gain riêng. Không gộp.
- *  · §2.3  Giọng người nói thì mọi bus khác HẠ XUỐNG, không bus nào đè lên giọng.
- *  · §2.4  Pan theo chỗ người ta đứng; `mono` thì gộp hết về giữa.
- *  · §5.5  "Âm mô tả thế giới thì giữ; âm chấm điểm người chơi thì bỏ."
- *          -> `NEGATIVE_CUES` ở dưới là DANH SÁCH ĐÓNG, và `sfx_do_roi_dat`
- *             cố ý KHÔNG nằm trong đó.
+ * Bốn luật cài thẳng vào đây, không phải "nhớ rồi tự giữ": mỗi bus một công tắc RIÊNG + trần gain
+ * riêng · giọng người nói thì mọi bus khác HẠ XUỐNG · pan theo chỗ người ta đứng · "âm mô tả thế
+ * giới thì giữ, âm chấm điểm người chơi thì bỏ" (`NEGATIVE_CUES` là DANH SÁCH ĐÓNG).
  */
 
 // ─────────────────────────────────────────────────────────────────── danh mục
@@ -71,12 +60,11 @@ const CROWD_DUCK = 0.282;
 /** Nhạc hạ −14 dB khi có giọng — §2.3. Thi hành qua `music.voiceDuck`. */
 
 /**
- * Âm "chấm điểm người chơi" — công tắc `disableNegativeAudioCues` tắt được.
- * Giá trị là thứ phát THAY (null = im hẳn).
+ * Âm "chấm điểm người chơi" — công tắc `disableNegativeAudioCues` tắt được; giá trị là thứ phát
+ * THAY (null = im hẳn).
  *
- * DANH SÁCH NÀY ĐÓNG. Thêm vào đây một âm mô tả THẾ GIỚI (bánh rớt, bánh khét,
- * ruồi bay) là lấy mất của người nhìn không rõ cách duy nhất biết chuyện vừa
- * xảy ra — P5-03 §5.5 nói thẳng điều đó, và nó là hợp đồng trợ năng, không
+ * ⚠️ DANH SÁCH NÀY ĐÓNG. Thêm vào đây một âm mô tả THẾ GIỚI (bánh rớt, bánh khét, ruồi bay) là
+ * lấy mất của người nhìn không rõ cách duy nhất biết chuyện vừa xảy ra — hợp đồng trợ năng, không
  * phải tuỳ chọn thẩm mỹ.
  */
 const NEGATIVE_CUES: Partial<Record<SfxId, SfxId | null>> = {
@@ -105,12 +93,9 @@ const JITTER: Record<BusId, { rate: number; db: number }> = {
 };
 
 /**
- * Mức của chuỗi âm tiết "chibi" so với bus giọng.
- *
- * Nó KHÔNG phải lời thoại — nội dung thật nằm ở chữ trên bong bóng. Để nó ngang
- * mức VO (bus `giongNPC` trần 0 dB, mặc định 100) thì nó thành thứ to nhất trong
- * cả bản phối, át cả tiếng tay mình đang làm. Nó chỉ cần đủ to để nói "có người
- * vừa mở miệng".
+ * Mức của chuỗi âm tiết "chibi" so với bus giọng. Nó KHÔNG phải lời thoại — nội dung thật nằm ở
+ * chữ trên bong bóng — nên để ngang mức VO thì nó thành thứ to nhất trong cả bản phối. Chỉ cần đủ
+ * to để nói "có người vừa mở miệng".
  */
 const TALK_GAIN = 0.62;
 
@@ -120,10 +105,9 @@ const MAX_CONCURRENT = 14;
 // ─────────────────────────────────────────────────────────────────── giọng NPC
 
 /**
- * Cao độ cố định cho từng NPC — P5-03 §4.2 D đòi "4–6 biến thể MỖI NHÓM GIỌNG".
- * Bộ asset tạm chỉ có MỘT bộ tiếng phi lời dùng chung, nên chỗ phân biệt 12 NPC
- * là cao độ: bà Bảy không được "hm" y hệt anh Dũng, nếu không thì tiếng phi lời
- * mất luôn chức năng "ai đang nhìn mình" mà §5.4 giao cho nó.
+ * Cao độ cố định cho từng NPC. Bộ asset tạm chỉ có MỘT bộ tiếng phi lời dùng chung, nên chỗ phân
+ * biệt 12 NPC là cao độ — bà Bảy không được "hm" y hệt anh Dũng, nếu không thì tiếng phi lời mất
+ * luôn chức năng "ai đang nhìn mình".
  *
  * Số lấy tay, không sinh từ hash: hash cho ra vài cặp sát nhau nghe như một người.
  */
@@ -189,15 +173,12 @@ class SfxDirector {
   /**
    * Mẩu một phát đang kêu. GIỮ CẢ OBJECT chứ không đếm bằng một con số.
    *
-   * Bản đầu là `live++` lúc phát và `live--` ở sự kiện `destroy`. Nghe thì chặt,
-   * chạy thì rò: trong vài chục giây chơi bình thường con số bò lên tới trần 14 và
-   * từ đó **mọi tiếng một phát đều im** — dao, gói giấy, tiền lẻ, tất cả. Game không
-   * báo lỗi gì cả, chỉ là hết tiếng. Mất gần một buổi mới lần ra.
+   * ⚠️ Đếm bằng `live++` / `live--` thì rò: trong vài chục giây chơi bình thường con số bò lên
+   * tới trần 14 và từ đó MỌI tiếng một phát đều im, không báo lỗi gì cả.
    *
-   * Lỗi kiểu đó không sửa bằng cách tìm cho ra chỗ rò, vì chỗ rò sau sẽ lại mọc ở
-   * một đường thoát khác (scene tắt giữa chừng, `stopAll`, trình duyệt chặn phát,
-   * sound bị cướp). Sửa bằng cách bỏ hẳn con số: giữ danh sách, và TỰ DỌN những
-   * cái đã tắt ngay trước khi đếm. Sai số tối đa là một frame, và không rò được.
+   * Không sửa bằng cách tìm cho ra chỗ rò — chỗ rò sau sẽ mọc ở một đường thoát khác (scene tắt
+   * giữa chừng, `stopAll`, trình duyệt chặn phát). Sửa bằng cách bỏ hẳn con số: giữ danh sách, và
+   * TỰ DỌN những cái đã tắt ngay trước khi đếm.
    */
   private live = new Set<Phaser.Sound.BaseSound>();
   /** Đồng hồ riêng, giây, chạy theo game chứ không theo `Date.now` (pause là dừng). */
@@ -236,10 +217,9 @@ class SfxDirector {
   /**
    * Xếp hàng tải `ids` vào loader của scene. Gọi trong `preload()`.
    *
-   * Mẩu một phát PHẢI nạp trước: nạp lười thì tiếng dao của cú bấm đầu tiên rơi
-   * vào khoảng không, mà cú đầu tiên là cú duy nhất người chơi còn đang HỌC rằng
-   * bấm E thì có tiếng. Ambience thì ngược lại — nạp lười được, vì nó fade vào
-   * trong 2 giây nên chậm 200 ms không ai thấy (xem `loop`).
+   * Mẩu một phát PHẢI nạp trước: nạp lười thì tiếng dao của cú bấm đầu tiên rơi vào khoảng không,
+   * mà cú đầu tiên là cú duy nhất người chơi còn đang HỌC rằng bấm E thì có tiếng. Ambience thì
+   * nạp lười được vì nó fade vào trong 2 giây.
    */
   preload(scene: Phaser.Scene, ids: readonly SfxId[]) {
     for (const id of ids) {
@@ -329,16 +309,11 @@ class SfxDirector {
   /**
    * Thoại kiểu chibi: 2–5 âm tiết ngắn từ giọng người thật, cao độ theo NPC.
    *
-   * Đây là lớp VÁ, không phải thiết kế: `ui/stall/BubblePool` hiện ra nguyên câu
-   * chứ không gõ từng chữ, nên chưa có chỗ bám cho VO thật. Không có tiếng người
-   * nào thì luật §6.5 #1 (nhạc fade về 0 khi NPC nói) nghe như nhạc tự dưng tắt.
+   * ⚠️ Đây là lớp VÁ, không phải thiết kế — `BubblePool` hiện nguyên câu chứ không gõ từng chữ
+   * nên chưa có chỗ bám cho VO thật. Nối VO thật vào thì GỠ HÀM NÀY, đừng giữ cả hai.
    *
-   * Nối VO thật vào thì GỠ HÀM NÀY, đừng giữ cả hai — hai giọng chồng lên nhau
-   * trên cùng một câu là thứ nghe sai rõ hơn cả việc không có giọng nào.
-   *
-   * Gọi ở ĐÚNG MỘT CHỖ: lúc khách gọi món, một lần mỗi lượt ghé (xem `stallAudio`).
-   * Bản đầu gọi theo mọi dòng thoại và nghe ra ngay là quá nhiều — bốn người cùng
-   * đứng thì bốn chuỗi âm tiết chồng lên nhau, không ai nghe ra tiếng của ai.
+   * Gọi ở ĐÚNG MỘT CHỖ: lúc khách gọi món, một lần mỗi lượt ghé. Gọi theo mọi dòng thoại thì bốn
+   * người cùng đứng là bốn chuỗi âm tiết chồng lên nhau.
    */
   talk(scene: Phaser.Scene, npcId: string, textLength: number, pan = 0) {
     if (!hasSfx("vox_blip")) return;
@@ -352,15 +327,11 @@ class SfxDirector {
     const n = Math.max(2, Math.min(5, Math.round(textLength / 15 + this.rng.next() * 1.2)));
 
     /*
-     * Đường cao độ, không phải cao độ phẳng.
+     * Đường cao độ, không phải cao độ phẳng: `drift` là hướng đi của cả câu (câu hỏi vống lên,
+     * câu trả lời xuôi xuống), `wobble` là xê dịch từng tiếng.
      *
-     * `drift` là hướng đi của cả câu — một câu hỏi vống lên, một câu trả lời xuôi
-     * xuống. `wobble` là xê dịch từng tiếng. Cộng lại thì hai lần nói cùng một
-     * người nghe ra hai ngữ điệu khác nhau dù rút từ cùng một túi file.
-     *
-     * Dải ±18% rộng gấp đôi bản đầu (±8%). Bản đầu nghe vẫn lặp vì chính chỗ này:
-     * đổi file mà không đổi cao độ thì tai vẫn nhận ra cùng một giọng, cùng một
-     * nốt, lặp lại — thứ tai bắt được là CHẤT GIỌNG, không phải file nào.
+     * Dải ±18% rộng gấp đôi bản đầu — đổi file mà không đổi cao độ thì tai vẫn nhận ra cùng một
+     * giọng cùng một nốt, vì thứ tai bắt được là CHẤT GIỌNG chứ không phải file nào.
      */
     const drift = (this.rng.next() * 2 - 1) * 0.14;
     let at = 0;
@@ -453,11 +424,11 @@ class SfxDirector {
   // ────────────────────────────────────────────────────────────── trợ năng
 
   /**
-   * Tick gỗ trung tính cho người thị lực kém, P5-03 §5.4. Mặc định TẮT.
+   * Tick gỗ trung tính cho người thị lực kém. Mặc định TẮT.
    *
-   * CÙNG MỘT ÂM cho chuyện tốt và chuyện xấu — đó là điều kiện tồn tại của nó:
-   * nó nói "có người vừa để ý tới bạn", không nói "bạn vừa làm sai". Pan theo
-   * chỗ người ta đứng, nên nó còn cho biết LÀ AI.
+   * ⚠️ CÙNG MỘT ÂM cho chuyện tốt và chuyện xấu — đó là điều kiện tồn tại của nó: nó nói "có
+   * người vừa để ý tới bạn", không nói "bạn vừa làm sai". Pan theo chỗ người ta đứng nên nó còn
+   * cho biết LÀ AI.
    */
   perceptionPing(scene: Phaser.Scene, pan: number) {
     if (!this.pingOn) return;

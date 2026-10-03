@@ -143,3 +143,34 @@ export class Clock {
     return fmtHhmm(this.minutes);
   }
 }
+
+
+/**
+ * GIỜ ĐỌC THÀNH LỜI — "650" → *"gần bảy giờ"*. Cho chỗ trống `{gio}` của `Service.fill`.
+ *
+ * Cần vì giờ phải đi vào CÂU NÓI, và một con số viết cứng trong lời thoại là một con số
+ * sẽ sai: `duong.voi` nói *"Dạ gần bảy giờ rồi"* trong khi cuộc đó mở suốt khung `PEAK`
+ * trải nhiều giờ — nên nó nói "gần bảy giờ" lúc đồng hồ chỉ tám rưỡi.
+ *
+ * Giọng người bán hàng, không phải giọng đồng hồ: làm tròn về mấy mốc người ta thật sự
+ * nói ra. Ngày game chỉ có 06:00–11:00 nên không cần lo buổi chiều.
+ */
+export function gioVi(minutes: number): string {
+  const DON = ["", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"];
+  const gio = (x: number) => (x === 10 ? "mười" : x === 11 ? "mười một" : x === 12 ? "mười hai" : DON[x] ?? String(x));
+  /** Phút đọc thành chữ: 15 → "mười lăm" · 20 → "hai mươi" · 25 → "hai mươi lăm". */
+  const phut = (x: number): string => {
+    if (x < 10) return DON[x];
+    if (x === 10) return "mười";
+    if (x < 20) return `mười ${x % 10 === 5 ? "lăm" : DON[x % 10]}`;
+    const c = Math.floor(x / 10), d = x % 10;
+    if (!d) return `${DON[c]} mươi`;
+    return `${DON[c]} mươi ${d === 5 ? "lăm" : d === 1 ? "mốt" : d === 4 ? "tư" : DON[d]}`;
+  };
+  const h = Math.floor(minutes / 60), m = minutes % 60;
+  if (m === 0) return `${gio(h)} giờ`;
+  if (m <= 5) return `hơn ${gio(h)} giờ`;
+  if (m >= 50) return `gần ${gio(h + 1)} giờ`;
+  if (m >= 25 && m <= 35) return `${gio(h)} giờ rưỡi`;
+  return `${gio(h)} giờ ${phut(m)}`;
+}

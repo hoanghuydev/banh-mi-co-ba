@@ -59,6 +59,41 @@ export const scaledVnd = (k: number) => Math.round(k * ECON.scale) * 1000;
 /** Giá từng món / từng ổ → ĐỒNG, KHÔNG co. */
 export const vnd = (k: number) => Math.round(k * 1000);
 
+/**
+ * SỐ TIỀN ĐỌC THÀNH LỜI — "64000" → *"sáu mươi tư ngàn"*.
+ *
+ * Cần vì giá phải đi vào CÂU NÓI (`{gia}` của `Service.fill`), mà không ai đứng bán bánh
+ * mì lại đọc "64.000 đồng". Chỉ lo tới khoảng tiền có thật trong trò chơi: vài ngàn tới
+ * vài trăm ngàn, luôn tròn ngàn. Ngoài khoảng đó thì trả về chữ số — một câu thoại không
+ * bao giờ nói tới số đó, và đoán bừa thì tệ hơn.
+ *
+ * Giọng Nam Bộ: "hai chục" chứ không "hai mươi", "bốn chục" chứ không "bốn mươi".
+ */
+export function dongVi(d: number): string {
+  const k = Math.round(d / 1000);
+  if (k <= 0 || k > 999 || d % 1000 !== 0) return d.toLocaleString("vi-VN") + " đồng";
+  const DON = ["", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"];
+  const tram = Math.floor(k / 100), chuc = Math.floor((k % 100) / 10), donvi = k % 10;
+  const parts: string[] = [];
+  if (tram) parts.push(`${DON[tram]} trăm`);
+  if (chuc === 0 && donvi && tram) parts.push("lẻ");
+  /*
+   * "Chục" chỉ dùng cho hàng chục TRÒN — "hai chục", "bốn chục". Có hàng đơn vị thì đọc
+   * "mươi": "ba mươi hai", "sáu mươi tư". Đọc "hai chục tư" là một câu không ai nói.
+   */
+  if (chuc === 1) parts.push("mười");
+  else if (chuc > 1) parts.push(donvi ? `${DON[chuc]} mươi` : `${DON[chuc]} chục`);
+  if (donvi) {
+    // "mười lăm" / "hai chục lăm" — số 5 sau hàng chục đọc là "lăm"; số 1 sau hàng chục
+    // từ 2 trở lên đọc là "mốt". Hai chỗ này mà đọc thẳng là lộ ngay ra máy nói.
+    if (donvi === 5 && chuc >= 1) parts.push("lăm");
+    else if (donvi === 1 && chuc >= 2) parts.push("mốt");
+    else if (donvi === 4 && chuc >= 2) parts.push("tư");
+    else parts.push(DON[donvi]);
+  }
+  return `${parts.join(" ")} ngàn`;
+}
+
 // ─────────────────────────────────────────────────────────────── lịch mùa
 
 export const weatherOf = (day: number): Weather => CAL.weather[(Math.max(1, day) - 1) % CAL.weather.length];

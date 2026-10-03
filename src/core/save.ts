@@ -87,7 +87,15 @@ export type SaveFile = {
     standPoint: StandPointId;
     dayStartSnapshotRef: string | null;
     /** Sổ sách của ngày đang dở — để reload giữa buổi bán không mất tiền đã thu. */
-    today: { served: number; lost: number; revenue: number };
+    today: { served: number; lost: number; revenue: number;
+      /**
+       * Đã nói bao nhiêu cuộc SÂU và nhận bao nhiêu lời bắt chuyện HÔM NAY (P2-06 §2.6).
+       *
+       * Phải nằm trong save chứ không chỉ trong instance `Service`: "Lưu và về sảnh"
+       * rồi vào lại giữa buổi tạo một `Service` mới, và nếu hai con số này về 0 thì
+       * cái van 2 cuộc/ngày lách được bằng đúng một lần thoát ra vào.
+       */
+      talksDeep?: number; talkOffers?: number };
   };
 
   rng: { counters: [StreamName, number][] };
@@ -200,7 +208,7 @@ export function newGame(name: string, saveId = uuid()): SaveFile {
     progress: {
       dayIndex: 1, band: "PRE_OPEN", gameMinutes: 6 * 60, scene: "Market",
       weather: weatherOf(1), standPoint: "DAU_HEM", dayStartSnapshotRef: null,
-      today: { served: 0, lost: 0, revenue: 0 },
+      today: { served: 0, lost: 0, revenue: 0, talksDeep: 0, talkOffers: 0 },
     },
     rng: { counters: [] },
     money: { cash: scaledVnd(ECON.startCash_k), debtsOwedToPlayer: [], debtsPlayerOwes: [], qrEnabled: false },

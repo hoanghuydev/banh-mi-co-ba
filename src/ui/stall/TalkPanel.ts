@@ -1,31 +1,29 @@
 import Phaser from "phaser";
 import { GAME_H, GAME_W } from "../../core/config";
-import { FONT, UI, buttonHeight, label, panel, textScale } from "../theme";
-import { MOOD_FACE, MOOD_LABEL, type TalkMood, type TalkTone } from "../../sim/talk";
-import { FACE_R, drawFace } from "../../entities/face";
+import { FONT, UI, label, panel, textScale } from "../theme";
+import type { TalkTone } from "../../sim/talk";
+import { CARD_EDGE, placeTalkCard } from "./talkCardLayout";
 
 /**
- * Bảng trò chuyện — P5-01. Cái mà bấm F ra.
+ * Dải trò chuyện — một thẻ HẸP neo CẠNH người đang nói, phía vỉa hè trống; tự lật sang bên kia
+ * khi chạm mép khung, và không bao giờ phủ lên cột của chính người đó.
  *
- * Nằm DƯỚI CÙNG màn hình, cao vừa đủ: khách đứng ở giữa–phải và người chơi phải còn
- * thấy MẶT họ trong lúc chọn câu. Cả game là chuyện bị nhìn; che mặt người đang nói
- * chuyện với mình thì mất luôn thứ duy nhất đáng xem.
+ * ⚠️ Bảng đáy màn hình của bản cũ che TRỌN người đang nói chuyện (đo được: mép trên bảng y = 244
+ * trong khi đỉnh đầu khách y ≈ 246), và ở cỡ chữ 200% thì hàng thứ tư rơi xuống y ≈ 598 > GAME_H
+ * — cái trợ năng tự huỷ chính nó.
  *
- * Ba đường vào, đủ cả ba như CANON §15.5 bắt với bảng kẹp nhân:
- *   1. bấm chuột vào dòng
- *   2. phím số 1–4
- *   3. ↑ ↓ chọn, Enter xác nhận
- * cộng Esc = làm thinh (KHÔNG phải nút huỷ — xem `talk.ignore`).
+ * Ba đường vào, đủ cả ba như CANON §15.5: bấm chuột · phím số 1–3 · ↑↓ rồi Enter.
  *
- * Bảng này KHÔNG tự đóng băng thế giới: StallScene đặt `clock.paused` trước khi mở.
- * Nhưng nó là lý do cái đóng băng đó tồn tại — đọc bốn dòng tiếng Việt mất 6–10 giây,
- * mà sức chờ ngắn nhất hẻm (anh Dũng) có 28 giây.
+ * Hai thứ ĐÃ BỎ, cùng lý do (không hiện một thông tin ở hai kênh): huy hiệu mặt trong thẻ (khuôn
+ * mặt THẬT đang ở trên người họ) và chữ `MOOD_LABEL` dưới nó.
+ *
+ * Đồng hồ KHÔNG đóng băng khi thẻ mở (`StallScene` đặt `clock.busy`), nên ngân sách đọc ở đây
+ * phải chặt — tối đa ba dòng, mỗi dòng một câu ngắn.
  */
 
-const PANEL_W = 620;
-const PAD = 16;
-/** Chiều cao tối đa của bảng theo % khung hình — còn lại phải thấy được khách. */
-const MAX_H_RATIO = 0.56;
+/** Bề ngang thẻ. Hẹp là CỐ Ý: nó phải lọt vào khoảng trống cạnh người, không chiếm hàng ghế đầu. */
+const CARD_W = 310;
+const PAD = 12;
 
 /** Màu mép trái của mỗi dòng theo giọng. Chỉ là GỢI Ý khí, không phải điểm số (T3). */
 const TONE_TINT: Record<TalkTone, number> = {
@@ -42,21 +40,15 @@ const TONE_TINT: Record<TalkTone, number> = {
 export type TalkPanelView = {
   name: string;
   line: string;
-  /**
-   * Khách nói câu đó bằng mặt mũi nào (P5-06). Vẽ thành huy hiệu mặt bên trái câu nói —
-   * CÙNG bộ mặt ba lớp đang chạy trên người họ, không phải một bộ icon thứ hai.
-   */
-  mood?: TalkMood;
-  skin?: number;
-  hair?: number;
+  /** Khách cố ý KHÔNG đáp — thẻ vẫn phải nói ra cái trống đó, xem `show()`. */
+  silent?: boolean;
   options: readonly { say: string; tone: TalkTone }[];
   done: boolean;
-};
-
-/** Mày tóc bạc vẽ lên nền da thì chìm — sậm lại, y như `CustomerActor`. */
-const browColor = (hair: number) => {
-  const r = (hair >> 16) & 255, g = (hair >> 8) & 255, b = hair & 255;
-  return 0.3 * r + 0.59 * g + 0.11 * b > 140 ? 0x5a5550 : hair;
+  /**
+   * Chỗ người đang nói, theo TOẠ ĐỘ MÀN HÌNH (đã trừ camera). Thẻ neo cạnh điểm này.
+   * Vắng thì rơi về giữa–dưới như cũ — headless và mấy màn không có sân khấu.
+   */
+  anchor?: { x: number; y: number };
 };
 
 export class TalkPanel {
@@ -65,98 +57,128 @@ export class TalkPanel {
   private cursor = 0;
   private count = 0;
   private off: (() => void)[] = [];
+  /**
+   * Chỗ đã CHỐT cho cuộc đang mở — tâm ngang và MÉP TRÊN, đã kẹp xong.
+   *
+   * ⚠️ Khoá riêng cái điểm neo là chưa đủ: chiều cao vẫn đổi theo nhịp, nên nhịp dày chạm mép
+   * dưới màn hình thì cú kẹp đẩy thẻ LÊN rồi nhịp sau mỏng lại nó RƠI XUỐNG.
+   *
+   * Nên khoá chỗ ĐÃ GIẢI XONG và cho nó đi MỘT CHIỀU: được trồi lên khi cần thêm chỗ, không bao
+   * giờ tụt lại. `show()` giữ nó qua cú `destroy()` bên trong; chỉ `destroy()` từ ngoài mới xoá.
+   */
+  private locked: { cx: number; top: number } | null = null;
 
   /**
    * @param onPick  người chơi chọn dòng thứ i
-   * @param onClose người chơi đóng bảng mà chưa nói hết (Esc) — LÀM THINH, có giá
+   * @param onClose người chơi đóng thẻ (Esc) — LUÔN MIỄN PHÍ, xem `StallScene.endTalk`
+   * @param blocked thẻ đang bị một lớp khác che (menu tạm dừng, sổ tay) ⇒ nuốt hết phím
    */
   constructor(
     private scene: Phaser.Scene,
     private onPick: (i: number) => void,
     private onClose: () => void,
+    private blocked: () => boolean = () => false,
   ) {}
 
   get isOpen() {
     return this.root !== null;
   }
 
-  /** Vẽ lại toàn bộ bảng cho một nhịp. Gọi lại mỗi lần khách đáp xong. */
+  /** Vẽ lại toàn bộ thẻ cho một nhịp. Gọi lại mỗi lần khách đáp xong. */
   show(v: TalkPanelView) {
+    // Giữ chỗ đã chốt qua cú `destroy()` ngay dưới: vẽ lại một nhịp KHÔNG phải mở cuộc mới.
+    const lock = this.locked;
     this.destroy();
+    this.locked = lock;
     const sz = Math.min(textScale(), 1.35);
-    const w = Math.min(PANEL_W * Math.min(sz, 1.15), GAME_W - 24);
-    const rowH = Math.round(buttonHeight(1.35) * 0.92);
-
+    const w = Math.min(CARD_W * Math.min(sz, 1.2), GAME_W - CARD_EDGE * 2);
     const c = this.scene.add.container(0, 0).setDepth(9_400_000).setScrollFactor(0);
 
-    // Câu khách vừa nói. Đo TRƯỚC khi đặt chỗ: tiếng Việt chồng dấu, 2 dòng hay 3 dòng
-    // là chênh nhau cả một hàng nút (CANON §15.1 — hộp giãn theo chữ, không đặt số cứng).
-    // Huy hiệu mặt chiếm một cột bên trái câu nói — câu phải hẹp lại đúng ngần đó, nếu
-    // không thì dòng cuối chui xuống dưới cái mặt và trông như vỡ chữ.
-    const faceCol = v.mood ? Math.round((FACE_R * 2 + 12) * sz) : 0;
-    const said = this.scene.add.text(0, 0, v.line, {
-      fontFamily: FONT, fontSize: `${Math.round(16 * sz)}px`, fontStyle: "500",
-      color: UI.ink, lineSpacing: Math.round(8 * sz), wordWrap: { width: w - PAD * 2 - faceCol },
-    }).setOrigin(0, 0);
 
-    const nameH = Math.round(20 * sz);
-    const lineH = v.line ? Math.max(said.height, v.mood ? (FACE_R * 2 + 16) * sz : 0) + 10 : 0;
-    const listH = v.options.length * (rowH + 6);
-    const hintH = Math.round(18 * sz) + 6;
-    const h = Math.min(GAME_H * MAX_H_RATIO, PAD * 2 + nameH + lineH + listH + hintH);
-    const cy = GAME_H - h / 2 - 10;
+    // Mỗi dòng lựa chọn cao theo CHÍNH chữ của nó. Bản cũ dùng một `rowH` cố định rồi
+    // kẹp chiều cao cả bảng — đó là chỗ cỡ chữ 200% làm hàng cuối rơi ra ngoài màn hình.
+    const rowTexts = v.options.map((o) => this.scene.add.text(0, 0, o.say, {
+      fontFamily: FONT, fontSize: `${Math.round(14 * sz)}px`, color: UI.ink,
+      lineSpacing: Math.round(5 * sz), wordWrap: { width: w - PAD * 2 - 30 },
+    }).setOrigin(0, 0.5));
+    const rowH = rowTexts.map((t) => Math.max(Math.round(30 * sz), t.height + Math.round(14 * sz)));
+
+    const nameH = Math.round(16 * sz);
+    /*
+     * CÂU HỌ VỪA ĐÁP, NẰM NGAY TRÊN BỘ LỰA CHỌN. Bong bóng SỐNG CÓ HẠN (2,8–9 s) rồi tắt, trong
+     * khi thẻ đứng chờ tới lúc người chơi bấm — mà đọc ba dòng rồi cân nhắc thường lâu hơn thế,
+     * nên tới lúc bấm thì câu mình đang ĐÁP LẠI đã biến mất.
+     *
+     * Hai kênh không phải một thông tin hiện hai lần: bong bóng mang theo CHỖ và KHOẢNH KHẮC,
+     * chữ trong thẻ mang theo NGỮ CẢNH và nó đứng yên.
+     *
+     * Im lặng cố ý vẫn phải có hình: ô trống đọc ra là UI hỏng, "…" đọc ra là một câu trả lời.
+     */
+    const quote = v.silent ? "…" : v.line.trim();
+    const lineTxt = quote
+      ? this.scene.add.text(0, 0, `“${quote}”`, {
+        fontFamily: FONT, fontSize: `${Math.round(13 * sz)}px`, color: UI.ink,
+        fontStyle: "italic", lineSpacing: Math.round(4 * sz),
+        wordWrap: { width: w - PAD * 2 },
+      }).setOrigin(0, 0)
+      : null;
+    const lineH = lineTxt ? lineTxt.height + Math.round(10 * sz) : 0;
+    const hintH = Math.round(15 * sz) + 6;
+    const h = PAD * 2 + nameH + lineH + rowH.reduce((a, x) => a + x + 5, 0) + hintH;
+
+    const { cx, cy } = this.place(v.anchor, w, h);
     const top = cy - h / 2;
 
-    c.add(panel(this.scene, GAME_W / 2, cy, w, h, UI.paper, 0.97));
-    c.add(label(this.scene, GAME_W / 2 - w / 2 + PAD, top + PAD + nameH / 2, v.name, 13, UI.muted, "700").setOrigin(0, 0.5));
+    c.add(panel(this.scene, cx, cy, w, h, UI.paper, 0.97));
+    c.add(label(this.scene, cx - w / 2 + PAD, top + PAD + nameH / 2, `nói với ${v.name}`, 12, UI.muted, "700").setOrigin(0, 0.5));
 
-    if (v.line) {
-      said.setPosition(GAME_W / 2 - w / 2 + PAD + faceCol, top + PAD + nameH + 2);
-      c.add(said);
-      if (v.mood) {
-        const g = this.scene.add.graphics();
-        const fx = GAME_W / 2 - w / 2 + PAD + Math.round(FACE_R * sz);
-        const fy = said.y + Math.round(FACE_R * sz) + 2;
-        g.setScale(sz);
-        // `drawFace` vẽ quanh gốc toạ độ của graphics, nên đặt gốc rồi vẽ ở (0,0):
-        // scale ăn vào nét vẽ chứ không đẩy cái mặt lệch khỏi cột bên trái.
-        g.setPosition(fx, fy);
-        drawFace(g, 0, 0, MOOD_FACE[v.mood], v.skin ?? 0xe3b189, browColor(v.hair ?? 0x2b2420));
-        c.add(g);
-        // Phụ đề một chữ: huy hiệu 22 px đọc được "cười" hay "giận", nhưng "ngượng" với
-        // "rưng rưng" thì không. Chữ là lưới an toàn, không phải phần trang trí.
-        c.add(label(this.scene, fx, fy + Math.round((FACE_R + 9) * sz), MOOD_LABEL[v.mood], 10, UI.muted, "500").setOrigin(0.5));
-      }
-    } else said.destroy();
+    if (lineTxt) {
+      lineTxt.setPosition(cx - w / 2 + PAD, top + PAD + nameH + Math.round(3 * sz));
+      c.add(lineTxt);
+      // Một gạch mảnh ngăn lời HỌ với lời MÌNH: hai khối chữ liền nhau trong cùng một
+      // thẻ thì mắt đọc thành một danh sách bốn dòng, và dòng đầu không bấm được.
+      const sep = this.scene.add.graphics();
+      sep.fillStyle(UI.line, 1);
+      sep.fillRect(cx - w / 2 + PAD, top + PAD + nameH + lineH - Math.round(5 * sz), w - PAD * 2, 1);
+      c.add(sep);
+    }
 
     let y = top + PAD + nameH + lineH;
     this.rows = [];
     this.count = v.options.length;
     this.cursor = 0;
     v.options.forEach((o, i) => {
-      const ry = y + rowH / 2;
-      c.add(this.makeRow(GAME_W / 2, ry, w - PAD * 2, rowH, i, o.say, o.tone, sz));
-      y += rowH + 6;
+      c.add(this.makeRow(cx, y + rowH[i] / 2, w - PAD * 2, rowH[i], i, rowTexts[i], o.tone, sz));
+      y += rowH[i] + 5;
     });
 
-    const hint = v.done ? "Enter — thôi nói chuyện" : "1–4 hoặc ↑↓ + Enter · Esc làm thinh";
-    c.add(label(this.scene, GAME_W / 2, top + h - PAD / 2 - hintH / 2, hint, 11, UI.muted, "400"));
+    const hint = v.done ? "Enter — thôi" : "1–3 · ↑↓ + Enter · Esc đóng";
+    c.add(label(this.scene, cx, top + h - PAD / 2 - hintH / 2, hint, 10, UI.muted, "400"));
 
     this.root = c;
     this.paint();
     this.bindKeys(v.done);
   }
 
-  private makeRow(x: number, y: number, w: number, h: number, i: number, text: string, tone: TalkTone, sz: number) {
+  /**
+   * Chỗ đặt thẻ. Neo SANG BÊN người nói, bên nào còn chỗ thì về bên đó.
+   *
+   * ⚠️ NEO BẰNG MÉP TRÊN, KHÔNG BẰNG TÂM: chiều cao thẻ đổi theo TỪNG NHỊP, nên neo bằng tâm thì
+   * cú kẹp đẩy thẻ CAO lên khi nó dày ra rồi thả xuống khi nhịp sau mỏng lại. Neo mép trên thì
+   * thẻ chỉ DÀI THÊM XUỐNG DƯỚI — mắt đang đọc từ trên xuống, nên mỏ neo phải là chỗ họ đang nhìn.
+   */
+  private place(a: { x: number; y: number } | undefined, w: number, h: number) {
+    const r = placeTalkCard(this.locked, a, { w, h }, { w: GAME_W, h: GAME_H });
+    this.locked = { cx: r.cx, top: r.top };
+    return { cx: r.cx, cy: r.top + h / 2 };
+  }
+
+
+  private makeRow(x: number, y: number, w: number, h: number, i: number, txt: Phaser.GameObjects.Text, tone: TalkTone, sz: number) {
     const row = this.scene.add.container(x, y);
     const bg = this.scene.add.graphics();
-    const num = label(this.scene, -w / 2 + 16, 0, String(i + 1), 13, UI.muted, "700").setOrigin(0.5);
-    // Chữ cắt theo bề ngang CÒN LẠI, không theo bề ngang bảng: số thứ tự và mép màu
-    // đã ăn mất ~34 px, không trừ thì dòng dài tràn ra ngoài nền ở cỡ chữ lớn.
-    const txt = this.scene.add.text(-w / 2 + 34, 0, text, {
-      fontFamily: FONT, fontSize: `${Math.round(15 * sz)}px`, color: UI.ink,
-      wordWrap: { width: w - 50 },
-    }).setOrigin(0, 0.5);
+    const num = label(this.scene, -w / 2 + 13, 0, String(i + 1), 12, UI.muted, "700").setOrigin(0.5);
+    txt.setPosition(-w / 2 + 26, 0);
 
     row.add([bg, num, txt]);
     row.setSize(w, h);
@@ -168,6 +190,7 @@ export class TalkPanel {
 
     this.rows.push({ bg, w, h });
     (bg as any).__tone = tone;
+    void sz;
     return row;
   }
 
@@ -177,26 +200,52 @@ export class TalkPanel {
       const tone = (r.bg as any).__tone as TalkTone;
       r.bg.clear();
       r.bg.fillStyle(on ? 0xe9e4d6 : 0xf7f5ee, 1);
-      r.bg.fillRoundedRect(-r.w / 2, -r.h / 2, r.w, r.h, 10);
+      r.bg.fillRoundedRect(-r.w / 2, -r.h / 2, r.w, r.h, 8);
       r.bg.lineStyle(1.5, on ? UI.accent : UI.line, 1);
-      r.bg.strokeRoundedRect(-r.w / 2, -r.h / 2, r.w, r.h, 10);
+      r.bg.strokeRoundedRect(-r.w / 2, -r.h / 2, r.w, r.h, 8);
       // mép trái theo giọng — đủ để thấy "cái này gắt" mà không thành một con số
       r.bg.fillStyle(TONE_TINT[tone], on ? 1 : 0.75);
-      r.bg.fillRoundedRect(-r.w / 2, -r.h / 2 + 6, 4, r.h - 12, 2);
+      r.bg.fillRoundedRect(-r.w / 2, -r.h / 2 + 5, 3, r.h - 10, 2);
     });
   }
+
+  /**
+   * Phím KHÔNG lớp nào được nuốt — CANON §15.2. `stopPropagation()` trên MỌI `keydown` làm `P`
+   * không tới được `StallScene`, tức người chơi KHÔNG VÀO ĐƯỢC menu tạm dừng khi thẻ đang mở, mà
+   * §15.2 nói "pause mọi lúc, kể cả giữa lúc khách đang nói". `Tab` và `F1`–`F8` đi cùng đường.
+   */
+  private static readonly PASS_THROUGH = new Set(["KeyP", "Tab", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8"]);
 
   private bindKeys(done: boolean) {
     const kb = this.scene.input.keyboard;
     if (!kb) return;
     const onKey = (ev: KeyboardEvent) => {
       if (!this.root) return;
-      // Bảng mở = CHẶN HẾT. Listener này ở pha CAPTURE trên window nên nó chạy trước
-      // plugin bàn phím của Phaser (pha bubble); `stopPropagation` ở đây là thứ duy nhất
-      // giữ cho W/A/S/D không làm người chơi đi mất khỏi quầy trong lúc đọc, và cho Esc
-      // không mở menu tạm dừng chồng lên bảng. `preventDefault` một mình KHÔNG đủ: nó
-      // chỉ bỏ hành vi mặc định của trình duyệt, không chặn listener khác.
+      /*
+       * Giữ phím KHÔNG được chạy hết cả cuộc: không lọc `ev.repeat` thì giữ Space hoặc Enter là
+       * key-repeat bấm qua cả cây trong một phần mười giây, áp đủ `rel`/`anger`/`act` rồi đánh
+       * dấu đã nghe — nội dung đó mất VĨNH VIỄN cả mùa mà người chơi không kịp thấy một chữ nào.
+       */
+      if (TalkPanel.PASS_THROUGH.has(ev.code)) return;
+      /*
+       * CHẶN TRƯỚC, LỌC `repeat` SAU — thứ tự này là bắt buộc.
+       *
+       * ⚠️ `return` ngay khi `ev.repeat` mà chưa `stopPropagation()` thì cú bấm đầu bị nuốt đúng,
+       * nhưng mọi sự kiện lặp phía sau lọt xuống plugin bàn phím của Phaser và bật
+       * `keys.W/A/S/D.isDown` — giữ W/A/S/D trong lúc đọc thẻ là cô Ba đi mất khỏi quầy.
+       */
       ev.stopPropagation();
+      if (ev.repeat && ev.code !== "ArrowUp" && ev.code !== "ArrowDown"
+        && ev.code !== "KeyW" && ev.code !== "KeyS") return;
+      /*
+       * CÓ LỚP KHÁC ĐÈ LÊN THÌ THẺ NÀY CÂM. `PASS_THROUGH` cho `P` đi thẳng vào menu tạm dừng,
+       * nhưng thẻ vẫn còn đó phía dưới và vẫn còn nghe phím — mà phản xạ của ai cũng là bấm Enter,
+       * và Enter rơi xuống đây thành `pick(cursor)` trong lúc màn hình đang mờ.
+       */
+      if (this.blocked()) return;
+      // Listener này ở pha CAPTURE trên window nên nó chạy trước plugin bàn phím của
+      // Phaser — `stopPropagation` phía trên là thứ duy nhất giữ cho W/A/S/D không làm
+      // người chơi đi mất khỏi quầy trong lúc đọc.
       const num = /^(?:Digit|Numpad)([1-9])$/.exec(ev.code);
       if (num && !done) {
         const i = Number(num[1]) - 1;
@@ -221,10 +270,17 @@ export class TalkPanel {
         else this.pick(this.cursor);
         return;
       }
-      // Esc KHÔNG phải nút huỷ: nó là "không trả lời", và Service tính tiền cho nó.
-      if (ev.code === "Escape" || ev.code === "KeyF") { ev.preventDefault(); this.close(); }
+      /*
+       * Esc = LÙI RA, luôn MIỄN PHÍ (luật L4: một phím chỉ mang một nghĩa, và "lùi ra khỏi lớp
+       * trên cùng" không bao giờ được là một nước đi có giá).
+       *
+       * Bản cũ gộp hai nghĩa vào một phím, và `KeyF` — đúng cái phím vừa MỞ ra thẻ này — cũng gọi
+       * `close()` trong khi dòng gợi ý không hề nhắc tới F. "Làm thinh" giờ là một DÒNG trong thẻ,
+       * giọng `IM`, hệ quả khai sẵn.
+       */
+      if (ev.code === "Escape") { ev.preventDefault(); this.close(); }
     };
-    // `capture` để Esc không chạm vào menu tạm dừng của StallScene lúc bảng đang mở.
+    // `capture` để Esc không chạm tới menu tạm dừng của StallScene lúc thẻ đang mở.
     window.addEventListener("keydown", onKey, true);
     this.off.push(() => window.removeEventListener("keydown", onKey, true));
   }
@@ -247,6 +303,7 @@ export class TalkPanel {
   }
 
   destroy() {
+    this.locked = null;
     this.unbind();
     this.root?.destroy(true);
     this.root = null;

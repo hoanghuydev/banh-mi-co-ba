@@ -148,12 +148,32 @@ function currentIntensity(m: Memory, day: number): number {
 function temperFactor(m: Memory): number {
   const p = m.ownerPersonality
   return m.valence < 0
-    ? (0.4 + 1.6 * p.deTha)     // deTha 0.2 → ×0.72 (nhớ dai nhất hẻm) · 0.9 → ×1.84 (mau quên)
-    : (0.8 + 0.6 * p.thanThien) // người mở lòng nhớ ơn lâu hơn
+    ? 1 / (0.4 + 1.6 * p.deTha)  // NGHỊCH ĐẢO của decayMul — deTha 0.2 → ×1.39 (nhớ dai nhất hẻm) · 0.9 → ×0.54 (mau quên)
+    : (0.8 + 0.6 * p.thanThien)  // người mở lòng nhớ ơn lâu hơn
 }
 ```
 
-> Hệ số nhánh âm `0.4 + 1.6·deTha` lấy **đúng** công thức `decayRate` đã chốt ở `P2-02 §4.6` (chị Lan `deTha 0.2` → `×0.72`, *"chậm nhất hẻm"*). Hai doc phải dùng chung một con số; nếu tune, tune ở **một chỗ** rồi đồng bộ.
+> ### ⚠️ SỬA MỘT LỖI DẤU CỦA BẢN TRƯỚC — nhánh âm là NGHỊCH ĐẢO, không phải chính `decayMul`
+>
+> Bản trước của doc này viết `tTaper = taper × (0.4 + 1.6·deTha)` kèm chú thích *"deTha 0.2 → ×0.72 (nhớ dai nhất hẻm)"*. Chú thích đúng ý định, công thức thì làm ngược lại — và nó ngược theo kiểu đọc doc không thấy được:
+>
+> * `decayMul = 0.4 + 1.6·deTha` là một **TỐC ĐỘ QUÊN**: `deTha` cao ⇒ quên nhanh ⇒ số LỚN.
+> * `taper` là một **ĐỘ DÀI** đoạn dốc: số LỚN ⇒ dốc thoải ⇒ phai **CHẬM**.
+>
+> Nhân thẳng một tốc độ vào một độ dài là lộn ngược hai đại lượng. Hậu quả đo được trên bản cũ (`WRONG_NAME` intensity 90, tạo ngày 1):
+>
+> | | ngày 6 | ngày 10 | ngày 16 | ngày 24 |
+> |---|---|---|---|---|
+> | **chị Lan** `deTha 0.2` — để bụng nhất hẻm | 76 | 37 | **23** | 23 |
+> | **bé Su** `deTha 0.9` — mau quên nhất hẻm | 88 | 78 | **56** | 28 |
+>
+> Suốt hơn hai tuần — gần hết một mùa — người mau quên giận dai hơn người để bụng, tức đúng cái tính cách mà cả P2-02 lẫn doc này dựng lên bị đảo chiều ở chỗ nó đáng kể nhất.
+>
+> **Nghịch đảo** là phép đổi đúng giữa "tốc độ" và "độ dài", và nó bị chặn hai đầu sẵn: `decayMul ∈ [0.4 · 2.0]` ⇒ hệ số `∈ [0.5 · 2.5]`. (`2.0 − decayMul` thì `deTha = 1` ra 0 và chia cho 0.)
+>
+> Con số nền `0.4 + 1.6·deTha` vẫn là **đúng** con số đã chốt ở `P2-02 §4.6` — chỗ sai nằm ở cách DÙNG nó, không ở giá trị. Hai doc vẫn dùng chung một con số; nếu tune, tune ở **một chỗ** rồi đồng bộ.
+>
+> Tìm ra lúc dựng `P2-09` (truy hồi ký ức đọc thẳng `currentIntensity`). Sửa ở `sim/memory.temperFactor`; lưới canh chiều ở `tests/p2-recall.test.ts` → `R-4b`.
 
 **Bảng `DECAY` per-kind** (ngày; `floor` tính theo % của `intensity0`, quy ra điểm tuyệt đối lúc tạo):
 

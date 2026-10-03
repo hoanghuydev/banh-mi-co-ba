@@ -1,67 +1,833 @@
 {
   "_note": "Danh mục FACT của rule DB — P2-01 §2.3.1. Nguồn DUY NHẤT: runtime (dialog/facts.ts) và validator (tools/validate-rules.ts) cùng đọc file này. Thêm fact ở đây TRƯỚC, viết rule sau. Kiểu: enum (so bằng ==, chuỗi → symbol) · ordinal (enum có thứ tự, so >= <= được, mã hoá bằng chỉ số) · number (số nguyên; số thực ×100) · bool (0/1). Fact vắng mặt trong query = rule có criterion trên nó BỊ LOẠI (luật loại trừ của Ruskin), trừ khi criterion là 'absent'. ⚠ = có điều kiện (chỉ có mặt trong một số tình huống).",
-  "concepts": ["GREET", "ORDER", "SMALLTALK", "NOTICE_EVENT", "NOTICE_FOLLOW", "DELIVERY", "HOLLOW_LOAF", "PAY", "FAREWELL", "INTERACT", "GOSSIP_TELL", "GOSSIP_HEAR", "IDLE", "ARC", "CO_BA", "SMALLTALK_CAILUONG_2", "SMALLTALK_CAILUONG_3", "SMALLTALK_CAILUONG_4"],
+  "concepts": [
+    "GREET",
+    "ORDER",
+    "SMALLTALK",
+    "NOTICE_EVENT",
+    "NOTICE_FOLLOW",
+    "DELIVERY",
+    "HOLLOW_LOAF",
+    "PAY",
+    "FAREWELL",
+    "INTERACT",
+    "GOSSIP_TELL",
+    "GOSSIP_HEAR",
+    "IDLE",
+    "ARC",
+    "CO_BA",
+    "SMALLTALK_CAILUONG_2",
+    "SMALLTALK_CAILUONG_3",
+    "SMALLTALK_CAILUONG_4"
+  ],
+  "_note_p209": "P2-09 §2.2 — gộp bảng đen: mọi khoá của sim/worldfacts.ts cũ sống tiếp ở đây qua mục `aliases`. Bảy namespace cho người viết nội dung: p.* người chơi · t.* người kia · w.* thế giới · c.* trong cuộc · v.* trong lượt ghé · d.* trong ngày · m.* cả mùa.",
   "facts": {
-    "day":                 { "scope": "Global", "type": "number", "min": 1, "max": 40 },
-    "hour":                { "scope": "Global", "type": "number", "min": 600, "max": 1100, "_note": "giờ·100 + phút: 6h43 → 643" },
-    "timeSlot":            { "scope": "Global", "type": "ordinal", "values": ["PRE_OPEN", "PEAK", "MID", "LULL"] },
-    "weather":             { "scope": "Global", "type": "enum", "values": ["NANG_GAT", "MAT", "AM_U", "MUA_RAO", "MUA_DAM", "OI"] },
-    "stallCleanliness":    { "scope": "Global", "type": "number", "min": 0, "max": 100 },
-    "queueLength":         { "scope": "Global", "type": "number", "min": 0 },
-    "customersServedToday":{ "scope": "Global", "type": "number", "min": 0 },
-    "dirtRemarkedToday":   { "scope": "Global", "type": "bool", "conditional": true, "_note": "đã có MỘT khách nhắc quầy dơ hôm nay (P1-02 §2.10: không cằn nhằn mỗi khách)" },
-
-    "playerHolding":       { "scope": "Player", "type": "enum", "values": ["EMPTY", "BANH", "BANH_CHAY", "TRA"] },
-    "playerHandsDirty":    { "scope": "Player", "type": "bool" },
-    "equipGasOven":        { "scope": "Global", "type": "bool", "conditional": true, "_note": "P3-04 A1 — đã đổi lò than sang lò gas" },
-
-    "npcId":               { "scope": "Customer", "type": "enum", "values": "@NPC_IDS" },
-    "npcSoi":              { "scope": "Customer", "type": "number", "min": 0, "max": 100 },
-    "npcNongTinh":         { "scope": "Customer", "type": "number", "min": 0, "max": 100 },
-    "npcDeTha":            { "scope": "Customer", "type": "number", "min": 0, "max": 100 },
-    "npcThanThien":        { "scope": "Customer", "type": "number", "min": 0, "max": 100 },
-    "npcRelTier":          { "scope": "Customer", "type": "ordinal", "values": ["RIVAL", "ACQUAINTANCE", "FRIEND"] },
-    "npcVisitCount":       { "scope": "Customer", "type": "number", "min": 0 },
-    "npcIsFirstVisit":     { "scope": "Customer", "type": "bool" },
-    "npcKnowsUsual":       { "scope": "Customer", "type": "bool" },
-    "npcSlot":             { "scope": "Customer", "type": "number", "min": 0 },
-    "npcGazeState":        { "scope": "Customer", "type": "enum", "values": ["LOOK_HANDS", "LOOK_FACE", "IDLE_SCAN", "PHONE", "COMPANION", "WATCH", "AWAY_RAIN", "DRINKING"] },
-    "npcMood":             { "scope": "Customer", "type": "number", "min": 0, "max": 100, "_note": "mood ngoài tầm kiểm soát (P2-02 §5.2), roll lúc spawn — 50 = bình thường" },
-    "npcMoodCause":        { "scope": "Customer", "type": "enum", "values": ["NONE", "SEP_MANG", "MUA_UOT", "DAU_OM", "HET_TIEN", "MET", "TIN_VUI"], "_note": "R12 P2-02: đúng 7 giá trị" },
-
-    "ctxSawDropToday":     { "scope": "Customer", "type": "bool", "ctx": true },
-    "ctxBarkT1_DROP":      { "scope": "Customer", "type": "bool", "ctx": true },
-    "ctxBarkT1_TAY":       { "scope": "Customer", "type": "bool", "ctx": true },
-    "ctxBarkT1_KHET":      { "scope": "Customer", "type": "bool", "ctx": true },
-    "ctxNhacQuayDo":       { "scope": "Customer", "type": "bool", "ctx": true },
-    "ctxVuaDuocTraDa":     { "scope": "Customer", "type": "bool", "ctx": true },
-    "ctxNhacCaiLuong":     { "scope": "Customer", "type": "bool", "ctx": true },
-    "ctxDangDocThoai":     { "scope": "Customer", "type": "bool", "ctx": true },
-    "ctxKhachMoiToi":      { "scope": "Customer", "type": "bool", "ctx": true },
-
-    "eventId":             { "scope": "Session", "type": "enum", "values": "@STIM_IDS", "conditional": true },
-    "eventSalience":       { "scope": "Session", "type": "number", "min": 0, "max": 100, "conditional": true },
-    "obsState":            { "scope": "Session", "type": "ordinal", "values": ["UNAWARE", "GLIMPSED", "NOTICED", "CONFIRMED"], "conditional": true },
-    "witnessCount":        { "scope": "Session", "type": "number", "min": 0, "conditional": true },
-    "orderIsUsual":        { "scope": "Session", "type": "bool", "conditional": true },
-    "defectKind":          { "scope": "Session", "type": "enum", "values": ["NONE", "MISSING", "UNWANTED", "RATIO_UNDER", "RATIO_OVER", "WRONG_TEMP", "STUFFED", "TASTE_OFF"], "conditional": true },
-    "defectWasSeen":       { "scope": "Session", "type": "bool", "conditional": true },
-    "defectCount":         { "scope": "Session", "type": "number", "min": 0, "conditional": true },
-    "dishUnderdone":       { "scope": "Session", "type": "bool", "conditional": true, "_note": "ổ rút khỏi lò trước CRUST.READY. Từ P5 nó là một LỖI thật (mượn defectKind WRONG_TEMP), nên fact này chỉ còn việc tách 'bánh non' khỏi 'bánh nguội' — hai thứ cùng một kind, hai câu khác hẳn nhau." },
-    "dishRefused":         { "scope": "Session", "type": "bool", "conditional": true, "_note": "concept HOLLOW_LOAF — khách có LẮC ĐẦU không nhận ổ chưa có nhân hay cầm cho xong (sim/service.ts: takesHollowLoaf). true = ổ ở lại trong tay người chơi, câu nói là câu bắt làm lại; false = họ vẫn trả tiền một ổ bánh mì không, câu nói chỉ là một câu chưng hửng. Chỉ có mặt ở HOLLOW_LOAF." },
-    "freeExtraTooMuch":    { "scope": "Session", "type": "bool", "conditional": true },
-    "extraHabitBroken":    { "scope": "Session", "type": "bool", "conditional": true, "_note": "mấy lượt ghé trước đều được cho thêm, lượt này không — CANON §8i đọc ngược (sim/memory.ts: extraHabit). Chỉ có mặt ở nhánh DELIVERY không lỗi." },
-    "waitTier":            { "scope": "Session", "type": "ordinal", "values": ["NHANH", "VUA", "LAU", "QUA_LAU"] },
-    "leaveReason":         { "scope": "Session", "type": "enum", "values": ["SERVED", "IMPATIENT", "CLOSED", "SOLD_OUT", "BALKED", "SOILED_FOOD"], "conditional": true, "_note": "BALKED = ngó thấy hàng dài rồi quay đầu, CHƯA từng xếp vào hàng (sim/service.ts: balkChance). Khác IMPATIENT: người đó không chờ một giây nào và người bán không làm gì sai — câu nói phải là câu nói với chính mình trên đường về, không phải câu trách. SOILED_FOOD = khách THẤY ổ bánh rớt xuống đất mà vẫn được đưa cho mình, nên không nhận (sim/service.ts: SOILED_CAUGHT). Khác REFUSED (chưa có rule nào): REFUSED là người bán mời khách đi, SOILED_FOOD là khách lắc đầu với ổ bánh." },
-    "serveOutcome":        { "scope": "Session", "type": "enum", "values": ["CLEAN", "DEFECT", "WAITED", "GRIT"], "conditional": true, "_note": "lượt ghé vừa xong đi ra sao, theo cách người khách nhớ nó lúc quay lưng. Chỉ có mặt ở FAREWELL nhánh leaveReason SERVED. GRIT = ổ đã nằm dưới đất mà người này KHÔNG thấy lúc nó rớt — họ cắn phải sạn trên đường về và không biết vì sao (sim/service.ts: SOILED_GRIT). GRIT thắng cả DEFECT khi hai cái cùng xảy ra." },
-    "interaction":         { "scope": "Session", "type": "enum", "values": ["TEA", "TEA_NOD", "TEA_SUSPECT"], "conditional": true, "_note": "concept INTERACT — bổ sung của bản dựng: P2-01 chưa có concept cho trà đá. Giá trị ASK đã bỏ ở P5-01: hỏi chuyện giờ đi qua content/talks, không qua rule DB." },
-    "secSinceLastLine":    { "scope": "Session", "type": "number", "min": 0 }
+    "day": {
+      "scope": "Global",
+      "type": "number",
+      "min": 1,
+      "max": 40
+    },
+    "hour": {
+      "scope": "Global",
+      "type": "number",
+      "min": 600,
+      "max": 1100,
+      "_note": "giờ·100 + phút: 6h43 → 643"
+    },
+    "timeSlot": {
+      "scope": "Global",
+      "type": "ordinal",
+      "values": [
+        "PRE_OPEN",
+        "PEAK",
+        "MID",
+        "LULL"
+      ]
+    },
+    "weather": {
+      "scope": "Global",
+      "type": "enum",
+      "values": [
+        "NANG_GAT",
+        "MAT",
+        "AM_U",
+        "MUA_RAO",
+        "MUA_DAM",
+        "OI"
+      ]
+    },
+    "stallCleanliness": {
+      "scope": "Global",
+      "type": "number",
+      "min": 0,
+      "max": 100
+    },
+    "queueLength": {
+      "scope": "Global",
+      "type": "number",
+      "min": 0
+    },
+    "customersServedToday": {
+      "scope": "Global",
+      "type": "number",
+      "min": 0
+    },
+    "dirtRemarkedToday": {
+      "scope": "Global",
+      "type": "bool",
+      "conditional": true,
+      "_note": "đã có MỘT khách nhắc quầy dơ hôm nay (P1-02 §2.10: không cằn nhằn mỗi khách)"
+    },
+    "playerHolding": {
+      "scope": "Player",
+      "type": "enum",
+      "values": "@HAND_IDS",
+      "_note": "khớp 1–1 với world/stations.Hand. Service đặt mỗi frame từ StallScene."
+    },
+    "playerHandsDirty": {
+      "scope": "Player",
+      "type": "bool"
+    },
+    "equipGasOven": {
+      "scope": "Global",
+      "type": "bool",
+      "conditional": true,
+      "_note": "P3-04 A1 — đã đổi lò than sang lò gas"
+    },
+    "npcId": {
+      "scope": "Customer",
+      "type": "enum",
+      "values": "@NPC_IDS"
+    },
+    "npcSoi": {
+      "scope": "Customer",
+      "type": "number",
+      "min": 0,
+      "max": 100
+    },
+    "npcNongTinh": {
+      "scope": "Customer",
+      "type": "number",
+      "min": 0,
+      "max": 100
+    },
+    "npcDeTha": {
+      "scope": "Customer",
+      "type": "number",
+      "min": 0,
+      "max": 100
+    },
+    "npcThanThien": {
+      "scope": "Customer",
+      "type": "number",
+      "min": 0,
+      "max": 100
+    },
+    "npcRelTier": {
+      "scope": "Customer",
+      "type": "ordinal",
+      "values": [
+        "RIVAL",
+        "ACQUAINTANCE",
+        "FRIEND"
+      ]
+    },
+    "npcVisitCount": {
+      "scope": "Customer",
+      "type": "number",
+      "min": 0
+    },
+    "npcIsFirstVisit": {
+      "scope": "Customer",
+      "type": "bool"
+    },
+    "npcKnowsUsual": {
+      "scope": "Customer",
+      "type": "bool"
+    },
+    "npcSlot": {
+      "scope": "Customer",
+      "type": "number",
+      "min": 0
+    },
+    "npcGazeState": {
+      "scope": "Customer",
+      "type": "enum",
+      "values": [
+        "LOOK_HANDS",
+        "LOOK_FACE",
+        "IDLE_SCAN",
+        "PHONE",
+        "COMPANION",
+        "WATCH",
+        "AWAY_RAIN",
+        "DRINKING"
+      ]
+    },
+    "npcMood": {
+      "scope": "Customer",
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "_note": "mood ngoài tầm kiểm soát (P2-02 §5.2), roll lúc spawn — 50 = bình thường"
+    },
+    "npcMoodCause": {
+      "scope": "Customer",
+      "type": "enum",
+      "values": [
+        "NONE",
+        "SEP_MANG",
+        "MUA_UOT",
+        "DAU_OM",
+        "HET_TIEN",
+        "MET",
+        "TIN_VUI"
+      ],
+      "_note": "R12 P2-02: đúng 7 giá trị"
+    },
+    "ctxSawDropToday": {
+      "scope": "Customer",
+      "type": "bool",
+      "ctx": true
+    },
+    "ctxBarkT1_DROP": {
+      "scope": "Customer",
+      "type": "bool",
+      "ctx": true
+    },
+    "ctxBarkT1_TAY": {
+      "scope": "Customer",
+      "type": "bool",
+      "ctx": true
+    },
+    "ctxBarkT1_KHET": {
+      "scope": "Customer",
+      "type": "bool",
+      "ctx": true,
+      "_note": "đã kêu về ổ CHÁY trong 90 s qua"
+    },
+    "ctxBarkT1_NGUOI": {
+      "scope": "Customer",
+      "type": "bool",
+      "ctx": true,
+      "_note": "đã kêu về ổ NGUỘI trong 90 s qua — latch RIÊNG với ctxBarkT1_KHET: cháy và nguội là hai lời chê khác nhau, chê cái này không nên bịt miệng cái kia"
+    },
+    "ctxNhacQuayDo": {
+      "scope": "Customer",
+      "type": "bool",
+      "ctx": true
+    },
+    "ctxVuaDuocTraDa": {
+      "scope": "Customer",
+      "type": "bool",
+      "ctx": true
+    },
+    "ctxNhacCaiLuong": {
+      "scope": "Customer",
+      "type": "bool",
+      "ctx": true
+    },
+    "ctxDangDocThoai": {
+      "scope": "Customer",
+      "type": "bool",
+      "ctx": true
+    },
+    "ctxKhachMoiToi": {
+      "scope": "Customer",
+      "type": "bool",
+      "ctx": true
+    },
+    "eventId": {
+      "scope": "Session",
+      "type": "enum",
+      "values": "@STIM_IDS",
+      "conditional": true
+    },
+    "eventSalience": {
+      "scope": "Session",
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "conditional": true
+    },
+    "obsState": {
+      "scope": "Session",
+      "type": "ordinal",
+      "values": [
+        "UNAWARE",
+        "GLIMPSED",
+        "NOTICED",
+        "CONFIRMED"
+      ],
+      "conditional": true
+    },
+    "eventBurnt": {
+      "scope": "Session",
+      "type": "bool",
+      "conditional": true,
+      "_note": "chỉ có mặt khi eventId = BURNT_OR_COLD. true = ổ CHÁY trong lò (có mùi, cả hàng ngửi thấy) · false = ổ NGUỘI lúc đưa. Một StimId gánh hai chuyện, nhưng câu thoại thì không: không ai kêu 'khét lẹt' trước một ổ chỉ nguội."
+    },
+    "witnessCount": {
+      "scope": "Session",
+      "type": "number",
+      "min": 0,
+      "conditional": true
+    },
+    "orderIsUsual": {
+      "scope": "Session",
+      "type": "bool",
+      "conditional": true
+    },
+    "defectKind": {
+      "scope": "Session",
+      "type": "enum",
+      "values": [
+        "NONE",
+        "MISSING",
+        "UNWANTED",
+        "RATIO_UNDER",
+        "RATIO_OVER",
+        "WRONG_TEMP",
+        "STUFFED",
+        "TASTE_OFF"
+      ],
+      "conditional": true
+    },
+    "defectWasSeen": {
+      "scope": "Session",
+      "type": "bool",
+      "conditional": true
+    },
+    "defectCount": {
+      "scope": "Session",
+      "type": "number",
+      "min": 0,
+      "conditional": true
+    },
+    "dishUnderdone": {
+      "scope": "Session",
+      "type": "bool",
+      "conditional": true,
+      "_note": "ổ rút khỏi lò trước CRUST.READY. Từ P5 nó là một LỖI thật (mượn defectKind WRONG_TEMP), nên fact này chỉ còn việc tách 'bánh non' khỏi 'bánh nguội' — hai thứ cùng một kind, hai câu khác hẳn nhau."
+    },
+    "dishRefused": {
+      "scope": "Session",
+      "type": "bool",
+      "conditional": true,
+      "_note": "concept HOLLOW_LOAF — khách có LẮC ĐẦU không nhận ổ chưa có nhân hay cầm cho xong (sim/service.ts: takesHollowLoaf). true = ổ ở lại trong tay người chơi, câu nói là câu bắt làm lại; false = họ vẫn trả tiền một ổ bánh mì không, câu nói chỉ là một câu chưng hửng. Chỉ có mặt ở HOLLOW_LOAF."
+    },
+    "freeExtraTooMuch": {
+      "scope": "Session",
+      "type": "bool",
+      "conditional": true
+    },
+    "extraHabitBroken": {
+      "scope": "Session",
+      "type": "bool",
+      "conditional": true,
+      "_note": "mấy lượt ghé trước đều được cho thêm, lượt này không — CANON §8i đọc ngược (sim/memory.ts: extraHabit). Chỉ có mặt ở nhánh DELIVERY không lỗi."
+    },
+    "waitTier": {
+      "scope": "Session",
+      "type": "ordinal",
+      "values": [
+        "NHANH",
+        "VUA",
+        "LAU",
+        "QUA_LAU"
+      ]
+    },
+    "leaveReason": {
+      "scope": "Session",
+      "type": "enum",
+      "values": [
+        "SERVED",
+        "IMPATIENT",
+        "CLOSED",
+        "SOLD_OUT",
+        "BALKED",
+        "SOILED_FOOD"
+      ],
+      "conditional": true,
+      "_note": "BALKED = ngó thấy hàng dài rồi quay đầu, CHƯA từng xếp vào hàng (sim/service.ts: balkChance). Khác IMPATIENT: người đó không chờ một giây nào và người bán không làm gì sai — câu nói phải là câu nói với chính mình trên đường về, không phải câu trách. SOILED_FOOD = khách THẤY ổ bánh rớt xuống đất mà vẫn được đưa cho mình, nên không nhận (sim/service.ts: SOILED_CAUGHT). Khác REFUSED (chưa có rule nào): REFUSED là người bán mời khách đi, SOILED_FOOD là khách lắc đầu với ổ bánh."
+    },
+    "serveOutcome": {
+      "scope": "Session",
+      "type": "enum",
+      "values": [
+        "CLEAN",
+        "DEFECT",
+        "WAITED",
+        "GRIT"
+      ],
+      "conditional": true,
+      "_note": "lượt ghé vừa xong đi ra sao, theo cách người khách nhớ nó lúc quay lưng. Chỉ có mặt ở FAREWELL nhánh leaveReason SERVED. GRIT = ổ đã nằm dưới đất mà người này KHÔNG thấy lúc nó rớt — họ cắn phải sạn trên đường về và không biết vì sao (sim/service.ts: SOILED_GRIT). GRIT thắng cả DEFECT khi hai cái cùng xảy ra."
+    },
+    "interaction": {
+      "scope": "Session",
+      "type": "enum",
+      "values": [
+        "TEA",
+        "TEA_NOD",
+        "TEA_SUSPECT"
+      ],
+      "conditional": true,
+      "_note": "concept INTERACT — bổ sung của bản dựng: P2-01 chưa có concept cho trà đá. Giá trị ASK đã bỏ ở P5-01: hỏi chuyện giờ đi qua content/talks, không qua rule DB."
+    },
+    "secSinceLastLine": {
+      "scope": "Session",
+      "type": "number",
+      "min": 0
+    },
+    "playerOnStreet": {
+      "scope": "Player",
+      "type": "bool",
+      "_note": "đã bước ra khỏi khu quầy"
+    },
+    "playerSoldOut": {
+      "scope": "Player",
+      "type": "bool"
+    },
+    "playerCash": {
+      "scope": "Player",
+      "type": "number",
+      "min": 0,
+      "_note": "till.floatLeft — đồng, không phải nghìn"
+    },
+    "playerTeaLeft": {
+      "scope": "Player",
+      "type": "number",
+      "min": 0,
+      "_note": "thùng trà còn mấy ly. KHÁC playerHolding=tea: một cái là rót được, một cái là đang cầm"
+    },
+    "playerStock": {
+      "scope": "Player",
+      "type": "number",
+      "min": 0,
+      "_note": "còn mấy ổ. `p.soldOut` là ngưỡng 0; `p.stock<=N` là mấy ổ cuối — hai chuyện khác nhau (qua-duong §2)"
+    },
+    "npcPhase": {
+      "scope": "Customer",
+      "type": "enum",
+      "values": [
+        "arriving",
+        "queueing",
+        "ordering",
+        "waiting",
+        "leaving"
+      ]
+    },
+    "npcPractice": {
+      "scope": "Customer",
+      "type": "enum",
+      "values": "@PRACTICE_IDS",
+      "_note": "P2-09 §2.5 — khung cảnh đang diễn ra giữa người chơi và người này"
+    },
+    "npcPassing": {
+      "scope": "Customer",
+      "type": "bool",
+      "_note": "người đi ngang, chưa hỏi mua gì"
+    },
+    "npcServed": {
+      "scope": "Customer",
+      "type": "bool"
+    },
+    "npcGlanced": {
+      "scope": "Customer",
+      "type": "bool",
+      "_note": "đã ngoái nhìn cái xe"
+    },
+    "npcLookingInside": {
+      "scope": "Customer",
+      "type": "bool",
+      "_note": "ĐANG nhìn vào trong quầy — map từ gazeState = WATCH"
+    },
+    "npcHasOrder": {
+      "scope": "Customer",
+      "type": "bool"
+    },
+    "npcWaitRatio": {
+      "scope": "Customer",
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "_note": "×100 của Customer.waitRatio — bảng đen không có số thực (P2-01 T-2)"
+    },
+    "npcNamed": {
+      "scope": "Customer",
+      "type": "bool",
+      "_note": "một trong 12 người CÓ TÊN. false = walkin/qua-duong, và kho đó KHÔNG CÓ HÔM QUA (P2-09 §10.3)"
+    },
+    "npcPurpose": {
+      "scope": "Customer",
+      "type": "enum",
+      "values": "@PURPOSE_IDS",
+      "conditional": true,
+      "_note": "60 mục đích. Chỉ có mặt với người đi ngang — khách có tên đi theo lịch của P2-03 §2.9"
+    },
+    "npcState": {
+      "scope": "Customer",
+      "type": "enum",
+      "values": "@STATE_IDS",
+      "conditional": true
+    },
+    "npcCutLine": {
+      "scope": "Customer",
+      "type": "bool",
+      "_note": "ĐÃ THẬT SỰ chen hàng — assignSlots ghi. Đây là chỗ câu 'bà ấy có chen hàng thật đâu' sống hay chết"
+    },
+    "npcBlocking": {
+      "scope": "Customer",
+      "type": "bool",
+      "_note": "đứng chắn ngay chỗ đưa hàng"
+    },
+    "npcInShade": {
+      "scope": "Customer",
+      "type": "bool"
+    },
+    "npcOnPhone": {
+      "scope": "Customer",
+      "type": "bool",
+      "_note": "map từ gazeState = PHONE"
+    },
+    "npcEating": {
+      "scope": "Customer",
+      "type": "bool"
+    },
+    "convoTone": {
+      "scope": "Convo",
+      "type": "enum",
+      "values": [
+        "AM",
+        "THUONG",
+        "DUA",
+        "THANG",
+        "LANH",
+        "GAT",
+        "CHUI",
+        "IM"
+      ],
+      "ctx": true,
+      "conditional": true,
+      "_note": "giọng ĐÃ dùng trong cuộc này. Nhiều giọng cùng lúc ⇒ hệ ghi mỗi giọng một fact convoTone<X>"
+    },
+    "convoAngered": {
+      "scope": "Convo",
+      "type": "bool",
+      "_note": "họ đã bị chọc giận TRONG cuộc này. Câu tử tế nói sau câu nặng phải khai !c.angered"
+    },
+    "convoWarmth": {
+      "scope": "Convo",
+      "type": "number",
+      "min": -100,
+      "max": 100,
+      "_note": "điểm ấm kiếm được trong CHÍNH cuộc này — inviteChance đọc"
+    },
+    "convoOpenedBy": {
+      "scope": "Convo",
+      "type": "enum",
+      "values": [
+        "PLAYER",
+        "NPC"
+      ],
+      "_note": "P2-09 §2.4 — khoá được đòi nhiều nhất cả bản rà (21 nút riêng qua-duong). Câu mở đầu bằng 'Dạ' là câu ĐÁP, chỉ đúng khi NPC mở lời"
+    },
+    "visitGaveTea": {
+      "scope": "Visit",
+      "type": "bool",
+      "_note": "trong LƯỢT GHÉ này đã mời trà rồi — không mời hai lần"
+    },
+    "visitGaveFood": {
+      "scope": "Visit",
+      "type": "bool"
+    },
+    "visitApologised": {
+      "scope": "Visit",
+      "type": "bool"
+    },
+    "visitPromised": {
+      "scope": "Visit",
+      "type": "enum",
+      "values": "@DEED_IDS",
+      "conditional": true,
+      "_note": "việc đang hứa dở trong lượt này"
+    },
+    "visitInviteRefused": {
+      "scope": "Visit",
+      "type": "bool",
+      "_note": "đã lắc đầu một lời mời — ẩn hẳn mọi INVITE sau đó (P2-06 §2.10)"
+    },
+    "dayMetToday": {
+      "scope": "Day",
+      "type": "bool",
+      "_note": "hôm nay đã gặp rồi — không chào lại như người lạ"
+    },
+    "dayToldMe": {
+      "scope": "Day",
+      "type": "bool",
+      "ctx": true,
+      "conditional": true,
+      "_note": "sáng nay họ đã kể chuyện này rồi — không hỏi lại"
+    },
+    "seasonVisits": {
+      "scope": "Season",
+      "type": "number",
+      "min": 0,
+      "_note": "mem.visits. Người ghé 20 lần không được chào như lần đầu"
+    },
+    "seasonTier": {
+      "scope": "Season",
+      "type": "ordinal",
+      "values": [
+        "RIVAL",
+        "ACQUAINTANCE",
+        "FRIEND"
+      ]
+    },
+    "seasonRemembers": {
+      "scope": "Season",
+      "type": "bool",
+      "conditional": true,
+      "_note": "P2-09 §2.4 — CÓ một ký ức khớp chủ đề đang hỏi. Do retrieve() đặt, không do người viết đoán"
+    },
+    "worldHot": {
+      "scope": "Global",
+      "type": "bool"
+    },
+    "worldRain": {
+      "scope": "Global",
+      "type": "bool"
+    },
+    "worldPeak": {
+      "scope": "Global",
+      "type": "bool"
+    },
+    "worldBand": {
+      "scope": "Global",
+      "type": "enum",
+      "values": "@BAND_IDS",
+      "_note": "BUỔI, khác timeSlot (mật độ khách)"
+    },
+    "worldShadeFree": {
+      "scope": "Global",
+      "type": "bool",
+      "_note": "ô hóng mát còn trống"
+    },
+    "worldOvenHot": {
+      "scope": "Global",
+      "type": "bool",
+      "_note": "lò đang nhen / mẻ vừa ra — mùi bánh là lý do tồn tại của cuộc duong.mui"
+    },
+    "worldSeatFree": {
+      "scope": "World",
+      "type": "bool",
+      "_note": "Còn ghế trống (`GHE_BAN`, SEAT_CAPACITY=2). Động: người khác ngồi mất giữa lúc đang đọc thẻ."
+    },
+    "npcSitting": {
+      "scope": "Visit",
+      "type": "bool",
+      "_note": "Người này đang NGỒI trên ghế — act `THEY_SIT`. Ngồi thì kiên nhẫn trôi chậm lại."
+    }
   },
-  "silentOk": ["SMALLTALK"],
+  "_note_aliases": "P2-09 §2.2 — MẶT TIỀN CHO NGƯỜI VIẾT. Một alias là một mảnh `when` đặt tên: `p.holdsBread` biên dịch thành criterion trên `playerHolding`, không phải một nhánh switch thứ hai. Dấu `!` ở đầu = phủ định. Dạng `khoá(tham số)` = alias có tham số, khai bằng `$` trong giá trị. Cú pháp cố ý NGHÈO: không biểu thức lồng nhau — cần logic phức tạp hơn thì thêm MỘT alias có tên đọc được.",
+  "aliases": {
+    "p.handsEmpty": {
+      "playerHolding": "empty"
+    },
+    "p.holdsBread": {
+      "playerHolding": [
+        "loaf_cold",
+        "loaf_hot",
+        "loaf_burnt",
+        "loaf_filled"
+      ]
+    },
+    "p.holdsFilled": {
+      "playerHolding": "loaf_filled"
+    },
+    "p.holdsTea": {
+      "playerHolding": "tea"
+    },
+    "p.handsDirty": {
+      "playerHandsDirty": true
+    },
+    "p.atCounter": {
+      "playerOnStreet": false
+    },
+    "p.onStreet": {
+      "playerOnStreet": true
+    },
+    "p.soldOut": {
+      "playerSoldOut": true
+    },
+    "p.hasTea": {
+      "playerTeaLeft": ">=1"
+    },
+    "p.cash": {
+      "playerCash": ">=$"
+    },
+    "p.stock": {
+      "playerStock": "<=$"
+    },
+    "t.passing": {
+      "npcPassing": true
+    },
+    "t.queueing": {
+      "npcPhase": "queueing"
+    },
+    "t.ordering": {
+      "npcPhase": "ordering"
+    },
+    "t.waiting": {
+      "npcPhase": "waiting"
+    },
+    "t.leaving": {
+      "npcPhase": "leaving"
+    },
+    "t.buying": {
+      "npcPassing": false,
+      "npcPhase": [
+        "arriving",
+        "queueing",
+        "ordering",
+        "waiting"
+      ]
+    },
+    "t.served": {
+      "npcServed": true
+    },
+    "t.cutLine": {
+      "npcCutLine": true
+    },
+    "t.blocking": {
+      "npcBlocking": true
+    },
+    "t.glanced": {
+      "npcGlanced": true
+    },
+    "t.lookingInside": {
+      "npcLookingInside": true
+    },
+    "t.inShade": {
+      "npcInShade": true
+    },
+    "t.onPhone": {
+      "npcOnPhone": true
+    },
+    "t.eating": {
+      "npcEating": true
+    },
+    "t.hasOrder": {
+      "npcHasOrder": true
+    },
+    "t.impatient": {
+      "npcWaitRatio": ">=60"
+    },
+    "t.named": {
+      "npcNamed": true
+    },
+    "t.purpose": {
+      "npcPurpose": "$"
+    },
+    "t.state": {
+      "npcState": "$"
+    },
+    "t.tier": {
+      "seasonTier": "$"
+    },
+    "t.practice": {
+      "npcPractice": "$"
+    },
+    "c.angered": {
+      "convoAngered": true
+    },
+    "c.saidTone": {
+      "convoTone": "$"
+    },
+    "c.warmth": {
+      "convoWarmth": ">=$"
+    },
+    "c.openedBy": {
+      "convoOpenedBy": "$"
+    },
+    "v.gaveTea": {
+      "visitGaveTea": true
+    },
+    "v.gaveFood": {
+      "visitGaveFood": true
+    },
+    "v.apologised": {
+      "visitApologised": true
+    },
+    "v.promised": {
+      "visitPromised": "$"
+    },
+    "v.inviteRefused": {
+      "visitInviteRefused": true
+    },
+    "d.metToday": {
+      "dayMetToday": true
+    },
+    "d.toldMe": {
+      "dayToldMe": true
+    },
+    "m.visits": {
+      "seasonVisits": ">=$"
+    },
+    "m.tier": {
+      "seasonTier": "$"
+    },
+    "m.remembers": {
+      "seasonRemembers": true
+    },
+    "w.hot": {
+      "worldHot": true
+    },
+    "w.rain": {
+      "worldRain": true
+    },
+    "w.peak": {
+      "worldPeak": true
+    },
+    "w.band": {
+      "worldBand": "$"
+    },
+    "w.shadeFree": {
+      "worldShadeFree": true
+    },
+    "w.ovenHot": {
+      "worldOvenHot": true
+    },
+    "w.queue": {
+      "queueLength": ">=$"
+    },
+    "w.day": {
+      "day": "<=$"
+    },
+    "p.stockAtLeast": {
+      "playerStock": ">=$"
+    },
+    "w.seatFree": {
+      "worldSeatFree": true
+    },
+    "t.sitting": {
+      "npcSitting": true
+    }
+  },
+  "silentOk": [
+    "SMALLTALK"
+  ],
   "signature": {
     "_note": "R014 — tình huống đặc trưng mỗi NPC PHẢI có dòng riêng (CANON §11 đòn bẩy 2).",
-    "BA_BAY": ["SMALLTALK"],
-    "CHI_HANH": ["ORDER"],
-    "CHU_KIET": ["SMALLTALK"]
+    "BA_BAY": [
+      "SMALLTALK"
+    ],
+    "CHI_HANH": [
+      "ORDER"
+    ],
+    "CHU_KIET": [
+      "SMALLTALK"
+    ]
   }
 }

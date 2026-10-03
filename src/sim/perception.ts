@@ -113,6 +113,13 @@ export type Observation = {
   peak: ObsState;
   /** Lúc kích thích tắt — `null` khi còn sống. Rò chỉ bắt đầu sau `diedAt + HOLD_TIME`. */
   diedAt: number | null;
+  /**
+   * Chép lại từ kích thích: ổ CHÁY (có mùi) hay chỉ ổ NGUỘI. `BURNT_OR_COLD` là một
+   * `StimId` gánh hai chuyện khác hẳn nhau, mà câu thoại thì không được gánh chung —
+   * người ta không kêu "khét" trước một ổ bánh nguội. Giữ ở đây vì tới lúc chọn câu
+   * (`Service.noticeBark`) thì kích thích đã có thể tắt rồi, chỉ còn Observation.
+   */
+  smell?: boolean;
 };
 
 /** Thứ che tầm nhìn — P1-02 §2.6. Nhân dồn, sàn 0,15. */
@@ -178,7 +185,7 @@ export function observe(o: Observer, active: readonly ActiveStim[], now: number,
     if (!obs) {
       // Lười cấp phát (P1-02 §2.3): không đủ để ai để ý thì khỏi tạo.
       if (f.rate * 100 / o.traitMul < 0.5) continue;
-      obs = { id: stim.id, slot: stim.slot, certainty: 0, peak: "UNAWARE", diedAt: null };
+      obs = { id: stim.id, slot: stim.slot, certainty: 0, peak: "UNAWARE", diedAt: null, smell: stim.smell };
       o.observations.set(stim.key, obs);
     }
     if (obs.peak === "CONFIRMED") continue;               // đã chốt

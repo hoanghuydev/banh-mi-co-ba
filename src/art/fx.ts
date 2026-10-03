@@ -2,18 +2,51 @@ import Phaser from "phaser";
 import { TW, TH } from "../world/iso";
 import { SHADOW } from "./palette";
 
-/** Hiệu ứng nhỏ: bóng đổ, vòng sáng "đang với tới được", ruồi bu thớt, bụi lau thớt. */
-export const FX = { shadow: "shadow", ring: "ring", fly: "fly", puff: "puff" } as const;
+/**
+ * Hiệu ứng nhỏ: bóng đổ, vòng sáng "đang với tới được", ruồi bu thớt, bụi lau thớt, mũi tên "cô Ba
+ * đây", vệt mưa + vòng nước bắn.
+ *
+ * Ngân sách là 4–6 TEXTURE HẠT cho cả lửa/khói/mưa/hơi nước/bụi; đang dùng ba (`puff`, `drop`,
+ * `ripple`), và cả ba đều vẽ TRẮNG rồi để emitter `tint` nên thêm một tông mới không tốn gì.
+ */
+export const FX = {
+  shadow: "shadow", ring: "ring", fly: "fly", puff: "puff", you: "you",
+  drop: "drop", ripple: "ripple",
+} as const;
 
 /**
- * Bề ngang con ruồi, tính bằng px thiết kế.
+ * Mũi tên chỉ xuống trên đầu người chơi — trong quán lúc đông, cô Ba là một người mặc đồ thường
+ * đứng giữa mười người mặc đồ thường.
  *
- * KHÔNG phải cỡ thật: ở đây mặt thớt rộng chừng 46 px cho ~40 cm, nên một con ruồi
- * đúng tỉ lệ sẽ chưa tới 1 px — tức vô hình, mà P1-02 §2.10 đòi độ bẩn phải NHÌN
- * THẤY ĐƯỢC. Mấy mẩu vụn bánh cạnh nó cũng đã phóng chừng mười lần rồi.
+ * ⚠️ TAM GIÁC ĐẶC chứ không phải một chữ: trên đầu khách đã có `?` và `!`, thêm một chữ nữa là
+ * người chơi phải ĐỌC mới biết dấu nào của ai. Một khối đặc, màu ấm, đọc được bằng đuôi mắt.
+ */
+const YOU_W = 18, YOU_H = 13, YOU_PAD = 3;
+/** Viền sậm bọc quanh: nền quán là gạch men trắng, mũi tên sáng trơn sẽ tan vào đó. */
+const YOU_INK = 0x2b2f31;
+/** Vàng nắng, cùng họ với lõi vòng sáng dưới chân trạm — không thêm màu mới. */
+const YOU_FILL = 0xffe9a8;
+
+/**
+ * VÒNG "ĐANG VỚI TỚI ĐƯỢC" dưới chân trạm — ba lớp, xem `buildFx`.
  *
- * 7 px là mức đọc ra cánh và thân ở zoom của cảnh quán mà vẫn còn bé hơn bàn tay cô Ba.
- * Đây là con số để CHỈNH BẰNG MẮT — đổi ở đây là đổi mọi chỗ.
+ * `RING_PAD` phải đủ cho nét ngoài cùng (dày 6 ⇒ thò ra 3 px) cộng một px nghỉ, không thì nét bọc
+ * bị xén cụt ở đỉnh và đáy ê-líp thành hai cái "sừng". Đệm ĐỐI XỨNG nên tâm texture vẫn là tâm ô.
+ */
+const RING_PAD = 4;
+/** Mực bọc ngoài — cùng màu với viền mũi tên, để hai chỉ báo nói cùng một giọng. */
+const RING_INK = YOU_INK;
+/** Thân vòng: hổ phách đậm, đủ no màu để không tan vào gạch men trắng. */
+const RING_EDGE = 0xffa726;
+/** Lõi sáng mảnh — thứ làm nó đọc ra là ĐÈN chứ không phải một vệt sơn. */
+const RING_CORE = 0xfff0c2;
+
+/**
+ * Bề ngang con ruồi, px thiết kế — KHÔNG phải cỡ thật: mặt thớt rộng ~46 px cho ~40 cm nên một con
+ * ruồi đúng tỉ lệ sẽ chưa tới 1 px, tức vô hình, mà độ bẩn thì phải NHÌN THẤY ĐƯỢC.
+ *
+ * 7 px là mức đọc ra cánh và thân ở zoom của cảnh quán mà vẫn bé hơn bàn tay cô Ba. Con số để
+ * CHỈNH BẰNG MẮT.
  */
 export const FLY_W = 7;
 
@@ -34,6 +67,31 @@ const PUFF_PX = 32;
  */
 const PUFF_LAYERS = 14;
 
+/**
+ * VỆT MƯA. Hẹp và dài: một giọt rơi nhanh hơn mắt bắt kịp nên thứ người ta thật sự thấy là VỆT
+ * NHOÈ của nó.
+ *
+ * Đậm ở ĐÁY, nhạt dần lên ĐỈNH — đáy là chỗ giọt đang ở, phần trên là cái đuôi nó vừa đi qua. Vẽ
+ * đều một màu thì ra cái que; vẽ đậm ở đỉnh thì vệt đi ngược chiều rơi.
+ *
+ * 4 × 28 là cỡ NƯỚNG chứ không phải cỡ hiện (emitter thu ngang còn ~0,5 và kéo dọc theo quãng
+ * rơi) — nướng dư rồi thu lại thì rìa mới mượt.
+ */
+const DROP_W = 4;
+/** Cao của texture vệt mưa. `ui/stall/Rain` chia độ dài vệt cho nó ra `scaleY`. */
+export const DROP_H = 28;
+
+/**
+ * VÒNG NƯỚC BẮN lúc giọt chạm đất. Hình THOI DẸT chứ không tròn: mặt đất trong iso là mặt phẳng
+ * nghiêng 2:1, nên vẽ tròn là cái vòng dựng đứng lên khỏi mặt đường.
+ *
+ * Hai nét chồng nhau — một nét DÀY mờ (nước loang) bọc một nét MẢNH rõ (mép sóng): một nét đơn
+ * phóng to ra thành cái vòng kim loại, hai nét mới ra chất nước.
+ */
+/** Bề ngang texture vòng nước — `ui/stall/Rain` cần nó để tính cỡ vòng lúc loang hết. */
+export const RIPPLE_W = 32;
+const RIPPLE_H = 16;
+
 export function buildFx(scene: Phaser.Scene) {
   // Bóng đổ: ê-líp dẹt bằng đúng sải chân, đặt ngay TẠI điểm chạm đất.
   // Bóng to và rơi thấp là thứ làm nhân vật trông lơ lửng.
@@ -43,12 +101,23 @@ export function buildFx(scene: Phaser.Scene) {
   g1.generateTexture(FX.shadow, 28, 12);
   g1.destroy();
 
-  // Vòng dưới chân trạm: phản hồi điều khiển, không phải trang trí —
-  // người chơi phải biết mình đang với tới cái gì mà không cần đoán.
+  // Vòng dưới chân trạm: phản hồi điều khiển, không phải trang trí.
+  //
+  // BA LỚP, không một nét. Một nét vàng nhạt gần như biến mất trên nền gạch men trắng của quầy —
+  // và đó không phải thứ sửa được bằng cách tăng alpha, vấn đề là ĐỘ TƯƠNG PHẢN với nền.
+  //
+  // Nên: nét MỰC SẬM bọc ngoài (đọc trên nền sáng) · nét HỔ PHÁCH đậm ở giữa (đọc trên nền sậm) ·
+  // lõi sáng mảnh làm nó "có đèn". Bọc mực là cùng mẹo mũi tên "cô Ba đây" dùng ngay dưới.
   const g2 = scene.make.graphics({ x: 0, y: 0 }, false);
-  g2.lineStyle(2.5, 0xffe9a8, 0.95);
-  g2.strokeEllipse(TW / 2 + 1, TH / 2 + 1, TW - 12, TH - 6);
-  g2.generateTexture(FX.ring, TW + 2, TH + 2);
+  const cx = (TW + RING_PAD * 2) / 2, cy = (TH + RING_PAD * 2) / 2;
+  const rw = TW - 12, rh = TH - 6;
+  g2.lineStyle(6, RING_INK, 0.5);
+  g2.strokeEllipse(cx, cy, rw, rh);
+  g2.lineStyle(3.5, RING_EDGE, 1);
+  g2.strokeEllipse(cx, cy, rw, rh);
+  g2.lineStyle(1.5, RING_CORE, 1);
+  g2.strokeEllipse(cx, cy, rw, rh);
+  g2.generateTexture(FX.ring, TW + RING_PAD * 2, TH + RING_PAD * 2);
   g2.destroy();
 
   // Ruồi bản vẽ code — đúng cái chấm đen trước giờ. `art/photo.ts` đè ảnh thật lên
@@ -58,6 +127,19 @@ export function buildFx(scene: Phaser.Scene) {
   g3.fillCircle(FLY_BOX / 2, FLY_BOX / 2, 1.8);
   g3.generateTexture(FX.fly, FLY_BOX, FLY_BOX);
   g3.destroy();
+
+  // Mũi tên "cô Ba đây". Vẽ viền bằng một tam giác TO HƠN nằm dưới, không dùng
+  // `lineStyle` — nét viền của Graphics bị cắt ngang ở mỗi đỉnh nhọn, ra ba cái sừng.
+  const g5 = scene.make.graphics({ x: 0, y: 0 }, false);
+  const w = YOU_W + YOU_PAD * 2, h = YOU_H + YOU_PAD * 2;
+  const tri = (cx: number, top: number, halfW: number, height: number) =>
+    [cx - halfW, top, cx + halfW, top, cx, top + height] as const;
+  g5.fillStyle(YOU_INK, 1);
+  g5.fillTriangle(...tri(w / 2, YOU_PAD - 2, YOU_W / 2 + 2, YOU_H + 4));
+  g5.fillStyle(YOU_FILL, 1);
+  g5.fillTriangle(...tri(w / 2, YOU_PAD, YOU_W / 2, YOU_H));
+  g5.generateTexture(FX.you, w, h);
+  g5.destroy();
 
   // Hạt bụi lau thớt. Vẽ TRẮNG để `tint` bên emitter quyết màu — một texture xài cho
   // mọi tông bụi, khỏi nướng thêm cái nào.
@@ -69,4 +151,28 @@ export function buildFx(scene: Phaser.Scene) {
   }
   g4.generateTexture(FX.puff, PUFF_PX, PUFF_PX);
   g4.destroy();
+
+  // Vệt mưa: từng lát 1 px, alpha theo bình phương độ cao -> đuôi tan dần chứ không
+  // cắt ngang. Đầu giọt là một chấm tròn ở đáy, để lúc vệt bị thu ngắn (mưa xa) nó
+  // vẫn còn đọc ra là một giọt nước chứ không thành một dấu gạch.
+  const g6 = scene.make.graphics({ x: 0, y: 0 }, false);
+  for (let i = 0; i < DROP_H; i++) {
+    const t = i / (DROP_H - 1);                        // 0 đỉnh -> 1 đáy
+    g6.fillStyle(0xffffff, 0.12 + 0.88 * t * t);
+    g6.fillRect(1, i, DROP_W - 2, 1);
+  }
+  g6.fillStyle(0xffffff, 1);
+  g6.fillCircle(DROP_W / 2, DROP_H - DROP_W / 2, DROP_W / 2);
+  g6.generateTexture(FX.drop, DROP_W, DROP_H);
+  g6.destroy();
+
+  // Vòng nước bắn. Chừa 1 px lề mỗi bên cho nét dày khỏi bị xén cụt ở bốn mép.
+  const g7 = scene.make.graphics({ x: 0, y: 0 }, false);
+  const rcx = RIPPLE_W / 2, rcy = RIPPLE_H / 2;
+  g7.lineStyle(3, 0xffffff, 0.35);
+  g7.strokeEllipse(rcx, rcy, RIPPLE_W - 4, RIPPLE_H - 4);
+  g7.lineStyle(1.2, 0xffffff, 0.95);
+  g7.strokeEllipse(rcx, rcy, RIPPLE_W - 4, RIPPLE_H - 4);
+  g7.generateTexture(FX.ripple, RIPPLE_W, RIPPLE_H);
+  g7.destroy();
 }

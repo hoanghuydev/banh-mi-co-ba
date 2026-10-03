@@ -86,7 +86,7 @@ export class DayScene extends Phaser.Scene {
     const w = ctx.world;
     ctx.rng.beginDay(w.saveId, w.progress.dayIndex);
     ctx.clock.reset(DAY_START_MIN);
-    w.progress.today = { served: 0, lost: 0, revenue: 0 };
+    w.progress.today = { served: 0, lost: 0, revenue: 0, talksDeep: 0, talkOffers: 0 };
     w.progress.scene = "Market";
     // P1-01 §2.6: sáng nào cũng chia lại phần cho 3 preset.
     w.stall.presets = refillPresets(w.stall.presets as never);
@@ -161,6 +161,20 @@ export class DayScene extends Phaser.Scene {
     bedtime(w);
     settleNight(w, bus);
     eveningCounting(w);                       // ghi lại dòng sổ cái SAU khi đã trả nghĩa vụ
+  }
+
+  /**
+   * Chỉ cho dev (`day.weather`): dựng lại cảnh quán TẠI CHỖ, giữ nguyên giờ và state.
+   *
+   * Phải đi qua `open()` chứ không gọi `scene.restart()` từ ngoài: `StallScene.init`
+   * cần `ctx` và `day` trong `data`, mà `restart()` thì chỉ mang theo đúng cái người
+   * gọi đưa — thiếu hai thứ đó là cảnh quán chết ngay ở dòng đầu `init`.
+   *
+   * Dùng để xem thử nền nướng lại (ngày mưa: mặt đường ướt, tắt vạt nắng) mà không
+   * phải chơi tới ngày 6.
+   */
+  devReopenStall() {
+    this.open("stall", { resume: true });
   }
 
   /** Lưu ngay rồi về sảnh. */

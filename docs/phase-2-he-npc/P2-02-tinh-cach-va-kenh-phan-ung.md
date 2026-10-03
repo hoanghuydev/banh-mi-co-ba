@@ -46,7 +46,7 @@ type Personality = {
 | | | | Mật độ rule (P2-01 §2.11) | Họ **có câu để nói** về những thứ người khác bỏ qua |
 | **`nongTinh`** | **Cường độ phản ứng** | `intensityMul = 0.5 + 1.0 × nongTinh` → chọn tầng biểu cảm I1/I2/I3 và âm lượng bark | `reactionDelay` (§6.4): nóng tính phản ứng **sớm hơn** | **To hơn, nhanh hơn, người khác quay lại nhìn.** `witnessCount` tăng |
 | | | `barkVolume = 0.4 + 0.6 × nongTinh` | | Ông Hải sau 10h làm cả hàng chờ ngoái đầu |
-| **`deTha`** | **Trí nhớ** (CANON §12) | `decayRate = base × (0.4 + 1.6 × deTha)` — `base` = −2/−10/−20 theo bucket | Ngưỡng promote short→long: `deTha` cao thì **khó promote** | **Bao nhiêu ngày sau họ còn nhắc.** Chị Lan nhắc sau 9 ngày; chú Tư quên sau 1 ngày |
+| **`deTha`** | **Trí nhớ** (CANON §12) | `decayRate = base × (0.4 + 1.6 × deTha)` ⚠️ đây là một **TỐC ĐỘ**; chỗ nào đem nó nhân vào một **THỜI LƯỢNG** thì phải NGHỊCH ĐẢO — xem `P2-03 §2.4`, một bản dựng đã gắn ngược chiều ở đúng chỗ đó — `base` = −2/−10/−20 theo bucket | Ngưỡng promote short→long: `deTha` cao thì **khó promote** | **Bao nhiêu ngày sau họ còn nhắc.** Chị Lan nhắc sau 9 ngày; chú Tư quên sau 1 ngày |
 | | | Sàn theo bucket: `points = max(points − decay, floor_of_tier)` | | |
 | **`thanThien`** | **Tốc độ quan hệ** | `relGain = base × (0.5 + 1.0 × thanThien)` | | Bao nhiêu ngày để lên `Friend`. Bé Su (1.0) lên sau ~4 lần; chị Lan (0.3) cần ~14 lần |
 | | **Xác suất lan tin** (CANON §12) | `pGossip = 0.15 + 0.55 × thanThien`, nhân thêm `×1.35` nếu tin tốt (CANON §12.5) | Số hop tối đa của tin từ người này | Họ **kể cho ai đó** ở góc hẻm — và bạn **nghe lỏm được** (CANON §12.4) |

@@ -42,6 +42,44 @@
         "Thôi cũng được. Mà đâu phải thứ con nói.",
         "Con bỏ nhầm rồi."
       ]
+    },
+    {
+      "id": "chaoNhau",
+      "tier": 3,
+      "vars": [],
+      "_note": "P2-06 §2.11(A) — hai người đi ngang gặp nhau giữa đường thì chào nhau một câu rồi đi tiếp. KHÔNG mang thông tin gì: không claim, không tên người, không chuyện của ai. Đây là cái NỀN, và nền thì phải miễn phí — nghe lỏm được, bỏ qua không mất gì (luật L15, và CANON §12 RB4 về việc giữ hai chấm `..` ở góc hẻm đừng bị loãng). Mọi câu phải đọc được với CẢ TÁM dáng người: đừng nhắc tuổi, nghề, giới.",
+      "variants": [
+        "Đi đâu đó?",
+        "Ăn gì chưa đó?",
+        "Nắng dữ ha.",
+        "Lâu quá hổng thấy mặt.",
+        "Đi chợ hả?",
+        "Ủa. Đi lối này chi vậy?",
+        "Khoẻ hông?",
+        "Nay rảnh dữ ta.",
+        "Về sớm dữ.",
+        "Trời này đi đứng cực thấy mồ.",
+        "Chút ghé chơi nghen.",
+        "Chèn ơi. Lâu quá."
+      ]
+    },
+    {
+      "id": "chaoDap",
+      "tier": 3,
+      "vars": [],
+      "_note": "P2-06 §2.11(A) — câu đáp, nói sau câu chào ~1,2 giây. Ngắn hơn câu chào: ngoài đời người ta đáp gọn rồi ai đi đường nấy. ⚠️ HAI TÚI RÚT ĐỘC LẬP (`greetPassers` lấy `chaoNhau` cho người này, `chaoDap` cho người kia, không ghép cặp). Nên MỌI câu đáp phải theo được BẤT KỲ câu chào nào — đừng viết câu chỉ trả lời đúng một câu hỏi. \"Khoẻ. Còn đằng đó?\" đã bị thay vì nó trả lời một câu hỏi sức khoẻ có thể chưa ai hỏi.",
+      "variants": [
+        "Đi chút hà.",
+        "Rồi rồi.",
+        "Nắng muốn xỉu.",
+        "Ờ hen.",
+        "Có chút chuyện.",
+        "Bận quá trời.",
+        "Thường thôi hà.",
+        "Cũng vậy hà.",
+        "Ừa. Thôi đi nghen.",
+        "Chút nữa ghé."
+      ]
     }
   ]
 }

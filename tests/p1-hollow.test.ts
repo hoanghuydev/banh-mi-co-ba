@@ -155,7 +155,19 @@ test("ổ chưa có nhân KHÔNG BAO GIỜ im — túi im lặng 7/20 không đ�
   const bagId = `silence:${c.memKey}`;
   h.ctx.world.shuffleBags[bagId] = { o: [0, 1, 2, 3, 4, 5, 6], l: -1, r: 1, t: 0 };
   h.service.serveDish(BARE);
-  for (let i = 0; i < 90; i++) h.step();              // cho câu thoại ra khỏi hàng đợi
+  /*
+   * 150 frame (5 s), không phải 90.
+   *
+   * Người này vừa gọi món xong là bị đưa ổ trống NGAY trong cùng một nhịp — chuyện chỉ
+   * có trong test, nhưng nó chạm đúng luật xếp hàng của `Service.speechBlocked`: câu
+   * mới đợi bong bóng câu trước (ở đây là câu gọi món, dài gần 6 s) tới trần
+   * `HOLD_MAX_SEC` = 3 s rồi mới chen lên. Cộng nhịp trễ của `say()` là ~3,4 s.
+   *
+   * Bài này đo CÓ NÓI HAY KHÔNG, không đo nói nhanh cỡ nào — nên chỗ cần nới là cái
+   * cửa sổ đo, không phải cái trần. Ngoài đời người chơi mất cả chục giây kẹp xong một
+   * ổ, lúc đó bong bóng gọi món đã tắt từ lâu và câu này ra ngay.
+   */
+  for (let i = 0; i < 150; i++) h.step();             // cho câu thoại ra khỏi hàng đợi
 
   const said = pick(ev, "dialog:spoken").map((p) => p.text as string);
   assert.ok(said.some(matches), `túi toàn vé im mà vẫn phải nói — ${JSON.stringify(said)}`);

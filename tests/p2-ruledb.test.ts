@@ -130,3 +130,57 @@ test("ngày chơi thật (headless) vẫn tất định và có thoại từ rul
   assert.deepEqual(a.spoken, b.spoken);
   assert.ok(Array.isArray(a.ds.appliedContext));
 });
+
+/**
+ * `BURNT_OR_COLD` gánh HAI chuyện — ổ cháy trong lò và ổ nguội lúc đưa — và trước đây
+ * cả hai cùng rơi vào một nhúm rule nói "khét". Người chơi đưa một ổ chỉ nguội, nhìn
+ * quanh không có khói nào, mà cả hàng kêu "khét lẹt": lời thoại tố cáo một thứ không
+ * có trên màn hình. `eventBurnt` là chỗ duy nhất tách hai nhánh đó.
+ */
+test("ổ NGUỘI không bao giờ lôi ra được một câu 'khét' — eventBurnt tách hai nhánh", () => {
+  const db = ruleDb();
+  const khet = /khét|cháy|khói/i;
+  const cold = new Query().set("eventId", "BURNT_OR_COLD").set("eventBurnt", false).set("obsState", "NOTICED");
+  const burnt = new Query().set("eventId", "BURNT_OR_COLD").set("eventBurnt", true).set("obsState", "NOTICED");
+
+  for (const npc of ["KHACH_VANG_LAI", "ONG_HAI", "THAY_PHUC", "ANH_DUNG", "CHI_HANH", "BE_SU", "BA_SAU", "CO_MAI", "CHU_TU", "CHU_KIET"]) {
+    cold.set("npcId", npc).set("hour", 800);
+    burnt.set("npcId", npc).set("hour", 800);
+    // Mọi hạt giống: rule thắng rồi mới tới chuyện bốc câu nào trong `say`.
+    for (let seed = 1; seed <= 8; seed++) {
+      const r = db.select("NOTICE_EVENT", cold, st(), 0, new Rng(seed));
+      assert.ok(r, `${npc}: ổ nguội mà không rule nào khớp`);
+      for (const s of r!.say) assert.ok(!khet.test(s), `${npc}: ổ nguội mà nói "${s}" (rule ${r!.idName})`);
+    }
+    // …và nhánh cháy vẫn còn nguyên: người nào vốn kêu khét thì vẫn kêu.
+    const b = db.select("NOTICE_EVENT", burnt, st(), 0, new Rng(1));
+    assert.ok(b, `${npc}: ổ cháy mà không rule nào khớp`);
+  }
+});
+
+test("rule im lặng của Anh Bảo vẫn hơn điểm rule generic ở CẢ hai nhánh cháy/nguội", () => {
+  const db = ruleDb();
+  for (const burnt of [true, false]) {
+    const q = new Query().set("npcId", "ANH_BAO").set("eventId", "BURNT_OR_COLD").set("eventBurnt", burnt).set("obsState", "NOTICED");
+    for (let seed = 1; seed <= 8; seed++) {
+      const r = db.select("NOTICE_EVENT", q, st(), 0, new Rng(seed));
+      assert.ok(r?.silent, `eventBurnt=${burnt} hạt ${seed}: Bảo nói "${r?.say[0]}" (rule ${r?.idName})`);
+    }
+  }
+});
+
+/**
+ * Hai latch RIÊNG: kêu về ổ cháy xong không được bịt miệng lời chê ổ nguội ngay sau đó
+ * — hai lỗi khác nhau, người ta nhắc cả hai.
+ */
+test("ctxBarkT1_KHET và ctxBarkT1_NGUOI không khoá chéo nhau", () => {
+  const db = ruleDb();
+  const q = new Query().set("eventId", "BURNT_OR_COLD").set("obsState", "NOTICED").set("npcId", "KHACH_VANG_LAI");
+  assert.equal(db.select("NOTICE_EVENT", q.set("eventBurnt", true), st(), 0, new Rng(1))?.idName, "gen.burnt.t1");
+  q.set("ctxBarkT1_KHET", true);                                   // vừa kêu "khét"
+  assert.equal(db.select("NOTICE_EVENT", q, st(), 0, new Rng(1))?.idName, "gen.burnt.t2");
+  // …ổ nguội ngay sau đó vẫn được nói tier-1, vì nó đếm bằng latch của chính nó
+  assert.equal(db.select("NOTICE_EVENT", q.set("eventBurnt", false), st(), 0, new Rng(1))?.idName, "gen.cold.t1");
+  q.set("ctxBarkT1_NGUOI", true);
+  assert.equal(db.select("NOTICE_EVENT", q, st(), 0, new Rng(1))?.idName, "gen.cold.t2");
+});

@@ -5,6 +5,8 @@
       "id": "sau.doi",
       "npc": "BA_SAU",
       "topic": "doi",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
       "when": {
         "day": [
           3,
@@ -56,7 +58,6 @@
                   "say": "Bà dạy con nấu với bà.",
                   "tone": "AM",
                   "rel": 3,
-                  "flag": "sauDayNau",
                   "reply": "Trời. Con bán bánh mì mà đòi nấu tàu hũ. Thôi để tui chỉ.",
                   "mood": "CUOI"
                 },
@@ -128,12 +129,20 @@
           "mood": "BUC"
         }
       ],
-      "openMood": "CUOI"
+      "openMood": "CUOI",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "DOI_BANH"
+      ]
     },
     {
       "id": "sau.xetai",
       "npc": "BA_SAU",
       "topic": "xetai",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
       "when": {
         "day": [
           15,
@@ -247,6 +256,22 @@
               "reply": "Tui nói rồi. Nó dạ dạ rồi nó chạy y cũ."
             },
             {
+              "say": "Ảnh nhờ con nói với bà là ảnh hổng có ý gì đâu bà.",
+              "tone": "AM",
+              "rel": 3,
+              "need": "dungNhoNoi",
+              "reply": "…Nó nhờ con nói hả. Vậy là nó có để bụng. Tui mừng chớ giận gì.",
+              "mood": "NGAC_NHIEN"
+            },
+            {
+              "say": "Ảnh có qua hỏi bà chuyện vô cua hông bà?",
+              "tone": "AM",
+              "rel": 3,
+              "need": "dungHoiSau",
+              "reply": "Có! Nó chống nạnh nó hỏi tui. Tui chỉ hai câu, nó gật gù rồi nó chạy.",
+              "mood": "CUOI_TUOI"
+            },
+            {
               "say": "Bà rành ghê bà.",
               "tone": "AM",
               "rel": 3,
@@ -262,14 +287,38 @@
           "tone": "LANH",
           "rel": -2,
           "reply": "Ờ ờ. Tui đi bán đây."
+        },
+        {
+          "say": "Bà uống miếng trà rồi kể tiếp đi bà.",
+          "tone": "AM",
+          "reply": "Ờ. Để tui thở cái đã. Chuyện xe tải kể cả buổi hổng hết.",
+          "mood": "THUONG",
+          "onKept": {
+            "rel": 2
+          },
+          "act": {
+            "kind": "OFFER_TEA",
+            "forSec": 8
+          },
+          "need": [
+            "p.hasTea",
+            "!v.gaveTea"
+          ]
         }
       ],
-      "openMood": "CUOI_TUOI"
+      "openMood": "CUOI_TUOI",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG"
+      ]
     },
     {
       "id": "sau.omcua",
       "npc": "BA_SAU",
       "topic": "omcua",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
       "when": {
         "day": [
           10,
@@ -396,7 +445,6 @@
                   "say": "Vậy bà truyền lại cho thằng nhỏ đi bà.",
                   "tone": "AM",
                   "rel": 3,
-                  "flag": "sauTruyenLai",
                   "reply": "…Ờ. Ờ ha. Tui hổng nghĩ ra.",
                   "mood": "CUOI"
                 },
@@ -437,12 +485,19 @@
           "mood": "BUC"
         }
       ],
-      "openMood": "BUC"
+      "openMood": "BUC",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG"
+      ]
     },
     {
       "id": "sau.ganh",
       "npc": "BA_SAU",
       "topic": "ganh",
+      "source": "NPC_ONLY",
+      "depth": "FULL",
       "when": {
         "day": [
           6,
@@ -486,7 +541,6 @@
           "tone": "AM",
           "rel": 4,
           "calm": 28,
-          "flag": "sauNgoiNghi",
           "mem": {
             "kind": "CARED_FOR_THEM",
             "intensity": 55
@@ -545,7 +599,10 @@
               "calm": 26,
               "reply": "Ờ… Ờ. Mát ruột. Cảm ơn con nghen.",
               "ref": "ket",
-              "mood": "THUONG"
+              "mood": "THUONG",
+              "while": [
+                "p.hasTea"
+              ]
             },
             {
               "say": "Dạ bà ngồi lẹ rồi đi nghen bà, con còn bán.",
@@ -554,7 +611,15 @@
               "ref": "ket"
             }
           ],
-          "mood": "THUONG"
+          "mood": "THUONG",
+          "needEquip": "GHE_BAN",
+          "act": {
+            "kind": "THEY_SIT",
+            "forSec": 40
+          },
+          "while": [
+            "w.seatFree"
+          ]
         },
         {
           "say": "Vai bà đau lâu chưa bà?",
@@ -619,18 +684,36 @@
             "intensity": 55
           },
           "act": {
-            "kind": "STEP_ASIDE"
+            "kind": "STEP_ASIDE",
+            "forSec": "TOI_LUOT"
           },
           "reply": "…Ờ. Tui dời. Tui xin lỗi con.",
-          "mood": "BUC"
+          "mood": "BUC",
+          "while": [
+            "t.blocking"
+          ]
+        },
+        {
+          "say": "Bà để con bưng gánh vô trong cho. Bà đứng nghỉ tay chút.",
+          "tone": "AM",
+          "rel": 3,
+          "calm": 24,
+          "reply": "Ờ… Ờ. Nhẹ cả vai. Cảm ơn con nghen.",
+          "mood": "THUONG"
         }
       ],
-      "openMood": "MET"
+      "openMood": "MET",
+      "practice": [
+        "QUAY_VANG",
+        "XEP_HANG"
+      ]
     },
     {
       "id": "sau.rao",
       "npc": "BA_SAU",
       "topic": "rao",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
       "when": {
         "day": [
           5,
@@ -673,7 +756,6 @@
               "say": "Bà dạy con rao đi bà.",
               "tone": "AM",
               "rel": 4,
-              "flag": "sauDayRao",
               "mem": {
                 "kind": "CARED_FOR_THEM",
                 "intensity": 55
@@ -802,12 +884,21 @@
           "mood": "BUC"
         }
       ],
-      "openMood": "NGHIEM"
+      "openMood": "NGHIEM",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "NAN_LAI",
+        "DOI_BANH"
+      ]
     },
     {
       "id": "sau.chonmoi",
       "npc": "BA_SAU",
       "topic": "chonmoi",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
       "when": {
         "day": [
           28,
@@ -829,12 +920,27 @@
             "say": "Bà nhớ ghé con nghen bà. Bà hứa nghen.",
             "tone": "AM",
             "rel": 4,
-            "flag": "sauHuaGhe",
             "mem": {
               "kind": "CARED_FOR_THEM",
               "intensity": 65
             },
             "reply": "…Ờ. Tui hứa. Tui có hứa với ai bao giờ đâu, mà tui hứa với con.",
+            "mood": "RUNG_RUNG"
+          },
+          {
+            "say": "Nồi bà gửi bên con, mai bà còn gửi nữa hông bà?",
+            "tone": "AM",
+            "rel": 3,
+            "need": "sauGuiNoi",
+            "reply": "…Ra ngoài đó tui ngồi một chỗ, hổng gửi ai nữa. Tui quen gửi con mất rồi.",
+            "mood": "RUNG_RUNG"
+          },
+          {
+            "say": "Bà đi rồi tám giờ rưỡi hẻm này im re đó bà.",
+            "tone": "AM",
+            "rel": 3,
+            "need": "sauDongHo",
+            "reply": "…Thôi con. Nói nữa tui gánh hổng nổi tới chợ đâu.",
             "mood": "RUNG_RUNG"
           },
           {
@@ -863,7 +969,6 @@
                   "say": "Vậy con đi bộ ra chợ mua bà vậy.",
                   "tone": "AM",
                   "rel": 4,
-                  "flag": "sauRaCho",
                   "mem": {
                     "kind": "CARED_FOR_THEM",
                     "intensity": 65
@@ -958,9 +1063,331 @@
           },
           "reply": "…Ờ. Ờ con nói phải. Thôi tui đi.",
           "mood": "BUON"
+        },
+        {
+          "say": "Để con bưng gánh vô trong cho bà ngồi nói chuyện bà.",
+          "tone": "AM",
+          "reply": "…Ờ. Con khiêng được hả. Nhẹ cả vai luôn.",
+          "mood": "THUONG",
+          "onKept": {
+            "rel": 3
+          },
+          "act": {
+            "kind": "PROMISE_DEED",
+            "deed": "BUNG_GANH"
+          }
         }
       ],
-      "openMood": "BUON"
+      "openMood": "BUON",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG"
+      ]
+    },
+    {
+      "id": "sau.moiloi",
+      "npc": "BA_SAU",
+      "topic": "moiloi",
+      "source": "PLAYER_ONLY",
+      "depth": "SHORT",
+      "weight": 25,
+      "when": {
+        "day": [
+          4,
+          34
+        ]
+      },
+      "opener": "Ờ. Con kêu tui hả con.",
+      "openMood": "NGAC_NHIEN",
+      "tree": [
+        {
+          "say": "Gánh nặng hông bà? Để con khiêng xuống cho.",
+          "tone": "AM",
+          "rel": 2,
+          "calm": 10,
+          "reply": "Trời. …Ờ, con khiêng được hả. Nhẹ cả vai luôn.",
+          "mood": "THUONG",
+          "then": [
+            {
+              "say": "Nồi này bà nấu từ mấy giờ vậy bà?",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Ba giờ. Nhen củi, nấu gừng, lọc đậu. Tới sáu giờ là tui ra đường.",
+              "mood": "NGHIEM"
+            },
+            {
+              "say": "Bà gánh vầy mỗi ngày mấy ký bà?",
+              "tone": "THANG",
+              "rel": 1,
+              "reply": "Hai đầu chừng hai chục ký. Vai tui chai một cục bằng đồng xu rồi.",
+              "mood": "MET"
+            },
+            {
+              "say": "Dạ con để xuống đây cho bà nghen.",
+              "tone": "THUONG",
+              "reply": "Ờ. Để sát vô trong giùm tui, kẻo xe quẹt.",
+              "mood": "THUONG",
+              "act": {
+                "kind": "PROMISE_DEED",
+                "deed": "BUNG_GANH"
+              },
+              "onKept": {
+                "rel": 2
+              }
+            }
+          ]
+        },
+        {
+          "say": "Bà nghỉ chưa bà? Nãy giờ con thấy bà đi hoài.",
+          "tone": "THANG",
+          "reply": "Chưa. Nghỉ là nguội nồi, nguội nồi là ế con à.",
+          "mood": "MET",
+          "then": [
+            {
+              "say": "Nguội thì hâm lại được mà bà.",
+              "tone": "THUONG",
+              "reply": "Hâm lại là đậu nó rã. Khách ăn một lần là biết liền con à.",
+              "mood": "NGHIEM"
+            },
+            {
+              "say": "Bà ngồi cái ghế này năm phút thôi bà.",
+              "tone": "AM",
+              "rel": 3,
+              "calm": 12,
+              "reply": "…Ờ. Năm phút. Con canh giùm tui nghen.",
+              "mood": "THUONG",
+              "needEquip": "GHE_BAN",
+              "act": {
+                "kind": "THEY_SIT",
+                "forSec": 40
+              },
+              "while": [
+                "w.seatFree"
+              ]
+            },
+            {
+              "say": "Vậy bà bán tới mấy giờ mới hết bà?",
+              "tone": "AM",
+              "rel": 1,
+              "reply": "Chừng mười một giờ. Hết nồi là tui về, hổng nán.",
+              "mood": "THUONG"
+            }
+          ]
+        },
+        {
+          "say": "Thôi bà. Con hỏi cho có.",
+          "tone": "LANH",
+          "rel": -1,
+          "reply": "…Ừ. Tui đi.",
+          "mood": "LANH"
+        }
+      ],
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "DOI_BANH",
+        "DI_NGANG"
+      ]
+    },
+    {
+      "id": "sau.moiloi2",
+      "npc": "BA_SAU",
+      "topic": "moiloi2",
+      "source": "PLAYER_ONLY",
+      "depth": "SHORT",
+      "weight": 20,
+      "when": {
+        "day": [
+          16,
+          34
+        ],
+        "minVisits": 5
+      },
+      "opener": "Ờ? Con kêu tui hả con.",
+      "openMood": "NGAC_NHIEN",
+      "tree": [
+        {
+          "say": "Bà đổi con chén tàu hũ lấy ổ bánh hông bà?",
+          "tone": "DUA",
+          "rel": 1,
+          "reply": "Hay! Để tui múc cho con chén đầy. Gừng tui nấu hồi ba giờ sáng.",
+          "mood": "CUOI_TUOI",
+          "then": [
+            {
+              "say": "Gừng bà nấu đậm ghê bà.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Tui giã tay chớ hổng xay. Xay nó ra nước, hổng ra mùi.",
+              "mood": "CUOI"
+            },
+            {
+              "say": "Vậy từ nay mình đổi hoài nghen bà.",
+              "tone": "DUA",
+              "rel": 2,
+              "reply": "Ờ! Vậy tui khỏi lo bữa sáng, con khỏi lo bữa xế. Huề.",
+              "mood": "CUOI_TUOI"
+            },
+            {
+              "say": "Dạ ổ của bà đây. Con bỏ nhiều thịt nghen.",
+              "tone": "THUONG",
+              "rel": 2,
+              "reply": "Trời. Nhiều quá con. Thôi tui ăn, mai tui múc bù.",
+              "mood": "THUONG"
+            }
+          ]
+        },
+        {
+          "say": "Hồi xưa bà cầm vô lăng, giờ bà gánh. Bà hổng tiếc hả bà?",
+          "tone": "AM",
+          "rel": 1,
+          "reply": "Tiếc chớ. Mà tụi nhỏ lớn rồi, tiếc cũng hổng đổi lại được.",
+          "mood": "BUON",
+          "then": [
+            {
+              "say": "Bà chạy tuyến nào vậy bà?",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Sài Gòn – Vĩnh Long. Mười hai năm. Tui thuộc từng ổ gà trên quốc lộ.",
+              "mood": "NGHIEM"
+            },
+            {
+              "say": "Sao bà bỏ nghề vậy bà?",
+              "tone": "THANG",
+              "reply": "Mắt tui kém đi. Chạy đêm mà hổng thấy rõ thì tui giết người ta chớ giỡn.",
+              "mood": "NGHIEM"
+            },
+            {
+              "say": "Dạ. Con hỏi lỡ lời, bà bỏ qua nghen bà.",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "Có gì đâu con. Chuyện cũ mà, nhắc cũng vui.",
+              "mood": "THUONG"
+            }
+          ]
+        },
+        {
+          "say": "Thôi bà. Con bận.",
+          "tone": "LANH",
+          "rel": -1,
+          "reply": "Ờ. Tui đi bán đây.",
+          "mood": "LANH"
+        }
+      ],
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "DOI_BANH",
+        "DI_NGANG"
+      ]
+    },
+    {
+      "id": "sau.nhochuyen",
+      "npc": "BA_SAU",
+      "topic": "nhochuyen",
+      "source": "PLAYER_ONLY",
+      "depth": "SHORT",
+      "weight": 18,
+      "when": {
+        "day": [
+          4,
+          40
+        ],
+        "minVisits": 2
+      },
+      "about": [
+        "TU_TE",
+        "CARED_FOR_THEM",
+        "FREE_EXTRA",
+        "TOT"
+      ],
+      "opener": "Ờ. Con kêu tui hả.",
+      "openMood": "NGAC_NHIEN",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "NAN_LAI",
+        "DI_NGANG"
+      ],
+      "tree": [
+        {
+          "say": "Bà còn nhớ {m.what} hông bà?",
+          "tone": "AM",
+          "rel": 2,
+          "need": [
+            "m.remembers"
+          ],
+          "reply": "Nhớ. Tui gánh ngoài đường cả ngày, gặp ai tử tế là tui nhớ mặt luôn.",
+          "mood": "THUONG",
+          "then": [
+            {
+              "say": "Bà gánh bao lâu rồi bà?",
+              "tone": "AM",
+              "rel": 1,
+              "reply": "Chín năm. Từ hồi tui bỏ vô lăng. Vai tui chai một cục bằng đồng xu.",
+              "mood": "NGHIEM"
+            },
+            {
+              "say": "Vậy bà nhớ con lâu chưa bà?",
+              "tone": "DUA",
+              "rel": 1,
+              "reply": "Từ bữa con khiêng giùm tui cái gánh. Bữa đó tui nhẹ cả vai.",
+              "mood": "CUOI"
+            },
+            {
+              "say": "Dạ con đỡ gánh xuống cho bà nghen.",
+              "tone": "AM",
+              "act": {
+                "kind": "PROMISE_DEED",
+                "deed": "BUNG_GANH"
+              },
+              "onKept": {
+                "rel": 3
+              },
+              "reply": "Ờ. Để sát vô trong giùm tui, kẻo xe quẹt.",
+              "mood": "THUONG"
+            }
+          ]
+        },
+        {
+          "say": "Nồi bà bữa nay còn nhiều hông bà?",
+          "tone": "THUONG",
+          "rel": 1,
+          "reply": "Còn nửa nồi. Trưa là hết. Tui nấu vừa đủ, hổng dám nấu dư.",
+          "mood": "NGHIEM",
+          "then": [
+            {
+              "say": "Sao bà hổng nấu dư cho chắc bà?",
+              "tone": "THANG",
+              "reply": "Dư là đổ. Đậu để qua đêm là chua, bán là tui mang tiếng.",
+              "mood": "NGHIEM"
+            },
+            {
+              "say": "Bà bán vầy đủ sống hông bà?",
+              "tone": "AM",
+              "rel": 1,
+              "reply": "Đủ. Tui một mình, ăn ít. Dư tui gửi về cho con tui ngoài quê.",
+              "mood": "THUONG"
+            },
+            {
+              "say": "Dạ bà bán đắt nghen bà.",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "Ờ. Con cũng vậy.",
+              "mood": "CUOI"
+            }
+          ]
+        },
+        {
+          "say": "Thôi bà. Con hỏi cho có.",
+          "tone": "LANH",
+          "reply": "…Ừ. Tui đi.",
+          "mood": "LANH"
+        }
+      ]
     }
   ]
 }

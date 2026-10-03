@@ -23,7 +23,7 @@ npm run validate:rules   # R001–R014 cho rule DB (P0-03 §2.3a)
 npm run lint:lines       # L001–L013 cho thoại tiếng Việt, `-- --fix` sửa NFC / kiểu dấu / viết hoa
 npm run content:stats    # đếm dòng/từ, đối chiếu mốc CANON §11
 python3 tools/prep-art.py       # rửa lại ảnh artist: art-raw/ -> public/art/ (cần Pillow)
-python3 tools/cut-character.py  # cắt bảng xoay nhân vật ra 8 hướng: -> public/art/player/
+python3 tools/cut-character.py  # cắt bảng xoay nhân vật ra 8 hướng (thêm tên người để cắt một mình)
 npm run sim -- --days 40 --policy newbie   # chạy 40 ngày không render (< 3 s)
 ```
 
@@ -39,7 +39,7 @@ Client-only, offline-first: **không server, không netcode** (CANON §2). Save 
 | kéo–thả / chạm / `1`–`9`, `0` | bỏ thêm một phần nguyên liệu |
 | `Backspace` | hoàn tác miếng vừa bỏ |
 | `Esc` (trong bảng kẹp nhân) · nút "để đó" · đi khỏi thớt | **gác** ổ lại trên thớt, giữ nguyên phần đã kẹp |
-| `F` | hỏi chuyện khách trước quầy — họ nhìn **mặt** mình thay vì nhìn tay (ASK_QUESTION) |
+| `F` | **trả lời** người vừa nói với mình, hoặc bắt chuyện với người đang có **vòng sáng dưới chân**. Đồng hồ **vẫn chạy** — nói chuyện tốn giờ bán thật. Tay đang bận thì cú bấm được **xếp hàng**, nói ngay khi rảnh |
 | giữ `C` | nghiêng người che tay — khách phía trước khó thấy tay/thớt hơn (OCCLUDE_BODY) |
 | `Q` | bỏ thứ đang cầm vô thùng (1 giây, không ai để ý) |
 | nút `P1` `P2` `P3` trong bảng kẹp nhân | áp preset chia sẵn buổi sáng — một chạm thay mười chạm, nhưng **không tự sửa theo lời khách dặn** |
@@ -203,7 +203,7 @@ src/
   dev/         overlay F1–F8 + console — chỉ có ở dev build, tree-shake khỏi bản phát hành
 tools/         sim · validate-rules · lint-lines · content-stats · check-gates   (Node, qua tsx)
                prep-art.py  rửa ảnh artist art-raw/ -> public/art/   (Python + Pillow)
-               cut-character.py  cắt bảng xoay nhân vật -> public/art/player/ (8 hướng)
+               cut-character.py  cắt bảng xoay nhân vật -> public/art/{player,npc/<tên>}/ (8 hướng)
 art-raw/       ảnh artist gửi, nguyên bản — KHÔNG đi vào bản build
 tests/         node:test
 ```
@@ -237,21 +237,44 @@ public/art/         ảnh đã rửa: tách nền đen, cắt sát alpha, XOAY �
                     hình thoi 2:1 đúng cỡ texture game
   |  src/art/photo.ts              bảng chỗ đặt: cao bao nhiêu px, lệch trái phải bao nhiêu
   v
-texture game        TILE.floor · PROP.* · HELD.key · FOOD.icon / big / loaf · p_<hướng>
+texture game        TILE.floor · PROP.* · HELD.key · FOOD.icon / big / loaf · p_<hướng> · <NPC>_<hướng>
 ```
 
 Hai file hai việc, không chồng lấn: **`prep-art.py` chỉ RỬA ảnh**, **`photo.ts` chỉ ĐẶT ảnh**.
 Muốn cái lò cao hơn thì sửa bảng `STANDING` trong `photo.ts`, không đụng script Python.
 
-**Người chơi — tám hướng.** `tools/cut-character.py` cắt bảng xoay của artist
-(`art-raw/character_model_list.png`) ra tám file `public/art/player/p_<hướng>.png`.
+**Tám hướng.** `tools/cut-character.py` cắt bảng xoay của artist ra tám file rời,
+mỗi người một **thư mục riêng**, file đặt tên bằng đúng tên hướng:
+
+| ai | bảng gốc | ra |
+|---|---|---|
+| cô Ba (người chơi) | `art-raw/character_model_list.png` | `public/art/player/p_<hướng>.png` |
+| anh Dũng | `art-raw/anh-dung-list.png` | `public/art/npc/anh-dung/<hướng>.png` |
+| bà Bảy | `art-raw/ba-bay-list.png` | `public/art/npc/ba-bay/<hướng>.png` |
+| anh Bảo | `art-raw/anh-bao-list.png` | `public/art/npc/anh-bao/<hướng>.png` |
+
+Mỗi người một dòng trong bảng `CAST` của script; artist gửi bảng mới thì thêm một
+dòng, không hàm nào phải sửa. Bố cục ô **mỗi bảng một kiểu** nên `CAST` ghi rõ ô nào
+ra hướng nào — đừng chép bảng của người này sang người kia. Bảng nào artist render
+trùng góc (hoặc bỏ sót) một hướng thì lấy hướng đối xứng lật ngang; `CAST` ghi rõ ô
+nào bị lật và vì sao lật được.
+
 Tên hướng là hướng TRÊN MÀN HÌNH (`Facing8` ở `world/iso.ts`): `s` là đi xuống màn
 hình, `e` là sang phải — khớp đúng tám tổ hợp WASD. Tám file dùng CHUNG một khung,
 đáy khung là mặt đất và tâm ngang khung là tâm hai bàn chân, nên quay người không
-làm nhân vật nhảy lên hụp xuống hay trượt ngang. Chỉ người chơi có đủ tám hướng;
-khách vẫn là bản vẽ code ba hướng (`w` lật ngang `e`), nên `textureFor` gộp tám về
-ba cho họ — xem `markEightWay` ở `art/character.ts`. Thiếu dù chỉ một file ảnh là cả
-bộ lặng lẽ rơi về bản vẽ code, đúng luật "không thủng lỗ" ở trên.
+làm nhân vật nhảy lên hụp xuống hay trượt ngang. Ai chưa có bảng xoay thì vẫn là bản
+vẽ code ba hướng (`w` lật ngang `e`), nên `textureFor` gộp tám về ba cho họ — xem
+`markEightWay` ở `art/character.ts`. Khách có ảnh thì khai ở bảng `NPC_PHOTOS` trong
+`art/photo.ts`, khoá là `id` bên `content/npcs.ts` (trùng luôn tiền tố texture, nên
+không file gameplay nào phải sửa). Thiếu dù chỉ một file ảnh là cả bộ lặng lẽ rơi về
+bản vẽ code, đúng luật "không thủng lỗ" ở trên.
+
+Bảng nào artist render hai hàng bằng hai **góc máy** khác nhau thì thân người chênh
+cả chục phần trăm giữa hai hàng (dấu hiệu: thân chênh nhiều mà bề ngang ĐẦU gần như
+không đổi) — xoay một vòng là người cao lên thấp xuống mấy px. Bật `san` cho người đó
+trong `CAST` để ép tám hướng về cùng cỡ; script in sẵn `chênh cao giữa tám hướng` mỗi
+lần cắt để biết khi nào cần. Cách sửa thật nằm ở phía artist: render lại cả tám ô bằng
+một góc máy.
 
 Lưu ý cho lần artist vẽ tiếp — CANON §15 bắt icon nhân phải khác nhau về **hình dáng**
 chứ không chỉ khác màu: ảnh thịt nguội và chả lụa hiện đều là lát tròn hồng, in đen
@@ -319,7 +342,7 @@ Thêm một công đoạn mới = thêm **một dòng** vào `STATIONS` (`world/
 - **§2 / §8e** — autosave NGAY khi sự kiện xảy ra (khách rời đi, bị bắt quả tang, chuyển cảnh,
   mất focus), double-buffer A/B + meta; seed cố định theo ngày + **6 stream RNG tách riêng**;
   nút chính thức **"Chơi lại ngày này"** khôi phục đúng bản chụp đầu ngày.
-- **T2** — người chơi KHÔNG BAO GIỜ chọn câu nói, chỉ chọn nguyên liệu. Không có dialogue tree.
+- **T2** — **khi có người đang chờ bánh, món ăn là câu trả lời duy nhất**: không một dòng chữ nào để bấm, chỉ có nguyên liệu. Lựa chọn bằng lời chỉ tồn tại ở **khoảng vắng** (quầy trống, người đã nhận bánh còn nán lại, người đi ngang) — trần 2 cuộc sâu/ngày, 0 cuộc trong giờ cao điểm. Xem `docs/phase-2-he-npc/P2-06-flow-tro-chuyen.md`.
 - **T3** — không một chỉ số quan hệ nào hiện ra. Sốt ruột đọc qua **dáng** (đứng yên → nhấp nhổm
   → khoanh tay) và qua lời, không qua thanh số.
 - **§5** — perception chạy thật, duyệt **từ phía sự kiện** chứ không phải từ phía NPC

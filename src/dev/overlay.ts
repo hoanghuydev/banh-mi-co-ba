@@ -16,7 +16,8 @@ import { fmtHhmm } from "../core/clock";
 import { telemetry } from "../core/session";
 import { factorsOf, stateOf } from "../sim/perception";
 import { FRAME_STEPS, frameStats } from "../sim/frame";
-import type { StallZone } from "../core/types";
+import type { StallZone, Weather } from "../core/types";
+import { CAL } from "../sim/econ";
 import { dev } from "./registry";
 import type { DayScene } from "../scenes/DayScene";
 
@@ -237,6 +238,24 @@ function makeApi(game: Phaser.Game, print: (s: string) => void) {
       fastForward(n: number) {
         need(dev.ctx, "ván chơi").clock.devFastForward = n;
         return `TIME_SCALE ×${n}`;
+      },
+      /**
+       * Ép trời — để xem được NGÀY MƯA mà không phải chơi tới ngày 6.
+       *
+       * Chỉ đổi CÁI NHÌN và TIẾNG: nền nướng lại (mặt đường ướt, không còn vạt nắng),
+       * lớp mưa dựng lên, `stallAudio` bắt `amb_mua_*`. KHÔNG đổi lượng khách hay độ
+       * soi — mấy cái đó `Service` suy thẳng từ `weatherOf(day)` theo lịch mùa, cố ý,
+       * để không ai chỉnh thời tiết mà lệch luôn cân bằng của ngày hôm đó.
+       *
+       * Phải dựng lại cảnh quán vì nền là `RenderTexture` nướng một lần ở `create()`.
+       */
+      weather(w: string) {
+        const world = need(dev.ctx, "ván chơi").world;
+        const all = Object.keys(CAL.weatherInfo);
+        if (!all.includes(w)) return `trời lạ — ${all.join(" ")}`;
+        world.progress.weather = w as Weather;
+        need(daySc(), "DayScene").devReopenStall();
+        return `trời → ${w} (chỉ đổi cái nhìn + tiếng, không đổi lượng khách)`;
       },
       end() { need(dev.stall, "quầy").end(); return "đóng quầy"; },
       replay() { return need(daySc(), "DayScene").replayDay() ? "chơi lại từ sáng" : "không có bản chụp đầu ngày"; },

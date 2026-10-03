@@ -5,6 +5,8 @@
       "id": "hai.bienhieu",
       "npc": "ONG_HAI",
       "topic": "bienhieu",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
       "when": {
         "day": [
           6,
@@ -126,12 +128,20 @@
           "mood": "BUC"
         }
       ],
-      "openMood": "CUOI"
+      "openMood": "CUOI",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "NAN_LAI"
+      ]
     },
     {
       "id": "hai.congai",
       "npc": "ONG_HAI",
       "topic": "congai",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
       "when": {
         "day": [
           14,
@@ -233,7 +243,28 @@
               },
               "silent": true,
               "mood": "BUC"
+            },
+            {
+              "say": "Chú cầm ổ này về ăn rồi tối chú gọi cho nó đi chú.",
+              "tone": "AM",
+              "reply": "…Ờ. Chú cầm. Tối chú gọi nó chú kể chuyện cái bảng hiệu.",
+              "mood": "RUNG_RUNG",
+              "onKept": {
+                "rel": 3
+              },
+              "act": {
+                "kind": "PROMISE_DEED",
+                "deed": "DUA_BANH"
+              },
+              "need": [
+                "!p.soldOut",
+                "p.holdsFilled"
+              ]
             }
+          ],
+          "need": [
+            "!p.soldOut",
+            "p.holdsFilled"
           ]
         },
         {
@@ -264,18 +295,34 @@
           "mood": "RUNG_RUNG"
         },
         {
+          "say": "Bà bán vé số có qua nói chuyện với chú hông chú?",
+          "tone": "AM",
+          "rel": 3,
+          "need": "bayHaiGap",
+          "reply": "…Có. Bả đứng đầu hẻm bả kêu chú một tiếng. Mấy chục năm mới có người biết.",
+          "mood": "RUNG_RUNG"
+        },
+        {
           "say": "Dạ.",
           "tone": "LANH",
           "rel": -2,
           "silent": true
         }
       ],
-      "openMood": "BUON"
+      "openMood": "BUON",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "DOI_BANH"
+      ]
     },
     {
       "id": "hai.say",
       "npc": "ONG_HAI",
       "topic": "say",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
       "when": {
         "day": [
           4,
@@ -301,12 +348,28 @@
             "rel": 2,
             "reply": "Ờ… ờ. Ngồi thì ngồi.",
             "calm": 30,
-            "mood": "MET"
+            "mood": "MET",
+            "needEquip": "GHE_BAN",
+            "act": {
+              "kind": "THEY_SIT",
+              "forSec": 40
+            },
+            "while": [
+              "w.seatFree"
+            ]
           },
           {
             "say": "Dạ chú đợi con chút.",
             "tone": "THUONG",
             "reply": "Nhanh nghen."
+          },
+          {
+            "say": "Dạ chú đứng nhích vô trong cho đỡ nắng, con làm liền.",
+            "tone": "AM",
+            "rel": 2,
+            "calm": 22,
+            "reply": "Ờ… ờ. Nhích thì nhích.",
+            "mood": "MET"
           }
         ]
       },
@@ -392,7 +455,15 @@
               "rel": 3,
               "reply": "Ờ… bây nói chuyện được. Chú ngồi.",
               "ref": "xuong",
-              "mood": "CUOI"
+              "mood": "CUOI",
+              "needEquip": "GHE_BAN",
+              "while": [
+                "w.seatFree"
+              ],
+              "act": {
+                "kind": "THEY_SIT",
+                "forSec": 40
+              }
             },
             {
               "say": "Chú về ngủ đi chú, mai con để phần cho.",
@@ -426,14 +497,38 @@
           "anger": 20,
           "reply": "Ủa? Bây hổng nói gì hả? Thôi được, chú đứng chú đợi.",
           "mood": "BUC"
+        },
+        {
+          "say": "Chú uống miếng trà đá cho tỉnh rồi con làm cho chú.",
+          "tone": "AM",
+          "reply": "…Ờ. Trà. Ờ. Chú uống.",
+          "mood": "MET",
+          "onKept": {
+            "rel": 2
+          },
+          "act": {
+            "kind": "OFFER_TEA",
+            "forSec": 8
+          },
+          "need": [
+            "p.hasTea",
+            "!v.gaveTea"
+          ]
         }
       ],
-      "openMood": "GIAN"
+      "openMood": "GIAN",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG"
+      ]
     },
     {
       "id": "hai.bongda",
       "npc": "ONG_HAI",
       "topic": "bongda",
+      "source": "BOTH",
+      "depth": "BARK",
       "when": {
         "day": [
           3,
@@ -472,6 +567,9 @@
               "rel": -1,
               "reply": "Ờ. Làm đi."
             }
+          ],
+          "need": [
+            "c.openedBy(NPC)"
           ]
         },
         {
@@ -505,21 +603,51 @@
               "mood": "BUC"
             }
           ],
-          "mood": "CUOI"
+          "mood": "CUOI",
+          "need": [
+            "c.openedBy(NPC)"
+          ]
         },
         {
-          "say": "Dạ.",
+          "say": "Tối qua đá banh hả chú? Con nghe chú la từ đầu hẻm.",
+          "tone": "DUA",
+          "rel": 2,
+          "need": [
+            "c.openedBy(PLAYER)"
+          ],
+          "reply": "Ha! Nghe tới đó luôn hả. Trọng tài đó ăn tiền chớ gì nữa.",
+          "mood": "CUOI_TUOI"
+        },
+        {
+          "say": "Chú ngủ được hông chú? Mắt chú đỏ kìa.",
+          "tone": "AM",
+          "rel": 2,
+          "need": [
+            "c.openedBy(PLAYER)"
+          ],
+          "reply": "Ngủ gì nổi. Hai giờ sáng mới hết trận.",
+          "mood": "MET"
+        },
+        {
+          "say": "Thôi chú. Để con làm cái đã.",
           "tone": "LANH",
           "rel": -1,
           "reply": "Ờ. Chú nói một mình vậy."
         }
       ],
-      "openMood": "BUC"
+      "openMood": "BUC",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG"
+      ]
     },
     {
       "id": "hai.pano",
       "npc": "ONG_HAI",
       "topic": "pano",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
       "when": {
         "day": [
           8,
@@ -574,6 +702,7 @@
                 {
                   "say": "Bà Bảy hay đi coi hát ở cái rạp lớn ngoài đường cái đó chú.",
                   "tone": "AM",
+                  "need": "bayCaiLuongTalk",
                   "rel": 4,
                   "flag": "haiBietBay",
                   "mem": {
@@ -610,12 +739,12 @@
               "tone": "AM",
               "rel": 3,
               "need": "kietMuonBang",
-              "flag": "haiVeBangKiet",
               "reply": "…Thằng bán bánh mì đẩy xe đó hả? Nó có hỏi chú đâu.",
               "then": [
                 {
                   "say": "Ảnh ngại hỏi chú. Chú qua hỏi ảnh một tiếng đi chú.",
                   "tone": "AM",
+                  "need": "kietNhoNoi",
                   "rel": 4,
                   "flag": "haiKietNoi",
                   "mem": {
@@ -680,8 +809,8 @@
                 {
                   "say": "Chú vẽ lại cái bảng xe con đi chú. Con hổng chê đâu.",
                   "tone": "AM",
+                  "need": "haiVietBang",
                   "rel": 4,
-                  "flag": "haiNhanVe",
                   "mem": {
                     "kind": "CARED_FOR_THEM",
                     "intensity": 55
@@ -721,12 +850,20 @@
           "reply": "Ờ. Chú đứng đây chú chờ. Chú hổng gấp."
         }
       ],
-      "openMood": "CUOI"
+      "openMood": "CUOI",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "NAN_LAI"
+      ]
     },
     {
       "id": "hai.duoi",
       "npc": "ONG_HAI",
       "topic": "duoi",
+      "source": "NPC_ONLY",
+      "depth": "FULL",
       "when": {
         "day": [
           6,
@@ -746,16 +883,36 @@
             "rel": 3,
             "calm": 28,
             "reply": "…Ờ. Ờ, chú ngồi. Chú ngồi đây chú hổng nói gì nữa.",
-            "mood": "THUONG"
+            "mood": "THUONG",
+            "needEquip": "GHE_BAN",
+            "while": [
+              "w.seatFree"
+            ],
+            "act": {
+              "kind": "THEY_SIT",
+              "forSec": 40
+            }
           },
           {
             "say": "Dạ chú đứng qua bên này cho người ta mua nghen chú.",
             "tone": "THANG",
             "rel": 1,
             "act": {
-              "kind": "STEP_ASIDE"
+              "kind": "STEP_ASIDE",
+              "forSec": "TOI_LUOT"
             },
-            "reply": "…Ờ. Chú qua. Con nói thì chú nghe."
+            "reply": "…Ờ. Chú qua. Con nói thì chú nghe.",
+            "while": [
+              "w.queue(1)"
+            ]
+          },
+          {
+            "say": "Dạ chú vô đứng trong bóng mát với con. Con bưng ổ ra cho chú.",
+            "tone": "AM",
+            "rel": 3,
+            "calm": 26,
+            "reply": "…Ờ. Chú vô. Chú vô rồi chú hổng nói gì nữa.",
+            "mood": "THUONG"
           },
           {
             "say": "Dạ.",
@@ -783,7 +940,6 @@
                   "say": "Dạ hổng sao chú. Mà bữa khác chú đừng vậy nghen chú.",
                   "tone": "AM",
                   "rel": 3,
-                  "flag": "haiBietLoi",
                   "mem": {
                     "kind": "CARED_FOR_THEM",
                     "intensity": 50
@@ -821,7 +977,10 @@
               "calm": 30,
               "reply": "…Ờ. Lạnh ghê. …Ờ, chú hạ hoả rồi.",
               "ref": "diyen",
-              "mood": "THUONG"
+              "mood": "THUONG",
+              "while": [
+                "p.hasTea"
+              ]
             },
             {
               "say": "Dạ thằng đó nó nhìn cái bảng hiệu chớ nó đâu nhìn chú.",
@@ -832,7 +991,15 @@
               "mood": "CUOI_TUOI"
             }
           ],
-          "mood": "THUONG"
+          "mood": "THUONG",
+          "needEquip": "GHE_BAN",
+          "while": [
+            "w.seatFree"
+          ],
+          "act": {
+            "kind": "THEY_SIT",
+            "forSec": 40
+          }
         },
         {
           "say": "Dạ chú nói nhỏ lại giùm con chú. Con còn khách.",
@@ -847,7 +1014,15 @@
               "calm": 25,
               "reply": "…Ờ. Chú ngồi.",
               "ref": "diyen",
-              "mood": "THUONG"
+              "mood": "THUONG",
+              "needEquip": "GHE_BAN",
+              "while": [
+                "w.seatFree"
+              ],
+              "act": {
+                "kind": "THEY_SIT",
+                "forSec": 40
+              }
             },
             {
               "say": "Chú mà còn la nữa là con hổng bán chú đâu nghen chú.",
@@ -913,7 +1088,441 @@
           "mood": "BUC"
         }
       ],
-      "openMood": "GIAN"
+      "openMood": "GIAN",
+      "practice": [
+        "XEP_HANG",
+        "GOI_MON",
+        "QUAY_VANG"
+      ]
+    },
+    {
+      "id": "hai.moiloi",
+      "npc": "ONG_HAI",
+      "topic": "moiloi",
+      "source": "PLAYER_ONLY",
+      "depth": "SHORT",
+      "weight": 25,
+      "when": {
+        "day": [
+          7,
+          40
+        ],
+        "slot": [
+          "PEAK",
+          "MID"
+        ]
+      },
+      "opener": "Hả? Con kêu chú hả.",
+      "openMood": "NGHI",
+      "tree": [
+        {
+          "say": "Hồi này chú có cầm cọ lại chưa chú?",
+          "tone": "AM",
+          "rel": 1,
+          "reply": "…Chưa. Tay chú còn run. Để bữa nào nó đứng lại.",
+          "mood": "BUON",
+          "then": [
+            {
+              "say": "Chú vẽ cái gì hồi xưa vậy chú?",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Bảng hiệu. Cả con đường này hồi tám mươi mấy là chú viết hết. Chữ tay.",
+              "mood": "NGHIEM"
+            },
+            {
+              "say": "Tay run thì chú vẽ cái gì to to đi chú.",
+              "tone": "THUONG",
+              "rel": 2,
+              "reply": "…Ờ há. Chú chưa nghĩ tới. Vẽ to thì run cũng hổng ai thấy.",
+              "mood": "NGAC_NHIEN"
+            },
+            {
+              "say": "Bữa nào chú viết giùm con cái bảng giá nghen chú.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "…Con nói thiệt hả. …Ờ. Để chú thử. Lâu rồi chú hổng ai nhờ.",
+              "mood": "RUNG_RUNG"
+            }
+          ]
+        },
+        {
+          "say": "Tối qua chú có coi đá banh hông chú?",
+          "tone": "DUA",
+          "rel": 1,
+          "reply": "Coi! Phút chín mươi nó sút một phát. Chú la muốn bể nhà.",
+          "mood": "CUOI_TUOI",
+          "then": [
+            {
+              "say": "Chú coi một mình hả chú?",
+              "tone": "THUONG",
+              "reply": "Một mình. Chú la xong chú quay qua hổng có ai. Thôi kệ.",
+              "mood": "BUON"
+            },
+            {
+              "say": "Trận tối nay chú qua đây coi ké với con đi chú.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "…Ờ! Chú qua. Chú đem theo gói đậu phộng.",
+              "mood": "CUOI_TUOI"
+            },
+            {
+              "say": "Chín mươi phút mà sút một phát trúng ha chú.",
+              "tone": "DUA",
+              "rel": 1,
+              "reply": "Trúng! Bóng đi sát cột. Chú coi lại ba lần trên điện thoại.",
+              "mood": "CUOI_TUOI"
+            }
+          ]
+        },
+        {
+          "say": "Chú uống từ sáng rồi phải hông. Về đi chú.",
+          "tone": "GAT",
+          "rel": -2,
+          "anger": 25,
+          "reply": "…Ờ. Chú có uống. Con nói trúng mà nghe đau.",
+          "mood": "BUC"
+        }
+      ],
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "NAN_LAI",
+        "DI_NGANG"
+      ]
+    },
+    {
+      "id": "hai.moiloi2",
+      "npc": "ONG_HAI",
+      "topic": "moiloi2",
+      "source": "PLAYER_ONLY",
+      "depth": "SHORT",
+      "weight": 20,
+      "when": {
+        "day": [
+          15,
+          40
+        ],
+        "minVisits": 5,
+        "slot": [
+          "PEAK",
+          "MID"
+        ]
+      },
+      "opener": "Ơ? Gì đó con.",
+      "openMood": "NGHI",
+      "tree": [
+        {
+          "say": "Con gái chú còn gọi hoài hông chú?",
+          "tone": "THUONG",
+          "rel": 1,
+          "reply": "Gọi. Tối nào cũng gọi. Chú nghe xong chú tắt máy.",
+          "mood": "BUON",
+          "then": [
+            {
+              "say": "Sao chú tắt máy vậy chú?",
+              "tone": "THANG",
+              "reply": "…Nó hỏi chú ăn chưa, chú nói rồi. Nó hỏi chú uống chưa, chú hổng biết nói sao.",
+              "mood": "BUON"
+            },
+            {
+              "say": "Chú nói thiệt với nó một lần đi chú.",
+              "tone": "THANG",
+              "rel": 2,
+              "reply": "…Chú sợ nó bỏ việc nó về. Nó ở tuốt ngoài Đà Nẵng mà con.",
+              "mood": "RUNG_RUNG"
+            },
+            {
+              "say": "Tối nay chú nghe hết cuộc đi chú. Đừng tắt.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "…Ờ. Để chú thử. Con nhắc chú nghen, chú hay quên.",
+              "mood": "THUONG"
+            }
+          ]
+        },
+        {
+          "say": "Chú ăn gì chưa chú? Con làm cho chú ổ nghen.",
+          "tone": "AM",
+          "rel": 2,
+          "calm": 10,
+          "reply": "…Ờ. Chú chưa ăn. Con làm đi.",
+          "mood": "THUONG",
+          "then": [
+            {
+              "say": "Chú ngồi xuống ăn đi chú, đứng ăn khó tiêu.",
+              "tone": "AM",
+              "rel": 2,
+              "calm": 10,
+              "reply": "…Ờ. Vậy chú ngồi.",
+              "mood": "THUONG",
+              "needEquip": "GHE_BAN",
+              "act": {
+                "kind": "THEY_SIT",
+                "forSec": 40
+              },
+              "while": [
+                "w.seatFree"
+              ]
+            },
+            {
+              "say": "Con bỏ ít ớt thôi nghen chú.",
+              "tone": "THUONG",
+              "reply": "Ờ. Bao tử chú dạo này nó hổng chịu cay.",
+              "mood": "MET",
+              "act": {
+                "kind": "PROMISE",
+                "item": "ot"
+              },
+              "onKept": {
+                "rel": 1
+              }
+            },
+            {
+              "say": "Chú ăn rồi chú về ngủ nghen chú.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "…Ờ. Chú về. Trưa nay chú hổng ra quán.",
+              "mood": "THUONG"
+            }
+          ]
+        },
+        {
+          "say": "Thôi chú. Hổng có gì.",
+          "tone": "LANH",
+          "rel": -1,
+          "reply": "…Ờ. Chú ngồi chú đợi.",
+          "mood": "LANH"
+        }
+      ],
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "DOI_BANH",
+        "DI_NGANG"
+      ]
+    },
+    {
+      "id": "hai.nhochuyen",
+      "npc": "ONG_HAI",
+      "topic": "nhochuyen",
+      "source": "PLAYER_ONLY",
+      "depth": "SHORT",
+      "weight": 18,
+      "when": {
+        "day": [
+          4,
+          40
+        ],
+        "minVisits": 2
+      },
+      "about": [
+        "TU_TE",
+        "FREE_EXTRA",
+        "CARED_FOR_THEM",
+        "TOT"
+      ],
+      "opener": "Hả? Gì đó con.",
+      "openMood": "NGAC_NHIEN",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "NAN_LAI",
+        "DOI_BANH",
+        "DI_NGANG"
+      ],
+      "tree": [
+        {
+          "say": "Chú còn nhớ {m.what} hông chú?",
+          "tone": "AM",
+          "rel": 2,
+          "need": [
+            "m.remembers"
+          ],
+          "reply": "…Nhớ. Chú uống nhiều mà chú hổng quên mấy chuyện đó đâu con.",
+          "mood": "RUNG_RUNG",
+          "then": [
+            {
+              "say": "Chú nhớ mà chú hổng nói gì hết hả chú.",
+              "tone": "THUONG",
+              "reply": "…Chú hổng biết nói. Hồi xưa chú vẽ, chú nói bằng cái bảng hiệu.",
+              "mood": "BUON"
+            },
+            {
+              "say": "Vậy chú vẽ cho con một cái đi chú.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "…Ờ. Để chú thử. Tay chú run mà chữ to thì chắc được.",
+              "mood": "RUNG_RUNG"
+            },
+            {
+              "say": "Dạ chú ăn ổ rồi về nghen chú.",
+              "tone": "AM",
+              "act": {
+                "kind": "PROMISE_DEED",
+                "deed": "DUA_BANH"
+              },
+              "onKept": {
+                "rel": 2
+              },
+              "need": [
+                "!p.soldOut"
+              ],
+              "reply": "…Ờ. Chú ăn rồi chú về. Trưa nay chú hổng ra quán.",
+              "mood": "THUONG"
+            }
+          ]
+        },
+        {
+          "say": "Bữa nay chú khoẻ hông chú?",
+          "tone": "THUONG",
+          "rel": 1,
+          "reply": "Khoẻ. Sáng nay chú dậy sớm, chú đi bộ một vòng công viên.",
+          "mood": "CUOI",
+          "then": [
+            {
+              "say": "Chú đi bộ được mấy bữa rồi chú?",
+              "tone": "AM",
+              "rel": 1,
+              "reply": "Ba bữa. Con gái chú nó dặn qua điện thoại. Chú nghe lời nó một lần coi sao.",
+              "mood": "THUONG"
+            },
+            {
+              "say": "Vậy chú bớt rượu luôn đi chú.",
+              "tone": "THANG",
+              "rel": 2,
+              "reply": "…Ờ. Chú đang bớt. Hôm qua chú có một ly thôi.",
+              "mood": "NGUONG"
+            },
+            {
+              "say": "Dạ vậy mừng quá chú.",
+              "tone": "AM",
+              "rel": 1,
+              "reply": "Ờ. Con mừng là chú ráng.",
+              "mood": "THUONG"
+            }
+          ]
+        },
+        {
+          "say": "Thôi chú. Hổng có gì.",
+          "tone": "LANH",
+          "reply": "…Ờ. Chú ngồi chú đợi.",
+          "mood": "LANH"
+        }
+      ]
+    },
+    {
+      "id": "hai.taythun",
+      "npc": "ONG_HAI",
+      "topic": "taythun",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
+      "weight": 16,
+      "when": {
+        "day": [
+          5,
+          40
+        ]
+      },
+      "initiates": 0.28,
+      "ignore": {
+        "rel": -1
+      },
+      "opener": "Con ơi… mở giùm chú cái nắp chai. Tay chú nó run quá chú vặn hổng được.",
+      "openMood": "NGUONG",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG"
+      ],
+      "tree": [
+        {
+          "say": "Dạ để con mở cho chú.",
+          "tone": "AM",
+          "rel": 2,
+          "reply": "…Ờ. Cảm ơn con. Hồi xưa cái nắp này chú búng một cái là ra.",
+          "mood": "BUON",
+          "then": [
+            {
+              "say": "Tay chú run lâu chưa chú?",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "…Hai năm. Bác sĩ nói tại rượu. Chú biết mà chú chưa bỏ được.",
+              "mood": "BUON"
+            },
+            {
+              "say": "Chú uống miếng trà đá đi chú, cho đỡ khát.",
+              "tone": "AM",
+              "act": {
+                "kind": "OFFER_TEA",
+                "forSec": 8
+              },
+              "onKept": {
+                "rel": 3
+              },
+              "need": [
+                "p.hasTea",
+                "!v.gaveTea"
+              ],
+              "reply": "…Ờ. Chú uống trà. Bữa nay chú uống trà thôi.",
+              "mood": "THUONG"
+            },
+            {
+              "say": "Có gì chú cứ kêu con chú.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "…Ờ. Chú ngại. Mà thôi, chú kêu.",
+              "mood": "RUNG_RUNG"
+            }
+          ]
+        },
+        {
+          "say": "Chú để đó, con mở rồi con đưa chú.",
+          "tone": "THUONG",
+          "rel": 1,
+          "reply": "Ờ. Con làm ơn. Chú vặn nãy giờ đỏ cả tay.",
+          "mood": "MET",
+          "then": [
+            {
+              "say": "Chú ngồi xuống đây đi chú.",
+              "tone": "AM",
+              "rel": 2,
+              "calm": 10,
+              "reply": "…Ờ. Chú ngồi.",
+              "mood": "THUONG",
+              "needEquip": "GHE_BAN",
+              "act": {
+                "kind": "THEY_SIT",
+                "forSec": 40
+              },
+              "while": [
+                "w.seatFree"
+              ]
+            },
+            {
+              "say": "Lần sau chú mua loại nắp bật đi chú.",
+              "tone": "THANG",
+              "rel": 1,
+              "reply": "…Ờ há. Chú chưa nghĩ tới. Con này tính kỹ.",
+              "mood": "NGAC_NHIEN"
+            },
+            {
+              "say": "Dạ. Của chú đây.",
+              "tone": "LANH",
+              "reply": "Ờ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Dạ con đang dở tay chú ơi.",
+          "tone": "LANH",
+          "reply": "…Ờ. Thôi chú tự vặn.",
+          "mood": "LANH"
+        }
+      ]
     }
   ]
 }

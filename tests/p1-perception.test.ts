@@ -284,3 +284,20 @@ test("stateOf đúng ngưỡng CANON §5", () => {
   assert.equal(stateOf(0.7), "NOTICED");
   assert.equal(stateOf(1), "CONFIRMED");
 });
+
+/**
+ * `BURNT_OR_COLD` đi chung một `StimId` cho ổ cháy và ổ nguội, nên cờ `smell` phải SỐNG
+ * SÓT từ kích thích sang Observation: tới lúc chọn câu thoại thì kích thích đã tắt từ
+ * lâu, chỉ còn Observation — mất cờ ở đây là khách đứng trước ổ nguội mà kêu "khét".
+ */
+test("Observation chép lại `smell` của kích thích — cháy và nguội không lẫn vào nhau", () => {
+  const o = observer("FRONT_CENTER", 1);
+  const dt = 1 / 60;
+  const stims: ActiveStim[] = [
+    { key: "chay", id: "BURNT_OR_COLD", slot: "OVEN", salience: 80, until: 1e9, smell: true },
+    { key: "nguoi", id: "BURNT_OR_COLD", slot: "HANDS", salience: 80, until: 1e9 },
+  ];
+  observe(o, stims, 0, dt);
+  assert.equal(o.observations.get("chay")?.smell, true);
+  assert.ok(!o.observations.get("nguoi")?.smell);
+});

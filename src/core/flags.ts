@@ -91,6 +91,15 @@ export type Settings = {
    * và tiền trong ống, không gợi ý, không "còn mua được mấy ổ nữa".
    */
   marketRunningTotal: boolean;
+  /**
+   * Mũi tên chỉ xuống trên đầu cô Ba (`entities/Player.ts`). Mặc định BẬT.
+   *
+   * Nó không phải trang trí: cô Ba là nhân vật DUY NHẤT không có bảng tên dưới chân,
+   * nên trong một quán đông người thì cách duy nhất tìm ra mình là bấm thử một phím rồi
+   * xem ai nhúc nhích. Mũi tên đã tự mờ đi khi đang đi, nên công tắc này là cho người
+   * chơi quen cảnh rồi và muốn khung hình sạch hẳn — không phải để sửa một lỗi nhấp nháy.
+   */
+  playerMarker: boolean;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -111,6 +120,7 @@ export const DEFAULT_SETTINGS: Settings = {
   notebookAuto: true,
   skipRitual: false,
   marketRunningTotal: true,
+  playerMarker: true,
 };
 
 /** Cài đặt sống độc lập với save: đổi ở menu là có hiệu lực ngay, kể cả chưa có ván nào. */

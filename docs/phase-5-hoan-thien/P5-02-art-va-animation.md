@@ -229,6 +229,7 @@ Người chơi *Phở Anh Hai* nêu **đích danh** những thứ này là lý d
 | **Nền bake** | Hẻm × 4 khung giờ + mưa + tối | 6 | **P0** (1) / P2 (5) |
 | | Chợ × 1, Nhà × 1 | 2 | P2 |
 | **Thời tiết / FX** | Vệt mưa (3 mật độ), nước đọng, hơi nước, khói lò, bụi nắng, heat shimmer | 8 | P1–P2 |
+| | ↳ **ĐÃ LÀM** — mưa dựng bằng particle procedural, không tốn asset nào: `world/rain.ts` (hình học + mật độ), `ui/stall/Rain.ts` (vệt mưa · vòng nước · giọt mái · tấm phủ §2.1.5), `TILE.wet` (nền ướt nướng sẵn), `ui/stall/ShopLight.ts` (hai cây đèn tuýp trong quán). Hai texture hạt mới: `FX.drop`, `FX.ripple` | 0 | — |
 | | **Biến thể TĨNH của từng FX** (cho `reduceMotion`) | 8 | **P1** — làm cùng lúc, không để sau |
 
 **Tổng asset môi trường: ~140 file.** Chi tiết ngân sách ở §5.

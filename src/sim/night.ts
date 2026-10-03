@@ -10,6 +10,7 @@ import { NPCS } from "../content/npcs";
 import type { Bus } from "../core/eventbus";
 import { newNpcState, type SaveFile } from "../core/save";
 import { nightly, record } from "./memory";
+import { reflect } from "./recall";
 import { gossipTick, newGossipState, witness } from "./gossip";
 import { checkHypotheses, composeEvening, landmarkTier, newNotebook } from "./notebook";
 import { makeUsual } from "./order";
@@ -61,6 +62,18 @@ export function settleNight(w: SaveFile, bus?: Bus) {
 
   for (const npc of NPCS) {
     const s = (w.npcs[npc.id] ??= newNpcState());
+    /*
+     * RÚT RA MỘT KẾT LUẬN — P2-09 §2.4, bản không-LLM của *reflection*.
+     *
+     * Chạy TRƯỚC `nightly()`: nó đọc `dayLastReinforced === day` để biết chuyện nào là
+     * của hôm nay, mà `nightly()` thì dọn và promote. Đổi thứ tự là reflection nhìn vào
+     * một kho đã bị dọn, và nó sẽ im lặng mãi mãi — đúng loại lỗi không ai nhìn ra.
+     */
+    const ref = reflect(s, day);
+    if (ref) {
+      record(s, npc.personality, ref.kind, ref.intensity, day);
+      bus?.emit("memory:reflected", { npcId: npc.id, note: ref.note });
+    }
     const r = nightly(s, npc.personality, day);
     for (const id of r.promoted) bus?.emit("memory:promoted", { npcId: npc.id, memoryId: id });
     if (r.from !== r.to) bus?.emit("relationship:tierChanged", { npcId: npc.id, from: r.from, to: r.to });

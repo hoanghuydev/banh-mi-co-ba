@@ -13,6 +13,7 @@ export const TILE = {
   floor: (kind: Floor, i: number) => `f_${kind}${i}`,
   VARIANTS: 4,
   sun: "sun",
+  wet: "wet",
 } as const;
 
 type FloorSpec = {
@@ -74,6 +75,25 @@ function sun(scene: Phaser.Scene) {
   });
 }
 
+/**
+ * MẶT ĐƯỜNG ƯỚT — dán chồng lên sàn NGOÀI TRỜI những ngày mưa, đúng chỗ mà ngày nắng
+ * dán vạt nắng (`bakeGround`). Hai cái loại trừ nhau: trời không thể vừa đổ nắng gắt
+ * vừa đổ mưa.
+ *
+ * Nướng sẵn vào nền chứ không vẽ mỗi frame, vì nó KHÔNG BAO GIỜ ĐỔI trong một buổi
+ * bán — thời tiết chốt từ lúc `dawn()`. Đây cũng là chỗ rẻ nhất để nói "trời đang mưa":
+ * người chơi thấy mặt đường sậm lại ngay từ frame đầu, trước cả giọt mưa đầu tiên.
+ *
+ * `wetRoad` sậm hơn cả nhựa đường khô (`roadFloor`), nên phủ lên vỉa hè sáng màu là ra
+ * đúng cái sắc sậm loang của xi măng thấm nước.
+ */
+function wet(scene: Phaser.Scene) {
+  prop(scene, TILE.wet, heightFor(0), (g, cx, cy) => {
+    g.fillStyle(PAL.rain.wetRoad, 0.3);
+    diamond(g, cx, cy, TW - 1, TH - 1);
+  });
+}
+
 export function buildTiles(scene: Phaser.Scene) {
   (Object.keys(FLOORS) as Floor[]).forEach((kind) => {
     const spec = FLOORS[kind];
@@ -82,4 +102,5 @@ export function buildTiles(scene: Phaser.Scene) {
     }
   });
   sun(scene);
+  wet(scene);
 }

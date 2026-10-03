@@ -2,6 +2,7 @@ import type Phaser from "phaser";
 import { NPCS } from "../../content/npcs";
 import { notebookWriteOpen } from "../../sim/season";
 import { buildBody } from "../../art";
+import { faceCrop } from "../../art/photo";
 import type { SaveFile } from "../../core/save";
 import type { NpcId } from "../../core/types";
 import {
@@ -54,6 +55,7 @@ const STYLE = `
 .nb-red div{margin:2px 0}
 .nb-abs{margin-top:8px;padding-top:6px;border-top:2px solid #cdbf9f}
 .nb-abs .row{display:flex;align-items:center;gap:8px;margin:4px 0}
+.nb-abs .row img {width :35px; height:35px ; object-fit:contain}
 .nb-faces{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
 .nb-face{cursor:pointer;border:2px solid transparent;border-radius:50%;padding:1px;background:none}
 .nb-face.on{border-color:#2f5d8a}
@@ -152,7 +154,10 @@ export class NotebookView {
     if (u !== undefined) return u;
     const npc = NPCS.find((n) => n.id === id);
     if (npc && !this.scene.textures.exists(`${id}_s`)) buildBody(this.scene, id, npc.body);
-    u = this.scene.textures.exists(`${id}_s`) ? this.scene.textures.getBase64(`${id}_s`) : "";
+    // `faceCrop` chứ không `getBase64`: xem lý do ở `art/photo.faceCrop` — texture người
+    // vẽ bằng code và texture ảnh thật có lề khác nhau, giao cho CSS cắt là ra hai kiểu
+    // chân dung khác hẳn nhau trên cùng một trang sổ.
+    u = this.scene.textures.exists(`${id}_s`) ? faceCrop(this.scene, `${id}_s`) : "";
     this.faces.set(id, u);
     return u;
   }

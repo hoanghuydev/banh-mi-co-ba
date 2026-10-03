@@ -63,6 +63,11 @@ Nguồn gốc mọi quyết định: [`../idea.md`](../idea.md) (Phần I — re
 | [`phase-2-he-npc/P2-03-tri-nho-va-quan-he.md`](phase-2-he-npc/P2-03-tri-nho-va-quan-he.md) | 3 tầng slot, decay có sàn, trần tin tưởng vĩnh viễn, lịch sinh hoạt |
 | [`phase-2-he-npc/P2-04-don-thoi-va-nho-nham.md`](phase-2-he-npc/P2-04-don-thoi-va-nho-nham.md) | Mutation graph, cap 2–3 hop, **nghe lỏm là điều kiện tồn tại**, đồ thị quan hệ NPC |
 | [`phase-2-he-npc/P2-05-so-tay-co-ba.md`](phase-2-he-npc/P2-05-so-tay-co-ba.md) | Mặt phẳng để người chơi NHẬN RA hệ thống. Game log dữ liệu thô, người chơi viết diễn giải |
+| [`phase-2-he-npc/P2-06-flow-tro-chuyen.md`](phase-2-he-npc/P2-06-flow-tro-chuyen.md) | **Flow trò chuyện v2** — hai kênh chia theo "có ai đang chờ không", bỏ đóng băng đồng hồ, NPC phải nói trước. Hồ sơ rà soát gốc ở [`audit/flow-tro-chuyen/`](audit/flow-tro-chuyen/README.md) |
+| [`phase-2-he-npc/P2-07-neo-thoai-vao-the-gioi.md`](phase-2-he-npc/P2-07-neo-thoai-vao-the-gioi.md) | **Hợp đồng ba phần** của một câu nói — `need` (ẩn) · `while` ("?") · `does` + `forSec`. Lời hứa có hạn, trí nhớ bốn tầng |
+| [`phase-2-he-npc/P2-08-viec-can-lam.md`](phase-2-he-npc/P2-08-viec-can-lam.md) | Năm danh sách rút từ bản rà đủ 1.534 nút: 374 `SỬA` · 202 `CẦN CODE` · 2 `XOÁ`. Hồ sơ rà gốc ở [`audit/thoai/`](audit/thoai/) |
+| [`phase-2-he-npc/P2-09-kien-truc-giao-tiep.md`](phase-2-he-npc/P2-09-kien-truc-giao-tiep.md) | **Kiến trúc giao tiếp** — gộp ba từ vựng thành một bảng đen, thế giới chào hàng (Sims), trí nhớ có truy hồi (`recency + importance + relevance`), bảy khung cảnh thay kho `ANY`, hồ sơ giao tiếp 12 NPC. Nghiên cứu nền ở [`audit/giao-tiep/`](audit/giao-tiep/research-ai-npc.md) |
+| [`phase-2-he-npc/P2-10-ke-hoach-ra-noi-dung.md`](phase-2-he-npc/P2-10-ke-hoach-ra-noi-dung.md) | **Kế hoạch rà 1.595 nút thoại** — sáu bước cho một file, thứ tự 14 file còn lại, việc code còn nợ. `qua-duong` đã xong (63,4% neo), mười bốn file còn ở 2–15% |
 
 ### Phase 3 — Kinh tế
 | File | Nội dung |

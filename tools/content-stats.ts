@@ -1,9 +1,10 @@
 /**
  * npm run content:stats — bảng đếm để đối chiếu mốc CANON §11 (P0-03 §2.3c).
  *
- * Mốc: v1/demo ~520 dòng ~5.000 từ · beta nội bộ ~1.200 · full ~2.980 ~30.000 từ.
+ * Mốc (CANON §11, nới ngày 2026-10-02): v1/demo ~5.000 từ · beta ~12.000 · full ~38.000.
+ * ĐƠN VỊ CHỐT LÀ TỪ, không phải dòng — số dòng chỉ nói lên người viết ngắt câu thế nào.
  * Firewatch: 8,3 từ/dòng. Nếu ta ra 20 từ/dòng thì ta đang viết VĂN chứ không viết
- * bark, và 2.980 dòng sẽ thành 60.000 từ.
+ * bark, và 4.200 dòng sẽ thành 84.000 từ.
  */
 import { join } from "node:path";
 import { ROOT, readJson, walk } from "./lib";
@@ -41,7 +42,7 @@ const perTier = [1, 2, 3].map((t) => rows.filter((r) => r.tier === t).reduce((a,
 const small = rows.filter((r) => r.n < 8);
 const generic = rows.filter((r) => r.generic).reduce((a, r) => a + r.n, 0);
 
-const MILESTONES = [["v1/demo", 520, 5000], ["beta nội bộ", 1200, 12000], ["full", 2980, 30000]] as const;
+const MILESTONES = [["v1/demo", 550, 5000], ["beta nội bộ", 1300, 12000], ["full", 4200, 38000]] as const;
 
 console.log("\ncontent:stats");
 console.log(`  tổng dòng        ${lines}`);

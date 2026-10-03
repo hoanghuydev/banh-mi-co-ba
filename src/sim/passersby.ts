@@ -1,33 +1,18 @@
 /**
  * NGƯỜI QUA ĐƯỜNG — cái hẻm có người đi ngang, và đa số họ không mua gì.
  *
- * Vì sao cần: trước bản này, người duy nhất xuất hiện trong khung hình là người TỚI MUA.
- * Quầy trống là cả khu phố trống. Hậu quả không phải chuyện thẩm mỹ mà là chuyện luật
- * chơi — cả trò chơi dựng trên "có người nhìn mình làm", mà nếu người duy nhất đi ngang
- * cũng là người sắp xếp hàng thì "có người" không còn là một tin tức nào nữa. Người chơi
- * học được một phản xạ sai và rất bền: thấy bóng người = sắp có đơn.
+ * Cả trò chơi dựng trên "có người nhìn mình làm"; nếu người duy nhất đi ngang cũng là người sắp
+ * xếp hàng thì "có người" không còn là tin tức nào nữa, và người chơi học một phản xạ sai rất
+ * bền: thấy bóng người = sắp có đơn.
  *
- * Nên có mấy người này. Họ đi từ đầu hẻm bên này qua đầu hẻm bên kia, một số ngoái nhìn
- * cái xe một cái rồi đi tiếp, và KHÔNG AI MUA GÌ. Đó là toàn bộ chức năng của họ:
+ * ⚠️ TỰ HỌ thì KHÔNG ĐỤNG TỚI KINH TẾ: không gọi món, không xếp hàng, không tính vào `ahead`,
+ * không chiếm `peakCap`, không vào `audience`, và không bao giờ TỰ đổi ý thành khách. Một ngày có
+ * họ và một ngày không, nếu người chơi cứ đứng sau quầy, phải ra đúng cùng một con số bán được.
  *
- *   · "có người đi ngang" trở lại thành chuyện thường, không phải điềm báo;
- *   · cái xe bánh mì có một đường phố quanh nó, chứ không đứng giữa khoảng không;
- *   · và người chơi có ai đó để bắt chuyện lúc quầy trống (bấm F — `Service.talkTarget`).
+ * Cửa DUY NHẤT để họ thành khách là người chơi tự đi mời (`inviteChance`, act `INVITE`) — nên cái
+ * nền vẫn chỉ là cái nền.
  *
- * TỰ HỌ thì KHÔNG ĐỤNG TỚI KINH TẾ. Người đi ngang không gọi món, không xếp hàng, không
- * tính vào `ahead`, không chiếm trần `peakCap`, không vào `audience` của tầng nhận thấy,
- * và không bao giờ TỰ đổi ý thành khách. Một ngày có họ và một ngày không có họ, nếu
- * người chơi cứ đứng sau quầy, phải ra đúng cùng một con số bán được — nếu không thì đây
- * không còn là cái nền nữa, nó là một hệ.
- *
- * Cửa DUY NHẤT để họ thành khách là người chơi tự đi mời (`inviteChance` ở cuối file,
- * act `INVITE` của `sim/talk.ts`). Đó là cố ý: quán vắng thì bước ra ngoài mời một câu
- * là việc duy nhất còn làm được, và nó phải là một việc THẬT — có tay nghề, có rủi ro,
- * không bao giờ chắc ăn. Nhưng nó luôn bắt đầu bằng một hành động của người chơi, nên
- * cái nền vẫn chỉ là cái nền.
- *
- * Thuần dữ liệu + toán: không Phaser, không RNG riêng (số ngẫu nhiên nhận từ ngoài vào),
- * nên `tools/sim.ts` và test chạy được y như trong game.
+ * Thuần dữ liệu + toán, nên `tools/sim.ts` và test chạy được y như trong game.
  */
 import type { Rng } from "../core/rng";
 import type { TimeBand } from "../core/clock";
@@ -35,24 +20,20 @@ import { STREET_LANES, STREET_X } from "../world/map";
 import { WALKIN_STYLES } from "../content/npcs";
 
 /**
- * Tối đa bao nhiêu người cùng ở trên đường một lúc.
- *
- * Đây là trần AN TOÀN chứ không phải nhịp độ — nhịp độ nằm ở `GAP_SEC`. Nó có mặt để một
- * ngày nào đó ai sửa `GAP_SEC` xuống quá tay thì cái hẻm không biến thành đám đông chen
- * nhau che mất hàng khách. Năm người trên hai dải, trải suốt 25 ô, là còn thưa.
+ * Tối đa bao nhiêu người cùng ở trên đường một lúc — trần AN TOÀN chứ không phải nhịp độ (nhịp độ
+ * nằm ở `GAP_SEC`). Nó có mặt để ai sửa `GAP_SEC` xuống quá tay thì cái hẻm không biến thành đám
+ * đông che mất hàng khách.
  */
 export const PASSERS_MAX = 5;
 
 /**
  * Cách nhau bao nhiêu GIÂY THẬT giữa hai người, theo khung giờ.
  *
- * Giây THẬT, không phải phút game — và đây là chỗ dễ làm sai nhất. Đồng hồ game tua
- * nhanh khi quầy trống (`core/clock`), nên tính theo phút game thì đúng lúc hẻm vắng
- * nhất lại là lúc người đi ngang ùa ra thành một đám. Mắt người chơi đọc giây thật.
+ * ⚠️ Giây THẬT chứ không phải phút game: đồng hồ game tua nhanh khi quầy trống, nên tính theo phút
+ * game thì đúng lúc hẻm vắng nhất lại là lúc người đi ngang ùa ra thành một đám.
  *
- * Một người đi hết chiều ngang bản đồ mất ~11 s, mà chỉ ~8 s trong đó là nằm trong khung
- * hình. Nên khoảng cách 2,6–6 s ở giờ cao điểm ra chừng một hai người trong khung — một
- * con hẻm Sài Gòn sáng sớm, không phải một quảng trường.
+ * Một người đi hết chiều ngang bản đồ mất ~11 s, chỉ ~8 s trong khung hình — nên 2,6–6 s ở giờ
+ * cao điểm ra chừng một hai người trong khung.
  */
 export const GAP_SEC: Record<TimeBand, readonly [number, number]> = {
   PRE_OPEN: [6, 14],
@@ -79,12 +60,10 @@ export const GLANCE_SEC: readonly [number, number] = [1.1, 2.6];
 export const SPEED_MUL: readonly [number, number] = [0.8, 1.25];
 
 /**
- * Tên gọi tạm, khớp 1–1 theo chỉ số với `WALKIN_STYLES` (y như `WALKIN_NAMES`).
+ * Tên gọi tạm, khớp 1–1 theo chỉ số với `WALKIN_STYLES`. Tách riêng khỏi `WALKIN_NAMES` vì mấy
+ * người này KHÔNG phải khách — "khách lạ" sai hẳn nghĩa với một người chỉ đi ngang.
  *
- * Tách riêng khỏi `WALKIN_NAMES` vì mấy người này KHÔNG phải khách: "khách lạ" là sai
- * hẳn nghĩa với một người chỉ đi ngang. Tên này chỉ hiện ra lúc người chơi bắt chuyện —
- * trên đầu họ không có chip tên nào (xem `CustomerActor`), vì một con đường mà ai cũng
- * đeo bảng tên thì không còn là đường nữa.
+ * Tên này chỉ hiện lúc người chơi bắt chuyện; trên đầu họ không có chip tên nào.
  */
 export const PASSER_NAMES = [
   "người đi đường", "chị đeo khẩu trang", "cô xách giỏ", "bà cụ",
@@ -117,12 +96,12 @@ export function nextGapSec(band: TimeBand, raining: boolean, rng: Rng): number {
 }
 
 /**
- * Dựng một lượt đi ngang. `counterX` là cột của chỗ đưa hàng — chỗ ngoái nhìn phải nằm
- * ngang tầm cái xe, chứ ngoái ở cuối hẻm thì không ai hiểu họ đang nhìn gì.
+ * Dựng một lượt đi ngang. `counterX` là cột của chỗ đưa hàng — chỗ ngoái nhìn phải nằm ngang tầm
+ * cái xe, chứ ngoái ở cuối hẻm thì không ai hiểu họ đang nhìn gì.
  *
- * Thứ tự rút số là HỢP ĐỒNG (test `p6-passersby` neo vào nó): hướng · dải · dáng người ·
- * tốc độ · có ngoái không · ngó mấy giây · lệch chỗ ngó. Chèn thêm một lần rút vào giữa
- * là đổi hết mọi người của mọi ngày.
+ * ⚠️ Thứ tự rút số là HỢP ĐỒNG (test `p6-passersby` neo vào nó): hướng · dải · dáng người · tốc độ
+ * · có ngoái không · ngó mấy giây · lệch chỗ ngó. Chèn thêm một lần rút vào giữa là đổi hết mọi
+ * người của mọi ngày.
  */
 export function planPasser(rng: Rng, counterX: number): PassPlan {
   const rightward = rng.next() < 0.5;
@@ -142,12 +121,13 @@ export function planPasser(rng: Rng, counterX: number): PassPlan {
 }
 
 /**
- * Mờ dần ở hai đầu đường — người ta ĐI VÀO khung hình chứ không hiện ra.
+ * Mờ dần ở hai đầu đường — người ta ĐI VÀO khung hình chứ không hiện ra. Hai đầu dải nằm ngoài
+ * khung nhìn ở phần lớn vị trí camera nhưng không phải MỌI vị trí, và một người bật ra giữa vỉa hè
+ * là thứ nhìn ra ngay.
  *
- * Hai đầu dải nằm ngoài khung nhìn ở phần lớn vị trí camera, nhưng không phải MỌI vị
- * trí: người chơi đứng ở đầu quầy bên trái thì mép trái khung nhìn liếm tới chỗ người ta
- * sinh ra. Một người bật ra giữa vỉa hè là thứ nhìn ra ngay. Một ô rưỡi mờ dần thì dù
- * camera đứng đâu cũng không ai thấy khoảnh khắc đó.
+ * ⚠️ Đây là quãng mờ DUY NHẤT của người đi ngang, và nó đo bằng Ô BẢN ĐỒ. Đã từng có thêm một hệ
+ * số mờ theo mép khung nhìn: nó làm người ta tan ra giữa đường, lại nhấp nháy theo bước chân của
+ * người chơi vì camera bám người chơi. Lý do dài hơn ở `entities/CustomerActor.ts`.
  */
 export const FADE_TILES = 1.5;
 
@@ -160,18 +140,13 @@ export function passerAlpha(x: number): number {
 // ──────────────────────────────────────────────────────────── mời khách vô
 
 /**
- * Quán vắng thì bước ra mời một câu — và người ta vô hay không là chuyện của người ta.
- *
- * Đây là việc DUY NHẤT người chơi làm được khi không có ai ở quầy, nên nó phải là một
- * việc THẬT: có tay nghề, có rủi ro, và không bao giờ chắc ăn. Ba cái hãm:
- *
- *  1. Trần 0,8 — không có câu nào kéo được mọi người vô. "Cũng tuỳ khách."
- *  2. Hàng chờ ăn mạnh nhất. Không ai được mời mà chịu đứng vào cuối một cái hàng ba
- *     người; mà đó cũng chính là chỗ cơ chế này tự biết điều: nó chỉ đáng dùng lúc VẮNG,
- *     đúng lúc người chơi rảnh tay để bước ra khỏi quầy. Đông khách thì đừng mời ai.
- *  3. `warmth` là điểm quan hệ vừa kiếm được TRONG CHÍNH cuộc nói chuyện này. "Mời khéo"
- *     nghĩa là nói mấy câu tử tế TRƯỚC rồi mới mời, chứ không phải bấm trúng nút "mời".
- *     Trần +0,15: nịnh giỏi cỡ nào cũng không bằng một cái hàng ngắn.
+ * Quán vắng thì bước ra mời một câu — và người ta vô hay không là chuyện của người ta. Đây là việc
+ * DUY NHẤT làm được khi không có ai ở quầy, nên nó phải THẬT: có tay nghề, có rủi ro, không bao
+ * giờ chắc ăn. Ba cái hãm:
+ *  1. trần 0,8 — không câu nào kéo được mọi người vô
+ *  2. hàng chờ ăn mạnh nhất, nên cơ chế này tự biết điều: chỉ đáng dùng lúc VẮNG
+ *  3. `warmth` là điểm quan hệ kiếm được TRONG CHÍNH cuộc này — "mời khéo" nghĩa là nói mấy câu
+ *     tử tế TRƯỚC rồi mới mời; trần +0,15, nịnh giỏi cỡ nào cũng không bằng một cái hàng ngắn
  *
  * Hết bánh thì bằng 0 — mời người ta vô rồi nói hết hàng là tệ hơn không mời.
  */

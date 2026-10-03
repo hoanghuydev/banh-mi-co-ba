@@ -1,21 +1,15 @@
 /**
  * Mép THẬT của một sprite (`art/opaque.opaqueEdges`).
  *
- * Hàm này sinh ra từ MỘT lỗi lặp lại ba lần ở ba chỗ khác nhau, lần nào cũng chỉ lòi ra
- * khi chơi thật: code hỏi KHUNG TEXTURE trong khi nó cần hỏi CÁI VẬT. Ổ bánh trong khung
- * 40×40 treo lơ lửng trên mặt thớt; dấu "việc cần làm" trỏ vào khoảng không phía trên
- * khúc quầy cao 92 px; cái bồn rửa nướng lệch 2 px nên tâm sprite không phải tâm bồn.
+ * Hàm này sinh ra từ MỘT lỗi lặp lại ba lần ở ba chỗ khác nhau, lần nào cũng chỉ lòi ra khi chơi
+ * thật: code hỏi KHUNG TEXTURE trong khi nó cần hỏi CÁI VẬT (ổ bánh treo lơ lửng trên mặt thớt;
+ * dấu việc cần làm trỏ vào khoảng không trên khúc quầy; bồn rửa nướng lệch 2 px).
  *
- * Phần quét alpha không sai được — nó chỉ đọc pixel. Cái sai LUÔN nằm ở bước sau: co
- * giãn hộp pixel về toạ độ màn hình rồi dời gốc. Bước đó giờ là `opaqueEdges`, thuần
- * toán, nên quét được cả ngàn trường hợp ở đây thay vì phải mở game ra nhìn.
+ * Phần quét alpha không sai được — cái sai LUÔN nằm ở bước co giãn hộp pixel về toạ độ màn hình
+ * rồi dời gốc. Bước đó giờ là `opaqueEdges`, thuần toán, nên quét được cả ngàn trường hợp ở đây.
  *
- * ── Giao kèo của `box` ───────────────────────────────────────────────────────
- * `left`/`top` tính vào, `right`/`bottom` hở ra, đơn vị là px TEXTURE, gốc góc trên
- * trái. `null` = texture trong suốt hết, hoặc không đọc nổi pixel.
- *
- * `b` là `getBounds()` của Phaser — ĐÃ nuốt sẵn origin, xoay và co. Mấy test dưới khoá
- * lại chuyện đó: ai lỡ tay cộng origin thêm lần nữa ở chỗ gọi sẽ gãy ở đây.
+ * Giao kèo của `box`: `left`/`top` tính vào, `right`/`bottom` hở ra, đơn vị px TEXTURE, gốc góc
+ * trên trái. `null` = texture trong suốt hết, hoặc không đọc nổi pixel.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";

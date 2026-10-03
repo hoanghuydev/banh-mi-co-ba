@@ -3,7 +3,8 @@
   "rules": [
     {"id": "dung.dropped_food", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_DUNG", "eventId": "DROPPED_FOOD", "obsState": ">=NOTICED"}, "silent": true, "say": []},
     {"id": "dung.dirty_hands", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_DUNG", "eventId": "DIRTY_HANDS", "obsState": ">=NOTICED"}, "silent": true, "say": []},
-    {"id": "dung.burnt_or_cold", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_DUNG", "eventId": "BURNT_OR_COLD", "obsState": ">=NOTICED", "ctxBarkT1_KHET": "absent"}, "applycontext": {"ctxBarkT1_KHET": {"value": 1, "duration": 90}}, "say": ["Nguội rồi nè em."]},
+    {"id": "dung.cold", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_DUNG", "eventId": "BURNT_OR_COLD", "eventBurnt": false, "obsState": ">=NOTICED", "ctxBarkT1_NGUOI": "absent"}, "applycontext": {"ctxBarkT1_NGUOI": {"value": 1, "duration": 90}}, "say": ["Nguội rồi nè em."]},
+    {"id": "dung.burnt", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_DUNG", "eventId": "BURNT_OR_COLD", "eventBurnt": true, "obsState": ">=NOTICED", "ctxBarkT1_KHET": "absent"}, "applycontext": {"ctxBarkT1_KHET": {"value": 1, "duration": 90}}, "say": ["Khét rồi em ơi."]},
     {"id": "dung.wrong_name", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_DUNG", "eventId": "WRONG_NAME", "obsState": ">=NOTICED"}, "silent": true, "say": []},
     {"id": "dung.wait.noticed", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_DUNG", "eventId": "MADE_THEM_WAIT", "obsState": "NOTICED"}, "say": ["Ê em ơi lẹ giùm anh cái, anh có đơn nè."]},
     {"id": "dung.bye.impatient", "concept": "FAREWELL", "when": {"npcId": "ANH_DUNG", "leaveReason": "IMPATIENT"}, "say": ["Thôi khỏi, anh đi. Bữa khác."]},

@@ -116,6 +116,58 @@ export const PAL = {
   skyTop: 0x7e939e,
   skyLow: 0xb9c6c9,
 
+  /*
+   * ── TRỜI MƯA ───────────────────────────────────────────────────────────────
+   * P5-02 §2.1.5, chép nguyên mã màu. Mưa KHÔNG phải một lớp xanh dán lên trên:
+   * nó NÉN DẢI GIÁ TRỊ và RÚT CHROMA — không còn gì trắng hẳn, không còn gì đen
+   * hẳn, mọi thứ ngả về một tông xám xanh.
+   *
+   * Thứ duy nhất KHÔNG bị rút màu là tấm bạt xanh (`#2F6F8F`) — spec gọi nó là
+   * "điểm nhìn của khung". Chưa có cái bạt nào trong cảnh nên `tarp` hiện chưa
+   * ai đọc; để sẵn ở đây vì nó là một nửa của cái luật trên, bỏ đi là lần sau
+   * có người rút màu luôn cả tấm bạt.
+   */
+  rain: {
+    ambient: 0x5a646a,          // tông nền của cả khung mưa
+    highlight: 0xa8b2b5,        // sáng nhất còn được phép — vệt mưa lấy màu này
+    shadow: 0x343c40,
+    sky: 0x6f787c,              // nền trời (màu nền camera)
+    wetRoad: 0x2f3a3e,          // nhựa đường ướt
+    reflect: 0x8fa0a6,          // phản chiếu trên nhựa — vệt DỌC, alpha 0,35
+    tarp: 0x2f6f8f,             // bạt che xanh — thứ bão hoà duy nhất trong mưa
+    /*
+     * Màu của TẤM PHỦ toàn khung lúc mưa. Không phải một màu ai chọn cho đẹp: nó là
+     * kết quả gộp đại số của hai lớp `ambient` + `sky` mà spec khai — xem `rainGrade`
+     * trong `world/rain.ts`. Đổi nó mà không đổi cái phép tính bên kia là lệch tông.
+     */
+    grade: 0x3c4246,
+  },
+
+  /*
+   * ── ĐÈN TRONG QUÁN ─────────────────────────────────────────────────────────
+   * Bóng đèn compact treo trần, KHÔNG CHỤP — P5-02 §2.2.3 xếp nó vào danh sách
+   * "chi tiết bốc mùi thật", cạnh vữa loang và dép rơi lạc. Ánh ngả VÀNG ẤM: đèn
+   * trắng là ánh của văn phòng, không phải của một cái xe bánh mì đầu hẻm.
+   *
+   * Đây là nguồn sáng DUY NHẤT trong game đi ngược chiều lớp phủ mưa: mưa kéo cả
+   * khung về xám xanh, cây đèn này kéo đúng khu làm việc sáng trở lại. Đó là cả
+   * điểm của nó — ngoài hiên ướt và tối, trong quán khô và sáng.
+   */
+  lamp: {
+    glow: 0xffd9a0,             // vũng sáng đổ xuống khu làm việc
+    core: 0xfff6d8,             // tim bóng — chỗ sáng nhất khung hình lúc mưa
+    shell: 0xe8e2d4,            // vỏ bóng lúc TẮT
+    /*
+     * Máng đèn — SẬM hẳn, không phải xám nhạt cho "hợp tông".
+     *
+     * Tường sau là gạch men sáng, nên một cái máng xám nhạt tan biến vào đó: bản đầu
+     * dùng `#8B939A` và trên khung hình thật chỉ còn thấy cái quầng sáng, không thấy
+     * cây đèn đâu. Vật gắn trên nền sáng thì phải đọc bằng ĐỘ SẬM — cùng mẹo mà vòng
+     * sáng dưới chân trạm và mũi tên "cô Ba đây" đã dùng (xem `art/fx.ts`).
+     */
+    housing: 0x434b52,
+  },
+
   // ── phụ kiện nhân vật
   capBlue: 0x2f4a6b,            // nón kết bảo vệ
   helmet: 0xd8d3c6,             // nón bảo hiểm nửa đầu

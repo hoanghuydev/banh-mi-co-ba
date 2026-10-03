@@ -1,38 +1,14 @@
 /**
- * Chỗ đặt dấu "việc cần làm" (`ui/chorePin`).
+ * Chỗ đặt dấu "việc cần làm" (`ui/chorePin`). File này tồn tại vì chỗ toán đó đã sai hai lần, và
+ * cả hai lần đều do người thiết kế ngồi chơi tìm ra chứ không phải người viết code — trong scene
+ * mỗi lần chạy thử chỉ nhìn được một vị trí camera, ở đây quét vài chục ngàn vị trí trong một giây.
  *
- * File này tồn tại vì MỘT lý do: chỗ toán đó đã sai hai lần, và cả hai lần đều không
- * phải người viết code tìm ra mà là người thiết kế ngồi chơi tìm ra. Trong scene nó chỉ
- * kiểm được bằng mắt, mỗi lần chạy thử chỉ nhìn được đúng một vị trí camera; ở đây quét
- * được vài chục ngàn vị trí trong một giây.
+ * Mấy test dưới KHÔNG chép lại công thức: chúng viết lại ba luật ở đầu `chorePin.ts` dưới dạng
+ * thứ NGƯỜI CHƠI nhìn thấy, rồi thử phá.
  *
- * Mấy test dưới KHÔNG chép lại công thức. Chúng viết lại ba luật ở đầu `chorePin.ts`
- * dưới dạng thứ NGƯỜI CHƠI nhìn thấy — "dấu không nhúc nhích khi trạm còn trên màn hình",
- * "đi một bước thì dấu bò một bước" — rồi thử phá.
- *
- * ── Luật đã đổi: giờ chỉ còn MỘT phép kẹp ────────────────────────────────────
- * Bản trước dùng hai phép khác nhau (kẹp từng trục khi còn thấy, chiếu dọc tia nối tâm
- * khi đã khuất). Chính file này đo ra chúng lệch nhau tới 90,4 px ngay tại chỗ giao, nặng
- * nhất ở mép trên — đúng nơi cái lò đứng. Giờ cả hai trường hợp dùng chung một phép kẹp
- * tách trục, còn `pinned` tụt xuống làm cái nhãn thuần tuý ("việc này ngoài khung") để
- * chỗ gọi vẽ nhỏ lại 0,8 lần.
- *
- * Mấy mệnh đề của bản cũ do đó đã chết theo, và chết ĐÚNG: dấu không còn thẳng hàng với
- * tâm, và hai cái việc cùng một góc mà khác khoảng cách thì ghim ở hai chỗ khác nhau.
- * Thay vào là mấy mệnh đề mạnh hơn, vì chúng nói được cả toạ độ chứ không chỉ nói góc:
- * hai trục RỜI NHAU HẲN, trục không bị kẹp báo ĐÚNG toạ độ thật, và phép kẹp KHÔNG GIÃN
- * — cái việc dời `d` px thì dấu dời nhiều nhất `d` px, từ đó mọi ngưỡng mượt siết xuống
- * đúng 1 px cho mỗi 1 px camera.
- *
- * ── Khung nhìn lấy số thật ───────────────────────────────────────────────────
- * `GAME_W/H` = 1024 × 576, `camera.ZOOM` = 1,28 -> khung nhìn THẾ GIỚI đúng 800 × 450.
- * Lề lấy đúng của `StallScene`: `edge` = `CHORE_R` (11) + `CHORE_EDGE` (8) = 19;
- * `top` = `CHORE_TOP` = 58. Lấy số thật chứ không lấy số tròn: hai lề LỆCH NHAU ba lần,
- * và chính độ lệch đó là thứ đẻ ra cú nhảy 90 px của bản cũ — số tròn đẹp sẽ giấu nó đi.
- *
- * Gốc khung nhìn cố ý KHÔNG đặt ở (0, 0): toạ độ thế giới của quán nằm quanh vài ngàn,
- * và một phép tính lẫn lộn "toạ độ khung" với "toạ độ màn hình" thì chỉ lòi ra khi gốc
- * khác 0.
+ * ⚠️ Khung nhìn và lề lấy SỐ THẬT, không lấy số tròn (`edge` 19 · `top` 58 — hai lề lệch nhau ba
+ * lần, và chính độ lệch đó đẻ ra cú nhảy 90 px của bản cũ). Gốc khung nhìn cố ý KHÔNG đặt ở
+ * (0, 0): lẫn "toạ độ khung" với "toạ độ màn hình" chỉ lòi ra khi gốc khác 0.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -67,16 +43,11 @@ function lcg(seed: number) {
 // ───────────────────────────────────────────────────────────── luật 1: còn trong khung
 
 /**
- * ĐÂY LÀ TEST QUAN TRỌNG NHẤT FILE.
+ * ĐÂY LÀ TEST QUAN TRỌNG NHẤT FILE — lần hỏng gần nhất đúng là chuyện này: cái thớt nằm chình
+ * ình giữa màn hình mà dấu chấm than trôi sang ngang mấy chục pixel.
  *
- * Lần hỏng gần nhất đúng là chuyện này: cái thớt nằm chình ình giữa màn hình mà dấu
- * chấm than lại trôi sang ngang mấy chục pixel, vì phép thử "ra khỏi màn hình" đo trên
- * khung ĐÃ TRỪ LỀ chứ không phải khung thật, rồi cú chiếu-theo-hướng kéo dấu đi.
- *
- * Quét lưới dày 2 px: ~190 × 100 = 19.000 vị trí. Một cái test chạy trong vài chục ms
- * phủ nhiều hơn toàn bộ số lần người thiết kế nhìn vào màn hình trong cả một tuần.
- * So sánh BẰNG ĐÚNG, không có sai số: luật nói "tuyệt đối không nhúc nhích", mà nhúc
- * nhích nửa pixel thì ở đây cũng là sai luật.
+ * Quét lưới dày 2 px (~19.000 vị trí), so sánh BẰNG ĐÚNG không sai số: luật nói "tuyệt đối không
+ * nhúc nhích", nên nhúc nhích nửa pixel cũng là sai luật.
  */
 test("việc nằm hẳn trong vùng vẽ: dấu đứng ĐÚNG trên nó, không lệch một pixel", () => {
   let n = 0;
@@ -95,13 +66,11 @@ test("việc nằm hẳn trong vùng vẽ: dấu đứng ĐÚNG trên nó, khôn
 });
 
 /**
- * Cái lò nằm ở HÀNG TRÊN CÙNG bản đồ (`STATION_ROW_Y` = 1), neo của nó chỉ cách mép
- * trên khung nhìn chừng 60 px khi camera trượt hết cỡ lên. Nghĩa là "trong khung nhưng
- * chui dưới dải icon" KHÔNG phải trường hợp hiếm — nó là trường hợp THƯỜNG NGÀY của
- * đúng cái trạm hay cháy bánh nhất.
+ * Cái lò nằm ở HÀNG TRÊN CÙNG bản đồ nên "trong khung nhưng chui dưới dải icon" là trường hợp
+ * THƯỜNG NGÀY của đúng cái trạm hay cháy bánh nhất.
  *
- * Luật 1 nói kẹp TỪNG TRỤC RIÊNG. Trục x còn nguyên chỗ thì x phải y nguyên: đẩy ngang
- * một cái dấu mà trạm của nó đang nhìn thấy rõ là nói dối người chơi về chỗ đứng.
+ * Luật 1 kẹp TỪNG TRỤC RIÊNG: trục x còn nguyên chỗ thì x phải y nguyên — đẩy ngang một cái dấu
+ * mà trạm của nó đang nhìn thấy rõ là nói dối người chơi về chỗ đứng.
  */
 test("việc còn trong khung mà nằm dưới dải icon: chỉ bị đẩy XUỐNG, x không đổi", () => {
   for (let ax = x0; ax <= x1; ax += 3) {
@@ -172,21 +141,13 @@ test("việc ra hẳn ngoài khung: dấu nằm ĐÚNG trên viền vùng vẽ, 
 });
 
 /**
- * "Trạm ở hướng nào thì dấu ở đúng phía ấy" (luật 2) — đo TỪNG TRỤC, vì luật bây giờ là
- * MỘT phép kẹp tách trục chứ không còn là phép chiếu theo tia.
+ * "Trạm ở hướng nào thì dấu ở đúng phía ấy" — đo TỪNG TRỤC, vì luật là MỘT phép kẹp tách trục
+ * chứ không còn là phép chiếu theo tia:
+ *  · việc ở bên TRÁI khung → dấu ở ĐÚNG lề trái · ở TRÊN → đúng lề trên · cả hai → đúng cái GÓC
+ *  · trục nào KHÔNG bị kẹp → dấu báo ĐÚNG TOẠ ĐỘ THẬT trên trục đó, chính xác từng bit
  *
- * Bản trước kiểm bằng "thẳng hàng với tâm". Điều đó giờ SAI, và sai một cách cố ý: cái
- * việc ở xa hẳn phía trên-trái thì dấu nằm ở GÓC, không nằm trên tia nối tâm. Thứ thay
- * thế nó mạnh hơn chứ không yếu hơn, vì nó nói được cả toạ độ chứ không chỉ nói góc:
- *
- *  · việc ở bên TRÁI khung  -> dấu ở ĐÚNG lề trái  (và tuyệt đối không ở lề phải);
- *  · việc ở TRÊN khung      -> dấu ở ĐÚNG lề trên;
- *  · cả hai                 -> dấu ở ĐÚNG cái GÓC ấy;
- *  · trục nào KHÔNG bị kẹp  -> dấu báo ĐÚNG TOẠ ĐỘ THẬT của cái việc trên trục đó,
- *    chính xác từng bit. Đây là phần phép chiếu cũ KHÔNG làm được: nó dồn mọi thứ về
- *    phía đường tâm, nên cái lò khuất bên trái bị báo sai cả độ cao.
- *
- * Quét kín cả chín vùng (ba khoảng x × ba khoảng y): giữa, ngoài mỗi phía, và bốn góc.
+ * Vế cuối là phần phép chiếu cũ KHÔNG làm được: nó dồn mọi thứ về đường tâm nên cái lò khuất bên
+ * trái bị báo sai cả độ cao. Quét kín cả chín vùng.
  */
 test("ghim đúng phía theo TỪNG TRỤC, trục còn lại báo đúng toạ độ thật", () => {
   // Ba mốc cho mỗi trục: ngoài hẳn · trong khung · ngoài hẳn. Thêm vài mốc lẻ trong khung
@@ -217,12 +178,9 @@ test("ghim đúng phía theo TỪNG TRỤC, trục còn lại báo đúng toạ 
 });
 
 /**
- * HAI TRỤC RỜI NHAU HẲN. Đây là cột sống của luật mới, và là thứ bản cũ vi phạm: phép
- * chiếu theo tia lấy `t = min(...)` CHUNG cho cả hai trục, nên độ cao của cái việc ảnh
- * hưởng tới vị trí NGANG của dấu. Chính cái dính líu đó đẻ ra cú nhảy 90 px.
- *
- * Phát biểu: x của dấu chỉ phụ thuộc x của cái việc, y chỉ phụ thuộc y. Kiểm bằng cách
- * giữ nguyên một trục rồi lôi trục kia đi khắp nơi — kể cả ra ngoài khung cả ngàn pixel.
+ * HAI TRỤC RỜI NHAU HẲN — cột sống của luật mới, và là thứ bản cũ vi phạm: phép chiếu theo tia
+ * lấy `t = min(...)` CHUNG cho cả hai trục nên độ cao của cái việc ảnh hưởng tới vị trí NGANG của
+ * dấu, và chính cái dính líu đó đẻ ra cú nhảy 90 px.
  */
 test("hai trục độc lập hoàn toàn: dời cái việc theo y không làm dấu nhúc nhích theo x", () => {
   const nhieuY = [V.top - 9000, V.top - 1, V.top + 1, y0, cy, y1, V.bottom, V.bottom + 9000];
@@ -242,16 +200,12 @@ test("hai trục độc lập hoàn toàn: dời cái việc theo y không làm 
 });
 
 /**
- * Dấu đi CÙNG CHIỀU với cái việc, và KHÔNG BAO GIỜ đi nhanh hơn nó (1-Lipschitz).
+ * Dấu đi CÙNG CHIỀU với cái việc, và KHÔNG BAO GIỜ đi nhanh hơn nó (1-Lipschitz):
+ *  · cùng chiều — đẩy việc sang phải thì dấu không bao giờ nhích sang trái
+ *  · không nhanh hơn — việc dời `d` px thì dấu dời nhiều nhất `d` px, tức KHÔNG BAO GIỜ CÓ CÚ
+ *    NHẢY; đây là lý do mọi ngưỡng mượt ở dưới siết được xuống đúng 1 px
  *
- * Hai mệnh đề này thay cho "chỉ phụ thuộc hướng" của bản cũ, và chúng mới đúng là thứ
- * người chơi đọc được:
- *  · CÙNG CHIỀU — đẩy cái việc sang phải thì dấu không bao giờ nhích sang trái. Thiếu
- *    nó là dấu "chỉ sai", và đó là lỗi tệ nhất một chỉ báo hướng có thể mắc.
- *  · KHÔNG NHANH HƠN — cái việc dời `d` px thì dấu dời nhiều nhất `d` px. Đây chính là
- *    thứ bảo đảm KHÔNG BAO GIỜ CÓ CÚ NHẢY, suy thẳng ra từ `clamp`, và là lý do mọi
- *    ngưỡng mượt ở dưới siết được xuống đúng 1 px.
- * Phép chiếu theo tia hỏng cả hai: gần góc khung nó khuếch đại bước đi lên `hw/hh` ≈ 2,04 lần.
+ * Phép chiếu theo tia hỏng cả hai: gần góc khung nó khuếch đại bước đi lên ~2,04 lần.
  */
 test("dấu đi cùng chiều với cái việc và không bao giờ đi nhanh hơn nó", () => {
   const rnd = lcg(5150);
@@ -267,12 +221,9 @@ test("dấu đi cùng chiều với cái việc và không bao giờ đi nhanh h
 });
 
 /**
- * Dời CẢ cái việc LẪN khung nhìn đi cùng một quãng thì dấu phải dời đúng quãng ấy.
- *
- * Nghe hiển nhiên, nhưng nó khoá đúng một thứ: trong hàm không được còn sót chỗ nào bám
- * vào toạ độ TUYỆT ĐỐI. Quán nằm ở toạ độ thế giới vài ngàn, mà mọi phép thử bằng mắt
- * thì làm ở quanh gốc — một chỗ lẫn "toạ độ khung" với "toạ độ màn hình" sẽ sống sót
- * qua mọi lần chơi thử và chỉ chết ở đây.
+ * Dời CẢ cái việc LẪN khung nhìn đi cùng một quãng thì dấu phải dời đúng quãng ấy — khoá chuyện
+ * trong hàm không còn sót chỗ nào bám vào toạ độ TUYỆT ĐỐI. Quán nằm ở toạ độ thế giới vài ngàn,
+ * mà mọi phép thử bằng mắt thì làm quanh gốc.
  */
 test("dời việc và khung cùng một quãng: dấu dời đúng quãng ấy", () => {
   const rnd = lcg(31337);
@@ -304,23 +255,14 @@ test("kẹp hai lần bằng kẹp một lần — không có cú trôi tích lu
 // ────────────────────────────────────────────────────── luật 2: "đi một bước, bò một bước"
 
 /**
- * Camera trượt 1 px thì dấu được phép bò bao nhiêu? ĐÚNG 1 px, không hơn một hạt bụi.
- *
- * Suy ra, không đoán. Dấu = `clamp(việc, lo, hi)`, mà camera trượt `δ` thì cái việc đứng
- * yên còn hai mốc `lo`, `hi` cùng dời `δ`. Dùng `clamp(a, lo+δ, hi+δ) = δ + clamp(a−δ, lo, hi)`
- * và `clamp` không giãn (dời đầu vào `δ` thì đầu ra dời nhiều nhất `δ`):
+ * Camera trượt 1 px thì dấu được phép bò ĐÚNG 1 px, không hơn một hạt bụi. Suy ra chứ không đoán:
+ * dấu = `clamp(việc, lo, hi)`, camera trượt `δ` thì việc đứng yên còn `lo`/`hi` cùng dời `δ`, nên
  *
  *      dấu(δ) − dấu(0) = δ + [clamp(a−δ) − clamp(a)] ∈ [0, δ]
  *
- * Trần là ĐÚNG `δ`, và chạm trần thật — lúc dấu đang bám lề thì nó dời đúng bằng lề.
- * Nên ngưỡng ở đây không phải một con số chọn cho dễ thở: nó là chính mệnh đề toán học,
- * viết ra dưới dạng chạy được.
- *
- * Bản cũ phải cho tới 2,5 px, vì phép chiếu theo tia khuếch đại bước đi lên `hw/hh` ≈ 2,04
- * lần ở gần góc khung. Siết từ 2,5 xuống 1,0 chính là đo được cái lợi của lần sửa này.
- *
- * Và lần này quét CẢ LÚC CHUYỂN giữa "còn thấy" và "đã khuất" — chỗ bản cũ phải loại ra
- * vì nó nhảy tới 90 px. Giờ chỗ đó không còn là chỗ đặc biệt nữa, vì chỉ còn một phép kẹp.
+ * Trần là ĐÚNG `δ` và chạm trần thật (lúc dấu bám lề). Bản cũ phải cho tới 2,5 px vì phép chiếu
+ * theo tia khuếch đại bước đi ~2,04 lần — siết từ 2,5 xuống 1,0 chính là cái lợi đo được của lần
+ * sửa này. Lần này quét CẢ LÚC CHUYỂN giữa "còn thấy" và "đã khuất".
  */
 const BUOC_TOI_DA = 1.0;
 
@@ -366,15 +308,11 @@ test("camera trượt từng pixel thì dấu bò theo từng pixel — kể c�
 });
 
 /**
- * KHÔNG ĐƯỢC LẮC. Người chơi đi đều sang trái thì dấu của cái việc nằm bên phải phải bò
- * đều sang phải — bò rồi giật ngược lại là thứ mắt bắt được ngay ở ngoại vi và đọc ra
- * là "màn hình bị lỗi", đúng thứ dấu này sinh ra để tránh.
+ * KHÔNG ĐƯỢC LẮC: người chơi đi đều sang trái thì dấu bò đều sang phải — bò rồi giật ngược lại là
+ * thứ mắt bắt được ngay ở ngoại vi và đọc ra là "màn hình bị lỗi".
  *
- * Đo theo TOẠ ĐỘ MÀN HÌNH (trừ đi mép khung), vì đó mới là thứ con mắt thấy: trong toạ
- * độ thế giới thì cả dấu lẫn khung cùng trôi, nhìn vào không nói lên điều gì.
- *
- * Chạy một lượt dài: camera đi qua hẳn cái việc, từ lúc nó còn khuất bên phải, qua lúc
- * hiện ra, tới lúc khuất bên trái. Suốt lượt đó, x-trên-màn-hình chỉ được GIẢM.
+ * Đo theo TOẠ ĐỘ MÀN HÌNH (trừ mép khung) vì đó mới là thứ con mắt thấy. Chạy một lượt dài qua cả
+ * ba giai đoạn: khuất bên phải → hiện ra → khuất bên trái.
  */
 test("camera đi đều một chiều: dấu bò đều một chiều, không lắc qua lắc lại", () => {
   // Đặt cái việc đúng tầm cao tâm vùng vẽ: trục y không có gì để cãi, mọi chuyện xảy ra
@@ -397,14 +335,9 @@ test("camera đi đều một chiều: dấu bò đều một chiều, không l�
 });
 
 /**
- * Cái việc nằm hẳn TRÊN khung, camera lia ngang qua dưới nó.
- *
- * Dưới luật mới mệnh đề siết hẳn lại: cái việc ở trên khung thì trục y của nó bị kẹp,
- * và CHỈ bị kẹp — nên dấu bám đúng lề trên, ĐỨNG IM TUYỆT ĐỐI theo chiều dọc suốt lượt.
- * Bản cũ chỉ dám đòi "đổi chiều nhiều nhất một lần", vì phép chiếu theo tia kéo dấu dâng
- * lên rồi hạ xuống theo góc nhìn — một chuyển động không ai yêu cầu và không nói lên gì.
- *
- * Còn trục x thì bò đều sang trái, đúng nhịp chân người chơi, và về sát lề thì dừng.
+ * Cái việc nằm hẳn TRÊN khung, camera lia ngang qua dưới nó: trục y bị kẹp và CHỈ bị kẹp, nên dấu
+ * bám đúng lề trên và ĐỨNG IM TUYỆT ĐỐI theo chiều dọc. Bản cũ chỉ dám đòi "đổi chiều nhiều nhất
+ * một lần" vì phép chiếu theo tia kéo dấu dâng lên rồi hạ xuống theo góc nhìn.
  */
 test("việc nằm trên đỉnh màn hình: dấu bám lề trên, đứng im theo chiều dọc", () => {
   const ax = cx + 2000, ay = V.top - 600;        // ở trên và lệch hẳn sang phải
@@ -424,36 +357,23 @@ test("việc nằm trên đỉnh màn hình: dấu bám lề trên, đứng im t
 // ─────────────────────────────────── chỗ nối giữa "còn thấy" và "đã ghim"
 
 /**
- * Trần cho cú NHẢY lúc cái việc vượt mép khung — thước đo CỦA MẮT.
+ * Trần cho cú NHẢY lúc cái việc vượt mép khung — thước đo CỦA MẮT: bán kính dấu `CHORE_R` = 11,
+ * nên nhảy quá một ĐƯỜNG KÍNH (22 px) là hai vòng tròn trước-sau rời hẳn nhau, đúng định nghĩa
+ * "biến mất chỗ này, hiện ra chỗ kia".
  *
- * Người chơi đi một bước thì dấu được nhảy bao nhiêu mà mắt vẫn đọc ra "cùng một cái dấu
- * đang bò" chứ không phải "một cái dấu khác vừa hiện ra"? Mốc có sẵn trong chính hệ này:
- * bán kính dấu `CHORE_R` = 11. Nhảy quá một ĐƯỜNG KÍNH (22 px) là hai vòng tròn
- * trước-sau rời hẳn nhau, không còn chồng một pixel nào — đúng định nghĩa "biến mất chỗ
- * này, hiện ra chỗ kia".
+ * ĐÃ SỬA. Hai test dưới từng là `todo`, ghi lại lỗi thật: hai nhánh của hàm đo trên hai hình chữ
+ * nhật khác nhau và không gặp nhau ở biên khung — mép TRÊN lệch tới 90,4 px, tức ~116 px thật
+ * trên màn 1024 trong đúng một frame, và nặng nhất ở đúng nơi cái lò đứng.
  *
- * ĐÃ SỬA. Hai test dưới đây từng là `todo`, ghi lại một lỗi thật: hai nhánh của hàm đo
- * trên hai hình chữ nhật khác nhau (kẹp theo TRỤC khi còn thấy, chiếu theo TIA khi đã
- * khuất), và chúng không gặp nhau ở biên khung. Đo được hồi đó, vẫn đúng khung 800 × 450
- * và lề thật (19 / 58):
- *   · mép TRÊN  tới 90,4 px · mép TRÁI / PHẢI tới 74,6 px · mép DƯỚI tới 35,2 px
- * 90 px trên khung 800 px, nhân `ZOOM` 1,28 nữa là ~116 px thật trên màn 1024 — hơn một
- * phần mười bề ngang màn hình, trong đúng một frame. Và nặng nhất ở MÉP TRÊN, tức đúng
- * nơi cái lò đứng (`STATION_ROW_Y` = 1) — trạm duy nhất mà bỏ lỡ dấu là CHÁY BÁNH.
- *
- * Giờ chỉ còn MỘT phép kẹp, nên chỗ giao không còn là chỗ đặc biệt nữa và cú nhảy biến
- * mất theo đúng cấu trúc chứ không phải nhờ chỉnh số. Hai test giữ nguyên ngưỡng 22 px
- * của người chơi để nói lên điều đó, nhưng còn siết thêm một ngưỡng TOÁN chặt hơn nhiều
- * ở ngay dưới — vì 22 px bây giờ là một cái trần cách thực tế cả vạn lần.
+ * Giờ chỉ còn MỘT phép kẹp nên cú nhảy biến mất theo cấu trúc chứ không nhờ chỉnh số. Ngưỡng
+ * 22 px giữ lại để nói lên điều đó; ngưỡng TOÁN chặt hơn nhiều nằm ngay dưới.
  */
 const NHAY_TOI_DA = 2 * 11;
 
 /**
- * Hai điểm cách nhau 2e-6 px, một bên trong một bên ngoài mép khung. Vì phép kẹp không
- * giãn, hai kết quả phải cách nhau NHIỀU NHẤT cũng 2e-6 — tức là đứng yên, ở mọi thang
- * đo mà con mắt hay cái card đồ hoạ biết tới.
- *
- * Quét kín cả bốn mép, từng pixel một. Đây chính là phép quét đã bắt được 90,4 px.
+ * Hai điểm cách nhau 2e-6 px, một bên trong một bên ngoài mép khung: phép kẹp không giãn nên hai
+ * kết quả phải cách nhau nhiều nhất cũng 2e-6 — tức đứng yên ở mọi thang đo. Quét kín cả bốn mép,
+ * từng pixel một; đây chính là phép quét đã bắt được 90,4 px.
  */
 test("việc trượt khỏi mép: dấu đứng yên, không còn cú nhảy nào", () => {
   const eps = 1e-6;
@@ -548,11 +468,9 @@ test("việc ở đúng tâm: dấu nằm nguyên tại đó, không bị tính 
 });
 
 /**
- * Khung hẹp hơn tổng hai lề. Có thật: cỡ chữ 200% nhân `CHORE_TOP` lên 116, cộng lề dưới
- * 19 là 135 — một màn hình 320 px cao chia `ZOOM` còn 250 thì vẫn qua, nhưng cửa sổ bị
- * kéo bẹt hoặc máy có thanh công cụ ăn mất nửa màn thì hết chỗ. Lúc đó thà về giữa khung
- * còn hơn trả ra một toạ độ lộn ngược (dấu bay ra ngoài màn hình, người chơi mất hẳn
- * chỉ báo mà không biết vì sao).
+ * Khung hẹp hơn tổng hai lề. Có thật: cỡ chữ 200% nhân `CHORE_TOP` lên 116, cộng lề dưới 19 là
+ * 135. Lúc đó thà về giữa khung còn hơn trả ra một toạ độ lộn ngược — dấu bay ra ngoài màn hình
+ * thì người chơi mất hẳn chỉ báo mà không biết vì sao.
  */
 test("khung quá hẹp để chứa hai lề: vẫn ra số tử tế, rơi về giữa khung", () => {
   const hep: ViewRect[] = [
@@ -574,22 +492,15 @@ test("khung quá hẹp để chứa hai lề: vẫn ra số tử tế, rơi về
 });
 
 /**
- * ĐÃ SỬA — test này từng là `todo`, ghi lại lỗi thật thứ hai, do phép quét bao trùm ở
- * cuối file tìm ra.
+ * ĐÃ SỬA — từng là `todo`, do phép quét bao trùm ở cuối file tìm ra.
  *
- * Hồi đó cái chốt "khung quá hẹp thì về giữa" nằm SAU nhánh `if (visible)`, nên nó không
- * che được chính nhánh đó. Khung thấp hơn lề trên mà cái việc lại đang Ở TRONG khung:
- * nhánh kẹp chạy với `lo > hi`, `clamp` trả về `lo` = `top + 58` — một điểm nằm DƯỚI ĐÁY
- * khung. Dấu bị vẽ ra ngoài vùng camera, tức BIẾN MẤT, mà `pinned` vẫn là `false` nên
- * chỗ gọi còn vẽ nó cỡ to như thể cái việc đang ở ngay trước mặt.
+ * Cái chốt "khung quá hẹp thì về giữa" từng nằm SAU nhánh `if (visible)` nên không che được chính
+ * nhánh đó: khung thấp hơn lề trên mà việc đang Ở TRONG khung thì `clamp` chạy với `lo > hi` và
+ * trả về một điểm nằm DƯỚI ĐÁY khung — dấu bị vẽ ra ngoài vùng camera, mà `pinned` vẫn `false` nên
+ * chỗ gọi còn vẽ nó cỡ to.
  *
- * Repro tối giản giữ nguyên: khung 800 × 50, việc ở đúng giữa (400, 25). Trước khi sửa
- * nó trả y = 58, thấp hơn đáy khung 8 px; giờ chốt đã được nâng lên TRƯỚC mọi thứ nên nó
- * về giữa khung. Hỏng với mọi khung cao < `o.top` (58, hoặc 116 ở cỡ chữ 200%).
- *
- * Giữ lại dù khung nhìn bản dựng luôn là 800 × 450: `worldView` CÓ lúc báo số lạ đúng
- * một frame (đổi cỡ cửa sổ, tab ẩn rồi hiện lại), mà một frame mất sạch dấu thì không ai
- * lần ra được nguyên nhân.
+ * Giữ lại dù khung nhìn bản dựng luôn là 800 × 450: `worldView` CÓ lúc báo số lạ đúng một frame
+ * (đổi cỡ cửa sổ, tab ẩn rồi hiện lại).
  */
 test("khung thấp hơn lề trên mà việc đang ở TRONG khung: dấu vẫn nằm trong khung", () => {
   const v: ViewRect = { left: 0, right: 800, top: 0, bottom: 50 };
@@ -626,14 +537,10 @@ test("khung rỗng (0 × 0): không NaN, không ∞", () => {
 /**
  * Chỗ giao "còn thấy / đã ghim" liền mạch với MỌI cỡ lề, không riêng cỡ đang dùng.
  *
- * Test này vốn là một phép CHẨN ĐOÁN: hồi còn hai nhánh, lề = 0 là cấu hình duy nhất mà
- * cú nhảy biến mất, và chính điều đó chỉ ra nguyên nhân là hai hình chữ nhật lệch nhau
- * chứ không phải công thức chiếu sai. Giờ chỉ còn một phép kẹp, nên nó đổi vai: nó khoá
- * lại rằng tính liền mạch KHÔNG phụ thuộc vào lề nữa.
- *
- * Quan trọng vì lề trên là biến: `CHORE_TOP * textScale()` chạy từ 58 tới 116 và còn đổi
- * giữa chừng khi người chơi chỉnh cỡ chữ trong lúc đang chơi. Một lỗi chỉ xuất hiện ở
- * một cỡ lề nào đó là lỗi gần như không ai bắt được.
+ * Vốn là một phép CHẨN ĐOÁN: hồi còn hai nhánh, lề = 0 là cấu hình duy nhất mà cú nhảy biến mất,
+ * và chính điều đó chỉ ra nguyên nhân. Giờ nó đổi vai — khoá lại rằng tính liền mạch KHÔNG phụ
+ * thuộc vào lề nữa, mà lề trên thì là biến (58 → 116, đổi được giữa chừng khi người chơi chỉnh cỡ
+ * chữ trong lúc đang chơi).
  */
 test("liền mạch ở biên với MỌI cỡ lề, không chỉ cỡ đang dùng", () => {
   const eps = 1e-7;
@@ -660,12 +567,9 @@ test("liền mạch ở biên với MỌI cỡ lề, không chỉ cỡ đang dù
 });
 
 /**
- * Cỡ chữ 200% nhân lề trên lên gấp đôi (`CHORE_TOP * textScale()` ở chỗ gọi) — vùng vẽ
- * tụt xuống hẳn 116 px. Mọi luật phải giữ nguyên, vì người bật cỡ chữ lớn đúng là người
- * cần chỉ báo rõ nhất; chỉ sai cho riêng họ là kiểu hỏng tệ nhất.
- *
- * Kiểm lại cả ba luật dưới cấu hình đó, bằng đúng cách phát biểu MỚI (kẹp từng trục), chứ
- * không bằng phép thử thẳng-hàng-với-tâm của bản cũ — cái đó giờ sai một cách cố ý.
+ * Cỡ chữ 200% nhân lề trên lên gấp đôi — vùng vẽ tụt xuống hẳn 116 px. Mọi luật phải giữ nguyên:
+ * người bật cỡ chữ lớn đúng là người cần chỉ báo rõ nhất, nên sai cho riêng họ là kiểu hỏng tệ
+ * nhất. Kiểm bằng đúng cách phát biểu MỚI (kẹp từng trục).
  */
 test("cỡ chữ 200%: lề trên gấp đôi mà ba luật vẫn đứng", () => {
   const O2: PinOpts = { edge: 19, top: 116 };
@@ -704,12 +608,11 @@ test("cỡ chữ 200%: lề trên gấp đôi mà ba luật vẫn đứng", () =
 });
 
 /**
- * Quét bao trùm: khung bất kỳ × chỗ đặt bất kỳ, 50.000 lượt tất định. Đây là cái lưới đỡ
- * cho mọi lần sửa sau — một chỗ chia cho 0 hay một `Math.min` lộn chiều sẽ rơi vào đây
- * kể cả khi nó không vi phạm luật nào kể trên.
+ * Quét bao trùm: khung bất kỳ × chỗ đặt bất kỳ, 50.000 lượt tất định — cái lưới đỡ cho mọi lần
+ * sửa sau.
  *
- * `NaN` nguy hơn một toạ độ sai nhiều: `Graphics.fillCircle(NaN, NaN, r)` làm hỏng cả
- * lớp đồ hoạ, mất luôn mọi dấu khác chứ không riêng cái đang tính.
+ * ⚠️ `NaN` nguy hơn một toạ độ sai nhiều: `Graphics.fillCircle(NaN, NaN, r)` làm hỏng cả lớp đồ
+ * hoạ, mất luôn mọi dấu khác chứ không riêng cái đang tính.
  */
 function quet(xet: (p: { x: number; y: number }, v: ViewRect, ghiChu: string) => void) {
   const rnd = lcg(99);

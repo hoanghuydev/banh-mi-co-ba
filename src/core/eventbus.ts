@@ -72,6 +72,12 @@ export type EventMap = {
   "memory:written":           { npcId: NpcId; kind: StimId; intensity: number
                                 tier: "SHORT" | "LONG" | "CORE"; evicted?: string };
   "memory:promoted":          { npcId: NpcId; memoryId: string };
+  /**
+   * P2-09 §2.4 — cuối ngày người này rút ra một KẾT LUẬN từ chuỗi chuyện đã xảy ra
+   * ("hay quên bỏ đồ chua — 3 lần rồi"). Khác `memory:promoted` ở chỗ nó không nói về
+   * một LẦN nào cả: nó là một ký ức dẫn xuất, và nó truy hồi được như mọi ký ức khác.
+   */
+  "memory:reflected":         { npcId: NpcId; note: string };
   "memory:decayed":           { npcId: NpcId; memoryId: string; from: number; to: number };
   "relationship:tierChanged": { npcId: NpcId; from: RelTier; to: RelTier };
   /**

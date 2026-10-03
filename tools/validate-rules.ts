@@ -10,6 +10,7 @@
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { NPC_IDS, STIM_IDS } from "../src/core/types";
+import { BAND_IDS, DEED_IDS, HAND_IDS, PRACTICE_IDS, PURPOSE_IDS, STATE_IDS } from "../src/content/vocab";
 import { ROOT, Report, read, readJson, walk } from "./lib";
 
 type WhenValue = string | number | boolean | (string | number)[];
@@ -29,9 +30,20 @@ export type Rule = {
 };
 
 type FactDef = { type: "enum" | "ordinal" | "number" | "bool"; values?: string[] | string; min?: number; max?: number; ctx?: boolean };
-type Schema = { concepts: string[]; facts: Record<string, FactDef>; signature: Record<string, string[]>; silentOk?: string[] };
+type AliasSpec = Record<string, string | number | boolean | (string | number)[]>;
+type Schema = {
+  concepts: string[]; facts: Record<string, FactDef>; signature: Record<string, string[]>;
+  silentOk?: string[];
+  /** P2-09 §2.2 — mặt tiền cho người viết nội dung. Một alias là một mảnh `when` đặt tên. */
+  aliases?: Record<string, AliasSpec>;
+};
 
-const MACROS: Record<string, readonly string[]> = { "@NPC_IDS": NPC_IDS, "@STIM_IDS": STIM_IDS };
+/** ⚠ Phải khớp `MACROS` của `src/dialog/facts.ts` — test `V-2` canh hai bên không lệch. */
+const MACROS: Record<string, readonly string[]> = {
+  "@NPC_IDS": NPC_IDS, "@STIM_IDS": STIM_IDS,
+  "@HAND_IDS": HAND_IDS, "@PRACTICE_IDS": PRACTICE_IDS, "@PURPOSE_IDS": PURPOSE_IDS,
+  "@STATE_IDS": STATE_IDS, "@DEED_IDS": DEED_IDS, "@BAND_IDS": BAND_IDS,
+};
 export const LINE_VARIANT_FLOOR = 6;
 /** Mỗi concept cần một rule "lưới an toàn" điểm thấp (P2-01 §2.9: tier-3 = score ≤ 2). */
 const SAFETY_NET_SCORE = 2;
@@ -111,6 +123,36 @@ export function validateRules(contentDir: string, srcDir: string): Report {
 
   const concepts = new Set(rules.map((x) => x.rule.concept));
   const readFacts = new Set(rules.flatMap((x) => Object.keys(x.rule.when ?? {})));
+
+  /*
+   * R015 — ALIAS: mặt tiền của cây thoại (P2-09 §2.2).
+   *
+   * Hai việc, và việc thứ hai mới là việc quan trọng: (a) kiểm từng alias trỏ tới fact có
+   * thật với giá trị trong miền; (b) ĐÁNH DẤU fact đó là CÓ NGƯỜI ĐỌC. Thiếu (b) thì R006
+   * báo 50 fact "không ai đọc" trong khi cây thoại đang đọc chúng mỗi nhịp — và một
+   * validator kêu oan 50 lần là một validator sẽ bị tắt đi (R8).
+   */
+  const aliases = schema.aliases ?? {};
+  for (const [name, spec] of Object.entries(aliases)) {
+    const where = `[alias ${name}]`;
+    if (!/^[cdmptvw]\.[a-zA-Z]+$/.test(name)) {
+      r.add("R015", "ERROR", schemaFile, where, `tên alias phải là <namespace>.<tên>, namespace trong p t w c v d m`);
+    }
+    const entries = Object.entries(spec);
+    if (!entries.length) r.add("R015", "ERROR", schemaFile, where, "alias rỗng — không khai criterion nào");
+    for (const [fact, raw] of entries) {
+      readFacts.add(fact);
+      const def = schema.facts[fact];
+      if (!def) { r.add("R015", "ERROR", schemaFile, where, `trỏ tới fact '${fact}' không có trong blackboard`); continue; }
+      for (const one of Array.isArray(raw) ? raw : [raw]) {
+        // `$` là chỗ nhận tham số (`m.visits(3)`) — không kiểm được miền lúc này, đúng ra
+        // là vậy: giá trị thật tới từ nội dung, và `validate-talks` mới là chỗ kiểm nó.
+        if (typeof one === "string" && one.includes("$")) continue;
+        const iv = interval(def, one);
+        if ("bad" in iv) r.add("R015", "ERROR", schemaFile, where, `'${fact}': ${iv.bad}`);
+      }
+    }
+  }
 
   for (const { rule, file } of rules) {
     const where = `[${rule.id}]`;

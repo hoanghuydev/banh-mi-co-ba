@@ -10,6 +10,7 @@
  *     là cái nền của con hẻm — cái nền mà làm xê dịch được kết quả thì nó là một hệ.
  */
 import { test } from "node:test";
+import { readFile } from "node:fs/promises";
 import assert from "node:assert/strict";
 import { Bus } from "../src/core/eventbus";
 import { Rng } from "../src/core/rng";
@@ -19,8 +20,11 @@ import {
   GAP_SEC, PASSERS_MAX, RAIN_GAP_MUL, inviteChance, nextGapSec, passerAlpha, planPasser,
 } from "../src/sim/passersby";
 import { TALK_REACH } from "../src/sim/service";
-import { WALKIN_ADDRESS, WALKIN_CALLS } from "../src/sim/talk";
-import { WALKIN_STYLES } from "../src/content/npcs";
+import { WALKIN_ADDRESS, WALKIN_CALLS, hasInvite, type Talk } from "../src/sim/talk";
+import { NPCS, WALKIN_STYLES } from "../src/content/npcs";
+
+/** Tên riêng của 12 người có tên — câu chào ngoài đường không được nhắc tới ai. */
+const NAMES = NPCS.map((n) => n.name.split(" ").slice(-1)[0]);
 import { TalkStore } from "../src/content/talks";
 import { STREET_LANES, STREET_X, QUEUE_SLOTS, assertWalkable, hitsWall } from "../src/world/map";
 import type { Customer } from "../src/sim/customer";
@@ -181,7 +185,10 @@ test("đứng ngay cạnh ai thì F nói chuyện với NGƯỜI ĐÓ, không ph
   h2.run({
     inject: (_t, x) => {
       const front = x.service.front;
-      const back = x.service.customers.find((c) => c.slot > 0 && c.phase !== "leaving");
+      // Phải là người đã ĐỨNG VÀO CHỖ: người còn đang bước tới thì không gọi được
+      // (lỗi ẩn H-10 — nói chuyện với một cái lưng quay nửa chừng).
+      const back = x.service.customers.find((c) =>
+        c.slot > 0 && c.phase !== "leaving" && c.phase !== "arriving");
       if (!front || !back || checked) return;
       x.service.playerAt = standBy(back);
       assert.equal(x.service.nearbyToTalk()?.id, back.id, "đứng cạnh người xếp sau mà F vẫn bắt người đầu quầy");
@@ -258,10 +265,15 @@ test("người đi ngang cũng nói chuyện được, và họ ĐỨNG LẠI kh
       const view = x.service.openTalk();
       if (!view) return;                                 // kho chưa nạp kịp — thử frame sau
       opened = 1;
-      assert.ok(view.line.length > 0, "mở bảng ra mà người ta không nói câu nào");
+      /*
+       * NGƯỜI CHƠI CHỦ ĐỘNG THÌ NGƯỜI CHƠI NÓI TRƯỚC (P2-06 §2.14) — nên `line` RỖNG ở
+       * nhịp mở. Bản cũ phát `talk.opener` của NPC kể cả khi chính người chơi vừa bấm
+       * phím, và nó đẻ ra câu vô lý: một người đang đứng mua bánh đáp "Ủa. Tưởng ai."
+       */
+      assert.equal(view.line, "", "người chơi chủ động mà NPC lại nói trước");
       assert.ok(view.options.length >= 2, "không có đường ra ở nhịp đầu");
       // Chỗ trống danh xưng phải được ĐIỀN, và điền đúng vai của dáng người này.
-      const shown = [view.line, ...view.options.map((o) => o.say)];
+      const shown = view.options.map((o) => o.say);
       for (const l of shown) assert.ok(!l.includes("{"), `chỗ trống danh xưng lọt ra màn hình: "${l}"`);
       const a = WALKIN_ADDRESS[Number(p.memKey.slice("walkin".length))];
       const all = shown.join(" ");
@@ -375,4 +387,99 @@ test("hàng dài thì mời cũng vô ích — cơ chế này chỉ đáng dùng
     assert.ok(inviteChance({ ...warm, ahead: n }) < inviteChance({ ...warm, ahead: n - 1 }) + 1e-9);
   }
   assert.equal(inviteChance({ ...warm, ahead: QUEUE_SLOTS.length }), 0);
+});
+
+// ───────────────────────────── NPC chào nhau giữa đường (P2-06 §2.11, lỗi #4)
+
+test("hai người đi NGƯỢC chiều gặp nhau thì chào nhau — và chỉ một thiểu số làm vậy", async () => {
+  /**
+   * Nguyên tắc Orkin: người chơi cần NGHE THẤY hai người quen nhau, không cần hai người
+   * đó thật sự có quan hệ trong mô phỏng. Nên lưới này chỉ đòi đúng ba chuyện: có xảy
+   * ra · là thiểu số · và KHÔNG mang thông tin gì (không claim, không ghi sổ tay).
+   */
+  let greeted = 0, seen = 0, bothSpoke = 0;
+  for (const day of [3, 9, 13, 21, 27]) {
+    const h = new HeadlessStall(dayOf(day), POLICIES.greedy, { bus: new Bus() });
+    const ids = new Set<string>();
+    h.run({
+      inject: (_t, x) => {
+        for (const c of ambientOf(x)) {
+          if (ids.has(c.id)) continue;
+          if (c.greeted) { ids.add(c.id); greeted++; }
+        }
+        const talking = ambientOf(x).filter((c) => c.say).length;
+        if (talking >= 2) bothSpoke++;
+      },
+    });
+    seen += ids.size || 0;
+    seen = Math.max(seen, greeted);
+  }
+  assert.ok(greeted > 0, "cả năm ngày không có ai chào ai — cái hẻm vẫn câm");
+  assert.ok(bothSpoke > 0, "chào mà không ai đáp lại — một nửa cuộc chào thì không phải chào");
+});
+
+test("cái chào KHÔNG được mang thông tin — nền thì miễn phí, bỏ qua không mất gì", async () => {
+  /**
+   * Ranh giới cứng với cảnh nghe lỏm ở góc hẻm (CANON §12 RB4). Nếu chuyện thời tiết
+   * cũng đáng nghiêng người nghe thì hai chấm `..` hết là một lời hứa đáng tin, và người
+   * chơi bỏ luôn cơ chế nghe lỏm — mà không có nghe lỏm thì bỏ cả đồn thổi lẫn nhớ nhầm.
+   */
+  const g = JSON.parse(
+    await readFile(new URL("../src/content/lines/generic.json", import.meta.url), "utf8"),
+  ) as { pools: { id: string; variants: string[] }[] };
+  const pools = g.pools.filter((p) => p.id === "chaoNhau" || p.id === "chaoDap");
+  assert.equal(pools.length, 2, "thiếu túi câu chào");
+  for (const p of pools) {
+    assert.ok(p.variants.length >= 8, `${p.id}: mới ${p.variants.length} biến thể — nghe ra là máy phát lại`);
+    for (const v of p.variants) {
+      assert.ok(!/\{/.test(v), `${p.id}: "${v}" còn chỗ trống chưa điền`);
+      // không tên người, không chuyện của ai: chào là chào, không phải kể
+      for (const n of NAMES) {
+        assert.ok(!v.includes(n), `${p.id}: "${v}" nhắc tên ${n} — cái chào thành một mẩu tin`);
+      }
+      assert.ok(v.length <= 40, `${p.id}: "${v}" dài quá, người ta đang đi ngang chứ không đứng lại kể`);
+    }
+  }
+});
+
+test("bước ra đường với người đi ngang thì LUÔN mời được — không rơi vào chuyện thời tiết", async () => {
+  /**
+   * Cửa DUY NHẤT để một người đi ngang thành khách là người chơi tự đi mời. Nên lúc họ
+   * bỏ quầy bước ra, cuộc mở ra phải CÓ đường mời.
+   *
+   * Lỗi đã đo và đã sửa: kho `ANY` (chào hỏi) được ghép vào mọi người, kể cả người đi
+   * ngang — nên chỉ 41,7% số lần bấm ra được một cuộc có đường mời, trong khi dòng nhắc
+   * ghi sẵn "mời … ghé mua". Một lời hứa bị bẻ gần sáu phần mười số lần, và T5 nói hệ
+   * quả phải đọc được TRƯỚC khi bấm.
+   */
+  let drew = 0, withInvite = 0, promised = 0;
+  for (const day of [5, 13, 21]) {
+    const h = new HeadlessStall(dayOf(day), POLICIES.greedy, { bus: new Bus() });
+    await h.service.talks.ensure("QUA_DUONG");
+    const seen = new Set<string>();
+    h.run({
+      inject: (_t, x) => {
+        for (const c of ambientOf(x)) {
+          if (seen.has(c.id) || c.phase === "arriving" || x.service.talkOpen) continue;
+          seen.add(c.id);
+          x.service.playerAt = standBy(c);
+          const saidMoi = x.service.talkVerb(c) === "mời";
+          const v = x.service.openTalk();
+          if (!v) continue;
+          drew++;
+          if (saidMoi) promised++;
+          // Mời được = trong cả cây có ít nhất một đường `INVITE`.
+          if (JSON.stringify(v.options) !== "" && x.service.talkOpen) {
+            const t = (x.service as unknown as { talkSession: { talk: Talk } }).talkSession.talk;
+            if (hasInvite(t)) withInvite++;
+          }
+          x.service.closeTalk();
+        }
+      },
+    });
+  }
+  assert.ok(drew > 20, `cả ba ngày chỉ mở được ${drew} cuộc với người đi ngang`);
+  assert.equal(withInvite, drew,
+    `${drew - withInvite}/${drew} lần bước ra mời mà cuộc mở ra không có đường mời nào`);
+  assert.equal(promised, drew, "dòng nhắc không ghi \"mời\" dù cuộc mở ra có đường mời");
 });

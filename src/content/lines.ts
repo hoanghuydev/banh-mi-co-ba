@@ -18,7 +18,9 @@ const SILENCE_BAG = 20, SILENCE_TICKETS = 7;
  * Thoại của khách đã sang rule DB (P2-01), câu người chơi đã sang `content/talks` (P5-01).
  * Còn lại đúng ba túi của P5-02: câu khách nói khi mình giữ / nuốt / làm trật lời hứa.
  */
-export type LinePool = "promiseKept" | "promiseBroken" | "promiseWrong";
+export type LinePool = "promiseKept" | "promiseBroken" | "promiseWrong"
+  /** P2-06 §2.11 — hai người đi ngang chào nhau giữa đường. Nền, không mang tin gì. */
+  | "chaoNhau" | "chaoDap";
 
 export type PoolDef = { id: LinePool; tier: 1 | 2 | 3; vars: string[]; variants: string[]; en?: string[] };
 

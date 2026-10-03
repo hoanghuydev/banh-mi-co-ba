@@ -2,18 +2,14 @@ import type { Slot } from "../core/eventbus";
 import { COUNTER_Y, STATION_ROW_Y } from "./map";
 
 /**
- * Trạm làm việc trong quầy — DỮ LIỆU, không phải code.
- * Thêm một công đoạn = thêm một dòng ở đây, không phải sửa scene.
+ * Trạm làm việc trong quầy — DỮ LIỆU, không phải code. Thêm một công đoạn = thêm một dòng ở đây,
+ * không phải sửa scene.
  *
- * Chuỗi thao tác v0.1 (xương sống của control loop), xếp trải dài theo chiều hẻm
- * để mỗi trạm có chỗ thở và người chơi phải thật sự DI CHUYỂN giữa các công đoạn:
- *   kệ (x4) → lò (x7) → thớt (x4) → rổ (x8) → chỗ đưa hàng (x12);
- *   thùng trà đá (x13) và bồn rửa tay (x15) là nhánh riêng.
+ * Chuỗi thao tác xếp trải dài theo chiều hẻm để người chơi phải thật sự DI CHUYỂN: kệ (x4) → lò
+ * (x7) → thớt (x4) → rổ (x8) → chỗ đưa hàng (x12); trà đá (x13) và bồn rửa (x15) là nhánh riêng.
  *
- * `ty` ĐỌC TỪ BẢN ĐỒ, không chép tay: trạm nằm trên mặt quầy phải theo quầy, trạm
- * nằm dọc tường sau phải theo tường. Hồi còn ghi số thì đẩy quầy ra một hàng là ba
- * cái trạm đứng chơ vơ giữa lối đi, không có gì báo — `assertWalkable()` chỉ soi chỗ
- * người đứng. Giờ muốn lệch cũng không lệch được.
+ * ⚠️ `ty` ĐỌC TỪ BẢN ĐỒ, không chép tay — hồi còn ghi số thì đẩy quầy ra một hàng là ba cái trạm
+ * đứng chơ vơ giữa lối đi, không có gì báo (`assertWalkable()` chỉ soi chỗ người đứng).
  */
 
 export type Hand =
@@ -80,50 +76,37 @@ export const STATIONS: Station[] = [
   },
   {
     /**
-     * Chỗ để bánh trên quầy — ổ đã nướng chưa tới lượt kẹp, VÀ ổ đã gói sẵn.
+     * Chỗ để bánh trên quầy — ổ đã nướng chưa tới lượt kẹp, VÀ ổ đã gói sẵn. Lò có ba ngăn mà thớt
+     * chỉ có một chỗ, nên không có nó là nướng ba ổ một lượt xong thì kẹt.
      *
-     * Lò có ba ngăn, thớt chỉ có một chỗ: nướng ba ổ một lượt xong là kẹt — ổ thứ hai
-     * lấy ra khỏi lò thì không có chỗ nào đặt, đứng cầm trên tay mà tay thì cần rảnh để
-     * làm việc khác. Nhận luôn ổ ĐÃ GÓI thì mở ra một lối chơi riêng: gói sẵn lúc vắng,
-     * giờ cao điểm chỉ việc rút ra đưa.
+     * KHÔNG phải một cái kho: ổ để đây vẫn NGUỘI đi, mà ổ nguội là ổ khách chê — gói sẵn là một
+     * CUỘC CƯỢC vào việc khách sẽ tới kịp.
      *
-     * Nó KHÔNG phải một cái kho: ổ để đây vẫn NGUỘI đi như mọi chỗ khác, mà ổ nguội là
-     * ổ khách chê (`WRONG_TEMP` lúc đưa). Gói sẵn là một CUỘC CƯỢC vào việc khách sẽ tới
-     * kịp, không phải một nước đi thắng chắc.
-     *
-     * Đặt ở x=8, giữa thớt (x=4) và chỗ đưa hàng (x=12): cách mỗi bên 4 ô, xa hơn hẳn
-     * bán kính với tới 1,6 ô, nên không bao giờ bấm E nhầm sang trạm bên cạnh.
-     *
-     * `needs` liệt kê cả ba tay dùng được vì đây là trạm HAI CHIỀU (để xuống / lấy lên),
-     * mà `needs`/`gives` chỉ tả được một chiều — luật thật nằm ở `pressBasket`.
+     * Đặt ở x=8, cách thớt và chỗ đưa hàng mỗi bên 4 ô (bán kính với tới là 1,6) nên không bao giờ
+     * bấm E nhầm sang trạm bên cạnh. `needs` liệt kê cả ba tay vì đây là trạm HAI CHIỀU — luật
+     * thật nằm ở `pressBasket`.
      */
     id: "basket", tx: 8, ty: COUNTER_Y, name: "chỗ để bánh", verb: "để bánh xuống",
     slot: "BOARD", needs: ["empty", "loaf_hot", "loaf_cold", "loaf_filled"], gives: "empty", holdMs: 0,
   },
   {
     /**
-     * Chỗ đưa hàng. Nhận cả Ổ TRƠN chưa kẹp gì, không chỉ ổ đã gói.
+     * Chỗ đưa hàng. Nhận cả Ổ TRƠN chưa kẹp gì, không chỉ ổ đã gói: có người gọi đúng "cho ổ bánh
+     * mì không", và chỉ nhận `loaf_filled` thì phải gác lên thớt, mở bảng, bấm gói mà không chọn gì
+     * — ba thao tác để làm đúng cái việc KHÔNG LÀM GÌ CẢ.
      *
-     * Có người gọi đúng "cho ổ bánh mì không" — và `Service` xưa nay vẫn bán được ổ
-     * rỗng, tính đúng giá bánh mì không. Nhưng `needs` lại chỉ nhận `loaf_filled`, nên
-     * muốn đưa một ổ trơn thì phải gác lên thớt, mở bảng kẹp nhân, rồi bấm gói mà không
-     * chọn gì — ba thao tác để làm đúng cái việc KHÔNG LÀM GÌ CẢ. Nhận thẳng ổ trơn.
-     *
-     * Không mở đường cho ẩu: đưa ổ trơn cho người gọi ổ đầy đủ thì `diffDish` đếm thiếu
-     * từng món một, nặng y như mọi lần làm sai khác.
+     * Không mở đường cho ẩu: đưa ổ trơn cho người gọi ổ đầy đủ thì `diffDish` đếm thiếu từng món.
      */
     id: "handoff", tx: 12, ty: COUNTER_Y, name: "quầy gọi món", verb: "đưa cho khách",
     slot: "HANDS", needs: ["loaf_filled", "loaf_hot", "loaf_cold", "tea"], gives: "empty", holdMs: 0,
   },
   {
     /**
-     * Thùng rác TRONG QUẦY. Trước đây thùng rác duy nhất đứng ngoài vỉa hè (`STREET_BIN`)
-     * và người chơi không với tới được — bỏ đồ đi là một phím Q bấm ở bất cứ đâu, món đồ
-     * bốc hơi ngay tại chỗ đang đứng. Giờ bỏ đi là một VIỆC có chỗ chốn: đi tới thùng,
-     * bấm E. Còn Q thì đổi nghĩa hẳn — ĐẶT XUỐNG SÀN, nhặt lại được (xem `StallScene.drop`).
+     * Thùng rác TRONG QUẦY. Trước đây thùng rác duy nhất đứng ngoài vỉa hè và người chơi không với
+     * tới được, nên bỏ đồ đi là một phím Q bấm ở bất cứ đâu. Giờ bỏ đi là một VIỆC có chỗ chốn, còn
+     * Q đổi nghĩa hẳn thành ĐẶT XUỐNG SÀN.
      *
-     * Ở x=10, giữa lò (x=7) và thùng trà đá (x=13): cách mỗi bên 3 ô, ngoài tầm với 1,6 ô
-     * nên không có chỗ nào bấm E mà phân vân giữa hai trạm.
+     * Ở x=10, cách lò và thùng trà mỗi bên 3 ô — ngoài tầm với 1,6 ô nên không chỗ nào phân vân.
      */
     id: "bin", tx: 10, ty: STATION_ROW_Y, name: "thùng rác", verb: "bỏ đi",
     slot: "UNDER_COUNTER", needs: ["loaf_cold", "loaf_hot", "loaf_burnt", "loaf_filled", "tea"],
@@ -131,13 +114,10 @@ export const STATIONS: Station[] = [
   },
   {
     /**
-     * Rửa tay. P1-01 §2.8 ghi 3,0 s; chơi thử thì dài gấp đôi mức đáng.
+     * Rửa tay. P1-01 §2.8 ghi 3,0 s; chơi thử thì dài gấp đôi mức đáng — cái GIÁ của việc cầm tiền
+     * đã đủ nặng ở chỗ khác (bỏ việc đang làm, đi hết chiều quầy, hàng vẫn dài ra).
      *
-     * Rửa tay là cái GIÁ của việc cầm tiền, mà cái giá đó đã đủ nặng ở chỗ khác rồi:
-     * phải bỏ việc đang làm, đi hết chiều quầy, và trong lúc đó hàng vẫn dài ra. Ba
-     * giây đứng chôn chân ở vòi chỉ cộng thêm thời gian chết, không cộng thêm quyết
-     * định nào. 1,5 s vẫn đủ lâu để khách kịp NHÌN THẤY mình rửa (P3-04 C1) — mà đó
-     * mới là thứ con số này tồn tại để bảo vệ.
+     * 1,5 s vẫn đủ lâu để khách kịp NHÌN THẤY mình rửa, mà đó mới là thứ con số này bảo vệ.
      */
     id: "sink", tx: 15, ty: STATION_ROW_Y, name: "rửa tay", verb: "rửa tay",
     slot: "HANDS", needs: ["empty"], gives: "empty", holdMs: 1500,
@@ -156,22 +136,19 @@ export function stationAtTile(tx: number, ty: number) {
 /** Bán kính với tới một trạm, tính bằng ô. */
 const REACH = 1.6;
 /**
- * Trạm đang chọn được GIỮ cho tới khi có trạm khác gần hơn hẳn — hệ số này là "gần hơn
- * hẳn" bằng bao nhiêu, đo trên bình phương khoảng cách (0,62 ≈ gần hơn 21% quãng đường).
+ * Trạm đang chọn được GIỮ cho tới khi có trạm khác gần hơn hẳn; hệ số này là "gần hơn hẳn" bằng
+ * bao nhiêu, đo trên bình phương khoảng cách (0,62 ≈ gần hơn 21% quãng đường).
  *
- * Thùng trà đá ở ô (13,1) và bồn rửa tay ở (15,1) chỉ cách nhau 2 ô, mà bán kính với
- * tới là 1,6 ô mỗi bên: đứng ở quãng giữa thì nhích nửa bước là trạm được chọn nhảy qua
- * lại, và cú E vừa bấm rơi vào trạm KHÁC với trạm người chơi đang đọc tên trên dòng
- * nhắc. Bám dính một chút thì mép lật nằm ở một chỗ cố định thay vì rung ngay dưới chân.
+ * Thùng trà (13,1) và bồn rửa (15,1) chỉ cách nhau 2 ô mà bán kính với tới là 1,6 ô mỗi bên: không
+ * bám dính thì nhích nửa bước là trạm được chọn nhảy qua lại, và cú E rơi vào trạm KHÁC với trạm
+ * người chơi đang đọc tên trên dòng nhắc.
  */
 const STICKY = 0.62;
 
 /**
- * Trạm người chơi với tới được, hoặc null.
- *
- * `current` là trạm của frame trước. Truyền vào thì hàm BÁM lấy nó (xem `STICKY`);
- * không truyền thì vẫn là "gần nhất thắng" như cũ, nên test và `headless` gọi được
- * mà không phải dựng thêm state.
+ * Trạm người chơi với tới được, hoặc null. `current` là trạm của frame trước — truyền vào thì hàm
+ * BÁM lấy nó (xem `STICKY`), không truyền thì vẫn là "gần nhất thắng" nên test và `headless` gọi
+ * được mà không phải dựng thêm state.
  */
 export function stationNear(wx: number, wy: number, current?: Station | null): Station | null {
   const dist2 = (s: Station) => {

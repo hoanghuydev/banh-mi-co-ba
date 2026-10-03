@@ -5,6 +5,8 @@
       "id": "lan.sep",
       "npc": "CHI_LAN",
       "topic": "sep",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
       "when": {
         "day": [
           12,
@@ -64,7 +66,6 @@
                     "kind": "CARED_FOR_THEM",
                     "intensity": 60
                   },
-                  "flag": "lanTinCay",
                   "reply": "…Vâng. Chỗ này em không phải giả vờ. Nên em mới ghé.",
                   "mood": "RUNG_RUNG"
                 },
@@ -140,12 +141,19 @@
           "mood": "BUC"
         }
       ],
-      "openMood": "NGUONG"
+      "openMood": "NGUONG",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG"
+      ]
     },
     {
       "id": "lan.len",
       "npc": "CHI_LAN",
       "topic": "len",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
       "when": {
         "day": [
           8,
@@ -216,6 +224,19 @@
               "tone": "DUA",
               "rel": 1,
               "reply": "…Để em xem. Em làm chậm lắm."
+            },
+            {
+              "say": "Để em hỏi giùm chị chỗ bán len, chiều em nhắn chị.",
+              "tone": "AM",
+              "reply": "…Thật hả em. …Vâng. Em hỏi giùm em nhé.",
+              "mood": "RUNG_RUNG",
+              "onKept": {
+                "rel": 3
+              },
+              "act": {
+                "kind": "PROMISE_DEED",
+                "deed": "LAY_SO"
+              }
             }
           ],
           "mood": "CUOI"
@@ -245,6 +266,14 @@
           ]
         },
         {
+          "say": "Chị ăn sáng chưa chị? Em hỏi thiệt đó chị.",
+          "tone": "AM",
+          "rel": 3,
+          "need": "maiNhoLan",
+          "reply": "…Chưa. Sao tự nhiên em hỏi vậy. …Cảm ơn em.",
+          "mood": "NGAC_NHIEN"
+        },
+        {
           "say": "Chị hỏi gì kỳ vậy chị, đây bán bánh mì mà.",
           "tone": "GAT",
           "rel": -6,
@@ -257,12 +286,19 @@
           "mood": "GIAN"
         }
       ],
-      "openMood": "NGUONG"
+      "openMood": "NGUONG",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG"
+      ]
     },
     {
       "id": "lan.imlang",
       "npc": "CHI_LAN",
       "topic": "imlang",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
       "when": {
         "day": [
           4,
@@ -300,7 +336,10 @@
                   "tone": "AM",
                   "rel": 3,
                   "reply": "…Vâng. Cảm ơn em.",
-                  "mood": "CUOI"
+                  "mood": "CUOI",
+                  "while": [
+                    "p.hasTea"
+                  ]
                 },
                 {
                   "say": "Chị nói ra cho nhẹ đi chị.",
@@ -358,18 +397,34 @@
           "mood": "MET"
         },
         {
+          "say": "Chị Hạnh đứng sau chị có chào chị một tiếng hông chị?",
+          "tone": "AM",
+          "rel": 2,
+          "need": "hanhChaoLan",
+          "reply": "…Có. Chị ấy chào em bằng giọng trong này. Em nghe em hơi giựt mình.",
+          "mood": "NGAC_NHIEN"
+        },
+        {
           "say": "…",
           "tone": "IM",
           "rel": 1,
           "reply": "…Em thích chỗ này. Không ai bắt em phải nói."
         }
       ],
-      "openMood": "LANH"
+      "openMood": "LANH",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "DOI_BANH"
+      ]
     },
     {
       "id": "lan.doncu",
       "npc": "CHI_LAN",
       "topic": "doncu",
+      "source": "NPC_ONLY",
+      "depth": "FULL",
       "when": {
         "day": [
           14,
@@ -460,7 +515,7 @@
                 "intensity": 85
               },
               "act": {
-                "kind": "REFUSE"
+                "kind": "WALK_ON"
               },
               "reply": "…Vâng. Thế thì cả hẻm biết rồi. Thôi em, chị đi.",
               "mood": "BUC"
@@ -503,18 +558,26 @@
             "intensity": 85
           },
           "act": {
-            "kind": "REFUSE"
+            "kind": "WALK_ON"
           },
           "silent": true,
           "mood": "GIAN"
         }
       ],
-      "openMood": "NGUONG"
+      "openMood": "NGUONG",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "NAN_LAI"
+      ]
     },
     {
       "id": "lan.chuot",
       "npc": "CHI_LAN",
       "topic": "chuot",
+      "source": "NPC_ONLY",
+      "depth": "FULL",
       "when": {
         "day": [
           6,
@@ -529,7 +592,6 @@
             "say": "Chị nói nhỏ giùm em, em cảm ơn chị nhiều.",
             "tone": "AM",
             "rel": 4,
-            "flag": "lanBaoChuot",
             "mem": {
               "kind": "CARED_FOR_THEM",
               "intensity": 55
@@ -607,7 +669,6 @@
               "say": "Bữa nay em bịt kín cái thùng đó lại chị.",
               "tone": "AM",
               "rel": 3,
-              "flag": "lanThungKin",
               "mem": {
                 "kind": "CARED_FOR_THEM",
                 "intensity": 45
@@ -657,7 +718,7 @@
                 "intensity": 70
               },
               "act": {
-                "kind": "REFUSE"
+                "kind": "WALK_ON"
               },
               "reply": "…Thôi em. Hôm nay chị không mua nữa.",
               "mood": "BUC"
@@ -675,18 +736,25 @@
             "intensity": 80
           },
           "act": {
-            "kind": "REFUSE"
+            "kind": "WALK_ON"
           },
           "silent": true,
           "mood": "GIAN"
         }
       ],
-      "openMood": "NGHIEM"
+      "openMood": "NGHIEM",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG"
+      ]
     },
     {
       "id": "lan.mua",
       "npc": "CHI_LAN",
       "topic": "aomua",
+      "source": "NPC_ONLY",
+      "depth": "FULL",
       "when": {
         "day": [
           5,
@@ -730,7 +798,6 @@
               "say": "Chị lấy cái áo mưa này đi chị. Em có hai cái.",
               "tone": "AM",
               "rel": 4,
-              "flag": "lanAoMua",
               "mem": {
                 "kind": "CARED_FOR_THEM",
                 "intensity": 60
@@ -766,7 +833,10 @@
               "calm": 22,
               "reply": "…Vâng. Em có cả trà nóng à.",
               "ref": "ket",
-              "mood": "THUONG"
+              "mood": "THUONG",
+              "while": [
+                "p.hasTea"
+              ]
             },
             {
               "say": "Chị quên áo mưa mà chị nhớ hết đơn hàng của chị ha chị.",
@@ -816,13 +886,420 @@
             "intensity": 60
           },
           "act": {
-            "kind": "STEP_ASIDE"
+            "kind": "STAND_IN_SHADE",
+            "forSec": 60
           },
           "reply": "…Vâng. Chị xin lỗi.",
-          "mood": "BUON"
+          "mood": "BUON",
+          "while": [
+            "w.shadeFree"
+          ],
+          "need": [
+            "w.rain"
+          ]
         }
       ],
-      "openMood": "NGUONG"
+      "openMood": "NGUONG",
+      "practice": [
+        "XEP_HANG",
+        "GOI_MON",
+        "DOI_BANH"
+      ]
+    },
+    {
+      "id": "lan.moiloi",
+      "npc": "CHI_LAN",
+      "topic": "moiloi",
+      "source": "PLAYER_ONLY",
+      "depth": "SHORT",
+      "weight": 25,
+      "when": {
+        "day": [
+          4,
+          23
+        ]
+      },
+      "opener": "…Em nghe.",
+      "openMood": "NGUONG",
+      "tree": [
+        {
+          "say": "Chị ăn gì chưa chị?",
+          "tone": "AM",
+          "rel": 2,
+          "reply": "…Chưa. Em chưa kịp. Lát nữa em ăn.",
+          "mood": "NGUONG",
+          "then": [
+            {
+              "say": "Em để sẵn ổ đây, lát chị ghé lấy nghen chị.",
+              "tone": "AM",
+              "reply": "…Vâng. Em để em tên gì để người ta khỏi lấy nhầm.",
+              "mood": "THUONG",
+              "act": {
+                "kind": "PROMISE_DEED",
+                "deed": "DUA_BANH"
+              },
+              "onKept": {
+                "rel": 3
+              },
+              "need": [
+                "!p.soldOut"
+              ]
+            },
+            {
+              "say": "Lát nữa là mấy giờ chị?",
+              "tone": "THANG",
+              "reply": "…Em cũng không biết. Lúc nào ngớt khách thì em ăn.",
+              "mood": "BUON"
+            },
+            {
+              "say": "Dạ. Em hỏi vậy thôi.",
+              "tone": "LANH",
+              "reply": "…Vâng.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Chị ngủ được hông chị?",
+          "tone": "THUONG",
+          "rel": 1,
+          "reply": "…Vâng. Chỗ em ồn, mà em quen rồi.",
+          "mood": "THUONG",
+          "then": [
+            {
+              "say": "Ồn kiểu gì vậy chị?",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "…Phòng sát đường. Xe tải chạy đêm. Mà em quen rồi.",
+              "mood": "MET"
+            },
+            {
+              "say": "Chị nhét bông gòn vô tai thử coi chị.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "…Em thử rồi. Nhét vô thì em lại nghe tiếng tim em.",
+              "mood": "BUON"
+            },
+            {
+              "say": "Thôi. Em hỏi vu vơ hà chị.",
+              "tone": "LANH",
+              "reply": "…Vâng. Em biết.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "…",
+          "tone": "IM",
+          "silent": true
+        }
+      ],
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "DOI_BANH",
+        "DI_NGANG"
+      ]
+    },
+    {
+      "id": "lan.moiloi2",
+      "npc": "CHI_LAN",
+      "topic": "moiloi2",
+      "source": "PLAYER_ONLY",
+      "depth": "SHORT",
+      "weight": 20,
+      "when": {
+        "day": [
+          13,
+          23
+        ],
+        "minVisits": 6
+      },
+      "opener": "…Vâng?",
+      "openMood": "NGUONG",
+      "tree": [
+        {
+          "say": "Cái chăn len của chị tới đâu rồi chị?",
+          "tone": "AM",
+          "rel": 2,
+          "reply": "…Được nửa rồi. Em làm chậm lắm.",
+          "mood": "NGUONG",
+          "then": [
+            {
+              "say": "Chị đan cho ai vậy chị?",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "…Em đan cho em. Lần đầu em làm cái gì cho em đó chị.",
+              "mood": "RUNG_RUNG"
+            },
+            {
+              "say": "Màu gì vậy chị?",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "…Xanh. Xanh lá. Em thích màu đó từ hồi nhỏ mà chưa mặc bao giờ.",
+              "mood": "THUONG"
+            },
+            {
+              "say": "Đan chậm cũng được mà chị. Có ai giục đâu.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "…Vâng. Chị nói vậy em thấy nhẹ.",
+              "mood": "THUONG"
+            }
+          ]
+        },
+        {
+          "say": "Chỗ chị bữa nay đỡ hông chị?",
+          "tone": "THUONG",
+          "rel": 1,
+          "reply": "…Vâng. Hôm nay em không phải giả vờ gì cả.",
+          "mood": "THUONG",
+          "then": [
+            {
+              "say": "Giả vờ gì vậy chị?",
+              "tone": "THANG",
+              "reply": "…Giả vờ vui. Ở đó người ta không thích ai buồn.",
+              "mood": "BUON"
+            },
+            {
+              "say": "Ở đây chị khỏi giả vờ nghen chị.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "…Vâng. Em biết. Nên em mới đứng đây lâu.",
+              "mood": "RUNG_RUNG"
+            },
+            {
+              "say": "Dạ. Vậy là mừng rồi chị.",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "…Vâng.",
+              "mood": "THUONG"
+            }
+          ]
+        },
+        {
+          "say": "Thôi chị. Em làm tiếp đây.",
+          "tone": "LANH",
+          "rel": -1,
+          "reply": "…Vâng. Em cứ làm.",
+          "mood": "LANH"
+        }
+      ],
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "DI_NGANG"
+      ]
+    },
+    {
+      "id": "lan.nhochuyen",
+      "npc": "CHI_LAN",
+      "topic": "nhochuyen",
+      "source": "PLAYER_ONLY",
+      "depth": "SHORT",
+      "weight": 18,
+      "when": {
+        "day": [
+          4,
+          40
+        ],
+        "minVisits": 2
+      },
+      "about": [
+        "LOI_NOI",
+        "RUDE_TO_THEM",
+        "BROKEN_PROMISE",
+        "XAU"
+      ],
+      "opener": "…Em nghe.",
+      "openMood": "NGAC_NHIEN",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "DI_NGANG"
+      ],
+      "tree": [
+        {
+          "say": "Chị còn nhớ {m.what} hông chị?",
+          "tone": "AM",
+          "rel": 2,
+          "need": [
+            "m.remembers"
+          ],
+          "reply": "…Nhớ. Em nhớ hết. Em không nói ra thôi.",
+          "mood": "BUON",
+          "then": [
+            {
+              "say": "Sao chị hổng nói ra chị?",
+              "tone": "THANG",
+              "reply": "…Nói ra rồi người ta ngại. Rồi người ta tránh em. Em quen rồi.",
+              "mood": "BUON"
+            },
+            {
+              "say": "Chị nói với em được mà chị.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "…Vâng. Em biết. Nên em mới đứng đây lâu hơn mấy chỗ khác.",
+              "mood": "RUNG_RUNG"
+            },
+            {
+              "say": "Dạ. Em xin lỗi chị nghen.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "…Không sao đâu. Em có giận gì đâu.",
+              "mood": "THUONG"
+            }
+          ]
+        },
+        {
+          "say": "Chị đứng đây chút cho đỡ mệt chị.",
+          "tone": "AM",
+          "rel": 2,
+          "calm": 10,
+          "reply": "…Vâng. Chút thôi. Em còn ca chiều.",
+          "mood": "MET",
+          "then": [
+            {
+              "say": "Ca chiều của chị mấy giờ chị?",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "…Hai giờ. Tới mười giờ đêm. Về tới phòng là mười một giờ.",
+              "mood": "MET"
+            },
+            {
+              "say": "Chị ăn gì trước khi vô ca chưa chị?",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "…Chưa. Em hay quên. Tới lúc đói thì hết giờ mất rồi.",
+              "mood": "BUON"
+            },
+            {
+              "say": "Dạ. Chị nghỉ đi chị.",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "…Vâng.",
+              "mood": "THUONG"
+            }
+          ]
+        },
+        {
+          "say": "…",
+          "tone": "IM",
+          "silent": true
+        }
+      ]
+    },
+    {
+      "id": "lan.dungnho",
+      "npc": "CHI_LAN",
+      "topic": "dungnho",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
+      "weight": 16,
+      "when": {
+        "day": [
+          5,
+          40
+        ]
+      },
+      "initiates": 0.26,
+      "ignore": {
+        "rel": -1
+      },
+      "opener": "…Em đứng đây một lát được không chị. Em chưa muốn về phòng.",
+      "openMood": "BUON",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG"
+      ],
+      "tree": [
+        {
+          "say": "Chị đứng đi chị. Đứng bao lâu cũng được.",
+          "tone": "AM",
+          "rel": 3,
+          "reply": "…Vâng. Cảm ơn chị. Em cứ đi vòng vòng từ nãy mà không biết đứng đâu.",
+          "mood": "RUNG_RUNG",
+          "then": [
+            {
+              "say": "Phòng chị có chuyện gì hả chị?",
+              "tone": "THUONG",
+              "reply": "…Không có gì đâu. Chỉ là về tới đó là em ngồi im tới sáng.",
+              "mood": "BUON"
+            },
+            {
+              "say": "Chị uống miếng trà đá rồi hẵng về chị.",
+              "tone": "AM",
+              "act": {
+                "kind": "OFFER_TEA",
+                "forSec": 8
+              },
+              "onKept": {
+                "rel": 3
+              },
+              "need": [
+                "p.hasTea",
+                "!v.gaveTea"
+              ],
+              "reply": "…Vâng. Em cầm hai tay cho ấm. Lạ nhỉ, trà đá mà em thấy ấm.",
+              "mood": "RUNG_RUNG"
+            },
+            {
+              "say": "Chị đứng đó, em làm việc em thôi.",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "…Vâng. Thế là đủ rồi chị.",
+              "mood": "THUONG"
+            }
+          ]
+        },
+        {
+          "say": "Chị ăn gì chưa chị? Em làm cho chị ổ.",
+          "tone": "AM",
+          "rel": 1,
+          "reply": "…Chưa. Mà thôi chị, em không đói.",
+          "mood": "BUON",
+          "then": [
+            {
+              "say": "Chị cầm đi, mai chị trả cũng được.",
+              "tone": "AM",
+              "act": {
+                "kind": "CREDIT_LOAF"
+              },
+              "onKept": {
+                "rel": 3
+              },
+              "need": [
+                "!p.soldOut"
+              ],
+              "reply": "…Vâng. Mai em trả. Em nhớ mà.",
+              "mood": "RUNG_RUNG"
+            },
+            {
+              "say": "Không đói thì chị cầm về ăn khuya chị.",
+              "tone": "THUONG",
+              "rel": 2,
+              "reply": "…Vâng. Thế thì em cầm. Cảm ơn chị.",
+              "mood": "THUONG"
+            },
+            {
+              "say": "Ừ. Vậy thôi chị.",
+              "tone": "LANH",
+              "reply": "…Vâng.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Chỗ này em còn bán chị ơi.",
+          "tone": "LANH",
+          "reply": "…Vâng. Em đi đây.",
+          "mood": "LANH"
+        }
+      ]
     }
   ]
 }

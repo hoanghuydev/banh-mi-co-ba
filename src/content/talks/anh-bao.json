@@ -5,6 +5,8 @@
       "id": "bao.hettien",
       "npc": "ANH_BAO",
       "topic": "hettien",
+      "source": "NPC_ONLY",
+      "depth": "FULL",
       "when": {
         "day": [
           6,
@@ -93,7 +95,7 @@
               "reply": "Dạ… hai triệu rưỡi cô. Dạ."
             },
             {
-              "say": "Mười ngàn em.",
+              "say": "{gia} em.",
               "tone": "THUONG",
               "reply": "Dạ. Em gửi cô.",
               "ref": "ket"
@@ -102,7 +104,7 @@
           "mood": "CUOI"
         },
         {
-          "say": "Mười ngàn em. Mà em ăn vậy no hông?",
+          "say": "{gia} em. Mà em ăn vậy no hông?",
           "tone": "AM",
           "rel": 3,
           "reply": "Dạ no cô. Em quen rồi.",
@@ -143,21 +145,31 @@
           "mood": "CUOI"
         },
         {
-          "say": "Mười ngàn. Em đứng qua bên cho cô bán nghen.",
+          "say": "{gia}. Em đứng qua bên cho cô bán nghen.",
           "tone": "LANH",
           "rel": -2,
           "reply": "Dạ. Dạ em xin lỗi cô.",
           "act": {
-            "kind": "STEP_ASIDE"
-          }
+            "kind": "STEP_ASIDE",
+            "forSec": "TOI_LUOT"
+          },
+          "while": [
+            "w.queue(1)"
+          ]
         }
       ],
-      "openMood": "NGUONG"
+      "openMood": "NGUONG",
+      "practice": [
+        "GOI_MON",
+        "DOI_BANH"
+      ]
     },
     {
       "id": "bao.tiengnhat",
       "npc": "ANH_BAO",
       "topic": "nhat",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
       "when": {
         "day": [
           14,
@@ -263,6 +275,14 @@
           ]
         },
         {
+          "say": "Nó nói nó tính chào em một tiếng đó em.",
+          "tone": "AM",
+          "rel": 3,
+          "need": "suChaoBao",
+          "reply": "Dạ?! …Dạ thôi cô. Để em chào trước. Em tập trong phòng hai bữa rồi.",
+          "mood": "NGUONG"
+        },
+        {
           "say": "Em hỏi gì kỳ vậy em.",
           "tone": "GAT",
           "rel": -5,
@@ -275,12 +295,19 @@
           "mood": "BUC"
         }
       ],
-      "openMood": "NGUONG"
+      "openMood": "NGUONG",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG"
+      ]
     },
     {
       "id": "bao.thi",
       "npc": "ANH_BAO",
       "topic": "thi",
+      "source": "NPC_ONLY",
+      "depth": "BARK",
       "when": {
         "day": [
           17,
@@ -334,7 +361,7 @@
               "mood": "CUOI"
             },
             {
-              "say": "Hai ổ, bốn chục. Em gửi tiền.",
+              "say": "Hai ổ, {gia2}. Em gửi tiền.",
               "tone": "LANH",
               "rel": -1,
               "reply": "Dạ."
@@ -342,12 +369,18 @@
           ]
         }
       ],
-      "openMood": "MET"
+      "openMood": "MET",
+      "practice": [
+        "GOI_MON",
+        "DOI_BANH"
+      ]
     },
     {
       "id": "bao.clip",
       "npc": "ANH_BAO",
       "topic": "clip",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
       "when": {
         "day": [
           14,
@@ -398,7 +431,6 @@
                   "say": "Em chỉ gì? Em nói hết câu đi em.",
                   "tone": "AM",
                   "rel": 4,
-                  "flag": "baoNoiHet",
                   "mem": {
                     "kind": "CARED_FOR_THEM",
                     "intensity": 60
@@ -417,7 +449,6 @@
                   "say": "Vậy bữa nào em nói với nó một tiếng đi em.",
                   "tone": "AM",
                   "rel": 3,
-                  "flag": "baoChaoSu",
                   "reply": "Dạ… để em. Dạ em sẽ nói. Chắc vậy.",
                   "mood": "CUOI"
                 },
@@ -518,12 +549,19 @@
           "mood": "BUON"
         }
       ],
-      "openMood": "NGUONG"
+      "openMood": "NGUONG",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG"
+      ]
     },
     {
       "id": "bao.lamthem",
       "npc": "ANH_BAO",
       "topic": "lamthem",
+      "source": "NPC_ONLY",
+      "depth": "FULL",
       "when": {
         "day": [
           12,
@@ -660,14 +698,21 @@
               "say": "Em ngồi ghế kia đi, cô kêu em dậy.",
               "tone": "AM",
               "rel": 4,
-              "flag": "baoNgoiGhe",
               "calm": 28,
               "mem": {
                 "kind": "CARED_FOR_THEM",
                 "intensity": 55
               },
               "reply": "Dạ… dạ thôi kỳ lắm cô. …Dạ. Em ngồi.",
-              "mood": "THUONG"
+              "mood": "THUONG",
+              "needEquip": "GHE_BAN",
+              "while": [
+                "w.seatFree"
+              ],
+              "act": {
+                "kind": "THEY_SIT",
+                "forSec": 40
+              }
             },
             {
               "say": "Em uống ly trà đá cho tỉnh nghen em.",
@@ -675,7 +720,10 @@
               "rel": 3,
               "calm": 20,
               "reply": "Dạ. Dạ cảm ơn cô.",
-              "mood": "THUONG"
+              "mood": "THUONG",
+              "while": [
+                "p.hasTea"
+              ]
             },
             {
               "say": "Ừ, em tỉnh lại rồi mua đi em.",
@@ -699,12 +747,18 @@
           "mood": "BUC"
         }
       ],
-      "openMood": "MET"
+      "openMood": "MET",
+      "practice": [
+        "GOI_MON",
+        "DOI_BANH"
+      ]
     },
     {
       "id": "bao.noi",
       "npc": "ANH_BAO",
       "topic": "noi",
+      "source": "NPC_ONLY",
+      "depth": "FULL",
       "when": {
         "day": [
           26,
@@ -752,7 +806,6 @@
                   "say": "Em tập ở đây cũng được mà em. Cô nghe.",
                   "tone": "AM",
                   "rel": 4,
-                  "flag": "baoTapNoi",
                   "mem": {
                     "kind": "CARED_FOR_THEM",
                     "intensity": 65
@@ -813,6 +866,7 @@
             {
               "say": "Phiền gì em. Cô bỏ chút ớt có mất gì đâu.",
               "tone": "AM",
+              "need": "baoDuocCho",
               "rel": 4,
               "act": {
                 "kind": "PROMISE",
@@ -849,7 +903,410 @@
           "mood": "LANH"
         }
       ],
-      "openMood": "CUOI"
+      "openMood": "CUOI",
+      "practice": [
+        "GOI_MON",
+        "DOI_BANH"
+      ]
+    },
+    {
+      "id": "bao.moiloi",
+      "npc": "ANH_BAO",
+      "topic": "moiloi",
+      "source": "PLAYER_ONLY",
+      "depth": "SHORT",
+      "weight": 25,
+      "when": {
+        "day": [
+          7,
+          40
+        ]
+      },
+      "opener": "Dạ… cô kêu em hả cô.",
+      "openMood": "NGUONG",
+      "tree": [
+        {
+          "say": "Em ăn sáng chưa em?",
+          "tone": "AM",
+          "rel": 2,
+          "reply": "Dạ… em ăn ổ không thôi cô. Dạ em no mà.",
+          "mood": "NGUONG",
+          "then": [
+            {
+              "say": "Ổ không thì khô lắm. Để cô bỏ chút pate cho em.",
+              "tone": "AM",
+              "reply": "Dạ… thôi cô, em trả thêm. …Dạ. Dạ em cảm ơn cô.",
+              "mood": "NGUONG",
+              "act": {
+                "kind": "PROMISE",
+                "item": "pate"
+              },
+              "onKept": {
+                "rel": 3
+              },
+              "need": [
+                "!p.soldOut"
+              ]
+            },
+            {
+              "say": "Em ăn vậy hoài hả em?",
+              "tone": "THANG",
+              "rel": 1,
+              "reply": "Dạ… cũng mấy tháng rồi cô. Em quen rồi mà cô.",
+              "mood": "NGUONG"
+            },
+            {
+              "say": "Ừ. Vậy cô làm cho em nghen.",
+              "tone": "LANH",
+              "reply": "Dạ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Em nói từ từ nghen em. Cô hổng có gấp đâu.",
+          "tone": "THUONG",
+          "rel": 1,
+          "reply": "Dạ… dạ. Cô là người đầu tiên nói với em câu đó.",
+          "mood": "NGUONG",
+          "then": [
+            {
+              "say": "Người ta hay giục em hả em?",
+              "tone": "THUONG",
+              "rel": 2,
+              "reply": "Dạ… em nói chậm nên người ta nói giùm luôn. Riết rồi em thôi nói.",
+              "mood": "BUON"
+            },
+            {
+              "say": "Ở đây em nói bao lâu cũng được em.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "Dạ… Dạ em cảm ơn cô. …Dạ em nói được rồi nè.",
+              "mood": "RUNG_RUNG"
+            },
+            {
+              "say": "Dạ. Em kêu gì cô làm nấy nghen.",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "Dạ… cho em ổ đầy đủ. Dạ, khỏi ớt cô.",
+              "mood": "THUONG"
+            }
+          ]
+        },
+        {
+          "say": "Em muốn gì thì nói lẹ giùm em. Cô làm hổng kịp nè.",
+          "tone": "GAT",
+          "rel": -2,
+          "anger": 25,
+          "reply": "…Dạ. Dạ em xin lỗi cô. Em đứng im.",
+          "mood": "NGUONG"
+        }
+      ],
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "DOI_BANH",
+        "DI_NGANG"
+      ]
+    },
+    {
+      "id": "bao.moiloi2",
+      "npc": "ANH_BAO",
+      "topic": "moiloi2",
+      "source": "PLAYER_ONLY",
+      "depth": "SHORT",
+      "weight": 20,
+      "when": {
+        "day": [
+          15,
+          40
+        ],
+        "minVisits": 6
+      },
+      "opener": "Dạ… cô gọi em hả cô.",
+      "openMood": "NGUONG",
+      "tree": [
+        {
+          "say": "Em dịch tới đâu rồi em?",
+          "tone": "AM",
+          "rel": 2,
+          "reply": "Dạ… được nửa chương. Dạ em dịch chậm lắm cô.",
+          "mood": "NGUONG",
+          "then": [
+            {
+              "say": "Sách gì vậy em?",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Dạ… sách nấu ăn. Của Nhật. Dạ nhiều từ em tra hoài hổng ra cô.",
+              "mood": "NGUONG"
+            },
+            {
+              "say": "Dịch chậm mà đúng thì hơn chớ em.",
+              "tone": "THUONG",
+              "rel": 2,
+              "reply": "Dạ… cô nói giống y chang ông thầy em hồi xưa.",
+              "mood": "THUONG"
+            },
+            {
+              "say": "Chừng nào xong em cho cô coi với nghen em.",
+              "tone": "DUA",
+              "rel": 1,
+              "reply": "Dạ… dạ. Mà sách nấu ăn, cô coi cô cười em chết.",
+              "mood": "CUOI_KHAN"
+            }
+          ]
+        },
+        {
+          "say": "Tối qua em ngủ được mấy tiếng em?",
+          "tone": "DUA",
+          "rel": 1,
+          "reply": "Dạ… ba tiếng. Dạ em quen rồi cô.",
+          "mood": "MET",
+          "then": [
+            {
+              "say": "Ba tiếng mà em ngồi dịch cả ngày hả em?",
+              "tone": "THANG",
+              "rel": 1,
+              "reply": "Dạ… em dịch đêm. Đêm yên, chữ nó vô dễ hơn cô à.",
+              "mood": "MET"
+            },
+            {
+              "say": "Em ngủ bù bữa nào chưa em?",
+              "tone": "AM",
+              "rel": 1,
+              "reply": "Dạ chủ nhật. Dạ em ngủ tới trưa luôn, dậy em thấy có lỗi.",
+              "mood": "NGUONG"
+            },
+            {
+              "say": "Ừ. Cô hỏi vậy thôi.",
+              "tone": "LANH",
+              "reply": "Dạ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Thôi em. Cô hỏi cho có.",
+          "tone": "LANH",
+          "rel": -1,
+          "reply": "…Dạ.",
+          "mood": "LANH"
+        }
+      ],
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "DI_NGANG"
+      ]
+    },
+    {
+      "id": "bao.nhochuyen",
+      "npc": "ANH_BAO",
+      "topic": "nhochuyen",
+      "source": "PLAYER_ONLY",
+      "depth": "SHORT",
+      "weight": 18,
+      "when": {
+        "day": [
+          4,
+          40
+        ],
+        "minVisits": 2
+      },
+      "about": [
+        "TU_TE",
+        "CARED_FOR_THEM",
+        "FREE_EXTRA",
+        "DUOC_NHO"
+      ],
+      "opener": "Dạ… cô kêu em hả cô.",
+      "openMood": "NGAC_NHIEN",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "DI_NGANG"
+      ],
+      "tree": [
+        {
+          "say": "Em còn nhớ {m.what} hông em?",
+          "tone": "AM",
+          "rel": 2,
+          "need": [
+            "m.remembers"
+          ],
+          "reply": "Dạ… nhớ. Dạ em nhớ lâu lắm cô. Chuyện nhỏ xíu em cũng nhớ.",
+          "mood": "NGUONG",
+          "then": [
+            {
+              "say": "Nhớ lâu vậy chắc em cực ha em.",
+              "tone": "THUONG",
+              "rel": 2,
+              "reply": "Dạ… cũng có. Mà chuyện vui em cũng nhớ lâu y vậy cô.",
+              "mood": "THUONG"
+            },
+            {
+              "say": "Em nhớ chuyện gì của cô nhất vậy em?",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Dạ… bữa cô nói em cứ nói từ từ. Dạ em nhớ nguyên câu luôn.",
+              "mood": "RUNG_RUNG"
+            },
+            {
+              "say": "Dạ. Cô làm ổ cho em nghen.",
+              "tone": "THUONG",
+              "act": {
+                "kind": "PROMISE_DEED",
+                "deed": "DUA_BANH"
+              },
+              "onKept": {
+                "rel": 2
+              },
+              "need": [
+                "!p.soldOut"
+              ],
+              "reply": "Dạ. Dạ em cảm ơn cô.",
+              "mood": "THUONG"
+            }
+          ]
+        },
+        {
+          "say": "Bữa nay em dịch được nhiêu rồi em?",
+          "tone": "THUONG",
+          "rel": 1,
+          "reply": "Dạ… ba trang. Dạ sáng nay em kẹt một chữ hoài cô.",
+          "mood": "MET",
+          "then": [
+            {
+              "say": "Chữ gì mà kẹt dữ vậy em?",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Dạ… một cái tên món ăn. Dạ tiếng mình hổng có món đó nên em hổng biết kêu sao.",
+              "mood": "NGUONG"
+            },
+            {
+              "say": "Em để đó mai tính đi em.",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "Dạ… em để là em nghĩ hoài. Dạ thôi em ráng.",
+              "mood": "MET"
+            },
+            {
+              "say": "Ừ. Em ráng nghen.",
+              "tone": "LANH",
+              "reply": "Dạ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Thôi em. Cô hỏi cho có.",
+          "tone": "LANH",
+          "reply": "…Dạ.",
+          "mood": "LANH"
+        }
+      ]
+    },
+    {
+      "id": "bao.thieutien",
+      "npc": "ANH_BAO",
+      "topic": "thieutien",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
+      "weight": 16,
+      "when": {
+        "day": [
+          5,
+          40
+        ]
+      },
+      "initiates": 0.3,
+      "ignore": {
+        "rel": -1
+      },
+      "opener": "Dạ cô… em thiếu hai ngàn. Dạ em để quên ví ở nhà rồi cô.",
+      "openMood": "NGUONG",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG"
+      ],
+      "tree": [
+        {
+          "say": "Hổng sao em. Mai em ghé trả cô cũng được.",
+          "tone": "AM",
+          "act": {
+            "kind": "CREDIT_LOAF"
+          },
+          "onKept": {
+            "rel": 3
+          },
+          "need": [
+            "!p.soldOut"
+          ],
+          "reply": "Dạ… dạ thiệt hả cô. Dạ mai em trả liền. Dạ em cảm ơn cô.",
+          "mood": "RUNG_RUNG",
+          "then": [
+            {
+              "say": "Em nhớ ghé nghen, cô ghi vô sổ rồi đó.",
+              "tone": "DUA",
+              "rel": 1,
+              "reply": "Dạ em nhớ. Dạ em hổng dám quên đâu cô.",
+              "mood": "NGUONG"
+            },
+            {
+              "say": "Hai ngàn mà em lo dữ vậy em.",
+              "tone": "THUONG",
+              "rel": 2,
+              "reply": "Dạ… em sợ người ta nghĩ em gạt. Dạ em bị vậy mấy lần rồi cô.",
+              "mood": "BUON"
+            },
+            {
+              "say": "Ừ. Em ăn đi em.",
+              "tone": "LANH",
+              "reply": "Dạ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Vậy cô làm ổ nhỏ hơn cho vừa tiền em nghen.",
+          "tone": "THUONG",
+          "rel": 1,
+          "reply": "Dạ… dạ được cô. Dạ vậy cũng được.",
+          "mood": "NGUONG",
+          "then": [
+            {
+              "say": "Ổ nhỏ mà cô bỏ y chang nghen em.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Dạ… cô tốt quá. Dạ mai em đem đủ tiền em mua ổ lớn.",
+              "mood": "THUONG"
+            },
+            {
+              "say": "Em đừng ngại, ai cũng có bữa quên ví em.",
+              "tone": "AM",
+              "rel": 2,
+              "reply": "Dạ… dạ. Dạ em đỡ quê rồi.",
+              "mood": "NGUONG"
+            },
+            {
+              "say": "Dạ em chờ chút nghen.",
+              "tone": "LANH",
+              "reply": "Dạ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Vậy em về lấy tiền rồi ghé lại nghen em.",
+          "tone": "LANH",
+          "reply": "…Dạ. Dạ em về.",
+          "mood": "LANH"
+        }
+      ]
     }
   ]
 }
