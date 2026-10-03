@@ -911,6 +911,81 @@ Một chỗ phải nói thẳng: lỗi số 3 tôi đã sửa MỘT nút rồi k
 `audit-loi.ts` quét mới lòi ra. Sửa bằng tay rồi khai xong là cách làm đã hỏng ba lần
 trong tài liệu này; cái máy dò phải chạy TRƯỚC khi khai.
 
+## 6quindecies. LẦN THỨ BA CÙNG MỘT LỖI — VÀ CÁI LƯỚI IM LẶNG VÌ MỘT DẤU `\b`
+
+Chủ dự án, ngay sau đợt trên:
+
+> *"Có chỗ nữa là bữa nay con làm mẻ ngon lắm. ngon thiệt ăn rồi biết. ờ cho một ổ. mà
+> npc đi mất chứ không mua. vẫn là free word."*
+
+`any.banh · 2.1`. Lần thứ ba cùng một lớp lỗi, và lần này đau hơn hai lần trước vì tôi
+VỪA viết xong một cái máy dò cho đúng lớp lỗi đó — `tools/audit-loi.ts` — và nó im.
+
+### Vì sao máy dò im: `\b` sau một chữ có dấu
+
+Mẫu M1 viết `(ổ|cái)\b`. `\b` của JS tính theo bảng ASCII: `cái\b` khớp (chữ `i` là ký tự
+từ), còn `ổ\b` **không bao giờ khớp** — `ổ` không phải ký tự từ ASCII nên không có ranh
+giới nào ở đó. Cái lưới vẫn in ra mười kết quả trông rất đúng, toàn khớp qua nhánh có
+`cái`, và bỏ qua sạch nhóm câu quan trọng nhất: mọi câu có chữ **ổ**.
+
+Sửa `(?![\p{L}])` với cờ `u` thì cùng một kho nhảy từ **10 lên 24** chỗ. Mười bốn chỗ đã
+nằm đó suốt, bị một ký tự nuốt mất.
+
+Đây là **lần thứ hai** cái bẫy này cắn trong cùng tài liệu — lần đầu `dạ\b` khớp "Dạo"
+trong `validate-talks.ts`. Ghi thẳng vào chỗ khai mẫu, cả hai file.
+
+### Lỗi thật trong 24 chỗ
+
+Rà tay 24 chỗ: 23 là khách ĐÃ đứng mua (nói "lấy một ổ" lúc đang xếp hàng thì không mở ra
+giao dịch nào mới — họ mua sẵn rồi). Đúng **một** chỗ thật, và nó đúng chỗ chủ dự án chỉ:
+
+`any.json` là kho **dùng chung**, nghĩa là một người ĐANG ĐI NGANG cũng nghe được. Nút đó
+không có act nào, nên người đi ngang gật *"Ờ thì… cho một ổ coi sao"* rồi đi tiếp —
+nguyên văn chủ dự án gọi là **free word**.
+
+Tách đôi theo `t.passing`:
+
+* `t.passing` → `INVITE`, kết cục do `inviteChance` quyết, có câu từ chối riêng.
+* `!t.passing` → giữ nguyên câu cũ. Với người đã đứng mua thì câu đó vô hại.
+
+Đo trên 282 người đi ngang thật: **7% ghé vô** — đúng dải của 24 lời mời VIẾT SẴN trong
+`qua-duong.json` (5–8%, `tools/probe-anybanh.ts`). Tức nút mới không phải nút yếu.
+
+### T017 — để không có lần thứ tư
+
+`qua-duong.json` thì sạch: cả 24 lời mời mua đều có `INVITE` sẵn. Lỗ duy nhất là kho
+`ANY`, nơi người viết dễ quên rằng người nghe có thể đang đi ngang. Nên luật thành máy:
+
+> Trong kho `ANY` và `QUA_DUONG`, một nút có câu đáp CHỐT VỤ MUA phải HOẶC mang `INVITE`,
+> HOẶC khoá `!t.passing`.
+
+Hai chỗ phải cẩn thận khi viết lưới này, và cả hai đều lộ ra lúc chạy:
+
+* **Mua ở CHỖ KHÁC không phải vụ mua của mình.** `duong.nhinra` có con bé nói *"Tới trường
+  {self} mua ổ bánh ở cổng"* — bắt oan. Thêm mẫu loại trừ `ở cổng|bên kia|chỗ khác|…`.
+* **`A-6` cấm `INVITE` ngoài kho ẩn danh**, vì `invite()` chỉ chạy cho người đang đi
+  ngang; gắn nhầm là một act IM LẶNG. Nới đúng một cửa: kho `ANY` được mời **khi nút khoá
+  `t.passing`** — chính là điều kiện `invite()` đòi. Và `invite()` không nuốt nữa: gọi
+  nhầm người thì bắn `dialog:silent / INVITE_SAI_NGUOI`.
+
+Lưới sống `tests/p2-validator-song.test.ts` thêm một ca riêng cho T017 (phá
+`qua-duong.json` bằng cách gỡ `INVITE` khỏi mọi lời mời) — vì một validator chết thì
+không kêu.
+
+### Số đo
+
+| | |
+|---|---|
+| Lưới | 543 → **547**, xanh hết |
+| `validate:talks` | 17 cổng (T001–T017), sạch |
+| Máy dò M1 sau khi sửa `\b` | 10 → **24** chỗ · 1 lỗi thật |
+| Lời mời mới `any.banh` | 7% ghé vô / 282 người — đúng dải 5–8% của lời mời viết sẵn |
+
+Chỗ phải nói thẳng, lần thứ hai trong hai đợt liền: **cái máy dò sai thì tệ hơn không có
+máy dò**, vì nó cấp cho tôi một tờ giấy chứng nhận sạch. Đợt trước tôi khai "rà 2.015 nút,
+8 lỗi thật, 8 đã sửa" — con số đúng, kết luận sai, vì mẫu quét đã mù từ đầu. Từ đợt này
+mỗi mẫu regex đụng chữ có dấu phải có một ca thử ĐỨNG CẠNH nó.
+
 ## 7. Truy vết
 
 | Khẳng định | Nguồn |

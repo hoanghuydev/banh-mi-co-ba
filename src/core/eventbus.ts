@@ -58,7 +58,8 @@ export type EventMap = {
   "dialog:requested":         { npcId: NpcId; concept: string; blackboard: Record<string, unknown> };
   "dialog:selected":          { npcId: NpcId; ruleId: string; responseId: string; score: number; rejected: number };
   "dialog:spoken":            { npcId: NpcId; text: string; tier: 1 | 2 | 3 };
-  "dialog:silent":            { npcId: NpcId; reason: "RATE_35" | "COOLDOWN" | "NO_RULE" | "EXPIRED" | "PERSONALITY" };
+  /** `INVITE_SAI_NGUOI` = mời một người KHÔNG đi ngang, tức nội dung gắn sai act — xem `Service.invite()`. */
+  "dialog:silent":            { npcId: NpcId; reason: "RATE_35" | "COOLDOWN" | "NO_RULE" | "EXPIRED" | "PERSONALITY" | "INVITE_SAI_NGUOI" };
   "bark:queued":              { npcId: NpcId; tier: 1 | 2 | 3; delaySec: number };
 
   // ── trí nhớ · quan hệ · đồn thổi (P2) ──────────────────────────────

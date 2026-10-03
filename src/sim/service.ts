@@ -2775,7 +2775,15 @@ export class Service {
 
   /** Dòng số `invite:<id lượt>` nên MỘT người chỉ có MỘT câu trả lời; người viết khai cả `yes` lẫn `no`, roll quyết câu nào. */
   private invite(c: Customer, act: Extract<TalkAct, { kind: "INVITE" }>, tone: TalkTone) {
-    if (!c.ambient || !c.pass) return;
+    if (!c.ambient || !c.pass) {
+      /*
+       * Mời một người KHÔNG đi ngang là một act im lặng — cùng họ với `BARTER` thiếu
+       * `case`. Nội dung đã khoá (`t.passing`, hoặc kho `WALKIN`/`QUA_DUONG`), nên tới
+       * được đây là nội dung gắn sai; kêu lên chứ đừng nuốt.
+       */
+      this.deps.bus.emit("dialog:silent", { npcId: c.memKey, reason: "INVITE_SAI_NGUOI" });
+      return;
+    }
     const unlimited = !!this.deps.noTimePressure;
     const ahead = this.customers.filter((x) => x.phase !== "leaving" && !x.pass && !x.balking).length;
     const p = inviteChance({

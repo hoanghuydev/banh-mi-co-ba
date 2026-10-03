@@ -31,10 +31,20 @@ const files = readdirSync(DIR).filter((f) => f.endsWith(".json"));
 
 /**
  * Câu đáp NHẬN LỜI — người ta chốt một việc có HỆ QUẢ VẬT CHẤT ngay lúc đó (ổ bánh đổi
- * chủ, giá đổi, món đổi). Cố tình hẹp: "bán", "mua" nói trống trong lúc tám chuyện thì
- * không phải giao dịch, mà kể chuyện.
+ * chủ, giá đổi, món đổi).
+ *
+ * ⚠️ Bản đầu viết HẸP (bắt buộc có đại từ: "cho TUI một ổ") và nó sót đúng một câu chủ dự
+ * án bắt được sau đó: *"Ờ thì… cho một ổ coi sao."* — không đại từ, không act, người ta
+ * nói xong đi mất. Thà ôm thêm mấy chỗ kể chuyện rồi loại bằng mắt còn hơn sót một giao
+ * dịch: đây là máy DÒ, không phải máy gác.
+ *
+ * ⚠️⚠️ KHÔNG dùng `\b` sau một chữ có dấu. `\b` của JS tính theo ASCII, mà "ổ" không phải
+ * ký tự từ ASCII, nên `ổ\b` KHÔNG BAO GIỜ khớp "cho một ổ coi sao" — mà `cái\b` thì khớp.
+ * Tức cái lưới im lặng bỏ qua đúng nhóm câu quan trọng nhất và vẫn in ra mười kết quả
+ * trông có vẻ đúng. Đây là lần thứ hai cái bẫy này cắn (lần đầu: `dạ\b` khớp "Dạo" trong
+ * `validate-talks.ts`). Dùng `(?![\p{L}])` với cờ `u`.
  */
-const NHAN_LOI = /(lấy|mua|bán cho|đổi|gói) (một |1 |hai |2 )?(ổ|cái)|lấy luôn|cho (tui|tôi|anh|chị|em|con|mình) (một |1 |hai |2 )?(ổ|cái)|đổi (qua|sang|thành|lại)|(làm|lấy) (ổ )?đầy đủ|khỏi hỏi|thêm (một |1 )?(ổ|cái)/i;
+const NHAN_LOI = /(cho|lấy|mua|bán|gói|làm|đổi|thêm)\s+(?:\S+\s+){0,2}?(?:một|hai|ba|[123])?\s*(ổ|cái|phần)(?![\p{L}])|lấy luôn|đổi (qua|sang|thành|lại)|(làm|lấy) (ổ )?đầy đủ|khỏi hỏi/iu;
 /**
  * Câu MỜI dời chỗ — phải là lời MỜI (có "đi/nghen/được mà" cuối câu), không phải câu
  * nói đá "Chú đứng đây hai phút là con mất một khách đó chú."

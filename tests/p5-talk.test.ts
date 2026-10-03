@@ -425,7 +425,14 @@ test("A-6 lời MỜI khai cả hai cái kết, và là câu CUỐI của nhánh
       assert.notEqual(node.act.yes, node.act.no, `${t.id}: "${node.say}" chịu hay không cũng một câu`);
       assert.ok(!node.then && !node.ref, `${t.id}: "${node.say}" mời xong còn viết tiếp`);
       assert.ok(CAN_INVITE.has(node.tone), `${t.id}: "${node.say}" mời bằng giọng ${node.tone} — nút chết`);
-      assert.ok(ANON_TALK_POOLS.includes(t.npc as never), `${t.id}: mời một người có tên`);
+      /*
+       * Kho `ANY` ai cũng nghe được, kể cả người CÓ TÊN đang đứng mua — mà `invite()` chỉ
+       * chạy cho người đang đi ngang, gắn nhầm là một act im lặng. Nên `ANY` được phép mời
+       * ĐÚNG KHI nút khoá `t.passing`: cái khoá đó chính là điều kiện `invite()` đòi.
+       */
+      const khoaDiNgang = [node.need ?? [], node.while ?? []].flat().map(String).includes("t.passing");
+      assert.ok(ANON_TALK_POOLS.includes(t.npc as never) || (t.npc === "ANY" && khoaDiNgang),
+        `${t.id}: mời một người có tên`);
     }
   }
   assert.ok(seen >= 4, `mới có ${seen} lời mời — quán vắng vẫn không có gì để làm`);

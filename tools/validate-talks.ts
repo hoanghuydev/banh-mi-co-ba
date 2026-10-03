@@ -2,7 +2,7 @@
  * npm run validate:talks — validator cho CÂY THOẠI. Song sinh với `validate-rules.ts` và có mặt
  * vì cùng một lý do: một cổng viết sai không crash, nó chỉ làm một câu KHÔNG BAO GIỜ HIỆN.
  *
- * Mười sáu kiểm tra T001–T016. ERROR chặn commit; WARN in ra nhưng cho qua — ranh giới giữa hai
+ * Mười bảy kiểm tra T001–T017. ERROR chặn commit; WARN in ra nhưng cho qua — ranh giới giữa hai
  * mức là "có làm hỏng thật không", không phải "có xấu không" (validator quá nghiêm thì writer tắt
  * nó đi).
  */
@@ -357,6 +357,41 @@ export function validateTalks(dir: string): Report {
     }
     if (t016Debt.length) {
       r.add("T016", "WARN", "src/content/talks", "[nợ]", `${t016Debt.length} người còn nợ T016: ${t016Debt.join(", ")}`);
+    }
+  }
+
+  /*
+   * T017 — BÁN ĐƯỢC HÀNG CHO MỘT NGƯỜI ĐANG ĐI NGANG THÌ PHẢI QUA `INVITE`.
+   *
+   * Chủ dự án bắt được lần thứ ba cùng một lớp lỗi, lần này ở `any.banh`:
+   *
+   *   mình: *"Ngon thiệt mà. {call} ăn rồi biết."*
+   *   họ:   *"Ờ thì… cho một ổ coi sao."*  → rồi đi mất, không mua.
+   *
+   * Câu đáp CHỐT MỘT VỤ MUA mà nút không có act nào, nên không đơn nào sinh ra. Với khách
+   * đã đứng mua thì câu đó vô hại (họ mua sẵn rồi); với người ĐANG ĐI NGANG thì nó là
+   * "free word" — nguyên văn chủ dự án.
+   *
+   * Nên luật: trong kho `ANY` và `QUA_DUONG` — hai kho một người đi ngang nghe được —
+   * một nút chốt vụ mua phải HOẶC mang `INVITE`, HOẶC khoá `!t.passing` để nó không bao
+   * giờ tới tai người đang đi.
+   *
+   * ⚠️ Mẫu dưới KHÔNG được dùng `\b` sau chữ có dấu: `\b` của JS tính theo ASCII nên
+   * `ổ\b` không bao giờ khớp "cho một ổ coi sao" — đúng cái bẫy đã cắn hai lần.
+   */
+  const CHOT_MUA = /(cho|lấy|mua|làm|gói)\s+(?:\S+\s+){0,2}?(?:một|hai|ba|[123])?\s*(ổ|phần)(?![\p{L}])|lấy luôn (mấy )?ổ/iu;
+  /** Mua ở CHỖ KHÁC thì không phải vụ mua của mình — con bé nói nó mua bánh ở cổng trường. */
+  const MUA_CHO_KHAC = /ở (cổng|trường|chợ|nhà|bên)|bên kia|chỗ khác|hồi nãy|lúc nãy/iu;
+  for (const { t, file } of talks) {
+    if (t.npc !== "ANY" && t.npc !== "QUA_DUONG") continue;
+    for (const { node, path } of walkTalk(t)) {
+      if (!node.reply || !CHOT_MUA.test(node.reply) || MUA_CHO_KHAC.test(node.reply)) continue;
+      if (node.act?.kind === "INVITE") continue;
+      const keys = [node.need ?? [], node.while ?? []].flat().map(String);
+      if (keys.includes("!t.passing")) continue;
+      r.add("T017", "ERROR", file, `${t.id}${path}`,
+        `câu đáp chốt vụ mua mà không có \`INVITE\` và không khoá \`!t.passing\` — `
+        + `một người đi ngang nói "${node.reply}" rồi đi tiếp, không đơn nào sinh ra`);
     }
   }
 

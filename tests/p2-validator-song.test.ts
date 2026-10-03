@@ -68,6 +68,35 @@ for (const [code, phaHoai] of CASES) {
   });
 }
 
+test("T017 còn bắt được khi nội dung bị phá đúng kiểu nó canh", () => {
+  /*
+   * T017 chỉ sống ở hai kho `ANY` / `QUA_DUONG` nên không dùng chung được bộ phá
+   * `ba-bay.json` ở trên: phá đúng chỗ nó canh mới là phá.
+   *
+   * Dựng lại ĐÚNG lỗi chủ dự án bắt được lần thứ ba: gỡ `INVITE` khỏi một câu mời mua
+   * trong `qua-duong.json` và để nguyên câu đáp nhận lời. Người đi ngang gật rồi đi mất.
+   */
+  const tmp = mkdtempSync(join(tmpdir(), "sab-"));
+  try {
+    cpSync(SRC, join(tmp, "content"), { recursive: true });
+    const p = join(tmp, "content", "talks", "qua-duong.json");
+    const d = JSON.parse(readFileSync(p, "utf8"));
+    let pha = 0;
+    const go = (ns: Any[]) => ns.forEach((n) => {
+      if (n.act?.kind === "INVITE") { n.reply = "Ờ thì… cho một ổ coi sao."; delete n.act; pha++; }
+      if (n.then) go(n.then);
+    });
+    for (const x of d.talks) { go(x.tree); for (const sub of Object.values(x.shared ?? {})) go(sub as Any[]); }
+    assert.ok(pha > 0, "không còn câu mời mua nào để phá — lưới này mất chỗ bám");
+    writeFileSync(p, JSON.stringify(d, null, 2));
+    const rep = validateTalks(join(tmp, "content"));
+    assert.ok(rep.diags.some((x) => x.code === "T017"),
+      "T017: gỡ INVITE rồi mà validator im — lưới này chết");
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test("nội dung THẬT của repo vẫn sạch — lưới nghiêm mà không bắt oan", () => {
   const rep = validateTalks(SRC);
   assert.deepEqual(rep.errors.map((d) => `${d.code} ${d.where} ${d.detail}`), []);

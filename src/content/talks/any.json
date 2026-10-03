@@ -324,10 +324,25 @@
               "say": "Ngon thiệt mà. {call} ăn rồi biết.",
               "tone": "DUA",
               "rel": 1,
+              "act": {
+                "kind": "INVITE",
+                "yes": "Ờ thì… cho một ổ coi sao.",
+                "no": "Thôi, bữa khác. {self} đang đi có việc."
+              },
+              "need": [
+                "!p.soldOut",
+                "t.passing"
+              ]
+            },
+            {
+              "say": "Ngon thiệt mà. {call} ăn rồi biết.",
+              "tone": "DUA",
+              "rel": 1,
               "reply": "Ờ thì… cho một ổ coi sao.",
               "mood": "CUOI_KHAN",
               "need": [
-                "!p.soldOut"
+                "!p.soldOut",
+                "!t.passing"
               ]
             },
             {
