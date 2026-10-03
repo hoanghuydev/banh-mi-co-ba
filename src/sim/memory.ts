@@ -62,6 +62,14 @@ export type RelState = {
   extraStreak?: number;
   /** ⚠️ Ngưỡng cộng dồn TỪ MỐC NÀY, không cộng trong một ngày: một người ghé quầy mười lăm phút thì một ngày hiếm khi đủ. */
   reflectedDay?: number;
+  /**
+   * ĐANG MƯỢN ĐỒ CỦA MÌNH — act `LEND_ITEM`, trả bằng `CLEAR_DEBT`.
+   *
+   * Theo MÙA chứ không theo lượt ghé: cho mượn cái áo mưa hôm nay thì mai họ mới mang
+   * trả, và cái món nợ đó phải sống qua đêm. Chỉ 12 người CÓ TÊN mới có sổ riêng; người
+   * lạ dùng chung `memKey` nên ghi vào đó là ghi lên sổ người khác (P2-09 §2.4).
+   */
+  borrowed?: { item: string; day: number };
   memory: { short: Memory[]; long: Memory[]; core: Memory | null };
   memSeq: number;
 };

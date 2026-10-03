@@ -936,8 +936,14 @@
           ],
           "mood": "NGAC_NHIEN",
           "need": [
-            "!p.soldOut"
-          ]
+            "!m.borrowing",
+            "!p.soldOut",
+            "p.coats(1)"
+          ],
+          "act": {
+            "kind": "LEND_ITEM",
+            "item": "áo mưa"
+          }
         },
         {
           "say": "Anh đứng đụt chút cho ráo rồi hẵng chạy anh.",
@@ -1418,6 +1424,110 @@
           "say": "Anh đứng chỗ khác giùm em, em còn bán.",
           "tone": "LANH",
           "reply": "…Ờ. Thôi anh đi.",
+          "mood": "LANH"
+        }
+      ]
+    },
+    {
+      "id": "dung.traao",
+      "npc": "ANH_DUNG",
+      "topic": "traao",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
+      "weight": 22,
+      "when": {
+        "world": [
+          "m.borrowing"
+        ]
+      },
+      "initiates": 0.34,
+      "ignore": {
+        "rel": -2
+      },
+      "opener": "Em ơi. Cái áo mưa nè. Anh giặt rồi mới đem trả em đó.",
+      "openMood": "NGUONG",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "DI_NGANG"
+      ],
+      "tree": [
+        {
+          "say": "Anh giặt luôn hả anh? Khỏi cần mà.",
+          "tone": "DUA",
+          "rel": 2,
+          "act": {
+            "kind": "CLEAR_DEBT"
+          },
+          "onKept": {
+            "rel": 1
+          },
+          "reply": "Mượn đồ người ta thì phải vậy chớ em. Anh được dạy vậy.",
+          "mood": "NGHIEM",
+          "then": [
+            {
+              "say": "Bữa đó anh về có ướt hông anh?",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "Hổng ướt. Mà anh chạy thêm được bốn cuốc nữa nhờ cái áo đó.",
+              "mood": "CUOI"
+            },
+            {
+              "say": "Áo anh rách anh vá chưa anh?",
+              "tone": "AM",
+              "rel": 1,
+              "reply": "Chưa. Anh định mua cái mới mà tháng này kẹt. Thôi để từ từ.",
+              "mood": "MET"
+            },
+            {
+              "say": "Dạ. Anh cứ giữ đi anh, chừng nào cần thì lấy.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "…Thôi. Anh trả. Giữ đồ người ta lâu là anh hổng chịu được.",
+              "mood": "NGHIEM"
+            }
+          ]
+        },
+        {
+          "say": "Dạ anh để đó giùm em.",
+          "tone": "THUONG",
+          "rel": 1,
+          "act": {
+            "kind": "CLEAR_DEBT"
+          },
+          "onKept": {
+            "rel": 1
+          },
+          "reply": "Ờ. Anh để lên bàn nghen. Cảm ơn em bữa đó.",
+          "mood": "THUONG",
+          "then": [
+            {
+              "say": "Có gì đâu anh. Em có hai cái mà.",
+              "tone": "AM",
+              "rel": 1,
+              "reply": "Hai cái mà em cho mượn một cái. Lúc đó anh ướt như chuột.",
+              "mood": "THUONG"
+            },
+            {
+              "say": "Lần sau mưa anh cứ ghé em anh.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "…Ờ. Anh nhớ.",
+              "mood": "RUNG_RUNG"
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "reply": "Ờ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Anh để đó, lát em cất.",
+          "tone": "LANH",
+          "reply": "Ờ. Anh để đây.",
           "mood": "LANH"
         }
       ]

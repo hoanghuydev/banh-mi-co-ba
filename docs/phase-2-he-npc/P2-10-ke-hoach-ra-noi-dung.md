@@ -165,13 +165,13 @@ chứ không phải của bộ máy. Khi rà tới file tương ứng thì làm 
 | ~~`MOVE_CART`~~ | chú Kiệt | 11 | ✅ **xong** — xem §6undecies |
 | ~~`CARRY_GANH` · `MOVE_GANH`~~ | bà Sáu | 11 | ✅ **xong** — xem §6decies |
 | ~~`RAO`~~ | bà Sáu dạy | 7 | ✅ **xong** — xem §6duodecies |
-| `LEND_ITEM` / `CLEAR_DEBT` | anh Dũng · chị Lan | 5 | arc áo mưa |
+| ~~`LEND_ITEM` / `CLEAR_DEBT`~~ | anh Dũng · chị Lan | 5 | ✅ **xong** — xem §6terdecies |
 | `TAKE_CASH` | bé Su · thầy Phúc | 5 | `PAY` có chiều ra, chưa có chiều vào |
 | ~~`BARTER`~~ | bà Sáu | 5 | ✅ **xong** — xem §6decies |
 | `ORDER_CHANGE` | anh Bảo · chị Lan | 4 | sửa đơn từ một nút thoại |
 | `OVERHEARD_BY` | bà Sáu | 2 | `overhear.ts` có sẵn, hệ thoại chưa nối |
 
-Và **một item** chưa có: áo mưa. (Cái gánh: ✅ `world/map.GANH_OUT` / `GANH_IN`.) (Ghế ngồi được: ✅ `world/map.SEAT_SPOT`.) (Ô hóng mát **đã có**:
+Ba item đã xong: ghế ngồi được · cái gánh · áo mưa. (Ghế ngồi được: ✅ `world/map.SEAT_SPOT`.) (Ô hóng mát **đã có**:
 `world/map.SHADE_SPOT`.)
 
 ---
@@ -774,6 +774,43 @@ trị**: lúc spawn nó mặc định là chính lối ra (`plan.spot ?? plan.to
 qua, và `R-1` báo *"cả buổi không có lúc nào có người đi thẳng ngang qua"*. Đúng cặp cờ là
 cặp mà `snapshot.glanced` dùng: `stay > 0 && until >= 0` — cùng một cái bẫy đã bắt ở
 §6bis với `t.glanced`, chỉ khác chỗ.
+
+## 6terdecies. ÁO MƯA, VÀ VẼ BẰNG CODE ĐỂ NHÌN THẤY CÁCH CHƠI
+
+### `LEND_ITEM` / `CLEAR_DEBT`
+
+Kho **hai cái** — con số do chính lời thoại khai (*"Em có hai cái."*). Một câu đã nói ra
+kho của nó thì đừng để code khai một con số khác.
+
+Ghi vào sổ **MÙA** (`RelState.borrowed`), không sổ lượt ghé: cho mượn hôm nay thì mai họ
+mới mang trả, món nợ đó phải sống qua đêm. Chỉ người CÓ TÊN — `memKey` của khách lạ dùng
+chung cho tám dáng người cả mùa.
+
+Và tôi viết **chiều còn thiếu**: `dung.traao` / `lan.traao`, khoá `when.world: m.borrowing`
+nên chỉ mở khi người ta THẬT SỰ đang giữ đồ của mình. *Cho mượn mà không có đường mang
+trả thì nó là `FREE_LOAF` đội lốt.*
+
+### Vẽ bằng code — và nó lộ ra hai chuyện
+
+Chủ dự án: *"vẽ để tôi biết vị trí và hình dung gameplay, thì tôi mới kêu artist vẽ bản
+chuẩn"*. Nên ba vật được vẽ bằng `Graphics`, theo đúng bút pháp `art/props.ts` sẵn có, và
+chúng là **sprite động** bám theo trạng thái `Service` chứ không phải ô bản đồ — vì chỗ
+của chúng LÀ một nước đi của người chơi.
+
+Nhìn lên màn hình xong mới thấy hai chuyện mà đọc code không thấy:
+
+* **Bộ bàn ghế bị vẽ hai lần.** Bản đồ ĐÃ CÓ bàn (`b` x14) và hai ghế (`s` x16–17) ở hàng
+  y11 — đúng điều bảng nợ nói: *"`GHE_BAN` hiện CHỈ LÀ HÌNH VẼ"*. Tranh có sẵn, thiếu
+  hành vi. Nên `SEAT_SPOT` dời về ngay trước bộ đó, và bỏ hẳn phần vẽ thêm.
+* **`drawPendingDeeds()` bị kẹt sau một `return` sớm** — lỗi CÓ SẴN. Nó nằm trong
+  `drawPendingTalk()`, mà hàm đó thoát ngay khi không có ai đang chờ mình trả lời. Nên
+  mấy chấm "lời hứa còn nợ" chỉ hiện vào những lúc tình cờ có một lời mời chuyện đang
+  treo — tức gần như không bao giờ. Mà cả cơ chế lời hứa (P2-07 §4bis) dựa vào cái chấm
+  đó để người chơi BIẾT mình đang nợ gì; không thấy chấm thì phạt vì quên là phạt TRÍ
+  NHỚ, đúng thứ T5 cấm. Lộ ra vì ba vật động gắn cùng chỗ và không bao giờ hiện.
+
+Bản vẽ hiện tại là **bản để đo**, không phải bản phát hành: hoạ sĩ thay texture sau, toạ
+độ và kích thước giữ nguyên.
 
 ## 7. Truy vết
 

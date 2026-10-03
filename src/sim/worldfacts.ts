@@ -40,6 +40,8 @@ export type WorldSnapshot = {
     inShade: boolean;
     sitting: boolean;
     filming: boolean;
+    /** Người này đang mượn một món đồ của mình (`LEND_ITEM`). */
+    borrowing: boolean;
     onPhone: boolean;
     eating: boolean;
     hasOrder: boolean;
@@ -81,6 +83,8 @@ export type WorldSnapshot = {
   shadeFree: boolean;
   seatFree: boolean;
   ganhOut: boolean;
+  /** Còn mấy cái áo mưa chưa cho mượn — act `LEND_ITEM`. */
+  coats: number;
   cartLan: boolean;
   cartChung: boolean;
   ovenHot: boolean;
@@ -127,6 +131,7 @@ export function queryOf(w: WorldSnapshot, q = new Query()): Query {
   q.set("npcInShade", t.inShade);
   q.set("npcSitting", t.sitting);
   q.set("npcFilming", t.filming);
+  q.set("npcBorrowing", t.borrowing);
   q.set("npcOnPhone", t.onPhone);
   q.set("npcEating", t.eating);
   q.set("npcHasOrder", t.hasOrder);
@@ -159,6 +164,7 @@ export function queryOf(w: WorldSnapshot, q = new Query()): Query {
   q.set("worldShadeFree", w.shadeFree);
   q.set("worldSeatFree", w.seatFree);
   q.set("worldGanhOut", w.ganhOut);
+  q.set("playerCoats", w.coats);
   q.set("worldCartLan", w.cartLan);
   q.set("worldCartChung", w.cartChung);
   q.set("worldOvenHot", w.ovenHot);

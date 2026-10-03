@@ -824,7 +824,15 @@
                   "silent": true
                 }
               ],
-              "mood": "RUNG_RUNG"
+              "mood": "RUNG_RUNG",
+              "act": {
+                "kind": "LEND_ITEM",
+                "item": "áo mưa"
+              },
+              "need": [
+                "!m.borrowing",
+                "p.coats(1)"
+              ]
             },
             {
               "say": "Chị uống ly trà nóng cho ấm chị.",
@@ -1297,6 +1305,116 @@
           "say": "Chỗ này em còn bán chị ơi.",
           "tone": "LANH",
           "reply": "…Vâng. Em đi đây.",
+          "mood": "LANH"
+        }
+      ]
+    },
+    {
+      "id": "lan.traao",
+      "npc": "CHI_LAN",
+      "topic": "traao",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
+      "weight": 22,
+      "when": {
+        "world": [
+          "m.borrowing"
+        ]
+      },
+      "initiates": 0.34,
+      "ignore": {
+        "rel": -2
+      },
+      "opener": "…Em. Cái áo mưa. Chị gấp lại rồi, chị để trong túi này.",
+      "openMood": "NGUONG",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "DI_NGANG"
+      ],
+      "tree": [
+        {
+          "say": "Chị gấp kỹ ghê chị.",
+          "tone": "AM",
+          "rel": 2,
+          "act": {
+            "kind": "CLEAR_DEBT"
+          },
+          "onKept": {
+            "rel": 1
+          },
+          "reply": "…Chị sợ trả nhàu em lại nghĩ chị cẩu thả.",
+          "mood": "NGUONG",
+          "then": [
+            {
+              "say": "Em đâu có nghĩ vậy chị.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "…Chị biết. Mà chị vẫn gấp. Quen rồi.",
+              "mood": "BUON"
+            },
+            {
+              "say": "Bữa đó chị về khô ráo chứ chị?",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "…Vâng. Lần đầu chị về nhà mà không ướt từ đầu tới chân.",
+              "mood": "RUNG_RUNG"
+            },
+            {
+              "say": "Dạ. Mưa nữa chị cứ ghé em nghen chị.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "…Vâng. Chị sẽ ghé.",
+              "mood": "THUONG"
+            }
+          ]
+        },
+        {
+          "say": "Chị giữ thêm bữa nữa cũng được mà chị.",
+          "tone": "AM",
+          "rel": 2,
+          "act": {
+            "kind": "CLEAR_DEBT"
+          },
+          "onKept": {
+            "rel": 1
+          },
+          "reply": "…Thôi. Chị giữ lâu chị thấy mắc nợ. Em cầm đi cho chị nhẹ.",
+          "mood": "BUON",
+          "then": [
+            {
+              "say": "Chị hổng mắc nợ em gì hết chị.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "…Chị biết chứ. Mà chị vẫn thấy vậy. Chị quen thấy vậy rồi.",
+              "mood": "BUON"
+            },
+            {
+              "say": "Vậy em cầm. Cảm ơn chị đem trả chị.",
+              "tone": "THUONG",
+              "rel": 2,
+              "reply": "…Vâng.",
+              "mood": "THUONG"
+            },
+            {
+              "say": "Dạ.",
+              "tone": "LANH",
+              "reply": "…Vâng.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Dạ. Em cất.",
+          "tone": "LANH",
+          "act": {
+            "kind": "CLEAR_DEBT"
+          },
+          "onKept": {
+            "rel": 1
+          },
+          "reply": "…Vâng.",
           "mood": "LANH"
         }
       ]

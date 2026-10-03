@@ -23,7 +23,7 @@ const W = (over: Partial<WorldSnapshot> = {}): WorldSnapshot => ({
   cash: 0, teaLeft: 10, stock: 20,
   them: {
     phase: "waiting", practice: "DOI_BANH", passing: false, served: false, named: true,
-    cutLine: false, blocking: false, glanced: false, lookingInside: false, inShade: false, sitting: false, filming: false,
+    cutLine: false, blocking: false, glanced: false, lookingInside: false, inShade: false, sitting: false, filming: false, borrowing: false,
     onPhone: false, eating: false, hasOrder: true, waitRatio: 0,
     purpose: null, state: null, tier: "ACQUAINTANCE", visits: 1,
   },
@@ -31,7 +31,7 @@ const W = (over: Partial<WorldSnapshot> = {}): WorldSnapshot => ({
   visit: { gaveTea: false, gaveFood: false, apologised: false, promised: [], inviteRefused: false },
   day: { met: false, told: [] },
   season: { remembers: false },
-  hot: false, rain: false, peak: false, queue: 0, shadeFree: false, seatFree: false, ganhOut: false, cartLan: false, cartChung: false, ovenHot: false, band: "SANG", dayIndex: 5,
+  hot: false, rain: false, peak: false, queue: 0, shadeFree: false, seatFree: false, ganhOut: false, coats: 2, cartLan: false, cartChung: false, ovenHot: false, band: "SANG", dayIndex: 5,
   ...over,
 });
 

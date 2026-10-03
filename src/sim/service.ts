@@ -95,6 +95,16 @@ const RAO_TURN = 0.45;
 /** Rao xong thì tiếng còn "trong không khí" bao lâu — người mới đi tới cũng nghe. */
 const RAO_SEC = 12;
 
+/**
+ * MÌNH CÓ MẤY CÁI ÁO MƯA — act `LEND_ITEM`.
+ *
+ * HAI, vì chính lời thoại nói ra con số đó: *"Anh lấy cái áo mưa này của em đi anh. Em có
+ * hai cái."* Một câu đã khai sẵn kho của nó thì đừng để code khai một con số khác.
+ *
+ * Và đó là cả cái giá: cho mượn được đúng hai lần, rồi hết — tới khi có người mang trả.
+ */
+const COATS_START = 2;
+
 /** Bốn ngày: đủ xa để người chơi quên mình đã làm gì, đủ gần để còn nối được nhân với quả. */
 const CLIP_DUNG_SAU = 4;
 /** ⚠️ Phải dài hơn `StallScene.REPLY_DELAY_SEC` — xem `talkVoice`. */
@@ -526,6 +536,8 @@ export class Service {
   cart: "LAN" | "XA" | "CHUNG" | null = null;
   /** Tiếng rao còn trong không khí tới giây nào (giây THẬT) — act `RAO`. */
   raoUntil = -1;
+  /** Còn mấy cái áo mưa chưa cho ai mượn — act `LEND_ITEM` / `CLEAR_DEBT`. */
+  coats = COATS_START;
   /** Khác `soldOut` (ngưỡng 0): "còn mấy ổ cuối" là một NGƯỠNG, và ba nút `qua-duong` hỏi đúng nó. */
   stock = 0;
   /** Tầng `d.*`, khoá theo `memKey` chứ không theo lượt ghé. Không cần dọn — `Service` sống một buổi bán. */
@@ -2120,6 +2132,7 @@ export class Service {
         inShade: c.inShade,
         sitting: c.sitting,
         filming: c.filming,
+        borrowing: !!this.mem(c.memKey).borrowed,
         onPhone: c.gazeState === "PHONE",
         eating: c.eating,
         hasOrder: !!c.order,
@@ -2154,6 +2167,7 @@ export class Service {
       shadeFree: this.shadeFree,
       seatFree: this.seatFree,
       ganhOut: this.ganh === "NGOAI",
+      coats: this.coats,
       cartLan: this.cart === "LAN",
       cartChung: this.cart === "CHUNG",
       ovenHot: this.ovenHot,
@@ -2639,6 +2653,12 @@ export class Service {
       case "RAO":
         this.rao(act.forSec);
         break;
+      case "LEND_ITEM":
+        this.lendItem(c, act.item);
+        break;
+      case "CLEAR_DEBT":
+        this.clearDebt(c);
+        break;
       default:
         /**
          * ⚠️ MỘT ACT KHÔNG CÓ NHÁNH LÀ MỘT LỜI NÓI MIỄN PHÍ, và nó IM LẶNG — `switch` thiếu nhánh không
@@ -2875,6 +2895,41 @@ export class Service {
     this.out.push({
       kind: "log",
       text: ngoai ? `rao một câu — ${ngoai} người ngoái lại.` : `rao một câu, chưa ai ngoái.`,
+    });
+  }
+
+  /**
+   * CHO MƯỢN MỘT MÓN — món đồ CÒN PHẢI VỀ.
+   *
+   * Khác `FREE_LOAF` (cho hẳn) và `BARTER` (đổi ngang): cái đáng chơi nằm ở chỗ nó có về
+   * hay không. Ghi vào sổ MÙA (`mem.borrowed`) chứ không sổ lượt ghé — cho mượn hôm nay
+   * thì mai họ mới mang trả, món nợ đó phải sống qua đêm.
+   *
+   * Chỉ người CÓ TÊN: `memKey` của khách lạ dùng chung cho tám dáng người cả mùa, ghi nợ
+   * vào đó là ghi lên sổ người khác (P2-09 §2.4).
+   */
+  private lendItem(c: Customer, item: string) {
+    if (!c.npc || this.coats <= 0) return;
+    const m = this.mem(c.memKey);
+    if (m.borrowed) return;
+    this.coats--;
+    m.borrowed = { item, day: this.deps.day };
+    this.remember(c, "CARED_FOR_THEM", SALIENCE.CARED_FOR_THEM);
+    this.out.push({ kind: "log", text: `cho ${this.label(c)} mượn ${item}. Còn ${this.coats} cái.` });
+  }
+
+  /** Họ mang trả. Món đồ về kho, và việc GIỮ LỜI mới là thứ đáng nhớ chứ không phải cái áo. */
+  private clearDebt(c: Customer) {
+    const m = this.mem(c.memKey);
+    if (!m.borrowed) return;
+    const item = m.borrowed.item;
+    const tre = this.deps.day - m.borrowed.day;
+    delete m.borrowed;
+    this.coats = Math.min(COATS_START, this.coats + 1);
+    this.remember(c, "REMEMBERED_STORY", SALIENCE.CARED_FOR_THEM);
+    this.out.push({
+      kind: "log",
+      text: tre <= 1 ? `${this.label(c)} mang trả ${item}.` : `${this.label(c)} mang trả ${item} sau ${tre} bữa.`,
     });
   }
 

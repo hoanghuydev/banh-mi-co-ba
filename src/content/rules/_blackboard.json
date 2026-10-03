@@ -660,6 +660,17 @@
       "scope": "World",
       "type": "bool",
       "_note": "Hai xe đang đứng chung một mái (lúc mưa). Mình mất một khoảng mặt tiền, chú Kiệt khỏi ướt."
+    },
+    "playerCoats": {
+      "scope": "World",
+      "type": "number",
+      "min": 0,
+      "_note": "Còn mấy cái áo mưa chưa cho ai mượn. Bắt đầu 2 — con số do chính lời thoại khai: \"Em có hai cái.\""
+    },
+    "npcBorrowing": {
+      "scope": "Season",
+      "type": "bool",
+      "_note": "Người này đang giữ một món đồ mượn của mình (mem.borrowed). Trả bằng act CLEAR_DEBT."
     }
   },
   "_note_aliases": "P2-09 §2.2 — MẶT TIỀN CHO NGƯỜI VIẾT. Một alias là một mảnh `when` đặt tên: `p.holdsBread` biên dịch thành criterion trên `playerHolding`, không phải một nhánh switch thứ hai. Dấu `!` ở đầu = phủ định. Dạng `khoá(tham số)` = alias có tham số, khai bằng `$` trong giá trị. Cú pháp cố ý NGHÈO: không biểu thức lồng nhau — cần logic phức tạp hơn thì thêm MỘT alias có tên đọc được.",
@@ -857,6 +868,12 @@
     },
     "w.cartChung": {
       "worldCartChung": true
+    },
+    "p.coats": {
+      "playerCoats": ">=$"
+    },
+    "m.borrowing": {
+      "npcBorrowing": true
     }
   },
   "silentOk": [

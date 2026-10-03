@@ -15,6 +15,10 @@ export const PROP = {
   // đậu cạnh xe số cho hai chiếc xe không giống hệt nhau, tấm bảng gỗ dựng ngoài vỉa
   // hè, và bình chữa cháy treo cạnh lò than — lò than là rủi ro có thật của game này.
   scooter: "scooter", sign: "sign", fire: "fire",
+  // Ba vật ĐỘNG — chúng không nằm trong lưới ô như mọi đạo cụ khác, vì chỗ của chúng
+  // là một nước đi của người chơi: cái gánh bà Sáu (`CARRY_GANH`), xe bánh mì chú Kiệt
+  // (`MOVE_CART`), và bộ ghế nhựa chỉ hiện khi đã mua `GHE_BAN` (`THEY_SIT`).
+  ganh: "ganh", cart: "cart",
 } as const;
 
 // ───────────────────────────────────────────────────────────── mẩu dùng nhiều nơi
@@ -415,6 +419,85 @@ function sink(scene: Phaser.Scene) {
   });
 }
 
+/**
+ * CÁI GÁNH TÀU HŨ của bà Sáu — một đòn tre, hai cái nồi, một cái khăn vắt.
+ *
+ * Vẽ bằng code để thấy CHỖ và thấy KÍCH THƯỚC: nó chiếm bao nhiêu mặt tiền, đặt ngoài
+ * thì chắn tới đâu. Bản chuẩn để hoạ sĩ vẽ sau; cái này là để chơi thử và đo.
+ */
+function ganh(scene: Phaser.Scene) {
+  const POT = 14;
+  prop(scene, PROP.ganh, heightFor(POT + 16), (g, cx, cy) => {
+    /*
+     * GÁNH ĐÃ HẠ XUỐNG ĐẤT, không phải gánh đang trên vai: hai nồi đặt đất, đòn tre GÁC
+     * NGANG trên hai vành nồi. Bản đầu tôi vẽ đòn cao hơn hẳn hai nồi — nhìn trên màn
+     * hình chỉ thấy hai cái nồi rời, cái đòn mảnh quá và lại bị nồi che.
+     */
+    for (const dx of [-16, 16]) {
+      const s = dx < 0 ? 1 : 0.95;
+      g.fillStyle(0x2b2b2b, 0.22);                     // bóng đổ dưới nồi
+      g.fillEllipse(cx + dx, cy + 1, 26 * s, 9 * s);
+      g.fillStyle(PAL.potDark, 1);
+      g.fillEllipse(cx + dx, cy - 1, 23 * s, 9 * s);
+      standing(g, cx + dx, cy, POT * s, PAL.pot, 22 * s, 10 * s);
+      g.fillStyle(shade(PAL.pot, 26), 1);              // vành nồi
+      g.fillEllipse(cx + dx, cy - POT * s, 23 * s, 9.5 * s);
+      g.fillStyle(shade(PAL.potDark, -16), 0.85);      // miệng nồi sâu xuống
+      g.fillEllipse(cx + dx, cy - POT * s + 1, 16 * s, 6 * s);
+    }
+    const rim = cy - POT - 1;                          // đòn gác trên vành nồi
+    g.fillStyle(shade(PAL.breadDark, -8), 1);
+    for (let i = -20; i <= 20; i++) {
+      const t = i / 20;
+      g.fillRect(cx + i * 0.95 - 1.6, rim - 2 + t * 1.6 + Math.abs(t) * -1.2, 3.2, 4.2);
+    }
+    g.fillStyle(shade(PAL.breadDark, 18), 0.6);        // bắt sáng dọc thân tre
+    for (let i = -20; i <= 20; i++) {
+      const t = i / 20;
+      g.fillRect(cx + i * 0.95 - 1.6, rim - 2 + t * 1.6 + Math.abs(t) * -1.2, 3.2, 1.2);
+    }
+    g.fillStyle(0xe8e3d4, 1);                          // khăn vắt vắt qua đòn
+    g.fillRoundedRect(cx - 5, rim - 2, 10, 13, 2.5);
+    g.fillStyle(shade(0xe8e3d4, -20), 0.75);
+    g.fillRect(cx - 5, rim + 5, 10, 1.8);
+  }, TW + 38);
+}
+
+/**
+ * XE BÁNH MÌ CỦA CHÚ KIỆT — thùng kính trên bốn bánh, một cái ô cắm lệch.
+ *
+ * Phải NHÌN RA LÀ MỘT CÁI XE BÁN HÀNG KHÁC, không phải cái xe của mình: thùng thấp hơn,
+ * ô màu khác, và không có bảng hiệu. Cả arc "hai cái xe tranh chỗ" đọc được hay không là
+ * ở chỗ người chơi liếc một cái biết ngay đó là xe ai.
+ */
+function cart(scene: Phaser.Scene) {
+  const BODY = 20, CASE = 13, POLE = 30;
+  prop(scene, PROP.cart, heightFor(BODY + CASE + POLE), (g, cx, cy) => {
+    g.fillStyle(0x3a3a3a, 1);                          // bánh xe
+    for (const dx of [-13, 13]) g.fillEllipse(cx + dx, cy - 3, 8, 5);
+    standing(g, cx, cy, BODY, 0x9c6b4a, TW - 10, TH - 6);   // thân xe gỗ
+    const top = cy - BODY;
+    g.fillStyle(shade(0x9c6b4a, -30), 0.8);            // hộc dưới
+    g.fillRect(cx - 14, top + 5, 28, 7);
+
+    standing(g, cx, top, CASE, PAL.jarGlass, TW - 16, TH - 10);  // tủ kính
+    g.fillStyle(0xffffff, 0.22);
+    g.fillRect(cx - 12, top - CASE + 3, 24, CASE - 6);
+    for (const dx of [-7, 0, 7]) loaf(g, cx + dx, top - 4, 0.55);  // bánh trong tủ
+
+    const px = cx + 10;                                // cọc ô, lệch về một bên thân xe
+    g.fillStyle(0x6f6f6f, 1);
+    g.fillRect(px - 1.2, top - CASE - POLE, 2.4, POLE);
+    const uy = top - CASE - POLE + 3;                  // ô XANH — khác hẳn dù của mình
+    g.fillStyle(shade(0x3f7d5a, -26), 1);
+    g.fillEllipse(px, uy + 3, 42, 9);
+    g.fillStyle(0x3f7d5a, 1);
+    g.fillEllipse(px, uy, 42, 13);
+    g.fillStyle(shade(0x3f7d5a, 20), 0.55);            // bắt sáng mặt ô
+    g.fillEllipse(px - 6, uy - 2, 20, 6);
+  }, TW + 26);
+}
+
 export function buildProps(scene: Phaser.Scene) {
   sink(scene);
   oven(scene);
@@ -426,4 +509,6 @@ export function buildProps(scene: Phaser.Scene) {
   pothos(scene);
   crate(scene);
   bin(scene);
+  ganh(scene);
+  cart(scene);
 }

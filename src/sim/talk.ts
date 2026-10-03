@@ -85,6 +85,18 @@ export type TalkAct =
    * thì kéo họ quay đầu lại.
    */
   | { kind: "RAO"; forSec: ForSec }
+  /**
+   * CHO MƯỢN ĐỒ — arc áo mưa (anh Dũng · chị Lan, 5 nhắc).
+   *
+   * *"Anh lấy cái áo mưa này của em đi anh. Em có hai cái."* — một câu nói ra con số của
+   * chính nó, mà tới đợt này không có cái áo mưa nào tồn tại để mà cho.
+   *
+   * Khác `FREE_LOAF` (cho hẳn) và khác `BARTER` (đổi): cho mượn là món đồ CÒN PHẢI VỀ,
+   * và chuyện nó có về hay không mới là chỗ đáng chơi.
+   */
+  | { kind: "LEND_ITEM"; item: string }
+  /** Họ mang trả món đã mượn. */
+  | { kind: "CLEAR_DEBT" }
   | { kind: "LEAVE_SHADE" }
   | { kind: "LOOK_INSIDE"; forSec: ForSec }
   | { kind: "PROMISE_DEED"; deed: Deed }

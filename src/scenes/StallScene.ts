@@ -47,12 +47,12 @@ import { COUNTER_Y } from "../world/map";
 import { RENDER_SCALE } from "../core/render";
 import { StallCamera } from "../world/camera";
 import { artScale, fitPhoto, BOARD_TEX, BOARD_W, BASKET_TEX, BASKET_W } from "../art/photo";
-import { SIGN_TILE, SKY_FROM_Y, WORLD_H, WORLD_W, assertWalkable, floorAt, isSunlit, tileAt } from "../world/map";
+import { CART_CHUNG, CART_LAN, CART_XA, GANH_IN, GANH_OUT, SIGN_TILE, SKY_FROM_Y, WORLD_H, WORLD_W, assertWalkable, floorAt, isSunlit, tileAt } from "../world/map";
 import {
   HAND_LABEL, STATIONS, blockedReason, stationAtTile, stationNear, type Hand, type Station,
 } from "../world/stations";
 import {
-  BASE, COUNTER, FX, HELD, TILE, buildTextures, createSign, floorTextureAt, footY, heldFootPad,
+  BASE, COUNTER, FX, HELD, PROP, TILE, buildTextures, createSign, floorTextureAt, footY, heldFootPad,
   heldTexture, preloadArt, spriteEdges, textureForTile,
 } from "../art";
 import { Player } from "../entities/Player";
@@ -211,6 +211,9 @@ export class StallScene extends Phaser.Scene {
   private talkHoldsClock = false;
   /** Giữ cú bấm lại, mở ngay khi tay rảnh — cùng lối với `debtQueued`. */
   private talkQueued = -1;
+  /** Ba vật ĐỘNG — xem `drawMovables()`. */
+  private ganhImg: Phaser.GameObjects.Image | null = null;
+  private cartImg: Phaser.GameObjects.Image | null = null;
   private talkTurn = 0;
   private playerSay: { text: string; until: number } | null = null;
   private moneyPops!: MoneyPops;
@@ -814,6 +817,18 @@ export class StallScene extends Phaser.Scene {
     this.moneyPops.update(this.tickPopClock(), this.settings.reducedMotion);
     this.drawTalkTarget();
     this.drawPendingTalk();
+    /*
+     * GỌI Ở ĐÂY, KHÔNG LỒNG TRONG `drawPendingTalk()`.
+     *
+     * Lỗi có sẵn: `drawPendingDeeds()` nằm sau một `return` sớm — `drawPendingTalk()`
+     * thoát ngay khi KHÔNG có ai đang chờ mình trả lời. Nên mấy chấm "lời hứa còn nợ"
+     * chỉ hiện đúng vào những lúc tình cờ có một lời mời chuyện đang treo, tức gần như
+     * không bao giờ. Mà cả cơ chế lời hứa (P2-07 §4bis) dựa vào cái chấm đó để người chơi
+     * BIẾT mình đang nợ gì: không thấy chấm thì phạt vì quên là phạt trí nhớ, đúng thứ T5
+     * cấm. Lộ ra lúc gắn `drawMovables()` vào cùng chỗ và ba vật động không bao giờ hiện.
+     */
+    this.drawPendingDeeds();
+    this.drawMovables();
     this.drawRing();
     this.drawSteam();
     this.drawOven();
@@ -1726,10 +1741,47 @@ export class StallScene extends Phaser.Scene {
         g.fillCircle(sx + 16 + i * 6, top, 2);
       }
     }
-    this.drawPendingDeeds();
   }
 
   /** Đòi hỏi của T5: phạt vì quên một chuyện game không nhắc là phạt TRÍ NHỚ, không phải LỰA CHỌN. */
+  /**
+   * BA VẬT ĐỘNG — cái gánh, xe chú Kiệt, bộ ghế nhựa.
+   *
+   * Khác mọi đạo cụ khác ở chỗ chúng KHÔNG nằm trong lưới ô: chỗ của chúng là một nước
+   * đi của người chơi (`CARRY_GANH`, `MOVE_CART`), hoặc một món đã mua (`GHE_BAN`). Nên
+   * chúng là sprite dựng ở đây và bám theo trạng thái `Service`, không phải tile.
+   *
+   * Vẽ bằng code trước, để nhìn thấy CHỖ và KÍCH THƯỚC mà đánh giá cách chơi — bản chuẩn
+   * của hoạ sĩ thay vào sau, chỉ cần đổi texture.
+   */
+  private drawMovables() {
+    const put = (
+      cur: Phaser.GameObjects.Image | null, key: string,
+      at: { x: number; y: number } | null,
+    ) => {
+      if (!at) { cur?.setVisible(false); return cur; }
+      const { sx, sy } = toScreen(at.x, at.y);
+      const img = cur ?? this.add.image(0, 0, key).setOrigin(0.5, 1).setScale(1 / artScale(key));
+      return img.setVisible(true).setPosition(sx, footY(sy)).setDepth(depthOf(at.x, at.y));
+    };
+
+    const g = this.service.ganh;
+    this.ganhImg = put(this.ganhImg, PROP.ganh, g === "NGOAI" ? GANH_OUT : g === "TRONG" ? GANH_IN : null);
+
+    const k = this.service.cart;
+    this.cartImg = put(this.cartImg, PROP.cart,
+      k === "LAN" ? CART_LAN : k === "XA" ? CART_XA : k === "CHUNG" ? CART_CHUNG : null);
+
+    /*
+     * KHÔNG vẽ bộ bàn ghế ở đây — bản đồ đã có sẵn (`b` x14, hai `s` x16–17 ở hàng y11),
+     * và `SEAT_SPOT` đặt ngay trước nó. Dựng thêm một bộ nữa là hai bộ chồng lên nhau,
+     * đúng cái tôi vừa nhìn thấy trên màn hình.
+     *
+     * Việc còn thiếu không phải là TRANH mà là HÀNH VI — `THEY_SIT` đưa người ta tới chỗ
+     * đó. Chuyện "chưa mua `GHE_BAN` thì không ngồi được" đã khoá ở `Service.seatFree`.
+     */
+  }
+
   private drawPendingDeeds() {
     const g = this.pendingDots;
     for (const c of this.service.customers) {

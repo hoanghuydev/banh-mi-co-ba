@@ -38,7 +38,9 @@ const LAMPS: readonly Lamp[] = [
   { x: 3.06, y: 4, axis: "y", px: 1.5, py: 0, pw: 9, ph: 4.5 },
   // Đầu quầy bên phải: PHẢI ở tường sau, không phải vách phải — xem "VÌ SAO ĐẦU TRÁI
   // GẮN VÁCH HÔNG MÀ ĐẦU PHẢI THÌ KHÔNG" ở trên.
-  { x: 19.5, y: 0.95, axis: "x", px: 1, py: 2.05, pw: 11, ph: 5.5 },
+  // ⚠️ 19,5 → 16,5 khi quầy rút còn x=3..17: cây này soi ĐẦU QUẦY, nên nó đi theo đầu quầy.
+  // Để nguyên là một vũng sáng rọi xuống khúc tường trống ngoài rìa quán.
+  { x: 16.5, y: 0.95, axis: "x", px: 1, py: 2.05, pw: 11, ph: 5.5 },
 ];
 
 /**

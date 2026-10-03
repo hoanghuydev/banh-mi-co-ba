@@ -6,23 +6,23 @@
  * xét chỗ người đứng chứ không xét trạm.
  */
 export const MAP = [
-  "NN###D##################NN",  // y0  nhà hàng xóm · tường sau quán có CỬA ở x=5
-  "###XK..O..V..T.WP......###",  // y1  bình chữa cháy · kệ · lò · THÙNG RÁC · thùng trà đá · bồn rửa · chậu cây
-  "###....................##N",  // y2  lối đi sau quầy
-  "###....................###",  // y3  lối đi sau quầy
-  "###....................###",  // y4  lối đi sau quầy
-  "###....................##N",  // y5  lối đi sau quầy
-  "###QQQQQQQQQQQQQQQ###..###",  // y6  QUẦY x=3..17 (thớt x=4, rổ x=8, chỗ đưa hàng x=12) · tường x=18..20 · lối ra x=21,22
-  "....................A.....",  // y7  vỉa hè — hàng khách đứng gọi món · bảng gỗ "bánh mì ngon" dựa tường (x=20)
-  "..........................",  // y8  vỉa hè — LỐI ĐI của khách, từ đầu hẻm bên trái
-  "..........................",  // y9  vỉa hè — trống
-  "..C.V.....................",  // y10 két nước · thùng rác
-  ".................b.ss.MM.P",  // y11 bàn có hũ đũa · hai ghế nhựa · xe máy dựng · chậu cây
-  "..........................",  // y12 lòng đường
-  "..........................",  // y13 lòng đường
-  "..........................",  // y14 lòng đường
-  "..........................",  // y15 lòng đường
-  "..........................",  // y16 lòng đường
+  "NN###D###############NN",  // y0  nhà hàng xóm · tường sau quán có CỬA ở x=5
+  "###XK..O..V..T.WP...###",  // y1  bình chữa cháy · kệ · lò · THÙNG RÁC · thùng trà đá · bồn rửa · chậu cây
+  "###.................##N",  // y2  lối đi sau quầy
+  "###.................###",  // y3  lối đi sau quầy
+  "###.................###",  // y4  lối đi sau quầy
+  "###.................##N",  // y5  lối đi sau quầy
+  "###QQQQQQQQQQQQQQQ..###",  // y6  QUẦY x=3..17 (thớt x=4, rổ x=8, chỗ đưa hàng x=12) — lối ra 2 ô ở x=18,19
+  ".................A.....",  // y7  vỉa hè — hàng khách đứng gọi món · bảng gỗ "bánh mì ngon" ở đầu quầy (x=17)
+  ".......................",  // y8  vỉa hè — LỐI ĐI của khách, từ đầu hẻm bên trái
+  ".......................",  // y9  vỉa hè — trống
+  "..C.V..................",  // y10 két nước · thùng rác
+  "..............b.ss.MM.P",  // y11 bàn có hũ đũa · hai ghế nhựa · xe máy dựng · chậu cây
+  ".......................",  // y12 lòng đường
+  ".......................",  // y13 lòng đường
+  ".......................",  // y14 lòng đường
+  ".......................",  // y15 lòng đường
+  ".......................",  // y16 lòng đường
 ] as const;
 
 export const WORLD_W = MAP[0].length;
@@ -95,7 +95,7 @@ export const STREET_BIN = { x: 4.5, y: 9.45 };
  * GÓC HẺM — sân khấu nghe lỏm: cách xe bánh mì ~4–5 m, cạnh hai cái ghế nhựa. Ở phía PHẢI vì bên
  * trái là lối khách vào, mà hai người đứng tám giữa lối đi thì cả hàng khách phải lách qua họ.
  */
-export const GOSSIP_CORNER = [{ x: 19.4, y: 10.4 }, { x: 20.5, y: 10.45 }] as const;
+export const GOSSIP_CORNER = [{ x: 16.4, y: 10.4 }, { x: 17.5, y: 10.45 }] as const;
 
 /**
  * Một HÀNG NGANG song song với quầy, lùi dần sang TRÁI.
@@ -121,11 +121,15 @@ export const ASIDE_SPOT = { x: 13.9, y: 8.5 };
 /**
  * Ngoài khúc lối đi (x ≤ 13) và tách khỏi `ASIDE_SPOT` một quãng — trùng nhau thì "dạt ra" và
  * "đứng cho mát" ra cùng một dáng người ở cùng một điểm. MỘT CHỖ, MỘT NGƯỜI.
+ *
+ * ⚠️ 15,6 → 15,0 khi quầy ngắn đi 3 ô: khúc vỉa hè bên phải hàng chờ hẹp lại đúng 3 ô, mà bốn
+ * thứ vẫn phải chen vào đó (nép ra · gánh bà Sáu · đứng mát · xe chú Kiệt). Giữ nguyên 15,6 thì
+ * người đứng mát dính vào cái xe ở 16,1.
  */
-export const SHADE_SPOT = { x: 15.6, y: 8.2 };
+export const SHADE_SPOT = { x: 15.0, y: 8.2 };
 
 /** Sát `ASIDE_SPOT` nhưng lùi vào trong: ngồi là ở TRONG quán, khác hẳn đứng nép ra cho người ta qua. */
-export const SEAT_SPOT = { x: 12.8, y: 9.2 };
+export const SEAT_SPOT = { x: 16.6, y: 10.4 };
 
 /** HAI — đọc từ `slots` của `GHE_BAN` trong `equipment.json`. Khác `SHADE_CAPACITY` (một): ghế là đồ mình mua. */
 export const SEAT_CAPACITY = 2;
@@ -149,9 +153,16 @@ export const GANH_IN = { x: 11.9, y: 9.6 };
  * `CART_XA`   — chú về chỗ chú, bên kia hẻm.
  * `CART_CHUNG`— hai xe chung một mái, lúc mưa. Mình mất một khoảng mặt tiền, chú khỏi ướt.
  */
-export const CART_LAN = { x: 17.6, y: 7.6 };
-export const CART_XA = { x: 21.8, y: 7.6 };
-export const CART_CHUNG = { x: 17.0, y: 8.8 };
+/*
+ * ⚠️ Ba con số này ĐI THEO chiều dài quầy. Quầy rút 3 ô (x=3..17) thì mặt tiền cũng rút 3 ô, nên
+ * "lấn qua mặt tiền mình" phải là một chỗ KHÁC trước. Dời thẳng −3 thì `CART_LAN` rơi đúng lên
+ * `GANH_OUT` (14,6) — hai vật thể khác nhau, hai arc khác nhau, một điểm. 16,1 là chỗ xa gánh
+ * nhất mà vẫn còn nằm trong mặt tiền (`SHOPFRONT_X` = 3..18).
+ * `CART_XA` giữ khoảng cách ≥ 3 ô với `CART_LAN` — `assertWalkable()` gác đúng điều đó.
+ */
+export const CART_LAN = { x: 16.1, y: 7.6 };
+export const CART_XA = { x: 19.4, y: 7.6 };
+export const CART_CHUNG = { x: 14.0, y: 8.8 };
 
 /** Mấy người đứng mát được cùng lúc. Một — xem khối trên. */
 export const SHADE_CAPACITY = 1;
