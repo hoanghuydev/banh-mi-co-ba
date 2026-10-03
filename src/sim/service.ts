@@ -32,7 +32,7 @@ import { baseDrives, bump, decayDrives, drivesNow, scoreSatisfies } from "./driv
 import { profileOf } from "./profile";
 import {
   ADDRESS, DEFAULT_IGNORE_REL, TalkSession, WALKIN_ADDRESS, angerToWaitSec, applyTalk,
-  eligible, pickTalk, visibleOptions, isSharedTalk, MOOD_FACE, MOOD_POSE,
+  actsUnder, eligible, pickTalk, visibleOptions, isSharedTalk, MOOD_FACE, MOOD_POSE,
   // `kindOf` của `talk.ts` đụng tên với `kindOf` lỗi món đã có sẵn trong file này.
   kindOf as talkKindOf, countsAgainstDailyCap, forSecOf, satisfiesOf,
   type TalkOpenBy, type Deed, type ForSec,
@@ -2501,6 +2501,27 @@ export class Service {
 
   get talkOpen() {
     return this.talkSession !== null;
+  }
+
+  /**
+   * MỖI LỰA CHỌN ĐANG HIỆN LÀM GÌ — act của chính nó, và act gần nhất nằm trong NHÁNH con.
+   *
+   * `TalkView.options` cố tình chỉ có `say` + `tone`: người chơi đọc câu nói, không đọc tên
+   * act, và bày tên act ra màn hình là vi phạm T5 theo chiều ngược (nói trước kết cục).
+   * Nhưng một con BOT thì cần biết — không có cái này thì không bot nào bấm trúng được
+   * `OFFER_TEA`/`THEY_SIT`/`LEND_ITEM`, nên mấy fact `v.gaveTea`, `t.sitting`, `m.borrowing`
+   * đo ra 0% và không ai biết là "chưa từng xảy ra" hay "bot không biết làm".
+   *
+   * Dùng cho `sim/headless.ts` và mấy công cụ đo. KHÔNG dùng ở `StallScene`.
+   */
+  optionActs(): { kind: string | null; sau: readonly string[] }[] {
+    const s = this.talkSession;
+    const here = s?.options;
+    if (!s || !here) return [];
+    return visibleOptions(here, this.talkGate()).map((n) => ({
+      kind: n.act?.kind ?? null,
+      sau: actsUnder(n, s.talk),
+    }));
   }
 
   /**

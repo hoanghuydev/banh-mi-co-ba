@@ -37,7 +37,30 @@ export type Policy = {
   defectRate: number;
   teaRate: number;
   anticipate?: number;
+  /**
+   * CON BOT BIẾT LÀM VIỆC XÃ GIAO — rót trà, mời ngồi, cho mượn áo mưa, mời ghé, bưng gánh…
+   *
+   * Vì sao phải có: bot `greedy` chỉ biết GÓI BÁNH, nên `tools/probe-facts.ts` đo ra
+   * `v.gaveTea` 0% · `t.sitting` 0% · `t.filming` 0% · `m.borrowing` 0% · `w.cartChung` 0%
+   * — và không ai phân biệt được "nhánh đó chết" với "bot không biết làm". Một bảng đo
+   * không nói được nó KHÔNG đo được cái gì thì nó là một tờ giấy chứng nhận sạch.
+   *
+   * `socialRate` = xác suất mỗi lần có cơ hội thì thử mở lời.
+   *
+   * `socialActs` rỗng = nhận MỌI act. ⚠️ Nhận mọi act KHÔNG phủ hết: bot bấm cái đầu tiên
+   * nó gặp, nên mấy act nằm sâu hoặc hiếm không bao giờ tới lượt — đo thật ra 10/27 act.
+   * Khai một DANH SÁCH thì bot **xoay vòng**, mỗi cuộc săn một act, nên cả danh sách đều
+   * có cửa. Đó mới là cách trả lời "nhánh này có với tới được không".
+   */
+  socialRate?: number;
+  socialActs?: readonly string[];
 };
+
+/** Đồ nghề của bot xã giao — ghế và bình trà mua SỚM, vì không có chúng thì act không chạy. */
+export const BUILD_XA_GIAO: [number, EquipId][] = [
+  [1, "GHE_BAN"], [1, "BINH_TRA"], [2, "DU_CHE"], [3, "KEP_GAP"], [4, "THUNG_RAC"],
+  [5, "KHAN_3_MAU"], [6, "THOT_RIENG"], [8, "LONG_BAN"], [12, "VOI_BON"],
+];
 
 export const BUILD_VE_SINH: [number, EquipId][] = [
   [2, "KEP_GAP"], [4, "THUNG_RAC"], [5, "KHAN_3_MAU"], [5, "THOT_RIENG"], [6, "LONG_BAN"], [14, "BANG_QR"],
@@ -48,9 +71,25 @@ export const POLICIES: Record<string, Policy> = {
   greedy: { name: "greedy", workSec: [7, 10], dropRate: 0, defectRate: 0, teaRate: 0, build: BUILD_VE_SINH, anticipate: 0.5, buyLoaves: 20 },
   newbie: { name: "newbie", workSec: [12, 20], dropRate: 0.08, defectRate: 0.15, teaRate: 0.1 },
   tea: { name: "tea", workSec: [9, 13], dropRate: 0.04, defectRate: 0.05, teaRate: 0.6 },
+  /**
+   * BOT XÃ GIAO — bán chậm hơn `greedy` một chút và dành thì giờ cho người, đúng kiểu
+   * người chơi mà cả hệ thoại này viết cho. Mua sẵn ghế + bình trà + dù từ sớm, nếu không
+   * thì mấy act cần đồ nghề (`THEY_SIT`, `OFFER_TEA`) không có cửa chạy.
+   */
+  social: {
+    name: "social", workSec: [9, 13], dropRate: 0, defectRate: 0, teaRate: 0.25,
+    build: BUILD_XA_GIAO, anticipate: 0.5, buyLoaves: 20,
+    socialRate: 0.85, socialActs: [],
+  },
 };
 
 const WRAP_BEFORE_SERVE = 3;
+
+/** Trần nhịp một cuộc của bot xã giao — cây sâu nhất là `MAX_DEPTH`, thêm một nhịp cho chắc. */
+const SOCIAL_MAX_BEATS = 7;
+
+/** Bao nhiêu phần số lần mở lời là BƯỚC RA ĐƯỜNG mời người đi ngang, phần còn lại nói với khách ở quầy. */
+const SOCIAL_STREET = 0.45;
 
 export type Inject = (t: number, h: HeadlessStall) => void;
 
@@ -65,6 +104,8 @@ export class HeadlessStall {
   private pressure: boolean;
   private work: { left: number; forVisit: string; dropped: boolean; dish: Ingredient[]; wrapped: boolean } | null = null;
   private refused = new Set<string>();
+  private talkBeats = 0;
+  private hunt = 0;
 
   constructor(
     world: SaveFile,
@@ -113,8 +154,70 @@ export class HeadlessStall {
     this.bus.emit("stim:emitted", { stimId: id, zone, salience: SALIENCE[id], at: this.elapsed });
   }
 
+  /**
+   * NÓI CHUYỆN NHƯ MỘT NGƯỜI CHƠI — mở lời, rồi đi theo nhánh NÀO CÓ ACT.
+   *
+   * Đi qua đúng hai hàm `StallScene` gọi (`openTalk` → `chooseTalk`), không có đường tắt
+   * nào: một con bot gọi thẳng `service.serveTea()` thì nó đo cái hàm, không đo cái game.
+   *
+   * Cách chọn, theo thứ tự:
+   *   1. nút CÓ act mình đang cần          — việc chính
+   *   2. nút có act đó ở trong NHÁNH con   — đi xuống để tới được nó
+   *   3. nút có act bất kỳ                 — còn hơn một câu nói suông
+   *   4. nút đầu                           — cho cuộc trôi tới nhịp sau
+   */
+  private socialise() {
+    const p = this.policy;
+    const s = this.service;
+    if (!p.socialRate) return;
+
+    if (!s.talkOpen) {
+      if (this.bot.next() >= p.socialRate) return;
+      /*
+       * BƯỚC RA ĐƯỜNG. `talkTarget()` không có `playerAt` thì chỉ nhắm được người ĐẦU QUẦY,
+       * nên bot cũ không bao giờ nói chuyện với người đi ngang — và `INVITE` (25 nhắc) với
+       * `WALK_ON` (37 nhắc) đo ra 0 lần, trông như nội dung chết. Đặt `playerAt` đúng như
+       * `StallScene` làm khi người chơi đi ra lề: cùng một đường, không có cửa sau.
+       */
+      /** ⚠️ KHÔNG lọc `phase !== "leaving"`: người đi ngang MANG phase đó suốt — họ đang đi qua mà. */
+      const duong = s.customers.filter((c) => c.ambient && c.pass);
+      if (duong.length && this.bot.next() < SOCIAL_STREET) {
+        const ai = duong[this.bot.int(0, duong.length)];
+        s.playerAt = { x: ai.x, y: ai.y };
+        s.playerOnStreet = true;
+      } else {
+        s.playerAt = null;
+        s.playerOnStreet = false;
+      }
+      if (!s.openTalk()) return;
+      this.talkBeats = 0;
+      this.hunt++;                                  // cuộc mới ⇒ săn act kế tiếp trong danh sách
+      return;
+    }
+
+    /** Trần nhịp: cuộc nào cũng có đường ra, nhưng bot bấm hoài thì một cuộc ăn cả buổi. */
+    if (this.talkBeats >= SOCIAL_MAX_BEATS) { s.closeTalk(); return; }
+    this.talkBeats++;
+
+    const acts = s.optionActs();
+    if (!acts.length) { s.closeTalk(); return; }
+    /** Xoay vòng: mỗi cuộc săn MỘT act, nên act hiếm cũng tới lượt. Rỗng = nhận mọi act. */
+    const pool = p.socialActs ?? [];
+    const muon = pool.length > 1 ? [pool[this.hunt % pool.length]] : pool;
+    const hop = (xs: readonly string[]) => (muon.length ? xs.some((a) => muon.includes(a)) : xs.length > 0);
+
+    let i = acts.findIndex((o) => o.kind && hop([o.kind]));
+    if (i < 0) i = acts.findIndex((o) => hop(o.sau));
+    if (i < 0) i = acts.findIndex((o) => o.kind !== null);
+    if (i < 0) i = 0;
+
+    const v = s.chooseTalk(i);
+    if (!v || v.done) { s.closeTalk(); this.talkBeats = 0; }
+  }
+
   private act(dt: number) {
     const s = this.service;
+    this.socialise();
     const c = s.front;
     if (!c || c.phase !== "waiting" || !c.order) { this.work = null; return; }
     // Lượt mà khách đã LẮC ĐẦU một lần thì bỏ luôn, đừng lấy ổ bánh khác ra làm lại.

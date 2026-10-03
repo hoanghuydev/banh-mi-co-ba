@@ -1215,6 +1215,76 @@ Ba đợt liền, ba lần cùng một hình dạng: `\b` sau chữ có dấu ·
 tắc rút ra cho đợt sau: **mỗi phép đo phải nói được nó KHÔNG đo được cái gì**, và câu đó
 phải nằm ngay cạnh con số.
 
+## 6vicies. BOT BIẾT RÓT TRÀ, MỜI NGỒI, MỜI GHÉ
+
+Đợt trước tôi khai mấy fact `v.gaveTea` · `t.sitting` · `m.borrowing` đo ra 0% *"vì bot
+`greedy` chỉ biết gói bánh"*. Chủ dự án trả lời đúng một câu: *"viết bot biết rót trà, mời
+ngồi, cho mượn áo mưa đi"* — tức là **lời bào chữa đó chỉ thành sự thật khi có cái máy
+chứng minh nó**.
+
+### Bot `social`
+
+Đi qua ĐÚNG hai hàm `StallScene` gọi: `openTalk()` → `chooseTalk(i)`. Không gọi tắt
+`service.serveTea()` — gọi tắt là đo cái hàm chứ không đo cái game, đúng lỗi chủ dự án bắt
+ở đợt đầu (*"bạn có thật sự test như player không hay gọi fake code thế?"*). Lưới `BX-3`
+giữ ranh giới đó bằng cách đọc chính thân hàm.
+
+Để bấm trúng nhánh, `Service` thêm một cửa đọc: `optionActs()` trả về act của từng lựa
+chọn đang hiện **và** act nằm trong nhánh con của nó. ⚠️ `TalkView.options` vẫn chỉ có
+`say` + `tone` — bày tên act ra màn hình là vi phạm T5 theo chiều ngược (nói trước kết cục);
+`optionActs()` chỉ dành cho bot và công cụ đo.
+
+Ba chỗ phải sửa mới chạy được, và cả ba đều là bài học cũ:
+
+* **Danh sách săn phải XOAY VÒNG.** Nhận "act nào cũng được" thì bot bấm cái đầu tiên nó
+  gặp ⇒ chỉ 10/27 act chạy. Mỗi cuộc săn một act thì act hiếm mới tới lượt.
+* **Bot phải BƯỚC RA ĐƯỜNG.** `talkTarget()` không có `playerAt` thì chỉ nhắm được người
+  đầu quầy, nên bot không bao giờ nói chuyện với người đi ngang — `INVITE` (25 nhắc) và
+  `WALK_ON` (37 nhắc) đo ra **0 lần**, trông y như nội dung chết. Đặt `playerAt` đúng như
+  `StallScene` làm lúc người chơi ra lề.
+* **Người đi ngang MANG `phase: "leaving"` suốt** — họ đang đi qua mà. Lọc
+  `phase !== "leaving"` cho "gọn" là lọc sạch đúng nhóm mình cần, và nó im lặng: `thử 0`.
+
+### Trước / sau
+
+| | bot `greedy` | bot `social` |
+|---|---|---|
+| act chạy được | 0 (nó không nói chuyện) | **17 / 27** |
+| `w.seatFree` | 0% | **85%** |
+| `p.onStreet` | 0% | **43%** |
+| `v.gaveTea` | 0% | **16%** |
+| `INVITE` / `WALK_ON` | 0 lần | **332 / 149** lần (30 buổi) |
+| `OFFER_TEA` · `THEY_SIT` · `FILM` · `CARRY_GANH` · `MOVE_CART` | 0 lần | đều **> 0** |
+
+### Và cái bảng phải tự khai nó không đo được gì
+
+`tools/probe-social.ts` in kèm điều kiện của ván chơi: thời tiết gặp phải, đồ nghề mua
+được, và dòng nhắc rằng act dính một NGƯỜI cụ thể (`RAO`, `MOVE_GANH`, `BARTER` của bà Sáu;
+`OVERHEARD_BY` của anh Dũng) chỉ chạy khi đúng người đó có mặt.
+
+Bản đầu của chính dòng đó **in sai**: nó so thời tiết với chuỗi `"MUA"`, mà mưa có HAI tên
+(`MUA_RAO`, `MUA_DAM`), nên nó báo *"không có ngày mưa"* giữa một mùa có mưa — và lời báo
+đó sẽ đổ tội cho đúng chỗ không có tội. Sửa thành gọi `isRain()`. Lần thứ tư cùng một hình
+dạng trong tài liệu này, và lần này tôi bắt được nó trước khi khai ra.
+
+### Mười act còn đứng yên — và giờ "đứng yên" mới có nghĩa
+
+`BARTER` · `CLEAR_DEBT` · `DISCOUNT` · `GIVE_BREAD` · `LEND_ITEM` · `MOVE_GANH` ·
+`OVERHEARD_BY` · `PAY` · `RAO` · `TAKE_CASH`. Mùa 30 buổi NÀY có mưa, có ghế, có bình trà,
+có dù — nên không đổ cho điều kiện được nữa. Chúng nằm sâu trong cây của từng người, và
+bot xoay vòng chỉ dành cho mỗi act chừng 1/27 số cuộc. Đó là câu hỏi TẦN SUẤT NỘI DUNG,
+không phải câu hỏi nhánh chết — và giờ phân biệt được hai cái đó, điều trước đợt này
+không làm được.
+
+### Số đo
+
+| | |
+|---|---|
+| Lưới | 563 → **568** |
+| Chính sách bot | thêm `social` (`BUILD_XA_GIAO`: ghế + bình trà + dù mua sớm) |
+| Cửa mới của `Service` | `optionActs()` — chỉ cho bot/công cụ, KHÔNG cho `StallScene` |
+| `probe-facts.ts` | thêm `--bot social` |
+
 ## 7. Truy vết
 
 | Khẳng định | Nguồn |

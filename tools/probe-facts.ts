@@ -29,6 +29,8 @@ import blackboard from "../src/content/rules/_blackboard.json";
 const argN = (k: string, d: number) => { const i = process.argv.indexOf(`--${k}`); return i >= 0 ? Number(process.argv[i + 1]) : d; };
 const argS = (k: string, d: string) => { const i = process.argv.indexOf(`--${k}`); return i >= 0 ? String(process.argv[i + 1]) : d; };
 const POOL = argS("pool", "WALKIN"), DAYS = argN("days", 4);
+/** `--bot social` = con bot BIẾT rót trà / mời ngồi / mời ghé. Mặc định `greedy` chỉ biết gói bánh. */
+const BOT = argS("bot", "greedy");
 
 /**
  * ⚠️ TÁCH HAI CHUYỆN. Mười bảy khoá trong bảng đen ĐÒI THAM SỐ (`w.queue(2)`, `t.tier(FRIEND)`
@@ -56,7 +58,7 @@ const bus = new Bus(false); const platform = memoryPlatform();
 for (let d = 1; d < 5; d++) nextDay(w, bus);
 const hit = new Map<string, number>(); let n = 0;
 for (let day = 0; day < DAYS; day++) {
-  const h = new HeadlessStall(w, POLICIES.greedy, { bus, platform });
+  const h = new HeadlessStall(w, POLICIES[BOT] ?? POLICIES.greedy, { bus, platform });
   const svc = (h as unknown as { service: any }).service;
   /*
    * ⚠️ BA THỨ ÉP TAY — và phải đọc bảng kết quả với cái này trong đầu. Bot `greedy` không
@@ -93,12 +95,12 @@ for (let day = 0; day < DAYS; day++) {
   }
   nextDay(w, bus);
 }
-console.log(`\n${POOL} · ${n} mẫu lúc bấm F · tần suất sự thật\n`);
+console.log(`\n${POOL} · bot \`${BOT}\` · ${n} mẫu lúc bấm F · tần suất sự thật\n`);
 console.log(`  (${CAN_THAM_SO.size} khoá đòi tham số nên không hỏi trần được: ${[...CAN_THAM_SO].join(", ")})\n`);
 const rows = [...PROBES, ...EXTRA].map((k) => [k, (hit.get(k) ?? 0) / n] as const).sort((a, b) => b[1] - a[1]);
 for (const [k, r] of rows) {
   const bar = "█".repeat(Math.round(r * 30));
   /** ⚠️ "không bao giờ đúng" chỉ đúng với fact bot này CHẠM TỚI — xem khối ép tay ở trên. */
-  const flag = r === 0 ? "  ← KHÔNG BAO GIỜ ĐÚNG (bot này)" : r < 0.03 ? "  ← gần như không" : "";
+  const flag = r === 0 ? `  ← KHÔNG BAO GIỜ ĐÚNG (bot \`${BOT}\`)` : r < 0.03 ? "  ← gần như không" : "";
   console.log(`  ${k.padEnd(22)} ${(100 * r).toFixed(0).padStart(3)}%  ${bar}${flag}`);
 }

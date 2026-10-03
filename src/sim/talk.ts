@@ -291,6 +291,20 @@ export function satisfiesOf(t: Talk): Satisfies {
   return out;
 }
 
+/**
+ * Mọi act nằm TRONG nhánh con của một nút — để bot biết "bấm câu này rồi đi tiếp thì có
+ * tới được `OFFER_TEA` không". Có trần `MAX_DEPTH` vì `ref` trỏ vòng lại là cây vô hạn.
+ */
+export function actsUnder(n: TalkNode, t: Talk, depth = 0): string[] {
+  if (depth >= MAX_DEPTH) return [];
+  const out: string[] = [];
+  for (const k of childrenOf(n, t) ?? []) {
+    if (k.act) out.push(k.act.kind);
+    out.push(...actsUnder(k, t, depth + 1));
+  }
+  return out;
+}
+
 export function hasInvite(t: Talk): boolean {
   return walkNodes(t).some((x) => x.node.act?.kind === "INVITE");
 }
