@@ -97,6 +97,15 @@ export { pickBubbleSpot };
 
 
 const K = 120, DAMP = 14;
+
+/**
+ * NGỒI — act `THEY_SIT`. Hạ thân chừng này px và nén chiều cao chừng này phần.
+ *
+ * Đo bằng mắt trên lưới isometric 1 ô ≈ 34 px: 9 px là đủ thấy người ngồi THẤP HƠN người
+ * đứng cạnh mà chân không chui xuống dưới nền. Nén 12% là phần chân gập lại.
+ */
+const SIT_DROP = 9;
+const SIT_SQUASH = 0.12;
 type Spring = { v: number; x: number };
 const spring = (s: Spring, target: number, dt: number, d = DAMP) => {
   s.v += (-K * (s.x - target) - d * s.v) * dt;
@@ -116,7 +125,11 @@ export class CustomerActor {
   private leftAt = -1;
 
   private propFx: Phaser.GameObjects.Graphics;
-  private sp = { fwd: { v: 0, x: 0 }, up: { v: 0, x: 0 }, rot: { v: 0, x: 0 }, sy: { v: 0, x: 1 } };
+  private sp = {
+    fwd: { v: 0, x: 0 }, up: { v: 0, x: 0 }, rot: { v: 0, x: 0 }, sy: { v: 0, x: 1 },
+    /** NGỒI XUỐNG — act `THEY_SIT`. Lò xo chứ không nhảy nấc: ngồi phịch một frame là sai. */
+    sit: { v: 0, x: 0 },
+  };
   private lastT = -1;
 
   private facing: Facing = "n";
@@ -179,6 +192,13 @@ export class CustomerActor {
     const s = intensityMul(c.personality);
     let tFwd = pose.fwd * s, tUp = pose.up * s, tRot = pose.rot * s;
     const tSy = pose.sy ?? 1;
+    /*
+     * NGỒI THẤY ĐƯỢC. `THEY_SIT` đã làm kiên nhẫn trôi chậm từ đợt `GHE_BAN`, nhưng người
+     * ngồi và người đứng vẽ y hệt nhau — tức người chơi bỏ 320 nghìn mua bộ ghế và KHÔNG
+     * THẤY GÌ ĐỔI. Không nướng sprite mới: hạ thân xuống `SIT_DROP` và nén nhẹ chiều cao
+     * (chân gập), đúng lối "một bộ target cho lò xo, 0 sprite mới" của P2-02 §3.2.
+     */
+    const tSit = c.sitting ? SIT_DROP : 0;
     const since = c.now - c.react.poseSince;
     if (pose.osc && !reducedMotion && (!pose.osc.beats || since < pose.osc.beats * pose.osc.period)) {
       const w = Math.sin((since / pose.osc.period) * Math.PI * 2) * pose.osc.amp * s;
@@ -186,10 +206,12 @@ export class CustomerActor {
     }
     if (reducedMotion) {
       this.sp.fwd.x = tFwd; this.sp.up.x = tUp; this.sp.rot.x = tRot; this.sp.sy.x = tSy;
+      this.sp.sit.x = tSit;
     } else {
       const d = pose.d ?? DAMP;
       spring(this.sp.fwd, tFwd, dt, d); spring(this.sp.up, tUp, dt, d);
       spring(this.sp.rot, tRot, dt, d); spring(this.sp.sy, tSy, dt, d);
+      spring(this.sp.sit, tSit, dt, d);
     }
     const a = toScreen(c.x, c.y), b = toScreen(c.x, c.y - 1);
     const len = Math.hypot(b.sx - a.sx, b.sy - a.sy) || 1;
@@ -200,14 +222,16 @@ export class CustomerActor {
 
     const tex = textureFor(this.facing, c.memKey);
     this.body.setTexture(tex.key).setFlipX(tex.flip).setAlpha(fade);
-    this.body.setPosition(sx + fidget + fx, footY(sy) - hop + fy - this.sp.up.x).setDepth(depth);
+    this.body.setPosition(sx + fidget + fx, footY(sy) - hop + fy - this.sp.up.x + this.sp.sit.x).setDepth(depth);
     this.body.setAngle(this.sp.rot.x * (tex.flip ? -1 : 1));
     // Chia lại hệ số siêu lấy mẫu sau mỗi `setTexture`, y như `Player.ts`: người nào
     // đã có bảng xoay ẢNH THẬT (`art/photo.NPC_PHOTOS`) thì texture nướng dư pixel, còn
     // người chưa có ảnh vẫn là bản vẽ code tỉ lệ 1:1 (`artScale` trả 1). Không chia là
     // mấy người có ảnh đứng cao gấp `ART_SS` lần người chơi — to hơn cả cái quầy.
     const k = 1 / artScale(tex.key);
-    this.body.setScale(k, k * (this.sp.sy.x + Math.sin(this.bob * 2) * 0.02 * amp));
+    /** Ngồi thì thân NGẮN lại chứ không chỉ tụt xuống — tụt không thôi trông như lún xuống đất. */
+    const sitSquash = 1 - (this.sp.sit.x / SIT_DROP) * SIT_SQUASH;
+    this.body.setScale(k, k * (this.sp.sy.x + Math.sin(this.bob * 2) * 0.02 * amp) * sitSquash);
     this.shadow.setPosition(sx, sy).setDepth(depth - 1).setAlpha(fade);
 
     const headX = sx + fidget, headY = footY(sy) - BODY_H + 12 - hop;
@@ -255,7 +279,7 @@ export class CustomerActor {
       drawFace(g, sx + 22, markY + 6 + jolt, face, c.body.skin, browColor(c.body.hair), c.phase === "leaving" ? 0.7 : 1);
     }
 
-    this.drawBodyProps(sx + fidget + fx, footY(sy) - hop + fy - this.sp.up.x, depth, time, reducedMotion);
+    this.drawBodyProps(sx + fidget + fx, footY(sy) - hop + fy - this.sp.up.x + this.sp.sit.x, depth, time, reducedMotion);
     g.setAlpha(fade);
     this.propFx.setAlpha(fade);
 
@@ -341,6 +365,33 @@ export class CustomerActor {
       default:
         break;
     }
+    /*
+     * CÁI GHẾ DƯỚI NGƯỜI ĐANG NGỒI. Bản đồ có sẵn bộ bàn ghế ở hàng y11, nhưng người ta
+     * ngồi ở `SEAT_SPOT` ngay trước bộ đó — không có cái ghế nào ở ĐÚNG chỗ họ ngồi. Vẽ
+     * một cái ghế nhựa thấp bám theo người, nên dời `SEAT_SPOT` thì ghế đi theo.
+     */
+    if (this.sp.sit.x > 0.4) {
+      const k = this.sp.sit.x / SIT_DROP;
+      g.fillStyle(0x24588f, 0.95 * k).fillRect(x - 9, foot + 1, 3.5, 8).fillRect(x + 5.5, foot + 1, 3.5, 8);
+      g.fillStyle(0x2f6fb3, 0.95 * k).fillEllipse(x, foot + 1, 26, 10);
+      g.fillStyle(0x4b8fd6, 0.8 * k).fillEllipse(x, foot - 0.5, 20, 6);
+    }
+
+    /*
+     * BÉ SU GIƠ ĐIỆN THOẠI LÊN QUAY — act `FILM`. Trước đợt này `FILM` đổi `c.filming`,
+     * trừ điểm nếu quầy dơ, và KHÔNG VẼ GÌ: người chơi không biết máy đang chạy, nên cái
+     * giá "quầy dơ thì clip hỏng" là một cái bẫy chứ không phải một rủi ro đọc được (T5).
+     * Chấm đỏ nhấp nháy là thứ ai cũng đọc được mà không cần học.
+     */
+    if (c.filming) {
+      const px = x + 10, py = shoulder - 2;
+      g.fillStyle(0x24282b, 1).fillRoundedRect(px - 4, py - 7, 9, 15, 2);          // thân máy
+      g.fillStyle(0x7fb8d8, 0.85).fillRect(px - 2.5, py - 5.5, 6, 12);             // màn hình
+      const nhay = rm ? 1 : (Math.sin(time / 260) + 1) / 2;
+      g.fillStyle(0xd94f3d, 0.45 + 0.55 * nhay).fillCircle(px + 7, py - 6, 2.1);   // chấm đang quay
+      g.lineStyle(1.5, 0xe8d9b5, 0.9).lineBetween(x + 4, shoulder + 7, px - 2, py + 6);  // cánh tay giơ lên
+    }
+
     const binT = c.binAt >= 0 ? c.now - c.binAt : -1;
     if (c.carrying || (binT >= 0 && binT < 0.35)) {
       let bx = x + 11, by = shoulder + 14;

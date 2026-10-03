@@ -3,12 +3,13 @@ import assert from "node:assert/strict";
 import { COOL_RATE, WARM_OK, cool, isWarm } from "../src/sim/loaf";
 import { Bus } from "../src/core/eventbus";
 import { newGame } from "../src/core/save";
+import { buy, portionsFor, putBack, take } from "../src/sim/econ";
 import { HeadlessStall, POLICIES } from "../src/sim/headless";
 import { CAPACITY, INGREDIENTS, dishFor, type Ingredient } from "../src/sim/order";
 import { CRUST } from "../src/sim/oven";
 import { SALIENCE } from "../src/sim/perception";
 import { extraHabit, newRelState } from "../src/sim/memory";
-import { STATIONS, stationNear } from "../src/world/stations";
+import { STATIONS, blockedReason, stationNear } from "../src/world/stations";
 
 /**
  * 26 s → 60 s (xem khối ⚖️ CÂN BẰNG trong `sim/loaf.ts`). Con số được chốt bằng CÁCH
@@ -143,6 +144,45 @@ test("rổ bánh nóng đứng đủ xa thớt và chỗ đưa hàng để khôn
   assert.ok(basket.needs.includes("loaf_hot"));
   assert.ok(basket.needs.includes("loaf_cold"));
   assert.ok(basket.needs.includes("empty"));
+});
+
+/**
+ * Kẹp nhầm rồi bấm "Gói lại" KHÔNG ĐƯỢC là một cánh cửa đóng sập: kẹp có miếng ớt, hay quên
+ * mất chả, là chuyện xảy ra suốt — mà đường ra duy nhất từng là thùng rác (mất cả ổ bánh và
+ * cả phần nhân). Thớt phải nhận lại ổ ĐÃ GÓI để mở ra kẹp thêm / gỡ bớt (`unwrapToBoard`).
+ */
+test("ổ đã gói đem lại thớt được: kẹp nhầm thì mở ra sửa, không phải bỏ cả ổ", () => {
+  const board = STATIONS.find((s) => s.id === "board")!;
+  assert.ok(board.needs.includes("loaf_hot"), "ổ nóng trơn vẫn đặt xuống thớt được");
+  assert.ok(board.needs.includes("loaf_filled"), "ổ đã gói phải mở lại được ở thớt");
+  assert.equal(blockedReason(board, "loaf_filled"), null, "không được nói 'đang cầm ổ bánh đã kẹp'");
+  // Ổ nguội vẫn phải đi nướng lại trước, và ổ cháy vẫn chỉ có một đường là thùng rác.
+  assert.ok(blockedReason(board, "loaf_cold"));
+  assert.ok(blockedReason(board, "loaf_burnt"));
+});
+
+/**
+ * Hợp đồng của bảng kẹp nhân là "kho chỉ bị trừ lúc gói xong" — nên mở ổ ra là kho phải
+ * NHẬN LẠI đúng số phần đó. Không đối xứng thì mở ra gói lại một ổ hai lần là trừ hai lần
+ * nguyên liệu, và người chơi bị phạt vì đi sửa lỗi của mình.
+ */
+test("mở ổ ra thì kho nhận lại đúng số phần đã trừ lúc gói", () => {
+  const w = newGame("t", "unwrap");
+  const day = w.progress.dayIndex;
+  const inv = w.inventory;
+  buy(inv, "CHA_LUA", 1, day);
+  buy(inv, "OT", 1, day);
+  const before = { cha: portionsFor(inv, "chalua", day), ot: portionsFor(inv, "ot", day) };
+  assert.ok(before.cha > 0 && before.ot > 0, "có hàng để thử");
+
+  const dish: Ingredient[] = ["chalua", "chalua", "ot"];
+  for (const ing of dish) take(inv, ing, 1, day);        // gói xong: trừ kho (xem `finishDish`)
+  assert.equal(portionsFor(inv, "chalua", day), before.cha - 2);
+  assert.equal(portionsFor(inv, "ot", day), before.ot - 1);
+
+  for (const ing of dish) putBack(inv, ing, 1, day);     // mở ra: trả lại (xem `unwrapToBoard`)
+  assert.equal(portionsFor(inv, "chalua", day), before.cha);
+  assert.equal(portionsFor(inv, "ot", day), before.ot);
 });
 
 test("bánh nướng CHƯA TỚI là một lỗi thật, nặng dần, nhưng không bao giờ bằng bánh cháy", () => {

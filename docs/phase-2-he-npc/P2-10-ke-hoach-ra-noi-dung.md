@@ -1051,6 +1051,115 @@ Còn lại là **tune số**, không phải việc thiếu: `ATT_K` / `ATT_FLOOR
 telemetry người thật. Và vẽ: bé Su giơ điện thoại lúc `FILM`, dáng người NGỒI thấy được —
 hai thứ art, không phải thoại.
 
+## 6septdecies. TUNE SỐ — VÀ BA NÚM HOÁ RA LÀ MÃ CHẾT
+
+Chủ dự án: *"xử lý tune số và vẽ đi"*. `P2-09` §5 ghi ba số của `sim/drives.ts` là "bản
+dựng đặt, chưa tune", `P2-10` §6 để lại chờ telemetry người thật. Chờ mãi thì không bao
+giờ tune; cái đo được NGAY là hành vi của chính hệ. Dựng `tools/tune-drives.ts` quét từng
+núm, giữ hai núm kia.
+
+Kết quả đợt quét đầu — **cả ba núm đổi 8 lần mà KHÔNG đổi một con số nào**:
+
+```
+K=250 … 2000          hệt nhau
+FLOOR=3 … 22          hệt nhau
+DECAY_PER_MIN=0,5 … 8 hệt nhau
+```
+
+Đó không phải "đã tune xong", đó là **ba núm không nối vào gì**. Đào từng cái:
+
+### `ATT_K` — vì không điểm nào ÂM nên cái sàn chưa từng cắt
+
+`K` chỉ là hệ số thang; `pickWeighted` chuẩn hoá lại nên nhân bao nhiêu cũng ra cùng lựa
+chọn. Chỗ duy nhất nó nói chuyện với một mốc TUYỆT ĐỐI là `TALK_SCORE_FLOOR = −5`.
+`tools/probe-diem.ts` đo phân bố điểm: **thấp nhất 0,0** — không một cuộc nào từng xuống
+dưới 0, nói gì tới −5. Cái sàn là mã chết, nên `K` cũng chết theo.
+
+Vì sao không bao giờ âm: `scoreSatisfies` chỉ ra âm khi một cuộc làm drive TỆ ĐI, mà
+`satisfiesOf` chưa bao giờ sinh ra khoản tệ đi nào.
+
+### Lỗi thật mà cuộc quét lôi ra: luật khai mà không ai giữ
+
+`PRACTICE_PUSH.DOI_BANH` đẩy `DUOC_PHUC_VU` lên 85, kèm lời khai *"không chuyện tán gẫu
+nào thắng nổi con số đó"*. Đo ra thì **38% số lần bấm bắt chuyện lúc khách đang đợi bánh
+vẫn ra tán gẫu**.
+
+Lý do là một dòng trong `scoreSatisfies`: nó chỉ cộng trên những drive mà cuộc đó ĐỘNG
+TỚI. Cuộc tán gẫu không đụng `DUOC_PHUC_VU`, nên con số 85 **không chạm được vào nó**.
+Đẩy một drive lên trời không phạt được cái chuyện phớt lờ nó.
+
+Sửa đúng tầng của hệ, không bằng một `if`: cho cuộc KHÔNG dính mua bán một khoản **âm**
+trên chính `DUOC_PHUC_VU` — bị bắt chuyện trong lúc chờ làm cái chờ nặng thêm. Hàm
+`A(x) = K/x` lo phần còn lại: lúc drive thấp khoản âm gần như không thấy, lúc nó 85 thì
+nó đè bẹp. Trị số chọn bằng quét, không bằng cảm giác:
+
+| `CHO_PHIEN` | đợi bánh | gọi món | xếp hàng |
+|---|---|---|---|
+| 0 (trước) | **38%** | 35% | 28% |
+| 3 | 0% | 21% | 21% |
+| **6 ←** | **0%** | **6%** | **17%** |
+| 10 | 0% | 0% | 7% |
+| 24 | 0% | 0% | 0% |
+
+6 là chỗ duy nhất giữ đúng thứ tự thiết kế đòi — đợi bánh < gọi món < xếp hàng — mà không
+giết cái cuối. **Đứng xếp hàng LÀ lúc tán gẫu được.**
+
+Và vì điểm giờ xuống âm thật, `K` sống lại: quét lại ra `K=250/500` → sàn cắt 0%,
+`K=1000` → 7%. Giữ 1000, giờ có lý do đo được.
+
+### `DRIVE_DECAY_PER_MIN` — không có gì để suy giảm
+
+`bump()` của `sim/drives.ts` **không một ai gọi**. `c.drives` nằm y nguyên ở `driveBase`
+suốt buổi, nên `decayDrives` kéo một thứ chưa bao giờ xê dịch. Nghe một người kể chuyện
+xong, cái muốn kể của họ y như lúc chưa kể — tức nửa sau của mô hình Zubek chưa bao giờ
+chạy.
+
+Nối lại: `markTalkUsed` trừ `satisfiesOf(t)` vào `c.drives`. Trải điểm đo được tăng
+1,58 → 1,77. Trị số giữ 2, chọn bằng SỐ HỌC chứ không bằng quét: một cuộc `FULL` thoả
+`KE_CHUYEN` chừng 48 điểm, ở 2 điểm/phút thì về nền sau ~24 phút game — dài hơn phần lớn
+một lượt ghé, nên "vừa kể xong" kéo hết lượt đó. Lên 8 thì chưa đầy 6 phút: cùng một
+người kể lại cùng kiểu chuyện ngay trong một lượt.
+
+### `ATT_FLOOR` và `OVEN_SMELL_SEC` — nói thẳng là KHÔNG tune được
+
+* `ATT_FLOOR = 8` chỉ ăn khi một drive vượt 92. Mức cao nhất `PRACTICE_PUSH` đẩy tới là
+  85, nền cao nhất ~55. **Không bao giờ ăn** — đây là chứng minh, không phải quan sát.
+  Giữ lại như cái chặn chia-cho-0, và ghi thẳng là *không phải một núm để vặn*.
+* `OVEN_SMELL_SEC = 90` nằm sau `ovenBusy ||` trong `get ovenHot`, nên khi lò đang nhen
+  thì 90 giây kia không có ý nghĩa gì. Đo ra `w.ovenHot` **100%** ở một bộ chạy và **0%**
+  ở bộ khác — khác nhau ở chỗ bot có nhen lò hay không, không ở con số. Hai nút nội dung
+  khoá vào nó coi như không khoá gì. Đây là việc của **khoá nội dung**, không phải của
+  con số; ghi vào §6 chứ không vặn bừa.
+
+## 6octodecies. VẼ NỐT HAI MÓN — NGỒI, VÀ CÁI MÁY ĐANG QUAY
+
+Hai món art cuối, và cả hai không phải chuyện thẩm mỹ:
+
+* **`THEY_SIT`** làm kiên nhẫn trôi chậm 45% từ đợt `GHE_BAN`, nhưng người ngồi và người
+  đứng vẽ **y hệt nhau** — tức bỏ 320 nghìn mua bộ ghế mà màn hình không đổi một pixel.
+* **`FILM`** đặt `c.filming`, và clip hỏng nếu quầy dơ lúc máy chạy. Không vẽ gì thì
+  người chơi KHÔNG BIẾT máy đang chạy, nên cái giá đó là một **cái bẫy** chứ không phải
+  một rủi ro đọc được trước khi hành động (T5).
+
+Không nướng sprite mới, đúng lối "một bộ target cho lò xo, 0 sprite mới" của `P2-02` §3.2:
+ngồi thì hạ thân `SIT_DROP` 9 px **và** nén chiều cao 12% (chân gập) qua một lò xo riêng,
+cộng một cái ghế nhựa bám theo người. Quay thì một cái điện thoại giơ lên vai, màn hình
+sáng, chấm đỏ nhấp nháy, một nét tay nối lên.
+
+Đo trên trình duyệt, ghim toạ độ để phép đo không lẫn với bước đi: ngồi hạ **11,4 px** và
+nén đúng **12,0%**. Lưới `VE-1`…`VE-4` đọc thẳng mã vẽ — không dựng được Phaser trong
+`node:test`, mà cái cần canh là "có nhánh vẽ cho hai trạng thái đó hay không".
+
+### Số đo
+
+| | |
+|---|---|
+| Lưới | 556 → **560**, xanh hết |
+| Tán gẫu lúc khách đợi bánh | 38% → **0%** |
+| Tán gẫu lúc xếp hàng | 28% → 17% (còn sống) |
+| Trải điểm chọn chuyện | 1,58 → **1,77** |
+| Núm còn là mã chết | `ATT_FLOOR` (có chứng minh) · `OVEN_SMELL_SEC` (lỗi khoá nội dung) |
+
 ## 7. Truy vết
 
 | Khẳng định | Nguồn |

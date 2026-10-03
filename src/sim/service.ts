@@ -25,10 +25,10 @@ import { rollVisit } from "./schedule";
 import { SILENT_ABSENCE, extraHabit, record, servedWell, visitProbabilityMul, type BaseKind, type Memory } from "./memory";
 import { SHARED_POOL, TalkStore } from "../content/talks";
 import { allHold, firstBroken, holds, type WorldSnapshot } from "./worldfacts";
-import { bandOfMinutes, type PracticeId } from "../content/vocab";
+import { bandOfMinutes, type DriveId, type PracticeId } from "../content/vocab";
 import { retrieve, worthMentioning, type Recalled } from "./recall";
 import { describe as describePurpose, purposeHurry, purposeInviteMul, rollPurpose } from "./purpose";
-import { baseDrives, decayDrives, drivesNow, scoreSatisfies } from "./drives";
+import { baseDrives, bump, decayDrives, drivesNow, scoreSatisfies } from "./drives";
 import { profileOf } from "./profile";
 import {
   ADDRESS, DEFAULT_IGNORE_REL, TalkSession, WALKIN_ADDRESS, angerToWaitSec, applyTalk,
@@ -2649,6 +2649,21 @@ export class Service {
 
   /** 12 người CÓ TÊN nhớ theo MÙA; người KHÔNG CÓ TÊN nhớ theo LƯỢT GHÉ (`memKey` của họ dùng chung cả mùa). Cuộc `ANY` không vào sổ của ai. */
   private markTalkUsed(c: Customer, t: Talk) {
+    /*
+     * NÓI XONG THÌ CÁI MUỐN HẠ XUỐNG — mắt xích thiếu của cả hệ drive.
+     *
+     * `scoreSatisfies` chấm một cuộc theo chuyện nó THOẢ được bao nhiêu, nhưng trước đợt
+     * này không chỗ nào THOẢ thật: `bump()` của `sim/drives.ts` không một ai gọi, nên
+     * `c.drives` nằm y nguyên ở `driveBase` suốt buổi. Hệ quả đo được: quét
+     * `DRIVE_DECAY_PER_MIN` từ 0,5 tới 8 mà KHÔNG đổi một con số nào — không có gì để suy
+     * giảm. Nghe một người kể chuyện xong, cái muốn kể của họ vẫn y như lúc chưa kể.
+     *
+     * Dấu: `satisfiesOf` trả DƯƠNG = được thoả, mà thang ở đây là "đang muốn bao nhiêu",
+     * nên thoả thì TRỪ đi.
+     */
+    for (const [k, drop] of Object.entries(satisfiesOf(t))) {
+      if (drop) bump(c.drives, k as DriveId, -drop);
+    }
     const m = this.mem(c.memKey);
     /** Khoá theo `memKey` chứ không theo lượt ghé: ghé hai lần một sáng thì lần thứ hai không được hỏi lại chuyện vừa nghe. */
     const told = this.toldToday.get(c.memKey) ?? [];

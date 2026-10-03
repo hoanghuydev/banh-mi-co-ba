@@ -35,10 +35,76 @@ export const newDrives = (): DriveLevels => ({
  * không phải "chuyện này tôi cần vô hạn". Zubek không nói tới chỗ này vì nhu cầu của ông
  * không bao giờ chạm 0 — nhu cầu ở đây thì chạm suốt.
  */
-export const ATT_K = 1000;
-export const ATT_FLOOR = 8;
+/**
+ * ⚠️ Ba núm này gom vào MỘT vật đổi được, không phải ba `const` rời, vì `tools/tune-drives.ts`
+ * quét chúng: tune bằng cách sửa file rồi chạy lại là cách số trôi mà không ai biết. Mã
+ * chạy thật không bao giờ ghi vào đây — chỉ công cụ quét ghi.
+ */
+export const DRIVE_TUNE = {
+  /**
+   * HỆ SỐ THANG của `A(x) = K/x`. Một mình nó KHÔNG đổi lựa chọn — `pickWeighted` chuẩn
+   * hoá lại — nên nó chỉ nói chuyện với một mốc TUYỆT ĐỐI duy nhất: `TALK_SCORE_FLOOR`.
+   *
+   * Quét (`tools/tune-drives.ts`, cột "sàn-cắt" = phần ứng viên bị sàn loại):
+   *   K=250 → 0%  ·  K=500 → 0%  ·  K=1000 → 7%  ·  K=2000 → 7%
+   * Dưới 1000 thì cái sàn là mã chết. Giữ 1000: chỗ nó vừa bắt đầu làm việc.
+   */
+  K: 1000,
+  /**
+   * Sàn của `max(FLOOR, cur)`, với `cur = 100 − mức đang muốn`.
+   *
+   * ⚠️ Gần như KHÔNG BAO GIỜ ăn, và đây là chứng minh chứ không phải cảm giác: `cur` chỉ
+   * xuống dưới 8 khi một drive vượt 92, mà mức cao nhất `PRACTICE_PUSH` đẩy tới là 85
+   * (`DOI_BANH`) và mức nền cao nhất là ~55. Quét 3→22 không đổi một con số nào. Giữ lại
+   * như một cái chặn chia-cho-0 cho tương lai, KHÔNG phải một núm để vặn.
+   */
+  FLOOR: 8,
+  /**
+   * Điểm/phút game để một drive trôi về mức nền.
+   *
+   * ⚠️ Trước đợt này nó là MÃ CHẾT, và quét 0,5→8 không đổi gì — vì `bump()` của file này
+   * KHÔNG MỘT AI GỌI, nên `c.drives` nằm y nguyên ở `driveBase` cả buổi: không có gì để
+   * suy giảm. `markTalkUsed` giờ trừ `satisfiesOf(t)` vào `c.drives`, nên nó mới có việc.
+   *
+   * Chọn bằng số học chứ không bằng quét: một cuộc `FULL` thoả `KE_CHUYEN` chừng 48 điểm,
+   * nên ở 2 điểm/phút nó về nền sau ~24 phút game — dài hơn phần lớn một lượt ghé, tức
+   * "vừa kể xong" kéo đủ hết lượt đó. Lên 8 thì chưa đầy 6 phút: cùng một người kể lại
+   * cùng một kiểu chuyện ngay trong một lượt.
+   */
+  DECAY_PER_MIN: 2,
+  /**
+   * NÓI CHUYỆN TRÊN TRỜI LÚC NGƯỜI TA ĐANG ĐỢI BÁNH THÌ LÀM HỌ ĐỢI LÂU HƠN.
+   *
+   * `PRACTICE_PUSH.DOI_BANH` đẩy `DUOC_PHUC_VU` lên 85 với lời khai *"không chuyện tán gẫu
+   * nào thắng nổi con số đó"*. Đo ra thì không đúng: `scoreSatisfies` chỉ cộng trên những
+   * drive mà cuộc đó ĐỘNG TỚI, nên một cuộc tán gẫu không đụng `DUOC_PHUC_VU` → con số 85
+   * không chạm được vào nó, và 38% số lần bấm lúc khách đợi bánh vẫn ra tán gẫu
+   * (`tools/probe-tangau.ts`).
+   *
+   * Nên cho tán gẫu một khoản ÂM trên chính `DUOC_PHUC_VU`: bị bắt chuyện trong lúc chờ
+   * làm cái chờ nặng thêm. Lúc drive đó thấp thì khoản âm này gần như không thấy (hàm
+   * `A(x) = K/x` thoải ở vùng cao); lúc nó 85 thì nó đè bẹp cuộc tán gẫu. Đúng chỗ hệ
+   * Zubek phải tự lo, không phải một `if`.
+   *
+   * SỐ 6 ĐO RA, không chọn bằng cảm giác (`tools/probe-tangau.ts`, tỉ lệ bấm-ra-tán-gẫu):
+   *
+   *        CHO_PHIEN   đợi bánh   gọi món   xếp hàng
+   *            0          38%       35%       28%     ← luật khai mà không ai giữ
+   *            3           0%       21%       21%     gọi món ngang xếp hàng — sai thứ tự
+   *            6  ←        0%        6%       17%
+   *           10           0%        0%        7%     xếp hàng gần chết
+   *           24           0%        0%        0%     cả hẻm câm
+   *
+   * 6 là chỗ duy nhất giữ đúng THỨ TỰ mà thiết kế đòi — đợi bánh < gọi món < xếp hàng —
+   * mà không giết cái cuối. Đứng xếp hàng LÀ lúc tán gẫu được.
+   */
+  CHO_PHIEN: 6,
+};
 
-export const attenuate = (x: number) => ATT_K / Math.max(ATT_FLOOR, Math.min(100, x));
+export const ATT_K = DRIVE_TUNE.K;
+export const ATT_FLOOR = DRIVE_TUNE.FLOOR;
+
+export const attenuate = (x: number) => DRIVE_TUNE.K / Math.max(DRIVE_TUNE.FLOOR, Math.min(100, x));
 
 /**
  * MỨC NỀN theo tính cách — không phải một bảng viết tay thứ hai.
@@ -62,10 +128,10 @@ export function baseDrives(p: Personality): DriveLevels {
  * Suy giảm về mức nền — điểm/phút game. Không suy giảm về 0: mức nền LÀ con người họ,
  * còn phần vượt lên trên mới là chuyện của sáng hôm nay.
  */
-export const DRIVE_DECAY_PER_MIN = 2;
+export const DRIVE_DECAY_PER_MIN = DRIVE_TUNE.DECAY_PER_MIN;
 
 export function decayDrives(d: DriveLevels, base: DriveLevels, minutes: number) {
-  const step = DRIVE_DECAY_PER_MIN * minutes;
+  const step = DRIVE_TUNE.DECAY_PER_MIN * minutes;
   for (const k of DRIVE_IDS) {
     const b = base[k];
     d[k] = d[k] > b ? Math.max(b, d[k] - step) : Math.min(b, d[k] + step);

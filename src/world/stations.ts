@@ -72,7 +72,11 @@ export const STATIONS: Station[] = [
     id: "board", tx: 4, ty: COUNTER_Y, name: "thớt", verb: "kẹp nhân",
     // holdMs = 0: bấm E là MỞ BẢNG CHỌN NGUYÊN LIỆU, không phải giữ phím chờ xong.
     // Trụ cột T2 nằm ở đây — người chơi chọn nguyên liệu chứ không chọn câu nói.
-    slot: "BOARD", needs: ["loaf_hot"], gives: "loaf_filled", holdMs: 0,
+    //
+    // Nhận cả Ổ ĐÃ GÓI, không chỉ ổ nóng trơn: kẹp nhầm (hay kẹp thiếu) rồi bấm gói là
+    // chuyện xảy ra suốt, mà trước đây đường ra duy nhất là thùng rác — mất cả ổ bánh vì
+    // một miếng ớt. Thớt là chỗ MỞ Ổ RA kẹp thêm / gỡ bớt (xem `unwrapToBoard`).
+    slot: "BOARD", needs: ["loaf_hot", "loaf_filled"], gives: "loaf_filled", holdMs: 0,
   },
   {
     /**

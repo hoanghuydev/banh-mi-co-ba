@@ -13,7 +13,7 @@ import { weekdayOf, type Weekday } from "./schedule";
 import type { TimeBand } from "../core/clock";
 import type { Face, PoseId } from "./reaction";
 import type { PracticeId } from "../content/vocab";
-import { pickWeighted, type Satisfies } from "./drives";
+import { DRIVE_TUNE, pickWeighted, type Satisfies } from "./drives";
 import type { DriveId } from "../content/vocab";
 
 /** ⚠️ `GAT` là gắt với CHÍNH người đang đứng đây; `CHUI` là chửi NGƯỜI THỨ BA cùng với họ — hợp người thì được điểm. */
@@ -279,6 +279,12 @@ export function satisfiesOf(t: Talk): Satisfies {
   if (t.source !== "PLAYER_ONLY") out.KE_CHUYEN = 30 * deep;
   if (t.source !== "NPC_ONLY") out.DUOC_HOI = 28 * deep;
   if (k === "MUA") out.DUOC_PHUC_VU = 22 * deep;
+  /*
+   * Cuộc KHÔNG dính tới chuyện mua bán thì làm cái chờ nặng thêm — xem `DRIVE_TUNE.CHO_PHIEN`.
+   * Thiếu khoản này thì `DOI_BANH → DUOC_PHUC_VU 85` không chạm được vào cuộc tán gẫu, vì
+   * `scoreSatisfies` chỉ cộng trên drive mà cuộc đó ĐỘNG TỚI.
+   */
+  else out.DUOC_PHUC_VU = -DRIVE_TUNE.CHO_PHIEN * deep;
   const tones = walkNodes(t).map((x) => x.node.tone);
   const kho = tones.filter((x) => x === "CHUI" || x === "THANG").length;
   if (kho >= 2) out.PHAN_NAN = 18 * deep;

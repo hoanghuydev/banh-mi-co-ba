@@ -27,7 +27,7 @@ import { logNote } from "../sim/notebook";
 import { chorePin } from "../ui/chorePin";
 import { CLAIM } from "../sim/gossip";
 import { NPCS } from "../content/npcs";
-import { dishQuality, isRain, portionsFor, stockOf, take, goodsFor } from "../sim/econ";
+import { dishQuality, isRain, portionsFor, putBack, stockOf, take, goodsFor } from "../sim/econ";
 import { RITUAL_LINES, RITUAL_PRAYER, RITUAL_STEPS } from "../sim/till";
 import { dirtMul, has } from "../sim/equipment";
 import { labelOf } from "../sim/order";
@@ -1219,6 +1219,30 @@ export class StallScene extends Phaser.Scene {
     this.liftBoardLoaf();
   }
 
+  /**
+   * MỞ Ổ ĐÃ GÓI RA: nhân trở lại thớt, bảng kẹp mở lại với đúng ổ đó, kẹp thêm hay gỡ bớt
+   * tuỳ ý rồi gói lại (`finishDish`). Không có nó thì một cú bấm "Gói lại" sớm là không
+   * sửa được — kẹp nhầm có miếng ớt cũng phải đem cả ổ bỏ thùng rác.
+   */
+  private unwrapToBoard() {
+    // Kho phải nhận lại từng phần, ĐỐI XỨNG với `finishDish` (gói xong mới trừ kho): không
+    // trả thì mở ra gói lại một ổ hai lần là trừ nguyên liệu hai lần.
+    //
+    // Phần chia sẵn (preset) đã trừ ở cú gói đầu thì KHÔNG hoàn lại — nhân đổ ra thớt rồi,
+    // nó về kho thành nguyên liệu rời chứ không về lại thành một suất đã chia.
+    const day = this.world.progress.dayIndex;
+    for (const ing of this.dish) putBack(this.world.inventory, ing, 1, day);
+    this.boardLoaf = [...this.dish];
+    this.boardWarmth = this.handWarmth;                  // ổ mang theo cả bộ thông số của nó
+    this.boardCrust = this.handCrust;
+    this.boardSoiled = this.handSoiled;
+    this.boardQ = this.breadQ;
+    this.player.hand = "empty";
+    this.dish = [];
+    this.audio.wrap();                                   // tiếng giấy gói — lần này là mở ra
+    this.openBoard(false);
+  }
+
   /** Cầm ổ đang gác trên thớt lên tay — cả bộ thông số của nó đi theo. Thớt sạch trở lại. */
   private liftBoardLoaf() {
     this.boardLoaf = null;
@@ -1232,7 +1256,10 @@ export class StallScene extends Phaser.Scene {
 
   /** Phải nói ĐÚNG việc bấm phím sẽ làm, và luôn có ít nhất một đường ra. */
   private boardPrompt(): string | null {
-    if (!this.boardLoaf) return null;
+    if (!this.boardLoaf) {
+      // Tay đang cầm ổ đã gói: thớt là đường QUAY LẠI — mở ra kẹp thêm, gỡ bớt miếng kẹp nhầm.
+      return this.player.hand === "loaf_filled" ? "thớt — bấm E mở ổ ra kẹp thêm hoặc gỡ bớt" : null;
+    }
     if (this.player.hand !== "empty") return "thớt — đang có ổ gác · Q đặt ổ trên tay xuống";
     const bare = this.boardLoaf.length === 0;
     // Ổ nguội: nói thẳng việc đúng nhất là cầm ra lò nướng lại, nhưng KHÔNG giấu mất đường kẹp tiếp.
@@ -1247,6 +1274,8 @@ export class StallScene extends Phaser.Scene {
         // Đặt ổ nóng xuống thớt: tay rảnh, ổ nằm trên thớt cho tới khi gói.
         // Thớt đã có ổ thì nói luôn đường ra, đừng chỉ nói "không được" (xem `boardPrompt`).
         if (this.boardLoaf) { this.hud.toast("thớt đang có ổ, bấm Q đặt ổ trên tay xuống", "info", this.popClock); return; }
+        // Ổ ĐÃ GÓI đem lại thớt = mở giấy ra sửa, không phải gói ổ mới.
+        if (this.player.hand === "loaf_filled") { this.unwrapToBoard(); return; }
         this.player.hand = "empty";
         this.boardLoaf = [];
         this.boardWarmth = this.handWarmth;                    // ổ mang theo cả bộ thông số của nó
@@ -1302,10 +1331,11 @@ export class StallScene extends Phaser.Scene {
 
   /** So ngay với đơn của người đứng trước mặt: sai thì phát `ORDER_DEFECT` tại slot BOARD — khách ĐANG NHÌN thì sẽ thấy. */
   /** Mở bảng với đúng phần nhân đang nằm trên ổ gác ở thớt. */
-  private openBoard() {
+  private openBoard(slice = true) {
     // Nhát dao rạch dọc ổ — "âm chữ ký của game" (P5-03 §4.2 A). Nó nổ ở ĐÂY vì đây
     // là lúc ổ bánh thật sự được mở ra, dù trên màn hình chỉ là một cái bảng hiện lên.
-    this.audio.knife();
+    // Ổ ĐÃ GÓI mở lại thì không có nhát dao nào nữa: nó đã bị rạch ở cú mở đầu tiên.
+    if (slice) this.audio.knife();
     this.assembly.setPresets(this.world.stall.presets);
     this.assembly.placeBelow(this.hud.statsBottom);
     this.assembly.show(this.boardLoaf ?? []);
