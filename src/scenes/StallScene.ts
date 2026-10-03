@@ -92,8 +92,16 @@ const WIPED_CLEAN = 0.7;
 
 const HEAD_PX = 52;
 
-/** ⚠️ `PLAYER_SAY_TAIL` đo từ mốc này — nới chỗ này là nới cả quãng bong bóng của cô Ba nán lại. */
-const REPLY_DELAY_SEC = 1.2;
+/**
+ * Quãng ba chấm "đang nghĩ" trước câu đáp.
+ *
+ * 1,2 s lúc đầu là canh theo nhịp ĐỌC; chơi thật thì nó thành nhịp CHỜ, và chủ dự án nói
+ * thẳng là chậm. 0,3 s vẫn đủ tách hai bong bóng (câu mình → câu họ) mà không bắt người
+ * chơi ngồi đợi — một cuộc bốn nhịp tiết kiệm được gần bốn giây đồng hồ bán hàng.
+ *
+ * ⚠️ `PLAYER_SAY_TAIL` đo từ mốc này — nới chỗ này là nới cả quãng bong bóng của cô Ba nán lại.
+ */
+const REPLY_DELAY_SEC = 0.3;
 /** Ngắn hơn hẳn bong bóng khách: câu của mình là câu mình vừa tự bấm ra. Đủ cho cú tắt dần 260 ms. */
 const PLAYER_SAY_TAIL = 0.35;
 const HUD_BAND_PX = 74;

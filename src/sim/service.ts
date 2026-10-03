@@ -11,7 +11,8 @@ import { newNpcState, type NpcState } from "../core/save";
 import { orderDefectKey } from "../core/stimid";
 import { Customer, DEFAULT_PATIENCE_SEC, LEAVE_AT, PATIENCE_BONUS_SEC, TEA, teaSuspectAtCup, type LeaveReason } from "./customer";
 import {
-  INGREDIENTS, diffDish, extraPortions, generosityOf, labelOf, makeUsual, mkDefect, portionsOf, sameOrder, sayOrder,
+  INGREDIENTS, diffDish, extraPortions, generosityOf, labelOf, levelsOf, makeUsual, mkDefect, portionsOf,
+  sameOrder, sayOrder,
   type Defect, type Ingredient, type OrderSpec,
 } from "./order";
 import {
@@ -53,6 +54,10 @@ import { CRUST, bandOfCrust } from "./oven";
 import { satisfaction, servedVector, tasteOf } from "./taste";
 import { arcToday, extraVisits, usualOf as authoredUsual, type ArcCtx, type Line } from "../content/arcs";
 import { arcCtx, moment, onPass, onServed, onTea, onUnserved, storyCrowdMul, timeline, walkinLine, type StoryState } from "./story";
+import TAM from "../content/lines/tam.json";
+
+/** Mấy cảnh hai người đi ngang đứng lại tám — xem `chatScene()`. */
+const TAM_CANH: readonly (readonly string[])[] = TAM.canh;
 import type { VisitPlan } from "./customer";
 
 /**
@@ -105,6 +110,15 @@ const RAO_SEC = 12;
  */
 const COATS_START = 2;
 
+/**
+ * CƠ HỘI NGƯỜI TA CHỊU ĐỔI ĐƠN, trước khi trừ đi phần vội.
+ *
+ * Không phải 1: chủ dự án hỏi đúng chỗ — *"bảo làm đầy đủ thì lâu lâu vẫn từ chối chứ
+ * nhỉ"*. Mời một người ăn sang hơn là một lời mời, không phải một cái nút; người đang trễ
+ * làm thì gần như chắc chắn lắc.
+ */
+const ORDER_CHANGE_BASE = 0.72;
+
 /** Bốn ngày: đủ xa để người chơi quên mình đã làm gì, đủ gần để còn nối được nhân với quả. */
 const CLIP_DUNG_SAU = 4;
 /** ⚠️ Phải dài hơn `StallScene.REPLY_DELAY_SEC` — xem `talkVoice`. */
@@ -118,6 +132,28 @@ const GREET_CHANCE = 0.25;
 const GREET_REACH = 1.0;
 const GREET_SLOW = 0.75;
 const GREET_SLOW_SEC = 1.6;
+/**
+ * CHÀO NHAU thì đi chậm lại; NÓI CHUYỆN thì phải ĐỨNG LẠI.
+ *
+ * Chủ dự án: *"2 npc nói chuyện với nhau ít nhất cũng phải đứng lại nói. đi ngang qua nói
+ * thì sao đúng logic. thà chào nhau còn được."* Đúng — một câu chào ném qua vai thì được,
+ * còn đứng kể một chuyện mà cả hai vẫn bước đều là hai cái đầu nói vào không khí.
+ *
+ * Nên tách hai việc: `GREET_SLOW` giữ nguyên cho câu chào, còn cảnh có TIN ĐỒN thì cả hai
+ * dừng hẳn ngần này giây.
+ */
+const CHAT_STOP_SEC = 4.5;
+
+/**
+ * Bao lâu một lần hai người đi ngang ĐỨNG LẠI TÁM một cảnh — `content/lines/tam.json`.
+ *
+ * Phải HIẾM hơn chào nhau nhiều: cái hẻm sống là vì thỉnh thoảng có người dừng kể chuyện,
+ * chứ không phải vì lúc nào cũng có hai người đứng giữa đường nói. 0,12 — chừng một cảnh
+ * mỗi năm lần hai người dừng chào nhau — đo được chừng một cảnh một buổi (`tools/probe-tam.ts`).
+ */
+const CHAT_SCENE_CHANCE = 0.18;
+/** Một cảnh bốn câu, mỗi câu cách nhau ngần này giây. */
+const CHAT_LINE_GAP = 1.9;
 const GREET_REPLY_SEC = 1.2;
 
 /** Người GẦN NHẤT thắng, kể cả người đi ngang; không ai trong tầm thì rơi về người đầu quầy. */
@@ -978,6 +1014,7 @@ export class Service {
     this.tickPassers(dt, ctx.dayOver);
     this.greetPassers();
     this.expireOffers();
+    this.walkedAwayMidTalk();
     this.tickWorldFacts();
     this.tickDeeds();
 
@@ -1036,7 +1073,11 @@ export class Service {
 
   /**
    * Đi ngược chiều trong vòng một ô, roll tất định theo CẶP và NGÀY, chậm lại 0,8 giây.
-   * ⚠️ KHÔNG mang thông tin gì — đó là ranh giới cứng với cảnh nghe lỏm ở góc hẻm.
+   *
+   * Ba mức, từ nhẹ tới nặng: chào một câu rồi đi tiếp → đứng lại ném một TIN ĐỒN →
+   * `chatScene()` đứng tám hẳn một cảnh. Cảnh chỉ nổ khi hẻm đang im (hàng đợi lời ≤ 1),
+   * vì một câu nền `pri 18` quá hạn `QUEUE_EXPIRE_SEC` là bị bỏ — nổ giữa lúc đông thì
+   * hai người đứng chôn chân mà không ai nói gì.
    */
   private greetPassers() {
     const amb = this.customers.filter((c) => c.ambient && c.pass && !c.speaking && !c.greeted);
@@ -1053,11 +1094,28 @@ export class Service {
           continue;
         }
         a.greeted = b.greeted = true;
-        a.greetUntil = a.now + GREET_SLOW_SEC;
-        b.greetUntil = b.now + GREET_SLOW_SEC;
+        /*
+         * CẢNH TÁM CHUYỆN — hai người dừng hẳn, nói qua lại mấy nhịp. Người chơi không
+         * cần xen vào; nó là cái nền làm hẻm có người sống. Roll RIÊNG, tất định theo cặp
+         * và ngày, không rút ké dòng `greet:`.
+         */
+        if (this.queue.length <= 1 && this.deps.hub.derive(`tam:${this.deps.day}:${key}`).next() < CHAT_SCENE_CHANCE) {
+          this.chatScene(a, b, key);
+          return;
+        }
         const hi = this.barks.take("chaoNhau", a.memKey);
         /** Câu ĐÁP có xác suất là một tin đồn đang sống. Người đi ngang không giữ niềm tin nào và không dẫn nguồn. */
         const tin = this.streetRumour();
+        /*
+         * Chào một câu thì đi chậm lại; KỂ một chuyện thì đứng hẳn. Dừng bằng cách ghim
+         * `pass.spot` vào đúng chỗ đang đứng — cùng cơ chế `openTalk` dùng để ghim một
+         * người đang đi ngang, nên không đẻ thêm một đường dừng thứ hai.
+         */
+        const dung = !!tin;
+        for (const x of [a, b]) {
+          x.greetUntil = x.now + (dung ? CHAT_STOP_SEC : GREET_SLOW_SEC);
+          if (dung && x.pass) { x.pass.spot = { x: x.x, y: x.y }; x.pass.until = x.now + CHAT_STOP_SEC; }
+        }
         const re = tin ?? this.barks.take("chaoDap", b.memKey);
         if (hi) this.say(a, hi, 3, false, 20);
         if (re) this.say(b, re, 3, false, 20, undefined, GREET_REPLY_SEC);
@@ -1070,6 +1128,35 @@ export class Service {
         return;
       }
     }
+  }
+
+  /**
+   * Hai người đi ngang đứng lại tám một cảnh — luân phiên A → B → A → B.
+   *
+   * Dừng bằng chính cơ chế `openTalk` ghim người đi ngang (`pass.spot` = chỗ đang đứng),
+   * nên không đẻ thêm một đường dừng thứ hai. Cảnh rút tất định theo cặp + ngày: cùng một
+   * ván thì cùng một cảnh, golden không lệch.
+   */
+  private chatScene(a: Customer, b: Customer, key: string) {
+    /*
+     * ⚠️ Phải đứng GẦN nhau mới tám được. `greetPassers()` đã lọc `GREET_REACH`, nhưng cái
+     * gác nằm ở ĐÂY mới đủ: chơi thử trên trình duyệt (ngày 8) thấy hai bong bóng nổ ở hai
+     * đầu hẻm cách nhau mười bốn ô — nhìn như hai người hét qua đường. Một hàm công khai
+     * dựng cảnh thì tự nó phải từ chối cái cặp vô lý, không trông vào chỗ gọi.
+     */
+    if (Math.hypot(a.x - b.x, a.y - b.y) > GREET_REACH + 0.5) return;
+    const canh = TAM_CANH[Math.floor(this.deps.hub.derive(`tamidx:${this.deps.day}:${key}`).next() * TAM_CANH.length)];
+    if (!canh?.length) return;
+    const giu = canh.length * CHAT_LINE_GAP + 1.2;
+    for (const x of [a, b]) {
+      x.greetUntil = x.now + giu;
+      if (x.pass) { x.pass.spot = { x: x.x, y: x.y }; x.pass.until = x.now + giu; }
+    }
+    canh.forEach((text, i) => {
+      const who = i % 2 === 0 ? a : b;
+      this.say(who, text, 3, false, 18, undefined, i * CHAT_LINE_GAP);
+    });
+    this.out.push({ kind: "log", text: `${this.label(a)} với ${this.label(b)} đứng tám chuyện.` });
   }
 
   private lastRumourId = "";
@@ -1158,7 +1245,21 @@ export class Service {
       /** Gia hạn mỗi frame: `openTalk` chỉ hẹn 4 giây mà đọc hết một cuộc mất 20–30 giây. */
       // `owesLine`: phiên đã đóng nhưng câu đáp còn chưa ra khỏi miệng người ta.
       if (this.talkWith === c || this.owesLine(c)) { p.until = c.now + PASSER_TALK_TAIL; return; }
-      if (c.now < p.until) return;
+      /*
+       * ĐƯỢC MỜI TỚI MỘT CHỖ KHÁC THÌ PHẢI ĐI TỚI ĐÓ.
+       *
+       * Lỗi chủ dự án bắt: *"kêu người ta đứng đây cho mát… họ cũng chả thèm chạy lại chỗ
+       * cái ô để đứng."* `standInShade` đổi `spot` sang ô hóng mát VÀ đặt `until`, mà nhánh
+       * đi bộ phía trên chỉ chạy khi `until < 0` — nên họ đứng nguyên chỗ cũ đếm ngược rồi
+       * đi tiếp. Lời mời có hiệu lực trên giấy, không có hiệu lực trên màn hình.
+       *
+       * `theySit` cũng y vậy với cái ghế.
+       */
+      if (c.now < p.until) {
+        // Chưa tới chỗ được mời thì ĐI TỚI; tới rồi thì đứng cho hết quãng.
+        if (!near(c, spot, 0.3)) walk(c, spot, dt, p.speed);
+        return;
+      }
       walk(c, exit, dt, (p.speed ?? 1) * (c.now < c.greetUntil ? GREET_SLOW : 1));
       return;
     }
@@ -2452,6 +2553,7 @@ export class Service {
     const w = c ? this.snapshot(c) : null;
     return {
       flags: this.talkFlags(),
+      day: this.deps.day,
       holds: w ? (key: string) => holds(key, w) : undefined,
       cash: this.deps.till?.floatLeft,
       noInvite: !!c?.inviteRefused,
@@ -2658,6 +2760,9 @@ export class Service {
         break;
       case "CLEAR_DEBT":
         this.clearDebt(c);
+        break;
+      case "ORDER_CHANGE":
+        this.orderChange(c, act);
         break;
       default:
         /**
@@ -2933,6 +3038,43 @@ export class Service {
     });
   }
 
+  /**
+   * ĐỔI CÁI ĐƠN — và KHÔNG phải lúc nào họ cũng chịu.
+   *
+   * Lỗi chủ dự án bắt: *"Vậy em làm đầy đủ cho anh nghen."* mang `PROMISE { item }`, nên
+   * người ta gật mà cái đơn vẫn y như cũ, và tiền vẫn tính theo đơn cũ. Giờ nó đổi
+   * `c.order.intent` thật; `loafPriceVnd(tierOf(intent))` tự ăn theo, nên không có đường
+   * nào làm ổ đầy đủ mà thu tiền ổ thường.
+   *
+   * CƠ HỘI GẬT: người đang vội thì gần như không — mời họ ăn sang hơn giữa lúc trễ làm là
+   * mời sai lúc. Dòng số riêng `doidon:` theo lượt ghé, rút MỘT lần, không rút ké.
+   */
+  private orderChange(c: Customer, act: Extract<TalkAct, { kind: "ORDER_CHANGE" }>) {
+    if (!c.order || c.phase === "leaving") return;
+    const hurry = c.purpose?.hurry ?? 0.3;
+    const p = Math.max(0.1, ORDER_CHANGE_BASE - hurry * 0.55 + 0.2 * c.personality.thanThien);
+    /** Họ tự xin thì không roll — không ai xin đổi món rồi tự từ chối mình. */
+    const yes = act.aiXin === "HO" || this.deps.hub.derive(`doidon:${c.id}`).next() < p;
+    const mood: TalkMood = yes ? "CUOI" : "THUONG";
+    this.actReply = { text: yes ? act.ok : act.no, mood };
+    this.scheduleReact(c, MOOD_FACE[mood], MOOD_POSE[mood]);
+    if (!yes) { this.out.push({ kind: "log", text: `${this.label(c)} giữ đơn cũ.` }); return; }
+
+    const it = c.order.intent;
+    for (const toi of Array.isArray(act.toi) ? act.toi : [act.toi]) {
+      if (toi === "dayDu") it.dayDu = true;
+      else if (toi === "itRau") it.rau = "it";
+      else if (toi === "themNhan" && !it.nhieu) it.nhieu = it.nhan[0] ?? "pate";
+      else if (toi === "khongOt") { it.ot = 0; it.tuong = 0; }
+    }
+    c.order.levels = levelsOf(it);
+    c.order.phrase = undefined;                        // câu gọi cũ không còn tả đúng ổ nữa
+    this.out.push({
+      kind: "log",
+      text: `${this.label(c)} đổi đơn — giờ tính ${dongVi(loafPriceVnd(tierOf(it)))}.`,
+    });
+  }
+
   private standUp(c: Customer) {
     if (!c.sitting) return;
     c.sitting = false;
@@ -3153,6 +3295,26 @@ export class Service {
   }
 
   /** Người chơi hai tay đang bận thì họ KHÔNG NGHE THẤY, không phải "làm thinh". */
+  /**
+   * ĐANG NÓI DỞ MÀ MÌNH BỎ ĐI THÌ CUỘC TẮT.
+   *
+   * Chủ dự án: *"bắt chuyện với người ta mà trong lúc đó user đi chỗ khác rồi người ta vẫn
+   * phản hồi, trong khi 2 người đứng cực kì xa."* Đúng — `openTalk()` kiểm khoảng cách một
+   * lần lúc MỞ, rồi không ai kiểm lại nữa; người chơi đi hết cái hẻm mà cuộc vẫn chạy.
+   *
+   * Nới hơn `TALK_REACH` một thân người: đứng nói chuyện thì người ta xê dịch vài bước là
+   * thường, cắt đúng ngưỡng mở sẽ làm cuộc rụng oan giữa chừng.
+   */
+  private walkedAwayMidTalk() {
+    const c = this.talkWith, p = this.playerAt;
+    if (!c || !p) return;
+    if (Math.hypot(c.x - p.x, c.y - p.y) <= TALK_REACH + 1.5) return;
+    this.out.push({ kind: "log", text: `mình bỏ đi giữa chừng — ${this.label(c)} thôi nói.` });
+    /** Người đi ngang thì đi tiếp luôn: họ không đứng đó chờ mình quay lại. */
+    if (c.pass) { c.pass.spot = c.pass.exit; c.pass.until = c.now; }
+    this.endTalk();
+  }
+
   private expireOffers() {
     for (let i = this.offers.length - 1; i >= 0; i--) {
       const o = this.offers[i];

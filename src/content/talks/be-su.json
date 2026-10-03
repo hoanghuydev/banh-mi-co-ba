@@ -632,7 +632,8 @@
           "rel": 4,
           "need": "tuMoLong",
           "reply": "Thiệt hả cô?! …Dạ. Vậy mai con đem máy, con quay con chim.",
-          "mood": "CUOI"
+          "mood": "CUOI",
+          "flag": "suHuaQuayChim"
         },
         {
           "say": "Vậy thôi con về đi, cô đông khách.",
@@ -1648,6 +1649,105 @@
           "tone": "LANH",
           "reply": "…Dạ. Dạ thôi con đi chỗ khác.",
           "mood": "LANH"
+        }
+      ]
+    },
+    {
+      "id": "su.chim",
+      "npc": "BE_SU",
+      "topic": "chim",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
+      "weight": 24,
+      "when": {
+        "needFlag": "~suHuaQuayChim"
+      },
+      "initiates": 0.3,
+      "ignore": {
+        "rel": -2
+      },
+      "opener": "Cô ơi! Con quay con chim rồi nè cô. Cô coi đi cô.",
+      "openMood": "CUOI_TUOI",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG"
+      ],
+      "tree": [
+        {
+          "say": "Ủa con quay thiệt hả con. Cô tưởng con nói cho vui.",
+          "tone": "NGAC_NHIEN",
+          "rel": 3,
+          "reply": "Con nói là con làm chớ cô! Con đợi nó đậu ở dây điện con quay nguyên hai phút lận.",
+          "mood": "CUOI_TUOI",
+          "then": [
+            {
+              "say": "Con quay đẹp ghê. Cái chỗ nó bay lên đó.",
+              "tone": "AM",
+              "rel": 4,
+              "mem": {
+                "kind": "CARED_FOR_THEM",
+                "intensity": 50
+              },
+              "reply": "Dạ! Chỗ đó con quay bốn lần mới được. Cô là người đầu tiên coi đó cô.",
+              "mood": "RUNG_RUNG"
+            },
+            {
+              "say": "Bữa trước con nói con hổng có hứng mà.",
+              "tone": "THUONG",
+              "rel": 2,
+              "reply": "…Dạ. Mà cô kêu con quay con chim. Con nghĩ hoài rồi con đi quay.",
+              "mood": "NGUONG"
+            },
+            {
+              "say": "Con đăng chưa con? Được nhiêu lượt rồi?",
+              "tone": "DUA",
+              "rel": 1,
+              "reply": "Dạ chưa. Cái này con hổng đăng. Con để coi một mình à.",
+              "mood": "THUONG"
+            }
+          ]
+        },
+        {
+          "say": "Cô coi nè. Cô bỏ bánh xuống cô coi cho kỹ.",
+          "tone": "AM",
+          "rel": 4,
+          "mem": {
+            "kind": "CARED_FOR_THEM",
+            "intensity": 55
+          },
+          "reply": "Dạ…! Cô bỏ bánh xuống coi của con thiệt hả cô.",
+          "mood": "RUNG_RUNG",
+          "then": [
+            {
+              "say": "Chớ sao. Con làm cả buổi mà.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "Dạ… con quay thêm nữa nghen cô. Con quay cái hẻm mình.",
+              "mood": "CUOI_TUOI"
+            },
+            {
+              "say": "Con chịu khó ghê. Đợi hai phút lận.",
+              "tone": "THUONG",
+              "rel": 3,
+              "reply": "Dạ. Má con nói con làm gì cũng nửa chừng. Cái này con làm hết á cô.",
+              "mood": "THUONG"
+            },
+            {
+              "say": "Rồi rồi. Cô coi rồi. Con đi học đi.",
+              "tone": "LANH",
+              "rel": -1,
+              "reply": "…Dạ. Dạ con đi.",
+              "mood": "BUON"
+            }
+          ]
+        },
+        {
+          "say": "Cô đang làm bánh con ơi. Lát nữa nghen.",
+          "tone": "LANH",
+          "rel": -1,
+          "reply": "…Dạ. Dạ con đứng đây con đợi.",
+          "mood": "BUON"
         }
       ]
     }

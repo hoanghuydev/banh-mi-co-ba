@@ -587,7 +587,7 @@
           }
         },
         {
-          "say": "Bữa nay hết sớm rồi {call}. Mai {call} ghé sớm nghen.",
+          "say": "Hết bánh rồi {call} ơi.",
           "tone": "AM",
           "rel": 2,
           "need": [
@@ -597,7 +597,7 @@
           "act": {
             "kind": "WALK_ON"
           },
-          "reply": "Ủa, hết rồi hả. Thôi mai tui ghé lúc bảy giờ.",
+          "reply": "Ủa, hết rồi hả. Thôi {self} đi tiếp.",
           "mood": "NGAC_NHIEN"
         },
         {
@@ -616,7 +616,7 @@
         {
           "say": "Dạ hết rồi {call} ơi.",
           "tone": "THANG",
-          "reply": "Tiếc dữ. Thôi mai tui ghé sớm.",
+          "reply": "Tiếc dữ. Thôi, bữa nào đi ngang tui ngó.",
           "need": [
             "c.openedBy(NPC)",
             "p.soldOut"
@@ -1089,11 +1089,17 @@
           "mood": "MET",
           "then": [
             {
-              "say": "{call} đọc {me} ghi giùm cho.",
+              "say": "Ghé {me} làm luôn một lượt cho {call} đỡ phải đi xa.",
               "tone": "AM",
               "rel": 3,
-              "reply": "Ờ hay! Một ổ không ớt, một ổ nhiều pate, một ổ chay, một ổ đầy đủ.",
-              "mood": "CUOI_TUOI"
+              "act": {
+                "kind": "INVITE",
+                "yes": "Ờ hay! Vậy làm giùm {self} bốn ổ. Một ổ không ớt, một ổ nhiều pate.",
+                "no": "Thôi con ơi. Tụi nó dặn mua chỗ quen rồi."
+              },
+              "need": [
+                "!p.soldOut"
+              ]
             },
             {
               "say": "Nhà {call} khó chiều ha.",
@@ -1128,14 +1134,17 @@
               "mood": "NGHIEM"
             },
             {
-              "say": "{call} cầm ổ ăn dọc đường cho kịp.",
+              "say": "{call} cầm một ổ ăn dọc đường cho kịp.",
               "tone": "AM",
               "rel": 1,
-              "reply": "Ờ, gói lẹ giùm. {self} vừa chạy vừa ăn quen rồi.",
-              "mood": "MET",
               "need": [
                 "!p.soldOut"
-              ]
+              ],
+              "act": {
+                "kind": "INVITE",
+                "yes": "Ờ. Gói lẹ giùm {self}, {self} vừa chạy vừa ăn quen rồi.",
+                "no": "Thôi con. Giao trễ một đơn là {self} bị trừ tiền."
+              }
             },
             {
               "say": "Dạ {call} chạy cẩn thận nghen.",
@@ -1195,14 +1204,17 @@
               "mood": "RUNG_RUNG"
             },
             {
-              "say": "{call} mua ổ để sẵn cho nó ăn đi.",
+              "say": "{call} mua ổ để sẵn cho nó ăn nghen.",
               "tone": "AM",
               "rel": 2,
-              "reply": "Ờ! Nó mê bánh mì. Cho {self} hai ổ, đầy đủ nghen.",
-              "mood": "CUOI_TUOI",
               "need": [
                 "!p.soldOut"
-              ]
+              ],
+              "act": {
+                "kind": "INVITE",
+                "yes": "Ờ! Nó mê bánh mì. Cho {self} hai ổ.",
+                "no": "Thôi, để nó về rồi tính. Nó kén lắm."
+              }
             },
             {
               "say": "Dạ {call} đi nghen.",

@@ -48,6 +48,8 @@ export type Deed = {
   onBroken?: [TalkEffect, TalkEffect, TalkEffect];
 };
 
+export type DoiDon = "dayDu" | "themNhan" | "itRau" | "khongOt";
+
 export type TalkAct =
   | { kind: "PAY"; vnd: number; note: string }
   | { kind: "DISCOUNT"; vnd: number }
@@ -97,6 +99,30 @@ export type TalkAct =
   | { kind: "LEND_ITEM"; item: string }
   /** Họ mang trả món đã mượn. */
   | { kind: "CLEAR_DEBT" }
+  /**
+   * ĐỔI CÁI ĐƠN — *"Vậy em làm đầy đủ cho anh nghen."*
+   *
+   * Lỗi chủ dự án bắt được: câu đó mang `PROMISE { item: "pate" }`, nên NGƯỜI TA GẬT
+   * (*"Ừ. Đầy đủ. Khỏi hỏi."*) mà **cái đơn vẫn y như cũ** — và tiền vẫn tính theo đơn cũ.
+   * Một câu đổi đơn thì phải đổi ĐƠN, không phải hứa thêm một món.
+   *
+   * `ok`/`no` là hai câu đáp do CHÍNH HỌ quyết: không phải ai cũng chịu đổi, và người
+   * đang vội thì càng không. Giá đi theo `tierOf(order.intent)` nên đổi đơn là đổi tiền —
+   * không có đường nào làm ổ đầy đủ mà thu tiền ổ thường.
+   */
+  | {
+      kind: "ORDER_CHANGE";
+      /** Một đổi, hoặc mấy đổi cùng lúc — *"cho em ổ đầy đủ, khỏi ớt"* là hai thứ một câu. */
+      toi: DoiDon | DoiDon[];
+      ok: string;
+      no: string;
+      /**
+       * AI MỞ MIỆNG XIN. `"MINH"` (mặc định) là mình đề nghị — họ có cửa từ chối, và câu
+       * `no` dùng tới. `"HO"` là CHÍNH HỌ xin đổi (anh Bảo nói lắp cuối cùng cũng gọi
+       * được món): roll từ chối ở đây là vô lý, không ai xin rồi tự từ chối mình.
+       */
+      aiXin?: "MINH" | "HO";
+    }
   | { kind: "LEAVE_SHADE" }
   | { kind: "LOOK_INSIDE"; forSec: ForSec }
   | { kind: "PROMISE_DEED"; deed: Deed }
@@ -355,9 +381,9 @@ export function okWhen(w: TalkWhen | undefined, c: TalkCtx): boolean {
   if (w.slot && !w.slot.includes(c.slot)) return false;
   if (w.rain !== undefined && w.rain !== c.rain) return false;
   if (w.minVisits !== undefined && c.visits < w.minVisits) return false;
-  if (w.needFlag && !c.flags[w.needFlag]) return false;
+  if (w.needFlag && !flagHeld(c.flags, w.needFlag, c.day)) return false;
   if (w.needEquip && !(c.hasEquip?.(w.needEquip) ?? true)) return false;
-  if (w.notFlag && c.flags[w.notFlag]) return false;
+  if (w.notFlag && flagHeld(c.flags, w.notFlag, c.day)) return false;
   // Vắng `holds` (test, công cụ) = coi như THOẢ: một bộ ctx trần không được phép làm cả
   // kho biến mất — cùng lý do với `TalkGate.holds`.
   if (w.world?.length && c.holds && !w.world.every((k) => c.holds!(k))) return false;
@@ -439,6 +465,11 @@ export function pickTalk(all: readonly Talk[], c: TalkCtx, rng: Rng, by: TalkOpe
 
 export type TalkGate = {
   flags: TalkCtx["flags"];
+  /**
+   * Ngày hôm nay — chỉ để chấm `~cờ` ("đặt từ một ngày TRƯỚC"). Vắng = `~cờ` rơi về
+   * "có cờ là được", y như cũ.
+   */
+  day?: number;
   /**
    * Một khoá bảng đen có đúng không — `Service` đưa vào (`worldfacts.holds` đã gắn sẵn
    * ảnh chụp thế giới). Vắng = coi như đúng hết (test, headless).
@@ -548,14 +579,35 @@ export function beatWidth(nodes: readonly TalkNode[]): { min: number; max: numbe
 }
 
 /**
+ * Một cờ chuyện có đang giữ không, với tiền tố `~` = ĐẶT TỪ MỘT NGÀY TRƯỚC.
+ *
+ * Mọi lời hứa "mai con đem ra cho cô coi" đều cần `~`: cờ trơn thì câu trả bài nổ NGAY
+ * trong cùng buổi, người ta vừa hứa xong đã làm xong — đúng cái vô lý chủ dự án bắt được
+ * ở người đi ngang. Cờ lưu NGÀY đặt (`story.flags[f] = day`), nên so ngày là đủ; cờ kiểu
+ * boolean cũ rơi về "có là được".
+ */
+/** Bỏ tiền tố `~` để lấy TÊN cờ — lưới F-1/F-2/M-5 phải so bằng tên, không bằng cách hỏi. */
+export const bareFlag = (key: string): string => (key.startsWith("~") ? key.slice(1) : key);
+
+export function flagHeld(flags: TalkCtx["flags"], key: string, day?: number): boolean {
+  if (!key.startsWith("~")) return !!flags[key];
+  const at = flags[key.slice(1)];
+  return typeof at === "number" ? day === undefined || at < day : !!at;
+}
+
+/**
  * Một khoá `need` có thoả không. Không có dấu chấm = cờ chuyện; có dấu chấm = khoá bảng
  * đen, hỏi qua `gate.holds`. ⚠️ Thiếu `gate.holds` thì coi như ĐÚNG, không coi như sai.
+ *
+ * Tiền tố `~` = CỜ ĐẶT TỪ MỘT NGÀY TRƯỚC. Mọi lời hứa "mai con đem ra cho cô coi" đều
+ * cần nó: `need: "cờ"` trơn thì câu trả bài nổ NGAY trong cùng buổi, người ta vừa hứa
+ * xong đã làm xong — đúng cái vô lý chủ dự án bắt được ở người đi ngang.
  */
 function gateOk(key: string, gate: TalkGate): boolean {
   const neg = key.startsWith("!");
   const body = neg ? key.slice(1) : key;
   if (body.includes(".")) return gate.holds ? gate.holds(key) : true;
-  return neg !== !!gate.flags[body];
+  return neg !== flagHeld(gate.flags, body, gate.day);
 }
 
 const EXIT_TONES: ReadonlySet<TalkTone> = new Set<TalkTone>(["LANH", "IM", "GAT"]);

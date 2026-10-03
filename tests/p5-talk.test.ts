@@ -12,7 +12,7 @@ import assert from "node:assert/strict";
 import { NPCS } from "../src/content/npcs";
 import { Rng } from "../src/core/rng";
 import { DECAY, REDEEM, newRelState } from "../src/sim/memory";
-import {
+import { bareFlag,
   ADDRESS, ANON_TALK_POOLS, DEFAULT_IGNORE_REL, EXTRA_TALK_POOLS, FORBIDDEN_SELF, MAX_DEPTH,
   MOOD_FACE, MOOD_LABEL, MOOD_NEGATIVE,
   MOOD_POSE, TalkSession, angerToWaitSec, applyTalk,
@@ -280,7 +280,12 @@ test("L-4 câu GẮT luôn có giá, câu ẤM không bị phạt, câu CHỬI �
 test("L-5 không có `reply` thì phải khai `silent` — phân biệt im CÓ Ý với quên viết", () => {
   for (const t of TALKS) {
     for (const { node } of walkNodes(t)) {
-      if (node.act?.kind === "INVITE") continue;
+      /*
+       * Hai act TỰ MANG CÂU ĐÁP, vì câu nào hiện ra là do CHÍNH HỌ quyết chứ không do
+       * người viết: `INVITE` (ghé hay đi tiếp) và `ORDER_CHANGE` (chịu đổi đơn hay giữ
+       * đơn cũ). Viết thêm `reply` vào mấy nút đó là viết một câu không bao giờ hiện.
+       */
+      if (node.act?.kind === "INVITE" || node.act?.kind === "ORDER_CHANGE") continue;
       assert.ok(node.reply || node.silent, `${t.id}: "${node.say}" không có câu đáp mà cũng không khai \`silent\``);
     }
   }
@@ -669,7 +674,7 @@ test("M-5 cờ chuyện bắc cầu GIỮA hai người — chuyện chú A ph�
   }
   const cross: string[] = [];
   for (const t of TALKS) {
-    const need = t.when?.needFlag;
+    const need = t.when?.needFlag && bareFlag(t.when.needFlag);
     if (!need) continue;
     const owners = setBy.get(need);
     assert.ok(owners?.size, `${t.id}: cần cờ "${need}" mà không cuộc nào đặt được nó`);

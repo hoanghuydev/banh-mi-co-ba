@@ -1028,12 +1028,16 @@
               "say": "Vậy {me} làm đầy đủ cho {call} nghen.",
               "tone": "AM",
               "rel": 2,
-              "reply": "Ừ. Đầy đủ.",
               "mood": "CUOI",
               "act": {
-                "kind": "PROMISE",
-                "item": "pate"
-              }
+                "kind": "ORDER_CHANGE",
+                "toi": "dayDu",
+                "ok": "Ừ, đầy đủ luôn. Tính thêm bao nhiêu {me} trả.",
+                "no": "Thôi, {self} lấy như cũ. Bữa nay {self} ăn ít."
+              },
+              "need": [
+                "t.hasOrder"
+              ]
             },
             {
               "say": "Dễ ăn vầy đi đâu cũng sướng {call} ha.",
@@ -2189,8 +2193,16 @@
         {
           "say": "{me} làm đầy đủ cho {call} nghen.",
           "tone": "LANH",
-          "reply": "Ừ. Đầy đủ. Khỏi hỏi.",
-          "mood": "LANH"
+          "mood": "LANH",
+          "act": {
+            "kind": "ORDER_CHANGE",
+            "toi": "dayDu",
+            "ok": "Ừ. Đầy đủ đi. {self} đói lắm rồi.",
+            "no": "Thôi khỏi. Như {self} kêu lúc nãy là được."
+          },
+          "need": [
+            "t.hasOrder"
+          ]
         }
       ]
     },

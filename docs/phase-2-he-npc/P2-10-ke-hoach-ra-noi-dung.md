@@ -812,6 +812,105 @@ Nhìn lên màn hình xong mới thấy hai chuyện mà đọc code không th�
 Bản vẽ hiện tại là **bản để đo**, không phải bản phát hành: hoạ sĩ thay texture sau, toạ
 độ và kích thước giữ nguyên.
 
+## 6quaterdecies. CHÍN LỖI CHỦ DỰ ÁN BẮT ĐƯỢC KHI CHƠI — VÀ CUỘC RÀ CẢ KHO SAU ĐÓ
+
+Đợt này không bắt đầu từ kế hoạch. Nó bắt đầu từ một danh sách chủ dự án gõ ra sau khi
+ngồi chơi, và câu cuối của danh sách đó là câu phải đọc trước khi đọc phần còn lại:
+
+> *"Nhưng bạn nói đã xong và tôi test thấy bị như vậy nên hơi thất vọng vì lỗi quá nhiều
+> và bạn làm khong kĩ."*
+
+Chín lỗi, tất cả đều ở **người đi ngang** — phần tôi đã khai là XONG.
+
+| # | Bắt được | Thật ra là gì | Sửa |
+|---|---|---|---|
+| 1 | *"bảo em là ổ đầy đủ, npc gật 'ừ đầy đủ khỏi hỏi' mà món vẫn là món cũ"* | câu đó mang `PROMISE { item }` — hứa THÊM MỘT MÓN, không đổi ĐƠN. Giá đi theo `tierOf(order.intent)` nên có đường làm ổ đầy đủ mà thu tiền ổ thường | act `ORDER_CHANGE` đổi `c.order.intent` thật, giá chạy theo. Có roll từ chối (`0,72 − vội×0,55 + 0,2×thân thiện`) đúng ý *"làm đầy đủ thì lâu lâu vẫn từ chối chứ nhỉ"* |
+| 2 | *"hỏi người ta chị mua đồ ăn sáng cho nhà hả, rồi order 4 người, đọc món các kiểu, xong ngta đi mất tiêu"* | ba dòng trong `duong.nhinra` cho người đi ngang "nhận lời mua" bằng một `reply` trơn — không `act`, nên không có đơn nào sinh ra | đổi thành `INVITE` thật, có `yes`/`no`, kết cục do `inviteChance` quyết |
+| 3 | *"bắt chuyện với npc qua đường mà bảo bữa nay hết sớm rồi anh, xong ngta trả lời ừ mai tui qua. Vô lý quá. Họ là người qua đường mà"* | `duong.cuoibuoi` hứa chuyện ngày mai thay một người KHÔNG CÓ trí nhớ mùa | viết lại hai nút; thêm lưới `tools/audit-loi.ts` lớp M3 quét cả kho |
+| 4 | *"kêu người ta đứng đây cho mát mà họ chả thèm chạy lại chỗ cái ô"* | bước đi của người đi ngang bỏ qua `pass.spot` mới | sửa bước đi: `c.now < p.until` thì đi TỚI chỗ mới rồi mới đứng |
+| 5 | *"bỏ thời gian chờ phản hồi đổi thành 300ms đi"* | `REPLY_DELAY_SEC` 1,2 s | → 0,3 s |
+| 6 | *"bắt chuyện với ngta mà user đi chỗ khác rồi ngta vẫn phản hồi, trong khi 2 người đứng cực kì xa"* | phiên thoại không có đường tự cắt theo khoảng cách | `walkedAwayMidTalk()` — xa quá `TALK_REACH + 1,5` ô là phiên đứt |
+| 7 | *"2 npc nói chuyện với nhau ít nhất cũng phải đứng lại nói. đi ngang qua nói thì sao đúng logic"* | chào thì đi chậm lại, mà KỂ CHUYỆN cũng đi chậm lại | `CHAT_STOP_SEC` — ném tin đồn thì ghim `pass.spot` đứng hẳn; chào suông giữ nguyên |
+| 8 | *"thà chào nhau còn được"* | — | giữ nguyên mức chào một câu |
+| 9 | *"bổ sung thêm npc lâu lâu đứng tám chuyện drama với nhau. NPC này user không cần tương tác"* | chưa có | `content/lines/tam.json` — 8 cảnh, 32 câu, luân phiên A→B→A→B; `chatScene()` ghim cả hai đứng im |
+
+### Cảnh tám chuyện — ba chỗ phải canh
+
+Cái hẻm trước đợt này chỉ có hai mức: ném nhau một câu chào rồi đi, hoặc đứng lại đúng
+một câu tin đồn. Mức thứ ba là **đứng tám**, và nó phải chịu ba cái gác:
+
+* **Phải HIẾM.** `CHAT_SCENE_CHANCE = 0,18` trên số lần hai người DỪNG chào nhau — đo
+  được **một cảnh một buổi** (`tools/probe-tam.ts`: 101 lần gặp mặt → 22 lần chào → 6
+  cảnh trên sáu buổi). Dày hơn thì hẻm thành cái chợ đứng tám.
+* **Chỉ nổ lúc hẻm đang im** (`queue.length ≤ 1`). Câu nền mang `pri 18`, quá
+  `QUEUE_EXPIRE_SEC` là BỊ BỎ — nổ giữa lúc đông thì hai người đứng chôn chân mà không
+  ai nói gì, tệ hơn là không có cảnh.
+* **Phải đứng GẦN nhau.** Cái gác này nằm trong chính `chatScene()`, không trông vào chỗ
+  gọi — chơi thử trên trình duyệt ngày 8 thấy hai bong bóng nổ ở hai đầu hẻm cách nhau
+  **mười bốn ô**, nhìn như hai người hét qua đường. Lưới `TAM-4b`.
+
+Không cảnh nào nói về cái xe bánh mì (lưới `TAM-2`): người ta không đứng giữa đường nói
+chuyện của mình, và người chơi KHÔNG cần xen vào.
+
+### Rà cả kho — vì chủ dự án nói đúng chỗ đau
+
+> *"rà soát lại. cái lỗi này tôi chỉ mới test của người qua đường thôi. không biết người
+> mua có bị thế không."*
+
+Đó là câu phải trả lời bằng máy. `tools/audit-loi.ts` quét **2.015 nút / 15 kho**, bốn
+lớp, mỗi lớp dựng từ một lỗi CÓ THẬT ở trên:
+
+| Lớp | Nghi | Thật | Còn lại |
+|---|---|---|---|
+| M1 hứa suông — nhận lời mà không act | 81 → 12 sau khi siết regex | **2** | 10 là kể chuyện, không phải giao dịch |
+| M2 mời suông — mời dời chỗ mà không ai dời | 19 → 4 | **0** | 4 là câu nói đá, không phải lời mời |
+| M3 sai thân phận — người đi ngang nói chuyện mùa vụ | 1 | **1** | 0 |
+| M4 hẹn mai mà không ghi gì | 18 → 17 | **5** | 4 là người ngày nào cũng tới |
+
+Hai lỗi M1 thật, và cả hai đều đúng loại chủ dự án đã bắt:
+
+* `bao.moiloi · 1.2` — anh Bảo nói lắp, cuối cùng cũng gọi được món: *"Dạ… cho em ổ đầy
+  đủ. Dạ, khỏi ớt cô."* Đơn KHÔNG đổi. Giờ là `ORDER_CHANGE` hai thứ một câu
+  (`["dayDu","khongOt"]`) với `aiXin: "HO"` — **họ tự xin thì không roll từ chối**, không
+  ai xin đổi món rồi tự từ chối mình.
+* `lan.mua · 0.0.0` — *"Chị cứ lấy đi chị. Mai chị trả em cũng được."* Câu y hệt ở
+  `lan.dungnho` có `CREDIT_LOAF`; câu này KHÔNG. Tức là cho chịu mà sổ không ghi.
+
+### `~cờ` — lời hứa phải qua đêm thật
+
+Năm chỗ hẹn hôm sau mà không ghi lại gì. Ghi bằng cờ chuyện thì chưa đủ: `need: "cờ"`
+đúng NGAY trong buổi, nên người ta vừa hứa xong là cuộc trả bài mở ra liền — đúng cái vô
+lý số 3 ở trên, chỉ đổi chỗ.
+
+Nên thêm tiền tố `~`: `~cờ` chỉ đúng khi cờ được đặt từ một NGÀY TRƯỚC. Cờ vốn đã lưu
+ngày (`story.flags[cờ] = day`) nên không cần thêm gì vào save. Ba cuộc trả bài mới, mỗi
+cuộc là một lời hứa được giữ:
+
+| Hứa | Trả bài |
+|---|---|
+| `dung.ca · 0.0.2` *"Mai anh chụp hình anh đưa em coi"* | `dung.anhca` — *"Hình con cá nè. Anh hứa anh chụp mà."* |
+| `sau.xetai · 0.2` *"Mai tui đem cái bằng ra tui cho con coi"* | `sau.bang` — *"Cái bằng nè. Tui nói tui có mà con hổng tin."* |
+| `su.buon · 2` *"Vậy mai con đem máy, con quay con chim"* | `su.chim` — *"Con quay con chim rồi nè cô."* |
+
+Lưới `HM-1`…`HM-4`: có cuộc trả bài · hứa hôm nay thì hôm nay CHƯA mở · qua đêm thì MỞ ·
+cờ trơn vẫn ăn ngay (không đổi luật cũ sau lưng) · và một lượt chạy THẬT kiểm rằng
+`applyTalkOption` ghi SỐ NGÀY chứ không ghi `true`.
+
+### Số đo đợt này
+
+| | |
+|---|---|
+| Lưới | 541 → **543**, xanh hết |
+| `validate:talks` · `lint:lines` | sạch · 0 ERROR |
+| Cảnh tám chuyện | ~1 buổi/cảnh (6 cảnh / 6 buổi) |
+| Rà kho | 2.015 nút · 8 lỗi thật · 8 đã sửa |
+| Chơi thử trình duyệt | ngày 6 đủ buổi: 18 lượt chào, 1 cảnh tám, **0 lỗi console** |
+
+Một chỗ phải nói thẳng: lỗi số 3 tôi đã sửa MỘT nút rồi khai xong, trong khi
+`duong.cuoibuoi` có HAI nút cùng hứa chuyện ngày mai. Nút thứ hai nằm đó tới khi
+`audit-loi.ts` quét mới lòi ra. Sửa bằng tay rồi khai xong là cách làm đã hỏng ba lần
+trong tài liệu này; cái máy dò phải chạy TRƯỚC khi khai.
+
 ## 7. Truy vết
 
 | Khẳng định | Nguồn |

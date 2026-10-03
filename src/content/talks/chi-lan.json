@@ -809,7 +809,16 @@
                   "tone": "AM",
                   "rel": 3,
                   "reply": "…Vâng. Mai chị trả. Chị trả đúng ngày mai nhé, em nhớ nhắc chị.",
-                  "mood": "CUOI"
+                  "mood": "CUOI",
+                  "act": {
+                    "kind": "CREDIT_LOAF"
+                  },
+                  "onKept": {
+                    "rel": 3
+                  },
+                  "need": [
+                    "!p.soldOut"
+                  ]
                 },
                 {
                   "say": "Chị ướt rồi vô chỗ làm chị ngồi máy lạnh là bệnh đó chị.",

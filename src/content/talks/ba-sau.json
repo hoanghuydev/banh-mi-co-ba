@@ -246,7 +246,8 @@
               "say": "Bà nói dóc hoài bà ơi.",
               "tone": "DUA",
               "rel": -2,
-              "reply": "Tui có cái bằng nè! Mai tui đem ra tui cho con coi."
+              "reply": "Tui có cái bằng nè! Mai tui đem ra tui cho con coi.",
+              "flag": "sauHuaDemBang"
             }
           ],
           "mood": "THUONG"
@@ -1258,8 +1259,16 @@
               "say": "Dạ ổ của bà đây. Con bỏ nhiều thịt nghen.",
               "tone": "THUONG",
               "rel": 2,
-              "reply": "Trời. Nhiều quá con. Thôi tui ăn, mai tui múc bù.",
-              "mood": "THUONG"
+              "mood": "THUONG",
+              "act": {
+                "kind": "ORDER_CHANGE",
+                "toi": "themNhan",
+                "ok": "Ờ! Nhiều thịt. Tui gánh cả buổi, đói muốn xỉu.",
+                "no": "Thôi con. Nhiều quá tui ăn hổng hết, phí."
+              },
+              "need": [
+                "t.hasOrder"
+              ]
             }
           ],
           "act": {
@@ -1421,6 +1430,104 @@
           "tone": "LANH",
           "reply": "…Ừ. Tui đi.",
           "mood": "LANH"
+        }
+      ]
+    },
+    {
+      "id": "sau.bang",
+      "npc": "BA_SAU",
+      "topic": "bang",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
+      "weight": 23,
+      "when": {
+        "needFlag": "~sauHuaDemBang"
+      },
+      "initiates": 0.3,
+      "ignore": {
+        "rel": -2
+      },
+      "opener": "Nè con. Cái bằng nè. Tui nói tui có mà con hổng tin.",
+      "openMood": "NGHIEM",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "DI_NGANG"
+      ],
+      "tree": [
+        {
+          "say": "Dạ con tin mà bà. Con giỡn thôi.",
+          "tone": "AM",
+          "rel": 3,
+          "reply": "Tui biết. Mà tui vẫn muốn con coi. Hạng C đó. Năm tám sáu.",
+          "mood": "THUONG",
+          "then": [
+            {
+              "say": "Hình bà hồi đó trẻ ghê bà.",
+              "tone": "DUA",
+              "rel": 3,
+              "reply": "Hai mươi bốn. Tóc dài tới lưng. Giờ thì… thôi khỏi nói.",
+              "mood": "CUOI"
+            },
+            {
+              "say": "Bà giữ kỹ dữ. Giấy còn nguyên nè.",
+              "tone": "THUONG",
+              "rel": 3,
+              "reply": "Bọc nhựa, để đáy tủ. Nhà cháy tui cũng ôm cái này chạy trước.",
+              "mood": "NGHIEM"
+            },
+            {
+              "say": "Sao bà hổng chạy nữa bà?",
+              "tone": "THANG",
+              "rel": 1,
+              "reply": "…Mắt tui. Năm hai ngàn lẻ ba tui nghỉ. Thôi, chuyện cũ.",
+              "mood": "BUON"
+            }
+          ]
+        },
+        {
+          "say": "Bà đem ra thiệt luôn hả bà.",
+          "tone": "DUA",
+          "rel": 2,
+          "reply": "Chớ sao. Tui nói là tui làm. Tui gánh tàu hũ chớ tui hổng nói dóc.",
+          "mood": "NGHIEM",
+          "then": [
+            {
+              "say": "Dạ. Bà cất đi bà, rớt uổng.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "Ờ. Tui cất. …Cảm ơn con chịu coi nghen.",
+              "mood": "RUNG_RUNG"
+            },
+            {
+              "say": "Vậy bà chở con một cuốc đi bà.",
+              "tone": "DUA",
+              "rel": 2,
+              "reply": "Cha! Con nhỏ này. Xe đâu mà chở. Gánh thì tui gánh con được.",
+              "mood": "CUOI"
+            },
+            {
+              "say": "Dạ con bận quá bà ơi.",
+              "tone": "LANH",
+              "rel": -1,
+              "reply": "…Ờ. Con bán đi.",
+              "mood": "BUON"
+            }
+          ]
+        },
+        {
+          "say": "Bà đưa con giữ giùm cho, quầy con có hộc.",
+          "tone": "THUONG",
+          "rel": -1,
+          "reply": "Thôi thôi. Cái này tui giữ. Hổng ai giữ giùm tui cái này hết.",
+          "mood": "NGHIEM"
+        },
+        {
+          "say": "Bà ơi con đang đông. Bữa khác con coi nghen bà.",
+          "tone": "LANH",
+          "rel": -1,
+          "reply": "…Ờ. Ờ, con bán đi. Tui cất.",
+          "mood": "BUON"
         }
       ]
     }

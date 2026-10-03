@@ -989,7 +989,17 @@
               "tone": "THUONG",
               "rel": 1,
               "reply": "Dạ… cho em ổ đầy đủ. Dạ, khỏi ớt cô.",
-              "mood": "THUONG"
+              "mood": "THUONG",
+              "act": {
+                "kind": "ORDER_CHANGE",
+                "toi": [
+                  "dayDu",
+                  "khongOt"
+                ],
+                "aiXin": "HO",
+                "ok": "Dạ… cho em ổ đầy đủ. Dạ, khỏi ớt cô.",
+                "no": "Dạ… thôi cô. Dạ em ăn như cũ."
+              }
             }
           ]
         },
@@ -1283,7 +1293,17 @@
               "tone": "AM",
               "rel": 2,
               "reply": "Dạ… cô tốt quá. Dạ mai em đem đủ tiền em mua ổ lớn.",
-              "mood": "THUONG"
+              "mood": "THUONG",
+              "act": {
+                "kind": "PROMISE",
+                "item": "pate"
+              },
+              "onKept": {
+                "rel": 3
+              },
+              "need": [
+                "!p.soldOut"
+              ]
             },
             {
               "say": "Em đừng ngại, ai cũng có bữa quên ví em.",

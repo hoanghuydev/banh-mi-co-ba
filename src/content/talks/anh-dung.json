@@ -198,7 +198,8 @@
                   "tone": "AM",
                   "rel": 3,
                   "reply": "Được! Mai anh chụp hình anh đưa em coi.",
-                  "mood": "CUOI"
+                  "mood": "CUOI",
+                  "flag": "dungHuaAnhCa"
                 },
                 {
                   "say": "Nuôi cá chi cho mất thời gian anh.",
@@ -1529,6 +1530,96 @@
           "tone": "LANH",
           "reply": "Ờ. Anh để đây.",
           "mood": "LANH"
+        }
+      ]
+    },
+    {
+      "id": "dung.anhca",
+      "npc": "ANH_DUNG",
+      "topic": "anhca",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
+      "weight": 24,
+      "when": {
+        "needFlag": "~dungHuaAnhCa"
+      },
+      "initiates": 0.3,
+      "ignore": {
+        "rel": -2
+      },
+      "opener": "Em ơi. Hình con cá nè. Anh hứa anh chụp mà.",
+      "openMood": "CUOI_TUOI",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG"
+      ],
+      "tree": [
+        {
+          "say": "Anh nhớ hả anh. Em tưởng anh quên rồi.",
+          "tone": "DUA",
+          "rel": 3,
+          "reply": "Quên sao được. Anh để điện thoại ngay chỗ hũ, chụp xong anh mới đi chạy.",
+          "mood": "CUOI",
+          "then": [
+            {
+              "say": "Nó lên màu thiệt nè anh. Đẹp ghê.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "Thấy chưa! Anh nói em có tin đâu. Con này anh nuôi một năm hai tháng rồi.",
+              "mood": "CUOI_TUOI"
+            },
+            {
+              "say": "Anh chụp hồi mấy giờ mà sáng dữ vậy anh?",
+              "tone": "THUONG",
+              "rel": 2,
+              "reply": "Năm giờ rưỡi. Anh dậy sớm hơn bình thường nửa tiếng để chụp cho đủ sáng.",
+              "mood": "THUONG"
+            },
+            {
+              "say": "Anh để em coi chút, em làm bánh cái đã nghen.",
+              "tone": "THANG",
+              "rel": 1,
+              "reply": "Ờ ờ. Em làm đi. Anh đứng đây anh chờ.",
+              "mood": "NGUONG"
+            }
+          ]
+        },
+        {
+          "say": "Dạ anh đưa em coi. Em làm xong ổ này em coi liền.",
+          "tone": "THUONG",
+          "rel": 2,
+          "reply": "Ờ. Hổng gấp. Em cứ làm.",
+          "mood": "THUONG",
+          "then": [
+            {
+              "say": "Con cá này anh thương hơn cái xe ha anh.",
+              "tone": "DUA",
+              "rel": 2,
+              "reply": "Cái xe hư anh sửa. Con cá chết là thôi. Khác nhau chớ em.",
+              "mood": "NGHIEM"
+            },
+            {
+              "say": "Bữa nào anh đem nó ra em coi thiệt đi anh.",
+              "tone": "AM",
+              "rel": 3,
+              "reply": "Hũ nước mà đem ra đường hả em. Thôi. Anh chụp thêm cho.",
+              "mood": "CUOI"
+            },
+            {
+              "say": "Dạ. Để đó em coi sau anh.",
+              "tone": "LANH",
+              "reply": "Ờ.",
+              "mood": "LANH"
+            }
+          ]
+        },
+        {
+          "say": "Anh ơi em đang đông. Để bữa khác nghen anh.",
+          "tone": "LANH",
+          "rel": -1,
+          "reply": "…Ờ. Ờ, em bán đi. Anh cất.",
+          "mood": "BUON"
         }
       ]
     }

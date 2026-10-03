@@ -15,7 +15,7 @@
 import { test } from "node:test";
 import { readFile, readdir } from "node:fs/promises";
 import assert from "node:assert/strict";
-import { needKeys, walkNodes, type Talk } from "../src/sim/talk";
+import { bareFlag, needKeys, walkNodes, type Talk } from "../src/sim/talk";
 import { TalkStore } from "../src/content/talks";
 
 const TALKS: Talk[] = await TalkStore.loadAll();
@@ -39,13 +39,14 @@ async function outsideText(): Promise<string> {
 const storyFlagsOf = (node: { need?: string | string[] }): string[] =>
   needKeys(node as never)
     .map((k) => (k.startsWith("!") ? k.slice(1) : k))
-    .filter((k) => !k.includes("."));
+    .filter((k) => !k.includes("."))
+    .map(bareFlag);
 
 const setBy = new Map<string, string[]>();
 const readBy = new Set<string>();
 for (const t of TALKS) {
-  if (t.when?.needFlag) readBy.add(t.when.needFlag);
-  if (t.when?.notFlag) readBy.add(t.when.notFlag);
+  if (t.when?.needFlag) readBy.add(bareFlag(t.when.needFlag));
+  if (t.when?.notFlag) readBy.add(bareFlag(t.when.notFlag));
   for (const { node } of walkNodes(t)) {
     // `need` nhận cả chuỗi lẫn mảng từ P2-09, và chỉ khoá KHÔNG có dấu chấm mới là cờ
     // chuyện — khoá bảng đen (`p.holdsBread`) không phải cờ, đừng tính nó vào đây.
