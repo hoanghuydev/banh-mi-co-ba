@@ -2,52 +2,28 @@ import Phaser from "phaser";
 import { TW, TH } from "../world/iso";
 import { SHADOW } from "./palette";
 
-/**
- * Hiệu ứng nhỏ: bóng đổ, vòng sáng "đang với tới được", ruồi bu thớt, bụi lau thớt, mũi tên "cô Ba
- * đây", vệt mưa + vòng nước bắn.
- *
- * Ngân sách là 4–6 TEXTURE HẠT cho cả lửa/khói/mưa/hơi nước/bụi; đang dùng ba (`puff`, `drop`,
- * `ripple`), và cả ba đều vẽ TRẮNG rồi để emitter `tint` nên thêm một tông mới không tốn gì.
- */
+/** Ngân sách 4–6 TEXTURE HẠT cho cả lửa/khói/mưa/bụi; đang dùng ba, và cả ba vẽ TRẮNG rồi để emitter `tint`. */
 export const FX = {
   shadow: "shadow", ring: "ring", fly: "fly", puff: "puff", you: "you",
   drop: "drop", ripple: "ripple",
 } as const;
 
-/**
- * Mũi tên chỉ xuống trên đầu người chơi — trong quán lúc đông, cô Ba là một người mặc đồ thường
- * đứng giữa mười người mặc đồ thường.
- *
- * ⚠️ TAM GIÁC ĐẶC chứ không phải một chữ: trên đầu khách đã có `?` và `!`, thêm một chữ nữa là
- * người chơi phải ĐỌC mới biết dấu nào của ai. Một khối đặc, màu ấm, đọc được bằng đuôi mắt.
- */
+/** ⚠️ TAM GIÁC ĐẶC chứ không phải một chữ: trên đầu khách đã có `?` và `!`, thêm chữ nữa là người chơi phải ĐỌC mới biết dấu nào của ai. */
 const YOU_W = 18, YOU_H = 13, YOU_PAD = 3;
 /** Viền sậm bọc quanh: nền quán là gạch men trắng, mũi tên sáng trơn sẽ tan vào đó. */
 const YOU_INK = 0x2b2f31;
 /** Vàng nắng, cùng họ với lõi vòng sáng dưới chân trạm — không thêm màu mới. */
 const YOU_FILL = 0xffe9a8;
 
-/**
- * VÒNG "ĐANG VỚI TỚI ĐƯỢC" dưới chân trạm — ba lớp, xem `buildFx`.
- *
- * `RING_PAD` phải đủ cho nét ngoài cùng (dày 6 ⇒ thò ra 3 px) cộng một px nghỉ, không thì nét bọc
- * bị xén cụt ở đỉnh và đáy ê-líp thành hai cái "sừng". Đệm ĐỐI XỨNG nên tâm texture vẫn là tâm ô.
- */
+/** Phải đủ cho nét ngoài cùng (dày 6 ⇒ thò ra 3 px) cộng một px nghỉ, không thì nét bọc bị xén cụt thành hai cái "sừng". */
 const RING_PAD = 4;
-/** Mực bọc ngoài — cùng màu với viền mũi tên, để hai chỉ báo nói cùng một giọng. */
 const RING_INK = YOU_INK;
 /** Thân vòng: hổ phách đậm, đủ no màu để không tan vào gạch men trắng. */
 const RING_EDGE = 0xffa726;
 /** Lõi sáng mảnh — thứ làm nó đọc ra là ĐÈN chứ không phải một vệt sơn. */
 const RING_CORE = 0xfff0c2;
 
-/**
- * Bề ngang con ruồi, px thiết kế — KHÔNG phải cỡ thật: mặt thớt rộng ~46 px cho ~40 cm nên một con
- * ruồi đúng tỉ lệ sẽ chưa tới 1 px, tức vô hình, mà độ bẩn thì phải NHÌN THẤY ĐƯỢC.
- *
- * 7 px là mức đọc ra cánh và thân ở zoom của cảnh quán mà vẫn bé hơn bàn tay cô Ba. Con số để
- * CHỈNH BẰNG MẮT.
- */
+/** KHÔNG phải cỡ thật — ruồi đúng tỉ lệ chưa tới 1 px, tức vô hình, mà độ bẩn thì phải NHÌN THẤY ĐƯỢC. */
 export const FLY_W = 7;
 
 /** Khung vuông của texture ruồi — chừa chỗ cho cánh lúc ảnh bị XOAY theo hướng bay. */

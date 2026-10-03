@@ -16,14 +16,7 @@ import type { PracticeId } from "../content/vocab";
 import { pickWeighted, type Satisfies } from "./drives";
 import type { DriveId } from "../content/vocab";
 
-/**
- * Giọng của một lựa chọn — tô mép nút, và test bắt nhịp nào cả 4 dòng cùng giọng.
- *
- *   AM     ấm, hỏi han      THUONG xã giao        DUA  giỡn, chọc
- *   THANG  nói thẳng        LANH   cho qua        IM   không nói gì
- *   GAT    gắt với CHÍNH người đang đứng đây — luôn có giá
- *   CHUI   chửi NGƯỜI THỨ BA cùng với họ — khác GAT, hợp người thì được điểm
- */
+/** ⚠️ `GAT` là gắt với CHÍNH người đang đứng đây; `CHUI` là chửi NGƯỜI THỨ BA cùng với họ — hợp người thì được điểm. */
 export type TalkTone = "AM" | "THUONG" | "DUA" | "THANG" | "LANH" | "GAT" | "CHUI" | "IM";
 
 export const TONE_LABEL: Record<TalkTone, string> = {
@@ -42,27 +35,12 @@ export type TalkEffect = {
   flag?: string;
 };
 
-/**
- * Hành động thật mà một câu nói sinh ra. ⚠️ Mọi act có thời lượng đều phải khai `forSec`.
- *
- *   PAY        tiền ra khỏi két NGAY — nút bị ẩn nếu không đủ
- *   DISCOUNT   bớt tiền thật ở `settlePayment`    FREE_LOAF  ổ này không tính tiền
- *   PROMISE    hứa bỏ thêm món — kiểm lúc đưa bánh
- *   STEP_ASIDE bảo dạt qua cho người sau          REFUSE     không bán nữa
- *   INVITE     mời người đi ngang ghé vô mua
- */
-/**
- * Thời lượng của một hành động: hết giờ thì họ quay lại đúng mục đích ban đầu. Hai mốc
- * không đo được bằng giây có tên riêng, mọi thứ khác là giây THẬT.
- */
+/** ⚠️ Mọi act có thời lượng đều phải khai `forSec`, và phải có đường THẤT BẠI thật. */
 export type ForSec = number | "TOI_LUOT" | "TOI_KHI_AN_XONG";
 
 export const forSecOf = (f: ForSec): number | null => (typeof f === "number" ? f : null);
 
-/**
- * Việc đã hứa, có HẠN tính bằng giây thật. Khác `PROMISE` (món kẹp vô ổ, kiểm lúc đưa
- * bánh) ở chỗ thưởng trả LÚC LÀM XONG, và nuốt lời có ba nấc theo tính cách.
- */
+/** Khác `PROMISE` (món kẹp vô ổ, kiểm lúc đưa bánh): hạn tính bằng giây THẬT, và thưởng trả LÚC LÀM XONG. */
 export type Deed = {
   what: string;
   dueSec: number;
@@ -76,85 +54,44 @@ export type TalkAct =
   | { kind: "FREE_LOAF" }
   | { kind: "PROMISE"; item: string }
   | { kind: "REFUSE" }
-  /**
-   * Bảo họ dạt qua cho người sau — họ nghe hay không là chuyện của họ.
-   * `forSec: "TOI_LUOT"` nép tới khi người được nhường xong việc; không có ai để nhường
-   * thì `ASIDE_HOLD_SEC` giây rồi bước vô lại.
-   */
   | { kind: "STEP_ASIDE"; forSec: ForSec }
-  /**
-   * Mời người đi ngang ghé mua. Người viết phải khai CẢ `yes` và `no` — kết cục do roll
-   * `sim/passersby.inviteChance` × `purpose.purposeInviteMul` quyết, không do người chơi.
-   */
+  /** Kết cục do roll `passersby.inviteChance` × `purpose.purposeInviteMul` quyết, không do lựa chọn người chơi. */
   | { kind: "INVITE"; yes: string; no: string }
-  /**
-   * Họ đi tiếp, kết thúc cuộc. Với `QUA_DUONG` đây là trạng thái NGHỈ: nút lá không khai
-   * act thì mặc định đi tiếp (`Service.walkOnDefault`).
-   */
+  /** Với `QUA_DUONG` đây là trạng thái NGHỈ: nút lá không khai act thì mặc định đi tiếp. */
   | { kind: "WALK_ON" }
   | { kind: "GIVE_BREAD"; forSec: ForSec }
   | { kind: "OFFER_TEA"; forSec: ForSec }
   | { kind: "STAND_IN_SHADE"; forSec: ForSec }
-  /**
-   * HỌ NGỒI XUỐNG — mở khoá bằng thiết bị `GHE_BAN`, chỗ ngồi là `world/map.SEAT_SPOT`.
-   *
-   * `P2-08` §2 nhóm C đòi 24 lần, và tới đợt này nó vẫn là món nợ to nhất: `GHE_BAN` mua
-   * được, vẽ ra được, mà **không nút thoại nào làm ai ngồi xuống**. Hai mươi bốn câu mời
-   * ngồi chạy không tải.
-   */
+  /** Mở khoá bằng `GHE_BAN`; ngồi làm kiên nhẫn trôi chậm (`Customer.sitting`), khác `STAND_IN_SHADE` ở chỗ đó. */
   | { kind: "THEY_SIT"; forSec: ForSec }
-  /**
-   * HỌ QUAY PHIM — bé Su (13 nhắc), và `walkin.quayclip` (anh làm kênh review).
-   *
-   * `P2-08` §2 nhóm C ghi *"quay phim là lý do tồn tại của nhân vật"*, mà tới đợt này
-   * mười ba câu "ừ con quay đi" vẫn không làm ai giơ điện thoại lên. Cái clip thì đã có
-   * sẵn chỗ trong kinh tế từ lâu (`story.clipDay` → ×1,4 lượng khách ba ngày), chỉ là nó
-   * do kịch bản đặt chứ không do việc bé Su quay cái gì.
-   */
+  /** Clip ra sao phụ thuộc quầy sạch hay dơ lúc máy đang chạy — xem `Service.filmSpoiled`. */
   | { kind: "FILM"; forSec: ForSec }
   | { kind: "STOP_FILM" }
-  /**
-   * MÌNH BƯNG CÁI GÁNH VÔ TRONG — bà Sáu (11 nhắc).
-   *
-   * Khác `MOVE_GANH` ở chỗ AI làm: bưng giùm là một việc mình bỏ công, nên nó mua được
-   * thiện cảm; bảo bà tự dời thì cái lối cũng thông, mà cái vai bà vẫn vậy.
-   */
+  /** Khác `MOVE_GANH` ở chỗ AI làm: bưng giùm là một việc mình bỏ công nên mua được thiện cảm; bảo bà tự dời thì không. */
   | { kind: "CARRY_GANH" }
   | { kind: "MOVE_GANH" }
-  /**
-   * ĐỔI HÀNG — một ổ bánh lấy một món của họ. Bà Sáu: chén tàu hũ.
-   *
-   * `P2-08` §2 nhóm C ghi *"không act nào nhận một món VÀO"*. Mà cái thiếu thật ra ở
-   * chiều kia: đưa một ổ bánh mà KHÔNG lấy tiền và cũng KHÔNG phải cho không. `FREE_LOAF`
-   * là cho, `PAY` là bán — đổi là chuyện thứ ba, và nó là cách hai người bán hàng nghèo
-   * đối xử với nhau.
-   *
-   * Cái giá có thật: mất doanh thu một ổ. Thứ nhận lại nằm ở `rel` và ở trí nhớ, không ở
-   * một con số kho — đó đúng là thứ một chén tàu hũ đáng.
-   */
+  /** Chiều NHẬN một món vào: đưa ổ bánh mà không lấy tiền, và cầm về một thứ. */
   | { kind: "BARTER"; nhan: string }
-  /**
-   * DỜI CÁI XE CỦA CHÚ KIỆT — arc hai cái xe tranh chỗ (11 nhắc).
-   *
-   *   `XA`    chú về chỗ chú bên kia hẻm — mặt tiền mình thông, mà mình vừa đuổi ông ta
-   *   `CHUNG` hai xe chung một mái lúc mưa — mình mất một khoảng mặt tiền, chú khỏi ướt
-   *
-   * Không có đường nào bảo chú LẤN vào: lấn là việc chú tự làm, và đó là cái người chơi
-   * phải xử lý chứ không phải cái họ chọn.
-   */
+  /** `XA` chú về bên kia hẻm (mặt tiền thông, mà mình vừa đuổi ông ta) · `CHUNG` hai xe chung một mái (mình mất một khúc). */
   | { kind: "MOVE_CART"; toi: "XA" | "CHUNG" }
+  /**
+   * CẤT TIẾNG RAO — bà Sáu dạy (7 nhắc), `sau.rao`.
+   *
+   * *"Con bán mà con hổng rao. Người ta đi ngang đâu có biết con ơi."* — cả cuộc đó dựng
+   * quanh một câu người chơi tự nói ra (*"Bánh mì nóng hông…"*), mà tới đợt này nó không
+   * làm một ai ngoái lại.
+   *
+   * Đây là nước đi NGƯỢC với cái xe chú Kiệt: xe lấn thì ăn bớt người đi ngang, tiếng rao
+   * thì kéo họ quay đầu lại.
+   */
+  | { kind: "RAO"; forSec: ForSec }
   | { kind: "LEAVE_SHADE" }
   | { kind: "LOOK_INSIDE"; forSec: ForSec }
   | { kind: "PROMISE_DEED"; deed: Deed }
   | { kind: "CREDIT_LOAF" };
 
 
-/**
- * Cảm xúc của câu đáp — người viết khai, không suy ra từ `rel` / `anger`. Bảng dưới dịch
- * sang ba lớp mặt của P2-02, cộng dáng người hay đi kèm.
- *
- * ⚠️ KHÔNG dùng emoji: bảng glyph của game (linter L013) chỉ có chữ Việt và dấu câu.
- */
+/** ⚠️ KHÔNG dùng emoji: bảng glyph của game (linter L013) chỉ có chữ Việt và dấu câu. */
 export type TalkMood =
   | "CUOI_TUOI" | "CUOI" | "CUOI_KHAN" | "THUONG" | "NGAC_NHIEN" | "NGUONG"
   | "BUON" | "RUNG_RUNG" | "GIAN" | "BUC" | "NGHI" | "LANH" | "MET" | "NGHIEM";
@@ -198,56 +135,31 @@ export const MOOD_POSE: Record<TalkMood, PoseId> = {
 export const MOOD_NEGATIVE: ReadonlySet<TalkMood> = new Set<TalkMood>(["GIAN", "BUC", "LANH", "BUON", "MET", "NGHI"]);
 
 /**
- * Hợp đồng ba phần của một câu nói:
+ * Hợp đồng ba phần: `need` (chuyện ĐÃ xảy ra — không thoả thì ẨN lựa chọn) · `while` (đang đúng
+ * LÚC nói — không thoả thì NPC hiện "?") · `act` (nói xong thế giới đổi gì — không có là free word).
  *
- *   TRƯỚC  `need`   cần chuyện gì ĐÃ xảy ra   → không thoả: KHÔNG HIỆN lựa chọn
- *   LÚC    `while`  cần gì ĐANG đúng lúc nói  → không thoả: NPC hiện "?" rồi bỏ qua
- *   SAU    `act`    nói xong thế giới đổi gì  → không có: là free word
- *
- * Hai cách xử khác nhau vì hai loại sai khác nhau: `need` sai = câu đó vô nghĩa với
- * người này; `while` sai = vừa nãy còn đúng, giờ hết đúng.
+ * Hai cách xử khác nhau vì hai loại sai khác nhau: `need` sai = câu vô nghĩa với người này;
+ * `while` sai = vừa nãy còn đúng, giờ hết đúng.
  */
 export type TalkNode = TalkEffect & {
-  /**
-   * Cần ĐANG đúng ngay lúc bấm. Không thoả ⇒ NPC hiện "?" và nhịp đó kết thúc.
-   * Từ vựng khoá: `docs/phase-2-he-npc/P2-07-neo-thoai-vao-the-gioi.md` §3.
-   */
   while?: string[];
-  /**
-   * Chuyện này nói về thẻ gì — đầu vào của truy hồi ký ức. Vắng = kế thừa `about` của cả
-   * cuộc; khai ở đây khi một nhánh rẽ sang chuyện khác hẳn.
-   */
+  /** Vắng = kế thừa `about` của cả cuộc. */
   about?: string[];
   act?: TalkAct;
   needCash?: number;
   say: string;
   tone: TalkTone;
   reply?: string;
-  /**
-   * Khách đáp câu này bằng MẶT MŨI nào. Vắng = `applyTalkOption` suy ra; có khai thì nó
-   * thắng.
-   */
   mood?: TalkMood;
-  /**
-   * Khách KHÔNG đáp, cố ý. Test đòi mọi nút không có `reply` phải khai cờ này, để phân
-   * biệt với chỗ quên viết `reply`.
-   */
+  /** Cố ý im. Test đòi mọi nút không có `reply` phải khai cờ này, để phân biệt với chỗ quên viết. */
   silent?: boolean;
   then?: TalkNode[];
   ref?: string;
   /**
-   * Cần gì ĐÃ xảy ra rồi. Không thoả ⇒ ẩn hẳn lựa chọn, nên chỉ dùng cho sự thật TĨNH —
-   * sự thật ĐỘNG thì dùng `while`. Hai loại khoá, phân biệt bằng DẤU CHẤM:
-   *
-   *   `coBienHieu`    không có dấu chấm ⇒ cờ chuyện (`story.flags`)
-   *   `p.holdsBread`  có dấu chấm ⇒ khoá bảng đen (`_blackboard.json` mục `aliases`)
-   *   `m.visits(3)`   khoá có tham số · `!x` phủ định
+   * Chỉ dùng cho sự thật TĨNH — sự thật ĐỘNG thì dùng `while`. Hai loại khoá phân biệt bằng DẤU CHẤM:
+   * `coBienHieu` = cờ chuyện · `p.holdsBread` = khoá bảng đen · `m.visits(3)` = khoá có tham số · `!x` phủ định.
    */
   need?: string | string[];
-  /**
-   * Chỉ hiện khi người chơi ĐÃ MUA thiết bị này. Test `E-1` của `p2-equip-talk` quét nội
-   * dung theo bảng từ vựng đạo cụ và bắt mọi câu nhắc đồ phải mua mà thiếu cổng này.
-   */
   needEquip?: string;
 };
 
@@ -261,42 +173,22 @@ export type TalkWhen = {
   needFlag?: string;
   notFlag?: string;
   needEquip?: string;
-  /**
-   * CẢ CUỘC chỉ sống khi thế giới đang thế này — khoá bảng đen, phép VÀ.
-   *
-   * Khác `TalkNode.need` ở TẦNG: `need` ẩn một LỰA CHỌN, cái này rút cả CUỘC ra. Dùng khi
-   * chủ đề của cả cuộc dựa vào một sự thật.
-   */
+  /** Khác `TalkNode.need` ở TẦNG: `need` ẩn một LỰA CHỌN, cái này rút cả CUỘC ra. */
   world?: string[];
 };
 
-/**
- * Ai được quyền mở lời. Bắt buộc khai; linter L014 fail nếu vắng.
- *
- *   NPC_ONLY    ý định / hoàn cảnh / yêu cầu của chính họ — ĐA SỐ (81/86 cuộc)
- *   PLAYER_ONLY chỉ có nghĩa khi người chơi chủ động gợi — tầng chào hỏi dùng chung `ANY`
- *   BOTH        chuyện phiếm chung, ai mở cũng được
- */
+/** Bắt buộc khai (linter L014). `NPC_ONLY` là ĐA SỐ — 81/86 cuộc: ý định của chính họ thì người chơi không moi ra bằng một cú bấm phím. */
 export type TalkSource = "NPC_ONLY" | "PLAYER_ONLY" | "BOTH";
 
 /**
- * Cuộc này tốn bao nhiêu thời gian ĐỌC, không đo độ quan trọng.
- *   BARK  một nhịp · SHORT  ba nhịp, không `act` · FULL  cây đầy đủ
- *
- * Chỉ `FULL` tiêu vào trần `TALK_DEEP_PER_DAY` và đòi mở dải lựa chọn ở kênh LỜI.
- * `BARK` / `SHORT` chạy được cả lúc đang bán.
+ * Tốn bao nhiêu thời gian ĐỌC, không đo độ quan trọng: `BARK` một nhịp · `SHORT` ba nhịp · `FULL`
+ * cây đầy đủ. Chỉ `FULL` tiêu vào `TALK_DEEP_PER_DAY` và đòi mở dải lựa chọn ở kênh LỜI.
  */
 export type TalkDepth = "BARK" | "SHORT" | "FULL";
 
 /**
- * Loại hội thoại — trục vuông góc với `depth`: chuyện này để LÀM GÌ.
- *
- *   MOI     mời người đi ngang ghé mua. Người chơi luôn mở lời, kết cục là một cái roll.
- *           KHÔNG trí nhớ, KHÔNG điểm quan hệ, KHÔNG tiêu trần ngày.
- *   CHAO    xã giao — hỏi đường, đứng nhờ mái hiên. Không hệ quả đáng kể.
- *   MUA     chuyện phát sinh lúc mua bán với khách vãng lai, tắt theo lượt ghé.
- *   CHUYEN  chuyện đời của 12 người CÓ TÊN. Chỗ duy nhất có trí nhớ, lời hứa, arc nhiều
- *           ngày, và là chỗ duy nhất tiêu vào trần `TALK_DEEP_PER_DAY`.
+ * Trục vuông góc với `depth`: chuyện này để LÀM GÌ. ⚠️ `MOI` không trí nhớ, không điểm quan hệ,
+ * không tiêu trần ngày (người đi ngang dùng chung `memKey` cho tám dáng); `CHUYEN` là chỗ duy nhất có cả ba.
  */
 export type TalkKind = "MOI" | "CHAO" | "MUA" | "CHUYEN";
 
@@ -308,12 +200,7 @@ export function kindOf(t: Talk): TalkKind {
   return "CHUYEN";
 }
 
-/**
- * Nói xong người ta nhẹ đi chuyện gì — suy từ kho + `source` + `depth`.
- *
- * Một luật trái chiều: cuộc nào cũng đẩy `VIEC_RIENG` LÊN, vì đứng nói chuyện là chậm
- * việc của người ta. Đó là cái hãm giữ cho tán gẫu không bao giờ miễn phí.
- */
+/** Luật trái chiều: cuộc nào cũng đẩy `VIEC_RIENG` LÊN — đứng nói chuyện là chậm việc của người ta. */
 export function satisfiesOf(t: Talk): Satisfies {
   if (t.drives) return t.drives;
   const deep = t.depth === "FULL" ? 1.6 : t.depth === "SHORT" ? 1 : 0.5;
@@ -333,26 +220,15 @@ export function hasInvite(t: Talk): boolean {
   return walkNodes(t).some((x) => x.node.act?.kind === "INVITE");
 }
 
-/**
- * Cuộc này MỞ MIỆNG RA đã là mời chưa — chỉ xét NHỊP ĐẦU, khác `hasInvite`. Đây là cái
- * quyết ai được miễn sàn điểm trong `pickTalk`.
- */
+/** Khác `hasInvite` ở chỗ chỉ xét NHỊP ĐẦU — cái quyết ai được miễn sàn điểm trong `pickTalk`. */
 export const opensWithInvite = (t: Talk): boolean =>
   t.tree.some((n) => n.act?.kind === "INVITE");
 
 export const countsAgainstDailyCap = (t: Talk) => kindOf(t) === "CHUYEN" && t.depth === "FULL";
 
-/**
- * Cuộc này có được đụng vào TRÍ NHỚ và ĐIỂM QUAN HỆ không. `MOI` thì không: `memKey` của
- * người đi ngang dùng chung cho tám dáng người suốt cả mùa.
- */
+/** `MOI` thì không: `memKey` của người đi ngang dùng chung cho tám dáng suốt cả mùa. */
 export const touchesRelationship = (t: Talk) => kindOf(t) !== "MOI";
 
-/**
- * Người chơi đang mở lời, hay đang trả lời? Quyết định rút từ tập nào.
- *   PLAYER  người chơi chủ động (bấm phím) — loại `NPC_ONLY`
- *   NPC     khách tự bắt chuyện           — loại `PLAYER_ONLY`
- */
 export type TalkOpenBy = "PLAYER" | "NPC";
 
 export const TALK_CHOICES_MAX = 3;
@@ -366,37 +242,18 @@ export type Talk = {
   source: TalkSource;
   depth: TalkDepth;
   kind?: TalkKind;
-  /**
-   * Khung cảnh cuộc này sống được. Vắng = mọi khung cảnh — hiếm, và phải có lý do ghi
-   * trong `_note`; `tools/validate-talks` kiểm chuyện đó.
-   */
+  /** Vắng = mọi khung cảnh; hiếm, và phải có lý do ghi trong `_note`. */
   practice?: PracticeId | PracticeId[];
   opener: string;
   openMood?: TalkMood;
-  /**
-   * Khách TỰ bắt chuyện (không cần F): 0..0,6, roll khi họ đứng chờ. Người chơi làm lơ
-   * được, và làm lơ có giá — xem `ignore`.
-   */
+  /** 0..0,6, roll lúc họ đứng chờ. Người chơi làm lơ được, và làm lơ có giá — xem `ignore`. */
   initiates?: number;
   ignore?: { reply?: string; rel?: number; anger?: number; mem?: TalkEffect["mem"]; mood?: TalkMood };
   when?: TalkWhen;
-  /**
-   * Trọng số khi nhiều cuộc cùng đủ điều kiện, mặc định 10. Là ĐƯỜNG LUI: `pickTalk` chấm
-   * điểm theo drive khi `TalkCtx.score` có mặt.
-   */
+  /** ĐƯỜNG LUI: `pickTalk` chấm điểm theo drive khi `TalkCtx.score` có mặt. */
   weight?: number;
-  /**
-   * Nói xong người ta nhẹ đi chuyện gì. Vắng thì `satisfiesOf()` suy ra; khai tay chỉ khi
-   * suy ra sai.
-   */
   drives?: Partial<Record<DriveId, number>>;
-  /**
-   * CẢ CUỘC này nói về thẻ gì (thẻ của `sim/recall.tagsOf`) — đầu vào của `retrieve()`,
-   * chấm relevance bằng Jaccard. Vắng = "nhớ gì cũng được", relevance bị bỏ khỏi tổng.
-   *
-   * ⚠️ KHÔNG phải chỗ khai chuyện gì đã xảy ra — chuyện nào được nhớ ra là việc của
-   * `retrieve()`.
-   */
+  /** ⚠️ KHÔNG phải chỗ khai chuyện gì đã xảy ra — chỉ là chủ đề; nhớ ra gì là việc của `retrieve()`. */
   about?: string[];
   tree: TalkNode[];
   shared?: Record<string, TalkNode[]>;
@@ -406,20 +263,9 @@ export type TalkFile = { talks: Talk[] };
 
 // ─────────────────────────────────────────────────────────────── danh xưng
 
-/**
- * Ai gọi ai bằng gì — `self` / `you` là của khách, `call` / `me` là của người chơi.
- * Bảng này là lưới chắn: test `p5-talk` đọc nó và bắt mọi dòng dùng sai đại từ.
- */
+/** `self`/`you` là của khách, `call`/`me` là của người chơi. Test `p5-talk` đọc bảng này bắt mọi dòng dùng sai đại từ. */
 export type Address = { self: string; you: string; call: string; me: string };
 
-/**
- * Kho thoại KHÔNG gắn với một người cố định.
- *   WALKIN     khách vãng lai — đang mua, chỉ là chưa biết tên
- *   QUA_DUONG  người chỉ đi ngang (`sim/passersby.ts`) — KHÔNG mua gì
- *
- * Hai cái này đổi vai mỗi lượt, nên lưới danh xưng với họ chỉ đòi gọi bằng MỘT trong
- * `WALKIN_CALLS`, không đòi đúng một từ như với 12 người có tên.
- */
 export const ANON_TALK_POOLS = ["WALKIN", "QUA_DUONG"] as const;
 export const EXTRA_TALK_POOLS = [...ANON_TALK_POOLS, "ANY"] as const;
 
@@ -440,13 +286,7 @@ export const ADDRESS: Record<string, Address> = {
   QUA_DUONG: { self: "tui",  you: "cô",  call: "anh",  me: "em" },
 };
 
-/**
- * Danh xưng người lạ theo DÁNG NGƯỜI — khớp 1–1 theo chỉ số với `WALKIN_STYLES` (và vì
- * vậy với `WALKIN_NAMES` / `PASSER_NAMES`).
- *
- * Nội dung viết `{call}` / `{me}` / `{self}` / `{you}` và `Service.fill()` thay vào đúng
- * vai của người đang đứng đó — một bộ thoại dùng chung cho cả tám người.
- */
+/** Khớp 1–1 theo CHỈ SỐ với `WALKIN_STYLES`; nội dung viết `{call}`/`{me}`/`{self}`/`{you}` và `Service.fill()` thay vào. */
 export const WALKIN_ADDRESS: readonly Address[] = [
   { self: "tui", you: "cô",  call: "anh", me: "em" },   // 0 tóc ngắn — anh
   { self: "tui", you: "em",  call: "chị", me: "em" },   // 1 đuôi gà, khẩu trang — chị
@@ -458,16 +298,10 @@ export const WALKIN_ADDRESS: readonly Address[] = [
   { self: "tui", you: "con", call: "chú", me: "con" },  // 7 đeo kính, tóc ngắn — chú
 ];
 
-/**
- * Người lạ không có MỘT vai cố định, nên lưới danh xưng với họ — cả `WALKIN` lẫn
- * `QUA_DUONG`, xem `ANON_TALK_POOLS` — chỉ đòi gọi bằng một trong mấy vai này.
- */
+/** Người lạ không có MỘT vai cố định, nên lưới chỉ đòi gọi bằng một trong mấy vai này. */
 export const WALKIN_CALLS = ["anh", "chị", "cô", "chú", "bà", "ông", "em"];
 
-/**
- * Đại từ CẤM trong lời của từng người (lưới L-6 của test). Không suy ra được từ `ADDRESS`
- * vì chiều ngược lại mới là chỗ sai hay gặp.
- */
+/** Không suy ra được từ `ADDRESS`: chiều ngược lại mới là chỗ sai hay gặp (bé Su gọi người chơi là "em"). */
 export const FORBIDDEN_SELF: Record<string, string[]> = {
   BE_SU: ["chị", "cô ấy", "tui", "tao"],
   ANH_BAO: ["anh", "tui", "tao", "chú"],
@@ -497,10 +331,7 @@ export type TalkCtx = {
   hasEquip?: (id: string) => boolean;
   practice?: PracticeId;
   holds?: (key: string) => boolean;
-  /**
-   * Chấm điểm một cuộc theo drive của người đang đứng đó. Vắng = rơi về `weight`, để
-   * `tools/sim.ts` và golden bốn mươi ngày chạy y như cũ.
-   */
+  /** Vắng = rơi về `weight`, để `tools/sim.ts` và golden bốn mươi ngày chạy y như cũ. */
   score?: (t: Talk) => number;
 };
 

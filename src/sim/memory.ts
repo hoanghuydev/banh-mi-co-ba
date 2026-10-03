@@ -12,11 +12,7 @@ import type { Personality } from "../content/npcs";
 import type { RelTier } from "../core/types";
 import { decayMul, relGainMul } from "./personality";
 
-/**
- * `MISSED_EXTRA` — cái hụt của một THÓI QUEN, không phải một sự kiện CANON §3. Nó không có
- * `StimId` và không bao giờ có: không ai NHÌN THẤY được chuyện "mấy bữa trước có mà bữa nay
- * không". Cũng vì vậy nó không đi tin đồn (`witness` bỏ qua kind không có TRUE_CLAIM).
- */
+/** Không có `StimId` và không bao giờ có: không ai NHÌN THẤY được chuyện "mấy bữa trước có mà bữa nay không". Cũng vì vậy nó không đi tin đồn. */
 export type BaseKind =
   | "WRONG_NAME" | "MADE_THEM_WAIT" | "BURNT_OR_COLD" | "DROPPED_FOOD" | "ORDER_DEFECT" | "DIRTY_HANDS"
   | "RUDE_TO_THEM" | "BROKEN_PROMISE" | "MISSED_EXTRA"
@@ -62,20 +58,9 @@ export type RelState = {
   heavyToday: number;
   heavyDay: number;
   absentUntil: number;
-  /**
-   * Số lượt ghé LIÊN TIẾP gần đây được cho thêm — nền của thói quen "cho thêm". Đếm theo LƯỢT GHÉ
-   * chứ không theo ngày: mười hai người trong hẻm không ai ghé đủ bốn mươi ngày.
-   *
-   * Không bắt buộc có: save cũ thiếu trường này đọc ra 0 = "chưa có thói quen nào".
-   */
+  /** Đếm theo LƯỢT GHÉ chứ không theo ngày — mười hai người trong hẻm không ai ghé đủ bốn mươi bữa. */
   extraStreak?: number;
-  /**
-   * Ngày RÚT KẾT LUẬN gần nhất (reflection). Không bắt buộc có — save cũ đọc ra `undefined` =
-   * "chưa rút lần nào".
-   *
-   * ⚠️ Ngưỡng cộng dồn TỪ MỐC NÀY, không cộng trong một ngày: một người ghé quầy mười lăm phút thì
-   * một ngày hiếm khi đủ.
-   */
+  /** ⚠️ Ngưỡng cộng dồn TỪ MỐC NÀY, không cộng trong một ngày: một người ghé quầy mười lăm phút thì một ngày hiếm khi đủ. */
   reflectedDay?: number;
   memory: { short: Memory[]; long: Memory[]; core: Memory | null };
   memSeq: number;
@@ -164,34 +149,16 @@ export function newRelState(): RelState {
 }
 
 
-/**
- * Ba lượt ghé là chỗ một chuyện thôi còn là tình cờ và bắt đầu là NẾP. Hai lần thì
- * người ta chưa dám trông; ba lần thì lần thứ tư người ta đã đưa tay ra sẵn. Cùng con
- * số với `PROMOTE_AFTER_DAYS` (ký ức sống qua 3 ngày mới thành dài hạn) và với mốc
- * "lần thứ 3 trong ngày" mà CANON §8i dùng để bắt bài mua chuộc — một hẻm, một nhịp.
- */
+/** Ba lượt ghé là chỗ một chuyện thôi còn là tình cờ và bắt đầu là NẾP. */
 export const HABIT_VISITS = 3;
-/**
- * Thói quen dài hơn thì hụt đau hơn, nhưng chỉ tới đây. 6 = `FRIEND_MIN_VISITS`: quá
- * mốc đó thì với người ta đã là "lúc nào cũng vậy", thêm một lượt nữa không đổi gì.
- */
+/** Thói quen dài hơn thì hụt đau hơn, nhưng chỉ tới `FRIEND_MIN_VISITS`. */
 export const HABIT_STREAK_CAP = 6;
-/**
- * Cường độ cái hụt. Nhỏ hơn `FREE_EXTRA_BASE` (25) — món quà vẫn phải to hơn cái hụt,
- * không thì chuỗi "cho ba bữa rồi nghỉ một bữa" hoá ra lỗ, và người chơi học được đúng
- * một bài: đừng bao giờ cho thêm. Nhưng ×REL_K_NEG (0,2) nó vẫn ăn 3,6 điểm, hơn 3,0
- * điểm mà MỘT lần cho thêm kiếm được — vì cái mất bao giờ cũng nặng hơn cái được.
- */
+/** Nhỏ hơn `FREE_EXTRA_BASE` — món quà vẫn phải to hơn cái hụt khi mất nó. */
 export const MISSED_EXTRA_BASE = 18;
 /** Mỗi lượt ghé vượt ngưỡng cộng thêm 12% — chuỗi 6 lượt đau gấp ~1,36 lần chuỗi 3 lượt. */
 export const MISSED_EXTRA_STEP = 0.12;
 
-/**
- * Một lượt ghé đã giao xong đứng ở đâu với cái nếp "cho thêm":
- *   GAVE    — có cho thêm và người ta nhận
- *   NONE    — ổ đúng đơn, không có gì thêm
- *   REFUSED — có cho, nhưng người ta vừa nói "thôi đừng cho nữa" (CANON §8i phản tác dụng)
- */
+/** `GAVE` có cho thêm · `PLAIN` ổ trơn · `REFUSED` họ đẩy ra. */
 export type ExtraVisit = "GAVE" | "NONE" | "REFUSED";
 
 /**
@@ -304,11 +271,7 @@ function insertShort(s: RelState, m: Memory, day: number, p: Personality): { evi
 
 export type RecordResult = { memoryId: string | null; evicted?: string; healed: MemoryKind[]; core: boolean; delta: number };
 
-/**
- * Ghi một ký ức CHỨNG KIẾN — P2-03 §2.2 + §2.5 + §2.7. Trả về để Service phát event.
- * `intensity` = salience × confidence (P2-02 §2.1). Điểm quan hệ đổi NGAY (autosave ngay
- * sau đó — chống save-scum §8e); bucket chỉ đổi ban đêm (hysteresis).
- */
+/** Trả về để Service phát event. */
 export function record(s: RelState, p: Personality, kind: BaseKind, intensity: number, day: number,
   opts: { detail?: Memory["detail"]; badDay?: boolean } = {}): RecordResult {
   const m = newMemory(s, kind, Math.max(0, Math.min(100, intensity)), day);
@@ -416,10 +379,7 @@ export function servedWell(s: RelState, p: Personality, quality01: number, silen
 
 export type NightResult = { promoted: string[]; decayed: number; burn: BurnReason | null; from: RelTier; to: RelTier };
 
-/**
- * Chạy MỘT lần mỗi đêm, sau buổi bán — P2-03 §2.3 promote · §2.5 decay lần ghé bị lỡ ·
- * §2.8 dò đốt NPC · cập nhật bucket · dọn memory < EPSILON.
- */
+/** Chạy MỘT lần mỗi đêm, sau buổi bán. */
 export function nightly(s: RelState, p: Personality, day: number): NightResult {
   const from = s.tier;
   const expected = s.expectedDay === day;

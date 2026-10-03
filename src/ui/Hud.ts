@@ -12,42 +12,22 @@ import { FONT, UI } from "./theme";
 const DEPTH = 9_000_000;
 const HELP_UNTIL_DAY = 3;
 
-/**
- * Dòng phím ở đáy màn hình, DẠY DẦN theo ngày: ba ngày, ba dòng, mỗi dòng thêm đúng những phím
- * mà hôm đó mới có chỗ dùng. Hết ngày 3 thì tắt hẳn — lúc đó dòng nhắc theo trạm (`drawPrompt`)
- * đã làm nốt phần việc còn lại.
- *
- * Đổ cả chín phím vào MỘT dòng thì mắt không bắt được phím nào cả (tất cả cùng cỡ, cùng màu,
- * xếp ngang hàng), và ngày đầu người chơi phải đọc mấy phím chưa có việc gì để dùng.
- */
+/** Ba ngày, ba dòng, mỗi dòng thêm đúng những phím hôm đó mới có chỗ dùng; hết ngày 3 thì tắt hẳn. */
 const HELP_BY_DAY = [
   "WASD đi · E làm việc · Esc tạm dừng",
   "WASD đi · Shift chạy · E làm việc · Q đặt xuống · Tab sổ tay",
   "WASD đi · E làm việc · R cầm ổ trên thớt · Q đặt xuống · F hỏi chuyện · giữ C che tay · Tab sổ tay",
 ];
 
-/**
- * Có ai đang nhìn mình không:
- *  · NONE   không ai để mắt tới tay mình
- *  · GLANCE có người đang nhìn MẶT mình — họ ở đây, nhưng không soi tay
- *  · CLOSE  có người đang nhìn thẳng vào TAY mình — làm bậy lúc này là bị thấy
- */
+/** `GLANCE` = có người nhìn MẶT mình · `CLOSE` = có người nhìn thẳng vào TAY mình. */
 export type Watch = "NONE" | "GLANCE" | "CLOSE";
 
 /**
- * Con mắt "có người nhìn" — ô thứ BA của hàng icon ở đỉnh màn hình, đối xứng với icon bàn tay
- * qua nút tạm dừng.
+ * Ô thứ BA của hàng icon ở đỉnh màn hình. ⚠️ KHÔNG đặt giữa màn hình: chỗ đó là mặt tiền cái quán,
+ * và vòng ĐỘ GIÒN trên cửa lò rơi đúng quãng y 60–90 — đổi một thứ ĐỌC GẤP lấy một thứ tham khảo.
  *
- * ⚠️ KHÔNG đặt ở giữa màn hình: chỗ đó là mặt tiền cái quán, và vòng ĐỘ GIÒN trên cửa lò rơi
- * đúng vào quãng y 60–90 — đổi một thứ ĐỌC GẤP (ổ sắp cháy) lấy một thứ chỉ để tham khảo.
- *
- * Nó thuộc về hàng icon vì nó là TRẠNG THÁI TOÀN CỤC, liên tục, trả lời cùng một câu mà icon
- * bàn tay trả lời. Tầng "từng người" đã có rồi — dấu `?`/`!`/cặp mày trên đầu từng khách; con
- * mắt là tầng thứ hai nên phải ở trong chrome.
- *
- * Cùng đĩa giấy 44×36 với icon bàn tay. Phân biệt bằng HÌNH trước (có mắt / không có mắt), rồi
- * tới NHỊP (nháy khi bị soi tay) — màu chỉ là tầng thứ ba. KHÔNG phóng to thu nhỏ: ô trong một
- * hàng cố định mà đổi cỡ thì đọc ra là lỗi layout.
+ * Phân biệt bằng HÌNH trước, rồi NHỊP (nháy khi bị soi tay); màu chỉ là tầng thứ ba. KHÔNG phóng
+ * to thu nhỏ — ô trong một hàng cố định mà đổi cỡ thì đọc ra là lỗi layout.
  */
 const EYE_X = GAME_W / 2 + 58;
 const EYE_Y = 26;
@@ -57,43 +37,23 @@ const EYE_RED = 0xc0392b;
 const EYE_BLINK_MS = 1150;
 
 /**
- * ── DẢI THÔNG BÁO ───────────────────────────────────────────────────────────
+ * HAI kênh chữ, KHÔNG trộn: `say()` là LỜI NGƯỜI (góc dưới trái, phải nán lại vì người chơi cần
+ * NGHE để làm đúng đơn) · `toast()` là VIỆC MÁY BÁO (đỉnh màn hình, hiện rồi tắt).
  *
- * HAI kênh chữ, KHÔNG được trộn vào nhau:
- *   · `say()`   LỜI NGƯỜI — góc dưới trái, ba dòng gần nhất. Thứ người chơi phải NGHE để làm
- *               đúng đơn, nên nó phải nán lại.
- *   · `toast()` VIỆC MÁY BÁO — đỉnh màn hình, hiện rồi tắt.
- *
- * ⚠️ Chung một hộp thì thao tác của chính người chơi ("tay đang bận") đẩy câu gọi món ra khỏi
- * hộp — đúng câu họ cần nhớ để kẹp cho đúng.
+ * ⚠️ Chung một hộp thì thao tác của chính người chơi đẩy câu gọi món ra khỏi hộp.
  */
-/**
- * Mép PHẢI, thẳng hàng với ô tiền và phiếu đơn. Giữa đỉnh màn hình chính là chỗ NHÃN TRẠM của
- * cái quán, nên thông báo ở đó đè lên đúng mấy cái tên người chơi đang đọc.
- *
- * Dạt về cột phải thì màn hình chia sạch: trái-dưới LỜI NGƯỜI, phải SỔ SÁCH CỦA MÁY (tiền ·
- * phiếu đơn · thông báo), giữa để nguyên cho cái quán.
- */
+/** Giữa đỉnh màn hình là chỗ NHÃN TRẠM, nên thông báo ở đó đè lên đúng mấy cái tên người chơi đang đọc. */
 const TOAST_RIGHT = GAME_W - 26;
 const TOAST_TOP = 150;
 const TOAST_GAP = 6;
 const TOAST_MAX = 3;
-/**
- * Thời gian sống tính THEO SỐ KÝ TỰ. ⚠️ Không đếm từ: chữ Việt tách theo ÂM TIẾT nên đếm từ sai
- * 1,6–2 lần so với tiếng Anh — cùng một lượng chữ phải đọc mà máy cho thời gian khác nhau.
- *
- * `BASE` là phần cố định cho việc MẮT TÌM RA dòng mới; `PER_CHAR` là phần đọc. 55 ms/ký tự
- * ≈ 18 ký tự/giây — chậm hơn tốc độ đọc thật khá nhiều, vì người chơi đang bận hai tay.
- */
+/** ⚠️ Không đếm TỪ: chữ Việt tách theo ÂM TIẾT nên đếm từ sai 1,6–2 lần so với tiếng Anh. 55 ms/ký tự ≈ 18 ký tự/giây — chậm hơn tốc độ đọc thật, vì người chơi đang bận hai tay. */
 const TOAST_BASE_MS = 1800;
 const TOAST_PER_CHAR_MS = 55;
 const TOAST_MIN_MS = 2600;
 const TOAST_MAX_MS = 6000;
 const TOAST_FADE_FROM = 0.78;
-/**
- * Dòng mới trượt vào từ mép phải chừng này px. 20 chứ không phải 6: dưới ngưỡng ~15–20 px thì
- * mắt NGOẠI VI không bắt được chuyển động — mà ngoại vi mới là chỗ dòng này nằm.
- */
+/** 20 chứ không 6: dưới ~15–20 px thì mắt NGOẠI VI không bắt được chuyển động, mà ngoại vi mới là chỗ dòng này nằm. */
 const TOAST_SLIDE_PX = 20;
 const TOAST_SLIDE_MS = 190;
 const TOAST_TONE: Record<ToastTone, number> = {
@@ -113,13 +73,7 @@ type Toast = {
   life: number;
 };
 
-/**
- * Lớp thông tin trên màn hình. Tách khỏi scene vì HUD là thứ sẽ đổi nhiều nhất.
- *
- * Cỡ chữ theo cài đặt và HỘP TỰ GIÃN theo chữ (200% không tràn), nền ĐỤC (alpha 1), không viết
- * hoa toàn bộ. Được hiện: giờ, tiền, câu khách gọi NGUYÊN VĂN, thứ đã bỏ vào ổ đang cầm.
- * KHÔNG hiện: điểm, sao, thanh kiên nhẫn, chỉ số quan hệ, "đúng/sai" của hệ thống.
- */
+/** Được hiện: giờ, tiền, câu khách gọi NGUYÊN VĂN, thứ đã bỏ vào ổ. KHÔNG hiện: điểm, sao, thanh kiên nhẫn, chỉ số quan hệ, "đúng/sai" của hệ thống. */
 export class Hud {
   private left: Phaser.GameObjects.Text;
   private right: Phaser.GameObjects.Text;
@@ -237,10 +191,7 @@ export class Hud {
     this.saveDot = fixed(scene.add.circle(GAME_W - 14, GAME_H - 14, 4, 0xf4f1e8), DEPTH + 100).setAlpha(0);
   }
 
-  /**
-   * MỘT dòng máy báo cho người chơi: việc vừa làm, thứ vừa được, thứ vừa mất. KHÔNG dùng cho lời
-   * người nói — lời người đi `say()`. Hết chỗ thì cướp dòng GIÀ NHẤT.
-   */
+  /** KHÔNG dùng cho lời người nói — lời người đi `say()`. Hết chỗ thì cướp dòng GIÀ NHẤT. */
   toast(text: string, tone: ToastTone = "info", now = this.scene.time.now) {
     // Cùng một chuyện xảy ra liên tiếp thì GỘP thành "×N", không xếp ba dòng y hệt:
     // ba dòng giống nhau chiếm hết chỗ của ba chuyện KHÁC NHAU, mà thông tin thì vẫn
@@ -269,10 +220,7 @@ export class Hud {
     t.life = Math.min(TOAST_MAX_MS, Math.max(TOAST_MIN_MS, TOAST_BASE_MS + chars * TOAST_PER_CHAR_MS));
   }
 
-  /**
-   * Chỉ báo autosave — P0-02 §4: một chấm nhỏ mờ dần 0,8 s ở góc.
-   * KHÔNG vòng xoay, KHÔNG chặn thao tác.
-   */
+  /** Một chấm nhỏ mờ dần 0,8 s ở góc. KHÔNG vòng xoay, KHÔNG chữ "đang lưu". */
   flashSaved() {
     this.scene.tweens.killTweensOf(this.saveDot);
     this.saveDot.setAlpha(0.85);
@@ -283,11 +231,7 @@ export class Hud {
     return this.left.getBounds().bottom + 11;
   }
 
-  /**
-   * Bảng kẹp nhân mở (bên trái) thì nhật ký LỜI NGƯỜI dời sang phải, sát đáy màn hình —
-   * không thì câu gọi món nằm khuất sau bảng đúng lúc đang kẹp nhân theo câu đó.
-   * (Thông báo của máy không vướng bảng: nó ở đỉnh màn hình — xem `drawToasts`.)
-   */
+  /** Bảng kẹp nhân mở thì nhật ký LỜI NGƯỜI dời sang phải, sát đáy — hai khối chữ không được chồng nhau. */
   dockFeed(right: boolean) {
     const x = right ? 496 : 26;
     if (this.feedText.x === x) return;
@@ -302,11 +246,7 @@ export class Hud {
     this.feedBg.fillStyle(0x2b2f31, 1).fillRoundedRect(b.x - 10, b.y - 6, b.width + 20, b.height + 12, 8);
   }
 
-  /**
-   * Kênh LỜI NGƯỜI — khách nói, mình nói. Góc dưới trái, ba dòng gần nhất. Việc máy báo đi
-   * `toast()`. Cả hai kênh đều không có lời phán của hệ thống: không "đúng rồi", không "sai rồi",
-   * chỉ sự việc.
-   */
+  /** Việc máy báo đi `toast()`. Cả hai kênh đều không có lời phán của hệ thống: chỉ sự việc. */
   say(line: string) {
     this.log(line);
   }
@@ -357,13 +297,7 @@ export class Hud {
     this.drawToasts(s.now ?? this.scene.time.now, this.settings.reducedMotion);
   }
 
-  /**
-   * Dải thông báo ở đỉnh màn hình — xem khối chú thích ở `TOAST_X`. MỚI NHẤT Ở TRÊN: dòng mới
-   * rơi sát ngay dưới phiếu đơn, chỗ mắt người chơi đã phải liếc tới sẵn.
-   *
-   * ⚠️ Nhận `now` là ĐỒNG HỒ HIỆU ỨNG của scene chứ không phải `time.now`: bảng trò chuyện và
-   * menu đóng băng `clock` chứ không đóng băng Phaser.
-   */
+  /** MỚI NHẤT Ở TRÊN, rơi sát ngay dưới phiếu đơn. ⚠️ Nhận `now` là ĐỒNG HỒ HIỆU ỨNG của scene, không `time.now` — menu đóng băng `clock` chứ không đóng băng Phaser. */
   private drawToasts(now: number, reducedMotion: boolean) {
     const g = this.toastBg;
     g.clear();
@@ -385,13 +319,7 @@ export class Hud {
     }
   }
 
-  /**
-   * Con mắt ở đỉnh màn hình — xem khối chú thích ở `EYE_X`. Icon là file SVG (sinh bởi
-   * `tools/make-icons.ts`) chứ không vẽ tay bằng Graphics: nét sắc ở mọi cỡ màn hình.
-   *
-   * Hai bậc KHÔNG phân biệt bằng màu không thôi — bậc nặng NHÁY, bậc nhẹ đứng yên.
-   * `reducedMotion` thì tắt nháy, giữ nguyên mức đậm nhất.
-   */
+  /** Icon là SVG (sinh bởi `tools/make-icons.ts`) chứ không vẽ tay. Hai bậc phân biệt bằng NHÁY, không chỉ bằng màu; `reducedMotion` tắt nháy và giữ mức đậm nhất. */
   private drawEye(w: Watch) {
     const eye = this.eye;
     const on = w !== "NONE";
@@ -420,10 +348,7 @@ export class Hud {
       .setAlpha(close ? 0.55 + 0.45 * beat : 0.75);
   }
 
-  /**
-   * Icon bàn tay, khác nhau về HÌNH DẠNG (P1-04 §2.8): CLEAN = bàn tay rỗng viền ·
-   * MONEY = bàn tay + tờ tiền đặt chéo. Nằm cạnh nút tạm dừng, luôn thấy.
-   */
+  /** Khác nhau về HÌNH DẠNG, không chỉ màu: `CLEAN` bàn tay rỗng viền · `MONEY` bàn tay cầm tờ tiền. */
   private drawHands(state: "CLEAN" | "MONEY") {
     if (state === this.handsKey) return;
     this.handsKey = state;
@@ -487,10 +412,7 @@ export class Hud {
     });
   }
 
-  /**
-   * Mép trên của dòng hướng dẫn phím — dòng nhắc và thanh tiến trình xếp NGƯỢC LÊN từ
-   * đây. Ở cỡ chữ 200% dòng hướng dẫn chiếm hai dòng, đặt cứng `GAME_H − 66` là đè lên.
-   */
+  /** Dòng nhắc và thanh tiến trình xếp NGƯỢC LÊN từ mốc này. */
   private get stackTop() {
     return this.help.visible ? this.help.getBounds().top - 8 : GAME_H - 48;
   }
@@ -515,12 +437,8 @@ export class Hud {
   }
 
   /**
-   * Thanh tiến trình dưới dòng nhắc — MỘT thanh dùng cho HAI loại việc:
-   *  · GIỮ PHÍM ở một trạm (`busy`): đầy rồi thì xanh, vì người chơi được quyền nhả tay
-   *  · TAY ĐANG BẬN (`work`): không bao giờ xanh — xanh là lời mời nhả phím, mà ở đây không có
-   *    phím nào để nhả
-   *
-   * Việc xong trong tích tắc KHÔNG gửi `work` xuống đây — xem `beBusy(…, "quick")`.
+   * MỘT thanh cho HAI loại việc: GIỮ PHÍM (`busy`) đầy thì xanh vì người chơi được quyền nhả tay ·
+   * TAY ĐANG BẬN (`work`) không bao giờ xanh — xanh là lời mời nhả phím, mà ở đây không có phím nào.
    */
   private drawBar(busy: { st: Station; ms: number } | null, work: { frac: number } | null) {
     this.bar.clear();

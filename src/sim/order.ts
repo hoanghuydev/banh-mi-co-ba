@@ -1,17 +1,12 @@
 import type { Rng } from "../core/rng";
 
 /**
- * Đơn hàng, nguyên liệu và ĐỊNH LƯỢNG.
+ * Đơn hàng, nguyên liệu và ĐỊNH LƯỢNG. CANON T2: món ăn LÀ lựa chọn hội thoại — người chơi không
+ * chọn câu nói, họ chọn nguyên liệu, nên tất cả "ý" của một lượt tiếp khách nằm gọn ở file này.
  *
- * CANON T2: món ăn LÀ lựa chọn hội thoại. Người chơi không bao giờ chọn câu nói, họ chọn nguyên
- * liệu — nên tất cả "ý" của một lượt tiếp khách nằm gọn ở file này.
- *
- * Có định lượng chứ không phải chỉ có/không, vì "sai tỉ lệ" vốn đã là `ORDER_DEFECT` của canon,
- * §14 cho sẵn từ vựng ("nhiều ớt", "cho ít rau"), và §8(g) coi "bớt một thứ nhỏ với 100% khách
- * suốt 40 ngày" là lỗ hổng LỚN NHẤT — lỗ hổng đó chỉ tồn tại nếu bớt được.
- *
- * Nhưng KHÔNG cho bỏ vô hạn: §8(i) cấm spam hành vi mua chuộc, và một ổ bánh mì thì kẹp không lại
- * nếu nhồi quá (xem `CAPACITY`).
+ * Có định lượng vì §8(g) coi "bớt một thứ nhỏ với 100% khách suốt 40 ngày" là lỗ hổng LỚN NHẤT —
+ * lỗ hổng đó chỉ tồn tại nếu bớt được. Nhưng không cho bỏ vô hạn: §8(i) cấm spam mua chuộc, và
+ * một ổ bánh mì thì kẹp không lại nếu nhồi quá (`CAPACITY`).
  */
 
 export type Ingredient =
@@ -24,18 +19,11 @@ export type IngredientInfo = {
   key: number;
   label: string;
   kind: "nhan" | "rau" | "sot";
-  /**
-   * Tối đa bỏ được mấy phần. Thang chỉ còn hai nấc: một phần là mặc định, hai phần là
-   * "nhiều" — hết nấc. Nấc thứ ba không thêm được chữ nào vào câu khách nói, chỉ thêm
-   * một lần bấm, nên bỏ.
-   */
+  /** Thang hai nấc: một phần là mặc định, hai phần là "cho nhiều". */
   max: number;
 };
 
-/**
- * Thứ tự này là THỨ TỰ XẾP LỚP trong ổ bánh, từ dưới lên trên —
- * quết pate trước, nhân mặn, rồi rau, sốt rưới sau cùng. Bảng kẹp nhân vẽ theo đúng đây.
- */
+/** THỨ TỰ XẾP LỚP trong ổ, từ dưới lên — quết pate trước, rắc hành ngò sau cùng. */
 export const INGREDIENTS: IngredientInfo[] = [
   { id: "pate",    key: 1, label: "pate",         kind: "nhan", max: 2 },
   { id: "thit",    key: 2, label: "thịt nguội",   kind: "nhan", max: 2 },

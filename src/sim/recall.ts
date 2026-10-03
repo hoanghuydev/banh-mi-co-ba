@@ -21,13 +21,7 @@ export const RECENCY_DECAY = 0.88;
 
 export type Weights = { recency: number; importance: number; relevance: number };
 
-/**
- * Trọng số suy từ tính cách — P2-09 §2.4 ghi chú 3.
- *
- * `deTha` cao = dễ bỏ qua = chuyện cũ phai nhanh ⇒ nặng *recency*, nhẹ *importance*.
- * `soi` cao = để ý từng chi tiết ⇒ nặng *relevance*: họ nhớ đúng chuyện đang nói tới,
- * không nhớ chuyện to nhất.
- */
+/** `deTha` cao = dễ bỏ qua = chuyện cũ phai nhanh ⇒ nặng *recency*, nhẹ *importance*. Suy từ tính cách, không thêm núm nào cho tune. */
 export function weightsOf(p: Personality): Weights {
   return {
     recency: 0.6 + 0.8 * p.deTha,
@@ -36,12 +30,7 @@ export function weightsOf(p: Personality): Weights {
   };
 }
 
-/**
- * THẺ của một ký ức. Không có trường nào mới trong save: suy từ `kind` + `detail` + tầng.
- *
- * Giữ nghèo cố ý — mỗi thẻ phải là một chữ người viết nội dung gõ được vào `about` của
- * một topic mà không phải tra bảng.
- */
+/** Không có trường nào mới trong save: suy từ `kind` + `detail` + tầng. */
 export function tagsOf(m: Memory): Set<string> {
   const out = new Set<string>();
   out.add(m.kind);
@@ -79,13 +68,7 @@ export type Recalled = {
   what: string;
 };
 
-/**
- * Chuyện này đọc ra thành câu nói thế nào — `{m.what}` của nội dung lấy từ đây.
- *
- * Người viết KHÔNG được gõ mấy chữ này vào file thoại: đó đúng là cái bẫy cũ (viết "chuyện
- * thằng con" rồi mong là có chuyện thằng con). Bảng nằm đây vì nó phải khớp 1–1 với
- * `BaseKind`, và trình kiểm kiểu bắt được chỗ thiếu.
- */
+/** `{m.what}` của nội dung lấy từ đây — người viết gõ "Bữa trước {m.what} sao rồi?", không gõ thẳng chuyện cũ. */
 const WHAT: Record<BaseKind, string> = {
   WRONG_NAME: "cái vụ {me} kêu lộn tên",
   MADE_THEM_WAIT: "bữa {call} đứng chờ lâu",
@@ -137,23 +120,12 @@ export function retrieve(
   return out.slice(0, k);
 }
 
-/**
- * Người này ghé dày cỡ nào — để quy "ngày trôi qua" thành "lần ghé trôi qua".
- *
- * Trần 1,5 và sàn 0,25: người ghé ba lần một ngày không được quên nhanh gấp ba, và người
- * cả mùa ghé hai lần không được nhớ như mới hôm qua.
- */
+/** Quy "ngày trôi qua" thành "lần ghé trôi qua". */
 function visitsPerDay(s: RelState, day: number): number {
   return Math.max(0.25, Math.min(1.5, s.visits / Math.max(1, day)));
 }
 
-/**
- * Chuyện ĐÁNG nhắc lại không — ngưỡng để `m.remembers` bật.
- *
- * Không phải mọi ký ức đều đáng lôi ra giữa lúc bán hàng: một `FLOURISH` salience 15 từ
- * tuần trước không phải chuyện để mở lời. Ngưỡng tính theo salience gốc của kind nhân với
- * điểm truy hồi, nên một chuyện nhỏ vẫn lên được nếu nó rất mới và rất đúng chủ đề.
- */
+/** Không phải mọi ký ức đều đáng nhắc lại — dưới ngưỡng thì `m.remembers` sai và câu đó không tồn tại. */
 export const RECALL_FLOOR = 0.45;
 
 export function worthMentioning(r: Recalled): boolean {
@@ -176,12 +148,7 @@ export const REFLECT_MIN_OCCURRENCES = 3;
 
 export type Reflection = { kind: BaseKind; intensity: number; note: string };
 
-/**
- * Hôm nay người này có rút ra kết luận gì không. Gọi MỘT lần lúc đóng cửa, trước `nightly()`.
- *
- * Trả `null` là đa số, và đó là đúng: bài báo ra 2–3 lần mỗi ngày mô phỏng cho một agent
- * sống trọn ngày; ở đây một người ghé quầy mười lăm phút, nên vài ngày mới có một lần.
- */
+/** Gọi MỘT lần lúc đóng cửa, trước `nightly()`. */
 export function reflect(s: RelState, day: number): Reflection | null {
   const all = [...s.memory.short, ...s.memory.long];
   /*

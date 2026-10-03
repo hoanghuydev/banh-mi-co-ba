@@ -10,7 +10,6 @@ export type StallHooks = {
   service: Service;
   /** Ép đóng quầy ngay. */
   end(): void;
-  /** Phát một kích thích như thể người chơi vừa làm. */
   fire(stimId: string, zone?: string): void;
   gameObjects(): number;
 };

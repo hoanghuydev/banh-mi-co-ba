@@ -7,29 +7,11 @@ import { FONT, UI, button, buttonHeight, panel, textScale } from "./theme";
 import { Steam } from "./stall/Steam";
 
 /**
- * Bảng kẹp nhân — nơi trụ cột T2 sống hoặc chết.
- *
- * "Món ăn LÀ lựa chọn hội thoại": người chơi KHÔNG BAO GIỜ chọn câu nói, họ chọn
- * nguyên liệu. Nên đây là màn hình quan trọng nhất game.
- *
- * Ba đường vào đều dùng được, và CANON §15.5 bắt buộc phải có ĐỦ CẢ BA, đi chung:
- *   1. kéo miếng nhân thả vào ổ bánh            (cách chính)
- *   2. BẤM một cái vào miếng nhân               (chạm-để-đặt, đường trợ năng)
- *   3. phím số 1–8                              (bàn phím thuần)
- * cộng **nút Hoàn tác** và **một bước xác nhận** trước khi bánh rời tay.
- *
- * Bảng cố tình KHÔNG đóng băng thế giới: khách vẫn đứng đó chờ, kiên nhẫn vẫn tụt.
- * Muốn dừng hẳn thì bấm Esc — pause thật, đóng băng cả sự kiên nhẫn (CANON §15.2).
+ * Bảng kẹp nhân — nơi trụ cột T2 sống hoặc chết: món ăn LÀ lựa chọn hội thoại, nên đây là chỗ
+ * người chơi "nói". Mọi thứ ở đây phải đọc được bằng HÌNH, và phải mở/đóng được giữa chừng.
  */
 
-/**
- * Bảng nằm BÊN TRÁI, dưới phiếu đơn của HUD — KHÔNG che hàng khách (hàng khách đứng ở
- * giữa–phải màn hình). Lúc kẹp nhân là lúc khách nhìn tay mình kỹ nhất; bảng mà che mặt
- * họ là T1/T5 chết đúng lúc quan trọng nhất (P1-04 §2.1: sân khấu luôn phải thấy được).
- *
- * Mấy con số dưới đây là cỡ ở chữ 100%; CANON §15.1 bắt bảng phải GIÃN theo cỡ chữ nên
- * chúng chỉ là gốc để nhân — xem `layout()`.
- */
+/** Bên TRÁI, dưới phiếu đơn của HUD — KHÔNG che hàng khách, vì khách đang nhìn tay mình là cả luật chơi. */
 const PANEL_W = 470;
 const PANEL_LEFT = 8;
 const PANEL_TOP = 96;
@@ -37,25 +19,11 @@ const TILE_H = 44;
 const TRAY_COLS = 3;
 const TRAY_ROWS = Math.ceil(INGREDIENTS.length / TRAY_COLS);
 const LOAF_H = FOOD.LOAF_H;
-/**
- * Trần phóng của bảng. Khung hình thiết kế chỉ cao 576 px và bảng phải nằm gọn dưới
- * khung ngày/giờ của HUD, nên ở chữ 200% bảng KHÔNG thể phóng 200% — phóng hết mức mà
- * vẫn còn thấy đủ 10 ô nhân là ~145%. Bề ngang chặn thấp hơn nữa: bảng mà rộng quá
- * nửa màn hình là che mất hàng khách.
- */
+/** Khung thiết kế chỉ cao 576 px và bảng phải nằm gọn dưới dải HUD. */
 const MAX_SCALE = 1.45;
 const MAX_SCALE_W = 1.15;
 const MAX_SCALE_BTN = 1.25;
-/**
- * Gói bánh là MỘT cú bấm. Trước đây là ba nhịp gập · cuộn · xoắn và FLOURISH đo
- * bằng độ đều của hai khoảng nhịp — ba cú bấm cho mỗi ổ, mỗi khách, cả bốn mươi
- * ngày, là quá nhiều thao tác cho một thứ không có nhánh hỏng.
- *
- * FLOURISH không mất theo: nó chuyển từ ĐỀU TAY sang NHANH TAY — gói trong vòng
- * `wrapSnapMs` kể từ lúc đặt miếng nhân cuối là khéo. Vẫn là một khoảnh khắc đọc
- * được từ nhịp tay người chơi, và `service.ts` (SK ngày 5 của bé Sử) cùng
- * `gossip.ts` vẫn có cái để bắt.
- */
+/** Gói bánh là MỘT cú bấm. Ba nhịp gập · cuộn · xoắn đã bỏ: FLOURISH đo bằng nhịp cuối, và ba nhịp thì người chơi học thuộc rồi bấm máy móc. */
 const WRAP_SNAP_MS = 900;
 
 export class AssemblyPanel {
@@ -66,22 +34,13 @@ export class AssemblyPanel {
   private hint!: Phaser.GameObjects.Text;
   private dropZone!: Phaser.Geom.Rectangle;
   private ghost: Phaser.GameObjects.Image | null = null;
-  /**
-   * Phaser bắn `dragend` RỒI mới bắn `pointerup` trên chính ô vừa kéo.
-   * Không chặn thì một lần kéo-thả bị tính thành hai lần bật/tắt và món biến mất.
-   */
+  /** ⚠️ Phaser bắn `dragend` RỒI mới bắn `pointerup` trên chính ô vừa kéo — không chặn thì một cú kéo thành một cú kéo cộng một cú chạm. */
   private dragging = false;
 
-  /**
-   * NHẬT KÝ kẹp, không phải tập hợp: một `id` xuất hiện mấy lần là bỏ mấy phần.
-   * Giữ đúng thứ tự thao tác nên Hoàn tác chỉ việc `pop()`.
-   */
+  /** NHẬT KÝ kẹp, không phải tập hợp: một `id` xuất hiện mấy lần là bỏ mấy phần. */
   private stack: Ingredient[] = [];
   private presetBtns: Phaser.GameObjects.Text[][] = [];
-  /**
-   * Ổ đang kẹp được áp bằng preset thứ mấy. Suất chia sẵn CHỈ bị trừ lúc gói xong —
-   * đúng hợp đồng của bảng ("gỡ ra thì như chưa lấy"), nên phải nhớ qua cả lần gác ổ.
-   */
+  /** Suất chia sẵn CHỈ bị trừ lúc gói xong, không phải lúc áp preset. */
   private presetUsed: number | null = null;
   private presetArm: number | null = null;
   private tiles = new Map<Ingredient, () => void>();
@@ -109,15 +68,9 @@ export class AssemblyPanel {
     private onDone: (dish: Ingredient[], evenWrap: boolean) => void,
     private onPark: (dish: Ingredient[]) => void = () => {},
     private onAdd: (id: Ingredient) => void = () => {},
-    /**
-     * Bấm nút preset P1/P2/P3 — scene trả lại danh sách phần (hoặc null nếu hết phần chia
-     * sẵn). THUẦN TUÝ: chỉ đọc, KHÔNG được trừ suất chia sẵn ở đây (xem `onPresetConsumed`).
-     */
+    /** Trả null nếu hết phần chia sẵn. */
     private onPreset: (i: number) => Ingredient[] | null = () => null,
-    /**
-     * P3-03 — hết là hết (KH-3): trả lý do nếu KHÔNG bỏ thêm được phần này (kho hết),
-     * null nếu được. Kiểm lúc bỏ vào; kho chỉ bị trừ lúc gói xong (gỡ ra thì như chưa lấy).
-     */
+    /** Hết là hết: trả lý do nếu KHÔNG bỏ thêm được phần này. */
     private canAdd: (id: Ingredient, stack: readonly Ingredient[]) => string | null = () => null,
     private allowEmptyLoaf: () => boolean = () => false,
     private onPresetConsumed: (i: number) => void = () => {},
@@ -156,15 +109,7 @@ export class AssemblyPanel {
 
   // ───────────────────────────────────────────────────────────────── dựng bảng
 
-  /**
-   * CANON §15.1: hộp phải TỰ GIÃN theo chữ — bảng kẹp nhân là màn hình quan trọng nhất
-   * game, không được là chỗ duy nhất giữ nguyên 13 px ở cỡ chữ 200%.
-   *
-   * Phóng hết mức mà bảng vẫn nằm trong khung 1024×576 và vẫn chừa hàng khách bên phải:
-   *  · chiều cao chốt ở 4 hàng khay + ổ bánh (ảnh ổ không phóng) → trần ~1,45
-   *  · bề ngang chốt ở "không quá nửa màn hình"                  → trần 1,15
-   * Muốn tới đúng 200% thì phải cho khay CUỘN được — đổi lớn hơn phạm vi chỗ này.
-   */
+  /** CANON §15.1: hộp TỰ GIÃN theo chữ — bảng kẹp nhân là màn hình quan trọng nhất, cỡ chữ 200% không được cắt mất gì. */
   private layout() {
     this.s = Math.max(1, Math.min(textScale(), MAX_SCALE));
     this.sw = Math.min(this.s, MAX_SCALE_W);
@@ -197,10 +142,7 @@ export class AssemblyPanel {
     this.root.add(this.hint);
   }
 
-  /**
-   * Dời cả bảng xuống để mép trên nằm dưới `y` (đáy khung ngày/giờ của HUD — ở chữ 200%
-   * khung đó cao hơn). Không dời quá đáy màn hình.
-   */
+  /** Dời cả bảng xuống để mép trên nằm dưới đáy khung ngày/giờ của HUD. */
   placeBelow(y: number) {
     const dy = Math.max(0, Math.min(GAME_H - 4 - (PANEL_TOP + this.ph), y + 8 - PANEL_TOP));
     if (dy === this.root.y) return;
@@ -309,11 +251,7 @@ export class AssemblyPanel {
     return c;
   }
 
-  /**
-   * Trần mỗi loại. Thang phần ăn chỉ có HAI nấc (`INGREDIENTS[].max` = 2): một phần là
-   * mặc định, hai phần là "nhiều". Không có nấc thứ ba — bảng này tự theo con số đó,
-   * nên huy hiệu ×N cũng dừng ở ×2.
-   */
+  /** Thang phần ăn chỉ có HAI nấc: một phần là mặc định, hai phần là "cho nhiều". */
   private maxOf(id: Ingredient) {
     return INGREDIENTS.find((i) => i.id === id)!.max;
   }
@@ -381,12 +319,7 @@ export class AssemblyPanel {
     });
   }
 
-  /**
-   * Áp một preset. KHÔNG trừ suất chia sẵn ở đây: hợp đồng của bảng là "kho chỉ bị trừ
-   * lúc gói xong (gỡ ra thì như chưa lấy)", mà trước đây bấm P1 rồi Hoàn tác là mất suất
-   * vĩnh viễn — ba cú bấm hụt là mất 3 trong 12 suất, không lấy lại được. Suất chỉ rụng
-   * ở `confirm()`, qua `onPresetConsumed`.
-   */
+  /** KHÔNG trừ suất chia sẵn ở đây — hợp đồng của bảng là "kho chỉ bị trừ lúc gói xong". */
   private applyPreset(i: number) {
     // Ghi đè cả ổ đang kẹp là chuyện lớn: Hoàn tác chỉ `pop()` một miếng nên 20 phần đã
     // kẹp tay không lấy lại được. Hỏi một lần trước khi xoá.
@@ -435,12 +368,7 @@ export class AssemblyPanel {
     this.onDone(dish, even);
   }
 
-  /**
-   * Vẽ phần nhân nằm trong ổ — XẾP CHỒNG THÀNH LỚP, không phải xếp thành hàng.
-   * Đúng thứ tự người ta làm thật: quết pate trước, nhân mặn, rồi rau, sốt rưới sau cùng
-   * (thứ tự lấy từ `INGREDIENTS`). Bỏ hai phần thì thấy hai lớp — nhìn là biết mình cho dư.
-   * Bấm vào một lớp thì gỡ đúng một phần.
-   */
+  /** XẾP CHỒNG THÀNH LỚP, không xếp thành hàng — đúng cách nhân nằm trong một ổ bánh thật. */
   private repaint() {
     this.fillLayer.removeAll(true);
     this.hint.setColor(UI.muted);

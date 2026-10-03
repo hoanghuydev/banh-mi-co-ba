@@ -59,7 +59,6 @@ function wallBody(g: Pen, cx: number, cy: number, top: number) {
   }
 }
 
-/** Hộp đồng hồ điện + dây thả xuống — biến thể 1. */
 function meter(g: Pen, at: (u: number, v: number) => { x: number; y: number }) {
   const U0 = 9, U1 = 22, V0 = 20, V1 = 38;
   faceRect(g, at, U0 - 1.5, U1 + 1.5, V0 - 1.5, V1 + 1.5, shade(PAL.meterBox, -34));
@@ -74,7 +73,6 @@ function meter(g: Pen, at: (u: number, v: number) => { x: number; y: number }) {
   g.lineBetween(b.x, b.y, c.x, c.y);
 }
 
-/** Ô cửa sổ nhỏ có song sắt + chậu cây con trên bệ — biến thể 2. */
 function smallWindow(g: Pen, at: (u: number, v: number) => { x: number; y: number }) {
   const U0 = 6, U1 = TW / 2 - 6, V0 = 22, V1 = 50;
   faceRect(g, at, U0 - 2, U1 + 2, V0 - 2, V1 + 2, PAL.windowFrame);
@@ -94,7 +92,6 @@ function smallWindow(g: Pen, at: (u: number, v: number) => { x: number; y: numbe
   g.fillEllipse(pot.x - 1, pot.y - 9, 9, 6);
 }
 
-/** Tờ lịch đỏ + vệt nước ố chảy từ mái xuống — biến thể 3. */
 function poster(g: Pen, at: (u: number, v: number) => { x: number; y: number }) {
   const U0 = 8, U1 = 22, V0 = 24, V1 = 50;
   faceRect(g, at, U0 - 1, U1 + 1, V0 - 1, V1 + 1, shade(PAL.posterRed, -30), 0.9);

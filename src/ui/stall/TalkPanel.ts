@@ -5,20 +5,11 @@ import type { TalkTone } from "../../sim/talk";
 import { CARD_EDGE, placeTalkCard } from "./talkCardLayout";
 
 /**
- * Dải trò chuyện — một thẻ HẸP neo CẠNH người đang nói, phía vỉa hè trống; tự lật sang bên kia
- * khi chạm mép khung, và không bao giờ phủ lên cột của chính người đó.
+ * Một thẻ HẸP neo CẠNH người đang nói, tự lật sang bên kia khi chạm mép khung. Bảng đáy màn hình
+ * cũ che TRỌN người đang nói chuyện (mép trên y = 244 so với đỉnh đầu y ≈ 246), và ở cỡ chữ 200%
+ * thì hàng thứ tư rơi ra ngoài màn hình — cái trợ năng tự huỷ chính nó.
  *
- * ⚠️ Bảng đáy màn hình của bản cũ che TRỌN người đang nói chuyện (đo được: mép trên bảng y = 244
- * trong khi đỉnh đầu khách y ≈ 246), và ở cỡ chữ 200% thì hàng thứ tư rơi xuống y ≈ 598 > GAME_H
- * — cái trợ năng tự huỷ chính nó.
- *
- * Ba đường vào, đủ cả ba như CANON §15.5: bấm chuột · phím số 1–3 · ↑↓ rồi Enter.
- *
- * Hai thứ ĐÃ BỎ, cùng lý do (không hiện một thông tin ở hai kênh): huy hiệu mặt trong thẻ (khuôn
- * mặt THẬT đang ở trên người họ) và chữ `MOOD_LABEL` dưới nó.
- *
- * Đồng hồ KHÔNG đóng băng khi thẻ mở (`StallScene` đặt `clock.busy`), nên ngân sách đọc ở đây
- * phải chặt — tối đa ba dòng, mỗi dòng một câu ngắn.
+ * Đồng hồ KHÔNG đóng băng khi thẻ mở, nên ngân sách đọc phải chặt: tối đa ba dòng.
  */
 
 /** Bề ngang thẻ. Hẹp là CỐ Ý: nó phải lọt vào khoảng trống cạnh người, không chiếm hàng ghế đầu. */
@@ -44,10 +35,7 @@ export type TalkPanelView = {
   silent?: boolean;
   options: readonly { say: string; tone: TalkTone }[];
   done: boolean;
-  /**
-   * Chỗ người đang nói, theo TOẠ ĐỘ MÀN HÌNH (đã trừ camera). Thẻ neo cạnh điểm này.
-   * Vắng thì rơi về giữa–dưới như cũ — headless và mấy màn không có sân khấu.
-   */
+  /** TOẠ ĐỘ MÀN HÌNH (đã trừ camera) — thẻ là `scrollFactor(0)`. */
   anchor?: { x: number; y: number };
 };
 
@@ -57,15 +45,7 @@ export class TalkPanel {
   private cursor = 0;
   private count = 0;
   private off: (() => void)[] = [];
-  /**
-   * Chỗ đã CHỐT cho cuộc đang mở — tâm ngang và MÉP TRÊN, đã kẹp xong.
-   *
-   * ⚠️ Khoá riêng cái điểm neo là chưa đủ: chiều cao vẫn đổi theo nhịp, nên nhịp dày chạm mép
-   * dưới màn hình thì cú kẹp đẩy thẻ LÊN rồi nhịp sau mỏng lại nó RƠI XUỐNG.
-   *
-   * Nên khoá chỗ ĐÃ GIẢI XONG và cho nó đi MỘT CHIỀU: được trồi lên khi cần thêm chỗ, không bao
-   * giờ tụt lại. `show()` giữ nó qua cú `destroy()` bên trong; chỉ `destroy()` từ ngoài mới xoá.
-   */
+  /** ⚠️ Khoá riêng điểm neo là chưa đủ: chiều cao đổi theo nhịp, nên nhịp dày chạm mép dưới thì cú kẹp đẩy thẻ LÊN rồi nhịp sau mỏng lại nó RƠI XUỐNG. Khoá chỗ ĐÃ GIẢI XONG, và cho đi MỘT CHIỀU. */
   private locked: { cx: number; top: number } | null = null;
 
   /**
@@ -104,16 +84,7 @@ export class TalkPanel {
     const rowH = rowTexts.map((t) => Math.max(Math.round(30 * sz), t.height + Math.round(14 * sz)));
 
     const nameH = Math.round(16 * sz);
-    /*
-     * CÂU HỌ VỪA ĐÁP, NẰM NGAY TRÊN BỘ LỰA CHỌN. Bong bóng SỐNG CÓ HẠN (2,8–9 s) rồi tắt, trong
-     * khi thẻ đứng chờ tới lúc người chơi bấm — mà đọc ba dòng rồi cân nhắc thường lâu hơn thế,
-     * nên tới lúc bấm thì câu mình đang ĐÁP LẠI đã biến mất.
-     *
-     * Hai kênh không phải một thông tin hiện hai lần: bong bóng mang theo CHỖ và KHOẢNH KHẮC,
-     * chữ trong thẻ mang theo NGỮ CẢNH và nó đứng yên.
-     *
-     * Im lặng cố ý vẫn phải có hình: ô trống đọc ra là UI hỏng, "…" đọc ra là một câu trả lời.
-     */
+    /** Bong bóng SỐNG CÓ HẠN rồi tắt, trong khi thẻ đứng chờ tới lúc người chơi bấm — nên tới lúc bấm thì câu mình đang ĐÁP LẠI đã biến mất. Im lặng cố ý vẫn phải có hình: "…" chứ không phải ô trống. */
     const quote = v.silent ? "…" : v.line.trim();
     const lineTxt = quote
       ? this.scene.add.text(0, 0, `“${quote}”`, {
@@ -160,13 +131,7 @@ export class TalkPanel {
     this.bindKeys(v.done);
   }
 
-  /**
-   * Chỗ đặt thẻ. Neo SANG BÊN người nói, bên nào còn chỗ thì về bên đó.
-   *
-   * ⚠️ NEO BẰNG MÉP TRÊN, KHÔNG BẰNG TÂM: chiều cao thẻ đổi theo TỪNG NHỊP, nên neo bằng tâm thì
-   * cú kẹp đẩy thẻ CAO lên khi nó dày ra rồi thả xuống khi nhịp sau mỏng lại. Neo mép trên thì
-   * thẻ chỉ DÀI THÊM XUỐNG DƯỚI — mắt đang đọc từ trên xuống, nên mỏ neo phải là chỗ họ đang nhìn.
-   */
+  /** ⚠️ NEO BẰNG MÉP TRÊN, KHÔNG BẰNG TÂM: chiều cao đổi theo từng nhịp, neo bằng tâm thì cả hai mép cùng xê dịch. Mắt đọc từ trên xuống nên mỏ neo phải là chỗ họ đang nhìn. */
   private place(a: { x: number; y: number } | undefined, w: number, h: number) {
     const r = placeTalkCard(this.locked, a, { w, h }, { w: GAME_W, h: GAME_H });
     this.locked = { cx: r.cx, top: r.top };
@@ -209,11 +174,7 @@ export class TalkPanel {
     });
   }
 
-  /**
-   * Phím KHÔNG lớp nào được nuốt — CANON §15.2. `stopPropagation()` trên MỌI `keydown` làm `P`
-   * không tới được `StallScene`, tức người chơi KHÔNG VÀO ĐƯỢC menu tạm dừng khi thẻ đang mở, mà
-   * §15.2 nói "pause mọi lúc, kể cả giữa lúc khách đang nói". `Tab` và `F1`–`F8` đi cùng đường.
-   */
+  /** ⚠️ `stopPropagation()` trên MỌI `keydown` làm `P` không tới được `StallScene`, tức không vào được menu tạm dừng khi thẻ đang mở. */
   private static readonly PASS_THROUGH = new Set(["KeyP", "Tab", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8"]);
 
   private bindKeys(done: boolean) {
@@ -221,27 +182,13 @@ export class TalkPanel {
     if (!kb) return;
     const onKey = (ev: KeyboardEvent) => {
       if (!this.root) return;
-      /*
-       * Giữ phím KHÔNG được chạy hết cả cuộc: không lọc `ev.repeat` thì giữ Space hoặc Enter là
-       * key-repeat bấm qua cả cây trong một phần mười giây, áp đủ `rel`/`anger`/`act` rồi đánh
-       * dấu đã nghe — nội dung đó mất VĨNH VIỄN cả mùa mà người chơi không kịp thấy một chữ nào.
-       */
+      /** Không lọc `ev.repeat` thì giữ Space là key-repeat bấm qua cả cây trong một phần mười giây — nội dung đó mất VĨNH VIỄN cả mùa. */
       if (TalkPanel.PASS_THROUGH.has(ev.code)) return;
-      /*
-       * CHẶN TRƯỚC, LỌC `repeat` SAU — thứ tự này là bắt buộc.
-       *
-       * ⚠️ `return` ngay khi `ev.repeat` mà chưa `stopPropagation()` thì cú bấm đầu bị nuốt đúng,
-       * nhưng mọi sự kiện lặp phía sau lọt xuống plugin bàn phím của Phaser và bật
-       * `keys.W/A/S/D.isDown` — giữ W/A/S/D trong lúc đọc thẻ là cô Ba đi mất khỏi quầy.
-       */
+      /** ⚠️ `return` ngay khi `ev.repeat` mà chưa `stopPropagation()` thì mọi sự kiện lặp lọt xuống plugin bàn phím và bật `keys.W/A/S/D.isDown` — cô Ba đi mất khỏi quầy. */
       ev.stopPropagation();
       if (ev.repeat && ev.code !== "ArrowUp" && ev.code !== "ArrowDown"
         && ev.code !== "KeyW" && ev.code !== "KeyS") return;
-      /*
-       * CÓ LỚP KHÁC ĐÈ LÊN THÌ THẺ NÀY CÂM. `PASS_THROUGH` cho `P` đi thẳng vào menu tạm dừng,
-       * nhưng thẻ vẫn còn đó phía dưới và vẫn còn nghe phím — mà phản xạ của ai cũng là bấm Enter,
-       * và Enter rơi xuống đây thành `pick(cursor)` trong lúc màn hình đang mờ.
-       */
+      /** `PASS_THROUGH` cho `P` đi thẳng vào menu tạm dừng, nhưng thẻ vẫn còn đó và vẫn nghe phím — mà phản xạ của ai cũng là bấm Enter. */
       if (this.blocked()) return;
       // Listener này ở pha CAPTURE trên window nên nó chạy trước plugin bàn phím của
       // Phaser — `stopPropagation` phía trên là thứ duy nhất giữ cho W/A/S/D không làm
@@ -270,14 +217,7 @@ export class TalkPanel {
         else this.pick(this.cursor);
         return;
       }
-      /*
-       * Esc = LÙI RA, luôn MIỄN PHÍ (luật L4: một phím chỉ mang một nghĩa, và "lùi ra khỏi lớp
-       * trên cùng" không bao giờ được là một nước đi có giá).
-       *
-       * Bản cũ gộp hai nghĩa vào một phím, và `KeyF` — đúng cái phím vừa MỞ ra thẻ này — cũng gọi
-       * `close()` trong khi dòng gợi ý không hề nhắc tới F. "Làm thinh" giờ là một DÒNG trong thẻ,
-       * giọng `IM`, hệ quả khai sẵn.
-       */
+      /** Esc LUÔN MIỄN PHÍ (luật L4). "Làm thinh" đã thành một DÒNG viết sẵn trong dải, giọng `IM`, đọc được hệ quả trước khi bấm. */
       if (ev.code === "Escape") { ev.preventDefault(); this.close(); }
     };
     // `capture` để Esc không chạm tới menu tạm dừng của StallScene lúc thẻ đang mở.

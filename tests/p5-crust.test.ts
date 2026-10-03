@@ -20,7 +20,7 @@ import assert from "node:assert/strict";
 import { Bus } from "../src/core/eventbus";
 import { newGame } from "../src/core/save";
 import { HeadlessStall, POLICIES } from "../src/sim/headless";
-import { dishFor, type Ingredient } from "../src/sim/order";
+import { INGREDIENTS, dishFor, type Ingredient, type OrderSpec } from "../src/sim/order";
 import { CRUST } from "../src/sim/oven";
 
 type Ev = { e: string; p: any };
@@ -46,6 +46,16 @@ const pick = (ev: Ev[], e: string) => ev.filter((x) => x.e === e).map((x) => x.p
 /** Lỗi mà khách NÓI RA (một cái), và cả rổ lỗi hệ ghi ngầm. */
 const diffed = (ev: Ev[]) => pick(ev, "delivery:diffed")[0];
 const without = (dish: Ingredient[], ...ids: Ingredient[]) => dish.filter((x) => !ids.includes(x));
+/**
+ * Một thứ khách CÓ gọi mà bỏ ra được — cố ý tránh nhân mặn: rút hết nhân thì ổ thành ổ TRỐNG
+ * (`HOLLOW_LOAF`), một luật khác hẳn, có bài riêng ở `p1-hollow`.
+ */
+function dropMe(spec: OrderSpec): Ingredient {
+  const i = INGREDIENTS.find((x) => x.kind !== "nhan" && (spec.levels[x.id] ?? 0) > 0);
+  assert.ok(i, "đơn này không có rau nào để bỏ bớt — đổi seed");
+  return i.id;
+}
+
 /**
  * Mọi câu NGƯỜI NÀY nói ra sau lúc đưa bánh. Phải lọc theo `memKey`: cả hẻm cùng nói, và câu
  * đầu tiên bay ra thường là lời chào của một người khác đứng kế bên.
@@ -95,7 +105,7 @@ test("lò gas có `burnAt` riêng: dải tốt của nó KHÔNG bị đọc thà
 
 test("vừa thiếu món vừa chưa giòn: câu chính nói chuyện THIẾU MÓN", () => {
   const { h, ev, c } = atCounter();
-  const miss = Object.keys(c.order!.levels).find((k) => (c.order!.levels as any)[k] > 0) as Ingredient;
+  const miss = dropMe(c.order!);
   h.service.serveDish(without(dishFor(c.order!), miss), { crust: RAW });
   const d = diffed(ev);
   assert.ok(d.defects.length >= 2, "hệ vẫn ghi đủ cả hai lỗi");
@@ -105,7 +115,7 @@ test("vừa thiếu món vừa chưa giòn: câu chính nói chuyện THIẾU M�
 
 test("câu nói ra gồm CẢ HAI vế: chuyện thiếu món rồi tới chuyện vỏ bánh", () => {
   const { h, ev, c } = atCounter();
-  const miss = Object.keys(c.order!.levels).find((k) => (c.order!.levels as any)[k] > 0) as Ingredient;
+  const miss = dropMe(c.order!);
   h.service.serveDish(without(dishFor(c.order!), miss), { crust: SINGED });
   const lines = linesOf(h, ev, c.memKey);
   const line = lines.find((t) => /cháy cạnh|chưa giòn|vỏ/.test(t));
@@ -140,7 +150,7 @@ test("không cho thêm gì thì cô Ba không nói gì", () => {
 
 test("cho thêm trên ổ CÓ LỖI: vẫn nói ra, và khách vẫn cảm ơn trước khi chê", () => {
   const { h, ev, c } = atCounter();
-  const miss = Object.keys(c.order!.levels).find((k) => (c.order!.levels as any)[k] > 0) as Ingredient;
+  const miss = dropMe(c.order!);
   const r = h.service.serveDish([...without(dishFor(c.order!), miss), "ot"], { crust: RAW });
   assert.ok(r.playerSay, "ổ trật thì tấm lòng vẫn là tấm lòng");
   const lines = linesOf(h, ev, c.memKey);

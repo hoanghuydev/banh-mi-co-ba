@@ -164,7 +164,7 @@ chứ không phải của bộ máy. Khi rà tới file tương ứng thì làm 
 | ~~`FILM` / `STOP_FILM`~~ | bé Su | 13 | ✅ **xong** — xem §6nonies |
 | ~~`MOVE_CART`~~ | chú Kiệt | 11 | ✅ **xong** — xem §6undecies |
 | ~~`CARRY_GANH` · `MOVE_GANH`~~ | bà Sáu | 11 | ✅ **xong** — xem §6decies |
-| `RAO` | bà Sáu dạy | 7 | ba mảnh đã có, chưa ai nối |
+| ~~`RAO`~~ | bà Sáu dạy | 7 | ✅ **xong** — xem §6duodecies |
 | `LEND_ITEM` / `CLEAR_DEBT` | anh Dũng · chị Lan | 5 | arc áo mưa |
 | `TAKE_CASH` | bé Su · thầy Phúc | 5 | `PAY` có chiều ra, chưa có chiều vào |
 | ~~`BARTER`~~ | bà Sáu | 5 | ✅ **xong** — xem §6decies |
@@ -737,6 +737,43 @@ không phải lỗi logic (tắt riêng `KIET_STEAL` thì nó xanh lại): đợ
 lời từ **0,6 lên 1,8 lần/ngày**, nên lưới bắt đầu rơi trúng mấy lúc có người đang chờ mình
 trả lời — mà `talkCost` cho người vừa mở lời `TALK_B_ADDRESSED = −99`, thắng tuyệt đối, và
 ĐÚNG như vậy. Lưới đo luật KHOẢNG CÁCH thì phải đo lúc luật kia không bật.
+
+## 6duodecies. `RAO` — NƯỚC ĐI NGƯỢC VỚI CÁI XE CHÚ KIỆT
+
+*"Con bán mà con hổng rao. Người ta đi ngang đâu có biết con ơi."* — cả cuộc `sau.rao`
+dựng quanh một câu người chơi tự nói ra (*"Bánh mì nóng hông…"*), và tới đợt này nó không
+làm một ai ngoái lại. Bà dạy xong rồi thôi.
+
+| | hướng | cắn vào ai |
+|---|---|---|
+| xe chú Kiệt lấn | **−** ăn bớt người đi ngang | khách lạ |
+| tiếng rao | **+** kéo họ quay đầu (`RAO_TURN = 0,45`) | người đang đi thẳng |
+
+Và nó **không tự biến ai thành khách**: ngoái lại chỉ bật `t.glanced` ⇒ `inviteChance`
++0,24 — mở cửa cho câu mời, chứ người chơi vẫn phải mời. Tiếng rao mua sự CHÚ Ý, không
+mua đơn hàng.
+
+Đo trên một buổi bán ngày 9: rao 150 lần → **18 người ngoái lại** (0,12/lần). Thưa, và
+đúng là phải thưa: phần lớn người đi ngang đã có kế hoạch ngó hay không ngó từ lúc spawn,
+`RAO` chỉ với tới những ai đang đi thẳng.
+
+### Hai lỗi của chính tôi, hai lưới bắt được
+
+* **Cổng `never` ăn ngay lần đầu.** Khai `RAO` vào `TalkAct` xong, `npm run check` trượt
+  tại đúng dòng `assertActHandled(act)` — không phải chờ tới lúc chơi mới biết act chạy
+  không tải. Đây là lần đầu cái cổng dựng ở §6undecies có việc làm.
+* **Tôi ghi đè mất một cờ có sẵn.** Nút rao vốn đặt `sauRaoThu`, và `chu-kiet.json` đọc nó
+  (*"chú có nghe tui rao hồi sáng hông chú?"*). Tôi thay bằng một cờ tự nghĩ ra, và `F-2`
+  (*"cờ đọc mà không ai đặt = một nhánh nội dung không bao giờ mở ra"*) đỏ ngay. Lưới
+  `R-3` giờ ghim đúng TÊN cờ, không chỉ kiểm "có cờ nào đó".
+
+### Và một lỗi đọc cờ sai
+
+Bản đầu tôi lấy `pass.spot === null` làm dấu "chưa dừng ngó" — nhưng `spot` **luôn có giá
+trị**: lúc spawn nó mặc định là chính lối ra (`plan.spot ?? plan.to`). Nên không ai lọt
+qua, và `R-1` báo *"cả buổi không có lúc nào có người đi thẳng ngang qua"*. Đúng cặp cờ là
+cặp mà `snapshot.glanced` dùng: `stay > 0 && until >= 0` — cùng một cái bẫy đã bắt ở
+§6bis với `t.glanced`, chỉ khác chỗ.
 
 ## 7. Truy vết
 

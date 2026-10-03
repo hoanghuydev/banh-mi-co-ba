@@ -781,7 +781,11 @@
                   "rel": 3,
                   "flag": "sauRaoThu",
                   "reply": "Trời ơi. Nghe như con kêu đò. Mà được. Bữa đầu vậy là được rồi con.",
-                  "mood": "NGAC_NHIEN"
+                  "mood": "NGAC_NHIEN",
+                  "act": {
+                    "kind": "RAO",
+                    "forSec": 12
+                  }
                 },
                 {
                   "say": "Dạ thôi bà. Con rao con quê chết.",

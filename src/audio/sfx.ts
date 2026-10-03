@@ -5,14 +5,11 @@ import { loadSettings, type Settings } from "../core/save";
 import { music } from "./music";
 
 /**
- * TIẾNG ĐỘNG — bốn bus còn lại của CANON §15.4. Bus thứ năm ("Nhạc") sống riêng ở `music.ts`:
- * nhạc là 5 cue dài tải lười và crossfade, tiếng động là ~170 mẩu ngắn bắn theo sự kiện.
+ * TIẾNG ĐỘNG — bốn bus còn lại của CANON §15.4; bus "Nhạc" sống riêng ở `music.ts`. Scene nói "vừa
+ * có chuyện này", KHÔNG scene nào tự `this.sound.play`.
  *
- * Điểm nối duy nhất: scene nói "vừa có chuyện này", KHÔNG scene nào tự `this.sound.play`.
- *
- * Bốn luật cài thẳng vào đây, không phải "nhớ rồi tự giữ": mỗi bus một công tắc RIÊNG + trần gain
- * riêng · giọng người nói thì mọi bus khác HẠ XUỐNG · pan theo chỗ người ta đứng · "âm mô tả thế
- * giới thì giữ, âm chấm điểm người chơi thì bỏ" (`NEGATIVE_CUES` là DANH SÁCH ĐÓNG).
+ * Bốn luật cài thẳng vào đây: mỗi bus một công tắc + trần gain riêng · giọng người nói thì mọi bus
+ * khác hạ xuống · pan theo chỗ người ta đứng · âm mô tả THẾ GIỚI thì giữ, âm chấm điểm thì bỏ.
  */
 
 // ─────────────────────────────────────────────────────────────────── danh mục
@@ -35,11 +32,7 @@ export function sfxBus(id: SfxId): BusId {
 
 // ───────────────────────────────────────────────────────────────── trần gain
 
-/**
- * Trần của từng bus, P5-03 §2.1. Đây là mức TỐI ĐA khi người chơi kéo công tắc
- * lên 100 — không phải mặc định. `giongNPC` ở 0 dB là có chủ ý: giọng người là
- * thứ KHÔNG BAO GIỜ bị thứ khác đè, mọi bus khác đều có trần thấp hơn nó.
- */
+/** Mức TỐI ĐA khi người chơi kéo công tắc lên 100. */
 const CEILING: Record<BusId, number> = {
   duongPho: 0.708,   // −3 dB
   giongNPC: 1.0,     //  0 dB
@@ -55,24 +48,13 @@ const VOICE_DUCK: Record<BusId, number> = {
 };
 const CROWD_DUCK = 0.282;
 
-/**
- * Âm "chấm điểm người chơi" — công tắc `disableNegativeAudioCues` tắt được; giá trị là thứ phát
- * THAY (null = im hẳn).
- *
- * ⚠️ DANH SÁCH NÀY ĐÓNG. Thêm vào đây một âm mô tả THẾ GIỚI (bánh rớt, bánh khét, ruồi bay) là
- * lấy mất của người nhìn không rõ cách duy nhất biết chuyện vừa xảy ra — hợp đồng trợ năng, không
- * phải tuỳ chọn thẩm mỹ.
- */
+/** ⚠️ DANH SÁCH ĐÓNG. Thêm vào đây một âm mô tả THẾ GIỚI (bánh rớt, bánh khét, ruồi) là lấy mất của người nhìn không rõ cách duy nhất biết chuyện vừa xảy ra. */
 const NEGATIVE_CUES: Partial<Record<SfxId, SfxId | null>> = {
   ui_khong_hop_le: "ui_click_go",     // thay bằng click gỗ, CÙNG ĐỘ TO
   ui_ngay_am_tien: null,                        // im hẳn
 };
 
-/**
- * Giới hạn riêng cho còi xe — P5-03 §4.2 B: "tối đa 1 lần / 25 s". Còi là âm
- * gây khó chịu nhất trong bộ, và một hẻm Sài Gòn thật thì bấm còi nhiều hơn
- * thế rất nhiều — nhưng "thật" không phải mục tiêu, "chịu nổi 40 ngày" mới là.
- */
+/** Còi là âm gây khó chịu nhất trong bộ — tối đa 1 lần / 25 s. */
 const COOLDOWN_SEC: Partial<Record<SfxId, number>> = {
   sfx_coi_xe: 25,
   sfx_ga_gay: 20,
@@ -88,24 +70,14 @@ const JITTER: Record<BusId, { rate: number; db: number }> = {
   amBao: { rate: 0, db: 0 },           // §5.4: timbre giống hệt = thông tin, không phán xét
 };
 
-/**
- * Mức của chuỗi âm tiết "chibi" so với bus giọng. Nó KHÔNG phải lời thoại — nội dung thật nằm ở
- * chữ trên bong bóng — nên để ngang mức VO thì nó thành thứ to nhất trong cả bản phối. Chỉ cần đủ
- * to để nói "có người vừa mở miệng".
- */
+/** Không phải lời thoại (nội dung thật ở chữ trên bong bóng), nên để ngang mức VO thì nó thành thứ to nhất trong cả bản phối. */
 const TALK_GAIN = 0.62;
 
 const MAX_CONCURRENT = 14;
 
 // ─────────────────────────────────────────────────────────────────── giọng NPC
 
-/**
- * Cao độ cố định cho từng NPC. Bộ asset tạm chỉ có MỘT bộ tiếng phi lời dùng chung, nên chỗ phân
- * biệt 12 NPC là cao độ — bà Bảy không được "hm" y hệt anh Dũng, nếu không thì tiếng phi lời mất
- * luôn chức năng "ai đang nhìn mình".
- *
- * Số lấy tay, không sinh từ hash: hash cho ra vài cặp sát nhau nghe như một người.
- */
+/** Bộ asset tạm chỉ có MỘT bộ tiếng phi lời dùng chung, nên cao độ là chỗ phân biệt 12 NPC. Số lấy tay — hash cho ra vài cặp sát nhau nghe như một người. */
 const VOICE_PITCH: Record<string, number> = {
   BA_BAY: 1.12, BA_SAU: 1.08,                     // hai bà lớn tuổi, giọng cao mà khô
   CHU_TU: 0.82, ONG_HAI: 0.78, CHU_KIET: 0.86,    // ba ông, trầm
@@ -159,14 +131,9 @@ class SfxDirector {
   private voiceLeft = 0;
   private lastPlayed = new Map<string, number>();
   /**
-   * Mẩu một phát đang kêu. GIỮ CẢ OBJECT chứ không đếm bằng một con số.
-   *
-   * ⚠️ Đếm bằng `live++` / `live--` thì rò: trong vài chục giây chơi bình thường con số bò lên
-   * tới trần 14 và từ đó MỌI tiếng một phát đều im, không báo lỗi gì cả.
-   *
-   * Không sửa bằng cách tìm cho ra chỗ rò — chỗ rò sau sẽ mọc ở một đường thoát khác (scene tắt
-   * giữa chừng, `stopAll`, trình duyệt chặn phát). Sửa bằng cách bỏ hẳn con số: giữ danh sách, và
-   * TỰ DỌN những cái đã tắt ngay trước khi đếm.
+   * GIỮ CẢ OBJECT chứ không đếm bằng một con số. ⚠️ Đếm bằng `live++`/`live--` thì rò: con số bò lên
+   * tới trần và từ đó MỌI tiếng một phát đều im, không báo lỗi gì. Không sửa bằng cách tìm chỗ rò —
+   * chỗ rò sau sẽ mọc ở một đường thoát khác; bỏ hẳn con số, tự dọn trước khi đếm.
    */
   private live = new Set<Phaser.Sound.BaseSound>();
   private now = 0;
@@ -199,13 +166,7 @@ class SfxDirector {
 
   // ─────────────────────────────────────────────────────────────────── nạp
 
-  /**
-   * Xếp hàng tải `ids` vào loader của scene. Gọi trong `preload()`.
-   *
-   * Mẩu một phát PHẢI nạp trước: nạp lười thì tiếng dao của cú bấm đầu tiên rơi vào khoảng không,
-   * mà cú đầu tiên là cú duy nhất người chơi còn đang HỌC rằng bấm E thì có tiếng. Ambience thì
-   * nạp lười được vì nó fade vào trong 2 giây.
-   */
+  /** Mẩu một phát PHẢI nạp trước: cú bấm đầu tiên là cú duy nhất người chơi còn đang HỌC rằng bấm E thì có tiếng. Ambience thì nạp lười được. */
   preload(scene: Phaser.Scene, ids: readonly SfxId[]) {
     for (const id of ids) {
       const e = CATALOG[id];
@@ -223,10 +184,7 @@ class SfxDirector {
 
   // ─────────────────────────────────────────────────────────────── phát một phát
 
-  /**
-   * Bắn một mẩu. Trả về `true` nếu thật sự có tiếng — chỗ gọi hầu như không cần,
-   * nhưng test thì cần, và `dev/overlay` dùng để đếm.
-   */
+  /** Trả `true` nếu thật sự có tiếng — chỗ gọi hầu như không cần, nhưng test thì cần. */
   play(scene: Phaser.Scene, id: SfxId, o: Opts = {}): boolean {
     const resolved = this.resolve(id);
     if (!resolved) return false;
@@ -277,10 +235,7 @@ class SfxDirector {
     return true;
   }
 
-  /**
-   * Giọng NPC phi lời. Khác `play` ở đúng một chỗ: nó BẬT DUCKING (§2.3) —
-   * nhạc, tiếng đường phố và tiếng thao tác lùi lại để nghe rõ người.
-   */
+  /** Khác `play` ở đúng một chỗ: nó BẬT DUCKING — nhạc và tiếng động lùi lại nhường giọng. */
   voice(scene: Phaser.Scene, id: SfxId, npcId: string, pan = 0, mul = 1): boolean {
     // `mul` nhân vào cao độ CỦA NGƯỜI ĐÓ, không thay thế nó: bà Bảy bực vẫn phải
     // ra giọng bà Bảy, chỉ trầm hơn. Hạ rate cũng kéo dài file — "hm?" thành "hmmm".
@@ -289,33 +244,15 @@ class SfxDirector {
     return ok;
   }
 
-  /**
-   * Thoại kiểu chibi: 2–5 âm tiết ngắn từ giọng người thật, cao độ theo NPC.
-   *
-   * ⚠️ Đây là lớp VÁ, không phải thiết kế — `BubblePool` hiện nguyên câu chứ không gõ từng chữ
-   * nên chưa có chỗ bám cho VO thật. Nối VO thật vào thì GỠ HÀM NÀY, đừng giữ cả hai.
-   *
-   * Gọi ở ĐÚNG MỘT CHỖ: lúc khách gọi món, một lần mỗi lượt ghé. Gọi theo mọi dòng thoại thì bốn
-   * người cùng đứng là bốn chuỗi âm tiết chồng lên nhau.
-   */
+  /** ⚠️ Lớp VÁ, không phải thiết kế: `BubblePool` hiện nguyên câu chứ không gõ từng chữ nên chưa có chỗ bám cho VO thật. Nối VO thật vào thì GỠ HÀM NÀY, đừng giữ cả hai. */
   talk(scene: Phaser.Scene, npcId: string, textLength: number, pan = 0) {
     if (!hasSfx("vox_blip")) return;
     const pitch = voicePitch(npcId);
 
-    /*
-     * Số âm tiết theo độ dài câu, nhưng CÓ XÊ DỊCH — hai câu dài bằng nhau mà lúc
-     * nào cũng ra đúng ba tiếng thì tai bắt được cái nhịp đó trước khi bắt được
-     * nội dung, và đó chính là cảm giác "lặp".
-     */
+    /** CÓ XÊ DỊCH: hai câu dài bằng nhau mà lúc nào cũng ra đúng ngần ấy tiếng thì tai nhận ra ngay. */
     const n = Math.max(2, Math.min(5, Math.round(textLength / 15 + this.rng.next() * 1.2)));
 
-    /*
-     * Đường cao độ, không phải cao độ phẳng: `drift` là hướng đi của cả câu (câu hỏi vống lên,
-     * câu trả lời xuôi xuống), `wobble` là xê dịch từng tiếng.
-     *
-     * Dải ±18% rộng gấp đôi bản đầu — đổi file mà không đổi cao độ thì tai vẫn nhận ra cùng một
-     * giọng cùng một nốt, vì thứ tai bắt được là CHẤT GIỌNG chứ không phải file nào.
-     */
+    /** `drift` là hướng đi của cả câu, `wobble` là xê dịch từng tiếng — thứ tai bắt được là CHẤT GIỌNG, không phải file nào. */
     const drift = (this.rng.next() * 2 - 1) * 0.14;
     let at = 0;
     for (let i = 0; i < n; i++) {
@@ -337,12 +274,7 @@ class SfxDirector {
 
   // ──────────────────────────────────────────────────────────────── chạy vòng
 
-  /**
-   * Bật / tắt một vòng lặp (ambience, lò than, vòi nước, ruồi).
-   *
-   * Gọi lại với trạng thái đang có là KHÔNG LÀM GÌ — scene cứ gọi mỗi frame cũng
-   * được, đó là cách dùng mong muốn: "giờ này đáng lẽ phải nghe cái này".
-   */
+  /** Gọi lại với trạng thái cũ là không làm gì, nên scene cứ gọi mỗi frame được. */
   loop(scene: Phaser.Scene | null, id: SfxId, on: boolean, o: Omit<Opts, "delay"> = {}, fadeMs = 1200) {
     const e = CATALOG[id];
     if (!e) return;
@@ -400,13 +332,7 @@ class SfxDirector {
 
   // ────────────────────────────────────────────────────────────── trợ năng
 
-  /**
-   * Tick gỗ trung tính cho người thị lực kém. Mặc định TẮT.
-   *
-   * ⚠️ CÙNG MỘT ÂM cho chuyện tốt và chuyện xấu — đó là điều kiện tồn tại của nó: nó nói "có
-   * người vừa để ý tới bạn", không nói "bạn vừa làm sai". Pan theo chỗ người ta đứng nên nó còn
-   * cho biết LÀ AI.
-   */
+  /** ⚠️ CÙNG MỘT ÂM cho chuyện tốt và chuyện xấu: nó nói "có người vừa để ý tới bạn", không nói "bạn vừa làm sai". Pan theo chỗ đứng nên còn cho biết LÀ AI. */
   perceptionPing(scene: Phaser.Scene, pan: number) {
     if (!this.pingOn) return;
     this.play(scene, "a11y_ping_glimpsed", { pan });

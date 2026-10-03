@@ -12,8 +12,8 @@ export const MAP = [
   "###....................###",  // y3  lối đi sau quầy
   "###....................###",  // y4  lối đi sau quầy
   "###....................##N",  // y5  lối đi sau quầy
-  "###QQQQQQQQQQQQQQQQQQ..###",  // y6  QUẦY (thớt x=4, rổ x=8, chỗ đưa hàng x=12) — lối ra 2 ô ở x=21,22
-  "....................A.....",  // y7  vỉa hè — hàng khách đứng gọi món · bảng gỗ "bánh mì ngon" ở đầu quầy (x=20)
+  "###QQQQQQQQQQQQQQQ###..###",  // y6  QUẦY x=3..17 (thớt x=4, rổ x=8, chỗ đưa hàng x=12) · tường x=18..20 · lối ra x=21,22
+  "....................A.....",  // y7  vỉa hè — hàng khách đứng gọi món · bảng gỗ "bánh mì ngon" dựa tường (x=20)
   "..........................",  // y8  vỉa hè — LỐI ĐI của khách, từ đầu hẻm bên trái
   "..........................",  // y9  vỉa hè — trống
   "..C.V.....................",  // y10 két nước · thùng rác

@@ -18,7 +18,6 @@ import { TW, TH } from "../world/iso";
 /** Độ dày lớp mặt đường — hằng số duy nhất nối texture với chỗ đặt sprite. */
 export const BASE = 6;
 
-/** Điểm chân: nơi đặt mọi sprite đứng trên ô có tâm màn hình (sx, sy). */
 export function footY(sy: number) {
   return sy + TH / 2 + BASE;
 }

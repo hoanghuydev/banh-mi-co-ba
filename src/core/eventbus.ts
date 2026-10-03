@@ -48,7 +48,6 @@ export type EventMap = {
   "npc:arrived":              { npcId: NpcId; visitId: string; slot: CustomerSlot; atHhmm: string };
   "npc:slotChanged":          { npcId: NpcId; from: CustomerSlot; to: CustomerSlot };
   "npc:left":                 { npcId: NpcId; visitId: string; reason: LeaveReason };
-  /** Kênh 4 — hành động (P2-02 §3.4). */
   "npc:actionTaken":          { npcId: NpcId; action: "BINNED_FOOD" };
   "order:placed":             { npcId: NpcId; spec: unknown; phrasing: string };
   "order:delivered":          { npcId: NpcId; dish: string[]; waitedSec: number };
@@ -110,7 +109,6 @@ export type EventMap = {
   "market:done":              { spent: number; bought: { itemId: ItemId; qty: number }[] };
   "stall:closed":             { reason: StallCloseReason; served: number; revenue: number; lost: number };
   "evening:done":             { dayIndex: number };
-  /** P4-04 — màn kết xong, người chơi bấm "Về menu chính". */
   "ending:done":              { dayIndex: number };
 };
 

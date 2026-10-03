@@ -66,7 +66,6 @@ export class Clock {
   devFastForward = 1;
   /** Có khách ở quầy / hàng chờ không — do scene báo mỗi frame. */
   busy = false;
-  /** TIME_SCALE đang hiệu lực, để overlay dev đọc. */
   scale = TIME_SCALE_BASE;
 
   private timers: Timer[] = [];

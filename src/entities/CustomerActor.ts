@@ -14,34 +14,19 @@ import { STREET_BIN } from "../world/map";
 import { passerAlpha } from "../sim/passersby";
 
 /**
- * Phần NHÌN THẤY của một người khách. T5 — attention phải nhìn thấy được bằng HÌNH, không bằng
- * số:
- *  · dấu trên đầu, ba HÌNH DẠNG khác nhau (không phân biệt bằng màu): GLIMPSED `?` · NOTICED
- *    cặp mày nhíu · CONFIRMED `!`
- *  · "có người nhìn" gom về MỘT con mắt ở đỉnh màn hình (`Hud.drawEye`) — tia nhìn kẻ từ mắt
- *    từng khách đã bỏ: năm người xếp hàng là năm sợi dây cắt ngang chỗ tay mình đang làm
- *  · trạng thái ÁNH NHÌN có đạo cụ riêng (điện thoại, ly trà, liếc đồng hồ): người chơi phải
- *    thấy VÌ SAO khách không thấy mình làm rớt bánh
- *  · sốt ruột đọc qua DÁNG trước hết: đứng yên → nhấp nhổm → liếc đồng hồ
+ * Phần NHÌN THẤY của một người khách. T5 — attention đọc bằng HÌNH, không bằng số: dấu trên đầu
+ * ba HÌNH DẠNG khác nhau · "có người nhìn" gom về MỘT con mắt ở đỉnh màn hình · mỗi trạng thái
+ * ánh nhìn có đạo cụ riêng (người chơi phải thấy VÌ SAO khách không thấy mình làm rớt bánh).
  *
- * ⚠️ VÒNG KIÊN NHẪN trên đầu là NGOẠI LỆ CÓ CHỦ Ý do người thiết kế chốt — CANON L2 cấm đúng
- * hình dạng này. Ba cái hãm: vòng CHỈ hiện khi đang xếp hàng · KHÔNG có số, không vạch chia ·
- * `certainty`, quan hệ, khẩu vị vẫn tuyệt đối không có thanh nào. Bỏ vòng này đi thì xoá
- * `drawPatience` và lời gọi của nó, không còn gì dính.
+ * ⚠️ VÒNG KIÊN NHẪN là NGOẠI LỆ CÓ CHỦ Ý — CANON L2 cấm đúng hình dạng này. Ba cái hãm: chỉ hiện
+ * khi đang xếp hàng · không số, không vạch chia · `certainty`/quan hệ/khẩu vị vẫn không có thanh nào.
  */
 
-/**
- * Vòng kiên nhẫn — P5-05. Xanh dương → vàng → đỏ, nội suy liên tục chứ không nhảy bậc:
- * nhảy bậc thì người chơi chỉ nhớ "đang màu vàng", nội suy thì họ thấy nó ĐANG ĐỔI.
- */
+/** Nội suy liên tục chứ không nhảy bậc — nhảy bậc là một cái thước đo trá hình. */
 const PATIENCE_COLORS = [0x3f7fb0, 0xd8b13c, 0xc0392b] as const;
 const PATIENCE_R = 11;
 const PATIENCE_W = 3.5;
-/**
- * Vòng cao hơn ĐỈNH ĐẦU bao nhiêu px — neo theo đầu chứ không theo `markY` (chỗ của dấu `?`/`!`,
- * đã nằm sẵn 45 px trên đỉnh đầu). Ở 14 px thì vòng ngồi ngay trên tóc mà vẫn hở ~9 px với dấu
- * phía trên: hai thứ khác nhau, không được chồng nhau.
- */
+/** Neo theo ĐỈNH ĐẦU chứ không theo `markY` (đã nằm 45 px trên đầu): cộng vào đó nữa là vòng bay lơ lửng như của ai khác. */
 const PATIENCE_LIFT = 14;
 const PATIENCE_RED_SEC = 0.9;
 
@@ -61,48 +46,22 @@ function patienceColor(frac: number) {
 }
 const MARK_INK = "#f2efe9";
 const MARK_STROKE = "#2b2f31";
-/**
- * Dấu trên đầu + bong bóng: trên NHÃN TRẠM (8.000.000), vì nhãn "quầy gọi món" nằm đúng chỗ đầu
- * người khách đứng trước quầy. Lớp hiệu ứng (đạo cụ ánh nhìn, vòng kiên nhẫn, nét mặt): trên cả
- * bảng kẹp nhân (9.400.000) — lúc kẹp là lúc khách nhìn tay mình kỹ nhất.
- */
+/** Trên NHÃN TRẠM vì nhãn "quầy gọi món" nằm đúng chỗ đầu người đứng trước quầy; lớp hiệu ứng trên cả bảng kẹp nhân. */
 export const OVERLAY_DEPTH = 8_100_000;
 const FX_DEPTH = 9_450_000;
 
-/**
- * Chip tên: ở CHÂN, không ở trên đầu.
- *
- * ⚠️ Đo TỪ `sy` (điểm chạm đất), KHÔNG từ `footY(sy)` — `footY` thấp hơn mặt đất 21 px, nên đo
- * từ đó là chip rơi sang ô phía trước, trông như tên của người khác.
- *
- * 14 px dưới bàn chân: ngay dưới mép bóng đổ và vòng mục tiêu, còn chừa một khe đọc được, và
- * vẫn chưa chạm đầu người đứng sau.
- */
+/** ⚠️ Đo TỪ `sy` (điểm chạm đất), KHÔNG từ `footY(sy)` — `footY` thấp hơn mặt đất 21 px, đo từ đó là chip rơi sang ô phía trước. */
 const TAG_BELOW_FEET = 14;
 const EDGE = 6;
-/**
- * Hằng thời gian của cú trượt bong bóng khi nó phải dời chỗ. 0,09 s ⇒ đi ~96% quãng trong một
- * phần tư giây: mắt đọc ra là nó DI CHUYỂN (nên không mất dấu "ai đang nói") mà chữ không bị kéo
- * lê đủ lâu để khó đọc.
- */
+/** 0,09 s ⇒ đi ~96% quãng trong một phần tư giây: mắt đọc ra là nó DI CHUYỂN, mà chữ không bị kéo lê đủ lâu để khó đọc. */
 const BUBBLE_GLIDE_TAU = 0.09;
-/*
- * KHÔNG CÓ cái mờ dần theo MÉP KHUNG NHÌN — đã thử và đã bỏ, ghi lại để không ai làm lại.
- *
- * Hệ số đó tính trên toạ độ MÀN HÌNH nên làm đúng hai việc không ai xin: người đi ngang tan ra
- * giữa đường khi còn cách đầu hẻm cả chục ô, và alpha của họ nhảy theo mỗi bước chân người chơi
- * (camera trượt theo người chơi).
- *
- * Cú bật THẬT chỉ có ở hai đầu dải, nơi người ta sinh ra và bị xoá — và chỗ đó
- * `sim/passersby.passerAlpha` đã lo, tính theo toạ độ THẾ GIỚI nên không nhúc nhích khi camera
- * trượt.
+/**
+ * ⚠️ KHÔNG mờ dần theo MÉP KHUNG NHÌN — đã thử và đã bỏ: hệ số đó tính trên toạ độ MÀN HÌNH nên
+ * người đi ngang tan ra giữa đường, và alpha của họ nhảy theo mỗi bước chân người chơi.
+ * Cú bật THẬT chỉ có ở hai đầu dải, và `passersby.passerAlpha` đã lo (theo toạ độ THẾ GIỚI).
  */
 
-/**
- * Ô thật của một bong bóng. ⚠️ `Container.getBounds()` chỉ gộp con nào CÓ `getBounds`, mà
- * Graphics thì không — nên nó trả về đúng ô CHỮ, nhỏ hơn hẳn cái nền giấy. Nở ra theo đúng hình
- * học của `BubblePool.setText` / `place`.
- */
+/** ⚠️ `Container.getBounds()` chỉ gộp con nào CÓ `getBounds`, mà Graphics thì không — nó trả về đúng ô CHỮ, nhỏ hơn hẳn nền giấy. */
 function bubbleBox(root: Phaser.GameObjects.Container, scale: number): Box {
   const t = root.getBounds();
   const w = Math.max(t.width / scale + 22, 60) * scale;
@@ -114,26 +73,17 @@ function bubbleBox(root: Phaser.GameObjects.Container, scale: number): Box {
 }
 
 /**
- * Sổ bố cục bong bóng của MỘT frame. Hai chỗ đứng trong hàng chờ cách nhau ~34,5 px trên màn
- * hình, mà một bong bóng hai dòng đã cao ~54 px — hai người xếp sát nhau cùng nói thì bong bóng
- * CHẮC CHẮN chồng nhau. Đây là hình học, không phải xui.
- *
- * Mỗi actor đặt xong thì ghi ô của mình vào đây; actor sau đọc và né. Ai đứng TRƯỚC thì trồi
- * LÊN, ai đứng SAU thì lùi XUỐNG — giữ nguyên thứ tự hàng chờ. `stamp` là `time` của scene nên
- * frame mới thì sổ tự trắng.
+ * Hai chỗ đứng cách nhau ~34,5 px mà bong bóng hai dòng đã cao ~54 px, nên hai người sát nhau cùng
+ * nói là CHẮC CHẮN chồng — hình học, không phải xui. Ai đứng TRƯỚC thì trồi LÊN, giữ nguyên thứ tự
+ * hàng chờ. `stamp` là `time` của scene nên frame mới sổ tự trắng.
  */
 let bubbleStamp = -1;
 const bubbleBoxes: { sy: number; box: Box }[] = [];
 
 /**
- * VÙNG CẤM ĐÈ — chỗ người chơi đang CẦN NHÌN, `StallScene` nạp lại mỗi frame.
- *
- * Không thể thay bằng "đẩy bong bóng đi một hướng cố định": chiếu ra toạ độ màn hình thì hàng
- * khách và hàng trạm làm việc CHỒNG lên nhau, nên bong bóng mọc lên từ đầu khách là mọc thẳng
- * vào chỗ người chơi đang làm — đẩy sang đâu cũng đụng một trạm khác.
- *
- * Nhưng vùng cấm phải ĐỘNG, chỉ gồm chỗ đang có việc: che cái lò lúc trong lò trống chỉ là che
- * một bức hình, còn che vòng độ giòn lúc ổ sắp sém là lấy mất thứ duy nhất báo nó sắp cháy.
+ * ⚠️ CỐ Ý ngắn và ĐỘNG. Không thay được bằng "đẩy một hướng cố định": chiếu ra màn hình thì hàng
+ * khách và hàng trạm CHỒNG nhau, đẩy đâu cũng đụng một trạm khác. Mà che cái lò lúc lò trống chỉ
+ * là che một bức hình, còn che vòng độ giòn lúc ổ sắp sém là lấy mất thứ duy nhất báo nó sắp cháy.
  */
 const bubbleKeepOut: Box[] = [];
 
@@ -175,14 +125,9 @@ export class CustomerActor {
   private bob = 0;
 
   /**
-   * ĐỘ LỆCH BONG BÓNG đang áp (`live`) và đang nhắm tới (`want`), so với chỗ "đúng đầu".
-   *
-   * ⚠️ Phải nhớ chứ không hỏi `pickBubbleSpot` mỗi frame rồi đặt luôn: hàm đó RỜI RẠC — trả về
-   * một trong bảy nấc, và nấc thắng đổi ngay khi `keepOut` đổi. Đặt thẳng kết quả là bong bóng
-   * dịch chuyển tức thời cả một thân mình giữa hai frame.
-   *
-   * `settled` = chưa từng đặt lần nào ⇒ câu MỚI hiện ngay tại chỗ của nó, không trượt vào từ chỗ
-   * của câu trước.
+   * ⚠️ Phải nhớ chứ không hỏi `pickBubbleSpot` mỗi frame: hàm đó RỜI RẠC (bảy nấc), và nấc thắng đổi
+   * ngay khi `keepOut` đổi — đặt thẳng kết quả là bong bóng dịch chuyển tức thời giữa hai frame.
+   * `settled` = chưa từng đặt ⇒ câu MỚI hiện ngay tại chỗ của nó, không trượt vào từ chỗ câu trước.
    */
   private bubbleOff = { live: { dx: 0, dy: 0 }, want: { dx: 0, dy: 0 }, settled: false };
   private bubbleSaid = "";
@@ -250,13 +195,7 @@ export class CustomerActor {
     const len = Math.hypot(b.sx - a.sx, b.sy - a.sy) || 1;
     const fx = ((b.sx - a.sx) / len) * this.sp.fwd.x, fy = ((b.sy - a.sy) / len) * this.sp.fwd.x * 0.5;
 
-    /*
-     * NGƯỜI QUA ĐƯỜNG mờ dần ở hai ĐẦU ĐƯỜNG — `passerAlpha`, và CHỈ cái đó (xem khối "KHÔNG CÓ
-     * cái mờ dần theo MÉP KHUNG NHÌN" ở đầu file).
-     *
-     * Hai đầu dải nằm ngoài khung nhìn ở phần lớn vị trí camera, nhưng không phải mọi vị trí —
-     * nên quãng mờ này đo bằng ô BẢN ĐỒ, để dù camera đứng đâu nó cũng che đúng chỗ cần che.
-     */
+    /** Hai đầu dải nằm ngoài khung nhìn ở phần lớn vị trí camera nhưng không phải MỌI vị trí — nên quãng mờ đo bằng ô BẢN ĐỒ. */
     const fade = c.ambient ? passerAlpha(c.x) : 1;
 
     const tex = textureFor(this.facing, c.memKey);
@@ -274,13 +213,7 @@ export class CustomerActor {
     const headX = sx + fidget, headY = footY(sy) - BODY_H + 12 - hop;
     const name = this.label(c);
     if (this.tag.text !== name) this.tag.setText(name);
-    // Chip tên ở CHÂN, không ở trên đầu: trên đầu thì chip của người đứng sau rơi thẳng vào thân
-    // người đứng trước (hai chỗ đứng cách 34,5 px mà chip rộng gần 90 px), và chip của người ở
-    // quầy đè luôn nhãn trạm. Ở chân thì chip đi theo đúng nhịp hàng chờ nên không bao giờ chồng
-    // nhau, và không che mặt ai — mặt là kênh 1 (CANON §5).
-    //
-    // Người QUA ĐƯỜNG không có chip tên: một con đường mà ai đi ngang cũng đeo bảng tên thì
-    // không còn là con đường. Tên họ chỉ hiện lúc người chơi thật sự bắt chuyện.
+    /** Trên đầu thì chip của người sau rơi vào thân người trước (hai chỗ cách 34,5 px, chip rộng ~90 px) và chip người ở quầy đè nhãn trạm. Người QUA ĐƯỜNG không có chip. */
     this.tag.setVisible(!c.ambient);
     this.tag.setPosition(sx, sy + TAG_BELOW_FEET).setDepth(OVERLAY_DEPTH)
       .setAlpha(c.phase === "leaving" ? 0.45 : 0.9);
@@ -352,11 +285,7 @@ export class CustomerActor {
       if (!off.settled) { off.live = { ...off.want }; off.settled = true; }
       else if (reducedMotion) off.live = { ...off.want };
       else {
-        /*
-         * Kéo về đích theo thời gian thật, không theo số frame. ⚠️ Dùng CHUNG `dt` đã kẹp 50 ms
-         * ở trên — `this.lastT` lúc này đã bị gán `= time` rồi, tự tính lại ở đây là ra 0 và bong
-         * bóng đứng im vĩnh viễn.
-         */
+        /** ⚠️ Dùng CHUNG `dt` đã kẹp 50 ms ở trên — `this.lastT` lúc này đã bị gán `= time`, tự tính lại là ra 0 và bong bóng đứng im vĩnh viễn. */
         const k = 1 - Math.exp(-dt / BUBBLE_GLIDE_TAU);
         off.live = {
           dx: off.live.dx + (off.want.dx - off.live.dx) * k,
@@ -385,10 +314,7 @@ export class CustomerActor {
     );
   }
 
-  /**
-   * Prop của mood (P2-02 §5.2: THẤY → HIỂU → NGHE — nhìn thấy từ xa, trước câu nói đầu)
-   * và ổ bánh khách cầm về. Vẽ ngay trên thân, cùng lớp chiều sâu với người.
-   */
+  /** THẤY → HIỂU → NGHE: nhìn thấy từ xa, trước câu nói đầu tiên. */
   private drawBodyProps(x: number, foot: number, depth: number, time: number, rm: boolean) {
     const c = this.c, g = this.propFx;
     g.clear().setDepth(depth + 0.5);
@@ -428,13 +354,7 @@ export class CustomerActor {
     }
   }
 
-  /**
-   * Vòng kiên nhẫn — P5-05. Xem lời cảnh báo ở đầu file: đây là ngoại lệ của CANON L2.
-   *
-   * Chỉ hiện khi người ta ĐANG XẾP HÀNG. Lúc còn đi vô (`arriving`) chưa có gì để đếm —
-   * `waitSec` còn chưa chạy (xem `Customer.tick`), vẽ vòng đầy thì nói dối. Lúc đã quay
-   * lưng thì cũng hết chuyện, trừ một nhịp đỏ cuối để người chơi kịp hiểu VÌ SAO họ đi.
-   */
+  /** Ngoại lệ của CANON L2 — xem khối đầu file. Không số, không vạch chia. */
   private drawPatience(g: Phaser.GameObjects.Graphics, x: number, y: number) {
     const c = this.c;
     const leaving = c.phase === "leaving";

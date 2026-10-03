@@ -9,11 +9,7 @@ import { ReactionState } from "./reaction";
 import { CALM_MOOD, type Mood } from "./mood";
 import { newDrives, type DriveLevels } from "./drives";
 
-/**
- * Một người khách trong một lượt ghé quán. ⚠️ CANON T3: không thanh tình cảm, không `+3 trust`
- * — chỉ có mặt, lời, dáng, và hệ quả trễ. `mood` là để CHỌN biểu cảm và câu thoại, không bao
- * giờ vẽ ra thành số.
- */
+/** ⚠️ CANON T3: không thanh tình cảm, không `+3 trust` — chỉ có mặt, lời, dáng, và hệ quả trễ. */
 
 export type CustomerPhase =
   | "arriving"
@@ -22,23 +18,14 @@ export type CustomerPhase =
   | "waiting"
   | "leaving";
 
-/**
- * `refused`  người chơi mời đi (P5-02 act REFUSE)
- * `insulted` bị nói nặng tới mức bỏ về — KHÔNG mua nữa, và không phải "chờ lâu quá"
- * `balked`   ngó thấy hàng dài quá nên không vào — xem `balking` bên dưới
- * `soiled`   THẤY ổ bánh rớt xuống đất mà vẫn được đưa cho mình → không nhận, bỏ về
- */
+/** `insulted` = bị nói nặng tới mức bỏ về, KHÔNG phải "chờ lâu quá" · `balked` = ngó thấy hàng dài nên không vào · `soiled` = thấy ổ rớt rồi vẫn được đưa. */
 export type LeaveReason =
   | "served" | "impatient" | "closed" | "soldout" | "refused" | "insulted" | "balked" | "soiled";
 
 export const DEFAULT_PATIENCE_SEC = 50;
 export const LEAVE_AT = 1.6;
 
-/**
- * Cộng thêm cho MỌI khách, sau hết các hệ số — chỉnh độ khó của bản dựng. Cộng THẲNG chứ không
- * nhân: 6 s là 6 s với tất cả, nên chú Kiệt 28 s được đỡ nhiều hơn bà Sáu 90 s theo tỉ lệ, đúng
- * chỗ người chơi hay hụt tay nhất.
- */
+/** Cộng THẲNG chứ không nhân: 6 s là 6 s với tất cả, nên người ít kiên nhẫn được đỡ nhiều hơn theo tỉ lệ. */
 export const PATIENCE_BONUS_SEC = 6;
 
 export const TEA = {
@@ -50,21 +37,13 @@ export const TEA = {
   suspectSpan: 4,
 };
 
-/**
- * Ly thứ mấy TRONG NGÀY thì người này bắt bài chuyện mua chuộc — CANON §8(i). Trần áp cho MỌI
- * khách: soi ≥ 0,7 → ly 3 · soi 0,5 → ly 4 · soi 0,2 → ly 5 · soi 0 → ly 6.
- *
- * Đếm theo NGÀY (như FREE_EXTRA), không theo lượt ghé: ghé lần hai không làm bộ đếm về 0.
- */
+/** Trần áp cho MỌI khách, không riêng người soi: soi ≥ 0,7 bắt bài ở ly 3, xuề xoà nhất cũng tới ly 6. Đếm theo NGÀY. */
 export const teaSuspectAtCup = (soi: number) =>
   TEA.suspectAtCup + Math.round(Math.max(0, TEA.suspectSoi - soi) * TEA.suspectSpan);
 
 export type VisitPlan = ArcDay & { key?: string; name?: string; style?: number; paysWith?: number };
 
-/**
- * Ngồi thì kiên nhẫn trôi chậm còn ngần này. 0,55 chứ không 0 — ngồi lâu vẫn sốt ruột: người
- * ngồi chịu được ~180 giây trước mốc MADE_THEM_WAIT thay vì ~100.
- */
+/** 0,55 chứ không 0 — ngồi lâu vẫn sốt ruột; cái ghế không được thành một nút tắt kiên nhẫn. */
 const SIT_PATIENCE_MUL = 0.55;
 
 export class Customer implements Observer {
@@ -107,22 +86,15 @@ export class Customer implements Observer {
   loudCue = false;
 
   leaveReason: LeaveReason | null = null;
-  /** Kênh 1 + 2 (mặt, dáng) — P2-02 §3. Renderer đọc, sim ghi. */
+  /** Renderer đọc, sim ghi. */
   readonly react = new ReactionState();
   /** Mood ngoài tầm kiểm soát của hôm nay (P2-02 §5.2) — KHÔNG phải `mood` chờ bên dưới. */
   dayMood: Mood = CALM_MOOD;
-  /**
-   * "Trả tiền rồi bỏ món" (P2-02 §3.4, chữ ký của chị Lan): trên đường về đi vòng qua
-   * thùng rác đầu hẻm. `binAt` = lúc bỏ ổ bánh vô thùng (giây của khách), −1 = chưa.
-   */
+  /** Chữ ký của chị Lan: trên đường về đi vòng qua thùng rác đầu hẻm rồi mới ra cổng. */
   binDetour = false;
   binAt = -1;
-  /** Còn cầm ổ bánh trên tay không (lúc đi về). */
   carrying = false;
-  /**
-   * P2-04 §2.12 danh sách trắng #6: nghe đồn "ăn bớt", "bánh rớt"… thì NHÌN TAY kỹ hơn
-   * (gaze nền +≤0,15). Không đụng traitMul — tin đồn không làm ai soi hơn, chỉ nhìn nhiều hơn.
-   */
+  /** Nghe đồn "ăn bớt" / "bánh rớt" thì NHÌN TAY kỹ hơn — gaze nền cộng thêm ngần này. */
   gazeBias = 0;
   /** Người chơi nghiêng người nghe lỏm → khách trước quầy thấy mình lơ đễnh: gaze ×1,3 trong 5 s. */
   watchedIdleUntil = 0;
@@ -133,92 +105,45 @@ export class Customer implements Observer {
   orderedAt = 0;
   /** P4 — kịch bản của lượt ghé này (arc P4-01 / sự kiện P4-03). null = lượt thường. */
   plan: VisitPlan | null = null;
-  /** Mua thêm ổ nữa — gọi sau khi nhận ổ trước (cô Mai hai ổ, bà Bảy thứ Bảy…). */
+  /** Gọi sau khi đã nhận ổ trước — một người, từng ổ một. */
   more: OrderSpec[] = [];
   /** Câu nói có hẹn giờ (giây của service) — ai nói (`by` = người khác trong hàng). */
   script: { at: number; text: string; by?: string }[] = [];
-  /**
-   * Chỉ đi ngang (chú Kiệt gật đầu, bà Sáu rao): đứng lại `stay` giây ở chỗ dừng rồi đi. `spot`
-   * chỗ dừng · `exit` chỗ đi khuất. Người qua đường (`ambient`) khai cả hai vì họ đi XUYÊN cái
-   * hẻm chứ không vào rồi ra cùng một đầu.
-   */
+  /** Đứng lại `stay` giây ở chỗ dừng rồi đi. `spot`/`exit` vắng thì về mặc định; người qua đường khai cả hai vì họ đi XUYÊN cái hẻm. */
   pass: {
     stay: number; until: number; nod?: boolean;
     spot?: { x: number; y: number }; exit?: { x: number; y: number }; speed?: number;
   } | null = null;
-  /**
-   * NGƯỜI QUA ĐƯỜNG — chỉ là cái nền của con hẻm: không gọi món, không xếp hàng, không tính vào
-   * con số nào của buổi bán. Cờ này là chỗ DUY NHẤT phân biệt họ với người đi ngang CÓ KỊCH BẢN
-   * (hai thứ dùng chung đường đi `pass`).
-   */
+  /** ⚠️ Cờ DUY NHẤT phân biệt họ với người đi ngang CÓ KỊCH BẢN — hai thứ dùng chung đường đi `pass`. */
   ambient = false;
   /**
-   * "Đông quá thôi để bữa khác" — quyết LÚC VỪA TỚI đầu hẻm (`Service.balkChance`), trước khi
-   * đứng chờ một giây nào.
-   *
-   * ⚠️ Đừng nhầm với `queuePatienceMul`: cái kia nói người ĐÃ xếp vào hàng dài thì chờ được LÂU
-   * HƠN. Hai luật ngược chiều nhau là CỐ Ý, nên `balking` chỉ được bật ở `phase === "arriving"`
-   * và không bao giờ bật lại sau đó (hợp đồng có test: `tests/p1-queue-patience.test.ts`).
+   * Quyết LÚC VỪA TỚI đầu hẻm, trước khi chờ một giây nào. ⚠️ Chỉ bật ở `phase === "arriving"` và
+   * không bao giờ bật lại: `queuePatienceMul` ngược chiều với nó, và hợp đồng đó có test riêng.
    */
   balking = false;
-  /**
-   * Lượt đi ngang này đã TỪ CHỐI một lời mời rồi. Cái roll của `inviteChance` vốn đã tất định
-   * nên mời lại cũng ra đúng chữ "thôi" đó — nhưng nó chặn KẾT QUẢ, không chặn CƠ HỘI. Cờ này
-   * ẩn hẳn lựa chọn `INVITE` và đẩy người ta đi tiếp.
-   */
+  /** Roll của `inviteChance` vốn đã tất định nên mời lại cũng ra chữ "thôi" đó — nhưng nó chặn KẾT QUẢ, không chặn CƠ HỘI. */
   inviteRefused = false;
-  /**
-   * Lượt đi ngang này đã được XÉT chào hỏi rồi (P2-06 §2.11) — kể cả lúc trượt roll.
-   * Không có cờ này thì hai người đi chậm ngang nhau sẽ bị roll lại mỗi frame, và một
-   * cặp "không chào" rốt cuộc vẫn chào, chỉ là chậm hơn.
-   */
+  /** Kể cả lúc trượt roll — không có cờ này thì hai người đi ngược chiều bị xét lại mỗi frame. */
   greeted = false;
-  /** Còn chậm chân tới thời điểm này vì đang chào người đi ngược chiều. Xem `greetPassers`. */
+  /** Đang chậm chân vì chào người đi ngược chiều — `step()` trả tốc độ về sau mốc này. */
   greetUntil = 0;
-  /**
-   * ĐÃ THẬT SỰ CHEN HÀNG — `Service.tickWorldFacts` gán. Không có cờ này thì thoại buộc tội
-   * người ta chen hàng trong khi họ xếp đàng hoàng; mà trước đó còn tệ hơn một bậc: cờ khai ra
-   * rồi KHÔNG AI GÁN, nên câu buộc tội không bao giờ đúng được kể cả khi họ chen thật.
-   */
+  /** `Service.tickWorldFacts` gán. Không có cờ này thì thoại buộc tội người ta chen hàng trong khi họ xếp đàng hoàng. */
   cutLine = false;
-  /**
-   * THỨ TỰ TỚI, tăng dần — `Service` cấp lúc spawn. ⚠️ Không dùng được thứ tự mảng `customers`:
-   * `stepAside` splice người ta đi chỗ khác trong chính mảng đó.
-   */
+  /** ⚠️ Không dùng được thứ tự mảng `customers`: `stepAside` splice người ta đi chỗ khác trong chính mảng đó. */
   arrivedSeq = 0;
   /**
-   * ĐÃ BƯỚC RA KHỎI HÀNG, đứng nép qua một bên (`STEP_ASIDE`).
-   *
-   * ⚠️ Đây là chuyện VỊ TRÍ, không phải thứ tự: người đang nép không được cấp chỗ nào trong hàng
-   * (`assignSlots` bỏ qua, `slot = -1`), nên cả hàng sau lưng dồn lên một bậc THẬT. Chỉ đảo thứ
-   * tự mảng thì người ta vẫn đứng y trên hàng — tức bảo người ta dạt ra mà không ai dạt ra.
-   *
-   * `asideFor` là id lượt ghé của người được NHƯỜNG; vắng (null) thì nép `ASIDE_HOLD_SEC` giây
-   * rồi tự vào lại.
+   * ⚠️ Chuyện VỊ TRÍ, không phải thứ tự: người nép không được cấp chỗ nào (`assignSlots` bỏ qua),
+   * nên cả hàng sau lưng dồn lên một bậc THẬT. Chỉ đảo thứ tự mảng thì không ai dạt ra cả.
    */
   aside = false;
   asideFor: string | null = null;
-  /** Lúc bước ra khỏi hàng (giây của khách) — mốc đếm cho trường hợp `asideFor` vắng. */
   asideAt = 0;
-  /** Đang đứng ở ô hóng mát (`STAND_IN_SHADE`), tới thời điểm này thì đi tiếp. */
   inShade = false;
   shadeUntil = 0;
-  /**
-   * Đang NGỒI trên cái ghế (`THEY_SIT`), tới thời điểm này thì đứng dậy.
-   *
-   * Khác `inShade` ở hệ quả, không chỉ ở chỗ đứng: ngồi làm kiên nhẫn trôi CHẬM lại
-   * (`SIT_PATIENCE_MUL`). Đó là lý do một người bán hàng bỏ tiền mua cái ghế — không
-   * phải để trang trí, mà để người ta chịu chờ lâu hơn.
-   */
+  /** Khác `inShade` ở hệ quả: ngồi làm kiên nhẫn trôi CHẬM (`SIT_PATIENCE_MUL`) — đó là lý do mua cái ghế. */
   sitting = false;
   sitUntil = 0;
-  /**
-   * Đang QUAY PHIM (`FILM`) — bé Su chĩa điện thoại vào cái xe, tới lúc này thì cất máy.
-   *
-   * `filmSpoiled` ghi lại đoạn quay đó có dính chuyện gì xấu không: quầy dơ, tay chưa
-   * rửa, rớt ổ bánh, hay mình gắt một câu. Cuối đoạn mới chấm — vì một cái clip là cả
-   * đoạn, không phải một khoảnh khắc.
-   */
+  /** Clip ra sao phụ thuộc quầy sạch hay dơ trong lúc máy chạy — `filmSpoiled` chấm liên tục. */
   filming = false;
   filmUntil = 0;
   filmSpoiled = false;

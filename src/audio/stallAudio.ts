@@ -7,15 +7,11 @@ import { music } from "./music";
 import { sfx, type SfxId } from "./sfx";
 
 /**
- * LỚP ÂM THANH CỦA CẢNH QUÁN — chỗ duy nhất nối sự kiện game vào `audio/sfx.ts`. Hai nhóm hook ở
- * đây khác hẳn nhau về vòng đời:
- *  · NGHE BUS (khách tới, có người nói, bánh rớt) — gắn một lần ở `create`, gỡ ở `shutdown`
- *  · NỀN CHẠY VÒNG (ambience, lò than, ruồi) — hỏi lại MỖI FRAME "giờ này đáng lẽ phải nghe cái
- *    gì". Khai báo trạng thái mong muốn chứ không bật/tắt tại chỗ xảy ra chuyện: trời chuyển mưa
- *    giữa giờ cao điểm thì có BỐN chỗ trong scene phải nhớ đổi ambience, và sẽ có một chỗ quên.
+ * Chỗ duy nhất nối sự kiện game vào `audio/sfx.ts`. Hai nhóm hook khác vòng đời: NGHE BUS gắn một
+ * lần ở `create` · NỀN CHẠY VÒNG hỏi lại MỖI FRAME "giờ này đáng lẽ nghe gì".
  *
- * Mấy tiếng gắn thẳng vào thao tác tay (dao, gói giấy, rót trà) thì gọi trực tiếp từ `StallScene`
- * — chúng phải nổ ĐÚNG FRAME người chơi bấm phím.
+ * Khai báo trạng thái mong muốn chứ không bật/tắt tại chỗ xảy ra chuyện: trời chuyển mưa giữa giờ
+ * cao điểm thì có BỐN chỗ trong scene phải nhớ đổi ambience, và sẽ có một chỗ quên.
  */
 
 const PRELOAD: readonly SfxId[] = [
@@ -43,18 +39,11 @@ const BAND_BED: Record<TimeBand, SfxId> = {
 const RAINY: ReadonlySet<Weather> = new Set<Weather>(["MUA_RAO", "MUA_DAM"]);
 
 /**
- * ⚠️ NPC CHỈ LÊN TIẾNG Ở ĐÚNG HAI CHỖ: lúc GỌI MÓN (một lần cho cả lượt ghé) và lúc BỎ ĐI VÌ GIẬN
- * (một tiếng "hmmm" trầm hơn, dài hơn).
+ * ⚠️ NPC CHỈ LÊN TIẾNG Ở ĐÚNG HAI CHỖ: lúc GỌI MÓN và lúc BỎ ĐI VÌ GIẬN.
  *
- * Đã thử đúng chữ của §5.2 — 55% số lần chạm `GLIMPSED` thì khẽ "hm", cooldown 4 giây — và sai
- * hẳn: §5.2 viết cho MỘT người khách, mà giờ cao điểm có bốn người cùng đứng và `GLIMPSED` bật
- * tắt liên tục theo hướng nhìn, thành một dàn "hm… hm… hm…" chồng lên nhau.
- *
- * Việc "cho biết có người đang để ý" KHÔNG MẤT — nó về đúng chỗ của nó: nét mặt, và cái tick gỗ
- * `a11yPerceptionPing` cho ai không đọc được nét mặt ở 72px.
- *
- * Giọng người thì đắt: nghe là phải quay sang nhìn. Tiêu nó cho mọi cái liếc mắt thì tới lúc có
- * người thật sự bỏ đi, không còn gì để nói.
+ * Đã thử đúng chữ của §5.2 (55% số lần chạm `GLIMPSED` thì khẽ "hm") và sai hẳn: §5.2 viết cho MỘT
+ * khách, mà giờ cao điểm bốn người cùng đứng và `GLIMPSED` bật tắt liên tục. Giọng người thì đắt —
+ * tiêu nó cho mọi cái liếc mắt thì tới lúc có người thật sự bỏ đi, không còn gì để nói.
  */
 const ANGRY_PITCH = 0.78;
 
@@ -64,10 +53,7 @@ const ANGRY_EXITS: ReadonlySet<string> = new Set([
   "SOILED_FOOD",
 ]);
 
-/**
- * Độ bẩn mà con ruồi đầu tiên xuất hiện. PHẢI khớp `FLY_DIRT_MIN` ở `StallScene`
- * — hai hằng số, một sự thật; chép sai một chỗ là hình và tiếng lệch nhau.
- */
+/** ⚠️ PHẢI khớp `FLY_DIRT_MIN` ở `StallScene` — lệch thì có một quãng nghe thấy ruồi mà không thấy con nào. */
 const FLY_DIRT_MIN = 0.35;
 
 const AMBIENT_EVERY: Record<TimeBand, number> = {
@@ -114,25 +100,14 @@ export class StallAudio {
 
     this.listen("npc:arrived", (p) => this.steps(this.d.panOf(p.npcId)));
 
-    /*
-     * CHỖ LÊN TIẾNG THỨ NHẤT — gọi món. Bám vào `order:placed` chứ không `dialog:spoken`: một lượt
-     * ghé đẻ ra cả chục dòng thoại, bám vào đó thì giờ cao điểm thành cái chợ. Ở đây thì đúng một
-     * lần, vào đúng khoảnh khắc người chơi đang nhìn vào mặt người đó.
-     */
+    /** Bám `order:placed` chứ không `dialog:spoken`: một lượt ghé đẻ ra cả chục dòng thoại, bám vào đó thì giờ cao điểm thành cái chợ. */
     this.listen("order:placed", (p) => {
       if (this.spoke.has(p.npcId)) return;
       this.spoke.add(p.npcId);
       sfx.talk(scene, p.npcId, 26, this.d.panOf(p.npcId));
     });
 
-    /*
-     * CHỖ LÊN TIẾNG THỨ HAI — bỏ đi vì bực. Cùng một file "hửm", hạ cao độ xuống 0,78 nên trầm hơn
-     * và DÀI HƠN: một tiếng "hmmmm" gắt thay vì "hm?" dò hỏi. Không thêm file mới — cái phải nghe
-     * ra là cùng một người đó, lúc này đang bực.
-     *
-     * `SILENT_EXIT` cố ý KHÔNG có ở đây: khách bỏ đi không nói gì thì không có gì cả, chỉ tiếng
-     * bước chân xa dần. Cái im lặng đó là một phản ứng.
-     */
+    /** Cùng một file "hửm", hạ cao độ xuống 0,78 nên trầm và DÀI hơn. `SILENT_EXIT` cố ý không có ở đây — khách bỏ đi không nói gì thì chỉ còn tiếng bước chân. */
     this.listen("npc:left", (p) => {
       this.spoke.delete(p.npcId);
       const pan = this.d.panOf(p.npcId);
@@ -144,13 +119,7 @@ export class StallAudio {
       }
     });
 
-    /*
-     * Tầng nhận thấy: KHÔNG CÓ STING, và cũng KHÔNG CÓ GIỌNG (lý do dài ở `ANGRY_EXITS` phía trên).
-     * Còn lại đúng cái tick gỗ — mặc định TẮT, cùng một âm cho chuyện tốt và chuyện xấu.
-     *
-     * ⚠️ Một "ting!" phi diegetic thì không: người chơi sẽ học cách nghe tiếng ting thay vì nhìn
-     * mặt người, và thế là hỏng cả T3 lẫn T5.
-     */
+    /** KHÔNG STING, KHÔNG GIỌNG. ⚠️ Một "ting!" phi diegetic thì người chơi sẽ học cách nghe tiếng ting thay vì nhìn mặt người. */
     this.listen("perception:stateChanged", (p) => {
       if (p.to === "GLIMPSED" || p.to === "NOTICED") sfx.perceptionPing(scene, this.d.panOf(p.npcId));
     });
@@ -168,10 +137,7 @@ export class StallAudio {
 
   // ───────────────────────────────────────────────────────── nền chạy vòng
 
-  /**
-   * Gọi mỗi frame. `dt` là giây ĐÃ TRỪ pause — nên lúc tạm dừng thì hẻm không
-   * tự đẻ thêm tiếng xe, mà nền vẫn kêu (pause phải thấy an toàn, §6.5 #8).
-   */
+  /** `dt` ĐÃ TRỪ pause, nên lúc tạm dừng hẻm không tự đẻ thêm tiếng — mà nền vẫn kêu. */
   tick(dt: number, s: { band: TimeBand; weather: Weather; dirt: number; ovenHot: boolean; washing: boolean; burning: boolean; moving: boolean; running: boolean }) {
     this.now += dt;
     const { scene } = this.d;
@@ -197,13 +163,7 @@ export class StallAudio {
     sfx.loop(scene, "sfx_khet", s.burning, {}, 400);
     sfx.loop(scene, "sfx_rua_tay", s.washing, {}, 180);
 
-    /*
-     * Ruồi — chỉ số `STALL_CLEANLINESS` dạng NGHE ĐƯỢC, không con số nào hiện ra (T3).
-     *
-     * ⚠️ Ngưỡng phải khớp ĐÚNG `FLY_DIRT_MIN` của `StallScene.drawDirt` (0,35): lệch hai ngưỡng
-     * thì có một quãng nghe thấy ruồi mà không thấy con nào, và người chơi đi tìm một thứ không
-     * tồn tại. Độ to bò lên theo đúng ba nấc số ruồi của `drawDirt`.
-     */
+    /** `STALL_CLEANLINESS` dạng NGHE ĐƯỢC, không con số nào hiện ra. Độ to bò theo đúng ba nấc số ruồi của `drawDirt`. */
     const fly = s.dirt > FLY_DIRT_MIN;
     sfx.loop(scene, "sfx_ruoi", fly, {}, 1500);
     if (fly) sfx.loopVolume("sfx_ruoi", Math.min(1, (s.dirt - FLY_DIRT_MIN) / 0.35));
@@ -227,10 +187,7 @@ export class StallAudio {
     }
   }
 
-  /**
-   * Một tiếng lẻ ngoài hẻm. Trời mưa thì BỎ HẲN — §3.1: "Mưa: không có tiếng rao.
-   * Im lặng mưa — chi tiết đúng và đắt." Cùng lý do đó, mưa cũng không có chim.
-   */
+  /** Trời mưa thì BỎ HẲN: không có tiếng rao trong mưa. */
   private oneOffStreetSound(band: TimeBand, rain: boolean) {
     if (rain) return;
     const { scene } = this.d;
@@ -272,11 +229,7 @@ export class StallAudio {
   wrap() { this.one("sfx_goi_giay"); }
   tea() { this.one("sfx_rot_tra_da"); }
   cup() { this.one("sfx_dat_ly"); }
-  /**
-   * Lau thớt — NHIỀU nhát, trải đúng bằng lượt lau. Một nhát khăn dài 1,4 giây cho một lượt lau
-   * 2,5–5 giây thì nửa sau im hẳn trong khi thanh tiến trình vẫn chạy và bụi vẫn bốc, nghe như
-   * tay đã dừng mà máy vẫn bắt chờ.
-   */
+  /** NHIỀU nhát trải đúng bằng lượt lau — một nhát 1,4 giây cho lượt lau 2,5–5 giây thì nửa sau im hẳn trong khi thanh vẫn chạy. */
   wipeFor(seconds: number) {
     const nhat = Math.max(1, Math.round(seconds / 1.3));
     for (let i = 0; i < nhat; i++) {
@@ -302,11 +255,7 @@ export class StallAudio {
     this.one(this.d.rand() < 0.45 ? "sfx_xu" : "sfx_ngan_keo", { delay: 220 });
   }
 
-  /**
-   * Bỏ một phần nhân lên ổ — tiếng theo LOẠI nguyên liệu, không phải một tiếng
-   * "đặt đồ" dùng chung. Quết pate, rưới sốt và rắc tiêu là ba động tác khác hẳn
-   * nhau, mà tay người chơi làm chúng cả ngàn lần trong một mùa.
-   */
+  /** Tiếng theo LOẠI nguyên liệu, không phải một tiếng "đặt đồ" dùng chung. */
   place(ing: Ingredient) {
     if (ing === "pate") this.one("sfx_quet_pate");
     else if (ing === "tuongot") this.one("sfx_ruoi_sot");

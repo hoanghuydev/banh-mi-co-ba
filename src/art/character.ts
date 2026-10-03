@@ -4,18 +4,13 @@ import { blob, heightFor, prop, shade, slab, type Pen } from "./canvas";
 import type { Facing8 } from "../world/iso";
 
 /**
- * Thân người — dùng chung cho người chơi lẫn khách. v1 vẽ bằng code nhưng vẽ cho tử tế; v2 artist
- * thay bằng ảnh thật.
+ * Thân người — dùng chung cho người chơi lẫn khách. Mỗi nhân vật nướng 3 hướng ("w" là bản lật
+ * của "e"); ai có đủ ẢNH tám hướng thì dùng tám file rời (xem `markEightWay`).
  *
- * Mỗi nhân vật chỉ NƯỚNG 3 hướng, hướng "w" là bản lật ngang của "e". Ai được `art/photo.ts` sơn
- * đè đủ ẢNH tám hướng thì dùng tám file rời, không lật (xem `markEightWay`).
+ * ⚠️ Bàn chân đứng ĐÚNG ở `cy` — neo sai chỗ này là nhân vật bị nhấc lên và bóng đổ rơi lệch.
  *
- * ⚠️ Bàn chân đứng ĐÚNG ở `cy` — tâm hình thoi của ô. Neo sai chỗ này là nhân vật bị nhấc lên và
- * bóng đổ rơi lệch hẳn xuống chân.
- *
- * Đầu chiếm ~38% chiều cao, và đó là quyết định CHỨC NĂNG chứ không phải cho dễ thương: nhân vật
- * chỉ cao 64 px trên màn 1024×576, mà CANON §5 bắt người chơi phải ĐỌC ĐƯỢC mức nhận thấy qua NÉT
- * MẶT — đầu đúng tỉ lệ thật thì mắt chỉ còn 2 px.
+ * Đầu chiếm ~38% chiều cao là quyết định CHỨC NĂNG: nhân vật chỉ cao 64 px mà CANON §5 bắt phải
+ * ĐỌC ĐƯỢC mức nhận thấy qua NÉT MẶT — đầu đúng tỉ lệ thật thì mắt chỉ còn 2 px.
  */
 export const BODY_H = 64;
 
@@ -25,10 +20,7 @@ export type Hat = "cap" | "helmet" | "nonla";
 
 export type Build = "slim" | "round";
 
-/**
- * Hai TƯ THẾ. Chỉ ai thật sự bưng đồ mới cần nướng thêm `carry`
- * (hiện là mỗi người chơi) — khách không cầm gì nên chỉ có `idle`.
- */
+/** Chỉ ai thật sự bưng đồ mới cần nướng thêm `carry`. */
 export type Pose = "idle" | "carry";
 
 export type BodyStyle = {
@@ -58,24 +50,14 @@ function keyOf(who: string, dir: string, pose: Pose) {
   return pose === "carry" ? `${who}_${dir}_c` : `${who}_${dir}`;
 }
 
-/**
- * Nhân vật nào có ĐỦ ẢNH THẬT tám hướng. `art/photo.ts` ghi tên vào đây sau khi sơn xong, và chỉ
- * khi sơn đủ cả tám — thiếu một file ảnh là cả bộ lặng lẽ rơi về bản vẽ code.
- *
- * Phải là một cái sổ ĐĂNG KÝ chứ không phải cờ cứng: bản vẽ code chỉ nướng ba hướng nên
- * `textureFor` không thể đoán bừa rằng `p_se` có tồn tại hay không.
- */
+/** ⚠️ Chỉ ghi khi sơn ĐỦ cả tám hướng, nên thiếu một file là cả bộ lặng lẽ rơi về bản vẽ code. Phải là sổ ĐĂNG KÝ chứ không phải cờ cứng: bản vẽ code chỉ nướng ba hướng. */
 const EIGHT = new Set<string>();
 
 export function markEightWay(who: string) {
   EIGHT.add(who);
 }
 
-/**
- * Gộp tám hướng về ba bản vẽ code. Hướng chéo lấy hình NGHIÊNG: nhân vật đi chéo
- * mà đứng chính diện thì nhìn như đang trượt ngang, còn nghiêng thì chỉ là hơi
- * quá đà. Nửa phía tây lật ngang bản "e", đúng quy ước cũ.
- */
+/** Hướng chéo lấy hình NGHIÊNG: đi chéo mà vẽ chính diện thì nhìn ra là đi giật lùi. */
 const FOLD: Record<Facing8, { dir: Dir; flip: boolean }> = {
   s: { dir: "s", flip: false },
   n: { dir: "n", flip: false },
@@ -87,13 +69,7 @@ const FOLD: Record<Facing8, { dir: Dir; flip: boolean }> = {
   nw: { dir: "e", flip: true },
 };
 
-/**
- * Tên texture của một nhân vật theo hướng nhìn.
- *
- * Có ảnh thật tám hướng thì mỗi hướng một file, KHÔNG lật ngang cái nào — lật là
- * chữ "Bánh Mì" trên tạp dề soi gương, và hai nửa người đổi chỗ cho nhau.
- * Chưa có ảnh thì gộp về ba bản vẽ code theo `FOLD`.
- */
+/** Có ảnh thật tám hướng thì mỗi hướng một file; không thì gộp về ba bản vẽ code và lật ngang. */
 export function textureFor(facing: Facing8, who = "p", pose: Pose = "idle") {
   if (EIGHT.has(who)) return { key: keyOf(who, facing, pose), flip: false };
   const f = FOLD[facing];
@@ -102,12 +78,7 @@ export function textureFor(facing: Facing8, who = "p", pose: Pose = "idle") {
 
 // ─────────────────────────────────────────────────────────────── kích thước thân
 
-/**
- * Bốn con số này cộng lại ra đúng `BODY_H`. Đụng vào một cái là phải cộng lại.
- *
- * Chân phải dài hơn phần áo phủ xuống, không thì tạp dề trùm kín hai ống quần và
- * nhân vật đứng như một cái chuông — không đọc ra là đang ĐỨNG.
- */
+/** ⚠️ Bốn con số này cộng lại ra đúng `BODY_H` — đụng vào một cái là phải cộng lại. */
 const HIP = 17;          // từ gót lên hông
 const TORSO = 19;        // từ hông lên vai
 const NECK_GAP = 4;      // khoảng hở cổ giữa vai và cằm
@@ -119,13 +90,7 @@ function bodyWidth(dir: Dir, st: BodyStyle) {
   return (dir === "e" ? 17 : 24) + round;
 }
 
-/**
- * Chỗ đặt món đang cầm, đo từ ĐIỂM CHẠM ĐẤT lên (y dương = lên trên).
- *
- * Đây là hợp đồng giữa `character.ts` và `entities/Player.ts`: đổi tư thế bưng đồ
- * ở đây thì sửa đúng bảng này, không file nào khác phải biết. Toạ độ khớp với chỗ
- * hai cẳng tay của tư thế `carry` gặp nhau — xem `arms()`.
- */
+/** Điểm hai bàn tay gặp nhau, đo từ ĐIỂM CHẠM ĐẤT lên (y dương = lên trên). `art/held.ts` đặt tâm texture món vào đúng đây. */
 const HOLD_ANCHOR: Record<Facing8, { x: number; y: number }> = {
   s: { x: 0, y: 23 },
   se: { x: 5, y: 22 },
@@ -146,13 +111,7 @@ export function holdAnchor(facing: Facing8) {
 
 // ──────────────────────────────────────────────────────────────────────── cái đầu
 
-/**
- * Tóc phía SAU mặt — vẽ trước khối mặt để mặt đè lên.
- *
- * Chỉ nhô ra khỏi khối mặt 2–3 px. Để lớp này to hơn mặt tới 6 px là tóc nuốt gọn
- * cái đầu: còn đúng một ô mặt bé tí ở giữa, mọi biểu cảm chết theo. Ở kích cỡ này
- * tóc là cái VIỀN quanh mặt, không phải cái mũ trùm.
- */
+/** Vẽ TRƯỚC khối mặt để mặt đè lên. */
 function hairBack(g: Pen, cx: number, y: number, dir: Dir, st: BodyStyle) {
   const style = st.hairStyle ?? "short";
   g.fillStyle(shade(st.hair, -14), 1);
@@ -366,10 +325,7 @@ function legs(g: Pen, cx: number, feet: number, hip: number, dir: Dir, st: BodyS
   }
 }
 
-/**
- * Thân áo. Mép dưới dừng cao hơn hông 1 px, để hai ống quần lúc nào cũng lộ ra.
- * Áo dài quá là mất luôn cái chân.
- */
+/** Mép dưới dừng cao hơn hông 1 px, để hai ống quần lúc nào cũng lộ ra. */
 function torso(g: Pen, cx: number, shoulder: number, dir: Dir, st: BodyStyle) {
   const bw = bodyWidth(dir, st);
   const h = TORSO + 2;
@@ -389,16 +345,7 @@ function torso(g: Pen, cx: number, shoulder: number, dir: Dir, st: BodyStyle) {
   }
 }
 
-/**
- * Tay. Cánh tay và bàn tay là MỘT khối bo tròn, không phải một thanh rồi một
- * quả bóng gắn ở đầu — tách hai thì bàn tay trông như rời ra khỏi tay.
- *
- * `layer` quyết định tay nằm TRƯỚC hay SAU thân (xem thứ tự vẽ ở `draw`).
- * `pose`:
- *   idle  — buông thẳng xuống cạnh người
- *   carry — khuỷu gập, cẳng tay đưa ngang ra trước bụng để BƯNG ĐỒ.
- *           Món đang cầm đặt đúng chỗ hai bàn tay gặp nhau (`HOLD_ANCHOR`).
- */
+/** Cánh tay và bàn tay là MỘT khối bo tròn — một thanh rồi một quả bóng gắn vào đọc ra là khớp giả. */
 function arms(
   g: Pen, cx: number, shoulder: number, dir: Dir, st: BodyStyle,
   layer: "behind" | "front", pose: Pose,
@@ -524,10 +471,7 @@ function draw(g: Pen, cx: number, cy: number, dir: Dir, st: BodyStyle, pose: Pos
   head(g, cx, headY, dir, st);
 }
 
-/**
- * Nướng texture cho một nhân vật. `who` là tiền tố tên texture.
- * Chỉ nướng thêm tư thế `carry` cho ai thật sự bưng đồ — mỗi tư thế là 3 texture nữa.
- */
+/** `who` là tiền tố tên texture; chỉ nướng thêm tư thế `carry` khi được yêu cầu. */
 export function buildBody(
   scene: Phaser.Scene, who: string, style: BodyStyle, poses: readonly Pose[] = ["idle"],
 ) {

@@ -4,22 +4,8 @@ import { PAL } from "./palette";
 import { blob, diamond, heightFor, prop, shade, slab, standing, type Pen } from "./canvas";
 
 /**
- * Đạo cụ trong quán và trên vỉa hè. Mỗi hàm vẽ đúng một vật,
- * không hàm nào biết tới scene hay bản đồ.
- *
- * MỌI vật ở đây đứng bằng `standing()` — mặt đáy khối trùng khít mặt ô.
- * Trước đây dùng `isoBox` trần nên khối thò xuống dưới đáy texture và bị
- * cắt vát mất chân (thùng trà đá là ca rõ nhất).
- *
- * Chi tiết môi trường bắt buộc của CANON §14: ghế nhựa, hũ đũa,
- * xe máy dựng sát vách, chậu trầu bà.
- *
- * ── Luật vẽ chi tiết ở kích cỡ này ───────────────────────────────────────────
- * Một ô chỉ rộng 60 px. Chi tiết nào nhỏ hơn ~3 px thì ở màn 1024×576 nó biến
- * thành một hạt nhiễu, làm vật trông BẨN chứ không trông KỸ. Nên mọi thứ ở đây
- * đi theo ba bước: khối lớn có viền tối (`blob`/`slab`) → một mảng sáng để mắt
- * đọc ra chất liệu → đúng một hoặc hai "điểm nhấn" bằng màu tương phản mạnh
- * (nắp hũ đỏ, ớt, đèn xe). Nhiều hơn ba tầng là thừa, không ai thấy.
+ * Đạo cụ trong quán và trên vỉa hè — mỗi hàm vẽ đúng một vật, không hàm nào biết tới lưới ô.
+ * Vật nào CHỈ CÓ ẢNH THẬT thì không có hàm ở đây: thiếu ảnh là bỏ qua hẳn, chứ không vẽ thay.
  */
 export const PROP = {
   oven: "oven", tea: "tea", shelf: "shelf",
@@ -74,20 +60,12 @@ function leaf(g: Pen, x: number, y: number, color: number, s = 1) {
 
 // ──────────────────────────────────────────────────────────────────── đạo cụ quán
 
-/**
- * Bếp than: slot OVEN.
- * Lửa phải NHÌN THẤY được thì người chơi mới đọc được rủi ro (T5) — nên than hồng,
- * vỉ nướng và hai ổ bánh đang hơ đều nằm ở mặt trên, không bị gì che.
- */
+/** Lửa phải NHÌN THẤY được thì người chơi mới đọc được rủi ro cháy bánh. */
 function oven(scene: Phaser.Scene) {
   const H = 26;
   const W = TW - 10, D = TH - 5;
   prop(scene, PROP.oven, heightFor(H + 24), (g, cx, cy) => {
-    // Thân lò bằng tôn xám chứ không phải màu than: để màu than đậm cho LÒNG lò,
-    // thì cái miệng đỏ rực mới bật lên. Cả khối cùng một màu tối là mất luôn ngọn lửa,
-    // mà người chơi phải đọc được lửa mới đọc được rủi ro (T5).
-    // Dùng thẳng màu tôn, KHÔNG làm tối thêm: `isoBox` còn tự trừ 32 độ sáng nữa
-    // cho mặt bên khuất nắng, nên tối sẵn ở đây là ra một khối đen kịt.
+    /** Thân lò bằng tôn xám chứ không màu than: để màu than đậm cho LÒNG lò thì cái miệng mới đọc ra là miệng. */
     standing(g, cx, cy, H, PAL.grill, W, D);
     const top = cy - H;
 
@@ -128,14 +106,7 @@ function oven(scene: Phaser.Scene) {
   });
 }
 
-/**
- * Thùng trà đá — CANON §5.4: công cụ CHỦ ĐỘNG hạ attention của khách.
- *
- * Bản trước bày ba thứ rời nhau cạnh nhau (thùng · chồng ly · tấm bảng đỏ dựng
- * dưới đất) nên ở 60 px nó đọc ra là một đống đồ vứt ở góc, không phải MỘT vật.
- * Giờ gom hết về một khối: bảng dán LÊN thân thùng, chồng ly đặt LÊN nắp thùng.
- * Một bóng hình, ba mảng màu — xanh / đỏ / trắng — nhìn phát ra ngay.
- */
+/** CANON §5.4 — công cụ CHỦ ĐỘNG hạ attention của khách, nên nó phải nhìn ra ngay từ xa. */
 function tea(scene: Phaser.Scene) {
   const H = 38;
   const W = TW - 18, D = TH - 9;
@@ -189,15 +160,7 @@ function tea(scene: Phaser.Scene) {
   });
 }
 
-/**
- * Kệ nguyên liệu: khung sắt ba tầng.
- * Hạn dùng là ràng buộc kinh tế #1 (CANON §13) — nên hàng phải NHÌN THẤY ĐƯỢC
- * và đếm được bằng mắt, chứ không nằm trong một cái thùng kín.
- *
- * Bản trước nhồi bảy nhóm đồ vào ba tầng, lại còn để rổ bánh và chai nước tương
- * thò hẳn ra ngoài khung kệ — nhìn ra một đống lộn xộn chứ không ra cái kệ.
- * Luật bây giờ: MỖI TẦNG ĐÚNG MỘT NHÓM, và không gì được vượt quá mép ván kệ.
- */
+/** Hạn dùng là ràng buộc kinh tế #1, nên hàng trên kệ phải ĐẾM ĐƯỢC bằng mắt. */
 function shelf(scene: Phaser.Scene) {
   const TIER = 18;
   const N = 3;
@@ -288,11 +251,7 @@ function table(scene: Phaser.Scene) {
   }, TW + 12);
 }
 
-/**
- * Xe máy dựng sát vách nhường lối đi — CANON §14.
- * Vẽ đúng dáng xe số: yên dài, giỏ trước, kính chiếu hậu, biển số.
- * Không có mấy chi tiết đó thì ở 60 px nó chỉ là hai bánh xe và một cục tối.
- */
+/** Dựng sát vách nhường lối đi. Vẽ đúng dáng xe số: yên dài, giỏ trước. */
 function bike(scene: Phaser.Scene) {
   prop(scene, PROP.bike, heightFor(52), (g, cx, cy) => {
     const axle = cy - 11;
@@ -354,11 +313,7 @@ function bike(scene: Phaser.Scene) {
   }, TW + 24);
 }
 
-/**
- * Chậu trầu bà — CANON §14.
- * Để DƯỚI ĐẤT chứ không treo: bản treo cao đọc ra như cột lá lơ lửng,
- * vì ở góc iso này không có gì phía trên để mắt hiểu là nó treo vào đâu.
- */
+/** Để DƯỚI ĐẤT chứ không treo — bản treo cao đọc ra như cột đèn. */
 function pothos(scene: Phaser.Scene) {
   // Cả bụi thu về `S` lần: ở cỡ cũ nó cao gần bằng cái bồn rửa đứng ngay cạnh, đọc
   // ra như cây cảnh sảnh khách sạn chứ không phải chậu trầu bà để nền. Giữ nguyên
@@ -436,10 +391,7 @@ function bin(scene: Phaser.Scene) {
   });
 }
 
-/**
- * Bồn rửa tay (P1-01 §2.8) — chậu inox trên chân sắt, vòi nước, chai xà bông đỏ.
- * Bóng hình khác hẳn thùng trà (thấp, rộng, có vòi cong) để không ai nhầm hai thứ.
- */
+/** Chậu inox trên chân sắt, vòi nước, chai xà bông đỏ — bóng hình phải tách hẳn khỏi cái lò bên cạnh. */
 function sink(scene: Phaser.Scene) {
   const H = 30;
   const W = TW - 22, D = TH - 10;
