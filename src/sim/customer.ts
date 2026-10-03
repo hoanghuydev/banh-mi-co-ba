@@ -16,11 +16,11 @@ import { newDrives, type DriveLevels } from "./drives";
  */
 
 export type CustomerPhase =
-  | "arriving"    // đang đi từ ngoài đường vào
-  | "queueing"    // đứng chờ tới lượt
-  | "ordering"    // vừa tới quầy, đang nói món
-  | "waiting"     // đã gọi món, chờ bánh
-  | "leaving";    // xong việc (được phục vụ, hoặc bỏ đi)
+  | "arriving"
+  | "queueing"
+  | "ordering"
+  | "waiting"
+  | "leaving";
 
 /**
  * `refused`  người chơi mời đi (P5-02 act REFUSE)
@@ -31,9 +31,7 @@ export type CustomerPhase =
 export type LeaveReason =
   | "served" | "impatient" | "closed" | "soldout" | "refused" | "insulted" | "balked" | "soiled";
 
-/** P1-02 §2.7: sức chờ mặc định (giây thật tới mốc MADE_THEM_WAIT). */
 export const DEFAULT_PATIENCE_SEC = 50;
-/** Rời đi khi đã chờ quá 1,6 lần sức chờ. */
 export const LEAVE_AT = 1.6;
 
 /**
@@ -43,18 +41,12 @@ export const LEAVE_AT = 1.6;
  */
 export const PATIENCE_BONUS_SEC = 6;
 
-/** P1-02 §2.8 — trà đá. */
 export const TEA = {
-  /** Đưa xong 0,6 s khách mới cúi uống. */
   sipDelay: 0.6,
-  /** Ly thứ hai trong vòng 45 s chỉ được cái gật đầu — không cúi uống, không CARED_FOR_THEM. */
   cooldown: 45,
-  /** CARED_FOR_THEM nhỏ dần: ly 1 / 2 / 3+ — đếm theo NGÀY, không theo lượt ghé. */
   diminish: [1.0, 0.6, 0.25] as const,
-  /** Người soi ≥ 0,7 nhận tới ly thứ 3 là bắt bài chuyện mua chuộc. */
   suspectSoi: 0.7,
   suspectAtCup: 3,
-  /** Người xuề xoà bắt bài trễ hơn — nhưng AI CŨNG bắt bài (xem `teaSuspectAtCup`). */
   suspectSpan: 4,
 };
 
@@ -67,7 +59,6 @@ export const TEA = {
 export const teaSuspectAtCup = (soi: number) =>
   TEA.suspectAtCup + Math.round(Math.max(0, TEA.suspectSoi - soi) * TEA.suspectSpan);
 
-/** Kịch bản một lượt ghé = ngày của arc + (khách đặc biệt) tên, tờ tiền đưa. */
 export type VisitPlan = ArcDay & { key?: string; name?: string; style?: number; paysWith?: number };
 
 /**
@@ -83,34 +74,25 @@ export class Customer implements Observer {
   tx: number;
   ty: number;
 
-  /** Chỗ trong hàng chờ; 0 là ngay trước mặt người bán. */
   slot = -1;
   zone: Zone = "SEATED_FAR";
   gaze = 0.45;
-  /** Chỉ cho dev (`npc.gaze`): ép gaze cố định để tune §5. null = tự nhiên. */
   gazeOverride: number | null = null;
-  /** Vật che riêng (vd. người đứng trước chắn tầm) — scene/service đặt mỗi frame. */
   occluder = 1;
   traitMul: number;
-  /** traitMul gốc từ tính cách — `traitMul` = gốc × (1 + 0,35·độ bẩn quầy). */
   readonly baseTrait: number;
   observations = new Map<string, Observation>();
   readonly gazeM: GazeMachine;
 
   order: OrderSpec | null = null;
-  /** Câu gọi món NGUYÊN VĂN — thứ duy nhất phiếu đơn được phép hiện (P1-03 §2.4.3). */
   orderLine = "";
 
   // ── chờ (kênh THỜI GIAN, P1-02 §2.7) ─────────────────────────────────────────
-  /** Giây thật đã chờ. Pause / chế độ không giới hạn thời gian thì đứng yên. */
   waitSec = 0;
-  /** Sức chờ: tới đây là MADE_THEM_WAIT (CONFIRMED). */
   readonly waitT: number;
-  /** Đã qua mấy mốc: 1 = nhấp nhổm (0,6) · 2 = liếc đồng hồ + thở dài · 3 = CONFIRMED. */
   waitStage = 0;
 
   // ── trà đá ─────────────────────────────────────────────────────────────────
-  /** Số ly đã nhận trong LƯỢT GHÉ này (chỉ để xem; trần và mức nhỏ dần đếm theo NGÀY). */
   teaCount = 0;
   private holdingTeaFor = 0;
   private sipIn = -1;
@@ -122,7 +104,6 @@ export class Customer implements Observer {
   // ── hỏi chuyện (ASK_QUESTION) ─────────────────────────────────────────────
   private questionPending = false;
   lastAskedAt = -Infinity;
-  /** Có tiếng động lớn trong frame này (service đặt, tick tiêu). */
   loudCue = false;
 
   leaveReason: LeaveReason | null = null;

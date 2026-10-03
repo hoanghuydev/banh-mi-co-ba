@@ -43,10 +43,8 @@ const PATIENCE_W = 3.5;
  * phía trên: hai thứ khác nhau, không được chồng nhau.
  */
 const PATIENCE_LIFT = 14;
-/** Bỏ về vì bị đuổi / bị nói nặng / chờ quá lâu: vòng đỏ nguyên còn nán lại ngần này giây. */
 const PATIENCE_RED_SEC = 0.9;
 
-/** Lerp hai màu 24-bit theo từng kênh. */
 function mixRgb(a: number, b: number, t: number) {
   const f = (sh: number) => {
     const x = (a >> sh) & 0xff, y = (b >> sh) & 0xff;
@@ -55,7 +53,6 @@ function mixRgb(a: number, b: number, t: number) {
   return f(16) | f(8) | f(0);
 }
 
-/** 1 → xanh dương, 0,5 → vàng, 0 → đỏ. */
 function patienceColor(frac: number) {
   const [blue, yellow, red] = PATIENCE_COLORS;
   return frac > 0.5
@@ -82,7 +79,6 @@ const FX_DEPTH = 9_450_000;
  * vẫn chưa chạm đầu người đứng sau.
  */
 const TAG_BELOW_FEET = 14;
-/** Mép an toàn khi kẹp overlay trong khung nhìn. */
 const EDGE = 6;
 /**
  * Hằng thời gian của cú trượt bong bóng khi nó phải dời chỗ. 0,09 s ⇒ đi ~96% quãng trong một
@@ -141,7 +137,6 @@ const bubbleBoxes: { sy: number; box: Box }[] = [];
  */
 const bubbleKeepOut: Box[] = [];
 
-/** `StallScene` gọi mỗi frame, TRƯỚC khi vẽ khách. Rỗng = không có gì đang cần nhìn. */
 export function setBubbleKeepOut(boxes: readonly Box[]) {
   bubbleKeepOut.length = 0;
   bubbleKeepOut.push(...boxes);
@@ -151,14 +146,12 @@ export type BubbleKeepOutBox = Box;
 export { pickBubbleSpot };
 
 
-/** Lò xo của kênh dáng (P2-02 §3.2): K cứng, DAMP giảm chấn — cao thì "chắc", thấp thì "nhão". */
 const K = 120, DAMP = 14;
 type Spring = { v: number; x: number };
 const spring = (s: Spring, target: number, dt: number, d = DAMP) => {
   s.v += (-K * (s.x - target) - d * s.v) * dt;
   s.x += s.v * dt;
 };
-/** Mày tóc bạc vẽ lên nền da thì chìm mất — sậm lại cho đọc được. */
 const browColor = (hair: number) => {
   const r = (hair >> 16) & 255, g = (hair >> 8) & 255, b = hair & 255;
   return 0.3 * r + 0.59 * g + 0.11 * b > 140 ? 0x5a5550 : hair;
@@ -169,12 +162,9 @@ export class CustomerActor {
   private shadow: Phaser.GameObjects.Image;
   private mark: Phaser.GameObjects.Text;
   private tag: Phaser.GameObjects.Text;
-  /** Tia nhìn, cặp mày NOTICED, và đạo cụ ánh nhìn — một Graphics, vẽ lại mỗi frame. */
   private fx: Phaser.GameObjects.Graphics;
-  /** Giây (đồng hồ của khách) lúc họ quay lưng đi — vòng đỏ nán lại từ mốc này. */
   private leftAt = -1;
 
-  /** Đạo cụ trên THÂN (áo ướt, tay băng, ổ bánh cầm về) — nằm cùng lớp với người. */
   private propFx: Phaser.GameObjects.Graphics;
   private sp = { fwd: { v: 0, x: 0 }, up: { v: 0, x: 0 }, rot: { v: 0, x: 0 }, sy: { v: 0, x: 1 } };
   private lastT = -1;
@@ -195,13 +185,10 @@ export class CustomerActor {
    * của câu trước.
    */
   private bubbleOff = { live: { dx: 0, dy: 0 }, want: { dx: 0, dy: 0 }, settled: false };
-  /** Câu đang hiện — đổi câu thì cắt nội suy, đặt thẳng vào chỗ mới. */
   private bubbleSaid = "";
 
   constructor(private scene: Phaser.Scene, private c: Customer, private bubbles: BubblePool, textScale = 1,
-    /** P2-05: tên người chơi ghi trong sổ, chưa ghi thì mô tả hình dáng. */
     private label: (c: Customer) => string = (x) => x.name) {
-    // Texture nướng theo `memKey` (dáng người), không theo `id` (duy nhất mỗi lượt ghé).
     if (!scene.textures.exists(`${c.memKey}_s`)) buildBody(scene, c.memKey, c.body);
 
     this.shadow = scene.add.image(0, 0, FX.shadow).setOrigin(0.5, 0.5);
@@ -212,7 +199,6 @@ export class CustomerActor {
       stroke: "#1b2429", strokeThickness: 3,
     }).setOrigin(0.5);
 
-    // Dấu trên đầu cỡ CỐ ĐỊNH, không co giãn theo sprite (P1-04 §2.5).
     this.mark = scene.add.text(0, 0, "", {
       fontFamily: FONT, fontSize: "18px", fontStyle: "700", color: MARK_INK,
       stroke: MARK_STROKE, strokeThickness: 4,
@@ -238,7 +224,6 @@ export class CustomerActor {
     this.bob = moved > 0.002 ? this.bob + moved * 9 : 0;
     const hop = Math.abs(Math.sin(this.bob)) * 2.2 * amp;
 
-    // sốt ruột thì nhấp nhổm tại chỗ — dáng nói thay cho con số
     const fidget = c.mood === "annoyed" ? Math.sin(time / 130) * 1.6 * amp
       : c.mood === "checking" ? Math.sin(time / 320) * 0.9 * amp : 0;
 
@@ -246,7 +231,7 @@ export class CustomerActor {
     const dt = this.lastT < 0 ? 0 : Math.min(0.05, (time - this.lastT) / 1000);
     this.lastT = time;
     const pose = POSES[c.react.pose];
-    const s = intensityMul(c.personality);                 // nóng tính phóng đại BIÊN ĐỘ, không tốc độ
+    const s = intensityMul(c.personality);
     let tFwd = pose.fwd * s, tUp = pose.up * s, tRot = pose.rot * s;
     const tSy = pose.sy ?? 1;
     const since = c.now - c.react.poseSince;
@@ -254,14 +239,13 @@ export class CustomerActor {
       const w = Math.sin((since / pose.osc.period) * Math.PI * 2) * pose.osc.amp * s;
       if (pose.osc.axis === "x") tFwd += w; else if (pose.osc.axis === "y") tUp += w; else tRot += w;
     }
-    if (reducedMotion) {                                   // CANON §15.3: nhảy thẳng tới target, không nhún
+    if (reducedMotion) {
       this.sp.fwd.x = tFwd; this.sp.up.x = tUp; this.sp.rot.x = tRot; this.sp.sy.x = tSy;
     } else {
       const d = pose.d ?? DAMP;
       spring(this.sp.fwd, tFwd, dt, d); spring(this.sp.up, tUp, dt, d);
       spring(this.sp.rot, tRot, dt, d); spring(this.sp.sy, tSy, dt, d);
     }
-    // "về phía quầy" trên màn hình = hướng −y của thế giới
     const a = toScreen(c.x, c.y), b = toScreen(c.x, c.y - 1);
     const len = Math.hypot(b.sx - a.sx, b.sy - a.sy) || 1;
     const fx = ((b.sx - a.sx) / len) * this.sp.fwd.x, fy = ((b.sy - a.sy) / len) * this.sp.fwd.x * 0.5;
@@ -313,7 +297,6 @@ export class CustomerActor {
     const st = watching ? nowState(c, nowSec) : null;
     const markY = sy - BODY_H - 24;
     if (st?.state === "NOTICED") {
-      // cặp mày nhíu — hình dạng khác hẳn `?` và `!`
       g.lineStyle(4, 0x2b2f31, 1);
       g.lineBetween(sx - 11, markY - 5, sx - 2, markY + 1);
       g.lineBetween(sx + 11, markY - 5, sx + 2, markY + 1);
@@ -393,8 +376,6 @@ export class CustomerActor {
     }
   }
 
-  /** 0 ở sát mép khung nhìn, 1 khi đã vào hẳn trong khung — xem `PASSER_EDGE_FADE`. */
-  /** Kéo một overlay vào trong khung nhìn — chữ chạy ra ngoài mép là chữ mất. */
   private clampInView(t: Phaser.GameObjects.Text) {
     const v = this.scene.cameras.main.worldView;
     const hw = t.displayWidth / 2, hh = t.displayHeight / 2;
@@ -413,28 +394,27 @@ export class CustomerActor {
     g.clear().setDepth(depth + 0.5);
     const shoulder = foot - 36;
     switch (c.dayMood.prop) {
-      case "AO_UOT": {                                     // áo ướt: vai sậm + giọt nước
+      case "AO_UOT": {
         g.fillStyle(0x1b2a3a, 0.35).fillEllipse(x, shoulder + 4, 26, 10);
         const drip = rm ? 0 : (time / 400) % 1;
         g.fillStyle(0x9fc6e8, 0.9).fillCircle(x - 9, shoulder + 8 + drip * 10, 1.4).fillCircle(x + 8, shoulder + 12 + ((drip + 0.5) % 1) * 10, 1.4);
         break;
       }
-      case "TAY_BANG":                                     // tay băng trắng
+      case "TAY_BANG":
         g.fillStyle(0xf4f1ea, 1).fillRoundedRect(x + 9, shoulder + 10, 6, 9, 2);
         g.lineStyle(1, 0xc9c3b8, 1).lineBetween(x + 9, shoulder + 13, x + 15, shoulder + 13).lineBetween(x + 9, shoulder + 16, x + 15, shoulder + 16);
         break;
-      case "AO_MOI": {                                     // áo mới: lấp lánh
+      case "AO_MOI": {
         const t = rm ? 0.5 : (Math.sin(time / 260) + 1) / 2;
         g.fillStyle(0xfff4c2, 0.5 + 0.5 * t).fillCircle(x - 8, shoulder + 3, 1.6).fillCircle(x + 7, shoulder + 9, 1.3);
         break;
       }
-      case "VI_MONG":                                      // ví mỏng lép cầm tay
+      case "VI_MONG":
         g.fillStyle(0x6b4a33, 1).fillRoundedRect(x + 8, shoulder + 14, 7, 5, 1.5);
         break;
       default:
         break;
     }
-    // ổ bánh cầm về — và, với chị Lan, rơi vào thùng rác đầu hẻm (P2-02 §4.6)
     const binT = c.binAt >= 0 ? c.now - c.binAt : -1;
     if (c.carrying || (binT >= 0 && binT < 0.35)) {
       let bx = x + 11, by = shoulder + 14;
@@ -480,7 +460,6 @@ export class CustomerActor {
     g.lineStyle(PATIENCE_W, 0x0d1216, 0.22);
     g.strokeCircle(x, y, PATIENCE_R);
     if (frac <= 0) return;
-    // Vơi theo chiều kim đồng hồ từ 12 giờ — chiều ai cũng đọc được mà không cần học.
     const from = -Math.PI / 2;
     g.lineStyle(PATIENCE_W, patienceColor(frac), 0.95);
     g.beginPath();
@@ -491,7 +470,6 @@ export class CustomerActor {
   private drawGazeProp(g: Phaser.GameObjects.Graphics, x: number, y: number, time: number, rm: boolean) {
     switch (this.c.gazeState) {
       case "PHONE": {
-        // điện thoại trước mặt, màn hình sáng xanh nhấp nháy — lý do khách không thấy gì
         const pulse = rm ? 0.5 : 0.35 + 0.25 * Math.sin(time / 180);
         g.fillStyle(0x7fb8ff, pulse).fillCircle(x + 10, y + 8, 12);
         g.fillStyle(0x1b2429, 1).fillRoundedRect(x + 5, y, 10, 16, 2);
@@ -499,14 +477,12 @@ export class CustomerActor {
         break;
       }
       case "DRINKING": {
-        // ly trà che ngang mặt
         g.fillStyle(0xd9e6ea, 0.95).fillRoundedRect(x - 6, y - 4, 12, 16, 3);
         g.fillStyle(0xa8743f, 0.9).fillRect(x - 5, y + 2, 10, 9);
         g.fillStyle(0xffffff, 0.8).fillRect(x - 3, y + 3, 3, 3);
         break;
       }
       case "WATCH": {
-        // liếc đồng hồ tay
         g.fillStyle(0x2b2f31, 1).fillCircle(x + 12, y + 20, 5);
         g.fillStyle(0xf2efe9, 1).fillCircle(x + 12, y + 20, 3.5);
         g.lineStyle(1.5, 0x2b2f31, 1).lineBetween(x + 12, y + 20, x + 12, y + 17.5);
@@ -524,6 +500,6 @@ export class CustomerActor {
     this.mark.destroy();
     this.fx.destroy();
     this.propFx.destroy();
-    this.bubbles.release(this.c.id, true);           // người đã khuất: tắt ngay, không mờ dần
+    this.bubbles.release(this.c.id, true);
   }
 }

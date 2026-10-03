@@ -35,15 +35,10 @@ export const TONE_LABEL: Record<TalkTone, string> = {
 export const MAX_DEPTH = 6;
 
 export type TalkEffect = {
-  /** Điểm quan hệ cộng thẳng (không thành ký ức). Cỡ thường gặp: −6 … +4. */
   rel?: number;
-  /** Thành ký ức hẳn hoi — chỉ cho câu đủ nặng để người ta còn nhớ sang hôm sau. */
   mem?: { kind: BaseKind; intensity: number };
-  /** Giận 0..100 — ăn thẳng vào sức chờ của lượt ghé này (`waitSec` lên theo %). */
   anger?: number;
-  /** Dỗ 0..100 — lấy lại ngần ấy % quãng đã chờ. ⚠️ Không `calm` nào được quá 30. */
   calm?: number;
-  /** Đặt một cờ chuyện (story.flags) — cho arc và cho `need` của cuộc khác đọc lại. */
   flag?: string;
 };
 
@@ -62,7 +57,6 @@ export type TalkEffect = {
  */
 export type ForSec = number | "TOI_LUOT" | "TOI_KHI_AN_XONG";
 
-/** `forSec` quy ra giây, với hai mốc có tên thì trả `null` (người gọi tự biết khi nào hết). */
 export const forSecOf = (f: ForSec): number | null => (typeof f === "number" ? f : null);
 
 /**
@@ -71,11 +65,8 @@ export const forSecOf = (f: ForSec): number | null => (typeof f === "number" ? f
  */
 export type Deed = {
   what: string;
-  /** Giây THẬT từ lúc nói. Trà ~25 s · trao tay ~15 s · chạy đi lấy ~40 s. */
   dueSec: number;
-  /** Trả KHI LÀM XONG. */
   onKept?: TalkEffect;
-  /** Ba nấc nuốt lời, theo thứ tự. Nấc cuối luôn là bỏ đi. */
   onBroken?: [TalkEffect, TalkEffect, TalkEffect];
 };
 
@@ -101,11 +92,8 @@ export type TalkAct =
    * act thì mặc định đi tiếp (`Service.walkOnDefault`).
    */
   | { kind: "WALK_ON" }
-  /** Ổ rời tay người chơi, họ cầm lấy, ăn. 60 nút đòi tới. */
   | { kind: "GIVE_BREAD"; forSec: ForSec }
-  /** Tốn một ly thật; họ nhận HOẶC từ chối theo tính cách + tâm trạng + mục đích. */
   | { kind: "OFFER_TEA"; forSec: ForSec }
-  /** Họ đi tới ô hóng mát và đứng đó, rồi **đi tiếp đúng mục đích cũ**. */
   | { kind: "STAND_IN_SHADE"; forSec: ForSec }
   /**
    * HỌ NGỒI XUỐNG — mở khoá bằng thiết bị `GHE_BAN`, chỗ ngồi là `world/map.SEAT_SPOT`.
@@ -124,14 +112,30 @@ export type TalkAct =
    * do kịch bản đặt chứ không do việc bé Su quay cái gì.
    */
   | { kind: "FILM"; forSec: ForSec }
-  /** Bảo họ cất máy — đoạn quay huỷ, không ra clip nào. */
   | { kind: "STOP_FILM" }
+  /**
+   * MÌNH BƯNG CÁI GÁNH VÔ TRONG — bà Sáu (11 nhắc).
+   *
+   * Khác `MOVE_GANH` ở chỗ AI làm: bưng giùm là một việc mình bỏ công, nên nó mua được
+   * thiện cảm; bảo bà tự dời thì cái lối cũng thông, mà cái vai bà vẫn vậy.
+   */
+  | { kind: "CARRY_GANH" }
+  | { kind: "MOVE_GANH" }
+  /**
+   * ĐỔI HÀNG — một ổ bánh lấy một món của họ. Bà Sáu: chén tàu hũ.
+   *
+   * `P2-08` §2 nhóm C ghi *"không act nào nhận một món VÀO"*. Mà cái thiếu thật ra ở
+   * chiều kia: đưa một ổ bánh mà KHÔNG lấy tiền và cũng KHÔNG phải cho không. `FREE_LOAF`
+   * là cho, `PAY` là bán — đổi là chuyện thứ ba, và nó là cách hai người bán hàng nghèo
+   * đối xử với nhau.
+   *
+   * Cái giá có thật: mất doanh thu một ổ. Thứ nhận lại nằm ở `rel` và ở trí nhớ, không ở
+   * một con số kho — đó đúng là thứ một chén tàu hũ đáng.
+   */
+  | { kind: "BARTER"; nhan: string }
   | { kind: "LEAVE_SHADE" }
-  /** Họ quay nhìn vào quầy. */
   | { kind: "LOOK_INSIDE"; forSec: ForSec }
-  /** Lời hứa có hạn — xem `Deed`. */
   | { kind: "PROMISE_DEED"; deed: Deed }
-  /** Ghi nợ một ổ. KHÁC `FREE_LOAF`: nợ là nợ, có sổ, và có ngày đòi (`chu-tu`). */
   | { kind: "CREDIT_LOAF" };
 
 
@@ -145,7 +149,6 @@ export type TalkMood =
   | "CUOI_TUOI" | "CUOI" | "CUOI_KHAN" | "THUONG" | "NGAC_NHIEN" | "NGUONG"
   | "BUON" | "RUNG_RUNG" | "GIAN" | "BUC" | "NGHI" | "LANH" | "MET" | "NGHIEM";
 
-/** Tên tiếng Việt — nhật ký cuối ngày và tooltip dev đọc. */
 export const MOOD_LABEL: Record<TalkMood, string> = {
   CUOI_TUOI: "cười lớn", CUOI: "cười nhẹ", CUOI_KHAN: "cười gượng", THUONG: "thương",
   NGAC_NHIEN: "ngạc nhiên", NGUONG: "ngượng", BUON: "buồn", RUNG_RUNG: "rưng rưng",
@@ -175,7 +178,6 @@ export const MOOD_FACE: Record<TalkMood, Face> = {
   NGHIEM:     [1, 0, 1],
 };
 
-/** Dáng đi kèm. Cảm xúc không chỉ nằm trên mặt — người ta ngả tới hay lùi ra theo. */
 export const MOOD_POSE: Record<TalkMood, PoseId> = {
   CUOI_TUOI: "LEAN_IN", CUOI: "NOD", CUOI_KHAN: "SHRUG", THUONG: "SETTLE_IN",
   NGAC_NHIEN: "STEP_BACK_HALF", NGUONG: "TURN_AWAY_QUARTER", BUON: "IDLE", RUNG_RUNG: "SETTLE_IN",
@@ -183,7 +185,6 @@ export const MOOD_POSE: Record<TalkMood, PoseId> = {
   NGHIEM: "TILT_HEAD",
 };
 
-/** Cảm xúc nào là ÂM — test đòi câu `GAT` không được đáp bằng mặt cười. */
 export const MOOD_NEGATIVE: ReadonlySet<TalkMood> = new Set<TalkMood>(["GIAN", "BUC", "LANH", "BUON", "MET", "NGHI"]);
 
 /**
@@ -207,14 +208,10 @@ export type TalkNode = TalkEffect & {
    * cuộc; khai ở đây khi một nhánh rẽ sang chuyện khác hẳn.
    */
   about?: string[];
-  /** Hành động thật câu này gây ra ở thế giới. */
   act?: TalkAct;
-  /** Ẩn nút nếu két không đủ ngần này tiền — không hứa được cái mình không trả nổi. */
   needCash?: number;
-  /** Câu người chơi nói. Ngắn — nó nằm trên một cái nút. */
   say: string;
   tone: TalkTone;
-  /** Câu khách đáp ĐÚNG lựa chọn này. */
   reply?: string;
   /**
    * Khách đáp câu này bằng MẶT MŨI nào. Vắng = `applyTalkOption` suy ra; có khai thì nó
@@ -226,9 +223,7 @@ export type TalkNode = TalkEffect & {
    * biệt với chỗ quên viết `reply`.
    */
   silent?: boolean;
-  /** Bộ lựa chọn tiếp theo CỦA RIÊNG nhánh này. Vắng (và không có `ref`) = hết chuyện. */
   then?: TalkNode[];
-  /** Nhập vào một cây con đặt tên trong `talk.shared` — để nhánh hội tụ mà khỏi chép lại. */
   ref?: string;
   /**
    * Cần gì ĐÃ xảy ra rồi. Không thoả ⇒ ẩn hẳn lựa chọn, nên chỉ dùng cho sự thật TĨNH —
@@ -247,18 +242,14 @@ export type TalkNode = TalkEffect & {
 };
 
 export type TalkWhen = {
-  /** Khoảng ngày [từ, tới] trong mùa 40 ngày. */
   day?: [number, number];
   weekday?: Weekday[];
   tier?: RelTier[];
   slot?: TimeBand[];
   rain?: boolean;
-  /** Ghé đủ ngần này lần rồi mới có chuyện này để nói. */
   minVisits?: number;
   needFlag?: string;
-  /** Không hiện khi cờ này bật (chuyện đã cũ / người ta đã đi rồi). */
   notFlag?: string;
-  /** Cả cuộc chỉ mở khi đã mua thiết bị này — xem `TalkNode.needEquip`. */
   needEquip?: string;
   /**
    * CẢ CUỘC chỉ sống khi thế giới đang thế này — khoá bảng đen, phép VÀ.
@@ -299,7 +290,6 @@ export type TalkDepth = "BARK" | "SHORT" | "FULL";
  */
 export type TalkKind = "MOI" | "CHAO" | "MUA" | "CHUYEN";
 
-/** Loại của một cuộc, suy ra từ kho + nội dung (cả bốn loại ứng 1–1 với kho thoại). */
 export function kindOf(t: Talk): TalkKind {
   if (t.kind) return t.kind;
   if (t.npc === "ANY") return "CHAO";
@@ -323,14 +313,12 @@ export function satisfiesOf(t: Talk): Satisfies {
   if (t.source !== "PLAYER_ONLY") out.KE_CHUYEN = 30 * deep;
   if (t.source !== "NPC_ONLY") out.DUOC_HOI = 28 * deep;
   if (k === "MUA") out.DUOC_PHUC_VU = 22 * deep;
-  // Nhiều lời than trong cây = một cuộc để xả. Đếm giọng, không bắt ai khai.
   const tones = walkNodes(t).map((x) => x.node.tone);
   const kho = tones.filter((x) => x === "CHUI" || x === "THANG").length;
   if (kho >= 2) out.PHAN_NAN = 18 * deep;
   return out;
 }
 
-/** Cuộc này có đường mời khách ở đâu đó không. */
 export function hasInvite(t: Talk): boolean {
   return walkNodes(t).some((x) => x.node.act?.kind === "INVITE");
 }
@@ -342,7 +330,6 @@ export function hasInvite(t: Talk): boolean {
 export const opensWithInvite = (t: Talk): boolean =>
   t.tree.some((n) => n.act?.kind === "INVITE");
 
-/** Chỉ `CHUYEN` mới ăn vào trần cuộc sâu mỗi ngày — xem `TalkKind`. */
 export const countsAgainstDailyCap = (t: Talk) => kindOf(t) === "CHUYEN" && t.depth === "FULL";
 
 /**
@@ -358,39 +345,29 @@ export const touchesRelationship = (t: Talk) => kindOf(t) !== "MOI";
  */
 export type TalkOpenBy = "PLAYER" | "NPC";
 
-/** Tối đa bao nhiêu lựa chọn hiện ra MỘT nhịp — ngân sách đọc, P2-06 §2.6. */
 export const TALK_CHOICES_MAX = 3;
 
-/** Dưới ngần này điểm thì KHÔNG mở được cuộc nào — xem khối trong `pickTalk`. */
 export const TALK_SCORE_FLOOR = -5;
 
 export type Talk = {
   id: string;
-  /** NPC id, hoặc `WALKIN` (khách vãng lai), hoặc `ANY`. */
   npc: string;
-  /** Chủ đề — mỗi ngày mỗi người chỉ đụng một chủ đề một lần. */
   topic: string;
-  /** Ai được quyền mở lời. Bắt buộc. */
   source: TalkSource;
-  /** Tốn bao nhiêu thời gian đọc. Bắt buộc. */
   depth: TalkDepth;
-  /** Loại hội thoại. Vắng thì `kindOf()` suy ra từ kho — xem `TalkKind`. */
   kind?: TalkKind;
   /**
    * Khung cảnh cuộc này sống được. Vắng = mọi khung cảnh — hiếm, và phải có lý do ghi
    * trong `_note`; `tools/validate-talks` kiểm chuyện đó.
    */
   practice?: PracticeId | PracticeId[];
-  /** Câu khách nói trước. */
   opener: string;
-  /** Mặt khách lúc nói `opener`. */
   openMood?: TalkMood;
   /**
    * Khách TỰ bắt chuyện (không cần F): 0..0,6, roll khi họ đứng chờ. Người chơi làm lơ
    * được, và làm lơ có giá — xem `ignore`.
    */
   initiates?: number;
-  /** Người chơi đóng bảng mà không chọn gì (Esc). Vắng = coi như `{ rel: -1 }`. */
   ignore?: { reply?: string; rel?: number; anger?: number; mem?: TalkEffect["mem"]; mood?: TalkMood };
   when?: TalkWhen;
   /**
@@ -411,9 +388,7 @@ export type Talk = {
    * `retrieve()`.
    */
   about?: string[];
-  /** Nhịp đầu. */
   tree: TalkNode[];
-  /** Cây con dùng chung, cho `ref` trỏ tới. */
   shared?: Record<string, TalkNode[]>;
 };
 
@@ -499,7 +474,6 @@ export const FORBIDDEN_SELF: Record<string, string[]> = {
 
 // ─────────────────────────────────────────────────────────────── chọn cuộc
 
-/** Mọi thứ cần biết để lọc + chấm một cuộc trò chuyện. Service dựng, talk.ts không tự đọc gì. */
 export type TalkCtx = {
   npcId: string;
   day: number;
@@ -508,15 +482,10 @@ export type TalkCtx = {
   tier: RelTier;
   visits: number;
   flags: Record<string, string | number | boolean | undefined>;
-  /** Chủ đề đã đụng hôm nay với CHÍNH người này (không lặp chủ đề trong ngày). */
   usedToday: readonly string[];
-  /** id cuộc đã chơi cả mùa — không bao giờ lặp lại nguyên một cuộc. */
   usedSeason: readonly string[];
-  /** Người chơi đã mua thiết bị này chưa. Vắng = coi như có đủ. */
   hasEquip?: (id: string) => boolean;
-  /** Khung cảnh đang diễn ra — P2-09 §2.5. Vắng = không lọc (test, công cụ). */
   practice?: PracticeId;
-  /** Một khoá bảng đen có đúng không — cho `TalkWhen.world`. Vắng = coi như thoả. */
   holds?: (key: string) => boolean;
   /**
    * Chấm điểm một cuộc theo drive của người đang đứng đó. Vắng = rơi về `weight`, để
@@ -582,7 +551,6 @@ export function eligible(all: readonly Talk[], c: TalkCtx, by: TalkOpenBy = "PLA
 export function pickTalk(all: readonly Talk[], c: TalkCtx, rng: Rng, by: TalkOpenBy = "PLAYER"): Talk | null {
   const list = eligible(all, c, by);
   if (!list.length) return null;
-  /* Chấm điểm theo drive. `c.score` do `Service` đưa vào; vắng thì rơi về `weight`. */
   const scored = list.map((t) => ({ item: t, score: c.score ? c.score(t) : (t.weight ?? 10) }));
   if (c.score) {
     /*
@@ -616,7 +584,6 @@ export function pickTalk(all: readonly Talk[], c: TalkCtx, rng: Rng, by: TalkOpe
   return list[list.length - 1];
 }
 
-/** Điều kiện hiện một lựa chọn: cờ chuyện + tiền trong két + người ta đã từ chối chưa. */
 export type TalkGate = {
   flags: TalkCtx["flags"];
   /**
@@ -625,9 +592,7 @@ export type TalkGate = {
    */
   holds?: (key: string) => boolean;
   cash?: number;
-  /** Người chơi đã mua thiết bị này chưa. Vắng = coi như có đủ (test dựng gate trần). */
   hasEquip?: (id: string) => boolean;
-  /** Người này đã lắc đầu với một lời mời rồi — ẩn hẳn mọi lựa chọn `INVITE`. */
   noInvite?: boolean;
 };
 
@@ -648,7 +613,6 @@ export function visibleOptions(nodes: readonly TalkNode[], gate: TalkGate): Talk
   return trimKeepingExit(list.length ? list : [...nodes]);
 }
 
-/** `need` nhận cả một chuỗi lẫn một mảng — mảng là phép VÀ. */
 export const needKeys = (o: TalkNode): string[] =>
   o.need === undefined ? [] : Array.isArray(o.need) ? o.need : [o.need];
 
@@ -741,7 +705,6 @@ function gateOk(key: string, gate: TalkGate): boolean {
   return neg !== !!gate.flags[body];
 }
 
-/** Giọng nào đọc ra là "thôi, tôi không nói chuyện này nữa". Xem `trimKeepingExit`. */
 const EXIT_TONES: ReadonlySet<TalkTone> = new Set<TalkTone>(["LANH", "IM", "GAT"]);
 
 /**
@@ -759,7 +722,6 @@ export function trimKeepingExit(list: TalkNode[], max = TALK_CHOICES_MAX): TalkN
   return exit ? [...list.slice(0, max - 1), exit] : head;
 }
 
-/** Nhánh con của một nút: `then` của chính nó, hoặc cây con dùng chung mà nó trỏ `ref`. */
 export function childrenOf(n: TalkNode, t: Talk): TalkNode[] | null {
   if (n.then?.length) return n.then;
   if (n.ref) return t.shared?.[n.ref] ?? null;
@@ -768,9 +730,7 @@ export function childrenOf(n: TalkNode, t: Talk): TalkNode[] | null {
 
 // ─────────────────────────────────────────────────────────────── phiên
 
-/** Một cuộc đang mở. Sống trong Service, chết khi đóng bảng. */
 export class TalkSession {
-  /** Bộ lựa chọn đang hiện. null = hết chuyện. */
   private here: TalkNode[] | null;
   private depth = 0;
   done = false;
@@ -779,7 +739,6 @@ export class TalkSession {
    * nếu không, một nhịp khoá trọn sau `while` cho bấm vô hạn lần, mỗi lần trừ một điểm.
    */
   private struck = new Set<TalkNode>();
-  /** Người chơi đã chọn gì — nhật ký cuối ngày đọc. */
   readonly picked: { say: string; tone: TalkTone }[] = [];
 
   constructor(readonly talk: Talk, readonly npcKey: string) {
@@ -832,7 +791,7 @@ export class TalkSession {
     // Cắt ở MAX_DEPTH: `ref` trỏ vòng lại là cây vô hạn. Test L-9 bắt lúc build; đây là
     // lưới thứ hai lúc chạy.
     this.here = kids && this.depth < MAX_DEPTH ? kids : null;
-    this.struck.clear();                                     // nhịp mới, sổ trắng
+    this.struck.clear();
     this.done = this.here === null;
     return { node: n, reply: n.reply, done: this.done };
   }
@@ -871,7 +830,6 @@ export function angerToWaitSec(anger: number, waitT: number, waited: number, lea
 
 // ─────────────────────────────────────────────────────── duyệt cây (test/tool)
 
-/** Mọi nút của một cuộc, kể cả cây con dùng chung. Cắt ở `MAX_DEPTH` để `ref` vòng không treo. */
 export function walkNodes(t: Talk): { node: TalkNode; depth: number }[] {
   const out: { node: TalkNode; depth: number }[] = [];
   const seen = new Set<TalkNode>();
@@ -889,7 +847,6 @@ export function walkNodes(t: Talk): { node: TalkNode; depth: number }[] {
   return out;
 }
 
-/** Mọi dòng thoại của một cuộc — linter và test danh xưng đọc. */
 export function linesOf(t: Talk): { npc: string[]; player: string[] } {
   const all = walkNodes(t);
   return {

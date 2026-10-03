@@ -33,7 +33,6 @@ export const PROP = {
 
 // ───────────────────────────────────────────────────────────── mẩu dùng nhiều nơi
 
-/** Ổ bánh mì nhìn nghiêng — xuất hiện ở lò, ở kệ, ở rổ đầu quầy. */
 function loaf(g: Pen, x: number, y: number, s = 1) {
   g.fillStyle(PAL.breadDark, 1);
   g.fillEllipse(x, y, 20 * s, 8 * s);
@@ -43,7 +42,6 @@ function loaf(g: Pen, x: number, y: number, s = 1) {
   g.fillRect(x - 5 * s, y - 3 * s, 10 * s, 1.3 * s);
 }
 
-/** Hũ thuỷ tinh có nắp — pate, đồ chua, ớt xay. Nắp là điểm nhấn màu duy nhất. */
 function jar(g: Pen, x: number, y: number, w: number, h: number, fill: number) {
   slab(g, x - w / 2, y - h, w, h, 2.5, PAL.jarGlass, 2);
   g.fillStyle(fill, 0.95);                             // phần ruột nhìn xuyên kính
@@ -54,7 +52,6 @@ function jar(g: Pen, x: number, y: number, w: number, h: number, fill: number) {
   g.fillRoundedRect(x - w / 2 - 1, y - h - 3, w + 2, 4, 1.5);
 }
 
-/** Chai nhựa / chai nước tương dựng đứng. */
 function bottle(g: Pen, x: number, y: number, h: number, color: number) {
   g.fillStyle(shade(color, -30), 1);
   g.fillRoundedRect(x - 3.6, y - h, 7.2, h, 2);
@@ -66,7 +63,6 @@ function bottle(g: Pen, x: number, y: number, h: number, color: number) {
   g.fillRect(x - 2, y - h + 3, 1.3, h - 7);
 }
 
-/** Một chiếc lá của bụi trầu bà. */
 function leaf(g: Pen, x: number, y: number, color: number, s = 1) {
   g.fillStyle(shade(color, -26), 1);
   g.fillEllipse(x, y, 15 * s, 11 * s);
@@ -110,8 +106,6 @@ function oven(scene: Phaser.Scene) {
     g.fillStyle(PAL.emberHot, 0.85);
     g.fillEllipse(cx + 1, top - 1, 6, 3);
 
-    // Vỉ nướng: các thanh cắt theo đúng hình thoi miệng lò, không thanh nào thò ra
-    // ngoài thân — bản trước để nó tràn ra hai bên nên trông như cái thang dựng ngang.
     g.lineStyle(1.7, PAL.grill, 0.95);
     for (let t = -0.8; t <= 0.8; t += 0.4) {
       const hw = ((W - 16) / 2) * (1 - Math.abs(t) * 0.55);
@@ -122,7 +116,6 @@ function oven(scene: Phaser.Scene) {
     loaf(g, cx - 7, top - 6, 0.66);                    // hai ổ đang hơ cho nóng lại
     loaf(g, cx + 6, top - 9, 0.66);
 
-    // quạt nan dựng vào hông lò — thứ khiến cái lò đọc ra là lò than, không phải bếp ga
     const fx = cx - 25, fy = cy - 4;
     g.fillStyle(PAL.shelfBoard, 1);                    // cán quạt chạm đất
     g.fillRect(fx - 1.6, fy - 10, 3.2, 10);
@@ -160,7 +153,6 @@ function tea(scene: Phaser.Scene) {
     g.fillStyle(shade(PAL.teaLid, -26), 0.8);
     g.fillEllipse(cx, top, W - 16, D - 8);
 
-    // chồng ly nhựa đặt NGAY TRÊN nắp thùng — cùng một khối, không còn vật rời
     slab(g, cx - 12, top - 17, 11, 17, 2.5, 0xeef6f9, 2);
     for (const dy of [-13, -8.5, -4]) {
       g.fillStyle(0xffffff, 0.55);
@@ -174,7 +166,6 @@ function tea(scene: Phaser.Scene) {
     g.fillRect(cx + 13.6, cy - 18.4, 1.6, 10);
     g.fillRect(cx + 17, cy - 22, 5, 3.5);              // tay vặn
 
-    // bảng "TRÀ ĐÁ" DÁN LÊN mặt thùng, nghiêng theo mặt vách
     const bx = cx - 20, by = cy - 26;
     g.fillStyle(shade(PAL.signRed, -30), 1);
     g.fillPoints([
@@ -227,7 +218,6 @@ function shelf(scene: Phaser.Scene) {
       return y - 4;
     };
 
-    // ── tầng dưới: hai két nhựa xếp cạnh nhau
     let top = board(0);
     for (const [dx, color] of [[-11, PAL.crate[0]], [11, PAL.crate[1]]] as const) {
       standing(g, cx + dx, top, 12, color, 21, 10);
@@ -235,13 +225,11 @@ function shelf(scene: Phaser.Scene) {
       g.fillRect(cx + dx - 9, top - 4, 18, 2.2);
     }
 
-    // ── tầng giữa: ba hũ bằng nhau, chia đều bề ngang kệ
     top = board(1);
     jar(g, cx - 14, top, 12, 13, PAL.pate);
     jar(g, cx, top, 12, 13, PAL.pickle);
     jar(g, cx + 14, top, 12, 13, PAL.chilli);
 
-    // ── tầng trên: một rổ bánh, nằm gọn trong khung kệ
     top = board(2);
     blob(g, cx, top - 5, HALF * 2 - 4, 14, PAL.basketDark);
     g.fillStyle(PAL.basket, 1);
@@ -252,7 +240,6 @@ function shelf(scene: Phaser.Scene) {
   });
 }
 
-/** Ghế nhựa đỏ — cái ghế mà ai từng ngồi quán vỉa hè đều nhận ra trong nửa giây. */
 function stool(scene: Phaser.Scene) {
   const SEAT = 14;
   prop(scene, PROP.stool, heightFor(SEAT + 10), (g, cx, cy) => {
@@ -270,7 +257,6 @@ function stool(scene: Phaser.Scene) {
   });
 }
 
-/** Bàn nhựa thấp + hũ đũa + chén ớt + hộp giấy — bộ tứ của quán vỉa hè. */
 function table(scene: Phaser.Scene) {
   const LEGS = 18;
   prop(scene, PROP.table, heightFor(LEGS + 40), (g, cx, cy) => {

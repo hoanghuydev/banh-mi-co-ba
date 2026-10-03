@@ -19,13 +19,10 @@ import type { Facing8 } from "../world/iso";
  */
 export const BODY_H = 64;
 
-/** Kiểu tóc. Đây là thứ phân biệt 12 NPC nhanh hơn màu áo, vì nó nằm ngay cạnh mặt. */
 export type HairStyle = "short" | "bob" | "bun" | "ponytail";
 
-/** Mũ. `nonla` là nón lá — dấu hiệu "đi chợ / bán hàng rong" rõ nhất, nhận ra từ xa. */
 export type Hat = "cap" | "helmet" | "nonla";
 
-/** Dáng người. Chỉ hai mức, vì ở 64 px thì mức thứ ba không ai phân biệt được. */
 export type Build = "slim" | "round";
 
 /**
@@ -34,26 +31,18 @@ export type Build = "slim" | "round";
  */
 export type Pose = "idle" | "carry";
 
-/** Mỗi nhân vật là một bảng màu + vài phụ kiện. Thêm người = thêm một object. */
 export type BodyStyle = {
   skin: number;
   hair: number;
   shirt: number;
   trousers: number;
-  /** Có tạp dề không — chỉ người bán mới có. */
   apron?: number;
   hat?: Hat;
-  /** Dáng còng của người lớn tuổi. */
   stoop?: boolean;
-  /** Mặc định "short". */
   hairStyle?: HairStyle;
-  /** Kính lão — đọc ra tuổi nhanh hơn mọi thứ khác. */
   glasses?: boolean;
-  /** Khẩu trang — Sài Gòn buổi sáng thì một nửa người đi đường đang đeo. */
   mask?: boolean;
-  /** Giỏ đi chợ xách bên tay. Giá trị là màu của giỏ. */
   bag?: number;
-  /** Mặc định "slim". */
   build?: Build;
 };
 
@@ -125,7 +114,6 @@ const NECK_GAP = 4;      // khoảng hở cổ giữa vai và cằm
 const HEAD_R = 12;       // bán kính đầu
 const ARM_W = 5.6;       // mảnh — 7 px làm hai cánh tay to ngang nửa thân, đọc ra như tấm ván
 
-/** Bề ngang thân áo theo hướng nhìn và dáng người. */
 function bodyWidth(dir: Dir, st: BodyStyle) {
   const round = st.build === "round" ? 3 : 0;
   return (dir === "e" ? 17 : 24) + round;
@@ -149,7 +137,6 @@ const HOLD_ANCHOR: Record<Facing8, { x: number; y: number }> = {
   sw: { x: -5, y: 22 },
 };
 
-/** Ba hướng NGOẢNH LƯNG: món nằm khuất sau thân, `Player` phải hạ depth xuống. */
 const BEHIND = new Set<Facing8>(["n", "ne", "nw"]);
 
 export function holdAnchor(facing: Facing8) {
@@ -183,7 +170,6 @@ function hairBack(g: Pen, cx: number, y: number, dir: Dir, st: BodyStyle) {
   }
 }
 
-/** Tóc phía TRƯỚC mặt: mái, gọng tóc ôm thái dương. */
 function hairFront(g: Pen, cx: number, y: number, dir: Dir, st: BodyStyle) {
   const style = st.hairStyle ?? "short";
   g.fillStyle(st.hair, 1);
@@ -218,7 +204,6 @@ function hairFront(g: Pen, cx: number, y: number, dir: Dir, st: BodyStyle) {
   }
 }
 
-/** Mặt: mắt to có bắt sáng, chân mày, miệng cười nhẹ, má ửng. */
 function face(g: Pen, cx: number, y: number, dir: Dir, st: BodyStyle) {
   const eyes: number[] = dir === "s" ? [-5, 5] : [5];
   const eyeY = y + 2.5;
@@ -420,7 +405,6 @@ function arms(
 ) {
   const bw = bodyWidth(dir, st);
 
-  /** Cánh tay buông thẳng. */
   const hang = (dx: number, skin: number) => {
     const LEN = 17;
     slab(g, cx + dx, shoulder + 4, ARM_W, LEN, 2.8, skin, 2);
@@ -501,7 +485,6 @@ function apron(g: Pen, cx: number, shoulder: number, dir: Dir, color: number) {
   g.fillRect(ax + aw / 2 - 0.5, shoulder + 16, 1, 6.5);
 }
 
-/** Giỏ đi chợ xách bên tay — chỉ có nghĩa ở tư thế buông tay. */
 function bag(g: Pen, cx: number, shoulder: number, dir: Dir, st: BodyStyle) {
   const color = st.bag!;
   const bx = dir === "e" ? cx + 5 : cx + bodyWidth(dir, st) / 2 + 1;

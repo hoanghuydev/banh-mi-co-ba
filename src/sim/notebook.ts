@@ -25,15 +25,11 @@ export type RawNote =
   | { t: "FIRST_VISIT" }
   | { t: "SAID_SOMETHING"; text: string };
 
-/** ĐÚNG SÁU trường (P2-05 §2.2) — thêm trường thứ 7 là test type hỏng. */
 export type LogEntry = {
   day: number;
-  /** Phút trong ngày: 407 → "6h47". */
   minute: number;
   npcId: NpcId | "KHACH_LA";
-  /** Nguyên văn cách họ gọi. */
   orderText: string;
-  /** "lần thứ 9". */
   visitCount: number;
   note?: RawNote;
 };
@@ -49,18 +45,15 @@ export const SLOT_LABEL: Record<HypothesisSlot, string> = {
 
 export type Hypothesis = {
   slot: HypothesisSlot;
-  /** Id trong từ vựng, KHÔNG phải chuỗi tự do. */
   value: string;
   dayGuessed: number;
   /** KHÔNG CÓ 'WRONG'. */
   state: "OPEN" | "CONFIRMED";
   dayConfirmed?: number;
-  /** Ngày đổi giá trị gần nhất — mỗi slot đổi tối đa 1 lần/ngày. */
   dayChanged: number;
 };
 
 export type NpcPage = {
-  /** Tên người chơi tự ghi — thứ DUY NHẤT gắn tên lên đầu khách (P2-05, quyết định của chủ dự án). */
   name: string;
   freeLines: string;
   hypotheses: Hypothesis[];
@@ -76,9 +69,7 @@ export type Notebook = {
   pages: Record<NpcId, NpcPage>;
   eveningNotes: EveningNote[];
   landmarkTier: 0 | 1 | 2 | 3 | 4;
-  /** Đã thấy ai từng tới quầy — mặt của họ mới có trong sổ. */
   met: NpcId[];
-  /** Ghi nhận trong NGÀY để dựng trang tối (không phải cột trái — sổ tối đọc rồi quên). */
   today: DayFacts;
 };
 
@@ -94,7 +85,6 @@ export type DayFacts = {
   heardBad: boolean;
   heardGood: boolean;
   visitors: NpcId[];
-  /** Bằng chứng cho giả thuyết (§2.3 wasDemonstratedToday). */
   usualServed: NpcId[];
   cleanServedFront: NpcId[];
   served_: Record<NpcId, { minute: number; dish: Ingredient[] }[]>;
@@ -136,9 +126,8 @@ export function nameCheck(nb: Notebook, npcId: NpcId): boolean | null {
   return !Object.entries(KEY).some(([id, k]) => id !== npcId && k !== KEY[npcId] && w.includes(k));
 }
 
-/** Tên hiện trên đầu / trên phiếu: tên người chơi ghi, hoặc "—". */
 export function displayName(nb: Notebook | undefined, npcId: NpcId, fallback: string) {
-  if (!NPC.has(npcId)) return fallback;                    // khách vãng lai: mô tả hình dáng
+  if (!NPC.has(npcId)) return fallback;
   return nb?.pages[npcId]?.name?.trim() || "—";
 }
 
@@ -152,7 +141,6 @@ export function beginDay(nb: Notebook, day: number) {
   if (nb.today.day !== day) nb.today = newDayFacts(day);
 }
 
-/** Máy ghi một lượt gọi món. Không đúng/sai, không suy luận — chỉ chuyện đã xảy ra. */
 export function logOrder(nb: Notebook, e: { day: number; minute: number; npcId: NpcId | null; orderText: string; visitCount: number }) {
   beginDay(nb, e.day);
   const id = e.npcId ?? "KHACH_LA";
@@ -182,7 +170,6 @@ const WEEK_PATTERNS: Record<string, { label: string; days: readonly Weekday[] }>
 };
 const TINH_Y: Record<string, string> = { de_y_ky: "để ý kỹ", xue_xoa: "xuề xoà" };
 
-/** Nhãn đọc được của một giá trị. */
 export function valueLabel(slot: HypothesisSlot, v: string): string {
   if (slot === "HAY_AN" || slot === "KHONG_AN_DUOC") return INGREDIENTS.find((i) => i.id === v)?.label ?? v;
   if (slot === "THUONG_GHE") return bandLabel(v);
@@ -206,11 +193,9 @@ export function options(nb: Notebook, npcId: NpcId, slot: HypothesisSlot): strin
   if (slot === "THUONG_GHE") return [...new Set(mine.map((e) => bandId(e.minute)))];
   if (slot === "NGAY_TRONG_TUAN") return mine.length >= 3 ? Object.keys(WEEK_PATTERNS) : [];
   if (slot === "TINH_Y") return mine.length >= 2 ? Object.keys(TINH_Y) : [];
-  // nghề: nghề của những người mình đã gặp — không lộ nghề người chưa gặp
   return mine.length >= 2 ? [...new Set(nb.met.map((id) => NPC.get(id)?.role).filter((r): r is string => !!r))] : [];
 }
 
-/** Đặt / đổi một giả thuyết. Trả lý do nếu không được (không bao giờ nói "sai"). */
 export function guess(nb: Notebook, npcId: NpcId, slot: HypothesisSlot, value: string, day: number): string | null {
   const p = page(nb, npcId, day);
   if (!options(nb, npcId, slot).includes(value)) return "chưa gặp điều này ở người này";
@@ -232,7 +217,6 @@ export function unguess(nb: Notebook, npcId: NpcId, slot: HypothesisSlot) {
   if (p) p.hypotheses = p.hypotheses.filter((h) => h.slot !== slot || h.state === "CONFIRMED");
 }
 
-/** Sự thật của game — người chơi không bao giờ thấy trực tiếp. */
 function truth(npc: NpcDef, usual: Partial<Record<Ingredient, number>>, slot: HypothesisSlot, v: string): boolean {
   switch (slot) {
     case "HAY_AN": return (usual[v as Ingredient] ?? 0) >= 2;
@@ -269,7 +253,6 @@ function demonstrated(nb: Notebook, npcId: NpcId, slot: HypothesisSlot, v: strin
 
 export type Confirmation = { npcId: NpcId; slot: HypothesisSlot };
 
-/** Ban đêm: tick mực đỏ cho giả thuyết đúng VÀ đã được chứng minh hôm nay. Sai thì không làm gì. */
 export function checkHypotheses(nb: Notebook, day: number, usualOf: (id: NpcId) => Partial<Record<Ingredient, number>>): Confirmation[] {
   const out: Confirmation[] = [];
   for (const [id, p] of Object.entries(nb.pages)) {
@@ -277,7 +260,7 @@ export function checkHypotheses(nb: Notebook, day: number, usualOf: (id: NpcId) 
     if (!npc) continue;
     for (const h of p.hypotheses) {
       if (h.state !== "OPEN") continue;
-      if (!truth(npc, usualOf(id), h.slot, h.value)) continue;           // sai → im lặng
+      if (!truth(npc, usualOf(id), h.slot, h.value)) continue;
       if (!demonstrated(nb, id, h.slot, h.value, day)) continue;
       h.state = "CONFIRMED"; h.dayConfirmed = day;
       out.push({ npcId: id, slot: h.slot });
@@ -295,7 +278,6 @@ const ST = SO_TAY as unknown as { notes: Record<string, NoteDef>; confirm: Recor
 export const NOTE_RULES = ST.notes;
 export const CONFIRM_LINES = ST.confirm;
 
-/** "Chú Tư" giữa câu → "chú Tư"; đầu câu giữ hoa. */
 const mid = (name: string) => name.charAt(0).toLowerCase() + name.slice(1);
 const fill = (s: string, name: string, value = "") => {
   const out = s.replace(/\{name\}/g, (_m, i: number) => (i === 0 ? name : mid(name))).replace(/\{value\}/g, value);
@@ -324,7 +306,6 @@ export type EveningCtx = {
   day: number;
   lastDay: boolean;
   weather: import("../core/types").Weather;
-  /** Người đã gặp mà đang lỡ liên tiếp n lần ghé có lịch (P2-03 missStreak). */
   absences: { npcId: NpcId; missed: number }[];
   landmark: 0 | 1 | 2 | 3 | 4;
   confirmations: Confirmation[];
@@ -367,7 +348,6 @@ export function composeEvening(nb: Notebook, c: EveningCtx): EveningNote {
   const used = new Set<string>();
   for (const x of ranked) {
     if (lines.length >= 3 || used.has(x.def.concept)) continue;
-    // dòng "ngày thường" chỉ để lấp khi chưa đủ 2 dòng
     if (x.id === "ordinary" && lines.length >= 2) continue;
     used.add(x.def.concept);
     const key = `note:${x.id}`;

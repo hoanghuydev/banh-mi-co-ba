@@ -28,7 +28,6 @@ export const BUILD = {
 
 export const WALL_H = 80;
 
-/** Cao độ (đo dọc mặt vách từ mép trên) của dải gạch men ốp chân tường. */
 const TILE_BAND = WALL_H + BASE - 26;
 
 /**

@@ -25,7 +25,6 @@ const CATALOG = catalog as Record<string, Entry>;
 
 export const SFX_IDS = Object.keys(CATALOG) as SfxId[];
 
-/** Có id này trong bộ asset hiện tại không — bộ tạm còn thiếu vài thứ (tiếng rao). */
 export function hasSfx(id: string): id is SfxId {
   return id in CATALOG;
 }
@@ -48,16 +47,13 @@ const CEILING: Record<BusId, number> = {
   amBao: 0.501,      // −6 dB
 };
 
-/** Mức hạ khi có giọng NPC đang nói, P5-03 §2.3 ở `duckingStrength` = 70. */
 const VOICE_DUCK: Record<BusId, number> = {
   duongPho: 0.447,   // −7 dB
   giongNPC: 1.0,     //  không tự hạ mình
   thaoTac: 0.708,    // −3 dB
   amBao: 1.0,        //  0 dB — âm báo phải nghe thấy kể cả khi có người nói
 };
-/** Riêng lớp giọng lao xao bị hạ sâu hơn nền đường (−11 dB) — §2.3. */
 const CROWD_DUCK = 0.282;
-/** Nhạc hạ −14 dB khi có giọng — §2.3. Thi hành qua `music.voiceDuck`. */
 
 /**
  * Âm "chấm điểm người chơi" — công tắc `disableNegativeAudioCues` tắt được; giá trị là thứ phát
@@ -99,7 +95,6 @@ const JITTER: Record<BusId, { rate: number; db: number }> = {
  */
 const TALK_GAIN = 0.62;
 
-/** Trần số tiếng cùng lúc. Vượt trần thì BỎ tiếng mới, không cướp tiếng đang phát. */
 const MAX_CONCURRENT = 14;
 
 // ─────────────────────────────────────────────────────────────────── giọng NPC
@@ -131,10 +126,8 @@ export function voicePitch(npcId: string): number {
 type Loop = {
   sound: Phaser.Sound.BaseSound & { setVolume(v: number): unknown };
   bus: BusId;
-  /** Âm lượng tương đối 0..1 của riêng vòng này, trước khi nhân với bus. */
   level: number;
   target: number;
-  /** Đơn vị level trên mỗi giây. */
   rate: number;
   pan: number;
   crowd: boolean;
@@ -142,13 +135,9 @@ type Loop = {
 };
 
 type Opts = {
-  /** −1 (trái) .. +1 (phải). Bỏ qua khi `mono`. */
   pan?: number;
-  /** Nhân vào cao độ. Dùng cho giọng NPC; foley để yên cho jitter lo. */
   rate?: number;
-  /** 0..1, nhân thêm vào mức của bus. */
   volume?: number;
-  /** Chậm lại ngần này mili-giây rồi mới phát. */
   delay?: number;
 };
 
@@ -167,7 +156,6 @@ class SfxDirector {
   private mono = false;
   private noNegative = false;
   private pingOn = false;
-  /** Giây còn lại của ducking do giọng người — P5-03 §2.3. */
   private voiceLeft = 0;
   private lastPlayed = new Map<string, number>();
   /**
@@ -181,13 +169,11 @@ class SfxDirector {
    * TỰ DỌN những cái đã tắt ngay trước khi đếm.
    */
   private live = new Set<Phaser.Sound.BaseSound>();
-  /** Đồng hồ riêng, giây, chạy theo game chứ không theo `Date.now` (pause là dừng). */
   private now = 0;
   private warned = new Set<string>();
 
   // ───────────────────────────────────────────────────────────────── vòng đời
 
-  /** Gọi một lần ở `main.ts`, cạnh `music.attach`. */
   attach(game: Phaser.Game) {
     if (this.game) return;
     this.game = game;
@@ -208,7 +194,6 @@ class SfxDirector {
     this.noNegative = s.disableNegativeAudioCues;
     this.pingOn = s.a11yPerceptionPing;
     this.loops.forEach((l) => this.applyLoopGain(l));
-    // Bus kéo về 0 thì thả file đang chạy vòng luôn — không giữ một vòng câm tốn CPU.
     this.loops.forEach((l, key) => { if (this.busGain(l.bus) === 0) this.loop(null, key as SfxId, false, {}, 0); });
   }
 
@@ -232,7 +217,6 @@ class SfxDirector {
     }
   }
 
-  /** Mọi id của một bus — dùng để nạp cả nhóm mà không phải liệt kê tay. */
   idsOfBus(...buses: BusId[]): SfxId[] {
     return SFX_IDS.filter((id) => buses.includes(CATALOG[id].bus));
   }
@@ -259,7 +243,6 @@ class SfxDirector {
     const idx = this.drawVariant(resolved, e.files.length);
     const key = this.key(resolved, idx);
     if (!scene.cache.audio.exists(key)) {
-      // Thiếu file thì IM, không sập. Cảnh báo đúng một lần mỗi id để log còn đọc được.
       if (!this.warned.has(key)) {
         this.warned.add(key);
         if (import.meta.env?.DEV) console.warn(`[sfx] chưa nạp: ${key} — thêm vào preload của scene`);
@@ -338,12 +321,10 @@ class SfxDirector {
     for (let i = 0; i < n; i++) {
       const t = n > 1 ? i / (n - 1) : 0;
       const wobble = (this.rng.next() * 2 - 1) * 0.08;
-      // Tiếng cuối hạ xuống một chút: câu nói xuôi xuống ở cuối, không treo lơ lửng.
       const fall = i === n - 1 ? -0.06 : 0;
       this.play(scene, "vox_blip", {
         pan,
         rate: pitch * (1 + drift * t + wobble + fall),
-        // Âm tiết đầu rõ nhất rồi nhẹ dần — người ta không nói đều từng tiếng một.
         volume: TALK_GAIN * (i === 0 ? 1 : 0.78 + this.rng.next() * 0.16),
         delay: at,
       });
@@ -376,7 +357,6 @@ class SfxDirector {
 
     if (cur) {
       cur.pan = o.pan ?? cur.pan;
-      // Gọi lại khi đã ở đích là không làm gì — nhờ vậy scene cứ gọi mỗi frame được.
       if (cur.target !== 1 || cur.stopAtZero) this.fadeLoop(cur, 1, fadeMs, false);
       this.applyLoopGain(cur);
       return;
@@ -402,13 +382,11 @@ class SfxDirector {
     this.fadeLoop(l, 1, fadeMs, false);
   }
 
-  /** Vòng này đang kêu không — scene dùng để khỏi gọi lại mỗi frame. */
   looping(id: SfxId) {
     const l = this.loops.get(id);
     return !!l && l.target > 0;
   }
 
-  /** Đổi âm lượng tương đối của một vòng đang chạy (ruồi theo độ bẩn, mưa theo cường độ). */
   loopVolume(id: SfxId, v: number) {
     const l = this.loops.get(id);
     if (!l) return;
@@ -416,7 +394,6 @@ class SfxDirector {
     if (l.rate === 0) { l.level = l.target; this.applyLoopGain(l); }
   }
 
-  /** Tắt mọi vòng. Dùng lúc rời scene — ambience của quán không được theo vào menu. */
   stopLoops(fadeMs = 600) {
     this.loops.forEach((l) => this.fadeLoop(l, 0, fadeMs, true));
   }
@@ -437,7 +414,6 @@ class SfxDirector {
 
   // ─────────────────────────────────────────────────────────────── bên trong
 
-  /** Dọn những mẩu đã tắt rồi mới đếm — xem chú thích ở `live`. */
   private countLive() {
     for (const s of this.live) {
       if (!s.isPlaying && !s.isPaused) this.live.delete(s);
@@ -449,7 +425,6 @@ class SfxDirector {
     return `sfx_${id}_${i}`;
   }
 
-  /** Công tắc "tắt âm báo tiêu cực" — P5-03 §5.5. */
   private resolve(id: SfxId): SfxId | null {
     if (!this.noNegative) return id;
     return id in NEGATIVE_CUES ? (NEGATIVE_CUES[id] ?? null) : id;
@@ -468,7 +443,6 @@ class SfxDirector {
   }
 
   private setPan(snd: Phaser.Sound.BaseSound, pan: number) {
-    // `mono` gộp hết về giữa (§2.4). HTML5 audio không có pan — bỏ qua, không sập.
     const p = this.mono ? 0 : Math.max(-1, Math.min(1, pan));
     (snd as unknown as { setPan?: (v: number) => void }).setPan?.(p);
   }
@@ -480,7 +454,7 @@ class SfxDirector {
     scene.load.once(Phaser.Loader.Events.COMPLETE, () => {
       if (scene.cache.audio.exists(key)) done();
     });
-    scene.load.once(Phaser.Loader.Events.FILE_LOAD_ERROR, () => { /* không có file thì im */ });
+    scene.load.once(Phaser.Loader.Events.FILE_LOAD_ERROR, () => { });
     if (!scene.load.isLoading()) scene.load.start();
   }
 
@@ -508,7 +482,6 @@ class SfxDirector {
     for (const [k, v] of this.loops) if (v === l) this.loops.delete(k);
   }
 
-  /** §2.3: giọng người kêu thì mọi bus khác lùi lại, thả ra sau `release` giây. */
   private duckForVoice(seconds: number) {
     this.voiceLeft = Math.max(this.voiceLeft, seconds + 0.45);   // + release 450 ms của §2.3
     music.voiceDuck(true);
@@ -540,5 +513,4 @@ class SfxDirector {
   }
 }
 
-/** Một bàn mixer cho cả game. */
 export const sfx = new SfxDirector();

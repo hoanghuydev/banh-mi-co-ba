@@ -25,7 +25,6 @@ export const PAL = {
   wallShade: 0xa79f8d,
   wallMoss: 0x8d9a7e,
 
-  // ── nhà hàng xóm hai bên: khác tông để đọc ra là NHÀ KHÁC, không phải tường quán
   neighbour: [0xb9a893, 0xa8b0a2, 0xc3b0a4, 0x9fada9] as const,
   shutter: 0x6f7c85,
   window: 0x7e929c,
@@ -49,7 +48,6 @@ export const PAL = {
   signRedDark: 0x8e2a20,
   signYellow: 0xf5c542,
 
-  // ── vỏ kiến trúc: chi tiết vặt làm bức tường đọc ra là NHÀ chứ không phải khối hộp
   wallTile: 0x9fb2b8,           // gạch men ốp chân tường, kiểu nhà phố Sài Gòn
   wallTileJoint: 0x7d9198,
   meterBox: 0xd8d2c0,           // hộp đồng hồ điện
@@ -72,7 +70,6 @@ export const PAL = {
   teaLid: 0x9fd6b6,
   crate: [0x3f7d9e, 0xd2a044, 0x8a5f8f] as const,
 
-  // ── kệ nguyên liệu: khung sắt + hũ + rổ. Hạn dùng là ràng buộc kinh tế #1 (CANON §13)
   rackSteel: 0xa9b2b8,
   rackSteelDark: 0x76828a,
   shelfBoard: 0xb98b5e,
@@ -188,5 +185,4 @@ export const PAL = {
   paper: 0xf3f0e7,
 } as const;
 
-/** Bóng đổ chung, tách ra để mọi chỗ dùng cùng một độ đậm. */
 export const SHADOW = { color: 0x19222a, alpha: 0.26 } as const;

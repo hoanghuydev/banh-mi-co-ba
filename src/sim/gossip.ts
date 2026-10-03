@@ -28,7 +28,6 @@ export const MIN_CONFIDENCE = { bad: 0.35, good: 0.30 };
 export const GOOD_NEWS_MUL = 1.45, BAD_NEWS_MUL = 0.85;
 export const DECLARATION_GAIN = 0.12, DECLARATION_CAP = 1.6;
 export const SEASON_MUTATIONS = 4, MUTATION_MIN_GAP = 6;
-/** Tin không được nhắc lại thì tự nhạt — kênh giải thích #3 "thời gian + nhất quán". */
 export const NIGHTLY_FADE = 0.08;
 export const DORMANT_REVIVE = 1.3;
 
@@ -37,18 +36,15 @@ export type Pool = "hearsay" | "belief" | "conviction";
 
 export type Belief = {
   id: string;
-  /** Kind GỐC — không đổi kể cả khi méo. */
   kind: string;
   claim: string;
   valence: -1 | 1;
   intensity: number;
   intensityMul: number;
   confidence: number;
-  /** 0 = chứng kiến. */
   hops: number;
   /** Đường đi đầy đủ — KHÔNG BAO GIỜ rỗng khi hops ≥ 1; chain.length === hops. */
   chain: NpcId[];
-  /** Người mình nghe từ đó (null = tự thấy). */
   from: NpcId | null;
   mutated: boolean;
   severity?: Severity;
@@ -59,7 +55,6 @@ export type Belief = {
   dormant: boolean;
   dayHeard: number;
   lastToldDay: number;
-  /** Ngày gần nhất người này NHẮC chuyện này ở quầy (mỗi ngày tối đa một lần). */
   mentionedDay: number;
 };
 
@@ -67,10 +62,8 @@ export type OverhearPlan = {
   day: number;
   a: NpcId; b: NpcId;
   claim: string;
-  /** Tên nguồn trong câu của A — null khi A tự chứng kiến. */
   source: NpcId | null;
   lines: [string, string, string];
-  /** Câu A với tên nguồn thay bằng "…" — tầng nghe 1 (dừng tay nhưng không nghiêng người). */
   hiddenA: string;
 };
 
@@ -82,9 +75,7 @@ export type GossipState = {
   log: GossipLogEntry[];
   budget: { mutationsLeft: number; lastMutationDay: number; minGapDays: number };
   overhear: OverhearPlan | null;
-  /** Chuỗi đầu tiên có KỊCH BẢN (§2.13 #1) — không phó mặc xác suất. */
   scriptedDone: boolean;
-  /** P4-02 §2.3 — CÚ LỘ đã diễn chưa (bà Sáu kể cô Mai nghe, trước tiệm, đêm đầu tiên hẻm được phép kể). */
   revealDone?: boolean;
   seq: number;
 };
@@ -105,7 +96,6 @@ for (const [a, b, s] of (TIES as unknown as { edges: [string, string, number][] 
   (TIE.get(b) ?? TIE.set(b, []).get(b)!).push({ to: a, strength: s });
 }
 const NEVER = (TIES as unknown as { neverTellsTo?: Record<string, string[] | string> }).neverTellsTo ?? {};
-/** Cạnh để KỂ (một chiều): bỏ những người mà người này không bao giờ kể cho (P4-01). */
 export const tiesOf = (id: NpcId) => {
   const no = NEVER[id];
   const list = TIE.get(id) ?? [];
@@ -119,7 +109,6 @@ const C = CLAIMS as unknown as { reactions: Record<string, string[]>; claims: Re
 export const CLAIM = C.claims;
 export const REACTIONS = C.reactions;
 
-/** Kind → claim ĐÚNG (tin chưa méo). */
 export const TRUE_CLAIM: Record<string, string> = {};
 for (const [id, c] of Object.entries(CLAIM)) if (!c.mutated && !TRUE_CLAIM[c.kind]) TRUE_CLAIM[c.kind] = id;
 
@@ -140,7 +129,6 @@ export const MUTATION_GRAPH: Record<string, { to: string; rate: number; severity
   PLAYER_NAME: null, NPC_NAME: null, USUAL_ORDER: null,
 };
 
-/** Chuyện nặng thì người ít nói cũng kể. Tin tốt KHÔNG có sàn. */
 const GRAVITY_FLOOR: Record<string, number> = { DROPPED_FOOD: 0.55, DIRTY_HANDS: 0.45, WRONG_NAME: 0.40 };
 
 const PERSON = new Map(NPCS.map((n) => [n.id, n]));
@@ -171,7 +159,6 @@ export function witness(g: GossipState, npc: NpcId, kind: string, intensity: num
   });
 }
 
-/** Người chơi có tin đồn tốt/xấu nào đang sống trong đầu người này (tin NGHE KỂ). */
 export function activeHeard(g: GossipState, npc: NpcId) {
   return (g.beliefs[npc] ?? []).filter((b) => b.hops >= 1 && !b.dormant && b.confidence >= minConf(b));
 }
@@ -225,9 +212,7 @@ export type TickCtx = {
   saveId: string;
   day: number;
   allowFalseMemory: boolean;
-  /** Ai có mặt trong hẻm hôm nay (đã ghé quán). Người ở hẻm (bà Sáu, cô Mai, bà Bảy) luôn có mặt. */
   present: (id: NpcId) => boolean;
-  /** Ghế nhựa (P3-04 D1): khách ngồi lại nói chuyện với nhau → thêm lượt kể mỗi đêm. */
   extraTransmissions?: number;
   /**
    * P4-01 NPC-12 — sau SK-32 (hai người cùng nghề) chú Kiệt kể tin XẤU ít hẳn đi: 0,45 → 0,15,
@@ -242,7 +227,6 @@ export type TickCtx = {
   open?: boolean;
 };
 
-/** Một đêm của cái hẻm. Trả các lần truyền tin (để P2-05 ghi nhật ký). */
 export function gossipTick(g: GossipState, t: TickCtx): GossipLogEntry[] {
   const out: GossipLogEntry[] = [];
   const { day } = t;
@@ -281,7 +265,7 @@ export function gossipTick(g: GossipState, t: TickCtx): GossipLogEntry[] {
   }
 
   const tellers = NPCS.map((n) => n.id).filter(inAlley);
-  for (let i = tellers.length - 1; i > 0; i--) {                     // Fisher–Yates từ stream gossip
+  for (let i = tellers.length - 1; i > 0; i--) {
     const j = Math.floor(rng.next() * (i + 1));
     [tellers[i], tellers[j]] = [tellers[j], tellers[i]];
   }
@@ -290,7 +274,7 @@ export function gossipTick(g: GossipState, t: TickCtx): GossipLogEntry[] {
     const node = nodeOf(teller);
     const pool = (g.beliefs[teller] ?? []).filter((b) => !b.dormant && b.hops < MAX_HOPS && b.confidence >= minConf(b)
       && b.intensity * b.confidence * b.intensityMul >= 25
-      && (!node.requiresWitnessToRelay || b.hops === 0));                // thầy Phúc: chưa thấy tận mắt thì chưa kể
+      && (!node.requiresWitnessToRelay || b.hops === 0));
     const b = weighted(rng, pool, (x) => x.intensity * x.confidence * x.intensityMul * (x.valence > 0 ? GOOD_NEWS_MUL : BAD_NEWS_MUL));
     const roll = rng.next();
     if (!b || roll >= tellWillingness(teller, b.kind) * (t.willMul?.(teller, b.valence) ?? 1)) continue;
@@ -301,7 +285,6 @@ export function gossipTick(g: GossipState, t: TickCtx): GossipLogEntry[] {
     budget--;
   }
 
-  // kênh #3: tin không được nhắc lại thì nhạt dần; chìm dưới ngưỡng thì NGỦ (không xoá)
   for (const list of Object.values(g.beliefs)) {
     for (const b of list) {
       if (b.hops === 0) { b.intensity *= 0.94; continue; }
@@ -319,7 +302,7 @@ function transmit(g: GossipState, teller: NpcId, b: Belief, listener: NpcId, day
   const tn = nodeOf(teller), ln = nodeOf(listener);
   let conf = b.confidence * keep * (tn.credibility !== undefined ? 0.85 + 0.15 * tn.credibility : 1);
   if (tn.role === "DISTORTER") conf *= b.valence < 0 ? tn.badNewsMul ?? 1 : tn.goodNewsMul ?? 1;
-  if (ln.confidenceMulOnReceive) conf *= ln.confidenceMulOnReceive;          // thầy Phúc dập tắt
+  if (ln.confidenceMulOnReceive) conf *= ln.confidenceMulOnReceive;
 
   let claim = b.claim, mutated = b.mutated, severity = b.severity, here = false;
   // Nhớ nhầm — nơi DUY NHẤT mutation được phép xảy ra: trên cạnh truyền tin, không trên sự kiện
@@ -330,14 +313,13 @@ function transmit(g: GossipState, teller: NpcId, b: Belief, listener: NpcId, day
     g.budget.mutationsLeft--;
     g.budget.lastMutationDay = day;
     claim = edge.to; mutated = true; severity = edge.severity; here = true;
-    conf = Math.min(0.95, conf * 1.10);                                      // tin méo nghe CHẮC hơn
+    conf = Math.min(0.95, conf * 1.10);
   }
 
   const list = (g.beliefs[listener] ??= []);
   const chain = [...b.chain, teller];
   const existing = list.find((x) => x.claim === claim);
   if (existing) {
-    // nghe lại lần nữa từ người khác: chắc hơn, nhưng vẫn nhớ nguồn gần nhất
     existing.confidence = Math.min(0.95, Math.max(existing.confidence, conf));
     existing.dormant = false;
     existing.dayHeard = day;
@@ -355,12 +337,11 @@ function transmit(g: GossipState, teller: NpcId, b: Belief, listener: NpcId, day
   b.declarations++;
   b.intensityMul = Math.min(DECLARATION_CAP, 1 + DECLARATION_GAIN * b.declarations);
   b.confidence = Math.min(0.95, b.confidence * (1 + 0.5 * DECLARATION_GAIN));
-  if (b.hops === 0) b.confidence = 1;                                      // chứng kiến thì vẫn chắc chắn
+  if (b.hops === 0) b.confidence = 1;
   if (b.declarations >= 3) b.hardened = true;
   return { day, from: teller, to: listener, claim, mutated, mutatedHere: here, hops: chain.length };
 }
 
-/** Cảnh nghe lỏm sáng mai — dùng ĐÚNG tin vừa truyền đêm nay (§2.7: cửa sổ nhìn vào cái máy). */
 function planOverhear(a: NpcId, b: NpcId, heard: Belief, told: Belief, day: number, rng: Rng): OverhearPlan {
   const pick = (xs: string[]) => xs[Math.floor(rng.next() * xs.length)];
   const def = CLAIM[told.claim];
@@ -370,7 +351,6 @@ function planOverhear(a: NpcId, b: NpcId, heard: Belief, told: Belief, day: numb
   const hiddenA = raw.replace(/\{source\}/g, "…");
   const pb = personality(b);
   const react = def.valence > 0 ? REACTIONS.good : pb.soi >= 0.6 && pb.thanThien < 0.7 ? REACTIONS.doubt : REACTIONS.believe;
-  // cô Mai tự thêm giả thuyết đúng lúc tin ĐANG méo → người chơi nghe được nó hình thành
   const b1 = heard.mutated && !told.mutated ? CLAIM[heard.claim].wonder ?? pick(react) : pick(react);
   const a2 = pick(source ? REACTIONS.close : REACTIONS.closeSeen);
   return { day, a, b, claim: heard.claim, source, lines: [a1, b1, a2], hiddenA };

@@ -27,11 +27,9 @@ export type Personality = {
 export type NpcDef = {
   id: string;
   name: string;
-  /** Cách khách tự xưng / người chơi gọi. CANON §2: KHÔNG dịch đại từ. */
   role: string;
   personality: Personality;
   body: BodyStyle;
-  /** Lịch ghé quán — P2-03 §2.9. Rỗng = chỉ ghé khi dev gọi. */
   schedule: ScheduleRule[];
   /**
    * `patienceBaseSec` của P1-02 §2.7 — giây thật tới mốc MADE_THEM_WAIT (r = 1).

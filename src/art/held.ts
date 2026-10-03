@@ -44,7 +44,6 @@ export const HELD = { key: (h: HeldLook) => `held_${h}`, W: 40, H: 40 } as const
  */
 export type HeldLook = Hand | "loaf_baked";
 
-/** Tay không thì không có texture nào — đây là danh sách thật sự được nướng. */
 const CARRIED = [
   "loaf_cold", "loaf_baked", "loaf_hot", "loaf_burnt", "loaf_filled", "tea",
 ] as const;
@@ -62,7 +61,6 @@ export function heldTexture(hand: Hand, crust = 0): string {
   return HELD.key(hand);
 }
 
-/** Đo một lần rồi nhớ: quét alpha không rẻ, mà texture thì cả ván chơi không đổi. */
 const footPad = new Map<string, number>();
 
 /**
@@ -98,7 +96,6 @@ export function heldFootPad(scene: Phaser.Scene, key: string): number {
   return pad;
 }
 
-/** Thân ổ bánh nằm ngang, nằm ngay trên điểm cầm. `warp` làm hai đầu quắt lại. */
 function loafBody(g: Pen, cx: number, cy: number, top: number, dark: number, warp = 0) {
   // Bề ngang 24 px, tức đúng bằng bề ngang thân người. To hơn nữa là nhìn ra
   // đang bưng một khúc gỗ chứ không phải một ổ bánh mì.
@@ -115,7 +112,6 @@ function loafBody(g: Pen, cx: number, cy: number, top: number, dark: number, war
   g.fillEllipse(cx - 2.5, cy - 4, 12, 3.4);
 }
 
-/** Ổ chưa nướng: trắng nhợt, chưa rạch. */
 function loafCold(g: Pen, cx: number, cy: number) {
   loafBody(g, cx, cy, 0xe3d3ae, 0xbba884);
   g.fillStyle(0xcdbb96, 0.55);                         // vết bột còn bám trên vỏ
@@ -134,7 +130,6 @@ function loafCold(g: Pen, cx: number, cy: number) {
 function loafBakedCold(g: Pen, cx: number, cy: number) {
   const top = 0xa8825f, dark = 0x7d5f44;
   loafBody(g, cx, cy, top, dark);
-  // Chỗ ổ nóng có ánh vàng ấm thì ở đây là một lớp xám phủ lưng — vỏ đã khô, hết bóng.
   g.fillStyle(0x8e8378, 0.24);
   g.fillEllipse(cx - 1, cy - 2.6, 19, 6.2);
   g.fillStyle(shade(PAL.breadSlash, -24), 0.8);        // vết rạch đã tắt ánh vàng
@@ -143,7 +138,6 @@ function loafBakedCold(g: Pen, cx: number, cy: number) {
   g.fillEllipse(cx, cy - 3, 14, 1.2);
 }
 
-/** Ổ vừa ra lò: vàng, có đường rạch, có hơi bốc lên. */
 function loafHot(g: Pen, cx: number, cy: number) {
   loafBody(g, cx, cy, PAL.bread, PAL.breadDark);
   g.fillStyle(PAL.breadSlash, 0.95);                   // đường rạch dọc lưng
@@ -164,7 +158,6 @@ function loafHot(g: Pen, cx: number, cy: number) {
   }
 }
 
-/** Ổ cháy: đen xám, nứt, quắt lại. Phải đọc ra HỎNG từ xa (CANON §7.2). */
 function loafBurnt(g: Pen, cx: number, cy: number) {
   loafBody(g, cx, cy, 0x4a3b32, 0x2b221d, 2);
   g.fillStyle(0x1c1613, 1);                            // vết nứt trên vỏ
@@ -182,7 +175,6 @@ function loafBurnt(g: Pen, cx: number, cy: number) {
   g.strokePath();
 }
 
-/** Ổ đã kẹp nhân, gói giấy báo — ló đầu bánh và cọng ngò ra ngoài. */
 function loafFilled(g: Pen, cx: number, cy: number) {
   loafBody(g, cx, cy, PAL.bread, PAL.breadDark);
 
@@ -207,7 +199,6 @@ function loafFilled(g: Pen, cx: number, cy: number) {
   g.fillEllipse(cx - 9.5, cy - 2.3, 1.8, 9.5);
 }
 
-/** Ly trà đá: bóng hình ĐỨNG, khác hẳn mấy ổ bánh nằm ngang. */
 function teaCup(g: Pen, cx: number, cy: number) {
   const H = 19, W = 13;
   const topY = cy - H / 2;

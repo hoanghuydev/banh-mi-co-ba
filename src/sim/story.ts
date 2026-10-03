@@ -13,9 +13,7 @@ import { weekdayOf } from "./schedule";
 export type StoryState = {
   flags: StoryFlags;
   counts: Record<string, number>;
-  /** Thành tựu = KHOẢNH KHẮC (P4-05 §2.2 B) — không popup, không đếm, không % hoàn thành. */
   moments: string[];
-  /** Mua hàng cho ngày mai từ ngày 35 (SK-34: con tính sao thì tính — đọc bằng hành động). */
   basketLoaves: Record<number, number>;
 };
 
@@ -25,7 +23,6 @@ export const bump = (st: StoryState, key: string, n = 1) => { st.counts[key] = (
 export const countOf = (st: StoryState | undefined, key: string) => st?.counts[key] ?? 0;
 export function moment(st: StoryState, id: string) { if (!st.moments.includes(id)) st.moments.push(id); }
 
-/** Dựng ArcCtx cho content/arcs từ state + những gì service biết. */
 export function arcCtx(st: StoryState, day: number, o: { rain: boolean; owns: (e: string) => boolean; hasWrongName: (id: string) => boolean }): ArcCtx {
   return { day, flags: st.flags, count: (k) => countOf(st, k), rain: o.rain, owns: o.owns, hasWrongName: o.hasWrongName };
 }
@@ -57,13 +54,12 @@ export function storyCrowdMul(day: number, st: StoryState | undefined, o: { hasQ
 export type StoryOut = { say: { by: string | null; text: string; delay?: number }[]; log: string[] };
 const out = (): StoryOut => ({ say: [], log: [] });
 
-/** Mời trà đá (công cụ hạ attention, P1-02 §2.8) — cũng là cửa vào của SK-13, SK-15. */
 export function onTea(st: StoryState, npcId: string | null, day: number, ctx: { tag?: string; holding?: boolean }): StoryOut {
   const r = out();
   if (!npcId) return r;
   const before = countOf(st, `tea:${npcId}`);
   bump(st, `tea:${npcId}`);
-  if (st.flags.coaster && (day === 14 || day === 15)) st.flags.coasterUsed = true;       // kê ly lên miếng lót ly
+  if (st.flags.coaster && (day === 14 || day === 15)) st.flags.coasterUsed = true;
   // SK-13 · tai nghe của bà Bảy — cần đã mời bà trà ÍT NHẤT một lần trước đó
   if (npcId === "BA_BAY" && day >= 6 && day <= 9 && before >= 1 && !st.flags.caiLuong) {
     st.flags.caiLuong = day;
@@ -78,17 +74,15 @@ export function onTea(st: StoryState, npcId: string | null, day: number, ctx: { 
   return r;
 }
 
-/** Người đi ngang vừa tới chỗ dừng. */
 export function onPass(st: StoryState, _npcId: string | null, tag: string | undefined, day: number) {
   if (tag === "LAN-M2") st.flags.coaster = day;
   if (tag === "SK-38") st.flags.walletFound = day;
   if (tag === "SK-11") st.flags.kietTowelSeen = day;
-  if (tag === "SK-32") { st.flags.kietTalked = day; moment(st, "ONG_BA_NOI_KHONG_SAI"); }   // mở biến thể truyền xe (P4-04 §2.3)
+  if (tag === "SK-32") { st.flags.kietTalked = day; moment(st, "ONG_BA_NOI_KHONG_SAI"); }
   if (tag === "SK-41-STOP") st.flags.kietStopped = day;
-  if (tag === "SK-27-BAY") st.flags.bayStayed = day;              // CORE của bà Bảy: người chơi ở lại hẻm
+  if (tag === "SK-27-BAY") st.flags.bayStayed = day;
 }
 
-/** Cuối ngày — những gì một ngày quyết định cho các ngày sau (không phải điểm). */
 export function endOfDay(st: StoryState, day: number) {
   // SK-12 → SK-14: che tay thì bé không quay 6 ngày (clip dời tới 16); làm đẹp hẳn thì clip tới sớm (9)
   if (day === 5 && st.flags.clipDay === undefined) st.flags.clipDay = st.flags.suCover ? 16 : st.flags.suPretty ? 9 : 10;
@@ -110,7 +104,6 @@ export function storyOverhear(day: number): { id: string; a: string; b: string; 
   return null;
 }
 
-/** Nghe xong một cảnh có kịch bản (tầng nghe ≥ 1 = nghe được nội dung). */
 export function onStoryOverheard(st: StoryState, id: string, tier: number, day: number) {
   if (tier < 1) return;
   if (id === "story:SK-24") st.flags.knowsSign = day;
@@ -130,7 +123,6 @@ export function walkinLine(day: number, st: StoryState, idx: number): string | n
   return null;
 }
 
-/** Chuyện có giờ trong ngày — ghi ra dòng nhật ký quầy (không popup, không nhạc). */
 export function timeline(day: number, o: { atAlley: boolean }): { at: number; text: string }[] {
   const T: { at: number; text: string }[] = [];
   if (day === 24) T.push({ at: 7 * 60 + 15, text: "Cúp điện. Cả khu tắt đèn. Bảng QR hết xài được." });
@@ -141,11 +133,9 @@ export function timeline(day: number, o: { atAlley: boolean }): { at: number; te
 
 export type ServedInfo = {
   npcId: string | null; tag?: string; day: number; ok: boolean; order: OrderSpec; dish: Ingredient[];
-  /** Ổ đúng nhờ khẩu vị ẩn (ML) — không phải đúng câu nói. */
   viaAlt: boolean; crustOk: boolean; atMin: number; barter: boolean;
 };
 
-/** Khách nhận bánh. Trả những câu nói thêm — hệ quả là ai còn ở đó, không phải điểm (E3). */
 export function onServed(st: StoryState, s: ServedInfo): StoryOut {
   const r = out();
   const count = (id: Ingredient) => s.dish.filter((x) => x === id).length;
@@ -184,7 +174,6 @@ export function onServed(st: StoryState, s: ServedInfo): StoryOut {
   return r;
 }
 
-/** Khách bỏ đi mà chưa nhận gì (chờ lâu / người chơi không làm). */
 export function onUnserved(st: StoryState, npcId: string | null, tag: string | undefined, barter: boolean) {
   // SK-02 — không đưa ổ bánh cho bà Sáu = từ chối đổi. Hai lần là bà không bao giờ hỏi nữa.
   if (barter && npcId === "BA_SAU") bump(st, "barterRefused");
@@ -194,14 +183,12 @@ export function onUnserved(st: StoryState, npcId: string | null, tag: string | u
 
 // ─────────────────────────────────────────────────────────────── sáng / tối
 
-/** Câu cô Ba (và người trong hẻm) nói lúc đi chợ — không popup, không dấu chấm than. */
 export function morningLines(day: number, st: StoryState, o: { hasQr: boolean }): string[] {
   const L: string[] = [];
   if (day === 3 && st.flags.coMaiChange) L.push('Cô Mai (đứng bên tiệm, giơ xấp tiền lẻ cột thun): "Tiền lẻ nè con. Sáng nào cô cũng để sẵn."');
   if (day === 7) L.push('Cô Ba: "Con đi đi. Cô đứng coi xe."');
-  if (day === 12) L.push('Cô Ba: "Mối nào mình trả đúng hẹn thì người ta nhớ. Trễ một lần là người ta nhớ lâu hơn nữa."'); // SK-22 — viết thêm
+  if (day === 12) L.push('Cô Ba: "Mối nào mình trả đúng hẹn thì người ta nhớ. Trễ một lần là người ta nhớ lâu hơn nữa."');
   if (day === 18) L.push("Cô Ba không xuống xe được. Bữa nay con bán một mình.");
-  // P4-05 §2.2 A "Quen mặt đắt hàng" — không giải thích, không phân xử
   if (day === 23) L.push("Một người lạ mua pate cùng sạp, trả giá một câu, được bớt.");
   if (day === 24) L.push("Mưa từ sáu giờ. Nước lên ngập lối vô.");
   if (day === 36 && !o.hasQr) L.push('Bé Su: "Bên chú Kiệt có quẹt thẻ rồi đó cô."');
@@ -210,11 +197,10 @@ export function morningLines(day: number, st: StoryState, o: { hasQr: boolean })
   return L;
 }
 
-/** Câu cô Ba ghi sổ tối nay (phanh #2 của XĐ3: 2–3 dòng, KHÔNG phán đúng sai). null = để sổ tự viết. */
 export function eveningNoteOverride(day: number, st: StoryState, specLine?: string): string | null {
   if (specLine) return specLine;
   if (day === 18) return "Bữa nay cô nằm suốt. Con bán được hả?\nCô nghe tiếng con dọn tới chín giờ.";
-  if (day === 34) return "Cô nói với con rồi đó.\nCô nhẹ người.";                                      // viết thêm
+  if (day === 34) return "Cô nói với con rồi đó.\nCô nhẹ người.";
   if (day === 39) return "Cô ghi sổ sớm bữa nay.\nNgồi coi trang cuối hơi lâu.";                         // viết thêm
   void st;
   return null;

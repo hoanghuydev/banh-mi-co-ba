@@ -10,7 +10,6 @@ import { FOOD } from "../art/food";
 import { FONT, UI } from "./theme";
 
 const DEPTH = 9_000_000;
-/** P1-04 §2.10: hướng dẫn phím thường trực chỉ tới hết ngày 3. */
 const HELP_UNTIL_DAY = 3;
 
 /**
@@ -52,13 +51,9 @@ export type Watch = "NONE" | "GLANCE" | "CLOSE";
  */
 const EYE_X = GAME_W / 2 + 58;
 const EYE_Y = 26;
-/** Đĩa giấy: đúng cỡ đĩa của icon bàn tay. */
 const EYE_PLATE_W = 44, EYE_PLATE_H = 36;
-/** Cỡ icon bên trong — file SVG tỉ lệ 72×44, giữ đúng tỉ lệ đó. */
 const EYE_W = 33, EYE_H = 20;
-/** Cùng màu với `eye-red.svg` — viền đĩa giấy phải ăn màu với con mắt trên đó. */
 const EYE_RED = 0xc0392b;
-/** Chu kỳ nháy (ms). Chậm — đây là lời nhắc, không phải báo động. */
 const EYE_BLINK_MS = 1150;
 
 /**
@@ -80,7 +75,6 @@ const EYE_BLINK_MS = 1150;
  * phiếu đơn · thông báo), giữa để nguyên cho cái quán.
  */
 const TOAST_RIGHT = GAME_W - 26;
-/** Sàn: không bao giờ chui lên trên phiếu đơn, dù phiếu có ngắn tới đâu. */
 const TOAST_TOP = 150;
 const TOAST_GAP = 6;
 const TOAST_MAX = 3;
@@ -95,33 +89,26 @@ const TOAST_BASE_MS = 1800;
 const TOAST_PER_CHAR_MS = 55;
 const TOAST_MIN_MS = 2600;
 const TOAST_MAX_MS = 6000;
-/** Bắt đầu mờ ở mốc này của vòng đời; phần đầu phải còn rõ để đọc kịp. */
 const TOAST_FADE_FROM = 0.78;
 /**
  * Dòng mới trượt vào từ mép phải chừng này px. 20 chứ không phải 6: dưới ngưỡng ~15–20 px thì
  * mắt NGOẠI VI không bắt được chuyển động — mà ngoại vi mới là chỗ dòng này nằm.
  */
 const TOAST_SLIDE_PX = 20;
-/** Trượt xong trong chừng này ms. */
 const TOAST_SLIDE_MS = 190;
-/** Vạch màu bên trái mỗi dòng — kênh MÀU chỉ là phụ, chữ mới là chính (P1-04 §4.1). */
 const TOAST_TONE: Record<ToastTone, number> = {
   good: 0x3f7d5a,
   bad: 0xc0392b,
   info: 0x6a7680,
 };
 
-/** Sắc thái một dòng thông báo: được / mất / chỉ là chuyện đang xảy ra. */
 export type ToastTone = "good" | "bad" | "info";
 
 type Toast = {
   text: Phaser.GameObjects.Text;
-  /** Thời điểm sinh theo ĐỒNG HỒ HIỆU ỨNG của scene. −1 = đang rảnh. */
   born: number;
   tone: ToastTone;
-  /** Chữ gốc, chưa gắn "×N" — để nhận ra dòng trùng. */
   body: string;
-  /** Dòng này đã xảy ra mấy lần liên tiếp. */
   count: number;
   life: number;
 };
@@ -192,7 +179,6 @@ export class Hud {
       lineSpacing: Math.round(7 * settings.textScale), wordWrap: { width: 320 * Math.min(settings.textScale, 1.5) },
     }).setOrigin(1, 0), DEPTH + 100);
 
-    // Nhật ký lời khách — nền đục để đọc được trên mọi nền.
     this.feedBg = fixed(scene.add.graphics());
     this.feedText = fixed(scene.add.text(26, GAME_H - 100, "", {
       fontFamily: FONT, fontSize: fs(12), color: "#f2efe9", lineSpacing: Math.round(6 * settings.textScale),
@@ -210,7 +196,6 @@ export class Hud {
 
     this.carryBg = fixed(scene.add.graphics());
 
-    // Nút tạm dừng bấm được bằng chuột / chạm — không bắt ai phải có bàn phím (CANON §15.2).
     const px = GAME_W / 2, py = 26;
     const pbg = fixed(scene.add.graphics());
     pbg.fillStyle(UI.paper, 1).fillRoundedRect(px - 24, py - 18, 48, 36, 10);
@@ -268,7 +253,6 @@ export class Hud {
       this.dressToast(same);
       return;
     }
-    // Hết chỗ thì cướp dòng GIÀ NHẤT: cái vừa xảy ra bao giờ cũng cần hơn cái sắp tắt.
     const slot = this.toasts.find((t) => t.born < 0)
       ?? this.toasts.reduce((a, b) => (a.born <= b.born ? a : b));
     slot.body = text;
@@ -279,7 +263,6 @@ export class Hud {
     this.dressToast(slot);
   }
 
-  /** Viết chữ ra (kèm "×N" nếu lặp) rồi tính lại tuổi thọ theo đúng lượng chữ phải đọc. */
   private dressToast(t: Toast) {
     t.text.setText(t.count > 1 ? `${t.body}  ×${t.count}` : t.body);
     const chars = t.text.text.length;
@@ -296,7 +279,6 @@ export class Hud {
     this.scene.tweens.add({ targets: this.saveDot, alpha: 0, duration: 800, ease: "Sine.easeIn" });
   }
 
-  /** Đáy khung ngày/giờ góc trên trái — để bảng kẹp nhân nằm ngay dưới, không đè lên. */
   get statsBottom() {
     return this.left.getBounds().bottom + 11;
   }
@@ -329,7 +311,6 @@ export class Hud {
     this.log(line);
   }
 
-  /** Tên cũ của `say` — còn chỗ gọi nào chưa đổi thì vẫn chạy đúng kênh lời người. */
   log(line: string) {
     this.feed.push(line);
     if (this.feed.length > 3) this.feed.shift();
@@ -337,7 +318,6 @@ export class Hud {
     this.redrawFeedBg();
   }
 
-  /** Dọn cả hai kênh chữ — đổi ngày, rời cảnh. */
   clearLog() {
     this.feed = [];
     this.feedText.setText("");
@@ -351,24 +331,16 @@ export class Hud {
     near: Station | null; hand: Hand; busy: { st: Station; ms: number } | null;
     frozen: boolean;
     ticket: { name: string; text: string; urgent: boolean } | null;
-    /** Scene biết điều trạm không biết (vd. ổ đang gác trên thớt) → ghi đè dòng nhắc. */
     prompt?: string | null;
-    /** Ổ đã gói đang cầm trên tay — dải "đã bỏ" (P1-01 §4, CANON §15.5). */
     carry?: readonly Ingredient[] | null;
-    /** Tay sạch / dính tiền (P1-01 §2.8). */
     hands?: "CLEAN" | "MONEY";
-    /** Có ai đang để mắt tới mình không — con mắt ở đỉnh màn hình. */
     watch?: Watch;
-    /** Đồng hồ hiệu ứng của scene (dừng khi pause) — nhịp của dải thông báo. */
     now?: number;
-    /** Tay đang dở một việc có thời lượng (lau thớt, nhận tiền) — 0..1. */
     work?: { frac: number } | null;
   }) {
-    // Tên khung giờ bằng CHỮ, không thanh tiến trình (P0-02 §4). Giờ viết kiểu "6h47".
     const m = Math.floor(s.clock.minutes);
     const hhmm = `${Math.floor(m / 60)}h${String(m % 60).padStart(2, "0")}`;
     const slow = this.settings.noTimePressure ? " · thong thả" : "";
-    // P4-02 §4: KHÔNG có "/40" — người chơi không được đếm ngược, chữ đó biến mùa thành thanh tiến trình
     this.left.setText(`ngày ${s.day}\n${hhmm} · ${BAND_LABEL[s.clock.band]}${slow}`);
     this.right.setText(`${s.money.toLocaleString("vi-VN")}₫\nđã bán ${s.served} ổ`);
     this.drawStats();
@@ -395,9 +367,7 @@ export class Hud {
   private drawToasts(now: number, reducedMotion: boolean) {
     const g = this.toastBg;
     g.clear();
-    // Trẻ nhất trước — `born` lớn hơn là sinh sau.
     const live = this.toasts.filter((t) => t.born >= 0).sort((a, b) => b.born - a.born);
-    // Bắt đầu dưới phiếu đơn — phiếu là thứ người chơi phải đọc suốt lượt, không được đè.
     const ticketBottom = this.ticketText.text ? this.ticketText.getBounds().bottom + 18 : 0;
     let y = Math.max(TOAST_TOP, ticketBottom);
     for (const t of live) {
@@ -409,7 +379,6 @@ export class Hud {
       const x1 = TOAST_RIGHT + slide, x0 = x1 - w, y0 = y;
       g.fillStyle(0x0d1216, 0.18 * alpha).fillRoundedRect(x0 + 1, y0 + 4, w, h, 9);
       g.fillStyle(UI.paper, alpha).fillRoundedRect(x0, y0, w, h, 9);
-      // Vạch màu đầu dòng: được / mất / chuyện đang xảy ra. Bỏ màu đi vẫn đọc được chữ.
       g.fillStyle(TOAST_TONE[t.tone], alpha).fillRoundedRect(x0 + 5, y0 + 6, 3, h - 12, 1.5);
       t.text.setPosition(x1 - 12, y0 + 6).setAlpha(alpha);
       y += h + TOAST_GAP;
@@ -433,12 +402,10 @@ export class Hud {
     if (!on || !eye) return;
 
     const close = w === "CLOSE";
-    // 0 → 1 → 0, hình sin nên không giật ở hai đầu chu kỳ
     const beat = this.settings.reducedMotion || !close
       ? 1
       : 0.5 + 0.5 * Math.sin((this.scene.time.now / EYE_BLINK_MS) * Math.PI * 2);
 
-    // Đĩa giấy đục y hệt icon bàn tay và nút tạm dừng — ba ô một hàng (CANON §15: nền ĐỤC).
     const pw = EYE_PLATE_W, ph = EYE_PLATE_H;
     this.eyePlate.fillStyle(UI.paper, 1).fillRoundedRect(EYE_X - pw / 2, EYE_Y - ph / 2, pw, ph, 10);
     if (close) {
@@ -496,7 +463,6 @@ export class Hud {
     this.ticketBg.lineStyle(1.2, UI.line, 1).strokeRoundedRect(b.x - 12, b.y - 8, b.width + 24, b.height + 16, 10);
   }
 
-  /** "Đã bỏ": icon từng món + số phần, luôn thấy lúc cầm ổ đã gói đi ra quầy. */
   private drawCarry(dish: readonly Ingredient[] | null) {
     const key = dish ? dish.join(",") : "";
     if (key === this.carryKey) return;
@@ -507,9 +473,7 @@ export class Hud {
 
     const counts = portionsOf(dish as Ingredient[]);
     const items = INGREDIENTS.filter((i) => counts.has(i.id));
-    // Ngay dưới nút tạm dừng ở giữa trên — vùng tường sau, không đụng nhật ký góc dưới trái.
     const step = 46, w = items.length * step + 16, y = 76;
-    // không lấn sang phiếu đơn ở góc phải
     const x0 = Math.max(16, Math.min(GAME_W / 2 - w / 2, this.ticketText.getBounds().left - 24 - w));
     this.carryBg.fillStyle(UI.paper, 1).fillRoundedRect(x0, y - 22, w, 44, 10);
     items.forEach((ing, i) => {
@@ -531,7 +495,6 @@ export class Hud {
     return this.help.visible ? this.help.getBounds().top - 8 : GAME_H - 48;
   }
 
-  /** `override` không cần trạm: khoảng lặng ngày 40 nhắc phím bỏ qua giữa hẻm trống. */
   private drawPrompt(st: Station | null, hand: Hand, frozen: boolean, override: string | null) {
     this.promptBg.clear();
     if (frozen || (!st && !override)) { this.prompt.setText(""); return; }
@@ -551,7 +514,6 @@ export class Hud {
     this.promptBg.fillRoundedRect(x, y, w, h, 10);
   }
 
-  /** Thanh tiến trình của thao tác giữ phím (rót trà). */
   /**
    * Thanh tiến trình dưới dòng nhắc — MỘT thanh dùng cho HAI loại việc:
    *  · GIỮ PHÍM ở một trạm (`busy`): đầy rồi thì xanh, vì người chơi được quyền nhả tay

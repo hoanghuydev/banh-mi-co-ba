@@ -204,6 +204,20 @@ export const SEAT_SPOT = { x: 12.8, y: 9.2 };
  */
 export const SEAT_CAPACITY = 2;
 
+/**
+ * CHỖ ĐỂ CÁI GÁNH — act `CARRY_GANH` / `MOVE_GANH`, của bà Sáu.
+ *
+ * Bà Sáu gánh tàu hũ tới, và cái gánh ĐẶT XUỐNG ĐÂU là một chuyện có hậu quả: để ngoài
+ * thì nó chiếm mặt tiền, khách nhìn vô thấy chật và quay đầu nhiều hơn. `P2-08` §2 nhóm
+ * C đòi 11 lần, và chính nội dung đã viết sẵn cả ba vai của nó — nặng vai bà, chắn lối
+ * khách, gửi lại một nồi — mà không có vật thể nào để bám.
+ *
+ * `GANH_OUT` là chỗ bà hạ gánh theo thói quen: ngay mặt tiền, tiện cho bà, vướng cho mình.
+ * `GANH_IN` là trong quán, sát vách — bưng vô đó là một việc mình làm giùm.
+ */
+export const GANH_OUT = { x: 14.6, y: 7.4 };
+export const GANH_IN = { x: 11.9, y: 9.6 };
+
 /** Mấy người đứng mát được cùng lúc. Một — xem khối trên. */
 export const SHADE_CAPACITY = 1;
 
@@ -249,6 +263,11 @@ export function assertWalkable() {
   check("ASIDE_SPOT", ASIDE_SPOT);
   check("SHADE_SPOT", SHADE_SPOT);
   check("SEAT_SPOT", SEAT_SPOT);
+  check("GANH_OUT", GANH_OUT);
+  check("GANH_IN", GANH_IN);
+  if (Math.hypot(GANH_IN.x - GANH_OUT.x, GANH_IN.y - GANH_OUT.y) < 1.5) {
+    bad.push("GANH_IN quá sát GANH_OUT — bưng vô với để ngoài trông như một chỗ");
+  }
   if (Math.hypot(SEAT_SPOT.x - SHADE_SPOT.x, SEAT_SPOT.y - SHADE_SPOT.y) < 1) {
     bad.push("SEAT_SPOT nằm chồng lên SHADE_SPOT — ngồi với đứng mát thành một chỗ");
   }

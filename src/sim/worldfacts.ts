@@ -90,6 +90,8 @@ export type WorldSnapshot = {
   shadeFree: boolean;
   /** Còn ghế trống không — act `THEY_SIT`. Động: người khác ngồi mất giữa chừng. */
   seatFree: boolean;
+  /** Cái gánh của bà Sáu đang nằm chắn mặt tiền (`CARRY_GANH` / `MOVE_GANH`). */
+  ganhOut: boolean;
   ovenHot: boolean;
   band: string;
   /**
@@ -165,6 +167,7 @@ export function queryOf(w: WorldSnapshot, q = new Query()): Query {
   q.set("worldBand", w.band);
   q.set("worldShadeFree", w.shadeFree);
   q.set("worldSeatFree", w.seatFree);
+  q.set("worldGanhOut", w.ganhOut);
   q.set("worldOvenHot", w.ovenHot);
   q.set("queueLength", Math.max(0, Math.round(w.queue)));
   q.set("day", Math.max(1, Math.round(w.dayIndex)));

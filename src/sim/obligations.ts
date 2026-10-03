@@ -24,7 +24,6 @@ export type Due = {
   dueDay: number;
   amount: number;          // đồng, đã co
   mandatory: boolean;
-  /** Ngày cuối còn trả được trước khi thành vỡ. */
   lastDay: number;
 };
 
@@ -37,27 +36,22 @@ export type Due = {
  */
 export type EconToday = {
   day: number;
-  /** Đi chợ. */
   market: number;
   /** Than, đá, túi, xăng — CHỈ phần két trả nổi (phần cô Ba bù nằm ở `coBaCovered`). */
   fixed: number;
   /** Phần chi phí cố định cô Ba bù giùm — KHÔNG trừ vào két, chỉ để trang tối nói thật. */
   coBaCovered: number;
-  /** Tiền chỗ sáng nay. */
   rent: number;
   /** Cọc chỗ đứng, RÒNG (âm = lấy lại cọc chỗ cũ nhiều hơn cọc chỗ mới). */
   deposit: number;
   sendHome: number;
   sendHomeShort: number;
-  /** Tiền học + tiền thuốc đã đóng (hụi có dòng riêng). */
   obligations: number;
   /** Góp/hốt hụi, RÒNG (âm = hốt được nhiều hơn góp). */
   hui: number;
   /** Mua/bán đồ nghề, RÒNG (âm = bán được tiền). */
   tools: number;
-  /** Trả nợ mối. */
   debtRepay: number;
-  /** Chi phí "chuyện trong hẻm" (P4-03 — cảnh tối ghi vào). */
   story: number;
   wasted: string[];
   soldOut: number;
@@ -65,51 +59,39 @@ export type EconToday = {
   closedAtMin: number | null;
 };
 
-/** Chỗ ghi sổ — nhận cả `EconState` lẫn một `{ today }` rời (để test / gọi từ hệ khác). */
 export type EconBook = { today: EconToday };
 
 export type EconState = {
   /** Mã chỗ đứng (P3-05). Vỡ tiền thuê thì bị đẩy về L5 — góc khuất. */
   stand: "L1" | "L2" | "L3" | "L4" | "L5";
   rentArrearsDays: number;
-  /** Tiền thuê còn nợ (đồng). */
   rentOwed: number;
-  paid: Record<string, number>;      // id nghĩa vụ → ngày trả
+  paid: Record<string, number>;
   huiLate: number;
   huiExpelled: boolean;
-  huiContributed: number;            // đồng
+  huiContributed: number;
   huiTakenPeriod: number | null;
   losses: PermanentLossKind[];
   /** Ngày cô Ba phải bù tiền chợ / chi phí vì két không đủ — chỉ để trang tối nói một câu. */
   coBaCovered: number[];
-  /** Sổ sách hôm nay — tối đếm tiền. */
   today: EconToday;
-  /** Số preset kẹp sẵn tối đa — xe cũ còn 2 chỗ sau CART_DOWNGRADED. */
   presetSlots: number;
-  /** Chuyện xảy ra đêm qua (fail mềm) — sáng nay người ta nói ra một câu. */
   notices: (PermanentLossKind | "HUI_UNG")[];
-  /** Câu người ta nói sáng nay (người bán nhắc nợ, v.v.) — nói ra, không có banner. */
   morningLines: string[];
   /** P3-03 §2.8 — tiền lẻ đổi ở cô Mai sáng nay (đồng) và còn lại bao nhiêu. */
   float: number;
   floatLeft: number;
   /** Số lần bỏ qua nghi thức đốt vía — lần đầu cô Ba đốt giùm, từ lần hai cô im (P3-01 §2.6). */
   ritualSkips: number;
-  /** P3-04 E2 — hàng xóm khó chịu vì loa (ẩn, không bao giờ hiện số). */
   neighborAnnoyance: number;
-  /** Bị bắt tắt loa tới hết ngày này. */
   loaOffUntil: number;
-  /** Tên ghi trên bảng hiệu (P3-04 E3): "CO_BA" · "PLAYER" · "BLANK". */
   signName?: "CO_BA" | "PLAYER" | "BLANK";
   /** Tiền học vỡ mà xe còn đồ bán được → sáng mai phải chọn bán một món (P3-06 §2.4). */
   mustSell: boolean;
-  /** P3-05 — kế hoạch dời xe (tờ giấy dán trên xe), ai đang theo mình ở chỗ hiện tại, đã hỏi thăm chỗ nào. */
   movePlan: { to: EconState["stand"]; postedDay: number; moveDay: number } | null;
-  /** null = ở đầu hẻm, ai cũng ghé như thường. */
   followers: string[] | null;
   lastMoveDay: number;
   scouted: EconState["stand"][];
-  /** Tiền cọc đang nằm ở chủ chỗ hiện tại (cọc đầu hẻm là của cô Ba từ trước — 0). */
   deposit: number;
 };
 
@@ -124,11 +106,9 @@ export const newToday = (day: number): EconToday =>
     hui: 0, tools: 0, debtRepay: 0, story: 0, wasted: [], soldOut: 0, counted: false, closedAtMin: null });
 
 export const rentVnd = (stand: EconState["stand"]) => scaledVnd(ECON.rent_k[stand]);
-/** Hệ số khách vãng lai theo chỗ đứng (P3-05 §2.2 `standLocationMul`). Đợt D mở đủ 5 chỗ. */
 /** @deprecated — dùng `standDayMul` của sim/stands (đã gồm sự kiện hẻm + mái che). Giữ cho save cũ / test. */
 export const STAND_MUL: Record<EconState["stand"], number> = { L1: 1.0, L2: 1.05, L3: 1.15, L4: 1.2, L5: 0.65 };
 
-/** Câu người ta nói ra sáng hôm sau một fail mềm (P3-06 §2.3–2.4). Không có sting, không rung. */
 export const NOTICE_LINES: Record<PermanentLossKind | "HUI_UNG", string[]> = {
   LOST_PRIME_STAND: ['Chủ nhà: "Đầu hẻm cô cho người khác thuê rồi. Con dọn xuống góc khuất nghen."',
     'Chú Kiệt: "Tao không giành đâu. Chỗ trống thì người ta cho tao. Mày cần gì thì qua nói."'],

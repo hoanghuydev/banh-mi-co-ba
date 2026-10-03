@@ -163,15 +163,15 @@ chứ không phải của bộ máy. Khi rà tới file tương ứng thì làm 
 | ~~`THEY_SIT`~~ | chung | 24 | ✅ **xong** — xem §6octies |
 | ~~`FILM` / `STOP_FILM`~~ | bé Su | 13 | ✅ **xong** — xem §6nonies |
 | `MOVE_CART` | chú Kiệt | 11 | hai cái xe tranh chỗ là arc của ông |
-| `CARRY_GANH` · `MOVE_GANH` | bà Sáu | 11 | cái gánh là vật thể trung tâm |
+| ~~`CARRY_GANH` · `MOVE_GANH`~~ | bà Sáu | 11 | ✅ **xong** — xem §6decies |
 | `RAO` | bà Sáu dạy | 7 | ba mảnh đã có, chưa ai nối |
 | `LEND_ITEM` / `CLEAR_DEBT` | anh Dũng · chị Lan | 5 | arc áo mưa |
 | `TAKE_CASH` | bé Su · thầy Phúc | 5 | `PAY` có chiều ra, chưa có chiều vào |
-| `BARTER` | bà Sáu | 5 | không act nào nhận một món VÀO |
+| ~~`BARTER`~~ | bà Sáu | 5 | ✅ **xong** — xem §6decies |
 | `ORDER_CHANGE` | anh Bảo · chị Lan | 4 | sửa đơn từ một nút thoại |
 | `OVERHEARD_BY` | bà Sáu | 2 | `overhear.ts` có sẵn, hệ thoại chưa nối |
 
-Và **hai item** chưa có: cái gánh · áo mưa. (Ghế ngồi được: ✅ `world/map.SEAT_SPOT`.) (Ô hóng mát **đã có**:
+Và **một item** chưa có: áo mưa. (Cái gánh: ✅ `world/map.GANH_OUT` / `GANH_IN`.) (Ghế ngồi được: ✅ `world/map.SEAT_SPOT`.) (Ô hóng mát **đã có**:
 `world/map.SHADE_SPOT`.)
 
 ---
@@ -647,6 +647,45 @@ trước…"*): một act là một VIỆC XẢY RA, không phải một chủ �
 
 `tests/p2-quay.test.ts`, 4 lưới — trong đó `Q-3` canh đúng chỗ dễ mục nhất: clip tới sớm
 thì **lượng khách phải nhảy thật**, không phải một con số nằm im trong `flags`.
+
+## 6decies. CÁI GÁNH THÀNH MỘT VẬT THỂ, VÀ ĐỔI HÀNG THÀNH MỘT NƯỚC ĐI
+
+### `CARRY_GANH` / `MOVE_GANH`
+
+Nội dung đã viết sẵn cả **ba vai** của cái gánh từ lâu — nặng vai bà, chắn lối khách, gửi
+lại một nồi — mà không có vật thể nào để bám. Câu *"bà để gánh chỗ khác giùm con"* thậm
+chí mang `STEP_ASIDE`: bảo **người** dạt ra chứ không dời **cái gánh**.
+
+Cái giá đi qua đúng `balkChance` đã có sẵn, không đẻ thêm đường tính riêng: gánh để ngoài
+= **thêm một chỗ mặt tiền bị chiếm**. Và nó **chỉ cắn khi quầy đã đông** — `balkChance` chỉ
+khác 0 từ `ahead = 4` trên 6 chỗ — đúng điều lời thoại nói: *"khách con hổng đi qua được"*.
+Quầy trống thì cái gánh nằm đó chẳng cản ai; đó là chuyện lối đi, không phải một hình phạt nền.
+
+Hai act chứ không một, vì chúng là hai chuyện khác nhau giữa hai người:
+
+| | lối đi | cái vai bà |
+|---|---|---|
+| `CARRY_GANH` — mình bưng giùm | thông | được nghỉ |
+| `MOVE_GANH` — bảo bà tự dời | thông | vẫn phải nhấc hai chục ký |
+
+Cái gánh theo chân bà Sáu: bà tới thì nó nằm ngoài, bà về thì nó đi theo. Giữa hai mốc
+đó, chỗ của nó là việc của người chơi.
+
+### `BARTER`
+
+`P2-08` ghi *"không act nào nhận một món VÀO"*. Cái thiếu thật ra ở chiều kia: **đưa một ổ
+bánh mà không lấy tiền và cũng không phải cho không**. `FREE_LOAF` là cho, `PAY` là bán —
+đổi là chuyện thứ ba, và nó là cách hai người bán hàng nghèo đối xử với nhau.
+
+Ổ bánh rời kho thật, không có dòng doanh thu nào — hiện ra ở sổ cuối ngày như mọi ổ không
+bán được. Thứ nhận lại nằm ở `rel` và ở ký ức `CARED_FOR_THEM`, không ở một con số kho:
+một chén tàu hũ không làm mình bán thêm ổ nào, nó làm bà Sáu nhớ mình.
+
+`tests/p2-ganh.test.ts`, 5 lưới. `N-5` canh cái giá: đổi mà tay không cầm ổ nào, hoặc đổi
+lúc đã hết bánh, là đổi một thứ mình không có.
+
+Và lại một nút hứa HAI việc (*"Bà ngồi cái ghế này đi bà. Con bưng gánh vô cho."*) — lưới
+`G-3` của đợt trước bắt ngay. Một nút, một lời hứa.
 
 ## 7. Truy vết
 

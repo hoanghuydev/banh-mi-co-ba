@@ -34,13 +34,10 @@ export type Memory = {
   id: string;
   kind: MemoryKind;
   valence: -1 | 1;
-  /** Cache mỗi đêm — giá trị thật luôn tính lại bằng `currentIntensity`. */
   intensity: number;
-  /** Lúc tạo — MẪU SỐ CỦA redeem, không bao giờ đổi (§2.7 chi tiết 4). */
   intensity0: number;
   dayCreated: number;
   dayLastReinforced: number;
-  /** Đếm TUYẾN TÍNH (§8g) — khác với 0,75^(n−1) của §2.6. */
   occurrences: number;
   source: { via: "WITNESSED" } | { via: "HEARD"; from: string; hops: number; mutated: boolean };
   confidence: number;
@@ -52,7 +49,6 @@ export type Memory = {
 
 export type BurnReason = "HEAVY_DAY" | "BIG_DROP" | "COOL_OFF_CYCLE";
 
-/** Phần quan hệ + trí nhớ của NpcState (save v3). */
 export type RelState = {
   relationPoints: number;
   tier: RelTier;
@@ -60,11 +56,8 @@ export type RelState = {
   pointsAtDawn: number;
   visits: number;
   missStreak: number;
-  /** Ngày gần nhất NPC có lịch ghé (để decay chỉ đếm lần ghé bị LỠ). */
   expectedDay: number;
-  /** Giờ (phút) định ghé hôm đó — dẹp hàng sớm trước giờ này là họ tới mà không có gì (P3-01 §2.7). */
   expectedAt?: number;
-  /** Ngày gần nhất được phục vụ xong (không tính bỏ đi). */
   lastServedDay: number;
   trustCeiling: number;
   burnCount: number;
@@ -72,10 +65,8 @@ export type RelState = {
   wasRivalOnDay: number | null;
   pointsAtRival: number;
   missStreakSinceRival: number;
-  /** Số sự kiện âm salience ≥ 75 đã CONFIRMED hôm nay — dò HEAVY_DAY. */
   heavyToday: number;
   heavyDay: number;
-  /** "Vắng n ngày" — hệ quả trễ của người im lặng (P2-02 §4.6). */
   absentUntil: number;
   /**
    * Số lượt ghé LIÊN TIẾP gần đây được cho thêm — nền của thói quen "cho thêm". Đếm theo LƯỢT GHÉ
@@ -103,7 +94,6 @@ export const PROMOTE_FLOOR = 45;
 export const EPSILON = 2;
 export const GRACE_MISSES = 1;
 export const STACK_R = 0.75;
-/** HẰNG SỐ trong code, không phải bảng config — đổi phải qua review (R7). */
 export const OFFENSE_MUL = 1.0;
 export const KINDNESS_MUL_RIVAL = 1.25;
 export const FRIEND_MIN_VISITS = 6;
@@ -120,7 +110,6 @@ export const VALENCE: Record<BaseKind, -1 | 1> = {
   REMEMBERED_USUAL: 1, REMEMBERED_STORY: 1, CARED_FOR_THEM: 1, FREE_EXTRA: 1, FLOURISH: 1,
 };
 
-/** §2.4 — ngày; `floor` tính theo % của intensity0. */
 export const DECAY: Record<BaseKind, { hold: number; taper: number; floor: number }> = {
   WRONG_NAME:       { hold: 2, taper: 14, floor: 25 },
   DROPPED_FOOD:     { hold: 2, taper: 12, floor: 20 },
@@ -144,7 +133,6 @@ export const DECAY: Record<BaseKind, { hold: number; taper: number; floor: numbe
   FREE_EXTRA:       { hold: 0, taper: 4,  floor: 0 },
   FLOURISH:         { hold: 0, taper: 3,  floor: 0 },
 };
-/** Vết thương đã lành: memory dương yếu, bền (§2.7 chi tiết 3). */
 const HEALED_DECAY = { hold: 5, taper: 30, floor: 40 };
 
 type RedeemSpec = { K: number; minDistinctDays: number; requireKinds?: BaseKind[] };
@@ -155,9 +143,7 @@ export const REDEEM: Partial<Record<BaseKind, RedeemSpec>> = {
   BURNT_OR_COLD:  { K: 1.6, minDistinctDays: 2 },
   ORDER_DEFECT:   { K: 1.5, minDistinctDays: 2 },
   MADE_THEM_WAIT: { K: 1.2, minDistinctDays: 1 },
-  // Chuộc một câu nói phải bằng LỜI và sự để ý, không bằng ổ bánh to hơn (§2.7 "đúng trục").
   RUDE_TO_THEM:   { K: 2.0, minDistinctDays: 3, requireKinds: ["CARED_FOR_THEM", "REMEMBERED_STORY"] },
-  // Chuộc lời hứa gãy phải bằng chính thứ đã hứa: LÀM, không phải nói (§2.7 "đúng trục").
   BROKEN_PROMISE: { K: 2.4, minDistinctDays: 3, requireKinds: ["FREE_EXTRA", "CARED_FOR_THEM"] },
 };
 
@@ -183,7 +169,6 @@ export function newRelState(): RelState {
   };
 }
 
-// ───────────────────────────────────────────────── thói quen "cho thêm" (§8i đọc ngược)
 
 /**
  * Ba lượt ghé là chỗ một chuyện thôi còn là tình cờ và bắt đầu là NẾP. Hai lần thì

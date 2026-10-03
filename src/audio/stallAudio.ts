@@ -18,15 +18,12 @@ import { sfx, type SfxId } from "./sfx";
  * — chúng phải nổ ĐÚNG FRAME người chơi bấm phím.
  */
 
-/** Mẩu một phát phải nạp SẴN — nạp lười thì cú bấm đầu tiên rơi vào im lặng. */
 const PRELOAD: readonly SfxId[] = [
-  // thao tác
   "sfx_dao_rach", "sfx_vo_gion", "sfx_than_no", "sfx_quet_pate", "sfx_ruoi_sot",
   "sfx_rac_tieu", "sfx_kep_gap", "sfx_dat_thot", "sfx_goi_giay", "sfx_bich_nilon",
   "sfx_mo_tu_mat", "sfx_cua_lo", "sfx_rot_tra_da", "sfx_dat_ly", "sfx_lau_khan",
   "sfx_do_roi_dat", "sfx_tien_le", "sfx_xu", "sfx_ngan_keo", "sfx_thung_rac",
   "sfx_lat_so", "sfx_viet_but", "sfx_buoc_co_ba",
-  // hẻm — chỉ mấy mẩu ngắn; nền dài để `sfx.loop` nạp lười
   "sfx_xe_may_qua", "sfx_coi_xe", "sfx_cho_sua", "sfx_chim_se", "sfx_ga_gay",
   "sfx_buoc_chan", "sfx_keo_ghe",
   // giọng — CHỈ hai thứ đang thật sự dùng (xem luật "NPC chỉ lên tiếng ở hai chỗ").
@@ -34,13 +31,11 @@ const PRELOAD: readonly SfxId[] = [
   // vẫn nằm trong `tools/audio/sources.py` và trong `public/` vì bảng §4.2 D cần
   // chúng cho bark tier-2/tier-3 — nhưng CHƯA nạp, để khỏi kéo về thứ không phát.
   "vox_hum", "vox_blip",
-  // âm báo
   "ui_click", "ui_chon_nguyen_lieu", "ui_dat_thanh_cong", "ui_khong_hop_le",
   "ui_click_go", "ui_mo_menu", "ui_dong_menu", "ui_chot_don", "ui_autosave",
   "ui_mo_so_tay", "a11y_ping_glimpsed",
 ];
 
-/** Nền hẻm theo giờ — P5-03 §4.2 B. Một band một file, không trộn lớp (bộ tạm chưa có stem). */
 const BAND_BED: Record<TimeBand, SfxId> = {
   PRE_OPEN: "amb_hem_sang", PEAK: "amb_hem_sang", MID: "amb_hem_trua", LULL: "amb_hem_chieu",
 };
@@ -61,14 +56,12 @@ const RAINY: ReadonlySet<Weather> = new Set<Weather>(["MUA_RAO", "MUA_DAM"]);
  * Giọng người thì đắt: nghe là phải quay sang nhìn. Tiêu nó cho mọi cái liếc mắt thì tới lúc có
  * người thật sự bỏ đi, không còn gì để nói.
  */
-/** Hạ cao độ cho tiếng "hmmm" lúc bực: trầm hơn VÀ dài hơn, cùng một file. */
 const ANGRY_PITCH = 0.78;
 
-/** Bỏ đi kiểu này là bỏ đi vì BỰC — có tiếng. Mấy kiểu còn lại thì không. */
 const ANGRY_EXITS: ReadonlySet<string> = new Set([
-  "IMPATIENT",     // chờ mãi không tới lượt
-  "REFUSED",       // bị từ chối phục vụ
-  "SOILED_FOOD",   // nhìn thấy ổ bánh rớt đất rồi vẫn được đưa
+  "IMPATIENT",
+  "REFUSED",
+  "SOILED_FOOD",
 ]);
 
 /**
@@ -77,27 +70,22 @@ const ANGRY_EXITS: ReadonlySet<string> = new Set([
  */
 const FLY_DIRT_MIN = 0.35;
 
-/** Tiếng rời rạc ngoài hẻm: giây trung bình giữa hai lần, theo giờ. */
 const AMBIENT_EVERY: Record<TimeBand, number> = {
   PRE_OPEN: 14, PEAK: 22, MID: 26, LULL: 18,
 };
 
 export type StallAudioDeps = {
   scene: Phaser.Scene;
-  /** −1 (trái) .. +1 (phải) cho một NPC đang ở quầy; 0 nếu không thấy ai. */
   panOf: (npcId: string) => number;
-  /** 0..1 — số ngẫu nhiên của scene, để không tự đẻ thêm một nguồn rng nữa. */
   rand: () => number;
 };
 
 export class StallAudio {
   private off: (() => void)[] = [];
-  /** Ai đã lên tiếng trong lượt ghé này — mỗi người đúng MỘT lần, xoá lúc họ về. */
   private spoke = new Set<string>();
   private now = 0;
   private nextAmbient = 6;
   private stepPhase = 0;
-  /** Nền hẻm đang bật — giữ lại để tắt đúng cái cũ khi đổi giờ. */
   private bed: SfxId | null = null;
 
   constructor(private d: StallAudioDeps) {
@@ -105,7 +93,6 @@ export class StallAudio {
     this.wire();
   }
 
-  /** Gọi trong `preload()` của scene. */
   static preload(scene: Phaser.Scene) {
     sfx.preload(scene, PRELOAD);
   }
@@ -125,7 +112,6 @@ export class StallAudio {
   private wire() {
     const { scene } = this.d;
 
-    // Khách tới: BƯỚC CHÂN thôi, chưa có giọng — họ mới bước tới, chưa nói gì.
     this.listen("npc:arrived", (p) => this.steps(this.d.panOf(p.npcId)));
 
     /*
@@ -148,11 +134,11 @@ export class StallAudio {
      * bước chân xa dần. Cái im lặng đó là một phản ứng.
      */
     this.listen("npc:left", (p) => {
-      this.spoke.delete(p.npcId);                       // lượt ghé sau được lên tiếng lại
+      this.spoke.delete(p.npcId);
       const pan = this.d.panOf(p.npcId);
       if (ANGRY_EXITS.has(p.reason)) {
         sfx.voice(scene, "vox_hum", p.npcId, pan, ANGRY_PITCH);
-        this.steps(pan, 0.8, 320);                      // bước nhanh hơn: họ đang đi thẳng
+        this.steps(pan, 0.8, 320);
       } else {
         this.steps(pan, 0.7);
       }
@@ -209,7 +195,6 @@ export class StallAudio {
     // ── lò than ─────────────────────────────────────────────────────────────
     sfx.loop(scene, "sfx_lo_bed", s.ovenHot, {}, 1600);
     sfx.loop(scene, "sfx_khet", s.burning, {}, 400);
-    // Vòi nước chỉ kêu trong lúc thật sự đang rửa — fade ngắn để tắt gọn theo tay.
     sfx.loop(scene, "sfx_rua_tay", s.washing, {}, 180);
 
     /*
@@ -225,14 +210,12 @@ export class StallAudio {
 
     // ── bước chân cô Ba ─────────────────────────────────────────────────────
     if (s.moving) {
-      // Nhịp theo tốc độ đi, không theo đồng hồ: chạy thì bước mau hơn.
       this.stepPhase += dt * (s.running ? 3.1 : 2.1);
       if (this.stepPhase >= 1) {
         this.stepPhase -= 1;
-        sfx.play(scene, "sfx_buoc_co_ba");     // pan 0: đó là chân bạn (§2.4)
+        sfx.play(scene, "sfx_buoc_co_ba");
       }
     } else {
-      // Dừng lại là bước kế tiếp nổ NGAY khi đi tiếp, không phải sau nửa nhịp thừa.
       this.stepPhase = 0.92;
     }
 
@@ -264,7 +247,6 @@ export class StallAudio {
     else sfx.play(scene, "sfx_keo_ghe", { pan: side * 0.5 });
   }
 
-  /** Ba bước chân của một người đi tới / đi khỏi quầy. `gap` = mili-giây mỗi bước. */
   private steps(pan: number, vol = 1, gap = 300) {
     const { scene } = this.d;
     for (let i = 0; i < 3; i++) {
@@ -284,7 +266,6 @@ export class StallAudio {
 
   layLoaf() { this.one("sfx_mo_tu_mat"); }
   ovenDoor() { this.one("sfx_cua_lo"); }
-  /** Lấy ổ nóng ra lò: tiếng cửa lò + vỏ bánh nứt. */
   loafOut() { this.one("sfx_cua_lo"); this.one("sfx_vo_gion", { delay: 160 }); }
   knife() { this.one("sfx_dao_rach"); }
   putDown() { this.one("sfx_dat_thot"); }
@@ -307,7 +288,6 @@ export class StallAudio {
   notebook() { this.one("ui_mo_so_tay"); }
   writePen() { this.one("sfx_viet_but"); }
 
-  /** Ghi sổ nợ — hai nét bút rải đều trong lượt ghi, cùng lý do với `wipeFor`. */
   writeFor(seconds: number) {
     this.one("sfx_lat_so");
     const net = Math.max(1, Math.round(seconds / 1.1));
@@ -317,7 +297,6 @@ export class StallAudio {
   }
   pageTurn() { this.one("sfx_lat_so"); }
 
-  /** Nhận tiền: tiền giấy sột soạt rồi khay tiền. Dùng mỗi khách → nhiều biến thể nhất. */
   money() {
     this.one("sfx_tien_le");
     this.one(this.d.rand() < 0.45 ? "sfx_xu" : "sfx_ngan_keo", { delay: 220 });
@@ -329,14 +308,13 @@ export class StallAudio {
    * nhau, mà tay người chơi làm chúng cả ngàn lần trong một mùa.
    */
   place(ing: Ingredient) {
-    if (ing === "pate") this.one("sfx_quet_pate");          // quết — ẩm, nhớp, gần
-    else if (ing === "tuongot") this.one("sfx_ruoi_sot");   // rưới
-    else if (ing === "ot") this.one("sfx_rac_tieu");        // rắc
-    else this.one("sfx_kep_gap");                            // gắp — nhân và rau
+    if (ing === "pate") this.one("sfx_quet_pate");
+    else if (ing === "tuongot") this.one("sfx_ruoi_sot");
+    else if (ing === "ot") this.one("sfx_rac_tieu");
+    else this.one("sfx_kep_gap");
     this.one("ui_chon_nguyen_lieu", { volume: 0.8 });
   }
 
-  /** Âm báo giao diện — gom vào đây để scene không phải biết tên id. */
   uiClick() { this.one("ui_click"); }
   uiOk() { this.one("ui_dat_thanh_cong"); }
   uiBad() { this.one("ui_khong_hop_le"); }

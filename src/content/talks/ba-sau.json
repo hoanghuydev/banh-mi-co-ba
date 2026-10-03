@@ -95,7 +95,15 @@
               "mood": "THUONG"
             }
           ],
-          "mood": "CUOI"
+          "mood": "CUOI",
+          "act": {
+            "kind": "BARTER",
+            "nhan": "chén tàu hũ"
+          },
+          "need": [
+            "!p.soldOut",
+            "p.holdsFilled"
+          ]
         },
         {
           "say": "Dạ thôi bà, con lấy tiền thôi bà.",
@@ -537,7 +545,7 @@
       },
       "tree": [
         {
-          "say": "Bà ngồi cái ghế này đi bà. Con bưng gánh vô cho.",
+          "say": "Bà để đó con bưng gánh vô cho bà.",
           "tone": "AM",
           "rel": 4,
           "calm": 28,
@@ -612,12 +620,11 @@
             }
           ],
           "mood": "THUONG",
-          "needEquip": "GHE_BAN",
           "act": {
-            "kind": "THEY_SIT",
-            "forSec": 40
+            "kind": "CARRY_GANH"
           },
           "while": [
+            "w.ganhOut",
             "w.seatFree"
           ]
         },
@@ -684,13 +691,13 @@
             "intensity": 55
           },
           "act": {
-            "kind": "STEP_ASIDE",
-            "forSec": "TOI_LUOT"
+            "kind": "MOVE_GANH"
           },
           "reply": "…Ờ. Tui dời. Tui xin lỗi con.",
           "mood": "BUC",
           "while": [
-            "t.blocking"
+            "t.blocking",
+            "w.ganhOut"
           ]
         },
         {
@@ -699,7 +706,13 @@
           "rel": 3,
           "calm": 24,
           "reply": "Ờ… Ờ. Nhẹ cả vai. Cảm ơn con nghen.",
-          "mood": "THUONG"
+          "mood": "THUONG",
+          "act": {
+            "kind": "CARRY_GANH"
+          },
+          "while": [
+            "w.ganhOut"
+          ]
         }
       ],
       "openMood": "MET",
@@ -1073,9 +1086,11 @@
             "rel": 3
           },
           "act": {
-            "kind": "PROMISE_DEED",
-            "deed": "BUNG_GANH"
-          }
+            "kind": "CARRY_GANH"
+          },
+          "while": [
+            "w.ganhOut"
+          ]
         }
       ],
       "openMood": "BUON",
@@ -1136,6 +1151,12 @@
                 "rel": 2
               }
             }
+          ],
+          "act": {
+            "kind": "CARRY_GANH"
+          },
+          "while": [
+            "w.ganhOut"
           ]
         },
         {
@@ -1236,6 +1257,14 @@
               "reply": "Trời. Nhiều quá con. Thôi tui ăn, mai tui múc bù.",
               "mood": "THUONG"
             }
+          ],
+          "act": {
+            "kind": "BARTER",
+            "nhan": "chén tàu hũ"
+          },
+          "need": [
+            "!p.soldOut",
+            "p.holdsFilled"
           ]
         },
         {
@@ -1341,14 +1370,16 @@
               "say": "Dạ con đỡ gánh xuống cho bà nghen.",
               "tone": "AM",
               "act": {
-                "kind": "PROMISE_DEED",
-                "deed": "BUNG_GANH"
+                "kind": "CARRY_GANH"
               },
               "onKept": {
                 "rel": 3
               },
               "reply": "Ờ. Để sát vô trong giùm tui, kẻo xe quẹt.",
-              "mood": "THUONG"
+              "mood": "THUONG",
+              "while": [
+                "w.ganhOut"
+              ]
             }
           ]
         },

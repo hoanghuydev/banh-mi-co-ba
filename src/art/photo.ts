@@ -26,10 +26,8 @@ import type { Facing8 } from "../world/iso";
  * lửng và bóng đổ rơi lệch xuống dưới chân.
  */
 
-/** Tiền tố cho ảnh gốc vừa tải về, để không đụng tên với texture của game. */
 const SRC = "photo/";
 
-/** Ảnh con ruồi bu thớt. Ảnh nhìn ngang, đầu quay sang TRÁI — `StallScene` dựa vào đó. */
 const FLY = "fly";
 
 /**
@@ -42,7 +40,6 @@ const FLY = "fly";
 export const BOARD_TEX = "cut_board";
 const BOARD = "cutting_board";
 
-/** Bề ngang thớt trên màn, px thiết kế. Một ô quầy rộng `TW` = 60. */
 export const BOARD_W = 28;
 
 /**
@@ -52,7 +49,6 @@ export const BOARD_W = 28;
 export const BASKET_TEX = "bread_basket";
 const BASKET = "ro_banh_mi";
 
-/** Bề ngang rổ bánh, px thiết kế. Con số này đang được chỉnh bằng mắt. */
 export const BASKET_W = 23;
 
 /**
@@ -74,7 +70,6 @@ export const ART_SS = Math.min(3, Math.max(1, RENDER_SCALE * 1.4));
  */
 const ssOf = new Map<string, number>();
 
-/** Một pixel của texture `key` ứng với bao nhiêu pixel thiết kế. 1 nếu không siêu lấy mẫu. */
 export function artScale(key: string) {
   return ssOf.get(key) ?? 1;
 }
@@ -137,11 +132,8 @@ const FLOORS = ["walk", "road"] as const;
 // ───────────────────────────────────────────────────────────── đạo cụ đứng trên ô
 
 type Standing = {
-  /** Cao bao nhiêu px trên màn hình, đo từ điểm chạm đất lên đỉnh. */
   h: number;
-  /** Nhích ngang (px) khi chân vật không nằm giữa ảnh — xe máy chống nghiêng chẳng hạn. */
   dx?: number;
-  /** Hạ xuống bao nhiêu px so với TÂM hình thoi. Mặc định `SIT` — xem ngay dưới. */
   dy?: number;
 };
 
@@ -288,7 +280,6 @@ const OPEN_LOAF = ["loaf_lid", "loaf_trough"] as const;
  */
 const asked = new Set<string>();
 
-/** Mọi file PNG cần tải. Scene nào vẽ cảnh cũng phải gọi cái này trong `preload()`. */
 export function preloadPhotos(scene: Phaser.Scene) {
   const names = [
     ...FLOORS.flatMap((f) => [0, 1, 2, 3].map((i) => `f_${f}${i}`)),
@@ -311,7 +302,7 @@ export function preloadPhotos(scene: Phaser.Scene) {
 
 function source(scene: Phaser.Scene, name: string): HTMLImageElement | null {
   const key = SRC + name;
-  if (!scene.textures.exists(key)) return null;               // artist chưa gửi ảnh này
+  if (!scene.textures.exists(key)) return null;
   const img = scene.textures.get(key).getSourceImage();
   return img instanceof HTMLImageElement ? img : null;
 }
@@ -342,7 +333,6 @@ function shrink(img: HTMLImageElement, w: number, h: number): CanvasImageSource 
   return src;
 }
 
-/** Mở một texture canvas trắng, xoá bản cũ nếu có. Gọi lúc boot, chưa sprite nào dùng. */
 /**
  * Canvas trắng để vẽ texture lên. `ss` > 1 thì canvas to gấp `ss` lần NHƯNG context được scale
  * sẵn — mọi lệnh vẽ phía sau vẫn viết bằng toạ độ thiết kế, không chỗ nào phải nhân tay.
@@ -404,10 +394,8 @@ function standing(scene: Phaser.Scene, key: string, src: string, o: Standing) {
   made.tex.refresh();
 }
 
-/** Cỡ muốn có: đo theo bề NGANG (ổ bánh nằm) hoặc theo chiều CAO (ly trà đứng). */
 type Fit = { w?: number; h?: number };
 
-/** Ảnh nằm gọn giữa một ô vuông `size × size` — dùng cho icon nhân và món trên tay. */
 function boxed(scene: Phaser.Scene, key: string, src: string, size: number, fit: Fit) {
   const img = source(scene, src);
   if (!img) return;
@@ -497,11 +485,11 @@ function openLoaf(scene: Phaser.Scene) {
   const made = blank(scene, FOOD.loaf, FOOD.LOAF_W, FOOD.LOAF_H, ART_SS);
   if (!made) return;
 
-  const w = FOOD.CRUMB_W / 0.84;                     // ruột bánh chiếm ~84% bề ngang ảnh
+  const w = FOOD.CRUMB_W / 0.84;
   const th = (trough.height / trough.width) * w;
   const lh = (lid.height / lid.width) * w;
   const x = (FOOD.LOAF_W - w) / 2;
-  const cy = FOOD.LOAF_H / 2 + FOOD.CRUMB_DY;        // tâm lòng máng
+  const cy = FOOD.LOAF_H / 2 + FOOD.CRUMB_DY;
   // Nắp thò lên ĐÚNG `LID_PEEK` px phía trên mép máng: MÉP TRÊN của nắp nằm cao
   // hơn mép trên của máng chừng đó, hết. Đừng cộng thêm nửa chiều cao nắp — làm
   // vậy thì phần ló ra phụ thuộc nắp cao bao nhiêu, nên nắp càng cao càng tụt
@@ -511,12 +499,11 @@ function openLoaf(scene: Phaser.Scene) {
   made.tex.refresh();
 }
 
-/** Icon nhân (36 px) + bản to nằm trong ổ (×1,7). Gọi sau `buildFood()`. */
 export function paintFoodPhotos(scene: Phaser.Scene) {
   openLoaf(scene);
   for (const ing of INGREDIENTS) {
     const spec = FILLINGS[ing.id];
-    if (!spec) continue;                             // chưa có ảnh -> giữ hình vẽ code
+    if (!spec) continue;
     const [src, fill = 1, inLoaf = fill] = spec;
     const big = Math.ceil(FOOD.ICON * FOOD.BIG_SCALE);
     boxed(scene, FOOD.icon(ing.id), src, FOOD.ICON, { h: (FOOD.ICON - 2) * fill });
