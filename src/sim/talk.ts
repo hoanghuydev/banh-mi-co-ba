@@ -52,6 +52,17 @@ export type DoiDon = "dayDu" | "themNhan" | "itRau" | "khongOt";
 
 export type TalkAct =
   | { kind: "PAY"; vnd: number; note: string }
+  /**
+   * TIỀN ĐI VÀO KÉT — chiều ngược của `PAY`, năm nút đòi (bé Su, thầy Phúc).
+   *
+   * *"Ừ. Cô cầm lại."* — bé Su thối dư hai ngàn, mình cầm lại, và **két không nhích một
+   * đồng**. Một lời thoại nói về tiền mà không đụng tới tiền thì nó là lời thoại suông:
+   * cùng họ với "làm đầy đủ" mà đơn không đổi.
+   *
+   * ⚠️ KHÔNG phải doanh thu. Nó là tiền lẻ quay lại ống, nên đi vào `floatLeft` chứ không
+   * vào `soldOut`/`revenue` — nhập nhằng chỗ này thì trang tối nói dối người chơi.
+   */
+  | { kind: "TAKE_CASH"; vnd: number; note: string }
   | { kind: "DISCOUNT"; vnd: number }
   | { kind: "FREE_LOAF" }
   | { kind: "PROMISE"; item: string }
@@ -124,6 +135,26 @@ export type TalkAct =
       aiXin?: "MINH" | "HO";
     }
   | { kind: "LEAVE_SHADE" }
+  /**
+   * NGƯỜI TA NGHE THẤY — hai nút đòi (`dung.basau`: nói xấu bà Sáu *ngay giữa hẻm bà đang
+   * gánh đi qua*).
+   *
+   * Trước đợt này câu đó chỉ mất `rel −3` với anh Dũng; **bà Sáu không biết gì**. Nói xấu
+   * một người ngay lúc người đó đi ngang phải có giá, và cái giá phải nằm đúng chỗ: ở
+   * TRÍ NHỚ CỦA NGƯỜI BỊ NÓI, không ở người nghe cùng.
+   *
+   * Chỉ ăn khi người đó CÓ MẶT và đủ gần. Không có mặt thì không có gì xảy ra — và đó là
+   * một nước đi hợp lệ, không phải một cái bẫy: người chơi NHÌN THẤY bà đứng đó hay không
+   * trước khi bấm (T5).
+   */
+  | {
+      kind: "OVERHEARD_BY";
+      /** `memKey` của người NGHE THẤY — người đang bị nói xấu, không phải người đang đứng nói chuyện. */
+      ai: string;
+      /** Vết nhớ ghi vào sổ của HỌ. Mặc định `RUDE_TO_THEM`. */
+      vet?: BaseKind;
+      intensity?: number;
+    }
   | { kind: "LOOK_INSIDE"; forSec: ForSec }
   | { kind: "PROMISE_DEED"; deed: Deed }
   | { kind: "CREDIT_LOAF" };

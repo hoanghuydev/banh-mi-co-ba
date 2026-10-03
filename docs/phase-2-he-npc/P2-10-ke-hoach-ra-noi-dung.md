@@ -166,10 +166,16 @@ chứ không phải của bộ máy. Khi rà tới file tương ứng thì làm 
 | ~~`CARRY_GANH` · `MOVE_GANH`~~ | bà Sáu | 11 | ✅ **xong** — xem §6decies |
 | ~~`RAO`~~ | bà Sáu dạy | 7 | ✅ **xong** — xem §6duodecies |
 | ~~`LEND_ITEM` / `CLEAR_DEBT`~~ | anh Dũng · chị Lan | 5 | ✅ **xong** — xem §6terdecies |
-| `TAKE_CASH` | bé Su · thầy Phúc | 5 | `PAY` có chiều ra, chưa có chiều vào |
+| ~~`TAKE_CASH`~~ | bé Su · thầy Phúc | 5 | ✅ **xong** — xem §6sedecies |
 | ~~`BARTER`~~ | bà Sáu | 5 | ✅ **xong** — xem §6decies |
-| `ORDER_CHANGE` | anh Bảo · chị Lan | 4 | sửa đơn từ một nút thoại |
-| `OVERHEARD_BY` | bà Sáu | 2 | `overhear.ts` có sẵn, hệ thoại chưa nối |
+| ~~`ORDER_CHANGE`~~ | anh Bảo · chị Lan | 4 | ✅ **xong** — xem §6quaterdecies |
+| ~~`OVERHEARD_BY`~~ | bà Sáu | 2 | ✅ **xong** — xem §6sedecies |
+
+**Bảng nợ act đã TRẢ HẾT.** 26 act khai trong `TalkAct`, 26 act có `case` trong
+`applyAct` (ép bằng `assertActHandled(act: never)` — thiếu nhánh là lỗi BIÊN DỊCH, không
+phải lỗi im lặng), 25/26 có nội dung gọi tới. Còn đúng một act chưa ai gọi: `LEAVE_SHADE`
+— và nó KHÔNG chết, vì `shadeUntil` hết hạn thì `leaveShade()` tự chạy; nó chỉ chưa có
+một câu thoại nào bảo người ta đi tiếp SỚM. Không viết thoại chỉ để lấp một act.
 
 Ba item đã xong: ghế ngồi được · cái gánh · áo mưa. (Ghế ngồi được: ✅ `world/map.SEAT_SPOT`.) (Ô hóng mát **đã có**:
 `world/map.SHADE_SPOT`.)
@@ -985,6 +991,65 @@ Chỗ phải nói thẳng, lần thứ hai trong hai đợt liền: **cái máy 
 máy dò**, vì nó cấp cho tôi một tờ giấy chứng nhận sạch. Đợt trước tôi khai "rà 2.015 nút,
 8 lỗi thật, 8 đã sửa" — con số đúng, kết luận sai, vì mẫu quét đã mù từ đầu. Từ đợt này
 mỗi mẫu regex đụng chữ có dấu phải có một ca thử ĐỨNG CẠNH nó.
+
+## 6sedecies. TRẢ NỐT BẢNG NỢ ACT — VÀ HAI MÓN ĐỒ VẼ SAI CHỖ
+
+Chủ dự án hỏi ba câu: *"có làm cái xe, dù, rồi cho các item vào map không? với lại các
+act đã làm hết chưa? với lại phase đó còn task nào nữa không"*. Đi kiểm từng câu bằng
+máy, và câu thứ nhất lòi ra một lỗi không ai kêu.
+
+### Hai món đồ nghề vẽ cách chỗ nó phục vụ 3,5 và 11,3 ô
+
+Cái xe chú Kiệt và cái gánh bà Sáu thì đúng chỗ — chúng là **sprite động** đọc thẳng
+`CART_*` / `GANH_*`. Nhưng hai món ĐỒ NGHỀ thì vẽ bằng số viết cứng, và chúng đã trôi:
+
+| Món | Vẽ ở | Chỗ hệ thống gửi người tới | Lệch |
+|---|---|---|---|
+| `DU_CHE` | (12,6 · 5,6) — **sau quầy** | `SHADE_SPOT` (15,0 · 8,2) | 3,5 ô |
+| `GHE_BAN` | (5,5 · 8,4) — **đầu hẻm** | `SEAT_SPOT` (16,6 · 10,4) | 11,3 ô |
+
+Nghĩa là mười câu *"đứng dưới dù cho mát"* đẩy người ta ra một khoảng vỉa hè **trống
+trơn**, và mười bảy câu mời ngồi đặt người ta cách bộ ghế vừa mua 320 nghìn mười một ô.
+Đúng cái chủ dự án thấy khi chơi và tôi đã sửa NỬA: *"họ cũng chả thèm chạy lại chỗ cái ô
+để đứng hay đang đứng trong bóng mát"* — đợt trước tôi sửa bước đi, mà cái ô thì vẫn ở
+chỗ khác, nên sửa xong vẫn không thấy gì.
+
+Sửa: cả hai lấy thẳng toạ độ từ `world/map`, không viết số nữa. Lưới `VD-1`/`VD-2` đọc
+CHÍNH mã vẽ và bắt lỗi nếu ai viết số cứng lại — vì viết số cứng là cách nó trôi lần đầu.
+
+### Hai act cuối
+
+`TAKE_CASH` — chiều VÀO của `PAY`, năm nút đòi. Hai chỗ nó đổi hẳn ý nghĩa một nước đi:
+
+* `su.toan` — bé Su thối dư hai ngàn, mình *"Ừ. Cô cầm lại."* Két không nhích một đồng.
+* `phuc.quen · 1.1` — *"Dạ hai chục thầy."* là một câu **nói dối**: thầy trả rồi mà mình
+  bảo chưa. CANON §8 đòi ăn gian phải có LỢI THẬT thì nó mới là một lựa chọn. Trước đợt
+  này nó chỉ mất `rel −3` và không được gì — một nút không ai bấm, tức một nút chết.
+
+⚠️ Vào `floatLeft` (tiền lẻ trong ống), KHÔNG vào doanh thu — lưới `HA-3` canh đúng chỗ
+đó, vì nhập nhằng thì trang tối nói dối người chơi.
+
+`OVERHEARD_BY` — *"Bà rảnh ghê, lo chuyện người ta."* nói ngay giữa hẻm **bà Sáu đang gánh
+đi qua**. Trước đợt này chỉ mất `rel −3` với anh Dũng; bà Sáu không biết gì. Giờ cái giá
+nằm đúng chỗ: vết `RUDE_TO_THEM` vào sổ CỦA BÀ, cộng `witness()` — bà không chỉ giận, bà
+có một niềm tin hạng nhất để **kể lại**. Chỉ ăn trong `OVERHEAR_REACH` 4,5 ô, và bà có
+đứng đó hay không thì người chơi NHÌN THẤY trước khi bấm (T5) — rủi ro đọc được, không
+phải cái bẫy.
+
+### Trả lời câu thứ ba: còn gì trong phase này
+
+| Món | Tình trạng |
+|---|---|
+| 26 act | khai đủ · 26/26 có `case` · 25/26 có nội dung gọi (`LEAVE_SHADE` tự chạy khi hết hạn) |
+| 15 kho thoại | rà xong cả 15 |
+| Vật trong map | xe · gánh · dù · ghế · áo mưa — đủ, và giờ đúng chỗ |
+| 17 cổng validator | T001–T017 sạch |
+| Lưới | 554, xanh hết |
+
+Còn lại là **tune số**, không phải việc thiếu: `ATT_K` / `ATT_FLOOR` /
+`DRIVE_DECAY_PER_MIN` (`sim/drives.ts`) và `OVEN_SMELL_SEC` là số bản dựng đặt, phải chờ
+telemetry người thật. Và vẽ: bé Su giơ điện thoại lúc `FILM`, dáng người NGỒI thấy được —
+hai thứ art, không phải thoại.
 
 ## 7. Truy vết
 

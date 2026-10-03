@@ -145,6 +145,14 @@ const GREET_SLOW_SEC = 1.6;
 const CHAT_STOP_SEC = 4.5;
 
 /**
+ * Nói xấu ai trong vòng bao nhiêu ô thì người đó NGHE THẤY — act `OVERHEARD_BY`.
+ *
+ * Rộng hơn `TALK_REACH` (3) một chút: một câu nói to giữa hẻm thì người đi ngang cách bốn
+ * ô vẫn nghe được, và chính người chơi cũng nhìn thấy họ ở đó trước khi bấm.
+ */
+const OVERHEAR_REACH = 4.5;
+
+/**
  * Bao lâu một lần hai người đi ngang ĐỨNG LẠI TÁM một cảnh — `content/lines/tam.json`.
  *
  * Phải HIẾM hơn chào nhau nhiều: cái hẻm sống là vì thỉnh thoảng có người dừng kể chuyện,
@@ -2684,6 +2692,20 @@ export class Service {
         this.out.push({ kind: "log", text: `${act.note} — ${amt.toLocaleString("vi-VN")}₫` });
         break;
       }
+      case "TAKE_CASH": {
+        /*
+         * Chiều VÀO của `PAY`. Vào `floatLeft` (tiền lẻ trong ống), KHÔNG vào doanh thu —
+         * đây là tiền quay lại chứ không phải tiền bán được. Dấu ÂM trên dòng `cost` để
+         * trang tối cộng đúng: dương = tiền ra khỏi két.
+         */
+        if (this.deps.till) this.deps.till.floatLeft += act.vnd;
+        this.out.push({ kind: "cost", amount: -act.vnd, item: "talk" });
+        this.out.push({ kind: "log", text: `${act.note} — +${act.vnd.toLocaleString("vi-VN")}₫` });
+        break;
+      }
+      case "OVERHEARD_BY":
+        this.overheardBy(c, act);
+        break;
       case "DISCOUNT":
         pledge.discount += act.vnd;
         break;
@@ -3057,6 +3079,29 @@ export class Service {
    * CƠ HỘI GẬT: người đang vội thì gần như không — mời họ ăn sang hơn giữa lúc trễ làm là
    * mời sai lúc. Dòng số riêng `doidon:` theo lượt ghé, rút MỘT lần, không rút ké.
    */
+  /**
+   * Người bị nói xấu NGHE THẤY — act `OVERHEARD_BY`.
+   *
+   * Giá phải nằm trong sổ của CHÍNH HỌ (`record` + `witness`), không phải của người đang
+   * đứng nghe cùng. Và phải có một dòng nhật ký: không thấy gì xảy ra thì người chơi học
+   * sai bài — tưởng nói xấu sau lưng là miễn phí (T5).
+   */
+  private overheardBy(noi: Customer, act: Extract<TalkAct, { kind: "OVERHEARD_BY" }>) {
+    const ho = this.customers.find((x) => x.memKey === act.ai && x.phase !== "leaving");
+    if (!ho) return;                               // không có mặt thì không ai nghe — nước đi hợp lệ
+    if (Math.hypot(ho.x - noi.x, ho.y - noi.y) > OVERHEAR_REACH) return;
+    const vet = act.vet ?? "RUDE_TO_THEM";
+    const manh = act.intensity ?? 55;
+    record(this.mem(act.ai), ho.personality, vet, manh, this.deps.day);
+    /*
+     * `witness()` là chỗ nó khác một vết nhớ thường: bà Sáu không chỉ GIẬN, bà còn có một
+     * niềm tin hạng nhất để KỂ LẠI. Nói xấu người ta giữa hẻm thì chuyện đó đi tiếp.
+     */
+    if (this.deps.gossip) witness(this.deps.gossip, act.ai as never, vet, manh, this.deps.day);
+    this.out.push({ kind: "log", text: `${this.label(ho)} đứng ngay đó. ${this.label(ho)} nghe hết.` });
+    this.scheduleReact(ho, MOOD_FACE.BUC, MOOD_POSE.BUC);
+  }
+
   private orderChange(c: Customer, act: Extract<TalkAct, { kind: "ORDER_CHANGE" }>) {
     if (!c.order || c.phase === "leaving") return;
     const hurry = c.purpose?.hurry ?? 0.3;

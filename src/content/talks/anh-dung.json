@@ -512,7 +512,13 @@
                   "tone": "CHUI",
                   "rel": -3,
                   "reply": "Thôi em. Bả hổng có ác ý đâu. Anh biết mà.",
-                  "mood": "BUON"
+                  "mood": "BUON",
+                  "act": {
+                    "kind": "OVERHEARD_BY",
+                    "ai": "BA_SAU",
+                    "vet": "RUDE_TO_THEM",
+                    "intensity": 60
+                  }
                 }
               ],
               "mood": "NGAC_NHIEN"

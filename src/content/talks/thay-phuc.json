@@ -1010,7 +1010,12 @@
               "tone": "LANH",
               "rel": -3,
               "reply": "Ờ. Hai chục.",
-              "mood": "BUON"
+              "mood": "BUON",
+              "act": {
+                "kind": "TAKE_CASH",
+                "vnd": 20000,
+                "note": "lấy của thầy Phúc hai chục ngàn thầy đã trả rồi"
+              }
             }
           ],
           "mood": "BUON"

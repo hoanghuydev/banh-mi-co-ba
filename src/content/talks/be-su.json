@@ -919,7 +919,12 @@
                   "say": "Ừ. Cô cầm lại.",
                   "tone": "LANH",
                   "rel": -2,
-                  "silent": true
+                  "silent": true,
+                  "act": {
+                    "kind": "TAKE_CASH",
+                    "vnd": 2000,
+                    "note": "cầm lại hai ngàn bé Su thối dư"
+                  }
                 }
               ],
               "mood": "THUONG"
@@ -947,7 +952,12 @@
               },
               "reply": "Dạ má con dặn. Má nói tiền hổng phải của mình thì cầm nó nặng tay lắm.",
               "ref": "ket",
-              "mood": "THUONG"
+              "mood": "THUONG",
+              "act": {
+                "kind": "TAKE_CASH",
+                "vnd": 2000,
+                "note": "cầm lại hai ngàn bé Su thối dư"
+              }
             }
           ]
         },
