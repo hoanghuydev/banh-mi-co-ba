@@ -80,6 +80,81 @@
         "Ừa. Thôi đi nghen.",
         "Chút nữa ghé."
       ]
+    },
+    {
+      "id": "extraOffer",
+      "tier": 3,
+      "vars": [
+        "mon",
+        "me",
+        "call"
+      ],
+      "_note": "Câu CÔ BA nói lúc chìa ổ có đồ cho thêm (sim/service.ts: serveDish → playerSay). Bỏ thêm miếng đồ chua mà cả hẻm im thì người chơi không có đường nào biết trò chơi đã đọc ra hành động đó — và chuyện cho thêm là một trong hai đòn bẩy quan hệ rẻ nhất họ có. {mon} đã là một chuỗi kể sẵn (\"đồ chua với ớt\"), đừng thêm \"miếng\" hay \"chút\" vào trước nó. Danh xưng để trống, `Service.fill` điền theo người đang đứng trước mặt.",
+      "variants": [
+        "{me} cho thêm {mon} cho {call} nè.",
+        "{call} ơi, {me} bỏ thêm {mon} nghen.",
+        "Thêm {mon} cho {call} đó nghen.",
+        "{me} cho {call} thêm {mon} nha.",
+        "Nay có {mon}, {me} bỏ thêm cho {call}.",
+        "Dạ, {me} cho thêm {mon} nghen {call}."
+      ],
+      "en": [
+        "Added some extra {mon} for you.",
+        "Hey, I put in a bit more {mon}.",
+        "Extra {mon} for you there.",
+        "Giving you some extra {mon}.",
+        "Got {mon} today, so I added some.",
+        "Here, a little extra {mon}."
+      ]
+    },
+    {
+      "id": "thanksExtra",
+      "tier": 3,
+      "vars": [
+        "you"
+      ],
+      "_note": "Vế ĐẦU của câu giao bánh khi ổ CÓ LỖI mà người chơi vẫn cho thêm (sim/service.ts: speakConcept `wrap.pre`). Người trong hẻm cảm ơn trước rồi mới nói cái thiếu — bỏ vế này thì cho thêm trên một ổ trật nghe như không ai thấy. ⚠️ PHẢI rất ngắn (≤ 25 ký tự): nó là vế thứ ba chen vào một bong bóng cao ba dòng, và `WRAP_SOFT_MAX` sẽ CẮT BỎ chính nó khi câu ghép dài quá — viết dài là tự xoá mình. ⚠️ Đừng mở đầu bằng {you}: túi này không đi qua `fill` nên không có ai viết hoa giùm.",
+      "variants": [
+        "Ờ, cảm ơn {you} nghen.",
+        "Cảm ơn {you}.",
+        "Ừ, {you} có lòng.",
+        "Chà, có thêm. Cảm ơn.",
+        "Thôi được, cảm ơn nghen.",
+        "Biết {you} thương."
+      ],
+      "en": [
+        "Thanks for that.",
+        "Thank you.",
+        "That's kind of you.",
+        "Oh, extra. Thank you.",
+        "All right, thank you.",
+        "I know you mean well."
+      ]
+    },
+    {
+      "id": "crustTail",
+      "tier": 3,
+      "vars": [
+        "mon",
+        "you"
+      ],
+      "_note": "Vế CUỐI của câu giao bánh: ổ còn một lỗi khác được nói ở câu chính, lỗi VỎ BÁNH nói thêm vào đây (sim/service.ts: `wrap.post`). {mon} = \"chưa giòn\" | \"cháy cạnh\". Phải là một vế NỐI chứ không phải một câu đứng riêng — nó luôn đi sau một câu chê đã trọn ý, và hai câu chê rời nhau trong cùng một bong bóng thì nghe như cằn nhằn. Ngắn, vì bong bóng chỉ cao ba dòng.",
+      "variants": [
+        "Với lại ổ {mon} rồi nè {you}.",
+        "Mà ổ bánh {mon} nữa đó.",
+        "Với lại cái vỏ {mon} nghen.",
+        "Ổ này {mon} nữa nghen.",
+        "Mà {mon} nữa nè {you}.",
+        "Với lại bữa nay ổ {mon} à."
+      ],
+      "en": [
+        "And the loaf's off, too.",
+        "Plus the bread isn't right.",
+        "And the crust, too.",
+        "This one's off as well.",
+        "And that too, dear.",
+        "The loaf's like that today, too."
+      ]
     }
   ]
 }

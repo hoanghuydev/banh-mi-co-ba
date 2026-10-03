@@ -5,34 +5,15 @@ import { CRUST } from "../sim/oven";
 import type { Hand } from "../world/stations";
 
 /**
- * MÓN ĐANG CẦM TRÊN TAY.
+ * MÓN ĐANG CẦM TRÊN TAY — mỗi trạng thái một HÌNH khác hẳn, phân biệt được cả khi in đen trắng.
+ * Chip CHỮ trên đầu là thứ CANON §16 Đừng-1 gọi đúng tên, và nó phá T1: nếu chính người chơi cũng
+ * chỉ đọc chữ chứ không nhìn tay thì cái nhìn của khách chẳng còn nghĩa gì.
  *
- * Trước đây trạng thái tay hiện bằng một cái chip CHỮ lơ lửng trên đầu. Chip chữ
- * là thứ CANON §16 (Đừng-1) gọi đúng tên: dán nhãn lên thay vì diễn ra. Và nó phá
- * đúng trụ cột T1 — khách phải NHÌN THẤY tay bạn làm gì; nếu chính người chơi cũng
- * chỉ đọc chữ chứ không nhìn tay, thì cái nhìn của khách chẳng còn nghĩa gì.
+ * ⚠️ Hai ổ "nguội" là cố ý: `Hand` chỉ đếm tay đang bận gì, nhưng độ giòn và hơi ấm là HAI trục
+ * rời nhau — vẽ ổ 0,5 vỏ bằng hình bột sống là art nói dối sim. Hình chọn theo CẢ HAI (`heldTexture`).
  *
- * Nên mỗi trạng thái tay là một HÌNH khác hẳn nhau, phân biệt được cả khi in đen
- * trắng — đúng bài kiểm tra mà `food.ts` đang dùng cho icon nhân:
- *
- *   loaf_cold   ổ trắng nhợt, chưa rạch, không có gì bốc lên
- *   loaf_baked  ổ nâu xỉn có vết rạch, KHÔNG có hơi — đã nướng rồi nhưng đã nguội
- *   loaf_hot    ổ vàng có vết rạch + hai luồng hơi
- *   loaf_burnt  ổ đen xám, vỏ nứt, hai đầu quắt lại, khói mảnh
- *   loaf_filled ổ gói giấy báo, ló đầu bánh và cọng ngò xanh ra ngoài
- *   tea         ly nhựa trà đá có ống hút — bóng hình ĐỨNG, khác hẳn mấy ổ nằm ngang
- *
- * ── Vì sao có tới hai ổ "nguội" ──────────────────────────────────────────────
- * `Hand` chỉ đếm việc tay đang bận làm gì, nên ổ vừa lấy ở kệ ra và ổ nướng dở gác
- * trên thớt cho nguội mang chung một tên `loaf_cold`. Nhưng độ giòn (`sim/oven.crust`)
- * và hơi ấm (`sim/loaf.isWarm`) là HAI trục rời nhau: vẽ ổ 0,5 vỏ bằng hình bột sống
- * là art nói dối sim — người chơi nướng tới nơi rồi đặt xuống, nhặt lại thấy ổ trắng
- * nhợt, tưởng công nướng bay sạch. Nên hình ổ chọn theo CẢ HAI trục: xem `heldTexture`.
- *
- * ── Quy ước neo ──────────────────────────────────────────────────────────────
- * Tâm texture (W/2, H/2) là ĐIỂM CẦM — chỗ hai bàn tay ôm lấy món, không phải tâm
- * hình học của món. `Player` đặt sprite gốc (0.5, 0.5) thẳng vào `holdAnchor()`
- * của `character.ts`, nên hai file chỉ cần thống nhất đúng một điểm này.
+ * Tâm texture (W/2, H/2) là ĐIỂM CẦM, không phải tâm hình học của món — `Player` đặt sprite gốc
+ * (0.5, 0.5) thẳng vào `holdAnchor()` của `character.ts`.
  */
 export const HELD = { key: (h: HeldLook) => `held_${h}`, W: 40, H: 40 } as const;
 
@@ -49,12 +30,8 @@ const CARRIED = [
 ] as const;
 
 /**
- * Texture của món trên tay. `crust` chỉ có nghĩa với mấy ổ bánh; bỏ trống = như cũ.
- *
- * Chỉ `loaf_cold` mới phải hỏi tới `crust`: `loaf_hot` và `loaf_burnt` đã tự nói ra
- * độ giòn của chúng, còn ổ đã kẹp thì nhân che gần kín vỏ. Ngưỡng mượn thẳng
- * `CRUST.READY` thay vì gõ lại 0,45 — người cân bằng chỉnh mốc chín ở `sim/oven.ts`
- * thì hình ổ bánh đổi theo, không để art lệch khỏi sim một lần nữa.
+ * Chỉ `loaf_cold` mới phải hỏi `crust`: `loaf_hot` / `loaf_burnt` đã tự nói ra độ giòn, còn ổ đã
+ * kẹp thì nhân che gần kín vỏ. Ngưỡng mượn `CRUST.READY` thay vì gõ lại 0,45.
  */
 export function heldTexture(hand: Hand, crust = 0): string {
   if (hand === "loaf_cold" && crust >= CRUST.READY) return HELD.key("loaf_baked");
@@ -64,16 +41,9 @@ export function heldTexture(hand: Hand, crust = 0): string {
 const footPad = new Map<string, number>();
 
 /**
- * Từ MÉP DƯỚI texture lên tới ĐÁY THẬT của món là bao nhiêu px — tính bằng px texture.
- *
- * Phải có hàm này vì "mép dưới sprite" KHÔNG phải đáy ổ bánh. Texture món trên tay là
- * khung 40×40 với ổ bánh vẽ quanh tâm (`DRAW[hand](g, HELD.W/2, HELD.H/2)`), nên dưới
- * ổ còn chừng 15 px trống trơn; còn ảnh artist thì đã cắt sát nên gần như không trống.
- * Hai họ texture lệch nhau cả chục pixel, mà cùng một dòng code đặt chúng xuống mặt
- * quầy — đó là lý do ổ bánh nhìn như treo lơ lửng trên thớt và trên quầy.
- *
- * Đo bằng cách quét alpha thay vì gõ tay một con số: hôm nào artist gửi ảnh mới, hay ai
- * đó sửa `loafBody`, thì nó tự đúng theo, không phải nhớ chỉnh lại chỗ này.
+ * Từ MÉP DƯỚI texture lên ĐÁY THẬT của món, px texture — "mép dưới sprite" KHÔNG phải đáy ổ bánh.
+ * Texture vẽ code chừa ~15 px trống dưới ổ còn ảnh artist cắt sát, mà cùng một dòng code đặt chúng
+ * xuống mặt quầy. Quét alpha thay vì gõ tay, để ảnh mới về là tự đúng.
  */
 export function heldFootPad(scene: Phaser.Scene, key: string): number {
   const hit = footPad.get(key);

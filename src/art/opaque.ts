@@ -3,21 +3,12 @@ import Phaser from "phaser";
 /**
  * HỘP BAO PIXEL ĐỤC của một texture — mép thật của vật, bỏ hết khoảng trong suốt.
  *
- * Sinh ra vì cùng một lỗi đã lặp lại ba lần ở ba chỗ khác nhau, và lần nào cũng phải
- * chơi thật mới lòi ra:
+ * Mẫu số chung của ba lỗi đã gặp (ổ bánh treo lơ lửng trên thớt · dấu việc cần làm trỏ vào khoảng
+ * không trên khúc quầy · bồn rửa nướng lệch 2 px): code hỏi KHUNG TEXTURE trong khi nó cần hỏi CÁI
+ * VẬT.
  *
- *  · Ổ bánh đặt lên thớt: texture là khung 40×40 vẽ ổ quanh tâm, dưới ổ trống 15–20 px,
- *    nên "đặt mép dưới sprite vào mặt thớt" là ổ bánh treo lơ lửng.
- *  · Dấu "việc cần làm" trên khúc quầy: `displayHeight` là bề cao cả khối 92 px kể cả
- *    nóc tủ kính, nên dấu trỏ vào khoảng không phía trên tủ.
- *  · Bồn rửa: `standing()` nướng ảnh LỆCH 2 px trong texture (`STANDING[].dx`), nên tâm
- *    sprite không phải tâm vật.
- *
- * Mẫu số chung: code hỏi KHUNG TEXTURE trong khi nó cần hỏi CÁI VẬT. Đo một lần rồi
- * nhớ — quét alpha không rẻ, mà texture thì cả ván chơi không đổi.
- *
- * Tự đúng theo khi artist gửi ảnh mới hay ai đó sửa hàm vẽ: không có bảng số nào phải
- * nhớ chỉnh, nên không có bảng số nào lệch được.
+ * Đo một lần rồi nhớ (quét alpha không rẻ, texture thì cả ván không đổi), và tự đúng theo khi
+ * artist gửi ảnh mới — không có bảng số nào phải nhớ chỉnh.
  */
 
 /** Mép của phần ĐỤC, tính bằng px TEXTURE, gốc ở góc trên trái. `null` = texture rỗng. */

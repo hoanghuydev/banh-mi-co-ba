@@ -1,25 +1,9 @@
 /**
- * Góc phố có quán bánh mì — dữ liệu thuần, tách khỏi phép chiếu và khỏi scene. Sửa cái quán =
- * sửa mấy dòng chuỗi ở đây, không đụng code vẽ.
+ * Góc phố có quán bánh mì — dữ liệu thuần. Camera nhìn từ (−x, −y): y CÀNG LỚN CÀNG GẦN người xem.
  *
- * Camera nhìn từ phía (−x, −y): y CÀNG LỚN CÀNG GẦN người xem, nên quán nằm ở y nhỏ còn vỉa hè
- * và đường ở y lớn.
- *
- *   y0         tường sau + cửa ra vào
- *   y1         HÀNG TRẠM — kệ, lò, thùng trà đá, bồn rửa tay
- *   y2..y5     trong quán — khu người chơi làm việc
- *   y6         QUẦY tủ kính, sát mặt tiền; chừa lối đi RỘNG 2 Ô ở đầu quầy (một ô không lọt,
- *              thân người rộng 0,6 ô)
- *   y7..y11    vỉa hè — khách đứng gọi món ở y7; y7..y9 là LỐI ĐI của khách nên phải sạch đồ
- *              đạc tới cỡ x=13, đồ dồn xuống y10/y11
- *   y12..y16   lòng đường
- *
- * ⚠️ HÀNG y1 VÀ y6 BỊ KHOÁ: `world/stations.ts` đọc `STATION_ROW_Y` và `COUNTER_Y` từ chính file
- * này. Chèn thêm hàng vào giữa mà quên sửa hai hằng số đó là đẩy trạm ra khỏi quầy —
- * `assertWalkable()` chỉ xét chỗ người đứng, không xét trạm.
- *
- * Ba cột ngoài cùng mỗi bên là khối nhà hàng xóm, đặc. Vỉa hè và lòng đường KHÔNG có tường: hẻm
- * chạy thông suốt ra hai mép khung hình.
+ * ⚠️ HÀNG y1 VÀ y6 BỊ KHOÁ — `world/stations.ts` đọc `STATION_ROW_Y` / `COUNTER_Y` từ đây. Chèn
+ * hàng vào giữa mà quên sửa hai hằng số đó là đẩy trạm ra khỏi quầy, và `assertWalkable()` chỉ
+ * xét chỗ người đứng chứ không xét trạm.
  */
 export const MAP = [
   "NN###D##################NN",  // y0  nhà hàng xóm · tường sau quán có CỬA ở x=5
@@ -59,11 +43,7 @@ export function isBlocked(tx: number, ty: number) {
   return tileAt(tx, ty) !== ".";
 }
 
-/**
- * Hàng của HÀNG TRẠM và của QUẦY. `world/stations.ts` đọc hai hằng số này thay vì chép tay số
- * hàng — hồi còn ghi số thì đẩy quầy ra một hàng là ba cái trạm đứng chơ vơ giữa lối đi mà không
- * có gì báo.
- */
+/** `world/stations.ts` đọc hai hằng số này thay vì chép tay số hàng. */
 export const STATION_ROW_Y = 1;
 export const COUNTER_Y = 6;
 
@@ -76,11 +56,7 @@ export type Floor = "shop" | "walk" | "road";
 /** Hàng cuối của mỗi dải. Đổi bản đồ thì đổi ở đây, đừng rải số vào `floorAt`. */
 const SHOP_LAST_Y = 6;
 const WALK_LAST_Y = 11;
-/**
- * Ba hàng vỉa hè trong cùng (y7..y9) là LỐI ĐI — `assertWalkable()` soi đúng dải này.
- * Hàng y9 soi SUỐT chiều ngang (nó cũng là lối người qua đường, `STREET_LANES`); y7 và
- * y8 chỉ soi khúc khách thật sự đi qua — xem `assertWalkable()`.
- */
+/** Lối đi của khách. y9 soi SUỐT chiều ngang (nó cũng là lối người qua đường); y7/y8 chỉ soi khúc khách thật sự đi qua. */
 const LANE_LAST_Y = 9;
 
 export function floorAt(_tx: number, ty: number): Floor {
@@ -89,11 +65,7 @@ export function floorAt(_tx: number, ty: number): Floor {
   return "road";
 }
 
-/**
- * Hàng nào của lòng đường có vạch sơn giữa đường — DỮ KIỆN BẢN ĐỒ chứ không phải chuyện của lớp
- * vẽ: vạch sơn chạy thành một đường liền nên phải nằm ở một hàng cố định. Rắc theo hàm băm như ô
- * sàn thường là ra mấy vệt trắng lốm đốm giữa đường.
- */
+/** DỮ KIỆN BẢN ĐỒ chứ không phải chuyện của lớp vẽ: vạch sơn là một đường liền nên phải ở một hàng cố định. */
 export const ROAD_LANE_Y = 14;
 
 /** Bán kính va chạm của người chơi, tính theo ô. */
@@ -111,23 +83,12 @@ export function hitsWall(x: number, y: number, r = BODY_RADIUS) {
 export const SPAWN = { x: 8.5, y: 3.5 };
 
 /**
- * Cổng khách vào/ra. Mấy toạ độ này là DỮ KIỆN CỦA BẢN ĐỒ nên phải ở cùng file với bản đồ — để
- * trong `sim/service.ts` là có ngày ai đó đặt thùng rác lên đúng ô cổng rồi cả hàng khách đứng
- * chôn chân mà không ai biết vì sao. `assertWalkable()` bắt lỗi đó.
- *
- * Cổng ở ĐẦU HẺM BÊN TRÁI, TRÊN VỈA HÈ, và ở y9 (hàng vỉa hè NGOÀI) chứ không phải y7: `walk()`
- * đi thẳng không né ai, nên vào từ hàng ngoài thì khách men theo mép vỉa hè rồi mới tạt lên chỗ
- * đứng, chứ không xuyên thẳng qua giữa hàng người đang chờ.
+ * ⚠️ Ở y9 (hàng vỉa hè NGOÀI) chứ không y7: `walk()` đi thẳng không né ai, nên vào từ hàng ngoài
+ * thì khách men theo mép vỉa hè chứ không xuyên qua giữa hàng người đang chờ.
  */
 export const CUSTOMER_GATE = { x: 1.5, y: 9.5 };
 
-/**
- * Chỗ đứng cạnh thùng rác đầu hẻm — chị Lan trả tiền, cầm bánh, ra tới đây bỏ vô thùng. Frame
- * quan trọng nhất của cả game nên nó phải nằm TRONG khung hình, trên đường khách vẫn đi ra cổng.
- *
- * Cách cổng 3 ô chứ không phải 1: sát quá thì chị vừa rẽ vào đã chạm bán kính despawn 0,5 ô của
- * cổng và biến mất giữa chừng động tác.
- */
+/** Cách cổng 3 ô chứ không 1: sát quá thì chị vừa rẽ vào đã chạm bán kính despawn và biến mất giữa chừng động tác. */
 export const STREET_BIN = { x: 4.5, y: 9.45 };
 
 /**
@@ -137,18 +98,10 @@ export const STREET_BIN = { x: 4.5, y: 9.45 };
 export const GOSSIP_CORNER = [{ x: 19.4, y: 10.4 }, { x: 20.5, y: 10.45 }] as const;
 
 /**
- * Chỗ đứng xếp hàng — một HÀNG NGANG song song với quầy: người đầu tiên đứng ngay trước chỗ đưa
- * hàng (x=12), người sau lùi dần SANG TRÁI, cùng một hàng y.
+ * Một HÀNG NGANG song song với quầy, lùi dần sang TRÁI.
  *
- * ⚠️ Hàng ngang chứ không chéo ra đường là chuyện HÌNH HỌC: `depthOf` vẽ theo (x+y), nên hàng
- * chéo cho người đứng sau x+y lớn hơn và người thứ tư vẽ ĐÈ lên người đang gọi món. Lùi theo
- * trục x thuần thì người đầu hàng luôn nằm TRÊN CÙNG.
- *
- * Giãn 1,5 ô = 45 px, rộng hơn một thân người (~26 px) nên còn thấy rõ KHE HỞ: "đang có hàng
- * dài" phải đọc ra được từ hình, không phải đếm.
- *
- * `service.ts` vẫn dồn khách thứ 7 trở đi vào chỗ CUỐI, nên sáu chỗ chỉ đẩy bug đó ra xa chứ
- * không chữa — chữa thật là luật "đông quá thì thôi không mua" bên `service.ts`.
+ * ⚠️ Không chéo ra đường: `depthOf` vẽ theo (x+y), nên hàng chéo cho người thứ tư vẽ ĐÈ lên người
+ * đang gọi món. Giãn 1,5 ô để còn thấy KHE HỞ — "hàng dài" phải đọc ra từ hình, không phải đếm.
  */
 export const QUEUE_SLOTS = [
   { x: 12.5, y: 7.6, zone: "FRONT_CENTER" },
@@ -160,63 +113,45 @@ export const QUEUE_SLOTS = [
 ] as const;
 
 /**
- * CHỖ ĐỨNG DẠT RA — "Con đứng qua bên cho cô bán nghen" (`STEP_ASIDE`). Phải nằm NGOÀI hàng chờ
- * thật, không phải một chỗ khác TRONG hàng, nếu không người chơi chỉ thấy hai người đổi chỗ.
- *
- *  · x=13,9 — bên phải đầu hàng, lệch hẳn khỏi dãy người đứng mà vẫn trong tầm với của quầy
- *    (`FRONT_SIDE`), và nằm ngoài khúc lối đi x ≤ 13 mà `assertWalkable()` bắt phải sạch
- *  · y=8,5 — lùi một hàng ra ngoài, nên `depthOf` vẽ họ ĐÈ LÊN người đang gọi món: nhìn ra ngay
- *    là một người đã bước ra khỏi hàng
+ * Phải nằm NGOÀI hàng chờ thật, không phải một chỗ khác TRONG hàng — nếu không người chơi chỉ
+ * thấy hai người đổi chỗ. Lùi một hàng ra ngoài nên `depthOf` vẽ họ ĐÈ LÊN người đang gọi món.
  */
 export const ASIDE_SPOT = { x: 13.9, y: 8.5 };
 
 /**
- * CHỖ HÓNG MÁT / TRÚ MƯA — 38 nút thoại chờ ô này tồn tại. Trước đó `Service.shadeFree` khai ra
- * rồi không ai gán, vì không có ô nào để gán về: khoá có thật, chỗ đứng thì không.
- *
- *  · x=15,6 — ngoài khúc lối đi (x ≤ 13), và tách khỏi `ASIDE_SPOT` một quãng vì hai chỗ trùng
- *    nhau thì "dạt ra" và "đứng cho mát" ra cùng một dáng người ở cùng một điểm
- *  · y=8,2 — mép trong vỉa hè, dưới mái hiên nhà bên; vẫn trong tầm nhìn và tầm nói
- *
- * MỘT CHỖ, MỘT NGƯỜI — đó là cả lý do `w.shadeFree` là sự thật ĐỘNG (ra dấu "?" chứ không ẩn nút).
+ * Ngoài khúc lối đi (x ≤ 13) và tách khỏi `ASIDE_SPOT` một quãng — trùng nhau thì "dạt ra" và
+ * "đứng cho mát" ra cùng một dáng người ở cùng một điểm. MỘT CHỖ, MỘT NGƯỜI.
  */
 export const SHADE_SPOT = { x: 15.6, y: 8.2 };
 
-/**
- * CHỖ NGỒI — act `THEY_SIT`, mở khoá bằng thiết bị `GHE_BAN` (Ghế nhựa + bàn nhỏ).
- *
- * Trước đợt này `GHE_BAN` **chỉ là một món đồ mua được và một hình vẽ**: 24 nút thoại
- * mời người ta ngồi (`needEquip: "GHE_BAN"`) mà không nút nào làm người ta ngồi xuống —
- * đúng loại "lời nói miễn phí" mà lưới `A-1` sinh ra để dẹp, chỉ là nó nằm ở tầng act
- * chứ không ở tầng chữ nên không lưới nào thấy.
- *
- * Đặt sát ASIDE_SPOT nhưng lùi vào trong (x nhỏ hơn, y sâu hơn): ngồi là ở TRONG quán,
- * khác hẳn đứng nép ra cho người ta qua.
- */
+/** Sát `ASIDE_SPOT` nhưng lùi vào trong: ngồi là ở TRONG quán, khác hẳn đứng nép ra cho người ta qua. */
 export const SEAT_SPOT = { x: 12.8, y: 9.2 };
 
-/**
- * Mấy người ngồi được cùng lúc. HAI — `equipment.json` ghi `slots: 2` cho `GHE_BAN`
- * ("Ghế nhựa + bàn nhỏ"), nên con số này đọc từ chính món đồ chứ không bịa ra.
- *
- * Khác `SHADE_CAPACITY` (một): chỗ mát là một mẩu bóng râm, còn cái ghế là đồ mình mua —
- * mua rồi thì nó phải đáng tiền hơn một mẩu bóng.
- */
+/** HAI — đọc từ `slots` của `GHE_BAN` trong `equipment.json`. Khác `SHADE_CAPACITY` (một): ghế là đồ mình mua. */
 export const SEAT_CAPACITY = 2;
 
 /**
- * CHỖ ĐỂ CÁI GÁNH — act `CARRY_GANH` / `MOVE_GANH`, của bà Sáu.
- *
- * Bà Sáu gánh tàu hũ tới, và cái gánh ĐẶT XUỐNG ĐÂU là một chuyện có hậu quả: để ngoài
- * thì nó chiếm mặt tiền, khách nhìn vô thấy chật và quay đầu nhiều hơn. `P2-08` §2 nhóm
- * C đòi 11 lần, và chính nội dung đã viết sẵn cả ba vai của nó — nặng vai bà, chắn lối
- * khách, gửi lại một nồi — mà không có vật thể nào để bám.
- *
- * `GANH_OUT` là chỗ bà hạ gánh theo thói quen: ngay mặt tiền, tiện cho bà, vướng cho mình.
- * `GANH_IN` là trong quán, sát vách — bưng vô đó là một việc mình làm giùm.
+ * `GANH_OUT` là chỗ bà Sáu hạ gánh theo thói quen — ngay mặt tiền, tiện cho bà, vướng cho mình
+ * (chiếm một chỗ, khách nhìn vô thấy chật). `GANH_IN` là trong quán sát vách: bưng vô đó là một
+ * việc mình làm giùm.
  */
 export const GANH_OUT = { x: 14.6, y: 7.4 };
 export const GANH_IN = { x: 11.9, y: 9.6 };
+
+/**
+ * XE BÁNH MÌ CỦA CHÚ KIỆT — act `MOVE_CART`. Ba chỗ, ba chuyện khác nhau.
+ *
+ * `P2-08` §2 nhóm C: *"hai cái xe tranh chỗ là arc của ông"*. Mà tới đợt này mười một câu
+ * nói về cái xe đó đều là chữ suông — kể cả câu *"chú đứng chắn hết lối rồi"*, vốn mang
+ * `STEP_ASIDE`, tức bảo NGƯỜI dạt ra chứ không dời CÁI XE.
+ *
+ * `CART_LAN`  — chú đẩy sát qua mặt tiền mình. Chắn lối, VÀ ăn bớt khách.
+ * `CART_XA`   — chú về chỗ chú, bên kia hẻm.
+ * `CART_CHUNG`— hai xe chung một mái, lúc mưa. Mình mất một khoảng mặt tiền, chú khỏi ướt.
+ */
+export const CART_LAN = { x: 17.6, y: 7.6 };
+export const CART_XA = { x: 21.8, y: 7.6 };
+export const CART_CHUNG = { x: 17.0, y: 8.8 };
 
 /** Mấy người đứng mát được cùng lúc. Một — xem khối trên. */
 export const SHADE_CAPACITY = 1;
@@ -265,6 +200,11 @@ export function assertWalkable() {
   check("SEAT_SPOT", SEAT_SPOT);
   check("GANH_OUT", GANH_OUT);
   check("GANH_IN", GANH_IN);
+  check("CART_LAN", CART_LAN);
+  check("CART_CHUNG", CART_CHUNG);
+  if (Math.hypot(CART_XA.x - CART_LAN.x, CART_XA.y - CART_LAN.y) < 3) {
+    bad.push("CART_XA quá sát CART_LAN — đẩy đi với lấn chỗ trông như một chỗ");
+  }
   if (Math.hypot(GANH_IN.x - GANH_OUT.x, GANH_IN.y - GANH_OUT.y) < 1.5) {
     bad.push("GANH_IN quá sát GANH_OUT — bưng vô với để ngoài trông như một chỗ");
   }

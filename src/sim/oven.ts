@@ -1,20 +1,10 @@
 /**
- * Lò than — P1-01 §2.4. Nướng là một TRỤC LIÊN TỤC chạy nền, không phải giữ phím canh giờ.
+ * Lò than — nướng là một TRỤC LIÊN TỤC chạy nền, không phải giữ phím canh giờ.
+ *   trong lò: `crust += crustRate · heat · dt` (chỉ tăng) · mở cửa: `heat −= 0,12`, hồi trong ~6 s
+ *   <0,45 chưa tới · 0,45–0,88 GIÒN · 0,88–1,30 sém · >1,30 CHÁY (bắn `BURNT_OR_COLD` ngay tại lò)
  *
- *   trong lò:  crust += crustRate · heat · dt        (chỉ tăng, không giảm)
- *   mở cửa:    heat −= 0,12, hồi lại về 1 trong ~6 s
- *
- *   crust < 0,45   chưa tới   — chất lượng −, khách sành ăn (soi ≥ 0,7) chê
- *   0,45 – 0,88    GIÒN       — vùng tốt, rộng ~6 s: "đây không phải game canh giờ"
- *   0,88 – 1,30    sém cạnh   — chất lượng −−, vẫn không ra sự kiện
- *   > 1,30         CHÁY       — BURNT_OR_COLD bắn NGAY TẠI LÒ, có mùi
- *
- * 3 slot: bỏ ổ vào rồi đi làm việc khác được — cái giá là ổ ra lò bắt đầu NGUỘI
- * (`sim/loaf.ts`), nên nướng sẵn quá tay là tự hại mình. Không hàm nào ở đây roll RNG.
- *
- * Mỗi ổ mang THÔNG SỐ CỦA CHÍNH NÓ qua lò: `crust` (nướng tới đâu) và `q` (chất lượng
- * lô bánh lấy ở kệ). Trước đây `q` nằm ở một biến dùng chung trong scene nên bỏ ba ổ
- * vào lò là cả ba bị chấm bằng chất lượng của ổ lấy sau cùng.
+ * ⚠️ Mỗi ổ mang `crust` và `q` CỦA CHÍNH NÓ: để `q` ở một biến dùng chung thì bỏ ba ổ vào lò là cả
+ * ba bị chấm bằng chất lượng của ổ lấy sau cùng.
  */
 export const OVEN_SLOTS = 3;
 export const CRUST_RATE = 0.073;
@@ -22,29 +12,16 @@ export const HEAT_DROP = 0.12;
 const HEAT_RECOVER = 0.12 / 6;         // hồi đủ một lần mở cửa trong ~6 s
 
 /**
- * ⚖️ CÂN BẰNG — `BURNT` 1,00 → 1,30 (chờ người thiết kế duyệt lại con số này).
+ * ⚖️ `BURNT` 1,00 → 1,30 (chờ người thiết kế duyệt lại).
  *
- * Vì sao đổi: với 1,00 thì lò 3 slot chỉ dùng được 2. Đo ngày 1, khách xếp sẵn: nạp
- * 3 ổ mất ~7,2 s, vòng phục vụ ngắn nhất 7,4–8,5 s/khách (lò→thớt 1,2 s · thớt→quầy
- * 2,9 s · quầy→lò 1,85 s · cộng kẹp nhân và 3 nhịp gói). Ổ thứ ba phải nằm trong lò
- * thêm hai vòng ≈ 16 s, mà cửa sổ READY→BURNT ở 1,00 chỉ có 7,5 s ⇒ ổ thứ ba CHÁY,
- * mất trắng, kèm BURNT_OR_COLD cho cả hàng. Docstring ngay trên tự hứa "bỏ ổ vào rồi
- * đi làm việc khác được" — hằng số phủ nhận lời hứa đó.
+ * Với 1,00 thì lò 3 slot chỉ dùng được 2: ổ thứ ba phải nằm thêm ~16 s mà cửa sổ READY→BURNT chỉ
+ * có 7,5 s ⇒ cháy, mất trắng, kèm `BURNT_OR_COLD` cho cả hàng — tức hằng số phủ nhận chính lời hứa
+ * "bỏ ổ vào rồi đi làm việc khác được" ở docstring trên.
  *
- * Đổi CÁI GÌ: chỉ một con số, `BURNT`. `READY` và `SINGED` giữ nguyên nên mốc chín và
- * băng GIÒN (~5,9 s) không đổi một li — "quá tay là cháy, có mùi" vẫn còn nguyên, chỉ
- * là quãng SÉM trước khi mất trắng giãn từ 1,7 s (không ai đọc kịp) ra 5,8 s (nhìn
- * vòng trên cửa lò là thấy). Ổ thứ ba giờ ra lò ở 0,96–1,11 = SÉM: bán được, chất
- * lượng kém — đúng giá phải trả cho việc nạp đầy lò, thay vì mất trắng.
+ * Chỉ đổi `BURNT`; `READY` và `SINGED` giữ nguyên nên băng GIÒN không đổi một li. Quãng SÉM giãn
+ * từ 1,7 s (không ai đọc kịp) ra 5,8 s, và ổ thứ ba ra lò ở mức SÉM — bán được, chất lượng kém.
  *
- * Đo lại (một ổ trong lò, tính từ lúc bỏ vào):  READY 6,5 s · SINGED 12,4 s ·
- * CHÁY 14,1 s → 18,2 s.  Hai cửa sổ đổi:
- *   READY→CHÁY  7,5 s → 11,7 s
- *   SÉM→CHÁY    1,7 s →  5,8 s
- * Quên hẳn lò thì vẫn cháy: vòng phục vụ ≥ ~10,5 s/khách là ổ thứ ba mất trắng.
- *
- * Muốn chỉnh lại: `BURNT` nhỏ hơn = lò 3 slot ngặt hơn; lớn hơn = thoải mái hơn.
- * `burnAt` của lò gas (P3-04 A1) đặt ở `StallScene`, phải nới theo cho khỏi mất ưu thế.
+ * ⚠️ `burnAt` của lò gas đặt ở `StallScene`, phải nới theo cho khỏi mất ưu thế.
  */
 export const CRUST = { READY: 0.45, SINGED: 0.88, BURNT: 1.3 } as const;
 export type CrustBand = "RAW" | "CRISP" | "SINGED" | "BURNT";

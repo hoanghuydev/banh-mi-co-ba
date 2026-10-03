@@ -19,8 +19,8 @@ import { BASE, diamond, heightFor, prop, shade, slab, standing, type Pen } from 
  * nhau ở thứ BÀY BÊN TRONG (ổ bánh / khay giò chả + bảng giá) là đủ phá nhịp,
  * mà khung nhôm vẫn trùng khít nên vẫn đọc ra MỘT cái tủ liền.
  */
-const BODY = 32;         // cao bệ quầy
-const CASE = 30;         // cao tủ kính
+const BODY = 32;
+const CASE = 30;
 
 export const COUNTER = {
   end: "counter_end",
@@ -41,7 +41,6 @@ export const COUNTER = {
   TOP_ABOVE_FOOT: 1 + BASE + TH / 2 + BODY,
 } as const;
 
-/** Ổ bánh mì nhìn nghiêng. Dùng lại cho cả tủ kính lẫn rổ ở đầu quầy. */
 function loaf(g: Pen, x: number, y: number, s = 1) {
   g.fillStyle(PAL.breadDark, 1);
   g.fillEllipse(x, y, 20 * s, 8 * s);

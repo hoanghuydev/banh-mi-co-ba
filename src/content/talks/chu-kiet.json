@@ -61,7 +61,14 @@
                     "intensity": 70
                   },
                   "silent": true,
-                  "mood": "GIAN"
+                  "mood": "GIAN",
+                  "act": {
+                    "kind": "MOVE_CART",
+                    "toi": "XA"
+                  },
+                  "while": [
+                    "w.cartLan"
+                  ]
                 }
               ]
             },
@@ -178,7 +185,14 @@
           {
             "say": "Dạ chú đẩy xe đi chú, trễ rồi.",
             "tone": "THUONG",
-            "reply": "Ờ."
+            "reply": "Ờ.",
+            "act": {
+              "kind": "MOVE_CART",
+              "toi": "XA"
+            },
+            "while": [
+              "w.cartLan"
+            ]
           },
           {
             "say": "Mai gặp chú nghen chú.",
@@ -365,7 +379,14 @@
           {
             "say": "Chú đẩy xe đi chú, trễ rồi chú.",
             "tone": "THUONG",
-            "reply": "Ờ."
+            "reply": "Ờ.",
+            "act": {
+              "kind": "MOVE_CART",
+              "toi": "XA"
+            },
+            "while": [
+              "w.cartLan"
+            ]
           },
           {
             "say": "Mai gặp chú nghen chú.",
@@ -559,7 +580,14 @@
             "rel": 3,
             "calm": 22,
             "reply": "Ờ. …Ờ, chỗ này khuất gió thiệt.",
-            "mood": "THUONG"
+            "mood": "THUONG",
+            "act": {
+              "kind": "MOVE_CART",
+              "toi": "CHUNG"
+            },
+            "while": [
+              "w.cartLan"
+            ]
           },
           {
             "say": "Dạ.",
@@ -648,7 +676,14 @@
               "ref": "diyen"
             }
           ],
-          "mood": "THUONG"
+          "mood": "THUONG",
+          "act": {
+            "kind": "MOVE_CART",
+            "toi": "CHUNG"
+          },
+          "while": [
+            "w.cartLan"
+          ]
         },
         {
           "say": "Mưa vầy chú bán cho ai hả chú?",
@@ -710,13 +745,14 @@
             "intensity": 70
           },
           "act": {
-            "kind": "STEP_ASIDE",
-            "forSec": "TOI_LUOT"
+            "kind": "MOVE_CART",
+            "toi": "XA"
           },
           "silent": true,
           "mood": "GIAN",
           "while": [
-            "t.blocking"
+            "t.blocking",
+            "w.cartLan"
           ]
         }
       ],
@@ -745,7 +781,14 @@
           {
             "say": "Chú đẩy xe đi chú. Mai gặp chú.",
             "tone": "THUONG",
-            "reply": "Ờ."
+            "reply": "Ờ.",
+            "act": {
+              "kind": "MOVE_CART",
+              "toi": "XA"
+            },
+            "while": [
+              "w.cartLan"
+            ]
           },
           {
             "say": "Chú đừng để bụng nghen chú.",
@@ -938,7 +981,14 @@
           {
             "say": "Chú đẩy xe đi chú, trễ rồi.",
             "tone": "THUONG",
-            "reply": "Ờ."
+            "reply": "Ờ.",
+            "act": {
+              "kind": "MOVE_CART",
+              "toi": "XA"
+            },
+            "while": [
+              "w.cartLan"
+            ]
           }
         ]
       },
@@ -1248,7 +1298,14 @@
           "rel": -2,
           "anger": 20,
           "reply": "Tao đứng đường tao. Mày la gì dữ vậy.",
-          "mood": "BUC"
+          "mood": "BUC",
+          "act": {
+            "kind": "MOVE_CART",
+            "toi": "XA"
+          },
+          "while": [
+            "w.cartLan"
+          ]
         }
       ],
       "practice": [

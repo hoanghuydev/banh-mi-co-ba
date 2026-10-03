@@ -24,9 +24,9 @@ export const WATCHED: readonly EventKey[] = [
 ];
 
 export type TelemetryRow = {
-  t: number;          // thứ tự tăng dần
-  realMs: number;     // performance.now() từ lúc vào game
-  gameMin: number;    // vị trí đồng hồ game
+  t: number;
+  realMs: number;
+  gameMin: number;
   day: number;
   e: EventKey;
   p: unknown;
@@ -39,10 +39,8 @@ export type DayMetrics = {
   // ── CÂU HỎI SỐ 1 ─────────────────────────────────────────────────
   realMsTotal: number;
   realMsByScene: Partial<Record<SceneKey, number>>;
-  /** KHÔNG tính vào tổng — người chơi đi pha cà phê. */
   realMsPaused: number;
   realMsMenu: number;
-  /** = total − paused − menu ← con số dùng để ngoại suy. */
   realMsActive: number;
   // ── nhịp một khách ───────────────────────────────────────────────
   customersServed: number;
@@ -59,13 +57,11 @@ export type DayMetrics = {
   anticipatedVsDiscovered: { anticipated: number; discovered: number };
   // ── công cụ hạ attention (CANON §5.4) ────────────────────────────
   attentionToolUses: Partial<Record<AttentionTool, number>>;
-  /** Dùng rồi KHÔNG bị bắt trong 3 s sau. */
   attentionToolSuccess: Partial<Record<AttentionTool, number>>;
   // ── thoại (chống lặp — HT6) ──────────────────────────────────────
   linesSpoken: number;
   uniqueLinesSpoken: number;
   lineRepeatWithin2h: number;
-  /** Mục tiêu ~0,35 (CANON §11). */
   silentNoticeRate: number;
   barkTierMix: Record<1 | 2 | 3, number>;
   // ── hệ thống ─────────────────────────────────────────────────────
@@ -80,7 +76,6 @@ export type DayMetrics = {
 const RING_ROWS = 20_000;
 const KEY_METRICS = "banhmicoba.telemetry.metrics";
 const KEY_ROWS = "banhmicoba.telemetry.rows";
-/** Giữ bao nhiêu ngày dòng thô trong bộ nhớ trình duyệt (mỗi ngày ~70 KB). */
 const KEEP_DAYS_ROWS = 5;
 
 const pct = (xs: number[], p: number) => {
@@ -91,7 +86,6 @@ const pct = (xs: number[], p: number) => {
 
 const now = () => (typeof performance !== "undefined" ? performance.now() : 0);
 
-/** Số đo phần cứng do scene bơm vào — không đi qua bus vì nó xảy ra mỗi frame. */
 export type FrameSampler = () => { frameDeltas: number[] };
 
 export class Telemetry {
@@ -102,7 +96,6 @@ export class Telemetry {
   private band: TimeBand = "PRE_OPEN";
   private off: (() => void)[] = [];
   enabled: boolean;
-  /** Người điều phối playtest / overlay dev có thể đọc ngay. */
   readonly days: DayMetrics[] = [];
   bubblePoolSteals = 0;
   dialogDeferred = 0;
@@ -110,14 +103,13 @@ export class Telemetry {
 
   constructor(
     bus: Bus, enabled: boolean, private platform: Platform = defaultPlatform,
-    /** Đồng hồ thật — headless sim bơm đồng hồ mô phỏng vào đây. */
     private nowFn: () => number = now,
   ) {
     this.enabled = enabled;
     try {
       const raw = platform.read(KEY_METRICS);
       if (raw) this.days.push(...(JSON.parse(raw) as DayMetrics[]));
-    } catch { /* hỏng thì thôi */ }
+    } catch { }
     this.off.push(bus.on("clock:tick", (p) => { this.gameMin = p.gameMinutes; }));
     this.off.push(bus.on("clock:bandChanged", (p) => { this.band = p.to; }));
     this.off.push(bus.on("day:started", (p) => { this.day = p.dayIndex; }));
@@ -137,12 +129,10 @@ export class Telemetry {
     if (this.rows.length > RING_ROWS) this.rows.shift();
   }
 
-  /** Dòng của MỘT ngày. */
   rowsOf(day: number) {
     return this.rows.filter((r) => r.day === day);
   }
 
-  /** Tính DayMetrics từ dòng thô — hàm thuần, test gọi thẳng được. */
   static compute(dayIndex: number, rows: TelemetryRow[], sys: {
     frameDeltas: number[]; bubblePoolSteals: number; dialogDeferred: number;
   }): DayMetrics {
@@ -153,7 +143,6 @@ export class Telemetry {
     const end = of("day:ended").at(-1)?.realMs ?? rows.at(-1)?.realMs ?? start;
     const realMsTotal = Math.max(0, end - start);
 
-    // thời gian theo scene — cắt theo từng lần chuyển cảnh
     const byScene: Partial<Record<SceneKey, number>> = {};
     let curScene: SceneKey | null = null;
     let since = start;
@@ -163,7 +152,6 @@ export class Telemetry {
     }
     if (curScene) byScene[curScene] = (byScene[curScene] ?? 0) + (end - since);
 
-    // pause: cặp bật/tắt
     let paused = 0, pausedAt: number | null = null;
     for (const r of of("ui:pauseToggled")) {
       if (r.p.paused && pausedAt === null) pausedAt = r.realMs;
@@ -172,7 +160,6 @@ export class Telemetry {
     if (pausedAt !== null) paused += end - pausedAt;
     const realMsMenu = byScene.Menu ?? 0;
 
-    // nhịp một khách
     const arrived = new Map<string, TelemetryRow>();
     for (const r of of("npc:arrived")) arrived.set(r.p.visitId, r);
     const durations: number[] = [];
@@ -197,7 +184,6 @@ export class Telemetry {
     const msPerCustomerByBand: Partial<Record<TimeBand, number>> = {};
     for (const [b, xs] of Object.entries(byBand)) msPerCustomerByBand[b as TimeBand] = pct(xs!, 0.5);
 
-    // sự kiện
     const emitted: Partial<Record<StimId, number>> = {};
     const confirmed: Partial<Record<StimId, number>> = {};
     for (const r of of("stim:emitted")) emitted[r.p.stimId] = (emitted[r.p.stimId] ?? 0) + 1;
@@ -213,7 +199,6 @@ export class Telemetry {
       if (r.p.mode === "DISCOVERED") discovered++;
     }
 
-    // công cụ hạ attention — "thành công" = 3 s sau không ai CONFIRMED sự kiện tiêu cực
     const uses: Partial<Record<AttentionTool, number>> = {};
     const success: Partial<Record<AttentionTool, number>> = {};
     const confirms = of("perception:confirmed");
@@ -223,7 +208,6 @@ export class Telemetry {
       if (!caught) success[r.p.tool] = (success[r.p.tool] ?? 0) + 1;
     }
 
-    // thoại
     const lines = of("dialog:spoken");
     const seenAt = new Map<string, number>();
     let repeat2h = 0;
@@ -287,13 +271,11 @@ export class Telemetry {
     if (i >= 0) this.days.splice(i, 1, m); else this.days.push(m);
     this.bubblePoolSteals = 0;
     this.dialogDeferred = 0;
-    // Ghi NGOÀI frame gameplay: `day:ended` phát lúc quầy đã đóng.
     this.platform.write(KEY_METRICS, JSON.stringify(this.days));
     const keepFrom = this.day - KEEP_DAYS_ROWS + 1;
     this.platform.write(KEY_ROWS, this.rows.filter((r) => r.day >= keepFrom).map((r) => JSON.stringify(r)).join("\n"));
   }
 
-  /** Ngoại suy cả mùa + kết luận BẰNG CHỮ theo bảng quyết định P0-03 §2.1. */
   seasonEstimate(seasonDays = 40) {
     return estimateSeason(this.days, seasonDays);
   }

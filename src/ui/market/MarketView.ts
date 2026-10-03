@@ -113,7 +113,6 @@ const money = (v: number) => `${Math.round(v).toLocaleString("vi-VN")}₫`;
 const FORCED_SELL_SHARE = 0.5 / 0.6;
 const forcedSellVnd = (id: EquipId) => Math.round(resaleVnd(id) * FORCED_SELL_SHARE / 1000) * 1000;
 
-/** Lời người ta nói ở chợ về sự kiện sắp tới — NÓI RA, không có banner (Đừng-1). */
 function rumours(day: number): string[] {
   const out: string[] = [];
   for (const e of CAL.events) {
@@ -172,7 +171,6 @@ export class MarketView {
       .map(([dd, n]) => `${fmtUnits(n / d.perUnit)} ${d.unit}${dd < this.day ? ` mua ngày ${dd}` : ""}`).join(" · ");
   }
 
-  /** Những món đang có trong giỏ, kèm số lượng theo đơn vị của món. */
   private picked(): { g: GoodId; n: number }[] {
     return GOOD_IDS.filter((g) => (this.basket[g] ?? 0) > 0).map((g) => ({ g, n: this.basket[g]! }));
   }
@@ -238,7 +236,6 @@ export class MarketView {
     if (e.stand !== "L1") stat("chỗ bán", STANDS[e.stand].name.toLowerCase());
     head.append(stats);
 
-    // nợ mối — trả được ngay ở đây; hạn luôn là "cuối tuần", không đếm ngược
     for (const id of Object.keys(SUPPLIERS) as SupplierId[]) {
       const sup = w.suppliers?.[id];
       if (!sup || sup.owed <= 0) continue;
@@ -254,7 +251,6 @@ export class MarketView {
       head.append(line);
     }
 
-    // ── tầng 3: lời người. Gom hết vào MỘT khối, không rải xen kẽ với số.
     const said: string[] = [];
     for (const n of e.notices ?? []) said.push(...(NOTICE_LINES[n] ?? []));
     said.push(...(e.morningLines ?? []));
@@ -272,7 +268,6 @@ export class MarketView {
     return head;
   }
 
-  /** Các sạp. Thẻ cao đúng bằng ruột nó (`align-items:start`), không kéo cho bằng hàng. */
   private stalls() {
     const w = this.w, day = this.day;
     const body = this.el("div", "mk-body");
@@ -283,7 +278,6 @@ export class MarketView {
       const sup = SUPPLIERS[sid as SupplierId];
       const closed = sup && isClosed(sid as SupplierId, day);
       card.append(this.el("div", "mk-seller", closed ? `${SELLERS[sid]?.name} — nghỉ giỗ` : SELLERS[sid]?.name ?? sid));
-      // quan hệ đọc qua CÁCH GỌI, không qua thanh số (P3-02 §2.6.4)
       if (sup && !closed) card.append(this.el("div", "mk-blurb", `"${greetingOf(sid as SupplierId, state(w.suppliers ??= {}, sid as SupplierId))}"`));
       // Nghỉ giỗ KHÔNG phải là hết hàng: calendar.json `lo_ba_tam_nghi` (ngày 28–30) định
       // giá sẵn cho lò khác — bánh 4,2 ngàn thay vì 3,5 và ruột xấu hơn (breadQ0 0,90). Cái
@@ -394,7 +388,6 @@ export class MarketView {
     return bill;
   }
 
-  /** Chân trang: trái là TÌNH HÌNH, phải là VIỆC. Hai thứ không còn đứng lẫn vào nhau. */
   private foot(overCold: boolean) {
     const w = this.w, day = this.day;
     const foot = this.el("div", "mk-foot");
@@ -458,7 +451,6 @@ export class MarketView {
     if (!focusKey) return;
     const pick = (k: string) => this.root.querySelector<HTMLButtonElement>(`[data-k="${k}"]`);
     const el = pick(focusKey);
-    // nút "−" tự khoá lúc về 0 — focus rơi sang nút "+" cùng hàng, không rơi về đầu trang
     (el && !el.disabled ? el : pick(focusKey.replace("minus:", "plus:")))?.focus();
   }
 

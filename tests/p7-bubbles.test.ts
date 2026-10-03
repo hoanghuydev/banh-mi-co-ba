@@ -62,8 +62,6 @@ test("B-4 người đọc chậm được thêm giờ — cỡ chữ lớn / kh�
   const line = BARKS.reduce((a, b) => (a.length > b.length ? a : b));
   assert.ok(bubbleLife(line, 1.5) > bubbleLife(line, 1), "hệ số đọc chậm không có tác dụng");
   assert.ok(offerBubbleLife(line, 1.5) > offerBubbleLife(line, 1));
-  // Lời bắt chuyện LUÔN sống lâu hơn bark cùng độ dài: nó mở ra một việc phải làm, và
-  // bỏ lỡ nó thì `leave()` tính giá.
   assert.ok(offerBubbleLife(line) > bubbleLife(line));
 });
 
@@ -121,7 +119,6 @@ test("C-4 tránh chỗ người chơi đang cần nhìn — và tránh nó NẶN
   const spot = pickBubbleSpot({ x: 400, y: 200 }, SIZE, V, [], [oven]);
   assert.ok(!hit(boxAt(spot.x, spot.y), oven), `vẫn đè lên lò: (${spot.x}, ${spot.y})`);
 
-  // Khi buộc phải chọn, thà chồng lên một bong bóng khác còn hơn che mất cái lò.
   const other = boxAt(400, 140);
   const s2 = pickBubbleSpot({ x: 400, y: 200 }, SIZE, V, [other], [oven]);
   assert.ok(!hit(boxAt(s2.x, s2.y), oven), "ưu tiên sai: che lò để né một bong bóng");
@@ -141,7 +138,6 @@ test("C-6 đã dời đi rồi thì ĐỨNG YÊN — chỗ cũ còn sạch là k
   const prev = { dx: lifted.x - 400, dy: lifted.y - 300 };
   assert.notEqual(prev.dy, 0, "chưa bị đẩy đi đâu thì test này không kiểm được gì");
 
-  // Vật cản biến mất: "đúng chỗ" giờ sạch, nhưng bong bóng KHÔNG được rơi về đó giữa câu.
   const again = pickBubbleSpot({ x: 400, y: 300 }, SIZE, V, [], [], prev);
   assert.deepEqual(again, lifted, "vật cản vừa hết là bong bóng nhảy ngay về chỗ cũ");
 });
@@ -152,11 +148,10 @@ test("C-7 nhưng dính KHÔNG phải dán chết: chỗ cũ bị chặn thì v�
    * sắp cháy thì không gì gỡ được nữa, mà đó đúng là thứ `keepOut` sinh ra để tránh.
    */
   const oven = boxAt(400, 200, 92, 76);
-  const prev = { dx: 0, dy: 0 };                      // đang ở đúng đầu người nói…
+  const prev = { dx: 0, dy: 0 };
   const spot = pickBubbleSpot({ x: 400, y: 200 }, SIZE, V, [], [oven], prev);
   assert.ok(!hit(boxAt(spot.x, spot.y), oven), `dính chết vào chỗ che lò: (${spot.x}, ${spot.y})`);
 
-  // …và cả khi chỗ cũ là một chỗ ĐÃ BỊ ĐẨY, nó vẫn phải nhường khi bị chặn hẳn.
   const wall = boxAt(400, 140);
   const s2 = pickBubbleSpot({ x: 400, y: 200 }, SIZE, V, [wall], [oven], { dx: 0, dy: -60 });
   assert.ok(!hit(boxAt(s2.x, s2.y), oven), "ưu ái chỗ cũ tới mức che mất cái lò");
@@ -193,18 +188,17 @@ test("D-2 chốt chỗ rồi thì ĐI MỘT CHIỀU — không bao giờ tụt l
    * Nửa sau của cái nhảy: nhịp dày chạm mép dưới màn hình thì cú kẹp đẩy thẻ LÊN, rồi
    * nhịp sau mỏng lại nó RƠI XUỐNG. Neo mép trên thôi chưa chặn được chuyện này.
    */
-  const a = { x: 300, y: 500 };                       // sát mép dưới
+  const a = { x: 300, y: 500 };
   let spot: CardSpot = placeTalkCard(null, a, { w: 310, h: 120 }, SCREEN);
   const first = spot.top;
-  spot = placeTalkCard(spot, a, { w: 310, h: 300 }, SCREEN);   // nhịp dày: phải trồi lên
+  spot = placeTalkCard(spot, a, { w: 310, h: 300 }, SCREEN);
   const lifted = spot.top;
   assert.ok(lifted < first, "nhịp dày chạm mép dưới mà thẻ không trồi lên để đủ chỗ");
-  spot = placeTalkCard(spot, a, { w: 310, h: 120 }, SCREEN);   // nhịp mỏng: KHÔNG được rơi
+  spot = placeTalkCard(spot, a, { w: 310, h: 120 }, SCREEN);
   assert.equal(spot.top, lifted, "thẻ tụt xuống lại — đúng nửa sau của cái nhảy");
 });
 
 test("D-3 trong một cuộc, thẻ đứng yên dù điểm neo nhúc nhích", () => {
-  // Người nói nhích chân, camera trượt — thẻ của CÙNG một cuộc không được chạy theo.
   let spot = placeTalkCard(null, { x: 300, y: 200 }, { w: 310, h: 180 }, SCREEN);
   const t0 = { ...spot };
   spot = placeTalkCard(spot, { x: 480, y: 330 }, { w: 310, h: 180 }, SCREEN);
@@ -257,8 +251,6 @@ test("E-1 không câu nào bị câu sau đè lên trước khi kịp đọc", (
   const orig = Customer.prototype.speak;
   (Customer.prototype as unknown as { speak: typeof orig }).speak =
     function (this: Customer, text: string, seconds = 3.2, pri = 100) {
-      // Chỉ tính là NUỐT khi câu cũ chưa kịp nằm đủ lâu để đọc — cắt ngang có luật
-      // (`BARGE_IN_SEC`) là chuyện được phép, xem E-2.
       if (this.say !== null && this.sayFor > 0 && this.saidFor < BARGE_IN_SEC) {
         stomps.push(`"${this.say}" (mới ${this.saidFor.toFixed(2)}s) ⟵ "${text}"`);
       }
@@ -307,16 +299,12 @@ test("E-2 một người nói MỘT câu một lúc — câu sau đợi, và đ�
   assert.equal(blocked(c, { pri: 20, held: HOLD_MAX_SEC + 0.1 }), false,
     "đợi quá trần vẫn không được nói — câu này sẽ chết theo người nói lúc họ quay lưng");
 
-  // …nhưng trần KHÔNG được vượt mặt cái sàn: đã đợi quá lâu cũng không cho đè lên một
-  // câu vừa mới hiện ra. Để trần lên trước là đẻ lại đúng lỗi E-1 ở một cửa khác.
   (c as { saidFor: number }).saidFor = 0.1;
   assert.equal(blocked(c, { pri: 20, held: HOLD_MAX_SEC + 99 }), true,
     "đợi lâu rồi thì được đè lên cả câu chưa ai kịp thấy");
   assert.equal(blocked(c, { pri: 55 + BARGE_IN_PRI, held: 0 }), true,
     "quan trọng hơn hẳn thì được đè lên cả câu chưa ai kịp thấy");
 
-  // Nói xong rồi: còn một hơi thở trước câu kế, nếu không thì mắt đọc ra là MỘT bong
-  // bóng đổi chữ chứ không phải hai câu nói.
   const done = { say: null, sayFor: 0, sayPri: 55, saidFor: 5, sayQuietFor: 0.1, speaking: false } as unknown as Customer;
   assert.equal(blocked(done, { pri: 55, held: 0 }), true);
   (done as { sayQuietFor: number }).sayQuietFor = SAME_SPEAKER_GAP_SEC + 0.01;
@@ -353,16 +341,12 @@ test("F-1 câu đáp của nhịp CUỐI vẫn lên bong bóng — không chỉ 
       if (!near) return;
       sv.playerAt = { x: near.x + 0.5, y: near.y };
       if (!sv.openTalk()) return;
-      // Ai THẬT SỰ đang nói chuyện — `openTalk` tự chọn người theo luật của nó, không
-      // nhất thiết là người mình vừa đứng cạnh. Phải chụp TRƯỚC nhịp đầu: nhịp cuối
-      // xoá `talkWith` đi, mà đó đúng là nhịp bài này cần soi.
       const who = sv.talkingTo;
       if (!who) return;
       for (let depth = 0; depth < 8; depth++) {
         const next = sv.chooseTalk(0);
         if (!next) break;
         if (next.line) {
-          // Đúng cái `StallScene.advanceTalk` làm: ba chấm "đang nhập", rồi câu đáp.
           sv.talkPartnerSpeak("…", 1.2);
           sv.talkPartnerSpeak(next.line, bubbleLife(next.line));
           if (sv.customers.includes(who)) checked.push({ line: next.line, said: who.say, last: next.done });

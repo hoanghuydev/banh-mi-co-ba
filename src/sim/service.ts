@@ -11,14 +11,14 @@ import { newNpcState, type NpcState } from "../core/save";
 import { orderDefectKey } from "../core/stimid";
 import { Customer, DEFAULT_PATIENCE_SEC, LEAVE_AT, PATIENCE_BONUS_SEC, TEA, teaSuspectAtCup, type LeaveReason } from "./customer";
 import {
-  INGREDIENTS, diffDish, generosityOf, labelOf, makeUsual, mkDefect, portionsOf, sameOrder, sayOrder,
+  INGREDIENTS, diffDish, extraPortions, generosityOf, labelOf, makeUsual, mkDefect, portionsOf, sameOrder, sayOrder,
   type Defect, type Ingredient, type OrderSpec,
 } from "./order";
 import {
   MAX_LIVE_STIMULI, SALIENCE, STIM_SPEC, observe, peakOf, peakOfKey, rank, stateOf,
   type ActiveStim, type ObsState, type Occluder, type Zone,
 } from "./perception";
-import { ASIDE_SPOT, CUSTOMER_GATE, GANH_IN, GANH_OUT, QUEUE_SLOTS, SEAT_CAPACITY, SEAT_SPOT, SHADE_CAPACITY, SHADE_SPOT, STREET_BIN, hitsWall } from "../world/map";
+import { ASIDE_SPOT, CART_CHUNG, CART_LAN, CART_XA, CUSTOMER_GATE, GANH_IN, GANH_OUT, QUEUE_SLOTS, SEAT_CAPACITY, SEAT_SPOT, SHADE_CAPACITY, SHADE_SPOT, STREET_BIN, hitsWall } from "../world/map";
 import { PASSERS_MAX, PASSER_NAMES, inviteChance, nextGapSec, planPasser } from "./passersby";
 import { rollVisit } from "./schedule";
 import { SILENT_ABSENCE, extraHabit, record, servedWell, visitProbabilityMul, type BaseKind, type Memory } from "./memory";
@@ -49,121 +49,79 @@ import {
 import { moodBaseFace, moodPatienceMul, moodTipMul, rollMood } from "./mood";
 import { faceHoldSec, intensityMul, isSilentGrudge, reactionDelay } from "./personality";
 import { GROUP_OF, faceFor, poseFor, type Group, type Intensity, type PoseId } from "./reaction";
-import { CRUST } from "./oven";
+import { CRUST, bandOfCrust } from "./oven";
 import { satisfaction, servedVector, tasteOf } from "./taste";
 import { arcToday, extraVisits, usualOf as authoredUsual, type ArcCtx, type Line } from "../content/arcs";
 import { arcCtx, moment, onPass, onServed, onTea, onUnserved, storyCrowdMul, timeline, walkinLine, type StoryState } from "./story";
 import type { VisitPlan } from "./customer";
 
 /**
- * Điều phối việc bán hàng: ai tới lúc nào, đứng chỗ nào, chờ bao lâu, nhận bánh rồi phản
- * ứng ra sao. Scene gọi `perceive()` → `tickNpcs()` → `tickDialog()` mỗi frame.
- * Không import Phaser — chạy headless được (`npm run sim`).
+ * Điều phối bán hàng: ai tới lúc nào, đứng đâu, chờ bao lâu, nhận bánh rồi phản ứng ra sao.
+ * Scene gọi `perceive()` → `tickNpcs()` → `tickDialog()` mỗi frame. Không import Phaser.
  */
 
 const SLOTS: readonly { x: number; y: number; zone: Zone }[] = QUEUE_SLOTS;
 const GATE = CUSTOMER_GATE;
-/**
- * Khách đi bao nhiêu ô mỗi giây. Đồng hồ chờ chỉ chạy từ lúc đã đứng vào hàng
- * (`Customer.tick`), nên đi chậm KHÔNG làm họ mất kiên nhẫn.
- */
+/** Ô mỗi giây. Đồng hồ chờ chỉ chạy từ lúc đã đứng vào hàng, nên đi chậm không làm họ mất kiên nhẫn. */
 const WALK_SPEED = 1.7;
 
-/**
- * Trần số lần khách TỰ bắt chuyện mỗi buổi. Ba cái van đều cần: `initiates` của từng
- * cuộc, trần này, và `TALK_OFFER_GAP_SEC`.
- */
 const TALK_OFFERS_PER_DAY = 3;
 const TALK_OFFER_GAP_SEC = 100;
 
-/**
- * Trần cuộc SÂU (`depth: "FULL"`) mỗi ngày, áp cho CẢ HAI đường: người chơi bấm phím lẫn
- * khách tự bắt chuyện. `BARK` và `SHORT` KHÔNG tiêu vào trần này.
- */
+/** Áp cho CẢ HAI đường (bấm phím lẫn khách tự mở lời). `BARK`/`SHORT` không tiêu vào trần này. */
 const TALK_DEEP_PER_DAY = 2;
 
-/**
- * Xác suất mở lời mặc định cho cuộc `NPC_ONLY` không khai `initiates`. Ba cái van ở trên
- * mới là thứ giữ nhịp; con số này chỉ quyết ai trong số những người đủ điều kiện.
- */
 const TALK_INITIATE_BASE = 0.3;
 
-/**
- * Người đi ngang bị ghim lại bao lâu sau khi mình bắt chuyện — đo bằng thời gian CÒN LẠI
- * sau cuộc, không phải một hằng số tính từ lúc mở.
- */
+/** Đo bằng thời gian CÒN LẠI sau cuộc, không phải hằng số tính từ lúc mở. */
 const PASSER_TALK_TAIL = 4;
-/**
- * Một người đi ngang nói được mấy cuộc trong MỘT lần đi qua. `talkedThisVisit` chỉ chặn
- * mở LẠI cùng một cuộc, không chặn mở cuộc khác — nên trần phải nằm riêng ở đây.
- */
+/** `talkedThisVisit` chỉ chặn mở LẠI cùng một cuộc, không chặn mở cuộc khác — trần phải nằm riêng. */
 const PASSER_TALKS_MAX = 2;
 
-/**
- * Quầy dơ tới mức nào thì LỌT VÀO KHUNG HÌNH — act `FILM`.
- *
- * Thấp hơn ngưỡng khách phàn nàn: ống kính xoi hơn mắt người đứng mua, và đó đúng là
- * chuyện người bán hàng sợ khi có người giơ máy lên.
- */
+/** Thấp hơn ngưỡng khách phàn nàn: ống kính xoi hơn mắt người. */
 const DIRT_ON_CAMERA = 0.35;
 
 /**
- * Quay xong thì mấy ngày nữa cái clip mới lên — bé Su còn phải dựng.
+ * XE CHÚ KIỆT LẤN QUA THÌ ĂN BỚT BAO NHIÊU KHÁCH LẠ.
  *
- * Bốn ngày: đủ xa để người chơi quên mất mình đã cho quay, rồi lượng khách tự nhảy lên và
- * họ phải tự nối hai chuyện lại. Đó là cách một hệ quả dạy luật chơi mà không cần một
- * dòng chữ nào giải thích.
+ * Khác cái gánh bà Sáu ở bản chất, nên khác cả cách tính: cái gánh là một vật cản (cộng
+ * vào `ahead`, chỉ cắn lúc đông), còn cái xe là một ĐỐI THỦ ĐANG BÁN — nó lấy khách kể cả
+ * lúc vắng, và đó mới là chuyện làm chú Kiệt thành đối thủ chứ không phải một cái thùng.
+ *
+ * Chỉ ăn KHÁCH LẠ: người có tên tới tìm mình, không tạt ngang vì một cái xe đứng gần hơn.
+ *
+ * 0,18 — một phần sáu. Đủ thấy trong sổ cuối ngày, không đủ để một ngày hỏng vì quên đuổi.
  */
+const KIET_STEAL = 0.18;
+
+/** Bốn ngày: đủ xa để người chơi quên mình đã làm gì, đủ gần để còn nối được nhân với quả. */
 const CLIP_DUNG_SAU = 4;
-/**
- * CÂU CUỐI CÒN NỢ — người vừa nói chuyện còn được cầm micro ngần này giây sau khi phiên
- * đã đóng (xem `talkVoice`). ⚠️ Phải dài hơn `StallScene.REPLY_DELAY_SEC`.
- */
+/** ⚠️ Phải dài hơn `StallScene.REPLY_DELAY_SEC` — xem `talkVoice`. */
 const TALK_VOICE_TAIL = 2.5;
 
-/**
- * Lời bắt chuyện bị hoãn vì tay người chơi đang bận sống được bao lâu (giây thật). Quá
- * hạn thì HUỶ IM LẶNG, không phạt.
- */
+/** Quá hạn thì HUỶ IM LẶNG, không phạt. */
 const OFFER_DEFER_TTL_SEC = 90;
 const OFFER_QUEUE_MAX = 2;
 
-/**
- * Xác suất hai người đi ngang chào nhau. Phải là THIỂU SỐ — ai gặp ai cũng chào thì cái
- * chào hết nghĩa. `GREET_SLOW` là chậm lại, KHÔNG phải dừng.
- */
 const GREET_CHANCE = 0.25;
 const GREET_REACH = 1.0;
 const GREET_SLOW = 0.75;
 const GREET_SLOW_SEC = 1.6;
 const GREET_REPLY_SEC = 1.2;
 
-/**
- * Bấm F với được xa bao nhiêu ô. Trong tầm thì người GẦN NHẤT thắng, kể cả người đi ngang
- * ngoài đường; không ai trong tầm thì rơi về người đứng đầu quầy.
- */
+/** Người GẦN NHẤT thắng, kể cả người đi ngang; không ai trong tầm thì rơi về người đầu quầy. */
 export const TALK_REACH = 3;
 
 const EMPTY_STR: readonly string[] = [];
 
-/**
- * Cái đơn còn "đang mở" tới mốc nào của quãng chờ — xem `practiceOf`. Phải đóng lại TRƯỚC
- * khi người ta bắt đầu sốt ruột (`t.impatient` ở 0,6).
- */
+/** Phải đóng lại TRƯỚC khi người ta bắt đầu sốt ruột (`t.impatient` ở 0,6). */
 const ORDER_WINDOW = 0.35;
 
 const OVEN_SMELL_SEC = 90;
 
-/**
- * Bao nhiêu phần cảnh chào ngoài đường mang theo một tin đồn. Phải là THIỂU SỐ, nếu không
- * tin đồn hết là tin tức — nó thành tiếng ồn nền.
- */
 const STREET_RUMOUR_CHANCE = 0.3;
 
-/**
- * HẠN CỦA TỪNG VIỆC ĐÃ HỨA — giây THẬT, tính từ lúc nói. ⚠️ Không tính theo phút game:
- * đồng hồ game tua nhanh khi quầy trống, nên mọi lời hứa sẽ cùng hết hạn lúc rảnh nhất.
- */
+/** ⚠️ Giây THẬT, không phải phút game: đồng hồ tua nhanh khi quầy trống thì mọi lời hứa cùng hết hạn một lượt. */
 const DEED_DUE: Record<string, number> = {
   ROT_TRA: 25, DUA_BANH: 15, BUNG_GANH: 15, LAY_SO: 40, DOI_DON: 20,
 };
@@ -173,16 +131,10 @@ const DEED_LABEL: Record<string, string> = {
   BUNG_GANH: "bưng giùm cái gánh", LAY_SO: "lấy giùm cuốn sổ", DOI_DON: "sửa lại cái đơn",
 };
 
-/**
- * BA NẤC NUỐT LỜI — nhắc một câu → nói nặng → bỏ đi, mốc tính theo BỘI của hạn. Người
- * nóng tính (`nongTinh ≥ 0,8`) bỏ nấc một; người lạ bỏ cả ba và đi luôn.
- */
+/** Nhắc → nói nặng → bỏ đi. Nóng tính bỏ nấc một; người lạ bỏ cả ba. */
 const DEED_STAGES = [1.0, 1.6, 2.4] as const;
 
-/**
- * Trọng số chi phí nhắm mục tiêu — xem `Service.talkCost`. `LATERAL` là trục DỌC QUẦY
- * (phân biệt được ai với ai); `DEPTH` xuyên qua mặt quầy, gần như hằng số nên nhẹ hơn.
- */
+/** `LATERAL` là trục DỌC QUẦY (phân biệt được ai với ai); `DEPTH` xuyên mặt quầy, gần như hằng số. */
 export const TALK_W_LATERAL = 1.0;
 export const TALK_W_DEPTH = 0.45;
 export const TALK_B_FRONT = -0.9;
@@ -191,18 +143,11 @@ export const TALK_P_REFUSED = 1.2;
 /** Bám dính mục tiêu — cùng con số với `stations.STICKY`, để mục tiêu không nhấp nháy. */
 export const TALK_STICKY = 0.62;
 
-/**
- * Giữ lời thưởng VỪA PHẢI (nó chỉ là làm đúng điều mình nói); nuốt lời phạt NẶNG, nặng
- * hơn cả một lỗi đơn hàng.
- */
 const PROMISE_KEPT = 45;
 const PROMISE_SWAPPED = 55;
 const PROMISE_BROKEN = 85;
 
-/**
- * Chửi tới mức này thì người ta BỎ VỀ, không mua nữa (sau khi nhân `intensityMul`).
- * Ông Hải (nongTinh 0,9 → ×1,40) nổ ở `anger` 40; thầy Phúc (0,2 → ×0,70) phải 80.
- */
+/** Tính SAU `intensityMul`: ông Hải nổ ở `anger` 40, thầy Phúc phải 80. */
 const STORM_OFF_ANGER = 55;
 
 export const PRICE_BANH = 25_000;
@@ -215,28 +160,15 @@ export const MAX_AUDIENCE = 6;
 export const DIALOG_QUERIES_PER_FRAME = 1;
 export const MAX_BUBBLES = 2;
 const QUEUE_EXPIRE_SEC = 2.5;
-/**
- * HƠI THỞ giữa hai câu của CÙNG một người, tính bằng giây. Dưới 0,35 s thì câu sau bật
- * lên khi câu trước còn chưa mờ hết — mắt đọc ra là MỘT bong bóng đổi chữ.
- */
+/** Dưới 0,35 s thì câu sau bật lên khi câu trước chưa mờ hết — đọc ra là MỘT bong bóng đổi chữ. */
 export const SAME_SPEAKER_GAP_SEC = 0.35;
-/**
- * CẮT NGANG — câu mới phải hơn câu đang hiện ngần này điểm ưu tiên, và chỉ sau khi câu cũ
- * đã nằm trên màn hình `BARGE_IN_SEC` giây. 20 là chênh HẠNG, không phải chênh một chút.
- */
+/** Chênh 20 là chênh HẠNG: 20–55 chuyện phiếm, 70–100 chuyện của ổ bánh. */
 export const BARGE_IN_PRI = 20;
 export const BARGE_IN_SEC = 1.2;
-/**
- * TRẦN CỨNG cho quãng một câu phải đợi bong bóng của CHÍNH người nói. ⚠️ Thiếu trần thì câu
- * sau chết theo người nói: khách quay lưng là vòng dọn xoá mọi câu còn trong hàng đợi của
- * họ, im lặng. Nhân `readMul` để người đọc chậm được thêm giờ.
- */
+/** ⚠️ Thiếu trần thì câu sau chết theo người nói — khách quay lưng là vòng dọn xoá sạch hàng đợi của họ. */
 export const HOLD_MAX_SEC = 3;
 
-/**
- * Hệ số sức chờ theo CHỖ XẾP HÀNG: người xếp sau ba người đã BIẾT mình phải chờ nên chịu
- * được lâu hơn. NHÂN chứ không CỘNG (để khớp `rush` và `bond`), và chặn ở bậc thứ tư.
- */
+/** NHÂN chứ không CỘNG (cộng thẳng giây sẽ xoá mất nét tính cách), và chặn ở bậc thứ tư. */
 const QUEUE_PATIENCE_STEP = 0.15;
 const QUEUE_PATIENCE_CAP = 4;
 
@@ -245,11 +177,9 @@ export function queuePatienceMul(ahead: number) {
 }
 
 /**
- * "Hôm nay đông quá, thôi để bữa khác" — người tới đầu hẻm, ngó cái hàng, rồi QUAY ĐẦU. Mốc
- * "dài quá" suy từ `SLOTS.length`; hàng KÍN CHỖ trả thẳng `BALK_WHEN_FULL`. Trần 0,80.
- *
- * ⚠️ NGƯỢC CHIỀU với `queuePatienceMul` ngay trên (cái kia xảy ra SAU KHI đã xếp vào) — trộn hai
- * cái là phá hợp đồng ở `tests/p1-queue-patience`.
+ * Người tới đầu hẻm, ngó cái hàng, rồi QUAY ĐẦU. Mốc "dài quá" suy từ `SLOTS.length`; hàng kín chỗ
+ * trả thẳng `BALK_WHEN_FULL`. ⚠️ NGƯỢC CHIỀU với `queuePatienceMul` (cái kia xảy ra SAU khi đã xếp
+ * vào) — trộn hai cái là phá hợp đồng ở `tests/p1-queue-patience`.
  */
 const BALK_FROM_FILL = 0.6;
 const BALK_AT_FROM = 0.2;
@@ -261,6 +191,17 @@ const BALK_RUSH = 1.35;
 const BALK_CEIL = 0.8;
 
 export const balkFrom = (slots: number) => Math.max(1, Math.ceil(BALK_FROM_FILL * slots));
+
+/**
+ * Mọi `TalkAct` phải có nhánh trong `applyAct` — thiếu thì đây là lỗi BIÊN DỊCH.
+ *
+ * Tham số `never`: khi `switch` đã vét hết `kind`, TypeScript thu hẹp `act` xuống `never`
+ * và lời gọi này hợp lệ. Thiếu một `kind` thì nó còn lại kiểu đó, không gán được vào
+ * `never`, và `npm run check` trượt ngay tại dòng này.
+ */
+function assertActHandled(act: never): void {
+  throw new Error(`TalkAct chưa được nối vào applyAct: ${JSON.stringify(act)}`);
+}
 
 export function balkChance(o: {
   ahead: number;
@@ -282,11 +223,7 @@ export function balkChance(o: {
   return Math.min(BALK_CEIL, base * intensityMul(o.person) * rel * mood * (o.rushing ? BALK_RUSH : 1));
 }
 
-/**
- * Chỗ người quay đầu dừng lại ngó — LÙI THÊM MỘT BẬC sau chỗ cuối hàng, suy từ khoảng
- * cách giữa hai chỗ cuối chứ không chép toạ độ. Phải là một điểm THẬT trên vỉa hè: xoá
- * khách ngay ở cổng thì người chơi chỉ thấy một buổi sáng vắng khách, không thấy luật.
- */
+/** Lùi thêm một bậc sau chỗ cuối hàng. Phải là điểm THẬT trên vỉa hè, không thì người chơi chỉ thấy một buổi vắng khách. */
 const BALK_LOOK = (() => {
   const n = SLOTS.length;
   const p = n >= 2 ? { x: 2 * SLOTS[n - 1].x - SLOTS[n - 2].x, y: SLOTS[n - 1].y } : { ...SLOTS[0] };
@@ -294,46 +231,26 @@ const BALK_LOOK = (() => {
 })();
 const BALK_LOOK_SEC = 0.8;
 
-/**
- * Nép qua một bên mà KHÔNG có ai sau lưng để nhường thì đứng ngần này giây rồi vô lại
- * (`STEP_ASIDE`).
- */
 const ASIDE_HOLD_SEC = 6;
 
 const BARK_DELAY_MIN = 0.2;
 const BARK_DELAY_SPAN = 0.2;
 const FOLLOWUP_EXPIRE_SEC = 6;
 const SMALLTALK_AFTER_SEC = 4;
-/**
- * Giữa hai lần khách QUAY SANG NHÌN MẶT người bán. Không phải cooldown của nút F — nó chỉ
- * chặn việc bấm F liên tục để ép gaze rời khỏi tay mình.
- */
+/** Không phải cooldown của nút F — nó chặn việc bấm F liên tục để ép gaze rời khỏi tay mình. */
 export const ASK_COOLDOWN = 60;
 
-/**
- * BONG BÓNG SỐNG BAO LÂU — tốc độ đọc của người đang LÀM VIỆC (`READ_CPS`) cộng thời gian
- * NHẬN RA (`NOTICE_SEC`). Sàn 2,8 s, trần 8 s (`MAX_BUBBLES` là 2).
- */
+/** Tốc độ đọc của người đang LÀM VIỆC cộng thời gian NHẬN RA. Sàn 2,8 s, trần 8 s. */
 export const READ_CPS = 11;
 export const NOTICE_SEC = 0.8;
 export const BUBBLE_MIN_SEC = 2.8;
-/**
- * Trần. ⚠️ Phải ĐỦ CAO để không cắt cụt dòng dài nhất của kho: 9 s cho tới ~90 ký tự,
- * dòng dài nhất đang có là 82. Test `B-1` giữ cả hai đầu.
- */
+/** ⚠️ Phải đủ cao để không cắt cụt dòng dài nhất của kho (82 ký tự). Test `B-1` giữ cả hai đầu. */
 export const BUBBLE_MAX_SEC = 9;
 
-/**
- * @param slow nhân thêm cho người đọc chậm — cỡ chữ lớn và chế độ không giới hạn thời
- *   gian đều là lời khai của người chơi rằng họ cần thêm giờ (`CANON` §15).
- */
 export const bubbleLife = (text: string, slow = 1) =>
   Math.min(BUBBLE_MAX_SEC, Math.max(BUBBLE_MIN_SEC, NOTICE_SEC + text.length / READ_CPS)) * slow;
 
-/**
- * Bong bóng của một LỜI BẮT CHUYỆN sống lâu hơn bark, vì nó MỞ RA một việc người chơi phải
- * làm. Dấu ba chấm bền trên vai (`StallScene.drawPendingTalk`) lo phần còn lại.
- */
+/** Lâu hơn bark vì nó MỞ RA một việc người chơi phải làm; dấu ba chấm bền lo phần còn lại. */
 export const OFFER_BUBBLE_SEC = 5.5;
 export const offerBubbleLife = (text: string, slow = 1) =>
   Math.max(OFFER_BUBBLE_SEC * slow, bubbleLife(text, slow) + 1.5);
@@ -341,14 +258,11 @@ export const offerBubbleLife = (text: string, slow = 1) =>
 const NHAN_IDS: ReadonlySet<Ingredient> = new Set(INGREDIENTS.filter((i) => i.kind === "nhan").map((i) => i.id));
 
 /**
- * Ổ RỖNG — ổ KHÔNG CÓ MIẾNG NHÂN MẶN NÀO thì không còn là món khách gọi, nó là "bánh mì
- * không" (10.000₫). Ngưỡng là "không một miếng nhân mặn nào", không phải "ổ trống trơn": để
- * ở ổ trống trơn thì lách được bằng một cọng rau.
+ * Ổ không có MIẾNG NHÂN MẶN nào thì không còn là món khách gọi — nó là "bánh mì không".
+ * Ngưỡng ở "không miếng nhân mặn nào", không phải "ổ trống trơn": ổ trống trơn lách được bằng một cọng rau.
  */
 /**
- * Gọi người chưa biết tên bằng HÌNH DÁNG (xem `Service.label`) — suy từ `body` theo thứ tự
- * nón → kính → tóc → tạp dề → giỏ → dáng.
- *
+ * Gọi người chưa biết tên bằng HÌNH DÁNG — suy từ `body` theo thứ tự đọc được ở 64 px.
  * ⚠️ TẠM: chỗ đúng của mấy chuỗi này là một trường trong `content/npcs.ts`.
  */
 const XUNG_HO: Record<string, string> = {
@@ -377,14 +291,16 @@ export function isHollowLoaf(spec: OrderSpec, dish: readonly Ingredient[]) {
   return false;
 }
 
-/**
- * Miếng nhân ĐẦU TIÊN mà người ta gọi — chỗ trống `{mon}` của câu nói về ổ chưa có nhân.
- * Gọi hai ba nhân thì chỉ kể một: câu nói của một người, không phải cái phiếu kiểm.
- */
 export function hollowWantLabel(spec: OrderSpec) {
   const first = INGREDIENTS.find((i) => NHAN_IDS.has(i.id) && (spec.levels[i.id] ?? 0) > 0);
   return first ? first.label : "nhân";
 }
+
+/**
+ * Kết quả một lần đưa bánh. `playerSay` là câu CÔ BA nói ra lúc chìa ổ có đồ cho thêm —
+ * scene vẽ nó lên bong bóng của người chơi (`StallScene.sayAsPlayer`); `sim/` không biết vẽ.
+ */
+export type ServeResult = { ok: boolean; reason?: string; playerSay?: string };
 
 export type ServiceEvent =
   | { kind: "log"; text: string }
@@ -393,10 +309,7 @@ export type ServiceEvent =
   | { kind: "paid"; amount: number; item: "dish"; tip: number }
   | { kind: "cost"; amount: number; item: "tea" | "talk" }
   | { kind: "talkOffer"; npcId: string; name: string }
-  /**
-   * Đưa đồ trên tay người chơi cho một người (`GIVE_BREAD`). ⚠️ Phải đi qua đây, KHÔNG
-   * được tự đặt `this.playerHand` — `StallScene` gán lại nó MỖI FRAME.
-   */
+  /** ⚠️ Phải đi qua đây, KHÔNG tự đặt `this.playerHand` — `StallScene` gán lại nó mỗi frame. */
   | { kind: "takeHand"; npcId: string; name: string };
 
 export type TalkView = {
@@ -405,17 +318,10 @@ export type TalkView = {
   line: string;
   silent: boolean;
   said?: string;
-  /**
-   * Cảm xúc khách nói câu đó — bảng vẽ một huy hiệu mặt bên cạnh. Vắng = không vẽ gì
-   * (và mặt trên người họ vẫn đổi như cũ, suy ra từ hệ quả).
-   */
   mood?: TalkMood;
   skin: number;
   hair: number;
-  /**
-   * Người đang nói đứng ở đâu, theo Ô BẢN ĐỒ. Scene chiếu sang toạ độ màn hình để NEO
-   * thẻ lựa chọn cạnh họ (P2-06 §4.2) — thay cho cái bảng đáy che trọn người.
-   */
+  /** Ô BẢN ĐỒ; scene chiếu sang toạ độ màn hình để neo thẻ lựa chọn cạnh người nói. */
   at: { x: number; y: number };
   options: readonly { say: string; tone: TalkTone }[];
   done: boolean;
@@ -430,10 +336,7 @@ export type ServiceDeps = {
   bags: Record<string, BagState>;
   /** Reload giữa buổi: bỏ qua mọi lượt khách hẹn tới trước mốc này. */
   resumeAt?: number;
-  /**
-   * Hai bộ đếm trò chuyện của NGÀY, trỏ thẳng vào `world.progress.today` (P2-06 §2.6).
-   * Vắng (test dựng Service trần) thì Service tự đếm trong bộ nhớ.
-   */
+  /** Trỏ thẳng vào `world.progress.today`; vắng thì Service tự đếm trong bộ nhớ. */
   todayCounters?: { talksDeep?: number; talkOffers?: number };
   readMul?: number;
   dialog?: DialogState;
@@ -454,10 +357,7 @@ export type ServiceDeps = {
 };
 
 type Visit = { at: number; npc: NpcDef | null; seq: number; plan?: VisitPlan; defer?: number };
-/**
- * Chỗ người đi ngang dừng lại — cạnh hàng chờ, không chen vào hàng. ⚠️ Toạ độ thế giới DUY
- * NHẤT không nằm trong `world/map.ts`, nên `assertWalkable()` không soi tới.
- */
+/** ⚠️ Toạ độ thế giới DUY NHẤT không nằm trong `world/map.ts` — `assertWalkable()` không soi tới. */
 const PASS_SPOT = { x: 16.5, y: 8.4 };
 type Pending = {
   c: Customer; text: string; tier: 1 | 2 | 3; delay: number; log: boolean
@@ -469,10 +369,7 @@ type Pending = {
 };
 type Followup = { c: Customer; concept: string; at: number };
 
-/**
- * Lượt ghé vừa rồi ĐI RA SAO, theo cách người khách sẽ nhớ nó. `GRIT` = ổ đã nằm dưới đất mà
- * người này KHÔNG thấy lúc nó rớt, và nó THẮNG `DEFECT` khi hai cái cùng xảy ra.
- */
+/** `GRIT` = ổ nằm dưới đất mà người này KHÔNG thấy lúc nó rớt, và nó THẮNG `DEFECT`. */
 type ServeOutcome = "CLEAN" | "DEFECT" | "WAITED" | "GRIT";
 
 type Extra = Record<string, string | number | boolean>;
@@ -493,20 +390,16 @@ const FREE_EXTRA_DIMINISH = [1.0, 0.6, 0.25];
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 
 /**
- * Ổ ĐÃ NẰM DƯỚI ĐẤT — cờ `soiled` đi theo TỪNG Ổ, không theo người chơi; chia hai nhánh theo
- * việc người đó CÓ THẤY KHÔNG.
- *
- * ⚠️ `SOILED_GRIT` 30 phải NHỎ HƠN HẲN 95, nếu không nước đi tối ưu thành "cứ đưa đại". Răn thật
- * nằm ở `occurrences` cộng dồn, và ở chỗ `servedWell()` / `disprove()` không chạy.
+ * Cờ `soiled` đi theo TỪNG Ổ, không theo người chơi; chia hai nhánh theo việc người đó CÓ THẤY KHÔNG.
+ * ⚠️ `SOILED_GRIT` 30 phải nhỏ hơn hẳn 95, nếu không nước đi tối ưu thành "cứ đưa đại".
  */
 const SOILED_CAUGHT = 95;
 const SOILED_GRIT = 30;
 const SOILED_REFUSE_TOAST = "khách thấy ổ đó rớt rồi";
 
 /**
- * Ổ CHƯA CÓ NHÂN — thiếu miếng đồ chua là tay làm sai, ổ trống là CHƯA LÀM, nên nó KHÔNG qua túi
- * im lặng và có concept riêng `HOLLOW_LOAF`. Chỉ người vừa điềm đạm vừa dễ tha nhận
- * (`takesHollowLoaf`, 5/12); trả lại thì ổ Ở LẠI TRONG TAY người chơi và đồng hồ chờ vẫn chạy.
+ * Thiếu miếng đồ chua là tay làm sai, ổ trống là CHƯA LÀM — nên nó không qua túi im lặng và có
+ * concept riêng `HOLLOW_LOAF`. Chỉ người vừa điềm đạm vừa dễ tha nhận; ghi đúng một lần mỗi lượt ghé.
  */
 const HOLLOW_REFUSED = 55;
 const HOLLOW_REFUSE_TOAST = "khách không nhận — ổ chưa có nhân";
@@ -514,11 +407,8 @@ const HOLLOW_REFUSE_TOAST = "khách không nhận — ổ chưa có nhân";
 export const takesHollowLoaf = (p: Personality) => p.nongTinh <= 0.4 && p.deTha >= 0.7;
 
 /**
- * Ổ NƯỚNG CHƯA TỚI — một LỖI thật, mượn `WRONG_TEMP` chứ không thêm kind mới; nguội và non tách
- * ở tầng THOẠI bằng fact `dishUnderdone`.
- *
- * ⚠️ TRẦN 0,90 chứ không 1,0: ký ức ghi 90 × mag², nên mag 1,0 ra đúng 90 — hơn cả
- * `BURNT_OR_COLD` (80), mà bánh non không được nặng bằng bánh cháy.
+ * Mượn `WRONG_TEMP` chứ không thêm kind mới; nguội và non tách ở tầng THOẠI bằng `dishUnderdone`.
+ * ⚠️ TRẦN 0,90 chứ không 1,0: ký ức ghi 90 × mag², mà bánh non không được nặng bằng bánh cháy (80).
  */
 const UNDERDONE_FLOOR = 0.35;
 const UNDERDONE_CEIL = 0.9;
@@ -526,23 +416,35 @@ const UNDERDONE_LABEL = "bánh chưa giòn";
 const UNDERDONE_TEXT = "bánh nướng chưa tới";
 
 /**
- * Mốc đổi MẶT khi có lỗi: ổ nướng non một chút không được mang cùng cái mặt với ổ quên
- * miếng chả. 40 = chỗ một `ORDER_DEFECT` bắt đầu ăn 8 điểm quan hệ (×`REL_K_NEG` 0,2).
+ * SÉM CẠNH — dải `SINGED` của lò (`bandOfCrust`), tức ổ rút ra TRỄ nhưng chưa tới mức cháy.
+ * Trước đây dải này không mất gì hết: người chơi để quên ổ tới sát ngưỡng cháy rồi vẫn bán
+ * được một ổ hoàn hảo, nên cái vòng độ giòn trên cửa lò chỉ có MỘT đầu đáng nhìn.
+ *
+ * ⚠️ TRẦN 0,85 — thấp hơn trần của bánh non (0,90): ổ sém cạnh vẫn ăn được, ổ nướng chưa tới
+ * thì cắn vào là biết ngay. Cùng mượn `WRONG_TEMP` như bánh non; tách ở tầng THOẠI bằng
+ * `dishSinged`.
  */
+const SINGED_FLOOR = 0.3;
+const SINGED_CEIL = 0.85;
+const SINGED_LABEL = "bánh cháy cạnh";
+const SINGED_TEXT = "bánh cháy cạnh rồi";
+
+/** Gom tối đa ngần này tên món vào một câu — dài hơn là bong bóng cao quá ba dòng. */
+const MON_LIST_MAX = 3;
+/**
+ * Trần MỀM cho câu giao bánh đã ghép đủ ba vế (cảm ơn · chê món · vỏ bánh). Trên mức này thì vế
+ * cảm ơn bị cắt. 100 ≈ bốn dòng trong bong bóng 190 px — xem `LINE_MAX_CHARS` của `tools/lint-lines`
+ * (90 cho MỘT dòng thoại viết tay; câu ghép được nới một chút vì nó vốn là hai ý).
+ */
+const WRAP_SOFT_MAX = 100;
+
 const DEFECT_FACE_I3 = 40;
 
-/**
- * `relationship:moved` — T3: một CHIỀU, một mức ĐẬM/NHẠT, một mẩu chữ. Sàn 2 (cũng đúng bằng
- * `EPSILON` của `sim/memory.ts`): lượt nào cũng in một dòng thì dòng đó hết nghĩa.
- */
+/** T3: một CHIỀU, một mức ĐẬM/NHẠT, một mẩu chữ. Sàn 2 = `EPSILON` của `sim/memory.ts`. */
 const REL_MOVE_MIN = 2;
 const REL_MOVE_STRONG = 8;
 
-/**
- * Câu chào từ biệt đi sau câu nhận bánh, mà mỗi người chỉ có MỘT bong bóng
- * (`Customer.speak` ghi đè). 1,8 s quá mốc sống ngắn nhất của bong bóng nên câu trước kịp
- * đọc hết, và vẫn còn kịp nói trước khi người ta ra tới cổng.
- */
+/** Mỗi người chỉ có MỘT bong bóng, nên phải đợi câu nhận bánh đọc xong — mà vẫn kịp trước khi họ ra tới cổng. */
 const FAREWELL_DELAY = 1.8;
 
 export type DiffedDefect = Defect & { key: string | null; witness: "ANTICIPATED" | "DISCOVERED" };
@@ -565,47 +467,27 @@ export class Service {
   private nowSec = 0;
   private stimSeq = 0;
   private freeExtraToday = new Map<string, number>();
-  /**
-   * Lượt ghé đã được tính vào chuỗi "cho thêm" rồi (theo `customer.id`). Cần, vì một người
-   * mua HAI ổ thì `serveDish` chạy hai lần cho cùng một lượt ghé. Chỉ sống trong buổi bán.
-   */
+  /** Một người mua HAI ổ thì `serveDish` chạy hai lần cho cùng một lượt ghé. */
   private habitSettled = new Set<string>();
-  /**
-   * Lượt ghé đã bị lắc đầu vì ổ chưa có nhân (theo `customer.id`) — xem `HOLLOW_REFUSED`.
-   * Vết nhớ và câu nói ghi đúng một lần; lần đưa thứ hai chỉ còn tốn thời gian.
-   */
   private hollowShown = new Set<string>();
   private serveOutcome = new Map<string, ServeOutcome>();
-  /**
-   * Mẩu lý do NỔI BẬT NHẤT của khoảnh khắc đang gom cho `relationship:moved` — nhiều
-   * `record()` trong một lần giao bánh gộp lại thành MỘT dòng. T3: chữ thường, không số.
-   */
+  /** Nhiều `record()` trong một lần giao bánh gộp thành MỘT dòng; lý do nặng ký nhất thắng. */
   private relNote: { text: string; w: number } | null = null;
   private teaToday = new Map<string, number>();
   private devSeq = 0;
   private talkSession: TalkSession | null = null;
   private talkWith: Customer | null = null;
   /**
-   * AI CÒN MỘT CÂU CHƯA KỊP NÓI RA — KHÔNG phải `talkWith`.
-   *
-   * ⚠️ `chooseTalk` gọi `endTalk()` ngay trong nhịp cuối, nên `talkWith` đã là `null` trước khi
-   * scene kịp đưa câu đáp ra màn hình. Quyền nói sống lâu hơn phiên `TALK_VOICE_TAIL` giây.
+   * ⚠️ KHÔNG phải `talkWith`: `chooseTalk` gọi `endTalk()` ngay trong nhịp cuối, nên `talkWith` đã
+   * `null` trước khi scene kịp đưa câu đáp ra màn hình.
    */
   private talkVoice: Customer | null = null;
   private talkVoiceUntil = 0;
-  /**
-   * Khách đã tự bắt chuyện và đang chờ được trả lời — HÀNG ĐỢI, không phải một ô. Với một
-   * ô thì hai người cùng muốn bắt chuyện là người thứ hai im suốt lượt ghé, vì
-   * `smalltalked.add(c.id)` đã chạy trước `offerTalk()`.
-   */
+  /** HÀNG ĐỢI chứ không phải một ô: một ô thì người thứ hai im suốt lượt ghé vì `smalltalked` đã chạy trước. */
   private offers: { c: Customer; talk: Talk; at: number }[] = [];
   readonly talks = new TalkStore();
   private lastOfferAt = -Infinity;
-  /**
-   * Hai bộ đếm của ngày nằm trong SAVE (`progress.today`), không phải trong instance: "lưu
-   * và về sảnh" rồi vào lại giữa buổi dựng một `Service` mới, nên để ở field thì cái van
-   * 2 cuộc/ngày lách được bằng đúng một lần thoát ra vào.
-   */
+  /** ⚠️ Trong SAVE chứ không trong instance: "lưu và về sảnh" dựng `Service` mới, lách được trần ngày. */
   private get deepToday() { return this.deps.todayCounters?.talksDeep ?? this.deepLocal; }
   private set deepToday(n: number) {
     this.deepLocal = n;
@@ -618,70 +500,42 @@ export class Service {
   }
   private deepLocal = 0;
   private offersLocal = 0;
-  /**
-   * Cuộc đã rút cho một lượt ghé nhưng người chơi bỏ ngang trước khi nói câu nào. ⚠️ Phải
-   * giữ lại: rút lại mỗi lần mở thì mở–Esc–mở là một cái máy reroll nội dung.
-   */
+  /** ⚠️ Phải giữ lại: rút lại mỗi lần mở thì mở–Esc–mở là một cái máy reroll nội dung. */
   private heldTalk = new Map<string, Talk>();
   /**
-   * Cuộc đã nghe trong lượt ghé NÀY, cho người KHÔNG CÓ TÊN. ⚠️ Không ghi vào
-   * `mem(memKey).talksDone` được: `memKey` của người lạ là `walkin<dáng>`, tám dáng dùng chung
-   * một sổ cho cả mùa.
+   * ⚠️ Không ghi vào `mem(memKey).talksDone`: `memKey` của người lạ là `walkin<dáng>`, tám dáng dùng
+   * chung một sổ cho cả mùa. Người lạ nhớ theo LƯỢT GHÉ.
    */
   private talkedThisVisit = new Map<string, string[]>();
-  /**
-   * NGƯỜI ĐI NGANG NÀY ĐÃ DỪNG LẠI MẤY LẦN — đếm MỌI cuộc, kể cả cuộc túi dùng chung.
-   * Không đếm bằng `talkedThisVisit` được: nó cố ý KHÔNG ghi cuộc `ANY`.
-   */
+  /** Đếm MỌI cuộc kể cả túi dùng chung — `talkedThisVisit` cố ý không ghi cuộc `ANY`. */
   private passerTalks = new Map<string, number>();
   private talkEngaged = false;
   private talkNpcOpened = false;
-  /**
-   * Điểm quan hệ đã kiếm được TRONG cuộc đang mở — act `INVITE` đọc nó. Cộng từ `rel` người
-   * viết khai, chứ không đo `relNow()` trước/sau: người đi ngang và khách vãng lai đều
-   * không có `npc`, nên `relNow()` của họ luôn là 0 — mà đó đúng là những người được mời.
-   */
+  /** Cộng từ `rel` người viết khai, không đo `relNow()`: người đi ngang không có `npc` nên `relNow()` luôn 0. */
   private talkWarmth = 0;
   private lastTarget: Customer | null = null;
-  /**
-   * Câu đáp do HÀNH ĐỘNG quyết, không do lựa chọn — hiện tại chỉ có act `INVITE`. Người
-   * viết khai cả hai câu, cái roll chọn một; `chooseTalk` lấy câu này thay cho `reply`.
-   */
   private actReply: { text: string; mood: TalkMood } | null = null;
   private pledges = new Map<string, { promised: string[]; discount: number; free: boolean }>();
   teaLeft = TEA_PER_DAY;
   dirt = 0;
   handsDirty = false;
   /**
-   * NGẮT QUÃNG ĐƯỢC KHÔNG — scene đặt mỗi frame; van NGỮ CẢNH, khác ba van tần suất ở trên.
-   * `false` ở bảy cửa sổ cấm (cầm ổ nóng, bảng kẹp nhân mở, FLOURISH, lò SÉM, `handsBusy`,
-   * khách đang gọi món, còn đồ rơi dưới sàn). Mặc định `true` để headless chạy như cũ.
+   * Van NGỮ CẢNH, khác ba van tần suất ở trên. `false` ở bảy cửa sổ cấm (cầm ổ nóng, bảng kẹp nhân
+   * mở, FLOURISH, lò SÉM, `handsBusy`, khách đang gọi món, còn đồ rơi dưới sàn).
    */
   interruptible = true;
-  /**
-   * Hết sạch bánh mì (kho + lò + thớt + tay) — scene đặt mỗi frame. Khách tới là về không
-   * (P3-03 §2.3 OUT_OF_STOCK): người quen nhớ, và người quen lâu nhớ nặng hơn.
-   */
   soldOut = false;
   soldOutCount = 0;
-  /**
-   * LÒ ĐANG CÓ Ổ TRONG — scene đặt mỗi frame (`oven.count > 0`). Headless không có lò
-   * nên nó ở `false`, và đó là thật: một cái bot không nướng gì thì không thơm.
-   */
   ovenBusy = false;
   private lastBatchOutAt = -Infinity;
   private wasOvenBusy = false;
 
-  /**
-   * CÁI XE ĐANG CHẠY — lò có ổ, HOẶC đã bán được ổ nào hôm nay. ⚠️ Khác `w.ovenHot` của
-   * bảng đen; xem khối ở `ovenHot` ngay dưới.
-   */
+  /** ⚠️ Khác `w.ovenHot` của bảng đen — xem khối ở `ovenHot` ngay dưới. */
   get stallRunning() { return this.ovenBusy || this.servedCount > 0; }
 
   /**
-   * CÓ MÙI BÁNH KHÔNG — thứ `w.ovenHot` của bảng đen nói tới. ⚠️ Phải tách khỏi `stallRunning`:
-   * bảng đen khai fact này là "lò đang nhen / mẻ vừa ra", và mùi bánh không tắt ngay lúc rút ổ
-   * ra khỏi lò (`OVEN_SMELL_SEC` là cái đuôi đó).
+   * ⚠️ Phải tách khỏi `stallRunning`: bảng đen khai fact này là "lò đang nhen / mẻ vừa ra", và mùi
+   * bánh không tắt ngay lúc rút ổ ra khỏi lò.
    */
   get ovenHot() { return this.ovenBusy || this.nowSec - this.lastBatchOutAt < OVEN_SMELL_SEC; }
   private storyTimeline: { at: number; text: string }[] = [];
@@ -689,42 +543,27 @@ export class Service {
   // ── người qua đường (sim/passersby.ts) ─────────────────────────────────────
   private passerIn = 0;
   private passerSeq = 0;
-  /**
-   * Vị trí người chơi trong thế giới — scene đặt mỗi frame; `talkTarget` cần nó để chọn
-   * người gần nhất. Vắng (test headless) thì F rơi về người đứng đầu quầy như cũ.
-   */
   playerAt: { x: number; y: number } | null = null;
   playerHand = "empty";
   playerOnStreet = false;
   shadeFree = false;
   seatFree = false;
-  /**
-   * CÁI GÁNH của bà Sáu đang ở đâu — `null` là bà chưa tới (hoặc đã về).
-   *
-   * `"NGOAI"` là chỗ bà hạ gánh theo thói quen: ngay mặt tiền. Tiện cho bà, vướng cho
-   * mình — khách nhìn vô thấy chật nên quay đầu nhiều hơn, và đó là cái giá đọc được.
-   */
+  /** `"NGOAI"` là bà hạ gánh ngoài lối vào — chiếm một chỗ mặt tiền cho tới khi được mời dời vô. */
   ganh: "NGOAI" | "TRONG" | null = null;
   /**
-   * Còn mấy ổ trong giỏ — scene đặt mỗi frame. Khác `soldOut` (ngưỡng 0): "còn mấy ổ
-   * cuối" là một NGƯỠNG, và ba nút của `qua-duong` hỏi đúng cái ngưỡng đó.
+   * XE CHÚ KIỆT đang ở đâu — `null` là chú không có mặt.
+   *
+   * `"LAN"` là chú đẩy sát qua mặt tiền mình, và đó là mặc định khi chú tới: ông ta không
+   * xin phép. Người chơi xử lý bằng `MOVE_CART`.
    */
+  cart: "LAN" | "XA" | "CHUNG" | null = null;
+  /** Khác `soldOut` (ngưỡng 0): "còn mấy ổ cuối" là một NGƯỠNG, và ba nút `qua-duong` hỏi đúng nó. */
   stock = 0;
-  /**
-   * SÁNG NAY NGƯỜI NÀY ĐÃ KỂ CHUYỆN GÌ — tầng `d.*`, khoá theo `memKey` chứ không theo lượt ghé.
-   * Không cần dọn: `Service` sống đúng một buổi bán.
-   */
+  /** Tầng `d.*`, khoá theo `memKey` chứ không theo lượt ghé. Không cần dọn — `Service` sống một buổi bán. */
   private toldToday = new Map<string, string[]>();
-  /**
-   * KÝ ỨC VỪA ĐƯỢC TRUY HỒI cho nhịp đang mở. `null` = không nhớ ra chuyện gì khớp, và lúc
-   * đó `m.remembers` sai nên mọi câu nhắc chuyện cũ KHÔNG TỒN TẠI — nội dung không gọi tên
-   * một chuyện cũ, nó NHẬN một chuyện cũ.
-   */
+  /** `null` = không nhớ ra gì khớp, và lúc đó `m.remembers` sai nên mọi câu nhắc chuyện cũ không tồn tại. */
   private recalled: Recalled | null = null;
-  /**
-   * LỜI HỨA ĐANG TREO — mỗi món một hạn giây thật và một bộ đếm nấc. Sống trong `Service`
-   * (một buổi bán) chứ không trong save; lời hứa QUA ĐÊM là chuyện của `obligations.ts`.
-   */
+  /** Sống trong `Service` (một buổi bán), không trong save — lời hứa QUA ĐÊM là của `obligations.ts`. */
   private deeds: { c: Customer; deed: Deed; dueAt: number; nudged: number }[] = [];
   private asideFor = new Map<string, ForSec>();
   private arriveSeq = 0;
@@ -736,10 +575,7 @@ export class Service {
 
   servedCount = 0;
   lostCount = 0;
-  /**
-   * Mấy người ngó thấy hàng dài rồi quay về. CỐ Ý tách khỏi `lostCount` — xem nhánh
-   * `balked` trong `leave()`. Để đây cho dev overlay và cho việc tune, không cho màn tối.
-   */
+  /** CỐ Ý tách khỏi `lostCount` — xem nhánh `balked` trong `leave()`. Cho dev overlay, không cho màn tối. */
   balkedCount = 0;
   dialogDeferred = 0;
 
@@ -783,11 +619,7 @@ export class Service {
     this.talks.clear();
   }
 
-  /**
-   * Lịch khách cả buổi. Giờ cao điểm 6h30–8h dày khách hơn hẳn (CANON §13.3).
-   * Sinh từ một dòng số RIÊNG của (ngày, "npc-schedule") — không phụ thuộc người chơi
-   * làm gì trong ngày (P0-02 §2.3).
-   */
+  /** Sinh từ dòng số RIÊNG của (ngày, "npc-schedule") — không phụ thuộc người chơi làm gì trong ngày. */
   private buildSchedule() {
     const rng = this.deps.hub.derive("npc-schedule");
     const list: Omit<Visit, "seq">[] = [];
@@ -842,10 +674,7 @@ export class Service {
     return (this.deps.npcs[id] ??= newNpcState());
   }
 
-  /**
-   * Đơn ruột KHÔNG vào save. Người có tên: câu NGUYÊN VĂN của P4-01 (có thể đổi theo arc —
-   * chị Hạnh đổi chữ, anh Bảo được dạy ăn cay). Khách vãng lai: suy ra từ seed + id.
-   */
+  /** Không vào save. Người có tên: câu NGUYÊN VĂN của P4-01; khách vãng lai: suy từ seed + id. */
   private usualOf(id: string, atMin = 0): OrderSpec {
     const ctx = this.arcCtx();
     const authored = ctx ? authoredUsual(id, ctx, atMin) : null;
@@ -878,19 +707,12 @@ export class Service {
     }
   }
 
-  /**
-   * "Như mọi bữa" chỉ được nói khi: là NPC có tên, VÀ người chơi đã NGHE họ đọc nguyên
-   * đơn ít nhất hai lần. (Bổ sung của bản dựng — dạy trước rồi mới kiểm, giữ T3.)
-   */
+  /** Chỉ khi là NPC có tên VÀ người chơi đã NGHE họ đọc nguyên đơn ít nhất hai lần. */
   private canAskUsual(npc: NpcDef | null, m: NpcState) {
     return npc !== null && m.heard >= 2;
   }
 
-  /**
-   * Sức chờ T — P1-02 §2.7: base × (vội ? 0,65 : 1) × {Rival 0,8 · Acq 1,0 · Friend 1,35},
-   * NHÂN THÊM hệ số hàng chờ (bổ sung của bản dựng — xem `queuePatienceMul`), rồi CỘNG
-   * `PATIENCE_BONUS_SEC` sau cùng.
-   */
+  /** base × (vội ? 0,65 : 1) × tier, NHÂN thêm `queuePatienceMul`, rồi CỘNG `PATIENCE_BONUS_SEC` sau cùng. */
   private patienceOf(npc: NpcDef | null, at: number, ahead: number) {
     const base = npc?.patience ?? DEFAULT_PATIENCE_SEC;
     const rush = npc?.rush && at >= npc.rush[0] && at < npc.rush[1] ? 0.65 : 1;
@@ -902,10 +724,9 @@ export class Service {
   private spawn(v: Visit, nowMin: number) {
     const npc = v.npc;
     const plan = v.plan ?? null;
-    /*
-     * Trần thông lượng: `days.json` viết tay `target.peak` cho từng ngày — tối đa mấy khách
-     * VÃNG LAI cùng đứng ở quầy. Chỉ đếm khách vãng lai; chế độ không giới hạn thời gian ép
-     * trần về 1 và đếm MỌI người. Quá trần thì lượt ghé đó DỜI LẠI một phút, không mất.
+    /**
+     * `days.json` viết tay `target.peak` cho từng ngày. Chỉ đếm khách VÃNG LAI — người có tên tới theo
+     * lịch của họ. Quá trần thì lượt ghé DỜI LẠI một phút, không mất.
      */
     const unlimited = !!this.deps.noTimePressure;
     if (!plan?.pass && (unlimited || !npc)) {
@@ -930,29 +751,35 @@ export class Service {
           deTha: 0.5 + rng.next() * 0.4, thanThien: 0.3 + rng.next() * 0.5 };
 
     const mood = rollMood(this.deps.hub.derive(`mood:${v.seq}`), this.deps.day);
-    // Đã có mấy người đứng trước lúc người này tới. Tính ở ĐÂY một lần, chứ không theo chỗ
-    // đứng hiện thời: họ đã chấp nhận cái hàng mà họ NHÌN THẤY lúc xếp vào. Người đang bỏ
-    // đi, người chỉ đi ngang và người đang quay đầu thì không tính.
-    /*
-     * Cái gánh để ngoài CHIẾM MỘT CHỖ MẶT TIỀN — khách nhìn vô thấy chật y như có thêm
-     * một người đứng. Đó là cả cái giá của việc để yên nó đó, và nó đi qua đúng cái
-     * `balkChance` đã có sẵn chứ không đẻ thêm một đường tính riêng.
-     */
+    // Tính ở ĐÂY một lần, không theo chỗ đứng hiện thời: họ đã chấp nhận cái hàng họ NHÌN THẤY lúc xếp vào.
+    /** Cái gánh để ngoài CHIẾM MỘT CHỖ MẶT TIỀN — khách nhìn vô thấy chật y như có thêm một người. */
     const ahead = this.customers.filter((x) => x.phase !== "leaving" && !x.pass && !x.balking).length
       + (this.ganh === "NGOAI" ? 1 : 0);
 
-    /*
-     * "Đông quá thôi để bữa khác" — xem `balkChance` ở đầu file. Ba trường hợp KHÔNG bao giờ
-     * quay đầu: lượt ghé có kịch bản, chế độ không giới hạn thời gian, và người đi ngang.
-     *
-     * ⚠️ Dòng số RIÊNG `balk:` chứ không rút ké từ `visit:`.
+    /**
+     * Xem `balkChance` ở đầu file. Ba trường hợp KHÔNG bao giờ quay đầu: lượt ghé có kịch bản, chế độ
+     * không giới hạn thời gian, người đi ngang. ⚠️ Dòng số RIÊNG `balk:`, không rút ké từ `visit:`.
      */
-    const balking = !plan && !this.deps.noTimePressure
+    /*
+     * XE CHÚ KIỆT LẤN QUA THÌ ĂN BỚT KHÁCH LẠ — `KIET_STEAL`.
+     *
+     * Dòng số RIÊNG `kiet:` chứ không rút ké từ `balk:`: rút ké là rút CÓ ĐIỀU KIỆN từ
+     * một dòng dùng chung, đúng cái lỗi `maybeCutLine` đã mắc một lần (P0-02 §2.3).
+     *
+     * Chỉ khách LẠ: người có tên tới tìm mình, họ không tạt ngang vì một cái xe đứng gần
+     * hơn. Và đây là chỗ chú Kiệt thành ĐỐI THỦ chứ không phải một cái thùng chắn lối —
+     * cái gánh bà Sáu chỉ cộng vào `ahead`, cái xe này lấy mất người.
+     */
+    const kietLay = this.cart === "LAN" && !npc && !plan?.pass
+      && this.deps.hub.derive(`kiet:${v.seq}`).next() < KIET_STEAL;
+    if (kietLay) this.out.push({ kind: "log", text: "một người ghé xe chú Kiệt thay vì xe mình." });
+
+    const balking = kietLay || (!plan && !this.deps.noTimePressure
       && this.deps.hub.derive(`balk:${v.seq}`).next() < balkChance({
         ahead, slots: SLOTS.length, person,
         relVisitMul: visitProbabilityMul(m), moodPatience: moodPatienceMul(mood),
         rushing: !!npc?.rush && nowMin >= npc.rush[0] && nowMin < npc.rush[1],
-      });
+      }));
     // Quay đầu ở đầu hẻm KHÔNG phải một lượt ghé.
     if (!plan?.pass && !balking) m.visits++;
     m.lastSeenDay = this.deps.day;
@@ -999,25 +826,14 @@ export class Service {
     this.deps.bus.emit("npc:arrived", { npcId: memKey, visitId: id, slot: "SEATED_FAR", atHhmm: fmtHhmm(v.at) });
   }
 
-  /**
-   * CÓ NGƯỜI CHEN HÀNG THẬT — chỗ duy nhất gán `Customer.cutLine`. Ai chen: người NÓNG TÍNH
-   * đang VỘI, và chỉ khi hàng đã có người để mà chen. Rút từ `hub.derive` theo id lượt ghé.
-   */
+  /** Chỗ duy nhất gán `Customer.cutLine`. Ai chen: người NÓNG TÍNH đang VỘI, và chỉ khi hàng đã có người. */
   private maybeCutLine(c: Customer) {
     const ahead = this.customers.filter((x) => x !== c && this.inQueue(x) && !x.aside);
     if (ahead.length < 1) return;
     const hurry = c.purpose?.hurry ?? 0.3;
     const p = Math.max(0, 0.45 * c.personality.nongTinh * (0.4 + hurry) - 0.12 * ahead.length);
-    /*
-     * ⚠️ RÚT TỪ DÒNG RIÊNG, KHÔNG ĐỤNG DÒNG SPAWN. Rút có điều kiện trên một dòng dùng
-     * chung thì nó dịch mọi lần rút sau đó nhưng chỉ ở một số lượt — golden không vỡ ngay
-     * mà vỡ lệch pha vài ngày sau.
-     */
+    /** ⚠️ Rút có điều kiện trên dòng dùng chung thì golden không vỡ ngay mà vỡ lệch pha vài ngày sau. */
     if (this.deps.hub.derive(`cutline:${this.deps.day}:${c.id}`).next() >= p) return;
-    /*
-     * Chen là ĐỨNG LÊN TRƯỚC một người: dời họ lên trước người đầu hàng trong mảng, và
-     * `assignSlots` cấp chỗ theo thứ tự mới.
-     */
     const victim = ahead[ahead.length - 1];
     const i = this.customers.indexOf(c), j = this.customers.indexOf(victim);
     if (i < 0 || j < 0 || j >= i) return;
@@ -1058,10 +874,7 @@ export class Service {
 
   // ─────────────────────────────────────────────── bước 3 · tầng NHẬN THẤY
 
-  /**
-   * Duyệt từ phía SỰ KIỆN (CANON §5). Không được hoãn: hoãn perception là đổi kết quả
-   * game (P0-01 §2.4). `occluders` do scene đưa (thân người che, hơi lò…).
-   */
+  /** Duyệt từ phía SỰ KIỆN. ⚠️ Không được hoãn — hoãn perception là đổi kết quả game. */
   perceive(dt: number, nowSec: number, occluders: readonly Occluder[] = []) {
     this.nowSec = nowSec;
     this.active = this.active.filter((s) => s.until > nowSec - 30);
@@ -1090,11 +903,7 @@ export class Service {
     }
   }
 
-  /**
-   * Phản ứng khi NOTICED — P1-02 §2.9, CANON §11: 35% im lặng (túi theo người). Cooldown
-   * tier-1 giờ nằm trong content (`ctxBarkT1_*` của rule) — rule tier-1 hết lượt thì rule
-   * điểm thấp hơn ("Hửm.") tự thắng.
-   */
+  /** 35% im lặng (túi theo người). Cooldown tier-1 nằm trong content — hết lượt thì rule điểm thấp hơn thắng. */
   private noticeBark(c: Customer, id: StimId, state: ObsState, smell?: boolean) {
     if (!this.barks.speaks(c.memKey)) {
       this.deps.bus.emit("dialog:silent", { npcId: c.memKey, reason: "RATE_35" });
@@ -1107,10 +916,7 @@ export class Service {
     this.speakConcept(c, "NOTICE_EVENT", q, SALIENCE[id]);
   }
 
-  /**
-   * Kênh 1 + 2 — mặt đổi sau `reactionDelay`, và không hai người nào phản ứng trong cùng 60 ms.
-   * Luật 35% im lặng không đụng tới đây: im lặng là không NÓI, không phải không phản ứng.
-   */
+  /** Mặt đổi sau `reactionDelay`, không hai người nào trong cùng 60 ms. Luật 35% im lặng là không NÓI, không phải không phản ứng. */
   private react(c: Customer, id: StimId, i: Intensity, pose?: PoseId, group?: Group) {
     const p = c.personality;
     const g = group ?? GROUP_OF[id];
@@ -1122,11 +928,7 @@ export class Service {
     this.scheduleReact(c, face, chosen);
   }
 
-  /**
-   * Phản ứng với một chuyện KHÔNG có kích thích riêng — lời nói qua lại ở quầy (P5-01).
-   * Cùng luật giãn 60 ms và cùng `faceHoldSec` với `react()`; khác ở chỗ không có `StimId`
-   * nào để tra `npc.poses`, nên dáng lấy thẳng từ bảng nhóm.
-   */
+  /** Chuyện KHÔNG có kích thích riêng (lời nói ở quầy): không có `StimId` để tra `npc.poses` nên dáng lấy từ bảng nhóm. */
   private reactTalk(c: Customer, g: Group, i: Intensity, pose?: PoseId) {
     const p = c.personality;
     let face = faceFor(g, p, i);
@@ -1146,10 +948,7 @@ export class Service {
     c.react.schedule(c.now, at - this.nowSec, face, pose, faceHoldSec(p));
   }
 
-  /**
-   * Ghi một ký ức chứng kiến (P2-03). Chỉ 12 người có tên mới có trí nhớ — khách vãng
-   * lai lần đầu gặp chuyện xấu thì "im, đi thẳng, không bao giờ quay lại" (P2-02 §5.1 M3′).
-   */
+  /** Chỉ 12 người có tên mới có trí nhớ — khách vãng lai gặp chuyện xấu thì "im, đi thẳng, không quay lại". */
   private remember(c: Customer, kind: BaseKind, intensity: number, detail?: Memory["detail"]) {
     if (!c.npc || intensity <= 0) return;
     const m = this.mem(c.memKey);
@@ -1176,20 +975,12 @@ export class Service {
 
   // ───────────────────────────────────────── "việc mình làm có tới không" (T3)
 
-  /**
-   * Ghi lý do của một chuyện vừa làm quan hệ nhúc nhích. Nhiều lý do trong cùng một khoảnh
-   * khắc thì lý do NẶNG KÝ NHẤT thắng — người chơi chỉ đọc được một dòng. `>=` chứ không
-   * `>` để lý do ghi SAU thắng khi hoà.
-   */
+  /** Lý do NẶNG KÝ NHẤT thắng (người chơi chỉ đọc được một dòng). `>=` để lý do ghi SAU thắng khi hoà. */
   private noteRel(text: string, weight: number) {
     if (!this.relNote || weight >= this.relNote.w) this.relNote = { text, w: weight };
   }
 
-  /**
-   * Kết một khoảnh khắc người chơi nối được với việc mình vừa làm. Một khoảnh khắc = MỘT sự
-   * kiện, gộp mọi `record()` bên trong thành một chiều ròng; ròng gần bằng không thì KHÔNG phát.
-   * T3 / L2: chỉ có chiều, một mức đậm nhạt, và một mẩu chữ.
-   */
+  /** Gộp mọi `record()` của một sự kiện thành một chiều ròng; ròng gần 0 thì KHÔNG phát — im lặng cũng là tin. */
   private settleRelMoved(c: Customer, before: number) {
     const note = this.relNote;
     this.relNote = null;
@@ -1248,11 +1039,7 @@ export class Service {
       // Chỗ đi khuất của CHÍNH người này — cổng khách nằm ngay trên dải người qua đường đi.
       const exit = c.pass?.exit ?? GATE;
       if (c.phase !== "leaving" || !near(c, exit, 0.5) || lingering) continue;
-      /*
-       * ⚠️ DỌN SẠCH TRƯỚC KHI XOÁ NGƯỜI RA KHỎI DANH SÁCH. Người đi ngang đi khuất ở đây bằng
-       * `splice`, KHÔNG qua `leave()` — mà `leave()` là chỗ duy nhất dọn phiên trò chuyện.
-       * Thiếu nhánh này thì thẻ còn trên màn hình và cả hẻm câm tới khi người chơi bấm Esc.
-       */
+      /** ⚠️ Người đi ngang đi khuất bằng `splice`, không qua `leave()` — mà `leave()` là chỗ duy nhất dọn phiên trò chuyện. */
       if (this.talkWith === c) this.endTalk();
       const pendingOffer = this.offerFor(c);
       if (pendingOffer) this.offers.splice(this.offers.indexOf(pendingOffer), 1);
@@ -1267,10 +1054,7 @@ export class Service {
 
   // ────────────────────────────────────────────── người qua đường (ambient)
 
-  /**
-   * Nhịp người đi ngang — xem `sim/passersby.ts`. Đếm bằng GIÂY THẬT (`dt`), không bằng phút
-   * game: đồng hồ tua nhanh khi quầy trống. Dòng số `passer:<ngày>:<thứ tự>` là dòng RIÊNG.
-   */
+  /** Đếm bằng GIÂY THẬT, không phút game: đồng hồ tua nhanh khi quầy trống thì hẻm vắng nhất lại là lúc họ ùa ra. */
   private tickPassers(dt: number, dayOver: boolean) {
     if (dayOver) return;
     this.passerIn -= dt;
@@ -1283,11 +1067,8 @@ export class Service {
   }
 
   /**
-   * HAI NGƯỜI ĐI NGANG GẶP NHAU THÌ CHÀO NHAU MỘT CÂU — đi ngược chiều trong vòng một ô, roll
-   * tất định theo CẶP và theo NGÀY, chậm lại 0,8 giây, một câu chào một câu đáp.
-   *
-   * ⚠️ KHÔNG mang thông tin gì (không `claim`, không tên người, không ghi sổ tay) — đó là ranh
-   * giới cứng với cảnh nghe lỏm ở góc hẻm.
+   * Đi ngược chiều trong vòng một ô, roll tất định theo CẶP và NGÀY, chậm lại 0,8 giây, một câu chào
+   * một câu đáp. ⚠️ KHÔNG mang thông tin gì — đó là ranh giới cứng với cảnh nghe lỏm ở góc hẻm.
    */
   private greetPassers() {
     const amb = this.customers.filter((c) => c.ambient && c.pass && !c.speaking && !c.greeted);
@@ -1307,11 +1088,7 @@ export class Service {
         a.greetUntil = a.now + GREET_SLOW_SEC;
         b.greetUntil = b.now + GREET_SLOW_SEC;
         const hi = this.barks.take("chaoNhau", a.memKey);
-        /*
-         * KHU PHỐ BIẾT CHUYỆN CỦA MÌNH — câu ĐÁP có xác suất là một tin đồn đang sống. Tin lấy
-         * từ `gossip.ts`, đi ra bằng `overhear`: nghe lỏm được, KHÔNG xen vào được. Người đi
-         * ngang không giữ niềm tin nào và không dẫn nguồn (`tier: 1`).
-         */
+        /** Câu ĐÁP có xác suất là một tin đồn đang sống. Người đi ngang không giữ niềm tin nào và không dẫn nguồn. */
         const tin = this.streetRumour();
         const re = tin ?? this.barks.take("chaoDap", b.memKey);
         if (hi) this.say(a, hi, 3, false, 20);
@@ -1329,10 +1106,7 @@ export class Service {
 
   private lastRumourId = "";
 
-  /**
-   * MỘT TIN ĐANG SỐNG TRONG HẺM, nói thành một câu ngoài đường. Không giữ tin nào thì trả `null`
-   * và cảnh chào vẫn chạy bằng bark thường. Dùng câu `belief` (không có `{source}`).
-   */
+  /** Không giữ tin nào thì trả `null` và cảnh chào chạy bằng bark thường. Dùng câu `belief` (không `{source}`). */
   private streetRumour(): string | null {
     const g = this.deps.gossip;
     if (!g) return null;
@@ -1365,18 +1139,10 @@ export class Service {
       person, WALKIN_STYLES[plan.style], null, this.usualOf(memKey), 0,
       plan.from, DEFAULT_PATIENCE_SEC, rng,
     );
-    /*
-     * MỖI NGƯỜI ĐI NGANG CÓ MỘT LÝ DO ĐỂ ĐI — mục đích phân biệt người trễ giờ làm (mời cũng
-     * không dừng) với người đi chợ về, và quyết luôn việc họ dễ cười hay dễ cáu. Rút từ CHÍNH
-     * dòng số của lượt đi ngang này.
-     */
+    /** Phân biệt người trễ giờ làm (mời cũng không dừng) với người đi chợ về. Rút từ chính dòng số của lượt đi ngang này. */
     const roll = rollPurpose(rng, bandOf(this.nowMin));
     c.driveBase = baseDrives(c.personality);
-    /*
-     * MỤC ĐÍCH ĐẨY THẲNG VÀO DRIVE. Đây là chỗ "spam mời khách" chết mà không cần một luật
-     * chống spam nào: người đang vội có `VIEC_RIENG` và `YEN_THAN` cao nên mọi cuộc MỜI chấm
-     * ra gần 0 — `pickTalk` thôi rút chúng, chứ không phải rút rồi mới chặn.
-     */
+    /** Đây là chỗ "spam mời khách" chết mà không cần luật chống spam: người vội có `VIEC_RIENG` cao nên cuộc MỜI chấm gần 0. */
     c.driveBase.VIEC_RIENG = 25 + 60 * purposeHurry(roll.purpose, roll.state);
     c.driveBase.YEN_THAN = Math.max(c.driveBase.YEN_THAN, 20 + 50 * (1 - roll.state.inviteMul));
     c.drives = { ...c.driveBase };
@@ -1391,9 +1157,7 @@ export class Service {
     };
     c.purposeLabel = describePurpose(roll.purpose, roll.state);
     c.ambient = true;
-    // `leaving` ngay từ bước đầu: đó là cách `pass` vốn làm, và nó đúng — người đi ngang
-    // không bao giờ vào hàng, nên mọi chỗ đếm người đang đứng (`audience`, `assignSlots`,
-    // `ahead`, `peakCap`) phải bỏ qua họ mà không cần thêm một nhánh `if` nào.
+    // `leaving` ngay từ đầu: mọi chỗ đếm người đang đứng bỏ qua họ mà không cần thêm nhánh `if` nào.
     c.phase = "leaving";
     c.pass = {
       stay: plan.stay, until: -1,
@@ -1412,11 +1176,7 @@ export class Service {
         walk(c, spot, dt, p.speed);
         if (near(c, spot, 0.25)) {
           p.until = c.now + p.stay;
-          /*
-           * Người qua đường chỉ ngoái nhìn cái xe một cái. ⚠️ Đặt THẲNG vào `react` chứ không
-           * qua `this.react()` — hàm đó rút một số của `dialog-shufflebag`, dòng chung của cả hệ
-           * thoại.
-           */
+          /** ⚠️ Đặt THẲNG vào `react`, không qua `this.react()` — hàm đó rút số của `dialog-shufflebag`, dòng chung cả hệ thoại. */
           if (c.ambient) {
             if (p.stay > 0) c.react.schedule(c.now, 0, null, "PEEK_OVER", p.stay);
             return;
@@ -1427,23 +1187,14 @@ export class Service {
         }
         return;
       }
-      /*
-       * ĐANG NÓI CHUYỆN VỚI MÌNH THÌ ĐỨNG LẠI — gia hạn mỗi frame, không hẹn cứng một lần.
-       * `openTalk` chỉ đặt `until = now + PASSER_TALK_TAIL` (4 giây thật) mà đọc hết một
-       * cuộc mất 20–30 giây; gia hạn thì họ ở lại đúng bằng quãng mình còn nói.
-       */
+      /** Gia hạn mỗi frame: `openTalk` chỉ hẹn 4 giây mà đọc hết một cuộc mất 20–30 giây. */
       // `owesLine`: phiên đã đóng nhưng câu đáp còn chưa ra khỏi miệng người ta.
       if (this.talkWith === c || this.owesLine(c)) { p.until = c.now + PASSER_TALK_TAIL; return; }
       if (c.now < p.until) return;
       walk(c, exit, dt, (p.speed ?? 1) * (c.now < c.greetUntil ? GREET_SLOW : 1));
       return;
     }
-    /*
-     * Đã quyết không vào nhưng KHÔNG xoá người ta ở cổng: khách sinh ra ngay tại `GATE` nên
-     * `leave()` lúc spawn là họ biến mất trong CÙNG một frame. Họ vẫn đi vào, đứng ngó một nhịp,
-     * nói câu của mình rồi quay lưng. Trả sớm trước `waitSteps()` — chưa xếp hàng thì chưa có
-     * đồng hồ chờ nào chạy.
-     */
+    /** Khách sinh ra ngay tại `GATE` nên `leave()` lúc spawn là họ biến mất cùng frame. Trả sớm trước `waitSteps()`. */
     if (c.balking && c.phase !== "leaving") {
       walk(c, BALK_LOOK, dt);
       if (!near(c, BALK_LOOK, 0.25)) return;
@@ -1467,17 +1218,8 @@ export class Service {
       return;
     }
 
-    /*
-     * ĐANG NÉP QUA MỘT BÊN — họ ở NGOÀI hàng, nên không một nhánh nào bên dưới được
-     * kéo họ về chỗ đứng cũ. Vẫn rơi xuống `waitSteps()` ở cuối hàm: nhường chỗ không
-     * phải là bấm tạm dừng đồng hồ chờ của người ta, nép lâu quá thì vẫn bỏ về.
-     */
-    /*
-     * ĐANG NGỒI (`THEY_SIT`) — rời chỗ đứng nhưng KHÔNG rời hàng: tới lượt vẫn là lượt của họ,
-     * kiên nhẫn vẫn trôi chỉ chậm hơn.
-     *
-     * ⚠️ Đặt TRƯỚC nhánh `aside`: ai vừa nép vừa ngồi thì cái ghế thắng, nó là chỗ cụ thể hơn.
-     */
+    /** Họ ở NGOÀI hàng nên không nhánh nào kéo họ về chỗ cũ, nhưng vẫn rơi xuống `waitSteps()` — nép lâu quá thì vẫn bỏ về. */
+    /** Rời chỗ đứng nhưng KHÔNG rời hàng. ⚠️ Đặt TRƯỚC nhánh `aside`: vừa nép vừa ngồi thì cái ghế thắng. */
     if (c.sitting) {
       if (c.phase === "ordering") c.phase = "waiting";
       walk(c, SEAT_SPOT, dt);
@@ -1516,11 +1258,7 @@ export class Service {
     if (dayOver) this.leave(c, "closed");
   }
 
-  /**
-   * MADE_THEM_WAIT đi KÊNH THỜI GIAN của riêng từng người, không phải một kích thích cả hàng
-   * cùng thấy. Mốc theo r = đã chờ / sức chờ: 0,6 nhấp nhổm · ~0,85 liếc đồng hồ · 1,0 CONFIRMED
-   * · 1,6 bỏ đi.
-   */
+  /** Kênh THỜI GIAN của riêng từng người. Mốc theo r = đã chờ / sức chờ: 0,6 nhấp nhổm · 1,0 CONFIRMED · 1,6 bỏ đi. */
   private waitSteps(c: Customer) {
     const r = c.waitRatio;
     const watchAt = Math.max(0.85 * c.waitT, c.waitT - 8) / c.waitT;
@@ -1545,20 +1283,12 @@ export class Service {
     this.smalltalk(c);
   }
 
-  /**
-   * SMALLTALK — một lần mỗi lượt ghé, khi khách đã chờ bánh vài giây, không ai đang nói và
-   * không có câu nào đang xếp hàng. Rule quyết định nói gì (quầy dơ, chuyện cải lương…);
-   * không rule nào khớp thì im — chuyện phiếm không cần lưới an toàn.
-   */
+  /** Một lần mỗi lượt ghé. Rule quyết nói gì; không rule nào khớp thì im — chuyện phiếm không cần lưới an toàn. */
   private smalltalk(c: Customer) {
     if (c.phase !== "waiting" || this.smalltalked.has(c.id)) return;
     if (this.nowSec - c.orderedAt < SMALLTALK_AFTER_SEC) return;
     if (this.queue.length || this.customers.some((x) => x.speaking)) return;
-    /*
-     * ⚠️ ĐÁNH DẤU SAU, không đánh dấu trước: đánh dấu trước thì một người bị trượt vì lý do
-     * thuần kỹ thuật (hàng đợi lời mời đang đầy, tay người chơi đang bận) coi như đã tiêu
-     * xong lượt bắt chuyện của cả lượt ghé, và im luôn tới lúc đi về.
-     */
+    /** ⚠️ ĐÁNH DẤU SAU: đánh dấu trước thì người bị trượt vì lý do kỹ thuật coi như tiêu xong lượt bắt chuyện của cả lượt ghé. */
     if (this.offerTalk(c)) { this.smalltalked.add(c.id); return; }
     if (!this.interruptible) return;
     this.smalltalked.add(c.id);
@@ -1566,11 +1296,7 @@ export class Service {
     this.speakConcept(c, "SMALLTALK", {}, 45, true);
   }
 
-  /**
-   * Khách nhắc ở quầy một chuyện NGHE KỂ (P2-04 §2.9 ba pool): "nghe {nguồn} nói…" →
-   * "nghe nói…" → "biết mà". Dòng `hearsay` LUÔN có tên nguồn (RB3) — sợi chỉ để lần.
-   * Mỗi chuyện tối đa một lần mỗi ngày mỗi người.
-   */
+  /** Ba pool: "nghe {nguồn} nói…" → "nghe nói…" → "biết mà". Dòng `hearsay` LUÔN có tên nguồn — sợi chỉ để lần. */
   private mentionGossip(c: Customer): boolean {
     const g = this.deps.gossip;
     if (!g || !c.npc) return false;
@@ -1621,10 +1347,7 @@ export class Service {
     c.plan = c.plan ? { ...c.plan, after: undefined } : null;
   }
 
-  /**
-   * Tới mà hết bánh. Không có sự kiện thứ 12 (CANON §3): là MADE_THEM_WAIT lý do OUT_OF_STOCK,
-   * cường độ 55 × (1 + 0,5·min(số lần ghé, 20)/10) — khách ruột lâu năm nhớ nặng nhất.
-   */
+  /** Không có sự kiện thứ 12: là `MADE_THEM_WAIT` lý do OUT_OF_STOCK, cường độ theo số lần ghé — khách ruột nhớ nặng nhất. */
   private turnAway(c: Customer) {
     this.soldOutCount++;
     this.speakConcept(c, "FAREWELL", { leaveReason: "SOLD_OUT" }, 80, true);
@@ -1636,11 +1359,7 @@ export class Service {
     this.leave(c, "soldout");
   }
 
-  /**
-   * Câu buông ra lúc quay lưng đi. Luật quan trọng nhất: KHÔNG PHẢI AI CŨNG NÓI — chào đủ mỗi
-   * khách mỗi lượt thì nó thành tiếng chuông cửa. Bốn cái van đều có sẵn: túi im lặng 7/20
-   * (`barks.speaks`) · `odds` của từng rule · `silent: true` · và `QUEUE_EXPIRE_SEC`.
-   */
+  /** KHÔNG PHẢI AI CŨNG NÓI — chào đủ mỗi khách mỗi lượt thì thành tiếng chuông cửa. Bốn van đều có sẵn. */
   private farewell(c: Customer) {
     const outcome = this.serveOutcome.get(c.id) ?? "CLEAN";
     this.serveOutcome.delete(c.id);
@@ -1679,11 +1398,7 @@ export class Service {
     c.zone = "SEATED_FAR";
     if (reason === "served") { this.servedCount++; this.farewell(c); }
     if (!this.viaSettled && (reason === "impatient" || reason === "soldout" || reason === "soiled")) { this.opening.walkedAway = true; this.settleVia(); }
-    /*
-     * Lắc đầu không nhận ổ vừa nhặt dưới đất lên (xem `SOILED_CAUGHT`): một người chơi ĐỂ MẤT,
-     * nên vào thẳng `lostCount` và `lost` của sổ tay — khác hẳn nhánh `balked` ngay dưới. Ưu
-     * tiên 92, cao hơn mọi câu đang xếp hàng.
-     */
+    /** Một người chơi ĐỂ MẤT: vào thẳng `lostCount` và `lost` của sổ tay — khác hẳn nhánh `balked` ngay dưới. */
     if (reason === "soiled") {
       this.lostCount++;
       if (this.deps.notebook) this.deps.notebook.today.lost++;
@@ -1696,13 +1411,10 @@ export class Service {
       this.speakConcept(c, "FAREWELL", { leaveReason: "IMPATIENT" }, 80);
       this.out.push({ kind: "log", text: `${this.label(c)} bỏ đi — chờ lâu quá.` });
     }
-    /*
-     * Quay đầu vì đông: KHÔNG `remember()` (người bán không làm gì sai, mà `remember()` còn gọi
-     * `witness()` — cả hẻm kể nhau nghe một chuyện chưa từng xảy ra) và KHÔNG tính vào `lost`
-     * (hàng dài là hệ quả của bán được). `balkedCount` là chỗ cho dev overlay.
-     *
-     * Vẫn có giá: một ổ không bán được · `m.visits` không nhích · tối nay `nightly()` tính một
-     * lần LỠ.
+    /**
+     * KHÔNG `remember()` (người bán không làm gì sai, mà `remember()` còn gọi `witness()`) và KHÔNG tính
+     * vào `lost` (hàng dài là hệ quả của bán được). Giá nằm ở chỗ khác: một ổ không bán được, `m.visits`
+     * không nhích, và tối nay `nightly()` tính một lần LỠ.
      */
     if (reason === "balked") {
       this.balkedCount++;
@@ -1716,67 +1428,41 @@ export class Service {
 
   // ──────────────────────────── sự thật thế giới mà nội dung đọc (P2-09 §2.3)
 
-  /**
-   * CẬP NHẬT MẤY SỰ THẬT CÂU NÓI DỰA VÀO — `t.cutLine` · `t.blocking` · `w.shadeFree`.
-   *
-   * ⚠️ Đặt ở đây, mỗi frame, MỘT chỗ — không rải vào `assignSlots` / `spawn` / `leave`: một
-   * sự thật được ghi từ bốn chỗ là một sự thật sớm muộn gì cũng lệch.
-   */
+  /** ⚠️ Đặt ở đây, mỗi frame, MỘT chỗ — một sự thật được ghi từ bốn chỗ là một sự thật sớm muộn gì cũng lệch. */
   private tickWorldFacts() {
-    /*
-     * MẺ VỪA RA LÒ — bắt đúng lúc `ovenBusy` chuyển từ CÓ Ổ sang TRỐNG. Làm ở đây chứ không
-     * bắt scene gửi thêm một sự kiện nữa: scene đã phải gửi `ovenBusy` mỗi frame rồi, thêm
-     * một đường thứ hai là thêm một chỗ để hai bên lệch nhau.
-     */
+    /** Bắt đúng lúc `ovenBusy` chuyển CÓ Ổ → TRỐNG. Scene đã gửi `ovenBusy` mỗi frame rồi, thêm đường thứ hai là thêm chỗ lệch. */
     if (this.wasOvenBusy && !this.ovenBusy) this.lastBatchOutAt = this.nowSec;
     this.wasOvenBusy = this.ovenBusy;
 
-    /*
-     * CHEN HÀNG — thứ tự mảng `customers` LÀ thứ tự người ta tới, nên ai đứng gần quầy hơn một
-     * người tới TRƯỚC mình thì người đó đã chen. Chỉ tính người đang thật sự xếp hàng: `aside`
-     * tụt lại là do mình bảo họ nép, `balking` thì không ở trong hàng.
-     */
+    /** Thứ tự mảng `customers` LÀ thứ tự người ta tới. Chỉ tính người đang thật sự xếp hàng. */
     const queue = this.customers.filter((c) => this.inQueue(c) && !c.aside);
     for (let i = 0; i < queue.length; i++) {
       const c = queue[i];
       if (!c.cutLine) c.cutLine = queue.slice(0, i).some((before) => before.arrivedSeq > c.arrivedSeq);
-      /*
-       * ĐỨNG CHẮN — đứng ở chỗ đưa hàng mà KHÔNG phải lượt mình. Khác `cutLine` (sai thứ
-       * tự) ở chỗ nó là chuyện vị trí: người ta không giành lượt, họ chỉ đứng sai chỗ.
-       */
-      /*
-       * ĐỨNG CHẮN = chiếm CHỖ ĐƯA HÀNG trong lúc người sau không được phục vụ — người đã nhận
-       * bánh mà còn đứng đó, hoặc người đứng đầu hàng mà chưa chịu gọi.
-       *
-       * ⚠️ `arriving` KHÔNG tính: đó là người đang BƯỚC TỚI, không phải người đứng lì.
-       */
+      /** Người đã nhận bánh mà còn đứng đó, hoặc người đầu hàng chưa chịu gọi. ⚠️ `arriving` KHÔNG tính — đó là người đang BƯỚC TỚI. */
       const served = c.leaveReason === "served" || this.serveOutcome.has(c.id);
       c.blocking = c.slot === 0 && queue.length > 1 && (served || c.phase === "queueing");
     }
     for (const c of this.customers) if (!queue.includes(c)) { c.cutLine = false; c.blocking = false; }
-    /*
-     * NGƯỜI ĐI NGANG KHÔNG CHẮN QUẦY — đã thử gán rồi bỏ, ghi lại để không ai gán lại: chỗ họ
-     * dừng ngó nằm trên dải đường y9,6 / y12,4, còn chỗ đưa hàng ở y7,6, cách trọn một làn.
-     */
+    /** Đã thử gán rồi bỏ: chỗ họ dừng ngó cách chỗ đưa hàng trọn một làn, gán vào thì câu "xích qua chút" lúc nào cũng bày ra được. */
 
-    /*
-     * CHỖ MÁT CÒN TRỐNG KHÔNG — `SHADE_CAPACITY` = 1, một chỗ một người. Đây là lý do
-     * `w.shadeFree` là sự thật ĐỘNG (ra dấu "?" chứ không ẩn nút): người khác chiếm mất giữa
-     * lúc mình đang đọc thẻ là chuyện xảy ra được, và nó phải đọc ra được.
-     */
+    /** Một chỗ một người. Đây là lý do `w.shadeFree` là sự thật ĐỘNG: người khác chiếm mất giữa lúc mình đang đọc thẻ. */
     this.shadeFree = this.customers.filter((c) => c.inShade).length < SHADE_CAPACITY;
+    /** Kiểm thiết bị ở ĐÂY, không ở nội dung: `needEquip` chỉ ẩn nút, còn act thì vẫn chạy. */
+    /** Bà tới thì gánh nằm ngoài mặt tiền, bà về thì gánh đi theo — không có gánh mồ côi. */
     /*
-     * GHẾ: hết chỗ, hoặc CHƯA MUA ghế, thì không còn chỗ trống nào cả. Kiểm thiết bị ở
-     * đây chứ không để nội dung tự khai `needEquip`: một người viết quên khai là câu mời
-     * ngồi hiện ra ở cái xe chưa có ghế, và lời mời đó không có gì đỡ.
+     * CÁI GÁNH VÀ CÁI XE LÀ CHUYỆN CẢ NGÀY, KHÔNG PHẢI CHUYỆN MỘT LƯỢT GHÉ.
+     *
+     * Bản đầu tôi buộc chúng vào `phase !== "leaving" && !c.pass`, và cả hai không bao giờ
+     * xuất hiện: đo ra chú Kiệt **đi ngang** (`pass: true`) chứ không đứng quầy, 13/20
+     * ngày đều vậy. Mà đúng ra là thế — cái xe của ông đứng bên kia hẻm cả ngày, ông chỉ
+     * tạt qua nói một câu. Cái gánh bà Sáu cũng vậy: bà hạ xuống rồi đi bán tiếp.
+     *
+     * Nên: THẤY người đó HÔM NAY là vật của họ có mặt, và nó nằm đó tới khi người chơi
+     * xử lý. `Service` dựng lại mỗi ngày nên không cần dọn tay.
      */
-    /*
-     * CÁI GÁNH THEO CHÂN BÀ SÁU. Bà tới thì nó nằm ngoài mặt tiền (bà hạ xuống đó), bà
-     * về thì nó đi theo. Giữa hai mốc đó, chỗ của nó là việc của người chơi.
-     */
-    const baSau = this.customers.find((c) => c.memKey === "BA_SAU" && c.phase !== "leaving" && !c.pass);
-    if (!baSau) this.ganh = null;
-    else if (this.ganh === null) this.ganh = "NGOAI";
+    if (this.ganh === null && this.customers.some((c) => c.memKey === "BA_SAU")) this.ganh = "NGOAI";
+    if (this.cart === null && this.customers.some((c) => c.memKey === "CHU_KIET")) this.cart = "LAN";
 
     this.seatFree = has(this.deps.equip, "GHE_BAN")
       && this.customers.filter((c) => c.sitting).length < SEAT_CAPACITY;
@@ -1790,19 +1476,13 @@ export class Service {
     }
   }
 
-  /**
-   * LỜI HỨA HẾT HẠN — ba nấc: nhắc một câu → nói nặng → bỏ đi. Không có hạn thì một lời hứa
-   * cũng là một free word, chỉ là loại tinh vi hơn.
-   */
+  /** Ba nấc: nhắc → nói nặng → bỏ đi. Không có hạn thì một lời hứa cũng là free word, chỉ tinh vi hơn. */
   private tickDeeds() {
     for (let i = this.deeds.length - 1; i >= 0; i--) {
       const d = this.deeds[i];
       const c = d.c;
       if (c.phase === "leaving" && !c.pass) { this.deeds.splice(i, 1); continue; }
-      /*
-       * NGƯỜI NÓNG TÍNH BỎ NẤC MỘT, NGƯỜI LẠ BỎ CẢ BA. Người lạ không có trí nhớ để mà nhắc
-       * (`memKey` dùng chung cho tám dáng người), nên với họ lời hứa gãy là đi luôn.
-       */
+      /** Người lạ không có trí nhớ để mà nhắc, nên với họ lời hứa gãy là đi luôn. */
       const first = c.npc ? (c.personality.nongTinh >= 0.8 ? 1 : 0) : 2;
       const stage = DEED_STAGES.findIndex((m, k) => k >= first && c.now >= d.dueAt + (m - 1) * d.deed.dueSec);
       if (stage < 0 || stage < d.nudged) continue;
@@ -1837,11 +1517,7 @@ export class Service {
     let i = 0;
     for (const c of this.customers) {
       if (c.phase === "leaving" || c.balking) continue;
-      /*
-       * NGƯỜI ĐANG NÉP QUA MỘT BÊN KHÔNG CHIẾM CHỖ NÀO (`STEP_ASIDE`). Bỏ họ khỏi vòng cấp
-       * chỗ thì `i` không tăng, nên mọi người sau lưng dồn lên một bậc THẬT — người kế bước
-       * tới trước quầy, không phải đứng đổi chỗ cho nhau trên cùng một hàng.
-       */
+      /** Bỏ họ khỏi vòng cấp chỗ thì `i` không tăng, nên cả hàng sau dồn lên một bậc THẬT. */
       // Ngồi hay nép đều ở NGOÀI vòng cấp chỗ: `i` không tăng nên cả hàng sau dồn lên thật.
       if (c.aside || c.sitting) { c.slot = -1; c.occluder = 1; continue; }
       const from = c.zone;
@@ -1858,11 +1534,9 @@ export class Service {
   // ────────────────────────────────────────────────── bước 5 · lịch nói
 
   /**
-   * Mọi câu khách nói đi qua đây: trễ 0,2–0,4 s, tối đa 1 câu MỚI mỗi frame, tối đa 2 bong bóng;
-   * người đứng ngay trước quầy được nói trước; câu chờ quá 2,5 s thì thôi.
-   *
-   * `wait` cộng vào quãng trễ cho câu phải ĐỨNG SAU một câu khác của CHÍNH người đó, và hạn đếm
-   * từ lúc hết trễ nên nó không ăn mất cửa sổ nói.
+   * Trễ 0,2–0,4 s, tối đa 1 câu MỚI mỗi frame, tối đa 2 bong bóng; người đứng trước quầy nói trước;
+   * câu chờ quá 2,5 s thì thôi. `wait` cộng vào quãng trễ cho câu phải đứng sau một câu khác của
+   * CHÍNH người đó, và hạn đếm từ lúc hết trễ nên nó không ăn mất cửa sổ nói.
    */
   private say(c: Customer, text: string, tier: 1 | 2 | 3 = 2, log = false, pri = 50, rule?: Rule, wait = 0, offer = false) {
     const delay = wait + BARK_DELAY_MIN + this.dialogRng.next() * BARK_DELAY_SPAN;
@@ -1870,10 +1544,7 @@ export class Service {
     this.deps.bus.emit("bark:queued", { npcId: c.memKey, tier, delaySec: delay });
   }
 
-  /**
-   * Dựng query — P2-01 §2.1: dict PHẲNG mọi fact đúng NGAY LÚC NÀY, dựng lại mỗi lần hỏi.
-   * Global (giờ, quầy, hàng) · Player · Customer (tính cách ×100, quan hệ) · ctx* · Session.
-   */
+  /** Dict PHẲNG mọi fact đúng NGAY LÚC NÀY, dựng lại mỗi lần hỏi. */
   private buildQuery(c: Customer, extra: Extra): Query {
     const q = this.query.reset();
     const h = Math.floor(this.nowMin / 60), mm = Math.floor(this.nowMin % 60);
@@ -1907,11 +1578,18 @@ export class Service {
   }
 
   /**
-   * Mọi câu khách tự nói (trừ câu gọi món) đi qua đây: dựng query → rule DB chọn → xếp
-   * vào lịch nói. Không rule nào khớp = im lặng (hợp lệ). `concept` luôn là chuỗi literal
-   * ở chỗ gọi để validator (R003) dò được concept nào được hỏi tới.
+   * Không rule nào khớp = im lặng (hợp lệ). `concept` luôn là chuỗi literal để validator dò được.
+   *
+   * `wrap` là hai vế KẸP quanh câu rule DB rút ra — cảm ơn ở đầu, lỗi vỏ bánh ở cuối. Dựng ở
+   * đây chứ không viết thành rule riêng vì chúng phải GHÉP ĐƯỢC với mọi câu chê món (kể cả dòng
+   * riêng của từng người): một ổ thiếu đồ chua mà chưa giòn thì người ta nói cả hai, trong cùng
+   * một hơi. ⚠️ Rule `silent` vẫn im CẢ hai vế — im lặng của chị Lan là một câu trả lời, không
+   * phải một chỗ trống để nhét chữ vào.
    */
-  private speakConcept(c: Customer, concept: string, extra: Extra, pri = 50, log = false, vars: Record<string, string> = {}, wait = 0): boolean {
+  private speakConcept(
+    c: Customer, concept: string, extra: Extra, pri = 50, log = false,
+    vars: Record<string, string> = {}, wait = 0, wrap?: { pre?: string; post?: string },
+  ): boolean {
     const q = this.buildQuery(c, extra);
     const got = this.speaker.pick(concept, c.memKey, q, this.nowSec, vars);
     if (!got) {
@@ -1923,7 +1601,14 @@ export class Service {
       this.deps.bus.emit("dialog:silent", { npcId: c.memKey, reason: "PERSONALITY" });
       return false;
     }
-    this.say(c, got.text, got.tier, log, pri, got.rule, wait);
+    /*
+     * Thứ tự ƯU TIÊN khi câu ghép dài quá: vế CHÊ bao giờ cũng ở lại, vế CẢM ƠN rụng trước. Người
+     * chơi cần biết ổ vừa rồi trật chỗ nào hơn là cần nghe cảm ơn, và bong bóng chỉ cao ba dòng —
+     * một câu 130 ký tự trèo lên che mất cái vòng độ giòn trên cửa lò (xem `world/bubbleLayout`).
+     */
+    const full = [wrap?.pre, got.text, wrap?.post].filter(Boolean).join(" ");
+    const text = full.length > WRAP_SOFT_MAX ? [got.text, wrap?.post].filter(Boolean).join(" ") : full;
+    this.say(c, text, got.tier, log, pri, got.rule, wait);
     return true;
   }
 
@@ -1938,12 +1623,7 @@ export class Service {
     }
   }
 
-  /**
-   * Người này có đang bận một câu mà `p` CHƯA được phép cắt ngang không?
-   *
-   * ⚠️ Dùng ở hai chỗ — chỗ thả câu ra, và chỗ cộng đồng hồ quá hạn — và phải là CÙNG một
-   * phép thử: lệch nhau một chút là câu bị khoá ở chỗ này lại bị tính quá hạn ở chỗ kia.
-   */
+  /** ⚠️ Dùng ở hai chỗ (thả câu ra, và cộng đồng hồ quá hạn) và phải là CÙNG một phép thử. */
   private speechBlocked(p: Pending): boolean {
     const c = p.c;
     const slow = this.deps.readMul ?? 1;
@@ -2026,8 +1706,8 @@ export class Service {
    */
   serveDish(
     dish: Ingredient[],
-    opts: { cold?: boolean; crust?: number; quality?: number; readyAt?: number; soiled?: boolean } = {},
-  ): { ok: boolean; reason?: string } {
+    opts: { cold?: boolean; crust?: number; quality?: number; readyAt?: number; soiled?: boolean; burnAt?: number } = {},
+  ): ServeResult {
     const c = this.front;
     if (!c || c.phase !== "waiting") return { ok: false, reason: "chưa có ai chờ lấy bánh" };
     const bus = this.deps.bus;
@@ -2085,8 +1765,17 @@ export class Service {
       if (!r2.length) { raw = r2; viaAlt = true; }
     }
     if (opts.cold) raw.push(mkDefect("WRONG_TEMP", null));
-    const crustLow = opts.crust !== undefined && opts.crust < CRUST.READY;
+    /*
+     * HAI đầu của vòng độ giòn, cùng một luật: rút sớm quá thì bánh chưa giòn, rút trễ quá thì
+     * cháy cạnh. Đọc bằng `bandOfCrust` với `burnAt` THẬT của cái lò đang dùng (lò gas có ngưỡng
+     * riêng) — lấy hằng số thì ổ lò gas bị đọc nhầm là cháy ngay giữa dải tốt của nó.
+     */
+    const burnAt = opts.burnAt ?? CRUST.BURNT;
+    const band = opts.crust === undefined ? null : bandOfCrust(opts.crust, burnAt);
+    const crustLow = band === "RAW";
+    const crustSinged = band === "SINGED";
     if (crustLow) raw.push(underdoneDefect(opts.crust!));
+    else if (crustSinged) raw.push(singedDefect(opts.crust!, burnAt));
     if (opts.quality !== undefined && 1 - opts.quality >= tasteThreshold(c.personality.soi)) raw.push(mkDefect("TASTE_OFF", null));
     const defects: DiffedDefect[] = raw.map((d) => {
       const key = d.kind === "WRONG_TEMP" || d.kind === "STUFFED" || d.kind === "TASTE_OFF" ? null : orderDefectKey(c.id, d.kind, d.item);
@@ -2095,7 +1784,32 @@ export class Service {
     });
     bus.emit("order:delivered", { npcId: c.memKey, dish: [...dish], waitedSec: this.nowSec - c.orderedAt });
 
-    const spoken = this.pickSpoken(c, defects, hollow);
+    /*
+     * Lỗi VỎ BÁNH không bao giờ được là câu chính khi trong ổ còn một lỗi khác: "chưa giòn" /
+     * "cháy cạnh" là một vế BỔ SUNG, nói thêm vào cuối câu chê món (`crustTail`). Để nó tranh
+     * chỗ với lỗi thiếu món thì có lúc khách chỉ kêu bánh mềm và người chơi không bao giờ biết
+     * mình quên miếng đồ chua.
+     */
+    const crustDefect = defects.find(isCrustDefect) ?? null;
+    const others = crustDefect ? defects.filter((d) => d !== crustDefect) : defects;
+    const spoken = this.pickSpoken(c, others.length ? others : defects, hollow);
+    /** Vỏ bánh có lỗi mà câu chính đang nói chuyện khác → vế bổ sung. */
+    const crustTail = crustDefect && spoken !== crustDefect ? crustDefect : null;
+    /*
+     * CHO THÊM trên một ổ CÓ LỖI vẫn phải được nói ra. Điểm thì không (`freeExtra` vẫn chỉ chạy
+     * trên ổ sạch — hào phóng trên một ổ làm trật là chống chế, không phải tấm lòng), nhưng người
+     * ta vẫn cảm ơn trước rồi mới nói cái thiếu: đó là cách người trong hẻm nói chuyện.
+     */
+    const extraMons = extraPortions(c.order!, dish).map(labelOf);
+    const gaveExtra = extraMons.length > 0;
+    /*
+     * Cô Ba cũng phải mở miệng: bỏ thêm miếng đồ chua mà không ai nói gì thì người chơi không có
+     * đường nào biết trò chơi đã ĐỌC RA hành động đó. `fill` điền danh xưng theo đúng người đang
+     * đứng trước mặt ("con cho thêm đồ chua với ớt cho bà nè"), nên một câu dùng được cho cả hẻm.
+     */
+    const playerSay = gaveExtra
+      ? this.fill(c, this.barks.take("extraOffer", c.memKey, { mon: monVi(extraMons) }))
+      : undefined;
     let positive = 0;
     let tb = false;
     /**
@@ -2119,6 +1833,7 @@ export class Service {
       positive -= habitBroke;
       this.speakConcept(c, "DELIVERY", {
         defectCount: 0, orderIsUsual: remembered, freeExtraTooMuch: extra < 0, extraHabitBroken: habitBroke > 0,
+        freeExtraGiven: gaveExtra,
       }, habitBroke > 0 || extra < 0 ? 70 : 60, true);
     } else if (hollow) {
       // Người cầm cho xong vẫn phải NÓI RA chuyện ổ bánh không có gì trong đó, và nói
@@ -2128,10 +1843,20 @@ export class Service {
       this.speakConcept(c, "HOLLOW_LOAF", { dishRefused: false }, 90, true, { mon: hollowWantLabel(c.order!) });
     } else if (spoken) {
       positive += this.settlePledge(c, dish);
+      /*
+       * `dishUnderdone` / `dishSinged` CHỈ đặt khi chính lỗi vỏ bánh là câu chính. Đặt luôn thì
+       * một ổ vừa nguội vừa chưa giòn rút ra dòng "bánh chưa giòn" ở câu chính RỒI lại nghe thêm
+       * vế bổ sung "với lại ổ chưa giòn" — nói hai lần cùng một chuyện.
+       */
       this.speakConcept(c, "DELIVERY", {
         defectCount: defects.length, defectKind: kindOf(spoken), defectWasSeen: spoken.witness === "ANTICIPATED",
-        orderIsUsual: c.order!.intent.usual, dishUnderdone: crustLow,
-      }, 90, true, { mon: spoken.label });
+        orderIsUsual: c.order!.intent.usual, freeExtraGiven: gaveExtra,
+        dishUnderdone: spoken === crustDefect && crustLow,
+        dishSinged: spoken === crustDefect && crustSinged,
+      }, 90, true, { mon: this.monList(spoken, defects) }, 0, {
+        pre: gaveExtra ? this.barks.take("thanksExtra", c.memKey, this.addressOf(c)) : "",
+        post: crustTail ? this.barks.take("crustTail", c.memKey, { ...this.addressOf(c), mon: crustTailWord(crustTail) }) : "",
+      });
     } else {
       positive += this.settlePledge(c, dish);
       bus.emit("dialog:silent", { npcId: c.memKey, reason: "RATE_35" });
@@ -2242,7 +1967,7 @@ export class Service {
       this.say(c, c.orderLine, 2, true, 100);
       this.deps.bus.emit("order:placed", { npcId: c.memKey, spec: next, phrasing: c.orderLine });
       if (nb) logOrder(nb, { day: this.deps.day, minute: this.nowMin, npcId: c.npc?.id ?? null, orderText: c.orderLine, visitCount: this.mem(c.memKey).visits });
-      return { ok: true };
+      return { ok: true, playerSay };
     }
     c.carrying = true;
     const sawHygiene = [...c.observations.values()].some((o) => o.peak === "CONFIRMED"
@@ -2251,7 +1976,7 @@ export class Service {
       c.binDetour = true;
     }
     this.leave(c, "served");
-    return { ok: true };
+    return { ok: true, playerSay };
   }
 
   /**
@@ -2267,9 +1992,29 @@ export class Service {
     let top = sorted[0];
     const ant = sorted.find((d) => d.witness === "ANTICIPATED");
     if (ant && score(top) - score(ant) < 15) top = ant;
-    // `force`: ổ chưa có nhân không được túi im lặng tha, và KHÔNG rút vé của túi đó.
-    if (!force && !this.barks.speaks(c.memKey)) return null;
+    /*
+     * `force`: ổ chưa có nhân không được túi im lặng tha, và KHÔNG rút vé của túi đó.
+     *
+     * ⚠️ Từ đây MỌI ổ có lỗi đều force. Túi im lặng 7/20 vẫn sống ở mấy chỗ khác (bắt gặp sự
+     * việc, chào lúc ra về) — nhưng ở ĐÚNG khoảnh khắc giao bánh thì nó nuốt mất tín hiệu duy
+     * nhất nói cho người chơi biết ổ vừa rồi trật chỗ nào: ba lần trong hai chục lần giao, khách
+     * cầm ổ thiếu đồ chua rồi đi, không một chữ. Phạt vẫn nằm ở tiền boa và ở trí nhớ như cũ;
+     * cái bỏ đi chỉ là chuyện giấu luôn lý do.
+     */
+    if (!force && !defects.length && !this.barks.speaks(c.memKey)) return null;
     return top;
+  }
+
+  /**
+   * Tên món điền vào `{mon}`. Nhiều món CÙNG MỘT LỖI thì gom hết vào một câu ("thiếu đồ chua với
+   * ớt") — nói một món rồi im là người chơi sửa đúng một món và lần sau nghe chê tiếp. Chỉ gom
+   * trong cùng một `kindOf`: "thiếu pate" với "nhiều ớt quá" là hai câu khác nhau.
+   */
+  private monList(spoken: DiffedDefect, defects: DiffedDefect[]): string {
+    const k = kindOf(spoken);
+    const same = defects.filter((d) => d.item && kindOf(d) === k);
+    const names = [spoken.label, ...same.map((d) => d.label)];
+    return monVi([...new Set(names)].slice(0, MON_LIST_MAX));
   }
 
   private silentScore(defects: DiffedDefect[], spoken: DiffedDefect | null, positive: number) {
@@ -2340,7 +2085,7 @@ export class Service {
    *    nằm trong trí nhớ của người ta chứ không trong một lượt ghé
    *  · trà là MỜI: mỗi ly tốn tiền, có hạn 18 ly/ngày
    */
-  serveTea(): { ok: boolean; reason?: string } {
+  serveTea(): ServeResult {
     const c = this.front;
     if (!c || c.phase === "leaving") return { ok: false, reason: "chưa có ai để mời" };
     if (c.holdingTea) return { ok: false, reason: `${this.label(c)} còn cầm ly kia` };
@@ -2644,6 +2389,8 @@ export class Service {
       shadeFree: this.shadeFree,
       seatFree: this.seatFree,
       ganhOut: this.ganh === "NGOAI",
+      cartLan: this.cart === "LAN",
+      cartChung: this.cart === "CHUNG",
       ovenHot: this.ovenHot,
       band: bandOfMinutes(this.nowMin),
       dayIndex: this.deps.day,
@@ -3188,10 +2935,7 @@ export class Service {
         this.creditLoaf(c);
         break;
       case "REFUSE":
-        /*
-         * "Không bán cho nữa" chỉ có nghĩa với người ĐANG MUA. Với một người chỉ đi ngang
-         * qua thì "bị mời đi" là một câu vô nghĩa — họ chỉ đi tiếp như mọi người đi ngang khác.
-         */
+        /** "Không bán cho nữa" chỉ có nghĩa với người ĐANG MUA — người đi ngang thì chỉ đi tiếp. */
         if (c.ambient) { c.inviteRefused = true; if (c.pass) c.pass.until = c.now; break; }
         this.out.push({ kind: "log", text: `${this.label(c)} bị mời đi.` });
         this.leave(c, "refused");
@@ -3199,14 +2943,30 @@ export class Service {
       case "INVITE":
         this.invite(c, act, tone);
         break;
+      case "BARTER":
+        this.barter(c, act.nhan);
+        break;
+      case "MOVE_CART":
+        this.moveCart(c, act.toi);
+        break;
+      default:
+        /*
+         * MỘT ACT KHÔNG CÓ NHÁNH LÀ MỘT LỜI NÓI MIỄN PHÍ — và nó IM LẶNG.
+         *
+         * Đã xảy ra thật, ngay trong đợt này: `BARTER` được khai trong `TalkAct`, được
+         * gắn vào hai nút nội dung, qua hết `validate:talks` và 509 test — mà `switch`
+         * không có nhánh nào cho nó. Bà Sáu đổi chén tàu hũ lấy ổ bánh, và ổ bánh không
+         * đi đâu cả. Không trình kiểm kiểu nào kêu, vì `switch` thiếu nhánh thì TypeScript
+         * chỉ im.
+         *
+         * `never` ở đây biến nó thành LỖI BIÊN DỊCH: thêm một `kind` vào `TalkAct` mà
+         * quên nối thì `npm run check` trượt ngay, không chờ tới lúc chơi.
+         */
+        return assertActHandled(act);
     }
   }
 
-  /**
-   * MỜI một người đang đi ngang ghé vô mua — xem `sim/passersby.inviteChance`. Ba chi tiết cố ý:
-   * dòng số là `invite:<id lượt đi ngang>` nên MỘT người chỉ có MỘT câu trả lời · người viết khai
-   * cả `yes` lẫn `no` và CÁI ROLL quyết câu nào hiện ra · mặt đi theo kết quả chứ không theo lời.
-   */
+  /** Dòng số `invite:<id lượt>` nên MỘT người chỉ có MỘT câu trả lời; người viết khai cả `yes` lẫn `no`, roll quyết câu nào. */
   private invite(c: Customer, act: Extract<TalkAct, { kind: "INVITE" }>, tone: TalkTone) {
     if (!c.ambient || !c.pass) return;
     const unlimited = !!this.deps.noTimePressure;
@@ -3220,22 +2980,15 @@ export class Service {
       slots: Math.min(SLOTS.length, peakCap(this.deps.day, unlimited)),
       soldOut: this.soldOut,
     });
-    /*
-     * Mục đích và tâm trạng HÃM lời mời, không bao giờ đẩy nó lên — `INVITE_MAX = 0,8` vẫn là
-     * trần. Người đang chạy đi mua thuốc gấp thì mời khéo cỡ nào cũng không dừng.
-     */
+    /** Mục đích và tâm trạng HÃM lời mời, không bao giờ đẩy lên — `INVITE_MAX` vẫn là trần. */
     const yes = this.deps.hub.derive(`invite:${c.id}`).next() < p * (c.purpose?.inviteMul ?? 1);
     const mood: TalkMood = yes ? "CUOI" : "CUOI_KHAN";
     this.actReply = { text: yes ? act.yes : act.no, mood };
     this.scheduleReact(c, MOOD_FACE[mood], MOOD_POSE[mood]);
     if (!yes) {
-      /*
-       * Từ chối rồi là THÔI — ba chuyện cùng lúc: `inviteRefused` ẩn hẳn mọi lựa chọn `INVITE` ·
-       * họ đi tiếp NGAY, không nán lại làm mục tiêu cho cú mời thứ hai · `talkCost` cộng phạt nên
-       * phím tương tác thôi nhắm vào họ.
-       *
-       * Thiếu cả ba thì roll tất định chỉ chặn được kết quả, còn người chơi vẫn tốn thời gian
-       * thật để nghe lại đúng câu "thôi" đó.
+      /**
+       * Ba chuyện cùng lúc: `inviteRefused` ẩn mọi lựa chọn `INVITE` · họ đi tiếp NGAY · `talkCost` cộng
+       * phạt. Thiếu cả ba thì roll tất định chỉ chặn kết quả, người chơi vẫn tốn thời gian nghe lại câu "thôi".
        */
       c.inviteRefused = true;
       if (c.pass) c.pass.until = c.now;
@@ -3245,20 +2998,9 @@ export class Service {
     this.acceptInvite(c);
   }
 
-  /**
-   * Người đi ngang nhận lời: từ đây họ là một người khách thật. Xoá sạch dấu vết của một lượt đi
-   * ngang (`ambient`, `pass`) rồi trả họ về đúng đường đời của khách vãng lai.
-   *
-   * ⚠️ Không một nhánh `if` nào ở hạ nguồn được biết người này từng đi ngang — nếu không họ thành
-   * một loại khách hạng hai có luật riêng.
-   */
+  /** ⚠️ Không nhánh `if` nào ở hạ nguồn được biết người này từng đi ngang — nếu không họ thành khách hạng hai có luật riêng. */
   private acceptInvite(c: Customer) {
-    /*
-     * ĐỔI VAI THÌ ĐỔI CẢ SỔ ĐẾM KHO THOẠI. ⚠️ `talkKey(c)` đọc `c.ambient` nên ngay sau hai dòng
-     * dưới người này nhảy từ `QUA_DUONG` sang `WALKIN`, trong khi lúc spawn họ đã
-     * `ensure("QUA_DUONG")` — cú `release("WALKIN")` thừa ở `leave()` có thể kéo `WALKIN` về 0
-     * rồi thả `walkin.json` trong khi người ta còn đứng đó.
-     */
+    /** ⚠️ `talkKey(c)` đọc `c.ambient` nên người này nhảy kho `QUA_DUONG` → `WALKIN`; cú `release` thừa ở `leave()` có thể thả `walkin.json` khi người ta còn đứng đó. */
     this.talks.ensure("WALKIN");
     this.talks.release("QUA_DUONG");
     c.ambient = false;
@@ -3279,11 +3021,7 @@ export class Service {
 
   // ──────────────────────────────── hành động thật của một câu nói (P2-09 §2.6)
 
-  /**
-   * HỌ ĐI TIẾP, và cuộc kết thúc. Với người đi ngang đây là trạng thái NGHỈ; với khách đang mua
-   * thì họ BỎ ĐI, nên hai nhánh tách hẳn, và nhánh thứ hai đi qua `leave()` để kinh tế và trí
-   * nhớ ghi đủ.
-   */
+  /** Với người đi ngang đây là trạng thái NGHỈ; với khách đang mua thì họ BỎ ĐI, nên nhánh đó qua `leave()`. */
   private walkOn(c: Customer) {
     if (c.ambient && c.pass) {
       c.inShade = false;
@@ -3297,11 +3035,7 @@ export class Service {
     if (this.talkWith === c) this.endTalk();
   }
 
-  /**
-   * ĐƯA HỌ MIẾNG BÁNH — ổ RỜI TAY người chơi thật (`playerHand` về `empty`), nếu không thì "ăn
-   * thử cho biết" là thiện cảm không tốn gì. Cổng `p.holdsBread` đã chặn ở `need` nên tới đây là
-   * chắc có ổ; vẫn kiểm lại một lần vì `applyAct` gọi được từ đường khác.
-   */
+  /** Ổ RỜI TAY thật, nếu không thì "ăn thử cho biết" là thiện cảm không tốn gì. */
   private giveBread(c: Customer, forSec: ForSec) {
     if (!this.playerHand.startsWith("loaf")) return;
     this.out.push({ kind: "takeHand", npcId: c.memKey, name: this.label(c) });
@@ -3313,11 +3047,7 @@ export class Service {
     this.out.push({ kind: "log", text: `${this.label(c)} cầm lấy ổ bánh.` });
   }
 
-  /**
-   * MỜI HỌ LY TRÀ từ một câu nói — nối vào đúng `serveTea()` đã có. Hai chỗ khác với bấm phím rót
-   * trà: người được mời có thể là ai đang nói chuyện, và `v.gaveTea` được đặt nên kho dùng chung
-   * không mời lại lần hai trong cùng một lượt ghé.
-   */
+  /** Nối vào `serveTea()` đã có. Người được mời có thể là ai đang nói chuyện, và `v.gaveTea` chặn mời lại lần hai. */
   private offerTeaTo(c: Customer) {
     if (c.visit.gaveTea) return;
     const before = this.front;
@@ -3330,12 +3060,7 @@ export class Service {
     this.promiseDeed(c, { what: "ROT_TRA", dueSec: DEED_DUE.ROT_TRA });
   }
 
-  /**
-   * HỌ ĐI TỚI CHỖ MÁT VÀ ĐỨNG ĐÓ — rồi đi tiếp đúng mục đích cũ, nên `shadeUntil` là bắt buộc.
-   *
-   * Một chỗ, một người (`SHADE_CAPACITY`) — đó là lý do `w.shadeFree` là sự thật ĐỘNG: người khác
-   * chiếm mất giữa lúc mình đang đọc thẻ là chuyện xảy ra được.
-   */
+  /** Rồi đi tiếp đúng mục đích cũ, nên `shadeUntil` là bắt buộc. Một chỗ một người. */
   private standInShade(c: Customer, forSec: ForSec) {
     if (!this.shadeFree) return;
     c.inShade = true;
@@ -3347,13 +3072,7 @@ export class Service {
     this.out.push({ kind: "log", text: `${this.label(c)} bước vô chỗ mát đứng.` });
   }
 
-  /**
-   * MỜI NGỒI — và người ta ngồi THẬT. Khác `standInShade` ở hệ quả: ngồi làm kiên nhẫn trôi chậm
-   * (`Customer.sitting`), nên cái ghế 320 nghìn có một con số đo được chứ không phải một hình vẽ.
-   *
-   * Không ngồi được thì IM: `seatFree` là sự thật động nên `chooseTalk` đã trả "?" trước khi tới
-   * đây. Tới đây mà hết chỗ nghĩa là người khác vừa ngồi mất trong đúng nhịp vừa rồi.
-   */
+  /** Ngồi làm kiên nhẫn trôi chậm, nên cái ghế 320 nghìn có một con số đo được. Hết chỗ thì IM, không phải lời hứa suông. */
   private theySit(c: Customer, forSec: ForSec) {
     if (!this.seatFree || c.sitting) return;
     const sec = forSecOf(forSec) ?? 40;
@@ -3367,16 +3086,7 @@ export class Service {
     this.out.push({ kind: "log", text: `${this.label(c)} ngồi xuống ghế.` });
   }
 
-  /**
-   * CHO QUAY — và cái clip đó phụ thuộc vào mình làm gì trong lúc máy đang chạy.
-   *
-   * Đây là chỗ `story.flags.clipDay` thôi là một con số kịch bản và thành HỆ QUẢ: clip
-   * tới sớm (×1,4 lượng khách ba ngày, `storyCrowdMul`) nếu đoạn quay sạch; dính chuyện
-   * xấu thì không những không tới sớm mà còn để lại `clipBad` cho `su.drama.mang` nhắc.
-   *
-   * Rủi ro ĐỌC ĐƯỢC TRƯỚC KHI BẤM (CANON T5): quầy dơ hay tay bẩn thì người chơi nhìn
-   * thấy trên màn hình trước khi gật đầu cho quay.
-   */
+  /** Clip phụ thuộc vào mình làm gì trong lúc máy đang chạy — `filmSpoiled` chấm liên tục, không chỉ lúc bắt đầu. */
   private startFilm(c: Customer, forSec: ForSec) {
     if (c.filming) return;
     c.filming = true;
@@ -3414,25 +3124,14 @@ export class Service {
       this.out.push({ kind: "log", text: `đoạn quay dính cảnh quầy chưa dọn.` });
       return;
     }
-    /*
-     * Chỉ được DỜI SỚM, không bao giờ dời muộn: ngày 5 đã có một nhánh kịch bản đặt
-     * `clipDay` (che tay → 16, làm đẹp → 9, bình thường → 10). Cho quay thêm thì cái clip
-     * tới sớm hơn, chứ không được xoá mất nhánh kia.
-     */
+    /** ⚠️ Chỉ được DỜI SỚM, không bao giờ dời muộn — ngày 5 đã có một nhánh kịch bản đặt `clipDay`. */
     const cu = Number(st.flags.clipDay ?? 99);
     const moi = this.deps.day + CLIP_DUNG_SAU;
     if (moi < cu) st.flags.clipDay = moi;
     this.out.push({ kind: "log", text: `${this.label(c)} quay xong một đoạn ưng ý.` });
   }
 
-  /**
-   * CÁI GÁNH VÔ TRONG — `minhBung` phân biệt hai việc khác hẳn nhau.
-   *
-   * Mình bưng giùm: lối thông, VÀ cái vai bà được nghỉ. Bảo bà tự dời: lối cũng thông,
-   * mà bà vẫn phải nhấc hai chục ký lên vai thêm một lần nữa. Cùng một kết quả cho cái
-   * hẻm, hai chuyện khác nhau giữa hai người — nên thưởng nằm ở `onKept` của nội dung,
-   * không nằm ở đây.
-   */
+  /** `minhBung` phân biệt hai việc: mình bưng giùm (lối thông, và là một việc mình làm) với bảo bà tự dời. */
   private carryGanh(c: Customer, minhBung: boolean) {
     if (this.ganh !== "NGOAI") return;
     this.ganh = "TRONG";
@@ -3440,6 +3139,38 @@ export class Service {
     this.out.push({
       kind: "log",
       text: minhBung ? `mình bưng gánh vô trong giùm ${this.label(c)}.` : `${this.label(c)} dời gánh vô sát vách.`,
+    });
+  }
+
+  /**
+   * ĐỔI MỘT Ổ LẤY MỘT MÓN — không tiền, và cũng không phải cho không.
+   *
+   * Ổ bánh RỜI KHO THẬT và không có dòng doanh thu nào: đó là cái giá, hiện ra ở sổ cuối
+   * ngày như mọi ổ không bán được. Thứ nhận lại là `rel` + một ký ức `CARED_FOR_THEM` —
+   * một chén tàu hũ không làm mình bán thêm ổ nào, nó làm bà Sáu nhớ mình.
+   */
+  private barter(c: Customer, nhan: string) {
+    if (this.soldOut || c.visit.gaveFood) return;
+    this.stock = Math.max(0, this.stock - 1);
+    c.visit.gaveFood = true;
+    this.remember(c, "CARED_FOR_THEM", SALIENCE.CARED_FOR_THEM);
+    this.out.push({ kind: "log", text: `đổi một ổ lấy ${nhan} của ${this.label(c)}.` });
+  }
+
+  /**
+   * DỜI CÁI XE CỦA CHÚ KIỆT.
+   *
+   * `XA` dọn sạch mặt tiền, mà mình vừa đuổi một người đứng bán hai chục năm — giá nằm ở
+   * `rel` của nội dung. `CHUNG` thì mình vẫn mất một khoảng mặt tiền, đổi lại chú khỏi
+   * ướt; đó là nước đi hào phóng, và nó chỉ có nghĩa lúc trời mưa.
+   */
+  private moveCart(c: Customer, toi: "XA" | "CHUNG") {
+    if (this.cart === null || this.cart === toi) return;
+    this.cart = toi;
+    void CART_LAN; void CART_XA; void CART_CHUNG;
+    this.out.push({
+      kind: "log",
+      text: toi === "XA" ? `${this.label(c)} đẩy xe về chỗ cũ.` : `hai cái xe đứng chung một mái.`,
     });
   }
 
@@ -3458,10 +3189,7 @@ export class Service {
     if (c.pass) { c.pass.spot = c.pass.exit; c.pass.until = c.now; }
   }
 
-  /**
-   * MỘT LỜI HỨA CÓ HẠN: treo món nợ kèm hạn tính bằng giây THẬT, và **không trả một đồng thưởng
-   * nào**. Trả thưởng lúc nói thì cách chơi tối ưu là hứa rồi quên.
-   */
+  /** Treo món nợ kèm hạn giây THẬT, và KHÔNG trả một đồng thưởng nào — trả lúc hứa thì tối ưu là hứa rồi quên. */
   private promiseDeed(c: Customer, deed: Deed) {
     if (c.visit.promised.includes(deed.what)) return;
     c.visit.promised.push(deed.what);
@@ -3478,10 +3206,7 @@ export class Service {
     this.applyTalkOption(c, d.deed.onKept ?? { rel: 2, mem: { kind: "CARED_FOR_THEM", intensity: 40 } }, "mình giữ lời");
   }
 
-  /**
-   * GHI NỢ MỘT Ổ — khác `FREE_LOAF` ở chỗ nó là một món NỢ, có sổ, và có ngày đòi.
-   * `notebookEntries` đã có sẵn ở `content/arcs.ts`; đây là đường nối vào nó.
-   */
+  /** Khác `FREE_LOAF`: nợ là nợ, có sổ, có ngày đòi. */
   private creditLoaf(c: Customer) {
     const pledge = this.pledges.get(c.id) ?? { promised: [], discount: 0, free: false };
     pledge.free = true;
@@ -3489,11 +3214,7 @@ export class Service {
     this.out.push({ kind: "log", text: `ghi nợ một ổ cho ${this.label(c)} — nhớ ghi vô sổ.` });
   }
 
-  /**
-   * "Con đứng qua bên cho cô bán nghen." Người ta NGHE hay KHÔNG là chuyện của người ta — đây là
-   * một phép thử quan hệ, không phải một cái nút. Không thân, hoặc đang quạu, thì họ đứng ì ra
-   * và mình vừa làm mất mặt một người ngay trước hàng.
-   */
+  /** Người ta NGHE hay KHÔNG là chuyện của họ — một phép thử quan hệ, không phải một cái nút. */
   private askStepAside(c: Customer, forSec: ForSec = "TOI_LUOT") {
     const m = this.mem(c.memKey);
     this.asideFor.set(c.id, forSec);
@@ -3514,13 +3235,7 @@ export class Service {
     this.out.push({ kind: "log", text: `${this.label(c)} không nhúc nhích.` });
   }
 
-  /**
-   * BƯỚC RA KHỎI HÀNG, đứng nép qua một bên. Hai việc, và phải đủ cả hai: THỨ TỰ (tụt xuống sau
-   * đúng MỘT người, nhường một lượt chứ không xuống cuối hàng) và CHỖ ĐỨNG (`aside` kéo họ ra
-   * khỏi vòng cấp chỗ nên cả hàng sau lưng dồn lên một bậc).
-   *
-   * Nhường cho AI thì ghi lại (`asideFor`): người đó xong thì mình bước vô lại.
-   */
+  /** Hai việc, phải đủ cả hai: THỨ TỰ (tụt sau đúng MỘT người) và CHỖ ĐỨNG (`aside` kéo họ khỏi vòng cấp chỗ). */
   private stepAside(c: Customer) {
     const i = this.customers.indexOf(c);
     if (i < 0 || c.aside) return;
@@ -3552,16 +3267,8 @@ export class Service {
     return c.phase !== "leaving" && !c.pass && !c.balking;
   }
 
-  /**
-   * Nép tới chừng nào? Tới khi người mình nhường XONG VIỆC — họ quay lưng đi về (hoặc
-   * biến mất khỏi hàng). Không có ai để nhường thì nép một quãng ngắn rồi bước vô lại:
-   * đứng nép mãi ngoài lề trong khi quầy trống là một người bị bỏ quên.
-   */
+  /** Tới khi người mình nhường XONG VIỆC; không có ai để nhường thì nép một quãng ngắn rồi vô lại. */
   private asideDone(c: Customer) {
-    /*
-     * `forSec` của chính lời bảo dạt: số giây thì đếm giây, `"TOI_LUOT"` thì đợi người được
-     * nhường xong việc.
-     */
     const forSec = this.asideFor.get(c.id);
     const sec = forSec === undefined ? null : forSecOf(forSec);
     if (sec !== null) return c.now - c.asideAt >= sec;
@@ -3572,19 +3279,13 @@ export class Service {
   private rejoinQueue(c: Customer) {
     c.aside = false;
     c.asideFor = null;
-    /*
-     * `arriving` chứ không phải `queueing`: nhánh `queueing` thấy `slot === 0` là gọi món NGAY,
-     * kể cả khi người ta còn đứng ngoài lề — tức là gọi món vọng vào từ xa.
-     */
+    /** `arriving` chứ không `queueing`: nhánh `queueing` thấy `slot === 0` là gọi món NGAY, kể cả lúc còn đứng ngoài lề. */
     if (c.phase === "queueing") c.phase = "arriving";
     this.assignSlots();
     this.out.push({ kind: "log", text: `${this.label(c)} bước trở vô hàng.` });
   }
 
-  /**
-   * Giá ổ sau khi trừ cái người chơi đã HỨA MIỆNG. "Dạ thôi em bớt cô ba ngàn vậy" ra khỏi
-   * doanh thu thật, nên câu đó là một quyết định kinh tế chứ không còn là một câu xã giao.
-   */
+  /** "Bớt cô ba ngàn" ra khỏi doanh thu thật, nên nó là một quyết định kinh tế chứ không phải câu xã giao. */
   private pricedAfterPledge(c: Customer, price: number): number {
     const pledge = this.pledges.get(c.id);
     if (!pledge) return price;
@@ -3600,11 +3301,7 @@ export class Service {
     return price;
   }
 
-  /**
-   * Lời hứa được kiểm lúc ĐƯA BÁNH. Trả về điểm cộng/trừ để `deliver()` gộp vào `positive`, và
-   * nói ra câu của người ta. Ba kết cục: giữ lời → `CARED_FOR_THEM` · bỏ thứ KHÁC →
-   * `BROKEN_PROMISE` nhẹ · không bỏ gì → `BROKEN_PROMISE` nặng, chỗ đắt nhất của cả hệ trò chuyện.
-   */
+  /** Ba kết cục: giữ lời → `CARED_FOR_THEM` · bỏ thứ KHÁC → `BROKEN_PROMISE` nhẹ · không bỏ gì → nặng. */
   private settlePledge(c: Customer, dish: Ingredient[]): number {
     const pledge = this.pledges.get(c.id);
     if (!pledge?.promised.length) return 0;
@@ -3629,22 +3326,14 @@ export class Service {
     return score;
   }
 
-  /**
-   * Hệ quả của MỘT lựa chọn. Ba kênh, đúng thứ tự THẤY → HIỂU → NGHE: mặt + dáng · sức chờ · trí
-   * nhớ.
-   *
-   * Khách vãng lai KHÔNG có trí nhớ nhưng VẪN giận được — giận là chuyện của lượt ghé này, không
-   * cần ai nhớ ai.
-   */
+  /** Ba kênh, thứ tự THẤY → HIỂU → NGHE. Khách vãng lai KHÔNG có trí nhớ nhưng VẪN giận được. */
   private applyTalkOption(c: Customer, o: TalkEffect & { mood?: TalkMood; act?: TalkAct; tone?: TalkTone }, note?: string) {
     this.talkWarmth += o.rel ?? 0;
     const relBefore = this.relNow(c);
     if (note) this.relNote = { text: note, w: 1 };
     if (c.npc) {
       const out = applyTalk(o, this.mem(c.memKey), c.personality, this.deps.day);
-      // `memory:written` cố ý KHÔNG bắn ở đây: event đó khai `kind: StimId`, mà lời nói
-      // không phải một kích thích ai cũng nhìn thấy — nó chỉ xảy ra giữa hai người ở quầy.
-      // Cũng vì vậy nó không đi qua `witness()`: bà Sáu không đem câu này đi kể được.
+      // `memory:written` cố ý KHÔNG bắn ở đây: lời nói không phải kích thích ai cũng thấy, nên nó cũng không đi qua `witness()`.
       if (out.mem) {
         const days = SILENT_ABSENCE[out.mem];
         const m = this.mem(c.memKey);
@@ -3659,11 +3348,7 @@ export class Service {
       this.talkAngered = true;
     }
     if (o.calm) c.soothe(o.calm / intensityMul(c.personality));
-    /*
-     * Mặt + dáng. Người viết khai `mood` thì `mood` THẮNG: "Cha, con này!" và "…Ờ. Cảm ơn con."
-     * cùng +3 điểm mà hai khuôn mặt khác hẳn nhau, và chỉ người viết biết là khác. Không khai
-     * thì suy ra từ hệ quả y như cũ.
-     */
+    /** Người viết khai `mood` thì `mood` THẮNG — cùng +3 điểm mà hai khuôn mặt khác hẳn nhau. */
     const mood = o.mood;
     if (mood) {
       this.scheduleReact(c, MOOD_FACE[mood], MOOD_POSE[mood]);
@@ -3676,11 +3361,7 @@ export class Service {
     }
     if ("act" in o && o.act) this.applyAct(c, o.act as TalkAct, o.tone ?? "THUONG");
 
-    /*
-     * BỎ VỀ — chửi tới mức này thì họ không mua nữa, và chuyện đó phải THẤY ĐƯỢC: họ quay lưng
-     * đi, `lost` nhích lên, ổ đang làm dở thành ổ thừa. Ngưỡng tính SAU `intensityMul` nên tính
-     * cách quyết ai nổ trước; đặt cuối hàm để quan hệ và lời hứa ghi xong trước.
-     */
+    /** Ngưỡng tính SAU `intensityMul` nên tính cách quyết ai nổ trước. Đặt cuối hàm để quan hệ và lời hứa ghi xong trước. */
     if (anger >= STORM_OFF_ANGER && c.phase !== "leaving") {
       if (c.ambient) { c.inviteRefused = true; if (c.pass) c.pass.until = c.now; }
       else {
@@ -3691,14 +3372,7 @@ export class Service {
     this.settleRelMoved(c, relBefore);
   }
 
-  /**
-   * Khách TỰ bắt chuyện — đây là đường vào CHÍNH, không còn là ngoại lệ. Bộ lọc là `source`
-   * (81/86 cuộc là `NPC_ONLY`), còn `initiates` chỉ còn là XÁC SUẤT, mặc định
-   * `TALK_INITIATE_BASE`.
-   *
-   * Cuộc SÂU vẫn phải qua `canRun()`: khách không mở một câu chuyện dài khi quầy đang có ba
-   * người chờ. Câu ngắn thì cứ nói — hẻm phải sống.
-   */
+  /** Bộ lọc là `source` (81/86 cuộc `NPC_ONLY`); `initiates` chỉ còn là xác suất. Cuộc SÂU vẫn phải qua `canRun()`. */
   private offerTalk(c: Customer): boolean {
     if (this.talkSession) return false;
     // Trả `false` mà KHÔNG tiêu lượt bắt chuyện của họ — `smalltalk()` thử lại frame sau.
@@ -3719,13 +3393,7 @@ export class Service {
     return true;
   }
 
-  /**
-   * Lời bắt chuyện quá hạn thì HUỶ IM LẶNG, không phạt: người chơi hai tay đang bận một ổ nóng
-   * thì họ không "làm thinh", họ KHÔNG NGHE THẤY.
-   *
-   * Làm thinh chỉ có giá khi lời mời đã đứng đó đủ lâu TRONG một lúc tay rảnh — `leave()` lo
-   * phần đó.
-   */
+  /** Người chơi hai tay đang bận thì họ KHÔNG NGHE THẤY, không phải "làm thinh". */
   private expireOffers() {
     for (let i = this.offers.length - 1; i >= 0; i--) {
       const o = this.offers[i];
@@ -3733,21 +3401,11 @@ export class Service {
     }
   }
 
-  /**
-   * Scene vẽ dấu "đang chờ mình trả lời" trên vai mấy người này. T3: không một con số.
-   *
-   * ⚠️ Trả `customer.id` (một LƯỢT GHÉ) chứ không phải `memKey`: tám dáng khách lạ dùng chung
-   * tám `memKey`, nên hai người cùng dáng cùng đứng ở quầy sẽ cùng đeo dấu dù chỉ một người
-   * mở lời.
-   */
+  /** ⚠️ Trả `customer.id` (một LƯỢT GHÉ) chứ không `memKey`: hai người cùng dáng cùng đeo dấu dù chỉ một người mở lời. */
   get pendingTalkers(): readonly string[] {
     return this.offers.map((o) => o.c.id);
   }
 
-  /**
-   * Dev `rule.test` — hỏi thử rule DB cho người đứng trước quầy với fact Session tuỳ ý,
-   * KHÔNG nói, không đánh dấu gì. Trả bảng xếp hạng giống `rule.why`.
-   */
   devTest(concept: string, extra: Extra) {
     const c = this.front ?? this.customers[0];
     if (!c) return null;
@@ -3756,11 +3414,7 @@ export class Service {
     return { npc: c.memKey, facts: q.dump(), ranking: this.speaker.db.explain(concept, q, this.speaker.st, this.nowSec) };
   }
 
-  /**
-   * Tiền — P3-03 §2.5/2.6/2.8. Giá theo thực đơn (không bao giờ trừ tiền bánh). Khách quen
-   * có khi quên tiền → mua chịu; tới trả nợ thì nói số họ NHỚ; thối không đủ lẻ thì làm
-   * tròn xuống hoặc chạy qua cô Mai đổi (khách đứng chờ).
-   */
+  /** Giá theo thực đơn (không bao giờ trừ tiền bánh). Quên tiền → mua chịu; trả nợ thì nói số họ NHỚ; thiếu lẻ thì làm tròn xuống hoặc chạy qua cô Mai. */
   private settlePayment(c: Customer, price: number, tip: number, complained: boolean) {
     const day = this.deps.day;
     const debts = this.deps.debts;
@@ -3832,31 +3486,19 @@ export class Service {
     if (this.via < 0) this.via = 0;
   }
 
-  /**
-   * Người chơi đang NGHIÊNG NGƯỜI nghe lỏm (P2-04 §2.7 tầng 2) — giá phải trả: người đứng
-   * trước quầy thấy mình lơ đễnh, nhìn kỹ hơn 1,3× trong 5 giây.
-   */
+  /** Giá phải trả: người đứng trước quầy thấy mình lơ đễnh, nhìn kỹ hơn 1,3× trong 5 giây. */
   playerLeaning() {
     const c = this.front;
     if (c) c.watchedIdleUntil = c.now + 5;
   }
 
-  /**
-   * Tên hiện ra với người chơi (nhật ký, phiếu, lý do) — tên là thứ người chơi TỰ GHI vô sổ,
-   * chưa ghi thì chưa được gọi tên.
-   *
-   * Nhưng "chưa gọi tên" không có nghĩa là gọi người ta bằng một gạch ngang: quyền tự ghi tên
-   * mở tận ngày 11, nên chưa biết tên thì gọi bằng HÌNH DÁNG (`shapeOf`), đúng như với khách lạ.
-   */
+  /** Tên là thứ người chơi TỰ GHI vô sổ; chưa ghi thì gọi bằng HÌNH DÁNG, không phải một gạch ngang. */
   label(c: Customer) {
     if (!c.npc) return displayName(this.deps.notebook, c.memKey, c.name);
     return this.deps.notebook?.pages[c.npc.id]?.name?.trim() || shapeOf(c.npc);
   }
 
-  /**
-   * P3-04 C1 — rửa tay ở vòi NGAY TRƯỚC MẶT khách: ai đang nhìn tay mình thì yên tâm hơn
-   * (traitMul −0,12 trong 120 s). Chạy qua đúng công thức nhận thấy — không có đường tắt.
-   */
+  /** Rửa tay NGAY TRƯỚC MẶT khách: đi qua đúng công thức nhận thấy, không có đường tắt. */
   washedVisibly() {
     for (const c of this.audience) if (c.gaze >= 0.45) c.washRelief = c.now + 120;
   }
@@ -3869,11 +3511,7 @@ export class Service {
     return this.out.splice(0, this.out.length);
   }
 
-  /**
-   * Chỉ rút các dòng NHẬT KÝ — bảng trò chuyện cần in câu ra HUD ngay, mà lúc đó đồng hồ
-   * đang đứng nên vòng `settle()` chưa chạy. Sự kiện tiền vẫn nằm nguyên trong hàng đợi
-   * để đúng một chỗ xử: nếu rút luôn ở đây thì một lần bấm F ăn mất một lần thu tiền.
-   */
+  /** ⚠️ Chỉ rút dòng NHẬT KÝ: rút luôn sự kiện tiền ở đây thì một lần bấm F ăn mất một lần thu tiền. */
   drainLogs(): string[] {
     const out: string[] = [];
     for (let i = this.out.length - 1; i >= 0; i--) {
@@ -3891,13 +3529,7 @@ function kindOf(d: DiffedDefect): string {
   return d.kind;
 }
 
-/**
- * Ổ rút khỏi lò sớm — xem khối `UNDERDONE_FLOOR` ở đầu file để biết vì sao mượn `WRONG_TEMP`
- * và vì sao có sàn 0,35.
- *
- * `mkDefect` lo phần tính điểm; ở đây chỉ thay lại hai chuỗi CHỮ, vì "bánh nguội ngắt" không
- * phải thứ người ta nói về một ổ còn nóng mà mềm oặt. Không đụng gì tới số.
- */
+/** Xem khối `UNDERDONE_FLOOR` ở đầu file. `mkDefect` lo phần điểm; ở đây chỉ thay hai chuỗi CHỮ. */
 function underdoneDefect(crust: number): Defect {
   const short = clamp01((CRUST.READY - crust) / CRUST.READY);
   const mag = UNDERDONE_FLOOR + (UNDERDONE_CEIL - UNDERDONE_FLOOR) * short;
@@ -3905,18 +3537,34 @@ function underdoneDefect(crust: number): Defect {
 }
 
 /**
- * Mẩu lý do cho HUD, lấy từ chính lỗi khách để ý nhất — chữ thường, ngắn, KHÔNG số (T3).
- * `d.text` của lỗi theo món vốn đã đúng dạng ("thiếu pate", "có ớt", "ít đồ chua quá");
- * riêng ổ nhồi chặt có câu dài hai vế nên cắt lại cho vừa một dòng HUD.
+ * Xem khối `SINGED_FLOOR`. Nặng dần từ lúc chớm sém tới sát ngưỡng cháy của CHÍNH cái lò này —
+ * `burnAt` khác mặc định khi có lò gas, nên không được lấy `CRUST.BURNT`.
  */
+function singedDefect(crust: number, burnAt: number): Defect {
+  const span = Math.max(0.01, burnAt - CRUST.SINGED);
+  const over = clamp01((crust - CRUST.SINGED) / span);
+  const mag = SINGED_FLOOR + (SINGED_CEIL - SINGED_FLOOR) * over;
+  return { ...mkDefect("WRONG_TEMP", null, mag), label: SINGED_LABEL, text: SINGED_TEXT };
+}
+
+/** Lỗi của VỎ BÁNH (non hoặc sém), tách khỏi `WRONG_TEMP` nghĩa gốc là ổ nguội. */
+const isCrustDefect = (d: Defect) => d.kind === "WRONG_TEMP" && (d.label === UNDERDONE_LABEL || d.label === SINGED_LABEL);
+
+/** Vế bổ sung nói bằng mấy chữ nào: "chưa giòn" / "cháy cạnh". */
+const crustTailWord = (d: Defect) => (d.label === SINGED_LABEL ? "cháy cạnh" : "chưa giòn");
+
+/** "đồ chua", "đồ chua với ớt", "đồ chua, ớt với tương ớt" — cách kể món của người mình. */
+function monVi(names: readonly string[]): string {
+  if (names.length <= 1) return names[0] ?? "";
+  return `${names.slice(0, -1).join(", ")} với ${names[names.length - 1]}`;
+}
+
+/** Chữ thường, ngắn, KHÔNG số (T3). Ổ nhồi chặt có câu hai vế nên cắt lại cho vừa một dòng HUD. */
 function defectNote(d: DiffedDefect): string {
   return d.kind === "STUFFED" ? "ổ nhồi chặt quá" : d.text;
 }
 
-/**
- * Món được bỏ dư nhiều nhất — CHỈ để viết nhãn cho HUD, không bao giờ đụng tới điểm
- * (`generosityOf` mới là chỗ quyết có hào phóng hay không). Chỉ được gọi trên ổ KHÔNG LỖI.
- */
+/** CHỈ để viết nhãn HUD, không bao giờ đụng tới điểm (`generosityOf` mới là chỗ quyết). */
 function extraLabel(spec: OrderSpec, dish: readonly Ingredient[]): string | null {
   const got = portionsOf(dish);
   let best: Ingredient | null = null;
@@ -3938,12 +3586,7 @@ function near(c: { x: number; y: number }, p: { x: number; y: number }, r: numbe
   return Math.hypot(p.x - c.x, p.y - c.y) < r;
 }
 
-/**
- * Khách đi thẳng tới đích, chạm tường thì trượt — đủ dùng vì sân trước quán trống.
- *
- * `mul` là nhịp chân riêng của một người (người qua đường mỗi người một tốc độ). Mặc
- * định 1: mọi lời gọi cũ giữ nguyên `WALK_SPEED`, không ai bị nhanh chậm đi một chút nào.
- */
+/** `mul` là nhịp chân riêng của một người (người qua đường mỗi người một tốc độ); mặc định 1. */
 function walk(c: Customer, to: { x: number; y: number }, dt: number, mul = 1) {
   const dx = to.x - c.x, dy = to.y - c.y;
   const d = Math.hypot(dx, dy);

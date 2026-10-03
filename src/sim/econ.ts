@@ -54,9 +54,7 @@ type Cal = {
 };
 export const CAL = CAL_JSON as unknown as Cal;
 
-/** Khoản theo ngày/mùa → ĐỒNG, đã co theo SCALE (làm tròn nghìn). */
 export const scaledVnd = (k: number) => Math.round(k * ECON.scale) * 1000;
-/** Giá từng món / từng ổ → ĐỒNG, KHÔNG co. */
 export const vnd = (k: number) => Math.round(k * 1000);
 
 /**
@@ -98,20 +96,18 @@ export function dongVi(d: number): string {
 
 export const weatherOf = (day: number): Weather => CAL.weather[(Math.max(1, day) - 1) % CAL.weather.length];
 export const isRain = (w: Weather) => w === "MUA_RAO" || w === "MUA_DAM";
-/** 0 = thứ Hai … 6 = Chủ nhật. Ngày 1 là thứ Hai (P3-01 §2.4.4). */
 export const weekdayIdx = (day: number) => (((day - 1) % 7) + 7) % 7;
 export const WEEKDAY_VI = ["thứ Hai", "thứ Ba", "thứ Tư", "thứ Năm", "thứ Sáu", "thứ Bảy", "Chủ nhật"];
 
 export const eventsOn = (day: number) => CAL.events.filter((e) => day >= e.fromDay && day <= e.toDay);
 export const crowdMul = (day: number) => eventsOn(day).reduce((a, e) => a * (e.crowdMul ?? 1), 1);
 
-/** Giá một ĐƠN VỊ hàng hôm nay (nghìn đồng). Bánh mì là mỏ neo: không bao giờ nhân thứ/sự kiện. */
 export function priceOf(g: GoodId, day: number): number {
   const d = GOODS[g];
   if (g === "BANH") return eventsOn(day).find((e) => e.breadPrice_k)?.breadPrice_k ?? d.base_k;
   let p = d.base_k * CAL.weekdayIndex[d.weekday][weekdayIdx(day)];
   for (const e of eventsOn(day)) p *= e.priceMul?.[d.weekday] ?? 1;
-  return Math.round(p * 2) / 2;                        // chợ làm tròn tới 500đ
+  return Math.round(p * 2) / 2;
 }
 
 export function q0Of(g: GoodId, day: number): number {
@@ -119,14 +115,12 @@ export function q0Of(g: GoodId, day: number): number {
   return GOODS[g].q0;
 }
 
-/** Chi phí cố định mỗi ngày (đồng, đã co) — than, đá, túi, xăng, gửi xe… chạy cả ngày nghỉ. */
 export const fixedCostVnd = (day: number) => scaledVnd(day >= ECON.fixedCost_k.fromDay ? ECON.fixedCost_k.raised : ECON.fixedCost_k.base);
 
 // ─────────────────────────────────────────────────────────────── kho
 
 export type Lot = { good: GoodId; day: number; left: number; q0: number };
 export type Storage = "thung_xop" | "tu_mat";
-/** `storage` do thiết bị quyết (P3-04 B1 tủ mát); `noiU` = có nồi ủ xíu mại (B2). */
 export type InventoryState = { lots: Lot[]; lastBasket: Partial<Record<GoodId, number>>; storage?: Storage; noiU?: boolean };
 export const newInventory = (): InventoryState => ({ lots: [], lastBasket: {}, storage: "thung_xop" });
 
@@ -143,7 +137,6 @@ export function shelfDays(g: GoodId, storage: Storage = "thung_xop", noiU = fals
   return Math.max(1, d.curve.length + delta);
 }
 
-/** Chất lượng một lô hôm nay; null = HƯ (khoá). Người chơi KHÔNG BAO GIỜ thấy số này. */
 export function lotQuality(l: Lot, day: number, storage: Storage = "thung_xop", noiU = false): number | null {
   const age = day - l.day;
   if (age < 0 || age >= shelfDays(l.good, storage, noiU)) return null;
@@ -157,12 +150,10 @@ export function stockOf(inv: InventoryState, g: GoodId, day: number) {
   return inv.lots.reduce((a, l) => a + (l.good === g && lq(inv, l, day) !== null ? l.left : 0), 0);
 }
 
-/** Còn bao nhiêu PHẦN kẹp được cho nguyên liệu này (gộp mọi loại hàng dùng được). */
 export function portionsFor(inv: InventoryState, ing: Ingredient, day: number) {
   return goodsFor(ing).reduce((a, g) => a + stockOf(inv, g, day), 0);
 }
 
-/** Lấy n phần, lô cũ nhất trước. Trả chất lượng từng phần (thiếu thì trả ít hơn n). */
 export function take(inv: InventoryState, ing: Ingredient | "bread", n: number, day: number): number[] {
   const goods = ing === "bread" ? (["BANH"] as GoodId[]) : goodsFor(ing);
   const lots = inv.lots.filter((l) => goods.includes(l.good) && l.left > 0 && lq(inv, l, day) !== null)
@@ -176,7 +167,6 @@ export function take(inv: InventoryState, ing: Ingredient | "bread", n: number, 
   return out;
 }
 
-/** Trả phần lại kho (gỡ miếng khỏi ổ chưa gói). */
 export function putBack(inv: InventoryState, ing: Ingredient, n: number, day: number) {
   const g = goodsFor(ing).find((x) => stockOf(inv, x, day) > 0) ?? goodsFor(ing)[0];
   if (!g) return;
@@ -189,7 +179,6 @@ export function buy(inv: InventoryState, g: GoodId, units: number, day: number) 
   inv.lots.push({ good: g, day, left: units * GOODS[g].perUnit, q0: q0Of(g, day) });
 }
 
-/** Đầu ngày: dọn hàng hư. Trả những gì bỏ đi (để sổ sách tối ghi "bỏ: …"). */
 export function expire(inv: InventoryState, day: number): { good: GoodId; units: number }[] {
   const out: { good: GoodId; units: number }[] = [];
   inv.lots = inv.lots.filter((l) => {
@@ -200,7 +189,6 @@ export function expire(inv: InventoryState, day: number): { good: GoodId; units:
   return out;
 }
 
-/** Ô lạnh đang dùng (1 ô ≈ 20 phần của doc). Thùng xốp có 8 ô. */
 export function coldSlotsUsed(inv: InventoryState, day: number) {
   let s = 0;
   for (const g of GOOD_IDS) {
@@ -210,14 +198,11 @@ export function coldSlotsUsed(inv: InventoryState, day: number) {
   }
   return s;
 }
-/** Ô lạnh: thùng xốp 8, tủ mát 20 (P3-03 §2.2 STORAGE). */
 export const coldSlotCap = (inv?: InventoryState) => (inv?.storage === "tu_mat" ? 20 : ECON.storage.thung_xop.coldSlots);
 
 // ─────────────────────────────────────────────────────────────── giá ổ + chất lượng ổ
 
-/** "khong" = bánh mì không (P4-03 SK-31: 10.000₫ thay vì 25.000₫). */
 export type Tier = "khong" | "thuong" | "dayDu" | "dacBiet";
-/** Giá bán theo loại ổ khách gọi (P3-03 §2.5 thực đơn). */
 export function tierOf(intent: { nhan: readonly string[]; nhieu?: string; dayDu?: boolean }): Tier {
   const n = intent.nhan.length;
   if (!n && !intent.dayDu) return "khong";
@@ -247,5 +232,4 @@ export function dishQuality(bread: number, parts: { ing: Ingredient; q: number }
   return Math.max(0, Math.min(1, q));
 }
 
-/** Ngưỡng khách nếm ra: người soi nếm ra sớm hơn. Chị Lan (0,9) chỉ chịu được lệch 0,09. */
 export const tasteThreshold = (soi: number) => 0.18 - 0.10 * soi;

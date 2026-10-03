@@ -162,7 +162,7 @@ chứ không phải của bộ máy. Khi rà tới file tương ứng thì làm 
 |---|---|---|---|
 | ~~`THEY_SIT`~~ | chung | 24 | ✅ **xong** — xem §6octies |
 | ~~`FILM` / `STOP_FILM`~~ | bé Su | 13 | ✅ **xong** — xem §6nonies |
-| `MOVE_CART` | chú Kiệt | 11 | hai cái xe tranh chỗ là arc của ông |
+| ~~`MOVE_CART`~~ | chú Kiệt | 11 | ✅ **xong** — xem §6undecies |
 | ~~`CARRY_GANH` · `MOVE_GANH`~~ | bà Sáu | 11 | ✅ **xong** — xem §6decies |
 | `RAO` | bà Sáu dạy | 7 | ba mảnh đã có, chưa ai nối |
 | `LEND_ITEM` / `CLEAR_DEBT` | anh Dũng · chị Lan | 5 | arc áo mưa |
@@ -686,6 +686,57 @@ lúc đã hết bánh, là đổi một thứ mình không có.
 
 Và lại một nút hứa HAI việc (*"Bà ngồi cái ghế này đi bà. Con bưng gánh vô cho."*) — lưới
 `G-3` của đợt trước bắt ngay. Một nút, một lời hứa.
+
+## 6undecies. `MOVE_CART` — VÀ MỘT ACT CHẠY KHÔNG TẢI MÀ KHÔNG AI KÊU
+
+### Lỗi nặng nhất của đợt này là của chính tôi
+
+`BARTER` được khai trong `TalkAct`, gắn vào hai nút nội dung, **qua hết `validate:talks`
+và 509 test** — mà `switch` của `applyAct` không có nhánh nào cho nó. Bà Sáu đổi chén tàu
+hũ lấy ổ bánh, và ổ bánh không đi đâu cả. Tôi đã báo "xong" ở lượt trước; sai.
+
+TypeScript im vì **`switch` thiếu nhánh không phải lỗi kiểu**. Hai lưới mới chặn lại:
+
+* `default: assertActHandled(act)` — tham số `never`. Thêm một `kind` vào `TalkAct` mà
+  quên nối thì `npm run check` **trượt ngay tại dòng đó**, không chờ tới lúc chơi.
+* `X-5` — mọi `act.kind` có trong nội dung phải có `case` trong `applyAct`.
+
+### `MOVE_CART`
+
+Mười một câu nói về cái xe đều là chữ suông, kể cả *"chú đứng chắn hết lối rồi"* — nó
+mang `STEP_ASIDE`, tức bảo NGƯỜI dạt ra chứ không dời CÁI XE.
+
+Cái giá **khác hẳn cái gánh**, và khác vì bản chất khác:
+
+| | cách tính | cắn lúc nào |
+|---|---|---|
+| gánh bà Sáu | +1 `ahead` (một vật cản) | chỉ khi quầy đã đông |
+| xe chú Kiệt | `KIET_STEAL = 0,18` khách lạ đi thẳng qua xe chú | **kể cả lúc vắng** |
+
+Vì chú Kiệt là một **đối thủ đang bán**, không phải một cái thùng. Chỉ ăn khách LẠ:
+người có tên tới tìm mình, không tạt ngang vì một cái xe đứng gần hơn. Dòng số riêng
+`kiet:` chứ không rút ké `balk:` (P0-02 §2.3).
+
+Đo trên một buổi bán ngày 10: **để yên thì mất 2 khách vào xe chú; bảo chú đẩy đi thì 0.**
+
+### Và một lỗi điều kiện làm cả hai vật thể vô hình
+
+Bản đầu tôi buộc cái gánh và cái xe vào `phase !== "leaving" && !c.pass`. Cả hai **không
+bao giờ xuất hiện**: đo ra chú Kiệt **đi ngang** (`pass: true`) chứ không đứng quầy, 13/20
+ngày đều vậy — mà đúng ra là thế, cái xe của ông đứng bên kia hẻm cả ngày, ông chỉ tạt
+qua nói một câu.
+
+Bốn lưới `X-1`…`X-4` vẫn xanh hết, vì **không lưới nào chạy một buổi bán**. `X-6` và `X-7`
+có mặt để chữa đúng chỗ đó: chạy cái hẻm, rồi hỏi cái xe có lấn thật không và có mất khách
+thật không.
+
+### Một lưới cũ đỏ, và nó đỏ ĐÚNG
+
+`p6-passersby` — *"đứng ngay cạnh ai thì F nói chuyện với người đó"* — bắt đầu đỏ. Truy ra
+không phải lỗi logic (tắt riêng `KIET_STEAL` thì nó xanh lại): đợt P2-10 nâng khách tự mở
+lời từ **0,6 lên 1,8 lần/ngày**, nên lưới bắt đầu rơi trúng mấy lúc có người đang chờ mình
+trả lời — mà `talkCost` cho người vừa mở lời `TALK_B_ADDRESSED = −99`, thắng tuyệt đối, và
+ĐÚNG như vậy. Lưới đo luật KHOẢNG CÁCH thì phải đo lúc luật kia không bật.
 
 ## 7. Truy vết
 

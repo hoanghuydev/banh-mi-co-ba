@@ -22,7 +22,6 @@ import { CLAIM } from "../../sim/gossip";
  * của cô Ba chỉ tới vào buổi tối, sau khi người chơi đã DÙNG điều mình đoán ở quầy.
  * Mở giữa ngày = pause hoàn toàn (CANON §15.2) — scene gọi lo phần đó.
  */
-/** "6h47" — cách người trong hẻm nói giờ, không phải "06:47". */
 const hm = (m: number) => `${Math.floor(m / 60)}h${String(Math.floor(m % 60)).padStart(2, "0")}`;
 
 /**
@@ -76,16 +75,13 @@ const STYLE = `
 
 export type NotebookOpts = {
   mode: "evening" | "midday";
-  /** Tỉ lệ cỡ chữ CANON §15.1. */
   textScale: number;
-  /** Bật trang cuối ngày của cô Ba (công tắc #4). */
   showEvening: boolean;
   onClose: () => void;
 };
 
 export class NotebookView {
   private root: HTMLDivElement;
-  /** Hai nửa trang đôi, dựng một lần rồi chỉ thay ruột từng nửa — xem `render()`. */
   private colL!: HTMLDivElement;
   private colR!: HTMLDivElement;
   private day: number;
@@ -162,7 +158,6 @@ export class NotebookView {
     return u;
   }
 
-  /** Tên hiển thị trong sổ = tên NGƯỜI CHƠI ghi. Chưa ghi thì là "—". */
   private who(id: string) {
     if (id === "KHACH_LA") return "khách lạ";
     return this.nb.pages[id]?.name?.trim() || "—";
@@ -195,7 +190,6 @@ export class NotebookView {
     this.renderRight();
   }
 
-  /** Thay ruột một cột, giữ nguyên chỗ đang cuộn (đổi một ô "Cô đoán" không được nhảy trang). */
   private swap(col: HTMLElement, parts: HTMLElement[], toBottom = false) {
     const keep = col.querySelector(".nb-scroll")?.scrollTop ?? -1;
     col.replaceChildren(...parts);
@@ -229,7 +223,6 @@ export class NotebookView {
     col.push(h);
 
     const sc = this.el("div", "nb-scroll");
-    // trang cuối ngày của cô Ba — mực đỏ, 2–3 dòng, không phán đúng sai
     const note: EveningNote | undefined = this.nb.eveningNotes.find((n) => n.day === this.day);
     if (note && (this.opts.showEvening || note.confirmations.length)) {
       const red = this.el("div", "nb-red");
@@ -241,7 +234,6 @@ export class NotebookView {
     if (!rows.length) sc.append(this.el("div", "nb-empty", "chưa có gì trong ngày này"));
     for (const e of rows) sc.append(this.entry(e));
 
-    // "lâu rồi không thấy" — chỉ đếm số bữa, không diễn giải (§2.6)
     if (this.opts.showEvening) {
       const abs = this.nb.met.map((id) => ({ id, n: this.w.npcs[id]?.missStreak ?? 0 })).filter((a) => a.n >= 2 && !this.w.npcs[a.id]?.gone);
       if (abs.length) {
@@ -330,7 +322,6 @@ export class NotebookView {
     const img = this.el("img");
     img.src = this.face(id); img.alt = "";
     img.style.cssText = "width:44px;height:44px;border-radius:50%;object-fit:cover;object-position:50% 0;image-rendering:pixelated;background:#d9cdb2";
-    // P4-03 SK-21: thầy Phúc đưa cây bút NGÀY 11 — trước đó cột phải chỉ có mặt người, chưa ghi được
     if (!notebookWriteOpen(this.w.progress.dayIndex)) {
       top.append(img);
       wrap.append(top);

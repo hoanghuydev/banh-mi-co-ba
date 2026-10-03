@@ -1,27 +1,10 @@
 /**
- * NỘI DUNG KHÔNG ĐƯỢC NHẮC TỚI ĐỒ CHƯA MUA — P2-06 §2.17.
+ * NỘI DUNG KHÔNG ĐƯỢC NHẮC TỚI ĐỒ CHƯA MUA. Thoại từng mời người ta "đứng nhờ cái dù cho mát"
+ * trong khi chẳng có cái dù nào — lỗi THẾ GIỚI, và nó không nổ ra thành bug nào nên không có lưới
+ * thì nó mọc lại ngay lần viết nội dung sau.
  *
- * Chủ dự án bắt được: thoại mời người ta *"đứng nhờ cái dù cho mát"* trong khi
- * **chẳng có cái dù nào** trong sân. Quét ra thì không phải một ca lẻ — `DU_CHE`
- * (540k, mở ngày 8) và `GHE_BAN` (320k, ngày 5) đều là THIẾT BỊ MUA ĐƯỢC, và
- * `StallScene` chỉ vẽ chúng khi đã mua (`:3038`, `:3043`). Tổng mười câu.
- *
- * Đây không phải lỗi chính tả mà là lỗi THẾ GIỚI: nhân vật nói về một vật không tồn
- * tại, và người chơi nhìn quanh không thấy nó. Nó cũng không nổ ra thành bug nào —
- * nên nếu không có lưới, nó mọc lại ngay lần viết nội dung sau.
- *
- * Bảng từ vựng dưới đây CỐ Ý hẹp: chỉ những đồ `StallScene` vẽ CÓ ĐIỀU KIỆN. Ba thứ
- * ĐÃ KIỂM VÀ LOẠI RA, ghi lại để người sau khỏi đi gắn cổng nhầm:
- *
- *  · **bảng hiệu** — cái xe có bảng sẵn từ đầu (`createSign` gọi vô điều kiện ở
- *    `StallScene:848`); `BANG_HIEU` chỉ là bản nâng cấp đỏ-chữ-vàng.
- *  · **loa** — trong câu bà Bảy đó là điện thoại của chính bà, không phải `LOA_RAO`.
- *  · **ghế "kia"** — map `y11` có hai ghế nhựa sẵn ở ô (19,11)(20,11), bàn của hàng
- *    xóm bên kia hẻm. Chỉ "cái ghế NÀY" mới là ghế của quầy mình.
- *
- * Và một thứ ĐÃ SỬA chứ không gắn cổng: *"đứng nhờ cái mái hiên kia"* — trong cả
- * `art/props.ts` lẫn `world/map.ts` **không có mái hiên nào**, mua hay không mua cũng
- * không có. Câu đó đổi thành "đứng ké bóng cái xe", vì cái xe thì chắc chắn có.
+ * Bảng từ vựng CỐ Ý hẹp — chỉ đồ `StallScene` vẽ CÓ ĐIỀU KIỆN. Đã kiểm và LOẠI RA: bảng hiệu (xe
+ * có sẵn từ đầu) · loa (trong câu bà Bảy là điện thoại của bà) · ghế "kia" (ghế hàng xóm ở y11).
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -35,17 +18,11 @@ const TALKS: Talk[] = await TalkStore.loadAll();
 const word = (w: string) => new RegExp(`(^|[^\\p{L}])${w}([^\\p{L}]|$)`, "iu");
 
 /**
- * Từ vựng → thiết bị phải mua mới có. Thêm dòng khi thêm đạo cụ vẽ-có-điều-kiện.
+ * Từ vựng → thiết bị phải mua mới có.
  *
- * ⚠️ VỚI GHẾ THÌ PHẢI ĐỂ Ý CHỈ TỪ. Hàng `y11` của `world/map.ts` có **hai cái ghế nhựa
- * sẵn từ đầu** ở ô (19,11) và (20,11) — bàn của hàng xóm bên kia hẻm, không phải của
- * quán. Nên:
- *
- *   "ngồi ghế KIA"      → chỉ sang bên kia hẻm. CÓ THẬT, không cần cổng.
- *   "ngồi cái ghế NÀY"  → ghế của chính quầy mình ⇒ cần `GHE_BAN` (320k, ngày 5).
- *
- * Bắt bừa cả chữ "ghế" là bắt oan người viết sau và đẩy họ đi gắn cổng cho một câu vốn
- * đúng. Lưới chỉ được chặt ở chỗ nó CHẮC.
+ * ⚠️ VỚI GHẾ THÌ PHẢI ĐỂ Ý CHỈ TỪ: map `y11` có hai ghế nhựa sẵn của hàng xóm, nên "ngồi ghế KIA"
+ * là có thật (không cần cổng) còn "ngồi cái ghế NÀY" mới cần `GHE_BAN`. Bắt bừa cả chữ "ghế" là
+ * đẩy người viết sau đi gắn cổng cho một câu vốn đúng.
  */
 const PROP_WORDS: [RegExp, string][] = [
   [word("dù"), "DU_CHE"],

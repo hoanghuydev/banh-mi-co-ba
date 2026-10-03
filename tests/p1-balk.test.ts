@@ -1,15 +1,8 @@
 /**
- * "Hôm nay đông quá, thôi để bữa khác" — luật QUAY ĐẦU Ở ĐẦU HẺM (sim/service.balkChance).
- *
- * File này giữ hai thứ, và thứ hai mới là thứ dễ mất nhất:
- *
- *  1. HÌNH DẠNG đường cong. Mấy con số dưới đây là HỢP ĐỒNG chứ không phải chi tiết cài
- *     đặt — y như tests/p1-queue-patience.test.ts: đổi chúng là đổi cảm giác giờ cao điểm,
- *     nên phải đổi có chủ ý, không phải vô tình trong một lần dọn code.
- *
- *  2. RANH GIỚI với `queuePatienceMul`. Hai luật này NGƯỢC CHIỀU nhau một cách cố ý:
- *     hàng dài làm người ta ngại VÀO, nhưng vào rồi thì chính cái hàng ấy làm người ta
- *     chờ ĐƯỢC LÂU HƠN. Đứa nào trộn hai cái lại cũng sẽ thấy vỡ ở đây trước.
+ * Luật QUAY ĐẦU Ở ĐẦU HẺM (`sim/service.balkChance`). Giữ hai thứ:
+ *  1. HÌNH DẠNG đường cong — mấy con số là HỢP ĐỒNG, đổi chúng là đổi cảm giác giờ cao điểm
+ *  2. ⚠️ RANH GIỚI với `queuePatienceMul`: hai luật NGƯỢC CHIỀU một cách cố ý (hàng dài làm người
+ *     ta ngại VÀO, nhưng vào rồi thì chính nó làm người ta chờ LÂU HƠN). Trộn hai cái là vỡ ở đây.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";

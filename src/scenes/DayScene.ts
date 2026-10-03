@@ -33,7 +33,6 @@ export type DayStart = { mode: "new" } | { mode: "continue" };
 const CHILDREN = ["market", "stall", "evening", "ending"] as const;
 type Child = typeof CHILDREN[number];
 
-/** Tiền đổi ít nhất ngần này mới đáng một lần autosave riêng (P0-02 §2.6). */
 const MONEY_SAVE_THRESHOLD = 20_000;
 
 export class DayScene extends Phaser.Scene {
@@ -43,7 +42,7 @@ export class DayScene extends Phaser.Scene {
   constructor() { super("day"); }
 
   create(data: DayStart = { mode: "continue" }) {
-    fitDesignFrame(this.cameras.main);          // canvas phóng to, toạ độ giữ nguyên — `core/render`
+    fitDesignFrame(this.cameras.main);
     const probe = new SaveService(bus, () => { throw new Error("probe"); });
     let world: SaveFile | null = null;
     if (data.mode === "continue") {
@@ -88,11 +87,8 @@ export class DayScene extends Phaser.Scene {
     ctx.clock.reset(DAY_START_MIN);
     w.progress.today = { served: 0, lost: 0, revenue: 0, talksDeep: 0, talkOffers: 0 };
     w.progress.scene = "Market";
-    // P1-01 §2.6: sáng nào cũng chia lại phần cho 3 preset.
     w.stall.presets = refillPresets(w.stall.presets as never);
-    // P3-06: xe đã bán bớt (CART_DOWNGRADED) chỉ còn 2 chỗ kẹp sẵn — vĩnh viễn trong mùa
     if (w.econ && w.stall.presets.length > w.econ.presetSlots) w.stall.presets = w.stall.presets.slice(0, w.econ.presetSlots);
-    // P1-02 §2.10: qua đêm cô Ba dọn bớt — sáng ra còn 40% độ bẩn hôm qua.
     w.stall.cleanliness = 1 - (1 - w.stall.cleanliness) * 0.4;
     gcBags(w.shuffleBags, w.progress.dayIndex);
     // P3: rạng sáng — trời hôm nay, dọn hàng hư, thu tiền chỗ. TRƯỚC bản chụp đầu ngày, để
@@ -110,7 +106,6 @@ export class DayScene extends Phaser.Scene {
     ctx.save.request("SCENE_CHANGE");
   }
 
-  /** "Chơi tiếp": vào lại ĐÚNG chỗ đang đứng, bộ đếm RNG đúng chỗ đã dừng. */
   private resume() {
     const { ctx } = this;
     const p = ctx.world.progress;
@@ -130,7 +125,6 @@ export class DayScene extends Phaser.Scene {
     this.open(at[p.scene] ?? "market", { resume: true });
   }
 
-  /** P0-02 §2.8 — nút chính thức "Chơi lại ngày này": về sáng sớm, cùng seed, cùng lịch. */
   replayDay() {
     const w = this.ctx.world;
     const snap = this.ctx.save.readDayStart(w.saveId, w.progress.dayIndex);
@@ -152,7 +146,7 @@ export class DayScene extends Phaser.Scene {
   private settleFinalDay() {
     const w = this.ctx.world;
     const day = w.progress.dayIndex;
-    eveningCounting(w);                       // chi phí cố định + rút về nhà (một lần mỗi tối)
+    eveningCounting(w);
     neighborTick(w);
     // Không có cảnh tối = không có cái nút nào để góp. Khoản BẮT BUỘC hết hạn ĐÚNG HÔM NAY
     // được trả giùm nếu két đủ — fail mềm (P3-06) phải là hệ quả của một lựa chọn, không phải
@@ -160,7 +154,7 @@ export class DayScene extends Phaser.Scene {
     for (const d of duesOpen(w.econ, day)) if (d.mandatory && d.lastDay <= day) pay(w.econ, w.money, d, day);
     bedtime(w);
     settleNight(w, bus);
-    eveningCounting(w);                       // ghi lại dòng sổ cái SAU khi đã trả nghĩa vụ
+    eveningCounting(w);
   }
 
   /**
@@ -177,7 +171,6 @@ export class DayScene extends Phaser.Scene {
     this.open("stall", { resume: true });
   }
 
-  /** Lưu ngay rồi về sảnh. */
   quitToMenu() {
     this.ctx.save.flushNow("QUIT");
     this.closeChildren();
@@ -233,7 +226,6 @@ export class DayScene extends Phaser.Scene {
     on("evening:done", () => {
       const w = ctx.world;
       if (w.progress.dayIndex >= SEASON_DAYS) {
-        // T4: một mùa có điểm kết. Cú quay lại ngày 40 là việc của P4 — ở đây chỉ dừng đúng chỗ.
         w.flags.seasonOver = true;
         this.quitToMenu();
         return;
@@ -243,18 +235,16 @@ export class DayScene extends Phaser.Scene {
       this.beginDay();
     });
 
-    // Autosave — P0-02 §2.6: ghi NGAY khi sự kiện xảy ra, không đợi hết ngày.
     on("npc:left", () => ctx.save.request("CUSTOMER_DONE"));
     on("perception:confirmed", (p) => {
-      if (p.stimId === "DIRTY_HANDS") ctx.world.flags.dirtyHandsConfirmed = true;   // mở khoá vòi rửa (P3-04 C1)
+      if (p.stimId === "DIRTY_HANDS") ctx.world.flags.dirtyHandsConfirmed = true;
       ctx.save.request("EVENT");
-    });    // cú ghi quan trọng nhất của §8e
+    });
     on("gossip:seeded", () => ctx.save.request("EVENT"));
     on("relationship:tierChanged", () => ctx.save.request("EVENT"));
     on("obligation:due", () => ctx.save.request("EVENT"));
     on("money:changed", (p) => { if (Math.abs(p.delta) >= MONEY_SAVE_THRESHOLD) ctx.save.request("EVENT"); });
 
-    // Mất focus / đóng tab: ghi đồng bộ, ép ngay.
     const hidden = () => { if (document.visibilityState === "hidden") ctx.save.flushNow("QUIT"); };
     const unload = () => ctx.save.flushNow("QUIT");
     document.addEventListener("visibilitychange", hidden);

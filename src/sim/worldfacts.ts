@@ -18,9 +18,7 @@ import {
 } from "../dialog/gates";
 import type { PracticeId } from "../content/vocab";
 
-/** Ảnh chụp thế giới ngay lúc hỏi. `Service` dựng, không ai khác. */
 export type WorldSnapshot = {
-  /** Tay người chơi: khớp `world/stations.Hand`. */
   hand: string;
   handsDirty: boolean;
   onStreet: boolean;
@@ -29,33 +27,29 @@ export type WorldSnapshot = {
   teaLeft: number;
   stock: number;
 
-  /** Người đang nói chuyện. */
   them: {
-    phase: string;            // arriving · queueing · ordering · waiting · leaving
+    phase: string;
     practice: PracticeId;
     passing: boolean;
     served: boolean;
-    named: boolean;           // một trong 12 người CÓ TÊN
-    cutLine: boolean;         // ĐÃ THẬT SỰ chen hàng
+    named: boolean;
+    cutLine: boolean;
     blocking: boolean;
     glanced: boolean;
     lookingInside: boolean;
     inShade: boolean;
-    /** Đang ngồi trên ghế (`THEY_SIT`). */
     sitting: boolean;
-    /** Đang chĩa điện thoại vào cái xe (`FILM`). */
     filming: boolean;
     onPhone: boolean;
     eating: boolean;
     hasOrder: boolean;
-    waitRatio: number;        // 0..1
+    waitRatio: number;
     purpose: string | null;
     state: string | null;
     tier: string;
     visits: number;
   };
 
-  /** Trong CHÍNH cuộc đang mở — chỗ chữa "nói xong quên luôn". */
   convo: {
     tones: readonly string[];
     warmth: number;
@@ -63,7 +57,6 @@ export type WorldSnapshot = {
     openedBy: "PLAYER" | "NPC";
   };
 
-  /** Trong lượt ghé này — P2-07 §4ter tầng `v.*`. */
   visit: {
     gaveTea: boolean;
     gaveFood: boolean;
@@ -72,13 +65,11 @@ export type WorldSnapshot = {
     inviteRefused: boolean;
   };
 
-  /** Trong ngày — tầng `d.*`. */
   day: {
     met: boolean;
     told: readonly string[];
   };
 
-  /** Cả mùa — tầng `m.*`. `remembers` do `retrieve()` đặt, không do người viết đoán. */
   season: {
     remembers: boolean;
   };
@@ -88,10 +79,10 @@ export type WorldSnapshot = {
   peak: boolean;
   queue: number;
   shadeFree: boolean;
-  /** Còn ghế trống không — act `THEY_SIT`. Động: người khác ngồi mất giữa chừng. */
   seatFree: boolean;
-  /** Cái gánh của bà Sáu đang nằm chắn mặt tiền (`CARRY_GANH` / `MOVE_GANH`). */
   ganhOut: boolean;
+  cartLan: boolean;
+  cartChung: boolean;
   ovenHot: boolean;
   band: string;
   /**
@@ -168,6 +159,8 @@ export function queryOf(w: WorldSnapshot, q = new Query()): Query {
   q.set("worldShadeFree", w.shadeFree);
   q.set("worldSeatFree", w.seatFree);
   q.set("worldGanhOut", w.ganhOut);
+  q.set("worldCartLan", w.cartLan);
+  q.set("worldCartChung", w.cartChung);
   q.set("worldOvenHot", w.ovenHot);
   q.set("queueLength", Math.max(0, Math.round(w.queue)));
   q.set("day", Math.max(1, Math.round(w.dayIndex)));
@@ -186,7 +179,6 @@ const SET_KEYS: Record<string, (w: WorldSnapshot, arg: string) => boolean> = {
   "d.toldMe":   (w, a) => w.day.told.includes(a),
 };
 
-/** Query dùng lại giữa các lần hỏi — một cuộc hỏi vài chục lần mỗi nhịp. */
 const SCRATCH = new Query();
 
 /**
@@ -205,17 +197,13 @@ export function holds(key: string, w: WorldSnapshot): boolean {
   return gateHolds(key, queryOf(w, SCRATCH));
 }
 
-/** Mọi khoá đều đúng (`while` là phép VÀ). Danh sách rỗng = luôn đúng. */
 export const allHold = (keys: readonly string[] | undefined, w: WorldSnapshot) =>
   !keys?.length || keys.every((k) => holds(k, w));
 
-/** Khoá nào hỏng — để nhật ký dev nói được vì sao câu đó ra dấu "?". */
 export const firstBroken = (keys: readonly string[] | undefined, w: WorldSnapshot) =>
   keys?.find((k) => !holds(k, w)) ?? null;
 
-/** Mọi khoá phẳng hợp lệ — linter nội dung và test đọc. Suy ra từ bảng đen, không chép tay. */
 export const FACT_KEYS: readonly string[] = ALIAS_FLAGS;
-/** Khoá dạng hàm — kiểm riêng vì chúng mang tham số. */
 export const FACT_FNS: readonly string[] = ALIAS_FNS;
 
 export { allGates, checkGate, firstBrokenGate, isStoryFlag };

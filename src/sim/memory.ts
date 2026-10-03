@@ -2,17 +2,11 @@
  * Trí nhớ 3 tầng + quan hệ 3 bucket. Thuần dữ liệu, không Phaser, không RNG.
  *   SHORT 6–8 slot · LONG 3–4 slot (decay chậm ~3×) · CORE 1 slot (ghi một lần, không phai)
  *
- * Năm luật làm nên cảm giác "người này thật" — đừng "tối ưu" đi trong một lần refactor:
- *  1. ghi đè cái có cường độ THẤP NHẤT, không phải cái cũ nhất (không spam chuyện vặt để đẩy một
- *     lỗi nặng ra khỏi đầu người ta được)
- *  2. decay TAPERING: giữ → dốc cos mượt → sàn, không có vách đứng
- *  3. sàn theo bucket ĐÃ ĐẠT + decay đếm LẦN GHÉ BỊ LỠ, không đếm ngày
- *  4. memory thứ n cùng kind chỉ góp 0,75^(n−1) — không farm được bằng một chiêu
- *  5. chuộc lỗi phải tốn công hơn gây lỗi, qua NHIỀU NGÀY, đúng TRỤC
- * Và một biến không bao giờ phục hồi: trần tin tưởng.
+ * ⚠️ Năm luật đừng "tối ưu" đi: ghi đè cái cường độ THẤP NHẤT (không phải cũ nhất) · decay
+ * TAPERING không vách đứng · sàn theo bucket ĐÃ ĐẠT, decay đếm LẦN GHÉ BỊ LỠ · memory thứ n cùng
+ * kind chỉ góp 0,75^(n−1) · chuộc lỗi tốn công hơn gây lỗi, qua NHIỀU NGÀY, đúng TRỤC.
  *
- * T3: KHÔNG một con số nào ở đây được lên màn hình.
- * ⚠️ `REL_K_*` và điểm "phục vụ tử tế" là số của bản dựng (doc không chốt) — cần tune.
+ * T3: KHÔNG con số nào ở đây lên màn hình. `REL_K_*` là số của bản dựng, cần tune.
  */
 import type { Personality } from "../content/npcs";
 import type { RelTier } from "../core/types";
@@ -201,13 +195,11 @@ export const MISSED_EXTRA_STEP = 0.12;
 export type ExtraVisit = "GAVE" | "NONE" | "REFUSED";
 
 /**
- * Cập nhật chuỗi "cho thêm" cho MỘT lượt ghé, trả về cường độ của cái hụt (0 = không có gì để nói).
+ * Trả về cường độ cái hụt (0 = không có gì để nói). Nếp gãy ĐÚNG MỘT LẦN — chuỗi về 0 ngay tại đây,
+ * vì chưng hửng là chuyện của lần đầu tiên.
  *
- * Nếp gãy ĐÚNG MỘT LẦN (chuỗi về 0 ngay tại đây): chưng hửng là chuyện của lần đầu tiên, bữa nào
- * cũng cằn nhằn thì là người khó tính chứ không phải người hụt hẫng.
- *
- * REFUSED cũng xoá nếp nhưng KHÔNG phạt — không có nhánh này thì §8i quay ngược thành bẫy: bị chê
- * "cho nhiều quá" xong bữa sau nhịn cho, lại bị trừ tiếp.
+ * REFUSED cũng xoá nếp nhưng KHÔNG phạt: không có nhánh này thì bị chê "cho nhiều quá" xong bữa sau
+ * nhịn cho, lại bị trừ tiếp.
  */
 export function extraHabit(s: RelState, kind: ExtraVisit): number {
   const streak = s.extraStreak ?? 0;
@@ -224,16 +216,9 @@ export function slotCount(p: Personality) {
 }
 
 /**
- * Tính cách vặn ĐỘ DÀI đoạn dốc.
- *
- * ⚠️ NHÁNH ÂM LÀ NGHỊCH ĐẢO của `decayMul`, không phải chính nó: `decayMul = 0,4 + 1,6·deTha` là
- * một TỐC ĐỘ QUÊN (deTha cao ⇒ số lớn), còn `taper` là một ĐỘ DÀI đoạn dốc (số lớn ⇒ phai CHẬM).
- *
- * Nhân thẳng tốc độ vào độ dài là lộn ngược — đo được trên bản cũ (`WRONG_NAME` 90, tạo ngày 1):
- * tới ngày 16 chị Lan (để bụng nhất hẻm) còn 23, bé Su (mau quên nhất) còn 56. Suốt hơn hai tuần,
- * người mau quên giận dai hơn người để bụng.
- *
- * Nghịch đảo bị chặn hai đầu sẵn (`decayMul` ∈ [0,4 · 2,0] ⇒ hệ số ∈ [0,5 · 2,5]).
+ * ⚠️ NHÁNH ÂM LÀ NGHỊCH ĐẢO của `decayMul`: `decayMul` là TỐC ĐỘ QUÊN (deTha cao ⇒ số lớn), còn
+ * `taper` là ĐỘ DÀI đoạn dốc (số lớn ⇒ phai CHẬM). Nhân thẳng vào là lộn ngược — bản cũ cho người
+ * mau quên giận dai hơn người để bụng suốt hơn hai tuần.
  */
 function temperFactor(m: Memory, p: Personality) {
   return m.valence < 0 ? 1 / decayMul(p) : 0.8 + 0.6 * p.thanThien;
@@ -404,15 +389,11 @@ function insertLong(s: RelState, m: Memory, day: number, p: Personality) {
 }
 
 /**
- * Một câu nói qua lại làm ấm lên (hoặc nguội đi) MỘT CHÚT — P5-01.
+ * Đi THẲNG vào điểm quan hệ, KHÔNG qua `record()`: không chiếm slot trí nhớ, không đi tin đồn,
+ * không chuộc được bằng một ổ bánh. Câu nào nặng tới mức người ta NHỚ thì content khai `mem` riêng.
  *
- * Phần lớn câu trong một cuộc trò chuyện không đáng thành ký ức: nó chỉ là chuyện
- * "nói chuyện được" hay "nói chuyện khó chịu". Nên nó đi thẳng vào điểm quan hệ, KHÔNG
- * qua `record()`: không chiếm slot trí nhớ, không đi tin đồn, không chuộc được bằng
- * một ổ bánh. Câu nào nặng tới mức người ta NHỚ thì content phải khai `mem` riêng.
- *
- * `relGainMul` chỉ nhân cho phần DƯƠNG — người khép kín ấm lên chậm, nhưng không vì
- * khép kín mà bớt đau khi bị nói nặng.
+ * `relGainMul` chỉ nhân phần DƯƠNG — người khép kín ấm lên chậm, nhưng không vì khép kín mà bớt
+ * đau khi bị nói nặng.
  */
 export function talkPoints(s: RelState, p: Personality, delta: number) {
   const before = s.relationPoints;

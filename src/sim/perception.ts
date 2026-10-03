@@ -18,10 +18,8 @@ import type { CustomerSlot, ObsState, Slot, StimId } from "../core/types";
  * (CANON §8.1 luật L4 — stimId một nguồn, xem `core/stimid.ts`).
  */
 
-/** Chỗ đứng của khách so với quầy (cột của bảng visibility). */
 export type Zone = CustomerSlot;
 
-/** Bảng tra tĩnh, chép đúng số của CANON §5. */
 const VISIBILITY: Record<Zone, Record<Slot, number>> = {
   FRONT_CENTER: { HANDS: 0.95, BOARD: 0.85, OVEN: 0.60, UNDER_COUNTER: 0.05 },
   FRONT_SIDE:   { HANDS: 0.70, BOARD: 0.65, OVEN: 0.75, UNDER_COUNTER: 0.05 },
@@ -30,15 +28,14 @@ const VISIBILITY: Record<Zone, Record<Slot, number>> = {
   SEATED_FAR:   { HANDS: 0.10, BOARD: 0.10, OVEN: 0.25, UNDER_COUNTER: 0.00 },
 };
 
-/** Salience của từng sự kiện — CANON §3. Payload có thể ghi đè (vd. REMEMBERED_USUAL tầng T-A = 70). */
 export const SALIENCE: Record<StimId, number> = {
   WRONG_NAME: 100,
   MADE_THEM_WAIT: 100,
   BURNT_OR_COLD: 80,
   DROPPED_FOOD: 75,
-  ORDER_DEFECT: 20,        // 20 tại quầy -> 100 lúc ăn (xử lý ở delivery-diff)
+  ORDER_DEFECT: 20,
   DIRTY_HANDS: 40,
-  REFUSED_SERVICE: 85,     // CANON §3.4 — bịt lỗ hổng §8k
+  REFUSED_SERVICE: 85,
   REMEMBERED_USUAL: 90,
   REMEMBERED_STORY: 70,
   CARED_FOR_THEM: 50,
@@ -58,7 +55,6 @@ export const STIM_SPEC: Partial<Record<StimId, StimSpec>> = {
   WRONG_NAME:       { lifetime: 1.2, channel: "AUDIO_DIRECTED" },
   BURNT_OR_COLD:    { lifetime: 12.0, channel: "SMELL", gazeFloor: 0.40 },
   DROPPED_FOOD:     { lifetime: 3.5, channel: "AUDIO_AMBIENT" },
-  // sống từ lúc sai tới lúc gói/đưa (P1-02 §3.1: 4–12 s)
   ORDER_DEFECT:     { lifetime: 8.0, channel: "VISUAL" },
   DIRTY_HANDS:      { lifetime: 6.0, channel: "VISUAL" },
   REMEMBERED_STORY: { lifetime: 2.5, channel: "AUDIO_DIRECTED" },
@@ -67,7 +63,6 @@ export const STIM_SPEC: Partial<Record<StimId, StimSpec>> = {
   FLOURISH:         { lifetime: 3.0, channel: "VISUAL" },
   REFUSED_SERVICE:  { lifetime: 5.0, channel: "AUDIO_AMBIENT" },
 };
-/** Tên cũ — số giây sống của từng loại. */
 export const STIM_SECONDS: Partial<Record<StimId, number>> = Object.fromEntries(
   Object.entries(STIM_SPEC).map(([k, v]) => [k, v!.lifetime]),
 );
@@ -91,18 +86,13 @@ export function stateOf(certainty: number): ObsState {
   return "UNAWARE";
 }
 
-/** Một kích thích đang diễn ra. */
 export type ActiveStim = {
-  /** Khoá riêng của lần xảy ra này — cùng loại mà khác lần là khác khoá. */
   key: string;
   id: StimId;
   slot: Slot;
   salience: number;
-  /** Giây THẬT kể từ lúc mở quầy. */
   until: number;
-  /** AUDIO_DIRECTED: chỉ người này nghe (visitId). */
   target?: string;
-  /** Bánh cháy thật (không phải nguội) → có mùi. */
   smell?: boolean;
 };
 
@@ -111,7 +101,6 @@ export type Observation = {
   slot: Slot;
   certainty: number;
   peak: ObsState;
-  /** Lúc kích thích tắt — `null` khi còn sống. Rò chỉ bắt đầu sau `diedAt + HOLD_TIME`. */
   diedAt: number | null;
   /**
    * Chép lại từ kích thích: ổ CHÁY (có mùi) hay chỉ ổ NGUỘI. `BURNT_OR_COLD` là một
@@ -122,16 +111,12 @@ export type Observation = {
   smell?: boolean;
 };
 
-/** Thứ che tầm nhìn — P1-02 §2.6. Nhân dồn, sàn 0,15. */
 export type Occluder = { mul: number; slots: readonly Slot[]; zones: readonly Zone[] };
 
 export type Observer = {
   zone: Zone;
-  /** Chỉ số lượt ghé (visitId) — để kích thích nói thẳng vào một người tìm đúng người. */
   id?: string;
-  /** 0..1 — đang nhìn thẳng vào tay người bán hay đang bấm điện thoại. */
   gaze: number;
-  /** Vật che riêng của người này (vd. người đứng trước chắn tầm). */
   occluder: number;
   traitMul: number;
   observations: Map<string, Observation>;
@@ -183,12 +168,11 @@ export function observe(o: Observer, active: readonly ActiveStim[], now: number,
     }
     const f = factorsOf(o, stim, occluders);
     if (!obs) {
-      // Lười cấp phát (P1-02 §2.3): không đủ để ai để ý thì khỏi tạo.
       if (f.rate * 100 / o.traitMul < 0.5) continue;
       obs = { id: stim.id, slot: stim.slot, certainty: 0, peak: "UNAWARE", diedAt: null, smell: stim.smell };
       o.observations.set(stim.key, obs);
     }
-    if (obs.peak === "CONFIRMED") continue;               // đã chốt
+    if (obs.peak === "CONFIRMED") continue;
     obs.certainty = Math.min(1, obs.certainty + f.rate * dt);
     const st = stateOf(obs.certainty);
     if (rank(st) > rank(obs.peak)) obs.peak = st;
@@ -205,22 +189,18 @@ export function observe(o: Observer, active: readonly ActiveStim[], now: number,
 const ORDER: ObsState[] = ["UNAWARE", "GLIMPSED", "NOTICED", "CONFIRMED"];
 export const rank = (s: ObsState) => ORDER.indexOf(s);
 
-/** Mức cao nhất người này TỪNG đạt với một lần xảy ra (theo khoá). */
 export function peakOfKey(o: Observer, key: string): ObsState {
   return o.observations.get(key)?.peak ?? "UNAWARE";
 }
 
-/** Mức cao nhất với MỌI lần xảy ra của một loại. */
 export function peakOf(o: Observer, id: StimId): ObsState {
   let best: ObsState = "UNAWARE";
   for (const obs of o.observations.values()) if (obs.id === id && rank(obs.peak) > rank(best)) best = obs.peak;
   return best;
 }
 
-/** Một lần CONFIRMED còn hiện trên mặt bao lâu sau khi kích thích tắt (nó vẫn chốt trong trí nhớ). */
 export const CONFIRMED_SHOW_SEC = 4;
 
-/** Đang ở mức nào NGAY LÚC NÀY, nhìn vào đâu — để vẽ dấu trên đầu và tia nhìn. */
 export function nowState(o: Observer, now = Infinity): { id: StimId; state: ObsState; slot: Slot } | null {
   let best: { id: StimId; state: ObsState; slot: Slot } | null = null;
   for (const obs of o.observations.values()) {

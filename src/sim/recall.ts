@@ -1,34 +1,21 @@
 /**
- * TRUY HỒI KÝ ỨC — mô hình Park et al., *Generative Agents* (arXiv:2304.03442).
+ * TRUY HỒI KÝ ỨC — mô hình Park et al., *Generative Agents*:
+ *   score(m) = w_r·recency + w_i·importance + w_v·relevance(m, chủ đề)
  *
- *   score(m) = w_r·recency(m) + w_i·importance(m) + w_v·relevance(m, chủ đề)
- *
- * `sim/memory.ts` đã có hai trong ba thành phần (`currentIntensity` = importance, decay theo lần
- * ghé bị lỡ = recency); thiếu **relevance** và **một hàm truy hồi** — và thiếu hai ô đó giải
- * thích trọn vẹn 26 chỗ "nhớ nhầm chuyện chưa từng xảy ra".
- *
- * BA CHỖ CỐ Ý LỆCH khỏi bài báo, đều về phía rẻ hơn / đọc được hơn:
- *  1. recency đếm LẦN GHÉ BỊ LỠ, không đếm giờ — chỉ mượn hình dạng `0,995^n`
- *  2. relevance bằng khớp THẺ (Jaccard), không cosine embedding: kho ký ức một người là 6–8 slot
- *     nên quét tuyến tính rẻ hơn, và người thiết kế ĐỌC RA ĐƯỢC vì sao nó chọn cái đó
- *  3. trọng số theo TỪNG NGƯỜI, suy thẳng từ bốn chiều tính cách — không thêm núm nào cho tune
+ * Ba chỗ CỐ Ý lệch khỏi bài báo: recency đếm LẦN GHÉ BỊ LỠ (không đếm giờ) · relevance bằng khớp
+ * THẺ Jaccard (không cosine embedding — kho một người chỉ 6–8 slot, và người thiết kế đọc ra được
+ * vì sao nó chọn cái đó) · trọng số theo TỪNG NGƯỜI, suy từ tính cách.
  *
  * ⚠️ LUẬT CỨNG: nội dung không được GỌI TÊN một chuyện cũ, chỉ được NHẬN một chuyện cũ. Truy hồi
- * trả rỗng ⇒ `m.remembers` sai ⇒ câu đó KHÔNG TỒN TẠI. Luật này không sửa 26 nút nhớ nhầm — nó
- * làm cho nút thứ 27 không viết ra được.
+ * trả rỗng ⇒ `m.remembers` sai ⇒ câu đó KHÔNG TỒN TẠI.
  */
 import type { Personality } from "../content/npcs";
 import { SALIENCE_OF, currentIntensity, type BaseKind, type Memory, type RelState } from "./memory";
 
 /**
- * Hệ số suy giảm — mỗi LẦN GHÉ, không phải mỗi giờ.
- *
- * ⚠️ CỐ Ý KHÁC con số của bài báo: `0,995` của Park et al. là suy giảm mỗi GIỜ mô phỏng, chép
- * thẳng sang thang NGÀY thì cả dải chỉ còn rộng 1% và recency thành một con số không bao giờ đổi
- * được thứ hạng.
- *
- * `0,995^24 ≈ 0,887` là đúng một ngày của bài báo; `0,88` mỗi LẦN GHÉ cho đường cong đọc được:
- * 5 lần ghé còn 0,53 · 10 lần còn 0,28.
+ * ⚠️ Mỗi LẦN GHÉ, không mỗi giờ: `0,995` của bài báo là suy giảm mỗi GIỜ, chép thẳng sang thang
+ * NGÀY thì cả dải chỉ rộng 1% và recency không bao giờ đổi được thứ hạng. 0,88 cho 5 lần ghé còn
+ * 0,53 · 10 lần còn 0,28.
  */
 export const RECENCY_DECAY = 0.88;
 
@@ -122,15 +109,8 @@ function whatOf(m: Memory): string {
 }
 
 /**
- * GIỜ NÊN NHỚ CHUYỆN GÌ.
- *
- * `about` là tập thẻ của chủ đề đang hỏi; rỗng = "nhớ gì cũng được" và lúc đó relevance
- * bị bỏ khỏi tổng (không phải tính bằng 0 — bằng 0 sẽ làm cả ba trọng số lệch).
- *
- * `missedVisits` = số LẦN GHÉ đã trôi qua kể từ ký ức đó, do `Service` đưa vào. Không
- * tính trong này vì `RelState` không giữ lịch sử lần ghé; nó chỉ giữ `visits`.
- *
- * Gọi lúc dựng topic, KHÔNG gọi trong vòng vẽ.
+ * `about` rỗng = "nhớ gì cũng được", và lúc đó relevance bị BỎ khỏi tổng (không phải tính bằng 0 —
+ * bằng 0 sẽ làm cả ba trọng số lệch). Gọi lúc dựng topic, KHÔNG gọi trong vòng vẽ.
  */
 export function retrieve(
   s: RelState, p: Personality, day: number,
@@ -185,19 +165,11 @@ export function worthMentioning(r: Recalled): boolean {
 // ───────────────────────────────────────── reflection (P2-09 §2.4)
 
 /**
- * KẾT LUẬN RÚT RA CUỐI NGÀY — bản không-LLM của *reflection* (Park et al. §4.2).
+ * KẾT LUẬN RÚT RA CUỐI NGÀY — bản không-LLM của *reflection*. Cái đáng lấy là HÌNH DẠNG: một ký ức
+ * DẪN XUẤT nói về một MẪU chứ không về một lần, và nó truy hồi được như mọi ký ức khác.
  *
- * Bài báo cho agent tự đặt ba câu hỏi rồi viết câu trả lời ngược vào dòng ký ức, khi tổng
- * `importance` của sự kiện mới vượt **ngưỡng 150**. Ở đây không có LLM và cũng không cần:
- * cái đáng lấy là **hình dạng** — một ký ức DẪN XUẤT, nói về một MẪU chứ không về một
- * lần, và nó cũng truy hồi được như mọi ký ức khác.
- *
- * Vì sao đáng làm: nếu không có nó thì sau bốn mươi ngày một người chỉ có một chồng sự
- * kiện rời. Có nó thì họ nhắc lại được một **kết luận** — *"cô này hay quên bỏ đồ chua"* —
- * và đó mới là thứ đọc ra là một mùa có tích luỹ.
- *
- * Ba mẫu, viết tay, KHÔNG sinh chữ. Mỗi mẫu đòi một MẪU HÌNH thật trong kho ký ức, nên
- * một kết luận sai không ra được: nó nặng hơn một sự kiện sai (`§7` rủi ro).
+ * Ba mẫu viết tay, KHÔNG sinh chữ; mỗi mẫu đòi một MẪU HÌNH thật trong kho nên một kết luận sai
+ * không ra được — nó nặng hơn một sự kiện sai.
  */
 export const REFLECT_THRESHOLD = 150;
 export const REFLECT_MIN_OCCURRENCES = 3;
@@ -213,12 +185,9 @@ export type Reflection = { kind: BaseKind; intensity: number; note: string };
 export function reflect(s: RelState, day: number): Reflection | null {
   const all = [...s.memory.short, ...s.memory.long];
   /*
-   * CỘNG DỒN TỪ LẦN RÚT TRƯỚC, không cộng trong một ngày.
-   *
-   * Bài báo đếm "từ lần phản tỉnh gần nhất" và ra 2–3 lần mỗi ngày mô phỏng — nhưng agent
-   * của họ sống trọn một ngày, còn người ở đây ghé quầy mười lăm phút. Đo thử với mốc
-   * một-ngày: **4 lần cho cả mười hai người suốt bốn mươi ngày**, tức cơ chế coi như
-   * không tồn tại. Cộng dồn từ mốc thì nó ra đúng nhịp "vài ngày một lần".
+   * ⚠️ CỘNG DỒN TỪ LẦN RÚT TRƯỚC, không cộng trong một ngày: agent của bài báo sống trọn một ngày,
+   * còn người ở đây ghé quầy mười lăm phút. Đo với mốc một-ngày ra 4 lần cho cả 12 người suốt 40
+   * ngày, tức cơ chế coi như không tồn tại.
    */
   const since = s.reflectedDay ?? 0;
   const fresh = all.filter((m) => m.dayLastReinforced > since);

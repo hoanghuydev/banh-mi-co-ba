@@ -1,15 +1,9 @@
 /**
- * Mép THẬT của một sprite (`art/opaque.opaqueEdges`).
+ * Mép THẬT của một sprite (`art/opaque.opaqueEdges`) — code hỏi KHUNG TEXTURE trong khi nó cần
+ * hỏi CÁI VẬT. Lỗi này đã lặp ba lần ở ba chỗ, lần nào cũng chỉ lòi ra khi chơi thật.
  *
- * Hàm này sinh ra từ MỘT lỗi lặp lại ba lần ở ba chỗ khác nhau, lần nào cũng chỉ lòi ra khi chơi
- * thật: code hỏi KHUNG TEXTURE trong khi nó cần hỏi CÁI VẬT (ổ bánh treo lơ lửng trên mặt thớt;
- * dấu việc cần làm trỏ vào khoảng không trên khúc quầy; bồn rửa nướng lệch 2 px).
- *
- * Phần quét alpha không sai được — cái sai LUÔN nằm ở bước co giãn hộp pixel về toạ độ màn hình
- * rồi dời gốc. Bước đó giờ là `opaqueEdges`, thuần toán, nên quét được cả ngàn trường hợp ở đây.
- *
- * Giao kèo của `box`: `left`/`top` tính vào, `right`/`bottom` hở ra, đơn vị px TEXTURE, gốc góc
- * trên trái. `null` = texture trong suốt hết, hoặc không đọc nổi pixel.
+ * Giao kèo của `box`: `left`/`top` tính vào, `right`/`bottom` hở ra, px TEXTURE, gốc góc trên
+ * trái; `null` = trong suốt hết hoặc không đọc nổi pixel.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -30,13 +24,7 @@ const KHUNG: SpriteBox = { left: 1234.5, top: -876.25, width: 62, height: 70 };
 
 // ───────────────────────────────────────────────────────── hai cái mốc của phép ánh xạ
 
-/**
- * Hộp đục phủ KÍN texture thì không có gì để cắt: trả lại đúng khung sprite.
- *
- * Đây là một trong hai cái mốc neo phép ánh xạ texture → màn hình (mốc kia là hộp rỗng).
- * Sai ở đây là sai hệ quy chiếu, và mọi vật trong game lệch đi cùng một kiểu — thứ nhìn
- * lướt qua rất dễ tưởng là "art vẽ thế".
- */
+/** Một trong hai mốc neo phép ánh xạ texture → màn hình (mốc kia là hộp rỗng). Sai ở đây là sai hệ quy chiếu, và mọi vật lệch cùng một kiểu. */
 test("hộp đục phủ kín texture: mép trả về đúng bằng khung sprite", () => {
   const ca: Array<[SpriteBox, number, number]> = [
     [KHUNG, 62, 70],
@@ -55,14 +43,7 @@ test("hộp đục phủ kín texture: mép trả về đúng bằng khung sprit
   }
 });
 
-/**
- * Hộp RỖNG (`null`): texture trong suốt hết, hoặc trình duyệt chặn đọc pixel (canvas bị
- * "nhuốm bẩn" vì ảnh khác nguồn — chuyện có thật khi deploy lên CDN khác domain).
- *
- * Lúc đó thà trả về khung sprite — RỘNG HƠN cái vật — còn hơn bịa ra một con số. Rộng
- * hơn thì dấu chấm than treo hơi cao một chút; bịa số thì nó trỏ vào chỗ không có gì.
- * `cx` phải là tâm khung, vì không còn gì khác để biết tâm vật nằm đâu.
- */
+/** Trong suốt hết, hoặc canvas bị "nhuốm bẩn" vì ảnh khác nguồn. Thà trả khung sprite (RỘNG HƠN vật) còn hơn bịa một con số trỏ vào chỗ không có gì. */
 test("hộp rỗng: lui về khung sprite, cx đúng tâm khung", () => {
   const e = opaqueEdges(KHUNG, 62, 70, null);
   assert.deepEqual(
@@ -93,15 +74,8 @@ test("cỡ texture 0 hoặc âm: lui về khung sprite, không chia cho 0", () =
 // ──────────────────────────────────────────────────── ba cái lỗi lịch sử, viết thành số
 
 /**
- * LỖI 1 — ổ bánh treo lơ lửng trên mặt thớt.
- *
- * Texture món cầm tay là khung vuông 40×40 (`HELD.W/H`) vẽ ổ bánh quanh TÂM, nên dưới ổ
- * còn một dải trong suốt dày. "Đặt mép dưới sprite vào mặt thớt" vì thế là đặt mép dưới
- * KHUNG — ổ bánh nổi lên trên mặt gỗ đúng bằng dải trống đó.
- *
- * Lấy một ổ chiếm các hàng 13…24 (`bottom` = 25, hở phải): còn 15 hàng trong suốt phía
- * dưới, nên mép dưới THẬT phải cao hơn mép dưới khung đúng 15 px. Đúng con số
- * `heldFootPad` đang đếm, chỉ khác là giờ suy ra được thay vì đo bằng mắt.
+ * LỖI 1 — ổ bánh treo lơ lửng trên mặt thớt: texture món cầm tay vẽ ổ quanh TÂM khung 40×40, nên
+ * "đặt mép dưới sprite vào mặt thớt" là đặt mép dưới KHUNG.
  */
 test("ổ bánh trong khung 40×40: mép dưới thật cao hơn mép khung đúng 15 px", () => {
   const b: SpriteBox = { left: 300, top: 500, width: 40, height: 40 };
@@ -114,14 +88,8 @@ test("ổ bánh trong khung 40×40: mép dưới thật cao hơn mép khung đú
 });
 
 /**
- * LỖI 2 — dấu "việc cần làm" trỏ vào khoảng không phía trên khúc quầy.
- *
- * `counter_work` cao 92 px (`heightFor(BODY + 22)`), nhưng mặt quầy chỉ cao 54 px tính từ
- * điểm chân — phần trên texture là khoảng trống chừa cho khúc có tủ kính. Neo dấu theo
- * `displayHeight` là neo vào nóc cái khoảng trống ấy.
- *
- * Hộp đục bắt đầu ở hàng 20 thì mép trên THẬT phải thấp hơn mép khung đúng 20 px. Hồi
- * đó sai đúng kiểu này: dấu chấm than nổi cách cái thớt một quãng, trỏ vào không khí.
+ * LỖI 2 — dấu "việc cần làm" trỏ vào khoảng không: `counter_work` cao 92 px nhưng mặt quầy chỉ
+ * 54 px tính từ chân, phần trên là khoảng trống chừa cho khúc có tủ kính.
  */
 test("khúc quầy 92 px: mép trên thật thấp hơn mép khung đúng 20 px", () => {
   const b: SpriteBox = { left: 0, top: 1000, width: 62, height: 92 };
@@ -133,16 +101,9 @@ test("khúc quầy 92 px: mép trên thật thấp hơn mép khung đúng 20 px"
 });
 
 /**
- * LỖI 3, dạng tổng quát — tâm VẬT không phải tâm KHUNG.
- *
- * `standing()` vẽ ảnh vào texture ở `round(W/2 − w/2 + dx)`, với `dx` lấy từ bảng
- * `STANDING`. Hễ `dx ≠ 0` là vật nằm lệch trong khung, mà mọi chỗ neo lại dùng `img.x`
- * tức tâm KHUNG. Luật phải đúng với mọi độ lệch và mọi tỉ lệ co:
- *
- *      cx − tâm_khung = d × (bề_ngang_khung / bề_ngang_texture)
- *
- * Nhân với tỉ lệ co chứ không phải cộng thẳng: texture siêu lấy mẫu gấp ba thì lệch 6 px
- * texture chỉ là lệch 2 px trên màn.
+ * LỖI 3 — tâm VẬT không phải tâm KHUNG (`standing()` vẽ lệch theo `dx` của bảng `STANDING`, mà
+ * mọi chỗ neo lại dùng `img.x`). Luật: `cx − tâm_khung = d × (bề_ngang_khung / bề_ngang_texture)`
+ * — NHÂN tỉ lệ co chứ không cộng thẳng.
  */
 test("cx lệch tâm khung đúng bằng độ lệch của hộp đục, nhân tỉ lệ co", () => {
   const texW = 62, texH = 70;
@@ -161,19 +122,11 @@ test("cx lệch tâm khung đúng bằng độ lệch của hộp đục, nhân 
 });
 
 /**
- * LỖI 3, ca thật: CÁI BỒN RỬA. Suy từ gốc chứ không chép con số đo được.
+ * LỖI 3, ca thật: cái bồn rửa lệch 2,12 px. Suy từ `STANDING[PROP.sink]` + cỡ ảnh nguồn chứ không
+ * chép con số đo được.
  *
- * `STANDING[PROP.sink] = ["prop_sink", { h: 58, dx: −2 }]`, ảnh nguồn `prop_sink.png`
- * 303×384. `standing()` tính ra:
- *      w = (303 / 384) × 58 = 45,765625            bề ngang bồn trên màn
- *      W = max(TW + 2, ⌈w⌉ + 6) = max(62, 52) = 62 bề ngang texture
- *      vẽ tại x = round(62/2 − w/2 − 2) = 6
- * nên bồn chiếm px 6 … 51,765625, tâm 28,8828125, trong khi tâm khung là 31,0.
- * LỆCH 2,1171875 px — làm tròn 2,12.
- *
- * Trước khi có hàm này, mọi chỗ neo đều báo lệch 0: cái bồn bị coi là nằm giữa ô. 2 px
- * thì mắt không bắt được, nhưng nó là cùng MỘT lỗi với 38 px của cái thớt, chỉ nhỏ hơn.
- * Vá cái to mà bỏ cái nhỏ là để nguyên cái bẫy cho lần sau.
+ * 2 px thì mắt không bắt được, nhưng nó là cùng MỘT lỗi với 38 px của cái thớt — vá cái to mà bỏ
+ * cái nhỏ là để nguyên cái bẫy cho lần sau.
  */
 test("bồn rửa: tâm vật lệch tâm khung 2,12 px — đúng con số suy từ bảng STANDING", () => {
   const srcW = 303, srcH = 384, h = 58, dx = -2, TW = 60;
@@ -204,13 +157,7 @@ test("bồn rửa: tâm vật lệch tâm khung 2,12 px — đúng con số suy 
 
 // ─────────────────────────────────────────────────────────── bất biến của phép ánh xạ
 
-/**
- * DỜI khung sprite đi bao nhiêu thì mép dời theo đúng bấy nhiêu.
- *
- * Quán nằm ở toạ độ thế giới vài ngàn (`toScreen` của lưới iso), mà mọi phép thử bằng
- * mắt thì làm ở quanh gốc toạ độ. Một chỗ lẫn toạ độ tuyệt đối với toạ độ tương đối sẽ
- * sống sót qua mọi lần chơi thử và chỉ chết ở đây — nên dời hẳn ±50.000 px cho chắc.
- */
+/** Quán nằm ở toạ độ thế giới vài ngàn, mà mọi phép thử bằng mắt làm quanh gốc — nên dời hẳn ±50.000 px cho chắc. */
 test("dời khung sprite: mép dời đúng quãng ấy, mọi góc toạ độ thế giới", () => {
   const rnd = lcg(4242);
   const box: OpaqueBox = { left: 6, right: 52, top: 3, bottom: 58 };
@@ -224,14 +171,7 @@ test("dời khung sprite: mép dời đúng quãng ấy, mọi góc toạ độ 
   }
 });
 
-/**
- * CO GIÃN khung sprite thì mép co giãn theo, quanh chính góc trên trái của khung.
- *
- * Đây là chỗ `ART_SS` sống: texture nướng dư gấp `ss` lần rồi sprite thu lại `1/ss`.
- * Nhân nhầm hay chia nhầm một lần là cái vật co lại còn một phần ba — mà `artScale` thì
- * khác nhau giữa texture ảnh thật và texture vẽ bằng code, nên lỗi chỉ hiện ở nửa số
- * đạo cụ và rất dễ đọc nhầm thành "artist gửi ảnh sai cỡ".
- */
+/** Chỗ `ART_SS` sống. `artScale` khác nhau giữa texture ảnh thật và texture vẽ code, nên nhân/chia nhầm chỉ hiện ở nửa số đạo cụ và dễ đọc nhầm thành "artist gửi ảnh sai cỡ". */
 test("co giãn khung sprite: mép co giãn theo đúng tỉ lệ, quanh góc trên trái", () => {
   const box: OpaqueBox = { left: 6, right: 52, top: 3, bottom: 58 };
   const L = 777.5, T = -333.25;
@@ -257,15 +197,8 @@ test("co giãn khung sprite: mép co giãn theo đúng tỉ lệ, quanh góc tr�
 });
 
 /**
- * ORIGIN KHÔNG ĐƯỢC TÍNH HAI LẦN.
- *
- * `getBounds()` đã nuốt sẵn origin — sprite origin (0,5 · 1) đặt tại (x, y) và sprite
- * origin (0 · 0) đặt tại (x − w/2, y − h) cho ra ĐÚNG một cái khung. Hàm chỉ được nhìn
- * cái khung ấy. Ai đó sau này "sửa cho đúng" bằng cách cộng thêm origin ở chỗ gọi thì
- * mọi đạo cụ tụt xuống nửa chiều cao, và test này là chỗ nó gãy.
- *
- * Đạo cụ trong game dùng origin (0,5 · 1) — mép dưới là điểm chạm đất; bảng kẹp nhân thì
- * dùng (0 · 0). Liệt kê cả hai, cộng vài origin lẻ cho chắc.
+ * ⚠️ ORIGIN KHÔNG ĐƯỢC TÍNH HAI LẦN — `getBounds()` đã nuốt sẵn origin. Ai "sửa cho đúng" bằng
+ * cách cộng origin ở chỗ gọi thì mọi đạo cụ tụt xuống nửa chiều cao, và test này là chỗ nó gãy.
  */
 test("mép không phụ thuộc origin: cùng một khung thì cùng một kết quả", () => {
   const box: OpaqueBox = { left: 6, right: 52, top: 3, bottom: 58 };
@@ -294,16 +227,7 @@ test("mép không phụ thuộc origin: cùng một khung thì cùng một kết
     "cùng một khung mà ra hai kết quả");
 });
 
-/**
- * Mép THẬT không bao giờ chui ra ngoài khung sprite, và không bao giờ lộn ngược.
- *
- * Quét dày mọi hộp đục HỢP LỆ trong một texture 24×24 — hơn 20.000 hộp. Hợp lệ nghĩa là
- * nằm trong `[0, texW] × [0, texH]`, đúng thứ `opaqueBox` sinh ra được: nó quét trong
- * đúng kích thước ảnh nên không đẻ ra nổi hộp tràn ra ngoài.
- *
- * `cx` luôn là trung điểm của `left`/`right` — kiểm riêng, vì đó là trường duy nhất
- * không đọc thẳng ra từ hộp và là chỗ một dấu ngoặc sai sẽ nấp.
- */
+/** Quét hơn 20.000 hộp đục hợp lệ. `cx` kiểm riêng vì đó là trường duy nhất không đọc thẳng ra từ hộp. */
 test("mọi hộp đục hợp lệ: mép nằm trong khung, không lộn ngược, cx đúng trung điểm", () => {
   const N = 24;
   const b: SpriteBox = { left: -40.5, top: 17.25, width: 62, height: 70 };

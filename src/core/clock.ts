@@ -2,20 +2,14 @@ import DAY from "../content/days/day_index.json";
 import type { Bus } from "./eventbus";
 
 /**
- * Đồng hồ trong game — P0-02 §2.1. NGUỒN THỜI GIAN DUY NHẤT.
+ * Đồng hồ trong game — NGUỒN THỜI GIAN DUY NHẤT. Không hệ nào được đọc `delta` của Phaser, gọi
+ * `Date.now()`, hay tự giữ bộ đếm giây; pause là MỘT chỗ duy nhất trả `dt = 0`.
  *
- * Không hệ nào khác được đọc `delta` của Phaser, gọi `Date.now()`, hay tự giữ
- * một bộ đếm giây. Mọi hệ nhận `dt` từ `advance()` — và pause là MỘT chỗ duy nhất
- * trả `dt = 0`, nên không hệ nào phải tự hỏi "có đang pause không" (§2.2).
+ * ⚠️ Hai loại thời gian, KHÔNG được nhầm: `dt` (giây THẬT) cho certainty / kiên nhẫn / bark / lò,
+ * `minutes` (phút GAME) cho lịch khách / khung giờ / sổ cái. Certainty mà nhân `TIME_SCALE` thì
+ * hiệu chỉnh 1,4 s của CANON §5 sụp.
  *
- * Hai loại thời gian, KHÔNG được nhầm:
- *   dt (giây THẬT)   → certainty, kiên nhẫn, delay bark, nướng bánh
- *   minutes (phút GAME) → lịch khách, khung giờ, sổ cái
- * Certainty mà nhân với TIME_SCALE thì hiệu chỉnh 1,4 s của CANON §5 sụp.
- *
- * TIME_SCALE = số phút game trôi trong 1 phút thật. Luật: có ít nhất một khách ở
- * quầy/hàng chờ thì luôn là TIME_SCALE_BASE (30); quầy trống hoàn toàn mới tua
- * nhanh — và cao điểm thì không bao giờ tua, vì khách kế tiếp tới trong vài giây.
+ * Có khách ở quầy thì luôn `TIME_SCALE_BASE`; chỉ quầy trống hoàn toàn mới tua nhanh.
  */
 
 export type TimeBand = "PRE_OPEN" | "PEAK" | "MID" | "LULL";
@@ -146,14 +140,10 @@ export class Clock {
 
 
 /**
- * GIỜ ĐỌC THÀNH LỜI — "650" → *"gần bảy giờ"*. Cho chỗ trống `{gio}` của `Service.fill`.
+ * "650" → *"gần bảy giờ"*, cho chỗ trống `{gio}` của `Service.fill`. Một con số viết cứng trong
+ * lời thoại là một con số sẽ sai: cuộc mở suốt khung `PEAK` thì "gần bảy giờ" rơi vào lúc tám rưỡi.
  *
- * Cần vì giờ phải đi vào CÂU NÓI, và một con số viết cứng trong lời thoại là một con số
- * sẽ sai: `duong.voi` nói *"Dạ gần bảy giờ rồi"* trong khi cuộc đó mở suốt khung `PEAK`
- * trải nhiều giờ — nên nó nói "gần bảy giờ" lúc đồng hồ chỉ tám rưỡi.
- *
- * Giọng người bán hàng, không phải giọng đồng hồ: làm tròn về mấy mốc người ta thật sự
- * nói ra. Ngày game chỉ có 06:00–11:00 nên không cần lo buổi chiều.
+ * Giọng người bán hàng, không phải giọng đồng hồ. Ngày game chỉ 06:00–11:00.
  */
 export function gioVi(minutes: number): string {
   const DON = ["", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"];

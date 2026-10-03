@@ -14,27 +14,21 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { chorePin, type PinOpts, type ViewRect } from "../src/ui/chorePin";
 
-/** Khung nhìn thế giới thật của `StallScene`: 1024 × 576 chia cho `ZOOM` 1,28. */
 const V: ViewRect = { left: 1000, right: 1800, top: 500, bottom: 950 };
-/** Lề thật: `CHORE_R + CHORE_EDGE` và `CHORE_TOP`. */
 const O: PinOpts = { edge: 19, top: 58 };
 
-/** Vùng ĐƯỢC PHÉP VẼ (khung trừ lề) — mọi kết quả đều phải nằm trong đây. */
 const x0 = V.left + O.edge, x1 = V.right - O.edge;
 const y0 = V.top + O.top, y1 = V.bottom - O.edge;
 const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
 
-/** Dịch khung nhìn đi — mô phỏng camera trượt, kích thước giữ nguyên. */
 function moved(dx: number, dy: number): ViewRect {
   return { left: V.left + dx, right: V.right + dx, top: V.top + dy, bottom: V.bottom + dy };
 }
 
-/** Đúng phép thử "còn thấy" mà người chơi dùng: cái việc có nằm trong KHUNG THẬT không. */
 function onScreen(ax: number, ay: number, v: ViewRect) {
   return ax > v.left && ax < v.right && ay > v.top && ay < v.bottom;
 }
 
-/** Số ngẫu nhiên tất định — test phải ra y hệt nhau mọi lần chạy, kể cả lúc nó đỏ. */
 function lcg(seed: number) {
   let s = seed >>> 0;
   return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
@@ -60,8 +54,6 @@ test("việc nằm hẳn trong vùng vẽ: dấu đứng ĐÚNG trên nó, khôn
       n++;
     }
   }
-  // Chốt số điểm đã quét: nếu ai đó lỡ tay sửa bước nhảy thành 200 thì test vẫn xanh
-  // mà chẳng còn kiểm gì nữa.
   assert.ok(n > 15_000, `quét quá thưa, mới ${n} điểm`);
 });
 
@@ -74,7 +66,6 @@ test("việc nằm hẳn trong vùng vẽ: dấu đứng ĐÚNG trên nó, khôn
  */
 test("việc còn trong khung mà nằm dưới dải icon: chỉ bị đẩy XUỐNG, x không đổi", () => {
   for (let ax = x0; ax <= x1; ax += 3) {
-    // Từ sát mép trên khung thật tới sát mép trên vùng vẽ.
     for (let ay = V.top + 0.5; ay < y0; ay += 1) {
       const p = chorePin(ax, ay, V, O);
       assert.equal(p.x, ax, `x bị đẩy tại (${ax}, ${ay})`);
@@ -125,15 +116,12 @@ test("cờ `pinned` đúng bằng phép thử ra-khỏi-khung-thật, không ph�
 test("việc ra hẳn ngoài khung: dấu nằm ĐÚNG trên viền vùng vẽ, không trong không ngoài", () => {
   const rnd = lcg(7);
   for (let i = 0; i < 20_000; i++) {
-    // Quanh một vòng tròn bán kính lớn hơn hẳn nửa đường chéo khung -> chắc chắn khuất.
     const a = rnd() * Math.PI * 2, r = 500 + rnd() * 4000;
     const ax = cx + Math.cos(a) * r, ay = cy + Math.sin(a) * r;
     const p = chorePin(ax, ay, V, O);
     assert.equal(p.pinned, true);
-    // Trong vùng vẽ (có dung sai dấu phẩy động)...
     assert.ok(p.x >= x0 - 1e-9 && p.x <= x1 + 1e-9, `x ra ngoài: ${p.x}`);
     assert.ok(p.y >= y0 - 1e-9 && p.y <= y1 + 1e-9, `y ra ngoài: ${p.y}`);
-    // ...và CHẠM ít nhất một cạnh.
     const onEdge = Math.min(Math.abs(p.x - x0), Math.abs(p.x - x1),
       Math.abs(p.y - y0), Math.abs(p.y - y1));
     assert.ok(onEdge < 1e-6, `không chạm viền nào, cách ${onEdge} tại (${ax}, ${ay})`);
@@ -150,8 +138,6 @@ test("việc ra hẳn ngoài khung: dấu nằm ĐÚNG trên viền vùng vẽ, 
  * trái bị báo sai cả độ cao. Quét kín cả chín vùng.
  */
 test("ghim đúng phía theo TỪNG TRỤC, trục còn lại báo đúng toạ độ thật", () => {
-  // Ba mốc cho mỗi trục: ngoài hẳn · trong khung · ngoài hẳn. Thêm vài mốc lẻ trong khung
-  // để bắt chuyện kẹp lề (trong khung nhưng dưới dải icon).
   const xs = [V.left - 5000, V.left - 1, V.left, V.left + 1, x0, cx,
     x1, V.right - 1, V.right, V.right + 5000];
   const ys = [V.top - 5000, V.top - 1, V.top, V.top + 1, y0 - 1, y0, cy,
@@ -160,11 +146,9 @@ test("ghim đúng phía theo TỪNG TRỤC, trục còn lại báo đúng toạ 
     for (const ay of ys) {
       const p = chorePin(ax, ay, V, O);
       const ten = `(${ax}, ${ay})`;
-      // ── trục x
       if (ax <= V.left) assert.equal(p.x, x0, `${ten}: việc bên trái mà dấu không ở lề trái`);
       else if (ax >= V.right) assert.equal(p.x, x1, `${ten}: việc bên phải mà dấu không ở lề phải`);
       else if (ax >= x0 && ax <= x1) assert.equal(p.x, ax, `${ten}: x còn chỗ mà vẫn bị dời`);
-      // ── trục y
       if (ay <= V.top) assert.equal(p.y, y0, `${ten}: việc ở trên mà dấu không ở lề trên`);
       else if (ay >= V.bottom) assert.equal(p.y, y1, `${ten}: việc ở dưới mà dấu không ở lề dưới`);
       else if (ay >= y0 && ay <= y1) assert.equal(p.y, ay, `${ten}: y còn chỗ mà vẫn bị dời`);
@@ -285,9 +269,6 @@ test("camera trượt từng pixel thì dấu bò theo từng pixel — kể c�
     for (let k = 0; k < 600; k++) {
       const p = chorePin(ax, ay, moved(bx * k, by * k), O);
       if (truoc) {
-        // Đo TỪNG TRỤC, so với bước camera của ĐÚNG trục đó: trục camera không trượt thì
-        // dấu phải đứng im tuyệt đối. Gộp lại thành một khoảng cách Euclid là tự tay nới
-        // cho mỗi trục thêm một hệ số √2 mà không nói ra.
         const dx = Math.abs(p.x - truoc.x), dy = Math.abs(p.y - truoc.y);
         doMaxX = Math.max(doMaxX, dx); doMaxY = Math.max(doMaxY, dy);
         if (p.pinned !== truoc.pinned) soLanChuyen++;
@@ -299,10 +280,7 @@ test("camera trượt từng pixel thì dấu bò theo từng pixel — kể c�
       truoc = p;
     }
   }
-  // Phép quét phải thật sự ĐI QUA chỗ chuyển thấy/khuất — không thì nó chỉ đang kiểm lại
-  // cái quãng dễ, và cú nhảy 90 px cũ sẽ chui lọt y như lần trước.
   assert.ok(soLanChuyen > 100, `mới qua chỗ chuyển ${soLanChuyen} lần, quá ít để tin`);
-  // Và phải chạm trần, không thì ngưỡng 1,0 chỉ là trang trí.
   assert.ok(doMaxX > 0.99 && doMaxY > 0.99,
     `quét chưa chạm trần: x ${doMaxX.toFixed(3)}, y ${doMaxY.toFixed(3)}`);
 });
@@ -315,8 +293,6 @@ test("camera trượt từng pixel thì dấu bò theo từng pixel — kể c�
  * ba giai đoạn: khuất bên phải → hiện ra → khuất bên trái.
  */
 test("camera đi đều một chiều: dấu bò đều một chiều, không lắc qua lắc lại", () => {
-  // Đặt cái việc đúng tầm cao tâm vùng vẽ: trục y không có gì để cãi, mọi chuyện xảy ra
-  // trên trục x — đúng cái trục đang đo.
   const ay = cy;
   const ax = V.right + 500;
   let truoc = Infinity;
@@ -330,7 +306,6 @@ test("camera đi đều một chiều: dấu bò đều một chiều, không l�
       `dấu lọt ra ngoài lề ở bước ${k}: ${manHinh}`);
     truoc = manHinh;
   }
-  // Và nó phải đi hết chiều ngang, không đứng ì một chỗ.
   assert.ok(truoc < O.edge + 1e-9, `cuối lượt dấu chưa về sát mép trái: ${truoc}`);
 });
 
@@ -340,7 +315,7 @@ test("camera đi đều một chiều: dấu bò đều một chiều, không l�
  * một lần" vì phép chiếu theo tia kéo dấu dâng lên rồi hạ xuống theo góc nhìn.
  */
 test("việc nằm trên đỉnh màn hình: dấu bám lề trên, đứng im theo chiều dọc", () => {
-  const ax = cx + 2000, ay = V.top - 600;        // ở trên và lệch hẳn sang phải
+  const ax = cx + 2000, ay = V.top - 600;
   let truocX = Infinity;
   for (let k = 0; k <= 2600; k++) {
     const v = moved(k, 0);
@@ -387,15 +362,14 @@ test("việc trượt khỏi mép: dấu đứng yên, không còn cú nhảy n�
     if (d > te) { te = d; moTa = `(${ax}, ${ay}) ra hướng (${dx}, ${dy})`; }
   };
   for (let k = 1; k < 800; k++) {
-    soi(V.left + k, V.top, 0, -1);                 // vượt mép trên
-    soi(V.left + k, V.bottom, 0, 1);               // vượt mép dưới
+    soi(V.left + k, V.top, 0, -1);
+    soi(V.left + k, V.bottom, 0, 1);
   }
   for (let k = 1; k < 450; k++) {
-    soi(V.left, V.top + k, -1, 0);                 // vượt mép trái
-    soi(V.right, V.top + k, 1, 0);                 // vượt mép phải
+    soi(V.left, V.top + k, -1, 0);
+    soi(V.right, V.top + k, 1, 0);
   }
   assert.ok(te <= NHAY_TOI_DA, `dấu nhảy ${te.toFixed(1)} px tại ${moTa}`);
-  // Và cái ngưỡng THẬT: không giãn, nên nhiều nhất bằng đúng quãng dời đầu vào.
   assert.ok(te <= 2 * eps + 1e-12,
     `nhảy ${te} px cho đầu vào dời ${2 * eps} px — phép kẹp đang giãn, tại ${moTa}`);
 });
@@ -407,10 +381,10 @@ test("việc trượt khỏi mép: dấu đứng yên, không còn cú nhảy n�
  * chuyện biên vô cùng bé". Chính cấu hình này từng đo ra 90,4 px.
  */
 test("cái lò trôi khỏi đỉnh màn hình: dấu bò đúng 1 px, không nhảy", () => {
-  const ax = x0, ay = V.top + 300;               // cái việc nằm sát lề trái màn hình
+  const ax = x0, ay = V.top + 300;
   let truoc: { x: number; y: number } | null = null, te = 0, daGhim = false;
   for (let k = 0; k <= 400; k++) {
-    const v = moved(0, k);                       // camera trượt XUỐNG -> việc trôi lên khỏi đỉnh
+    const v = moved(0, k);
     const p = chorePin(ax, ay, v, O);
     daGhim ||= p.pinned;
     if (truoc) te = Math.max(te, Math.hypot(p.x - truoc.x, p.y - truoc.y));
@@ -418,13 +392,11 @@ test("cái lò trôi khỏi đỉnh màn hình: dấu bò đúng 1 px, không nh
   }
   assert.ok(daGhim, "lượt này phải đi qua chỗ cái việc vượt mép, không thì chẳng kiểm gì");
   assert.ok(te <= NHAY_TOI_DA, `dấu nhảy ${te.toFixed(1)} px cho đúng 1 px camera`);
-  // Ngưỡng thật: 1 px camera -> nhiều nhất 1 px dấu, kể cả ngay tại frame vượt mép.
   assert.ok(te <= 1 + 1e-9, `dấu bò ${te.toFixed(4)} px cho đúng 1 px camera`);
 });
 
 // ─────────────────────────────────────────────────────────── đầu vào quái đản
 
-/** Kết quả nào cũng phải là số thật và nằm trong khung — không có ngoại lệ. */
 function lanhLan(p: { x: number; y: number }, v: ViewRect, ghiChu: string) {
   assert.ok(Number.isFinite(p.x) && Number.isFinite(p.y), `${ghiChu}: ra NaN/∞`);
   const lo = Math.min(v.left, v.right), hi = Math.max(v.left, v.right);
@@ -474,10 +446,9 @@ test("việc ở đúng tâm: dấu nằm nguyên tại đó, không bị tính 
  */
 test("khung quá hẹp để chứa hai lề: vẫn ra số tử tế, rơi về giữa khung", () => {
   const hep: ViewRect[] = [
-    { left: 1000, right: 1030, top: 500, bottom: 530 },   // bẹt cả hai chiều
-    { left: 1000, right: 1800, top: 500, bottom: 540 },   // chỉ bẹt chiều cao
-    { left: 1000, right: 1020, top: 500, bottom: 950 },   // chỉ bẹt chiều ngang
-    // Đúng sát ngưỡng: rộng = 2 × lề, cao = lề trên + lề dưới.
+    { left: 1000, right: 1030, top: 500, bottom: 530 },
+    { left: 1000, right: 1800, top: 500, bottom: 540 },
+    { left: 1000, right: 1020, top: 500, bottom: 950 },
     { left: 1000, right: 1000 + 2 * O.edge, top: 500, bottom: 500 + O.top + O.edge },
   ];
   for (const v of hep) {
@@ -507,7 +478,6 @@ test("khung thấp hơn lề trên mà việc đang ở TRONG khung: dấu vẫn
   const p = chorePin(400, 25, v, O);
   assert.ok(p.y <= v.bottom, `dấu rơi xuống y = ${p.y}, đáy khung ở ${v.bottom}`);
   assert.deepEqual([p.x, p.y, p.pinned], [400, 25, true]);
-  // Và cái việc ở bất cứ đâu trong khung bẹt ấy cũng phải về đúng chỗ đó.
   for (const [ax, ay] of [[0, 0], [799, 49], [400, 1], [-500, 25]]) {
     const q = chorePin(ax, ay, v, O);
     lanhLan(q, v, `khung bẹt, việc (${ax}, ${ay})`);
@@ -545,12 +515,12 @@ test("khung rỗng (0 × 0): không NaN, không ∞", () => {
 test("liền mạch ở biên với MỌI cỡ lề, không chỉ cỡ đang dùng", () => {
   const eps = 1e-7;
   const cacLe: PinOpts[] = [
-    { edge: 0, top: 0 },          // không lề
-    { edge: 1, top: 1 },          // lề bé tí
-    { edge: 19, top: 58 },        // cỡ chữ 100%
-    { edge: 19, top: 116 },       // cỡ chữ 200%
-    { edge: 60, top: 180 },       // lề to vô lý — vẫn phải liền
-    { edge: 19, top: 0 },         // lệch hẳn hai trục
+    { edge: 0, top: 0 },
+    { edge: 1, top: 1 },
+    { edge: 19, top: 58 },
+    { edge: 19, top: 116 },
+    { edge: 60, top: 180 },
+    { edge: 19, top: 0 },
   ];
   for (const o of cacLe) {
     for (let k = 1; k < 800; k += 1) {
@@ -575,14 +545,12 @@ test("cỡ chữ 200%: lề trên gấp đôi mà ba luật vẫn đứng", () =
   const O2: PinOpts = { edge: 19, top: 116 };
   const a0 = V.left + O2.edge, a1 = V.right - O2.edge;
   const b0 = V.top + O2.top, b1 = V.bottom - O2.edge;
-  // Luật 1: trong vùng vẽ (đã hẹp lại) thì đứng yên tuyệt đối.
   for (let ax = a0; ax <= a1; ax += 7) {
     for (let ay = b0; ay <= b1; ay += 7) {
       const p = chorePin(ax, ay, V, O2);
       assert.deepEqual([p.x, p.y, p.pinned], [ax, ay, false]);
     }
   }
-  // Luật 2: ra ngoài thì về mép ĐÚNG PHÍA, và trục còn chỗ vẫn báo đúng toạ độ thật.
   for (const ax of [V.left - 3000, V.left, cx, V.right, V.right + 3000]) {
     for (const ay of [V.top - 3000, V.top, (b0 + b1) / 2, V.bottom, V.bottom + 3000]) {
       const p = chorePin(ax, ay, V, O2);
@@ -596,8 +564,6 @@ test("cỡ chữ 200%: lề trên gấp đôi mà ba luật vẫn đứng", () =
       assert.ok(p.x >= a0 - 1e-9 && p.x <= a1 + 1e-9 && p.y >= b0 - 1e-9 && p.y <= b1 + 1e-9, ten);
     }
   }
-  // Luật 2, phần "đi một bước bò một bước": vẫn đúng 1 px, kể cả ở lề trên rộng gấp đôi —
-  // chính chỗ cú nhảy cũ nặng nhất (lề càng rộng thì hai nhánh cũ càng lệch).
   let truoc: { x: number; y: number } | null = null, te = 0;
   for (let k = 0; k <= 500; k++) {
     const p = chorePin(a0, V.top + 300, moved(0, k), O2);

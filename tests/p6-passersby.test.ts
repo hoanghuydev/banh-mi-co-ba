@@ -190,7 +190,30 @@ test("đứng ngay cạnh ai thì F nói chuyện với NGƯỜI ĐÓ, không ph
       const back = x.service.customers.find((c) =>
         c.slot > 0 && c.phase !== "leaving" && c.phase !== "arriving");
       if (!front || !back || checked) return;
+      /*
+       * BỎ QUA LÚC CÓ NGƯỜI ĐANG CHỜ MÌNH TRẢ LỜI.
+       *
+       * `talkCost` cho người vừa mở lời `TALK_B_ADDRESSED` = −99 — thắng tuyệt đối, và
+       * ĐÚNG như vậy: làm lơ một người vừa hỏi mình là chuyện khác hẳn. Lưới này đo luật
+       * KHOẢNG CÁCH, nên phải đo lúc luật kia không bật.
+       *
+       * Trước đây không cần lọc vì khách hiếm khi tự mở lời (đo được 0,6 lần/ngày). Sau
+       * đợt P2-10 thì 1,8 lần/ngày, và lưới bắt đầu rơi trúng mấy lúc đó.
+       */
+      if (x.service.pendingTalkers.length) return;
       x.service.playerAt = standBy(back);
+      /*
+       * HỎI HAI LẦN — vì `talkTarget()` có ĐỘ DÍNH (`TALK_STICKY` −0,62, giữ mục tiêu cũ
+       * cho khỏi nhấp nháy), mà lưới này DỜI NGƯỜI CHƠI TỨC THÌ.
+       *
+       * Chơi thật thì mình đi bộ sang: suốt mấy chục frame đó `talkTarget()` chạy liên
+       * tục với người chơi ĐÃ đứng cạnh `back`, nên độ dính chuyển sang `back` từ lâu
+       * trước khi bấm F. Hỏi đúng một lần sau một cú dịch chuyển là đo mục tiêu dính của
+       * CHỖ ĐỨNG CŨ — một hiện vật của cách đo, không phải hành vi của game.
+       *
+       * (Nhịp đầu bị bỏ qua chứ không bị kiểm: nó là frame bước chân cuối cùng.)
+       */
+      x.service.nearbyToTalk();
       assert.equal(x.service.nearbyToTalk()?.id, back.id, "đứng cạnh người xếp sau mà F vẫn bắt người đầu quầy");
       // lùi về quầy: không còn ai trong tầm → rơi về người đứng đầu
       x.service.playerAt = { x: front.x, y: front.y - TALK_REACH - 1 };

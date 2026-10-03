@@ -17,12 +17,9 @@ import PURPOSES from "./npcs/purposes.json";
 type RawPurposeFile = { states: { id: string }[]; purposes: { id: string }[] };
 const RAW = PURPOSES as unknown as RawPurposeFile;
 
-/** 60 mục đích của `purposes.json` — P2-07 §5. */
 export const PURPOSE_IDS: readonly string[] = RAW.purposes.map((p) => p.id);
-/** 34 tâm trạng. */
 export const STATE_IDS: readonly string[] = RAW.states.map((s) => s.id);
 
-/** Tay người chơi — khớp 1–1 với `world/stations.Hand`. Test `V-1` canh chuyện đó. */
 export const HAND_IDS = [
   "empty", "loaf_cold", "loaf_hot", "loaf_burnt", "loaf_filled", "tea",
 ] as const;
@@ -36,12 +33,12 @@ export const HAND_IDS = [
  * đúng trong MỘT cái.
  */
 export const PRACTICE_IDS = [
-  "DI_NGANG",   // họ đi ngang, chưa hỏi mua gì
-  "XEP_HANG",   // đã vào hàng, chưa tới lượt
-  "GOI_MON",    // đang gọi món
-  "DOI_BANH",   // đã gọi xong, đang đợi ổ
-  "NAN_LAI",    // đã nhận bánh, còn nán lại
-  "QUAY_VANG",  // không có ai ở quầy
+  "DI_NGANG",
+  "XEP_HANG",
+  "GOI_MON",
+  "DOI_BANH",
+  "NAN_LAI",
+  "QUAY_VANG",
   "NGHE_LOM",   // cảnh NPC↔NPC, người chơi là khán giả
 ] as const;
 export type PracticeId = (typeof PRACTICE_IDS)[number];
@@ -86,7 +83,6 @@ export type DeedId = (typeof DEED_IDS)[number];
 export const BAND_IDS = ["SOM", "SANG", "TRUA"] as const;
 export type BandId = (typeof BAND_IDS)[number];
 
-/** Phút trong ngày → buổi. 06:00–07:30 sớm · 07:30–09:30 sáng · sau đó trưa. */
 export function bandOfMinutes(min: number): BandId {
   return min < 7 * 60 + 30 ? "SOM" : min < 9 * 60 + 30 ? "SANG" : "TRUA";
 }

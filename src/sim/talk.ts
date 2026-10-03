@@ -133,6 +133,16 @@ export type TalkAct =
    * một con số kho — đó đúng là thứ một chén tàu hũ đáng.
    */
   | { kind: "BARTER"; nhan: string }
+  /**
+   * DỜI CÁI XE CỦA CHÚ KIỆT — arc hai cái xe tranh chỗ (11 nhắc).
+   *
+   *   `XA`    chú về chỗ chú bên kia hẻm — mặt tiền mình thông, mà mình vừa đuổi ông ta
+   *   `CHUNG` hai xe chung một mái lúc mưa — mình mất một khoảng mặt tiền, chú khỏi ướt
+   *
+   * Không có đường nào bảo chú LẤN vào: lấn là việc chú tự làm, và đó là cái người chơi
+   * phải xử lý chứ không phải cái họ chọn.
+   */
+  | { kind: "MOVE_CART"; toi: "XA" | "CHUNG" }
   | { kind: "LEAVE_SHADE" }
   | { kind: "LOOK_INSIDE"; forSec: ForSec }
   | { kind: "PROMISE_DEED"; deed: Deed }

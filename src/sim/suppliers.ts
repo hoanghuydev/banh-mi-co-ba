@@ -18,9 +18,7 @@ export type SupplierId = "LO_BA_TAM" | "CO_NHUNG" | "CHU_CHIN" | "DI_NAM" | "CO_
 type SupplierDef = {
   name: string;
   personality: { soi: number; nongTinh: number; deTha: number; thanThien: number };
-  /** Trần bớt giá mối quen (P3-02 §2.6.2 bảng per-supplier). */
   discountCap: number;
-  /** Chào theo quan hệ — [người lạ, quen, thân]. */
   greet: [string, string, string];
   closedDays?: number[];
 };
@@ -40,7 +38,6 @@ export const SUPPLIERS: Record<SupplierId, SupplierDef> = {
 
 export type SupplierState = {
   tier: RelTier;
-  /** Ngày mua liên tiếp (tính cả ân hạn). */
   streak: number;
   lastBuyDay: number;
   buyDays: number;
@@ -48,14 +45,13 @@ export type SupplierState = {
   lateCount: number;
   /** Trần nợ nhân vĩnh viễn — trễ một lần ×0,75, không có đường nào làm nó tăng lại. */
   ceilingMul: number;
-  owed: number;              // đồng
+  owed: number;
   dueDay: number | null;
 };
 
 export const newSupplierState = (): SupplierState => ({
   tier: "ACQUAINTANCE", streak: 0, lastBuyDay: -99, buyDays: 0, paidEarly: 0, lateCount: 0, ceilingMul: 1, owed: 0, dueDay: null,
 });
-/** Người mới (chưa mua ngày nào) chưa phải "quen" — P3-02: Acquaintance sau 5 ngày mua. */
 export const knows = (s: SupplierState) => s.buyDays >= 5;
 
 export function state(all: Record<string, SupplierState>, id: SupplierId): SupplierState {
@@ -71,7 +67,6 @@ export function loyaltyDiscount(id: SupplierId, s: SupplierState): number {
   return Math.min(d, SUPPLIERS[id].discountCap);
 }
 
-/** Giá sau mối quen — bánh mì là mỏ neo, không bao giờ bớt. */
 export function discounted(g: GoodId, priceK: number, id: SupplierId, s: SupplierState) {
   if (g === "BANH") return priceK;
   return Math.round(priceK * (1 - loyaltyDiscount(id, s)) * 2) / 2;
@@ -79,7 +74,6 @@ export function discounted(g: GoodId, priceK: number, id: SupplierId, s: Supplie
 
 export const isClosed = (id: SupplierId, day: number) => !!SUPPLIERS[id].closedDays?.includes(day);
 
-/** Cuối buổi chợ: ai mua thì streak +1, ai không mua quá ân hạn thì mất mối. Ngày họ nghỉ thì đóng băng. */
 export function afterMarket(all: Record<string, SupplierState>, boughtFrom: ReadonlySet<SupplierId>, day: number) {
   for (const id of Object.keys(SUPPLIERS) as SupplierId[]) {
     const s = state(all, id);
@@ -100,9 +94,8 @@ export function creditCeiling(id: SupplierId, s: SupplierState): number {
   return Math.round(k * ECON.scale * s.ceilingMul) * 1000;
 }
 
-/** Hạn trả luôn là "cuối tuần" — Chủ nhật tới (P3-02 §2.6.1). */
 export function dueSunday(day: number) {
-  const wd = weekdayIdx(day);                 // 0 = T2 … 6 = CN
+  const wd = weekdayIdx(day);
   return day + (6 - wd || 7);
 }
 
@@ -143,7 +136,6 @@ export function dawnCheck(all: Record<string, SupplierState>, day: number): Supp
   return late;
 }
 
-/** Câu bà Tám khi mình trễ lần đầu — P3-02 §2.6.1, nguyên văn. */
 export const LATE_LINE: Partial<Record<SupplierId, string>> = {
   LO_BA_TAM: "Ừ thôi, khi nào có con đưa cô. Cô biết dạo này khó.",
   DI_NAM: "Thôi được, mai mốt đưa dì cũng được con.",

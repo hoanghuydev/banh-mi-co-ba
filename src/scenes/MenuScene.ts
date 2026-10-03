@@ -27,13 +27,13 @@ export class MenuScene extends Phaser.Scene {
   constructor() { super("menu"); }
 
   create() {
-    fitDesignFrame(this.cameras.main);          // canvas phóng to, toạ độ giữ nguyên — `core/render`
+    fitDesignFrame(this.cameras.main);
     this.drawBackdrop();
     this.show("main");
     // Mọi trang con phải thoát được bằng bàn phím (CANON §15): trước đây trang Cài đặt
     // không có phím nào ra, mà nút "Quay lại" thì nằm dưới mép màn hình.
     this.input.keyboard?.on("keydown-ESC", () => {
-      if (this.at === "audio") this.show("settings");      // trang con của Cài đặt
+      if (this.at === "audio") this.show("settings");
       else if (this.at !== "main") this.show("main");
     });
     // Trình duyệt chỉ cho phát tiếng sau cú chạm/gõ phím đầu tiên; Phaser xếp
@@ -57,9 +57,7 @@ export class MenuScene extends Phaser.Scene {
     this.tweens.add({ targets: this.page, alpha: 1, duration: 160 });
   }
 
-  // ------------------------------------------------------------------ backdrop
 
-  /** Nền: trời xanh xám + vệt nắng trắng + bóng hẻm. CANON §14, không dùng vàng nghệ. */
   private drawBackdrop() {
     const g = this.add.graphics();
     for (let i = 0; i < GAME_H; i += 4) {
@@ -71,24 +69,22 @@ export class MenuScene extends Phaser.Scene {
       g.fillRect(0, i, GAME_W, 5);
     }
 
-    g.fillStyle(P.sun, 0.1);                       // nắng chém chéo qua hẻm
+    g.fillStyle(P.sun, 0.1);
     g.fillPoints([
       { x: GAME_W * 0.52, y: 0 }, { x: GAME_W * 0.78, y: 0 },
       { x: GAME_W * 0.46, y: GAME_H }, { x: GAME_W * 0.2, y: GAME_H },
     ], true);
 
-    g.fillStyle(0x2f3a41, 0.32);                   // hai dãy nhà hai bên
+    g.fillStyle(0x2f3a41, 0.32);
     g.fillPoints([{ x: 0, y: 0 }, { x: 190, y: 0 }, { x: 96, y: GAME_H }, { x: 0, y: GAME_H }], true);
     g.fillPoints([
       { x: GAME_W, y: 0 }, { x: GAME_W - 210, y: 0 },
       { x: GAME_W - 110, y: GAME_H }, { x: GAME_W, y: GAME_H },
     ], true);
 
-    g.fillStyle(0x1b2126, 0.25);                   // mặt đường
+    g.fillStyle(0x1b2126, 0.25);
     g.fillRect(0, GAME_H - 96, GAME_W, 96);
 
-    // cái quầy + người bán đứng lùi ở góc, để sảnh có "nơi chốn" chứ không trống trơn.
-    // Tên texture lấy từ hằng số của `art/` để menu không bao giờ lệch khi art đổi tên.
     const S = 2.0;
     this.add.image(GAME_W - 262, GAME_H - 26, COUNTER.case(0)).setOrigin(0.5, 1).setScale(S).setAlpha(0.5);
     const end = this.add.image(GAME_W - 190, GAME_H + 4, COUNTER.end).setOrigin(0.5, 1).setScale(S).setAlpha(0.5);
@@ -104,9 +100,7 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5, 1).setAlpha(0.5);
   }
 
-  // ---------------------------------------------------------------- trang chính
 
-  /** Đọc save chỉ để hiện "Chơi tiếp" — không dựng context, không đụng RNG. */
   private peekSave(): { save: SaveFile | null; tooNew: boolean } {
     try {
       return { save: new SaveService(bus, () => { throw new Error("peek"); }).load(), tooNew: false };
@@ -137,8 +131,6 @@ export class MenuScene extends Phaser.Scene {
     const top = Math.round(88 / textScale());
     const st = new Stack(top, 10);
     const title = st.place(label(this, x, 0, "Bánh Mì Cô Ba", 40, UI.ink, "700"), 10);
-    // Tựa game KHÔNG phải chỗ đứng của tagline marketing (CANON §0 — chỗ của nó là trang
-    // bán và README). Một dòng tả CHỖ, để người ta biết mình sắp đứng ở đâu.
     const sub = st.place(label(this, x, 0, "Đầu hẻm, Sài Gòn.", 15, UI.muted, "400"), 0);
     body.add([title, sub]);
     this.card(body, top - 24, st.y + 24, [title, sub]);
@@ -174,7 +166,6 @@ export class MenuScene extends Phaser.Scene {
     }
   }
 
-  /** Có thứ gì để mất không — kể cả save hỏng / save của bản mới hơn: `clear()` xoá hết như nhau. */
   private hasSave() {
     return new SaveService(bus, () => { throw new Error("peek"); }).hasSave();
   }
@@ -188,12 +179,10 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private askTelemetryThenStart() {
-    // Bản bán ra: hỏi rõ MỘT lần về telemetry trước ván đầu tiên (P0-03 §4).
     if (loadSettings().telemetry === null) { this.show("telemetry"); return; }
     this.scene.start("day", { mode: "new" });
   }
 
-  /** Hỏi trước khi xoá — chỉ hiện khi THẬT SỰ có cái để mất. Đường lùi rõ hơn đường xoá. */
   private pageConfirmNew() {
     const { save } = this.peekSave();
     const x = GAME_W / 2;
@@ -233,7 +222,6 @@ export class MenuScene extends Phaser.Scene {
     telemetry.enabled = on;
   }
 
-  /** P0-03 §2.1: telemetry CỤC BỘ — nói rõ ghi gì, và rằng nó không gửi đi đâu. */
   private pageTelemetryAsk() {
     const x = GAME_W / 2;
     const body = this.add.container(0, 0);
@@ -259,14 +247,11 @@ export class MenuScene extends Phaser.Scene {
       this.setTelemetry(false); this.askTelemetryThenStart();
     }, { width: 220 }));
     st.skip(buttonHeight() + 14);
-    // Cả hai câu trả lời đều đi thẳng vào ván mới (= xoá ván cũ). Phải có đường lùi, không
-    // thì trang này là cái bẫy một chiều.
     body.add(st.button(button(this, x, 0, "Quay lại", () => this.show("main"),
       { width: 220, hint: "hoặc bấm Esc" }), 14));
     this.enableScroll(body, st.y, GAME_H - 20);
   }
 
-  // ------------------------------------------------------------------ cài đặt
 
   /**
    * CANON §15: trợ năng là bắt buộc, không phải "nice to have".
@@ -280,7 +265,6 @@ export class MenuScene extends Phaser.Scene {
     };
 
     const x = GAME_W / 2;
-    // Danh sách công tắc cuộn được; hai cái nút ở dưới KHÔNG cuộn theo (xem cuối hàm).
     const body = this.add.container(0, 0);
     this.page.add(body);
     const bg = this.add.graphics();
@@ -310,8 +294,6 @@ export class MenuScene extends Phaser.Scene {
       () => this.show("audio"), "nhạc · hẻm · giọng người · thao tác · âm báo");
     tg("Giảm chuyển động", () => (s.reducedMotion ? "bật" : "tắt"), () => put({ reducedMotion: !s.reducedMotion }),
       "tắt xe chạy qua, lá bay, rung màn hình");
-    // Cô Ba không có bảng tên dưới chân như khách — không có mũi tên thì người chơi mới
-    // vào phải bấm thử một phím mới biết mình là ai trong đám người đứng quanh quầy.
     tg("Mũi tên trên đầu mình", () => (s.playerMarker ? "bật" : "tắt"), () => put({ playerMarker: !s.playerMarker }),
       "tự mờ đi khi đang đi, sáng lại lúc đứng yên");
     tg("Bỏ giới hạn thời gian", () => (s.noTimePressure ? "bật" : "tắt"), () => put({ noTimePressure: !s.noTimePressure }),
@@ -331,9 +313,8 @@ export class MenuScene extends Phaser.Scene {
     tg("Ghi số liệu chơi thử", () => (s.telemetry ? "bật" : "tắt"),
       () => { put({ telemetry: !s.telemetry }); telemetry.enabled = !!s.telemetry; },
       "nằm trong máy này, không tự gửi đi đâu");
-    st.skip(12);                                // lề dưới của khung giấy
+    st.skip(12);
 
-    // nền khung cao đúng bằng nội dung
     bg.fillStyle(0xf7f4ec, 0.96).fillRoundedRect(x - 270, top, 540, st.y - top, 16);
 
     // Thanh chân GHIM ĐÁY màn hình. Trước đây hai nút này nằm trong dòng chảy của Stack: tám
@@ -365,7 +346,6 @@ export class MenuScene extends Phaser.Scene {
       music.applySettings(s);
       sfx.applySettings(s);
     };
-    /** Xoay vòng qua các nấc. Giá trị lạ (save cũ, sửa tay localStorage) rơi về nấc đầu. */
     const nextStep = (v: number) => {
       const at = (MUSIC_STEPS as readonly number[]).indexOf(v);
       return MUSIC_STEPS[(Math.max(at, -1) + 1) % MUSIC_STEPS.length];
@@ -384,7 +364,6 @@ export class MenuScene extends Phaser.Scene {
 
     const tg = (name: string, get: () => string, fn: () => void, hint?: string) =>
       body.add(st.button(toggle(this, x, 0, name, get, fn, 340, hint)));
-    /** Một kênh = một hàng xoay vòng âm lượng. */
     const chan = (name: string, key: "musicVolume" | "streetVolume" | "voiceVolume" | "foleyVolume" | "uiVolume" | "crowdVolume", hint: string, after?: () => void) =>
       tg(name, () => show(s[key]), () => { put({ [key]: nextStep(s[key]) } as Partial<Settings>); after?.(); }, hint);
 
@@ -400,15 +379,12 @@ export class MenuScene extends Phaser.Scene {
     st.skip(6);
     body.add(st.place(label(this, x, 0, "trợ năng", 13, UI.muted), 8));
 
-    // P5-03 §5.5 — ranh giới một dòng: âm mô tả thế giới thì giữ, âm chấm điểm thì bỏ.
     tg("Tắt âm báo tiêu cực", () => (s.disableNegativeAudioCues ? "bật" : "tắt"),
       () => put({ disableNegativeAudioCues: !s.disableNegativeAudioCues }),
       "vẫn nghe bánh rớt, bánh khét, ruồi bay — chỉ bỏ tiếng chê");
-    // P5-03 §5.4 — cùng một tiếng cho chuyện tốt và chuyện xấu: thông tin, không phán xét.
     tg("Báo khi có người để ý", () => (s.a11yPerceptionPing ? "bật" : "tắt"),
       () => put({ a11yPerceptionPing: !s.a11yPerceptionPing }),
       "một tiếng gõ gỗ, lệch về phía người đang nhìn");
-    // P5-03 §2.4 — cho người nghe bằng một bên tai.
     tg("Gộp về một kênh", () => (s.monoAudio ? "bật" : "tắt"), () => put({ monoAudio: !s.monoAudio }),
       "bỏ trái–phải, dồn hết vào giữa");
 
@@ -421,7 +397,6 @@ export class MenuScene extends Phaser.Scene {
     this.enableScroll(body, st.y + 10, barTop);
   }
 
-  /** Cuộn phần thân theo chiều dọc nếu nó cao hơn vùng nhìn thấy (`viewBottom`). */
   private enableScroll(body: Phaser.GameObjects.Container, contentBottom: number, viewBottom = GAME_H) {
     const extra = Math.max(0, contentBottom - viewBottom);
     if (!extra) return;
@@ -434,15 +409,12 @@ export class MenuScene extends Phaser.Scene {
     });
   }
 
-  // --------------------------------------------------------------- giới thiệu
 
   private pageAbout() {
     const x = GAME_W / 2;
     const body = this.add.container(0, 0);
     this.page.add(body);
 
-    // Xếp theo chiều cao ĐO ĐƯỢC như mọi trang khác (ui/theme §Stack). Toạ độ cứng ở đây
-    // chỉ đúng ở cỡ chữ 100%, mà trang này là trang nhiều chữ nhất của sảnh.
     const top = Math.round(104 / textScale());
     const st = new Stack(top, 10);
     const title = st.place(label(this, x, 0, "Giới thiệu", 26, UI.ink, "700"), 22);

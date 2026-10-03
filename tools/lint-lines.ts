@@ -12,7 +12,6 @@ import { pathToFileURL } from "node:url";
 import { ROOT, Report, readJson, similarity, walk } from "./lib";
 
 export const LINE_MAX_CHARS = 90;
-/** Chỗ trống danh xưng trong cây hội thoại — xem `sim/service.fill`. */
 const ADDRESS_VARS = ["call", "me", "self", "you"];
 /**
  * Chỗ trống KHÁC mà `Service.fill` điền được — P2-09 §2.4, §2.6.
@@ -45,7 +44,6 @@ type Red = {
   unaccentedRisk: string[]; enPronounLeaks: string[];
 };
 
-/** Một "túi" thoại cần lint: biến thể + biến được phép + ai nói. */
 type Bag = { file: string; where: string; vi: string[]; en?: string[]; vars: string[]; npc?: string; set: (vi: string[]) => void
   /** L014 — biến BẮT BUỘC có mặt ở mọi dòng (tin đồn: tên nguồn). */
   mustHave?: string;
@@ -55,7 +53,6 @@ type Bag = { file: string; where: string; vi: string[]; en?: string[]; vars: str
    * như đời, không phải biến thể giả.
    */
   noVariants?: boolean;
-  /** Khung chữ của túi này. Vắng = bong bóng. */
   box?: Box };
 
 // ── bảng chữ ────────────────────────────────────────────────────────────────
@@ -82,7 +79,6 @@ function sentenceCase(s: string) {
   return low.charAt(0).toUpperCase() + low.slice(1);
 }
 
-/** Số dòng khi bọc chữ trong một khung — ước lượng bề ngang ký tự như trình duyệt. */
 function wrappedLines(s: string, box: Box = BUBBLE) {
   const w = (ch: string) => (/[mwMWđĐ]/.test(ch) ? 0.8 : /[iljtf.,'!:;|]/.test(ch) ? 0.3 : ch === " " ? 0.28 : 0.56) * box.font;
   let lines = 1, cur = 0;
@@ -103,7 +99,6 @@ function collect(contentDir: string): { bags: Bag[]; save: () => void } {
 
   for (const f of walk(join(contentDir, "lines"), [".json"])) {
     const data = readJson<{ pools: { id: string; vars?: string[]; variants: string[]; en?: string[]; npc?: string }[] }>(f);
-    // P2-04 claims.json — tin đồn: hearsay/tell nói về NGUỒN nên có biến {source}
     const claims = (data as any).claims as Record<string, Record<string, unknown>> | undefined;
     for (const [id, c] of Object.entries(claims ?? {})) {
       for (const pool of ["hearsay", "belief", "conviction", "seen", "tell"] as const) {
@@ -171,7 +166,6 @@ function collect(contentDir: string): { bags: Bag[]; save: () => void } {
     const data = readJson<any>(f);
     const rules: any[] = Array.isArray(data) ? data : data.rules ?? [data];
     for (const rule of rules) {
-      // Biến nội suy của rule: `{mon}` = tên món (P2-01 §2.8). NPC nói = criterion npcId.
       bags.push({
         file: f, where: `rule ${rule.id}`, vi: rule.say ?? [], en: rule.en, vars: ["mon"], npc: rule.when?.npcId,
         set: (vi) => { rule.say = vi; dirty.set(f, () => writeFileSync(f, JSON.stringify(data, null, 2) + "\n")); },
@@ -193,13 +187,11 @@ export function lintLines(contentDir: string, opts: { fix?: boolean } = {}): Rep
       let s = raw;
       const where = `${b.where}[${i}]`;
 
-      // L004 — NFD (dấu tách rời)
       if (s !== s.normalize("NFC")) {
         if (opts.fix) { s = s.normalize("NFC"); changed = true; }
         else r.add("L004", "ERROR", b.file, where, `Unicode NFD (dấu tách rời) — ép NFC: "${s.normalize("NFC")}"`);
       }
 
-      // L005 — kiểu đặt dấu không nhất quán
       if (ACCENT_RE.test(s)) {
         ACCENT_RE.lastIndex = 0;
         const to = s.replace(ACCENT_RE, (m) => ACCENT_FIX[m.toLowerCase()] ?? m);
@@ -208,20 +200,17 @@ export function lintLines(contentDir: string, opts: { fix?: boolean } = {}): Rep
       }
       ACCENT_RE.lastIndex = 0;
 
-      // L007 — VIẾT HOA TOÀN BỘ
       if (isAllCaps(s)) {
         if (opts.fix) { s = sentenceCase(s); changed = true; }
         else r.add("L007", "ERROR", b.file, where, `viết hoa toàn bộ (CANON §15): "${s}"`);
       }
 
-      // L001 / L002 — biến nội suy
       for (const m of s.matchAll(/\{([\w.]+)\}/g)) {
         if (b.vars.includes(m[1])) continue;
         if (allVars.has(m[1])) r.add("L002", "ERROR", b.file, where, `biến {${m[1]}} đúng tên nhưng SAI SCOPE — túi này chỉ có [${b.vars.join(", ")}]`);
         else r.add("L001", "ERROR", b.file, where, `biến {${m[1]}} chưa định nghĩa — sẽ hiện nguyên chữ "{${m[1]}}" trên màn hình`);
       }
 
-      // L003 — độ dài
       const shown = s.replace(/\{[\w.]+\}/g, "xxxxxxxx");
       const box = b.box ?? BUBBLE;
       if (shown.length > LINE_MAX_CHARS) r.add("L003", "WARN", b.file, where, `${shown.length} ký tự > ${LINE_MAX_CHARS}`);
@@ -229,20 +218,17 @@ export function lintLines(contentDir: string, opts: { fix?: boolean } = {}): Rep
         r.add("L003", "WARN", b.file, where, `${wrappedLines(shown, box)} dòng trong khung ${box.px} px — hộp quá cao`);
       }
 
-      // L006 — mất dấu
       const words = s.split(/\s+/).filter(Boolean);
       if (words.length >= 5 && !DIACRITIC.test(s) && red.unaccentedRisk.some((w) => hasWord(s, w))) {
         r.add("L006", "ERROR", b.file, where, `câu tiếng Việt bị MẤT DẤU: "${s}"`);
       }
 
-      // L008 — từ Bắc trong pool Nam
       if (!b.npc || !red.northern.allowNpcs.includes(b.npc)) {
         for (const [bac, nam] of Object.entries(red.northern.words)) {
           if (hasWord(s, bac)) r.add("L008", "WARN", b.file, where, `từ giọng Bắc "${bac}" → giọng Nam "${nam}"`);
         }
       }
 
-      // L010 — lằn ranh đỏ §14.1
       for (const w of [...red.war, ...red.demeaning]) {
         if (hasWord(s, w)) r.add("L010", "ERROR", b.file, where, `chạm lằn ranh đỏ §14.1: "${w}"`);
       }
@@ -263,23 +249,19 @@ export function lintLines(contentDir: string, opts: { fix?: boolean } = {}): Rep
     });
     if (changed) b.set(fixed);
 
-    // L009 — đại từ xưng hô bị dịch trong bản en
     for (const [i, en] of (b.en ?? []).entries()) {
       for (const leak of red.enPronounLeaks) {
         if (hasWord(en, leak)) r.add("L009", "ERROR", b.file, `${b.where}.en[${i}]`, `đại từ xưng hô bị DỊCH thành "${leak}" — CANON §2: không dịch`);
       }
     }
-    // L014 — P2-04 RB3: mọi dòng thoại phát từ tin NGHE KỂ bắt buộc chèn tên nguồn
     if (b.mustHave) {
       for (const [i, s] of b.vi.entries()) {
         if (!s.includes(`{${b.mustHave}}`)) r.add("L014", "ERROR", b.file, `${b.where}[${i}]`, `thiếu {${b.mustHave}} — tin đồn không truy được nguồn = bị report là bug, và họ đúng`);
       }
     }
-    // L011 — thiếu phụ đề Anh
     const enCount = (b.en ?? []).filter((x) => x && x !== "…").length;
     if (enCount < b.vi.length) r.add("L011", "WARN", b.file, b.where, `thiếu phụ đề tiếng Anh (${enCount}/${b.vi.length})`);
 
-    // L012 — biến thể giả
     if (b.noVariants) continue;
     for (let i = 0; i < fixed.length; i++) {
       for (let j = i + 1; j < fixed.length; j++) {

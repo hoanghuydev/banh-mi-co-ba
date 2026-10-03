@@ -53,7 +53,6 @@ export function installDevTools(game: Phaser.Game) {
     + "font:12px ui-monospace,Consolas,monospace;padding:6px 8px;background:#0d1114;color:#e8f0f3;border:1px solid #445;border-radius:4px";
   document.body.appendChild(input);
 
-  // Nhật ký thoại gần nhất cho panel F3.
   const dialogLog: string[] = [];
   bus.onAny((e, p) => {
     if (!DIALOG_EVENTS.includes(e)) return;
@@ -228,7 +227,6 @@ function makeApi(game: Phaser.Game, print: (s: string) => void) {
 
   return {
     day: {
-      /** Tua đồng hồ tới giờ. */
       skipTo(hhmm: string) {
         const [h, m] = hhmm.split(":").map(Number);
         need(dev.ctx, "ván chơi").clock.minutes = h * 60 + m;
@@ -262,13 +260,11 @@ function makeApi(game: Phaser.Game, print: (s: string) => void) {
     },
     npc: {
       spawn(id: string) { return need(dev.stall, "quầy").service.devSpawn(id) ? `gọi ${id}` : `không có NPC ${id}`; },
-      /** Ép khách bấm điện thoại (0.05) / nhìn thẳng (1); null để trả về tự nhiên. */
       gaze(id: string, g: number | null) {
         const cs = need(dev.stall, "quầy").service.customers.filter((c) => c.memKey === id);
         for (const c of cs) c.gazeOverride = g;
         return `${cs.length} người`;
       },
-      /** Ép mood ngoài tầm kiểm soát cho người đang ở quán: NONE SEP_MANG MUA_UOT DAU_OM HET_TIEN MET TIN_VUI. */
       mood(id: string, cause: string) {
         const cs = need(dev.stall, "quầy").service.customers.filter((c) => c.memKey === id);
         if (!MOOD_CAUSES.includes(cause as MoodCause)) return `mood lạ — ${MOOD_CAUSES.join(" ")}`;
@@ -291,7 +287,6 @@ function makeApi(game: Phaser.Game, print: (s: string) => void) {
         const l = need(sp.last, "lần hỏi rule nào");
         return `${l.concept} · ${l.npc} → ${l.picked ?? "(im)"}\n` + ranking(sp.db.explain(l.concept, l.q, sp.st, l.now));
       },
-      /** Hỏi thử: `rule.test("DELIVERY", "defectKind=MISSING,defectWasSeen=true,defectCount=1")`. */
       test(concept: string, facts = "") {
         const extra: Record<string, string | number | boolean> = {};
         for (const kv of facts.split(",").map((x) => x.trim()).filter(Boolean)) {
@@ -321,7 +316,6 @@ function makeApi(game: Phaser.Game, print: (s: string) => void) {
   };
 }
 
-/** Chạy một dòng lệnh dạng `a.b(args)` — không `eval`, chỉ tra trong api. */
 function runCommand(api: any, line: string): unknown {
   const m = line.trim().match(/^([\w.]+)\s*(?:\((.*)\))?$/);
   if (!m) throw new Error("cú pháp: nhom.lenh(tham, so)");
@@ -337,15 +331,14 @@ function loadState(): { visible: boolean; panel: PanelId } {
   try {
     const raw = sessionStorage.getItem(SS_KEY);
     if (raw) return JSON.parse(raw);
-  } catch { /* bỏ qua */ }
+  } catch { }
   return { visible: false, panel: "perception" };
 }
 
 function saveState(s: { visible: boolean; panel: PanelId }) {
-  try { sessionStorage.setItem(SS_KEY, JSON.stringify(s)); } catch { /* bỏ qua */ }
+  try { sessionStorage.setItem(SS_KEY, JSON.stringify(s)); } catch { }
 }
 
-/** Bảng xếp hạng rule cho F3 / `rule.why` / `rule.test`. */
 function ranking(rows: { id: string; score: number; ok: boolean; why: string }[], n = 10) {
   return rows.slice(0, n).map((x) => `  ${x.ok ? "✓" : "·"} ${String(x.score).padStart(2)} ${x.id.padEnd(26)} ${x.why}`).join("\n");
 }

@@ -38,7 +38,6 @@ const ctx = (over: Partial<TalkCtx> = {}): TalkCtx => ({
 
 const byId = (id: string) => TALKS.find((t) => t.id === id)!;
 
-/** Một lượt ghé trần trụi, sức chờ 50 s — chỉ để đo `patienceLeft` / `soothe`. */
 const mkCustomer = (id: string) =>
   new Customer(id, "CHU_TU", "Chú Tư", P.CHU_TU, NPCS[1].body, null,
     makeUsual(new Rng(1)), 0, { x: 0, y: 0 }, 50, new Rng(2));
@@ -47,9 +46,6 @@ const mkCustomer = (id: string) =>
 
 test("T-1 câu đáp đi THEO lựa chọn, không rút riêng — đúng cái bug của nút F cũ", () => {
   const t = byId("bay.veso");
-  // Duyệt đúng những lựa chọn HIỆN RA, không phải cả `tree`: từ P2-06 §2.6 mỗi nhịp bị
-  // cắt còn `TALK_CHOICES_MAX` dòng (ngân sách đọc), nên `tree[3]` có thể không tồn tại
-  // trên màn hình. Cái test này giữ là "câu đáp đi theo lựa chọn", không phải "có 4 nút".
   const shown = visibleOptions(t.tree, { flags: {} });
   assert.ok(shown.length >= 2, "nhịp đầu không còn đủ lựa chọn");
   const replies = shown.map((o) => o.reply ?? `(im ${o.say})`);
@@ -79,7 +75,6 @@ test("T-3 rẽ được nhiều cấp: A → A4 → A4b", () => {
   let steps = 0;
   while (!s.done && steps < MAX_DEPTH) {
     const here = s.options!;
-    // đi theo nhánh nào còn con, để xuống đáy
     const i = here.findIndex((o) => childrenOf(o, deep!));
     s.choose(i >= 0 ? i : 0, { flags: {} });
     steps++;
@@ -105,7 +100,7 @@ test("T-5 khách im lặng vẫn là một nước đi: `silent` đi tiếp bìn
   const silent = TALKS.flatMap((t) => walkNodes(t).map((x) => ({ t, n: x.node }))).find((x) => x.n.silent);
   assert.ok(silent, "không có nút nào khách không thèm đáp");
   const i = silent!.t.tree.indexOf(silent!.n);
-  if (i < 0) return;                                   // nút im nằm sâu — T-4 đã phủ
+  if (i < 0) return;
   const s = new TalkSession(silent!.t, silent!.t.npc);
   const r = s.choose(i, { flags: {} })!;
   assert.equal(r.reply, undefined, "khai `silent` mà vẫn có câu đáp");
@@ -127,8 +122,8 @@ test("T-6 ấm thì lên điểm, gắt thì xuống — và gắt xuống NẶN
 });
 
 test("T-6b `relGainMul` chỉ nhân cho phần DƯƠNG — khép kín không vì vậy mà bớt đau", () => {
-  const a = applyTalk({ rel: 4 }, newRelState(), P.BE_SU, 10).relDelta;      // thanThien 1,0
-  const b = applyTalk({ rel: 4 }, newRelState(), P.CHI_LAN, 10).relDelta;    // thanThien 0,3
+  const a = applyTalk({ rel: 4 }, newRelState(), P.BE_SU, 10).relDelta;
+  const b = applyTalk({ rel: 4 }, newRelState(), P.CHI_LAN, 10).relDelta;
   assert.ok(a > b, "người mở lòng phải ấm lên nhanh hơn");
   const na = applyTalk({ rel: -4 }, newRelState(), P.BE_SU, 10).relDelta;
   const nb = applyTalk({ rel: -4 }, newRelState(), P.CHI_LAN, 10).relDelta;
@@ -193,7 +188,6 @@ test("T-11 `need` ẩn lựa chọn chưa mở, mà vẫn luôn còn một đư�
   assert.ok(out.length >= 1, "lọc sạch hết thì không còn đường ra");
   assert.ok(out.every((o) => (o.needCash ?? 0) === 0), "đường lui vẫn hiện lựa chọn không trả nổi");
 
-  /* Người ta đã lắc đầu rồi thì lời mời phải BIẾN MẤT, không phải roll lại (lỗi #5). */
   const inv: TalkNode[] = [
     { say: "ghé vô đi", tone: "AM", act: { kind: "INVITE", yes: "ừ", no: "thôi" } },
     { say: "dạ thôi", tone: "LANH" },
@@ -209,7 +203,6 @@ test("T-12 kho nạp theo người: `ensure` rồi mới có, `release` thì tr�
   assert.deepEqual(s.get(who), [], "chưa nạp mà đã trả về nội dung");
   await s.ensure(who);
   assert.ok(s.has(who) && s.get(who).length > 0);
-  // LRU giữ vài người gần nhất — thả một người không làm họ biến mất ngay
   s.release(who);
   assert.equal(s.has(who), true, "thả xong mất luôn thì khách ghé lại phải tải lại từ đầu");
   s.clear();
@@ -273,13 +266,10 @@ test("L-3 mỗi cuộc có đường từ chối ngay ở nhịp đầu — ngư
 test("L-4 câu GẮT luôn có giá, câu ẤM không bị phạt, câu CHỬI ĐỔNG không trung tính", () => {
   for (const t of TALKS) {
     for (const { node: o } of walkNodes(t)) {
-      // GẮT là hỗn với CHÍNH người đang đứng đây — không có đường nào miễn phí.
       if (o.tone === "GAT") {
         assert.ok((o.rel ?? 0) < 0 || (o.anger ?? 0) > 0 || o.mem, `${t.id}: "${o.say}" gắt mà miễn phí`);
       }
       if (o.tone === "AM") assert.ok((o.rel ?? 0) >= 0, `${t.id}: "${o.say}" tử tế mà bị trừ điểm`);
-      // Chửi đổng người thứ ba: ăn hay trật tuỳ người, nhưng không bao giờ là con số 0 —
-      // hùa theo một câu chửi luôn nói điều gì đó về mình.
       if (o.tone === "CHUI") {
         assert.notEqual(o.rel ?? 0, 0, `${t.id}: "${o.say}" chửi đổng mà không ai thấy gì`);
       }
@@ -290,7 +280,6 @@ test("L-4 câu GẮT luôn có giá, câu ẤM không bị phạt, câu CHỬI �
 test("L-5 không có `reply` thì phải khai `silent` — phân biệt im CÓ Ý với quên viết", () => {
   for (const t of TALKS) {
     for (const { node } of walkNodes(t)) {
-      // Lời MỜI khai câu đáp ở `act.yes`/`act.no` (cái roll chọn một) — xem A-6.
       if (node.act?.kind === "INVITE") continue;
       assert.ok(node.reply || node.silent, `${t.id}: "${node.say}" không có câu đáp mà cũng không khai \`silent\``);
     }
@@ -321,9 +310,6 @@ test("L-7 DANH XƯNG: lời người chơi gọi khách đúng vai, ít nhất m
     const a = ADDRESS[t.npc];
     if (!a) continue;
     const says = linesOf(t).player.join(" ");
-    // Người lạ (khách vãng lai, người qua đường) đổi vai mỗi lượt — chấp nhận bất kỳ vai
-    // nào, miễn là CÓ gọi. `{call}` là chỗ trống để `Service.fill` điền đúng vai theo
-    // DÁNG người đang đứng đó, nên nó luôn hợp lệ — và an toàn hơn mọi từ viết cứng.
     const anon = (ANON_TALK_POOLS as readonly string[]).includes(t.npc);
     const calls = anon ? WALKIN_CALLS : [a.call];
     assert.ok(
@@ -351,7 +337,6 @@ test("L-9 cuộc nào khách TỰ bắt chuyện cũng phải khai giá của vi
     assert.ok((t.ignore!.rel ?? DEFAULT_IGNORE_REL) < 0, `${t.id}: làm thinh mà không mất gì`);
     assert.ok((t.initiates ?? 0) > 0 && (t.initiates ?? 0) <= 0.35, `${t.id}: initiates ${t.initiates} quá dày`);
   }
-  // Đa số khách tới là để mua bánh mì, không phải để tâm sự (P5-01 §3).
   const share = TALKS.filter((t) => t.initiates).length / TALKS.length;
   assert.ok(share <= 0.5, `${(share * 100).toFixed(0)}% số cuộc là khách tự bắt chuyện — quán này không bán được gì`);
 });
@@ -375,8 +360,6 @@ test("A-1 câu nào hứa chuyện có thật thì phải mang `act` — không 
     [/\bcô bỏ (chút|thêm|cho)\b/i, "PROMISE"],
     [/\bbỏ cho (em|con|anh|chị)\b.*\bmiếng\b/i, "PROMISE"],
     [/\bbớt (cô|chú|anh|chị|bà|em)\b.*\bngàn\b/i, "DISCOUNT"],
-    // Phải là NGƯỜI CHƠI hứa, nên bắt buộc có chủ ngữ ngôi thứ nhất: "em không lấy tiền".
-    // Không có cửa này thì "Sao chú hổng lấy tiền chú?" — một câu HỎI — bị tính là lời hứa.
     [/\b(em|con|cô|tui)\s+(không|hổng)\s+lấy tiền\b/i, "FREE_LOAF"],
     [/\bđứng qua bên\b|\bdạt qua\b/i, "STEP_ASIDE"],
     [/\bmua chỗ khác\b/i, "REFUSE"],
@@ -412,7 +395,6 @@ test("A-3 két rỗng thì lựa chọn tốn tiền BIẾN MẤT, mà vẫn cò
   const broke = visibleOptions(nodes, { flags: {}, cash: 5000 });
   assert.equal(broke.length, 1, "hết tiền mà vẫn mời người ta mua vé số");
   assert.equal(broke[0].say, "thôi bà");
-  // cash không khai = không chặn (test cũ, sim headless)
   assert.equal(visibleOptions(nodes, { flags: {} }).length, 2);
 });
 
@@ -438,7 +420,6 @@ test("A-6 lời MỜI khai cả hai cái kết, và là câu CUỐI của nhánh
       assert.notEqual(node.act.yes, node.act.no, `${t.id}: "${node.say}" chịu hay không cũng một câu`);
       assert.ok(!node.then && !node.ref, `${t.id}: "${node.say}" mời xong còn viết tiếp`);
       assert.ok(CAN_INVITE.has(node.tone), `${t.id}: "${node.say}" mời bằng giọng ${node.tone} — nút chết`);
-      // Người có tên không được mời: họ tới theo lịch sinh hoạt của họ (P2-03 §2.9).
       assert.ok(ANON_TALK_POOLS.includes(t.npc as never), `${t.id}: mời một người có tên`);
     }
   }
@@ -451,20 +432,15 @@ test("A-7 mời KHÉO mở cửa rộng ra, nhưng không bao giờ mở toang",
     glanced: false, tone: "AM", warmth: 0, ahead: 0, slots: 6, soldOut: false,
   };
   const at = (over: Partial<typeof base>) => inviteChance({ ...base, ...over });
-  // không bao giờ chắc ăn, không bao giờ vô vọng — "cũng tuỳ khách"
   assert.ok(at({}) > 0 && at({}) < 1);
   assert.ok(at({ glanced: true, warmth: 10, person: { soi: 0, deTha: 1, thanThien: 1 } }) <= INVITE_MAX);
-  // mời khéo ăn thua: ngoái nhìn sẵn, nói mấy câu tử tế trước, giọng ấm
   assert.ok(at({ glanced: true }) > at({}), "ngoái nhìn sẵn mà mời vẫn khó y như người đi thẳng");
   assert.ok(at({ warmth: 5 }) > at({}), "nói tử tế trước rồi mời mà không hơn gì");
   assert.ok(at({ tone: "AM" }) > at({ tone: "THANG" }), "mời ngọt không hơn mời cộc");
-  // gắt / lạnh không phải một lời mời
   for (const tone of ["GAT", "LANH", "IM", "CHUI"]) assert.equal(at({ tone }), 0, `giọng ${tone}`);
-  // hàng chờ ăn mạnh nhất, và hết chỗ thì không còn chuyện mời
   assert.ok(at({ ahead: 1 }) < at({ ahead: 0 }));
   assert.equal(at({ ahead: 6 }), 0, "hết chỗ đứng mà vẫn mời được người ta vô");
   assert.equal(at({ soldOut: true }), 0, "mời người ta vô rồi nói hết bánh");
-  // tính cách: người xuề xoà dễ ghé hơn người kỹ tính
   assert.ok(at({ person: { soi: 0.1, deTha: 0.9, thanThien: 0.9 } })
     > at({ person: { soi: 0.9, deTha: 0.1, thanThien: 0.1 } }));
 });
@@ -487,7 +463,6 @@ test("A-5 vết `BROKEN_PROMISE` phai chậm hơn và đọng lại cao hơn m�
   for (const k of ["RUDE_TO_THEM", "ORDER_DEFECT", "BURNT_OR_COLD", "MADE_THEM_WAIT"] as const) {
     assert.ok(bp.floor >= DECAY[k].floor, `BROKEN_PROMISE đọng lại ít hơn ${k}`);
   }
-  // và phải chuộc được — bằng VIỆC LÀM, không bằng lời
   assert.ok(REDEEM.BROKEN_PROMISE, "không có đường chuộc lời hứa gãy");
   assert.deepEqual(REDEEM.BROKEN_PROMISE!.requireKinds, ["FREE_EXTRA", "CARED_FOR_THEM"]);
 });
@@ -504,7 +479,6 @@ test("E-1 mở bảng rồi Esc mà CHƯA nói câu nào: cuộc đó còn nguy�
   const used: string[] = [];
   const s = new TalkSession(t, "BA_BAY");
   assert.equal(s.done, false);
-  // Esc = chưa `choose()` lần nào → không có gì để ghi vào `talksDone`
   assert.deepEqual(s.picked, [], "chưa bấm gì mà đã tính là đã nói");
   assert.ok(eligible(TALKS, ctx({ npcId: "BA_BAY", usedSeason: used }), "NPC").some((x) => x.id === t.id));
 });
@@ -514,7 +488,6 @@ test("E-2 chọn MỘT câu rồi Esc: cuộc đó tính là đã nghe, không n
   const s = new TalkSession(t, "BA_BAY");
   s.choose(0, { flags: {} });
   assert.equal(s.picked.length, 1, "đã chọn mà không ghi lại");
-  // Service gọi `markTalkUsed` đúng ở nhịp này → mô phỏng bằng usedSeason
   assert.ok(!eligible(TALKS, ctx({ npcId: "BA_BAY", usedSeason: [t.id] }), "NPC").some((x) => x.id === t.id));
 });
 
@@ -569,7 +542,7 @@ test("E-4 trên Service THẬT: F → Esc → F lại vẫn mở được bảng
   assert.ok(first, "bấm F lần đầu không mở được bảng");
   assert.ok(first!.options.length >= 2, "bảng mở mà không có lựa chọn nào");
 
-  svc.closeTalk();                                  // Esc, chưa chọn câu nào
+  svc.closeTalk();
   assert.equal(svc.talkOpen, false);
 
   const again = svc.openTalk();
@@ -582,10 +555,10 @@ test("E-4 trên Service THẬT: F → Esc → F lại vẫn mở được bảng
 test("P-1 `patienceLeft` đo theo mốc BỎ ĐI, không theo mốc MADE_THEM_WAIT", () => {
   const c = mkCustomer("x");
   assert.equal(c.patienceLeft, 1, "chưa chờ giây nào mà vòng đã vơi");
-  c.waitSec = c.waitT;                               // đúng mốc MADE_THEM_WAIT
+  c.waitSec = c.waitT;
   assert.ok(c.patienceLeft > 0,
     "tới mốc MADE_THEM_WAIT là vòng cạn sạch — mà người ta còn đứng thêm 60% nữa");
-  c.waitSec = c.waitT * 1.6;                         // đúng mốc bỏ đi
+  c.waitSec = c.waitT * 1.6;
   assert.equal(c.patienceLeft, 0, "hết vòng mà chưa phải lúc bỏ đi");
   c.waitSec = c.waitT * 99;
   assert.equal(c.patienceLeft, 0, "vòng âm");
@@ -597,7 +570,6 @@ test("P-2 `soothe` lấy lại phần ĐÃ chờ, không bao giờ âm, và luô
   c.soothe(25);
   assert.ok(c.waitSec < 20 && c.waitSec > 0, `dỗ xong còn ${c.waitSec}`);
 
-  // dỗ người vừa tới thì gần như vô nghĩa — đó là chủ ý
   const fresh = mkCustomer("y");
   fresh.waitSec = 1;
   fresh.soothe(30);
@@ -645,7 +617,6 @@ test("M-2 mọi `mood` đều có thật trong bảng mặt, bảng dáng và b�
   for (const m of known) {
     const f = MOOD_FACE[m];
     assert.equal(f.length, 3, `${m}: mặt không đủ ba lớp`);
-    // `entities/face.ts` chỉ vẽ 6 biến thể mỗi lớp — số 6 là một ô vuông trắng.
     for (const v of f) assert.ok(Number.isInteger(v) && v >= 0 && v <= 5, `${m}: lớp mặt ${v} ngoài 0–5`);
   }
   const used = new Set<string>();
@@ -669,7 +640,6 @@ test("M-3 cảm xúc KHỚP với hệ quả: chọc người ta mà họ cườ
       if ((o.anger ?? 0) >= 25) {
         assert.ok(!warm.has(o.mood), `${t.id}: "${o.say}" chọc giận mà mặt "${MOOD_LABEL[o.mood]}"`);
       }
-      // Dỗ người ta xong mà mặt họ đanh lại thì cái `calm` kia không có nghĩa gì.
       if (o.calm) assert.ok(!MOOD_NEGATIVE.has(o.mood) || o.mood === "MET",
         `${t.id}: "${o.say}" dỗ mà mặt "${MOOD_LABEL[o.mood]}"`);
       if (o.mem?.kind === "RUDE_TO_THEM" && (o.mem.intensity ?? 0) >= 60) {
@@ -734,7 +704,6 @@ test("V-2 câu nào là ĐƠN HÀNG / YÊU CẦU của khách thì người chơ
     assert.equal(t.source, "NPC_ONLY",
       `${t.id}: opener là một đơn hàng ("${t.opener}") mà người chơi gợi ra được`);
   }
-  // và cái cổng phải THẬT SỰ chặn, không chỉ là một chữ trong JSON
   const nham = byId("walkin.nhamquan");
   assert.equal(okSource(nham, "PLAYER"), false, "người chơi vẫn moi được câu nhầm quán ra");
   assert.equal(okSource(nham, "NPC"), true, "chính khách cũng không nói được câu của mình");
@@ -755,12 +724,10 @@ test("V-4 tầng dùng chung KHÔNG BAO GIỜ cạn — đây là chỗ chữa '
     assert.equal(t.source, "PLAYER_ONLY", `${t.id}: tầng dùng chung phải là đường của NGƯỜI CHƠI`);
     assert.notEqual(t.depth, "FULL", `${t.id}: tầng dùng chung không được tiêu vào trần cuộc sâu`);
   }
-  // đã nghe hết cả mùa rồi thì vẫn còn: chỉ `usedToday` theo chủ đề mới chặn được
   const allIds = TALKS.map((t) => t.id);
   const left = eligible(TALKS, ctx({ npcId: "BA_BAY", usedSeason: allIds }), "PLAYER");
   assert.ok(left.length >= 6, "nghe hết một mùa là hết cả cách chào một người");
   assert.ok(left.every(isSharedTalk));
-  // mà chủ đề đã đụng hôm nay thì nghỉ tới mai — không phải một cái máy phát lại
   const topics = shared.map((t) => t.topic);
   assert.equal(eligible(TALKS, ctx({ npcId: "BA_BAY", usedSeason: allIds, usedToday: topics }), "PLAYER").length, 0);
 });
@@ -804,7 +771,6 @@ test("V-7 cắt xuống 3 dòng KHÔNG được cắt mất đường từ chố
   assert.ok(out.some((o) => exits.has(o.tone)), "cắt mất dòng lạnh duy nhất");
   assert.equal(out[out.length - 1].say, "d", "đường ra phải nằm ở chỗ cuối");
 
-  // và trên NỘI DUNG THẬT: mọi nhịp đầu đã qua `L-3` thì sau khi cắt vẫn phải còn đường ra
   for (const t of TALKS) {
     const shown = visibleOptions(t.tree, { flags: {} });
     assert.ok(shown.some((o) => exits.has(o.tone)),
@@ -827,13 +793,11 @@ test("V-8 BỐN LOẠI hội thoại, bốn bộ luật — mời khách không 
     assert.ok((byKind.get(k) ?? []).length > 0, `không có cuộc nào loại ${k}`);
   }
 
-  // MỜI: không trí nhớ, không tiêu trần ngày — người đi ngang không có tên để mà nhớ
   for (const t of byKind.get("MOI")!) {
     assert.equal(t.npc, "QUA_DUONG", `${t.id}: MOI mà không phải người đi ngang`);
     assert.equal(touchesRelationship(t), false, `${t.id}: lời mời mà ghi vào trí nhớ`);
     assert.equal(countsAgainstDailyCap(t), false, `${t.id}: mời một người lạ mà ăn vào trần ngày`);
   }
-  // CHUYỆN: chỉ 12 người CÓ TÊN, và chỉ chỗ này mới tiêu trần ngày
   const named = new Set(NPCS.map((n) => n.id));
   for (const t of byKind.get("CHUYEN")!) {
     assert.ok(named.has(t.npc), `${t.id}: CHUYEN mà npc "${t.npc}" không có tên`);

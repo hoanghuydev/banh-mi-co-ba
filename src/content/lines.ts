@@ -20,7 +20,15 @@ const SILENCE_BAG = 20, SILENCE_TICKETS = 7;
  */
 export type LinePool = "promiseKept" | "promiseBroken" | "promiseWrong"
   /** P2-06 §2.11 — hai người đi ngang chào nhau giữa đường. Nền, không mang tin gì. */
-  | "chaoNhau" | "chaoDap";
+  | "chaoNhau" | "chaoDap"
+  /**
+   * Ba túi của khoảnh khắc GIAO BÁNH (`sim/service.ts: serveDish`). Hai túi sau là VẾ KẸP
+   * quanh câu rule DB chứ không phải câu đứng một mình — xem `_note` của từng túi.
+   *   extraOffer   cô Ba chìa ổ có đồ cho thêm
+   *   thanksExtra  khách cảm ơn chuyện cho thêm, TRƯỚC khi nói ổ trật chỗ nào
+   *   crustTail    "với lại ổ chưa giòn / cháy cạnh" nối vào cuối câu chê món
+   */
+  | "extraOffer" | "thanksExtra" | "crustTail";
 
 export type PoolDef = { id: LinePool; tier: 1 | 2 | 3; vars: string[]; variants: string[]; en?: string[] };
 
@@ -50,7 +58,13 @@ export class Barks {
     if (!bag) this.live.set(id, (bag = new ShuffleBag(def.variants.length, this.bags[id])));
     const i = bag.draw(this.rng, this.day);
     this.bags[id] = bag.toJSON();
-    return def.variants[i].replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? "");
+    /*
+     * Chỗ trống KHÔNG có trong `vars` được GIỮ NGUYÊN, không xoá. Túi `extraOffer` là lời của cô
+     * Ba: nó mang `{me}` / `{call}`, và chỉ `Service.fill` mới biết điền ai vào đó (và viết hoa
+     * nếu đứng đầu câu). Xoá sạch ở đây thì câu ra màn hình thành " ơi,  bỏ thêm ớt nghen."
+     * Mọi túi khác đều được truyền đủ biến nên không đổi gì với chúng.
+     */
+    return def.variants[i].replace(/\{(\w+)\}/g, (m, k) => vars[k] ?? m);
   }
 
   tierOf(pool: LinePool) {

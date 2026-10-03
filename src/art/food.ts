@@ -12,7 +12,6 @@ import { shade, type Pen } from "./canvas";
  */
 export const FOOD = {
   icon: (id: Ingredient) => `ing_${id}`,
-  /** Bản to của icon, dùng cho lớp nhân nằm trong ổ — nướng riêng cho nét, không phóng hình nhỏ. */
   big: (id: Ingredient) => `ing_${id}_big`,
   loaf: "loaf_open",
   ICON: 36,
@@ -25,9 +24,7 @@ export const FOOD = {
   //    ngay lần đầu ai đó đổi cỡ ổ bánh.
   LOAF_W: 300,
   LOAF_H: 136,
-  /** Bề ngang phần RUỘT — nhân xếp trong khoảng này, quá thì tràn ra vỏ. */
   CRUMB_W: 214,
-  /** Tâm lòng máng nằm dưới tâm ảnh bao nhiêu px (vì nắp chiếm phần trên). */
   CRUMB_DY: 16,
   /** Nắp lật ra sau ló lên trên mép máng bao nhiêu px. Trần là ~38: cao hơn nữa
    *  thì lưng nắp bị khung texture `LOAF_H` xén mất. */

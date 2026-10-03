@@ -1,16 +1,10 @@
 /**
- * EventBus — P0-01 §2.5. Xương sống nối các hệ.
+ * EventBus — xương sống nối các hệ. Năm nguyên tắc: ĐỒNG BỘ (`emit()` gọi listener ngay — sự kiện
+ * phát trong frame phải xử lý xong trong frame) · TYPED, sai payload là lỗi biên dịch · một hệ
+ * không import hệ khác · GHI LẠI ĐƯỢC (ring buffer 2.000 mục, `trace.dump()` ra JSONL) · độ sâu
+ * emit lồng nhau > 8 thì throw.
  *
- * Năm nguyên tắc:
- *  1. ĐỒNG BỘ — `emit()` gọi listener ngay, không promise, không microtask. Sự kiện
- *     phát trong frame phải xử lý xong trong frame, nếu không thứ tự frame vô nghĩa.
- *  2. TYPED — một `EventMap`, sai payload là lỗi biên dịch.
- *  3. Một hệ không import hệ khác — `craft` không biết perception tồn tại, nó phát `stim:emitted`.
- *  4. GHI LẠI ĐƯỢC — ring buffer 2.000 mục, `trace.dump()` ra JSONL. Cũng là thứ
- *     test tất định so từng byte (P0-02 §6).
- *  5. Chống vòng lặp — độ sâu emit lồng nhau > 8 thì throw.
- *
- * Khi thêm hệ mới: THÊM EVENT VÀO ĐÂY TRƯỚC, viết code sau.
+ * ⚠️ Thêm hệ mới: THÊM EVENT VÀO ĐÂY TRƯỚC, viết code sau.
  */
 import type {
   A11yKey, AttentionTool, AutosaveReason, CraftStep, CustomerSlot, DaySummary, Defect,
@@ -81,16 +75,10 @@ export type EventMap = {
   "memory:decayed":           { npcId: NpcId; memoryId: string; from: number; to: number };
   "relationship:tierChanged": { npcId: NpcId; from: RelTier; to: RelTier };
   /**
-   * Quan hệ với một người vừa NHÍCH vì việc người chơi vừa làm — để HUD nói cho họ biết
-   * việc đó có ăn thua gì không (xem `Hud.toast`).
+   * ⚠️ T3 nguyên vẹn: payload KHÔNG mang con số, KHÔNG mang tổng, và không ai được suy ra
+   * `relationPoints` từ nó — chỉ HƯỚNG, ĐẬM/NHẠT, và một mẩu lý do bằng chữ.
    *
-   * T3 (CANON §T3 / L2) vẫn nguyên vẹn: payload KHÔNG mang con số, KHÔNG mang tổng, và
-   * không ai được suy ra `relationPoints` từ nó. Chỉ có HƯỚNG (`dir`), ĐẬM/NHẠT
-   * (`strength`) và một mẩu lý do bằng chữ (`note`, kiểu "cho thêm đồ chua") — đúng ba
-   * thứ người chơi cần để học luật chơi, không hơn.
-   *
-   * Phát MỘT lần cho MỘT khoảnh khắc người chơi nhận ra được (đưa xong một ổ, chọn xong
-   * một câu nói), không phát cho từng lần `record()` bên trong.
+   * Phát MỘT lần cho MỘT khoảnh khắc người chơi nhận ra được, không phát cho từng `record()`.
    */
   "relationship:moved":       { npcId: NpcId; dir: "UP" | "DOWN"; strength: "NHE" | "RO"; note: string };
   /** Khách nhắc ở quầy một chuyện NGHE KỂ — luôn kèm tên nguồn (P2-04 RB3). P2-05 ghi nhật ký. */

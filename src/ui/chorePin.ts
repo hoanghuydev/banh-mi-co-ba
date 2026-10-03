@@ -1,26 +1,13 @@
 /**
- * Đặt dấu "việc cần làm" lên màn hình — TOÁN THUẦN, không đụng Phaser.
+ * Đặt dấu "việc cần làm" lên màn hình — TOÁN THUẦN, không đụng Phaser. Tách khỏi scene vì chỗ này
+ * đã sai hai lần theo hai kiểu, và cả hai lần chỉ lòi ra khi chơi thật.
  *
- * Tách ra khỏi scene vì chính chỗ này đã sai hai lần liên tiếp theo hai kiểu khác nhau,
- * mà cả hai lần đều chỉ lòi ra khi chơi thật: trong scene thì nó chỉ chạy được bằng mắt,
- * còn ở đây thì quét được cả ngàn vị trí trong một cái test.
+ * Ba luật: việc CÒN TRONG KHUNG → dấu ĐÚNG TRÊN nó, chỉ kẹp cho khỏi bị cắt, và kẹp TỪNG TRỤC
+ * RIÊNG · việc RA NGOÀI KHUNG → vẫn đúng phép kẹp ấy, nên dấu ở mép ĐÚNG hàng ĐÚNG cột · không có
+ * mũi tên.
  *
- * ── Luật, đúng ba dòng ───────────────────────────────────────────────────────
- *  1. Cái việc CÒN TRONG KHUNG  → dấu nằm ĐÚNG TRÊN cái việc, chỉ kẹp vào trong lề cho
- *     khỏi bị cắt và khỏi chui sau dải icon ở đỉnh màn hình. Kẹp TỪNG TRỤC RIÊNG: trục
- *     nào còn chỗ thì tuyệt đối không nhúc nhích.
- *  2. Cái việc RA NGOÀI KHUNG → vẫn đúng một phép kẹp ấy, nên dấu nằm ở mép, ĐÚNG hàng
- *     và ĐÚNG cột thật của cái việc. Trạm ở hướng nào thì dấu ở đúng phía ấy; đi một
- *     bước thì dấu bò theo một bước, không bao giờ nhảy.
- *  3. Không có mũi tên. Cái cần nói là "có việc ở đằng kia", mà một cái chấm than ghim
- *     lệch hẳn về một phía đã nói đủ.
- *
- * MỘT phép kẹp cho cả hai trường hợp — đó là chỗ sửa lần này. Bản trước dùng hai phép
- * khác nhau (kẹp khi còn thấy, chiếu theo tia khi đã khuất) và chúng lệch nhau tới 90 px
- * ngay tại chỗ giao, nặng nhất ở mép trên, tức đúng chỗ cái lò đứng.
- *
- * `pinned` chỉ còn là một cái NHÃN ("việc này đang ngoài khung") để chỗ gọi vẽ nhỏ lại,
- * không còn tham gia vào việc tính toạ độ nữa.
+ * ⚠️ MỘT phép kẹp cho cả hai trường hợp. Hai phép khác nhau (kẹp khi còn thấy, chiếu theo tia khi
+ * đã khuất) lệch nhau tới 90 px ngay tại chỗ giao, nặng nhất ở mép trên — đúng chỗ cái lò đứng.
  */
 
 /** Khung nhìn, toạ độ thế giới. Trùng khớp `Phaser.Geom.Rectangle` ở mấy field này. */
@@ -56,17 +43,11 @@ export function chorePin(anchorX: number, anchorY: number, v: ViewRect, o: PinOp
     return { x: (v.left + v.right) / 2, y: (v.top + v.bottom) / 2, pinned: true };
   }
 
-  // KẸP TỪNG TRỤC, một luật duy nhất cho cả hai trường hợp.
+  // KẸP TỪNG TRỤC, một luật duy nhất cho cả hai trường hợp — xem khối đầu file.
   //
-  // Bản trước có hai nhánh: còn thấy thì kẹp từng trục, khuất thì chiếu dọc tia nối tâm
-  // vùng vẽ tới cái việc. Hai phép đó KHÔNG khớp nhau ở chỗ giao: đo được tới 90 px
-  // nhảy trong một frame, và lệch nhất ở MÉP TRÊN (lề trên 58 px so với 19 px ba mép
-  // kia) — đúng nơi cái lò đứng, vì hàng trạm nằm ở hàng trên cùng bản đồ. Người chơi
-  // thấy dấu chấm than trượt ngang khỏi cái lò đúng lúc cái lò chạm mép.
-  //
-  // Chỉ kẹp thì liên tục theo đúng định nghĩa, và KHÔNG mất gì: cái việc nằm lệch trái
-  // và hơi cao thì dấu ghim ở mép trái, ĐÚNG ĐỘ CAO THẬT của nó — nói "đằng kia" rõ hơn
-  // hẳn phép chiếu, vì phép chiếu kéo mọi thứ dồn về phía đường tâm.
+  // Chỉ kẹp thì liên tục theo đúng định nghĩa, và không mất gì: việc nằm lệch trái và hơi cao thì
+  // dấu ghim ở mép trái ĐÚNG ĐỘ CAO THẬT, nói "đằng kia" rõ hơn hẳn phép chiếu (phép chiếu kéo mọi
+  // thứ dồn về đường tâm).
   const x = clamp(anchorX, x0, x1);
   const y = clamp(anchorY, y0, y1);
   // `pinned` đo trên KHUNG THẬT, không trừ lề — nó chỉ để chỗ gọi vẽ nhỏ lại, phân biệt

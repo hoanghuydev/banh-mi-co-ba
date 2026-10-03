@@ -60,26 +60,19 @@ export const CUES: Record<CueId, Cue> = {
   },
 };
 
-/** Các nấc âm lượng ở Cài đặt. 55 là mặc định của bus `nhac` (P5-03 §2.1). */
 export const MUSIC_STEPS = [0, 25, 55, 80, 100] as const;
 
-/** Trần của bus `nhac`: −6 dB (P5-03 §2.1) — nhạc không bao giờ to bằng giọng người. */
 const BUS_CEILING = 0.5;
 
-/** Mức hạ khi mở menu tạm dừng: −12 dB (P5-03 §6.5 #8). */
 const DUCK_GAIN = 0.25;
 
-/** Mức hạ khi có giọng NPC đang nói: −14 dB (P5-03 §2.3). */
 const VOICE_DUCK_GAIN = 0.2;
 
 type Track = {
   sound: Phaser.Sound.BaseSound & { setVolume(v: number): unknown };
-  /** Âm lượng tương đối 0..1 của riêng track này, trước khi nhân với bus. */
   level: number;
   target: number;
-  /** Đơn vị level trên mỗi giây. 0 = không fade. */
   rate: number;
-  /** Fade về 0 xong thì dừng hẳn và bỏ. */
   stopAtZero: boolean;
 };
 
@@ -88,21 +81,17 @@ class MusicDirector {
   private tracks = new Map<CueId, Track>();
   private currentId: CueId | null = null;
 
-  /** 0..1 từ Cài đặt. */
   private volume = 0.55;
-  /** Hệ số ducking khi mở menu (P5-03 §6.5 #8). */
   private duckGain = 1;
   /** Hệ số ducking khi có giọng người (P5-03 §2.3). Tách khỏi `duckGain` vì hai
    *  cái chồng được lên nhau: mở pause ĐÚNG LÚC khách đang nói thì hạ cả hai. */
   private voiceDuckGain = 1;
-  /** Còn bao nhiêu giây phải im hẳn (P5-03 §6.5). */
   private hushLeft = 0;
 
   private loading = new Set<CueId>();
 
   // ────────────────────────────────────────────────────────────────── vòng đời
 
-  /** Gọi một lần ở `main.ts`. Từ đây nhạc sống độc lập với mọi scene. */
   attach(game: Phaser.Game) {
     if (this.game) return;
     this.game = game;
@@ -129,7 +118,7 @@ class MusicDirector {
 
     const cue = CUES[id];
     if (!scene.cache.audio.exists(cue.key)) {
-      this.currentId = id;                        // nhớ ý định trước, phát khi tải xong
+      this.currentId = id;
       this.load(scene, id, () => { if (this.currentId === id) this.start(scene, id, fadeMs); });
       this.fadeOthers(id, fadeMs);
       return;
@@ -140,7 +129,6 @@ class MusicDirector {
     this.fadeOthers(id, fadeMs);
   }
 
-  /** Dừng mọi thứ. `fadeMs = 0` là cắt ngay. */
   stop(fadeMs = 900) {
     this.currentId = null;
     this.tracks.forEach((t) => this.fadeTo(t, 0, fadeMs, true));
@@ -176,7 +164,6 @@ class MusicDirector {
     this.refreshGains();
   }
 
-  /** Đang có nhạc không — dùng để đo tỉ lệ 52–65% của P5-03 §6.5. */
   get playing() {
     return this.hushLeft <= 0 && this.currentId !== null && this.volume > 0;
   }
@@ -198,7 +185,6 @@ class MusicDirector {
       // scene có thể đã tắt trong lúc tải; `done` tự kiểm tra lại ý định hiện tại
       if (scene.cache.audio.exists(cue.key)) done();
     });
-    // Không có file cũng không được làm sập game — chỉ là không có nhạc.
     scene.load.once(Phaser.Loader.Events.FILE_LOAD_ERROR, () => this.loading.delete(id));
     if (!scene.load.isLoading()) scene.load.start();
   }
@@ -234,7 +220,6 @@ class MusicDirector {
     }
   }
 
-  /** Âm lượng thật = level của track × cài đặt × trần bus × 2 tầng ducking × im lặng. */
   private applyGain(t: Track) {
     const hushed = this.hushLeft > 0 ? 0 : 1;
     t.sound.setVolume(t.level * this.volume * BUS_CEILING * this.duckGain * this.voiceDuckGain * hushed);
@@ -269,5 +254,4 @@ class MusicDirector {
   }
 }
 
-/** Một dàn nhạc cho cả game. */
 export const music = new MusicDirector();

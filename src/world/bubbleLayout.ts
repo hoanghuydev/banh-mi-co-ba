@@ -1,10 +1,7 @@
 /**
- * BỐ CỤC BONG BÓNG THOẠI — toán thuần, KHÔNG Phaser.
- *
- * Tách khỏi `entities/CustomerActor.ts` vì một lý do rất cụ thể: cái bug ở đây là bug
- * THỨ TỰ (né chồng lấn trước hay kẹp vào mép khung nhìn trước), và thứ tự thì kiểm bằng
- * số chứ không cần dựng một cảnh Phaser. File kia `import Phaser`, nên test headless
- * (`npm test`) không nạp nổi nó.
+ * BỐ CỤC BONG BÓNG THOẠI — toán thuần, KHÔNG Phaser. Tách khỏi `CustomerActor` vì bug ở đây là bug
+ * THỨ TỰ (né chồng lấn trước hay kẹp mép khung trước), kiểm bằng số được; file kia `import Phaser`
+ * nên test headless không nạp nổi.
  */
 
 export type Box = { x0: number; y0: number; x1: number; y1: number };
@@ -18,32 +15,19 @@ export const BUBBLE_GAP = 6;
 export const BUBBLE_EDGE = 6;
 
 /**
- * ƯU ÁI CHỖ ĐANG ĐỨNG — hệ số nhân vào điểm xấu của chỗ bong bóng đang ở.
+ * ƯU ÁI CHỖ ĐANG ĐỨNG — `keepOut` là ĐỘNG (trạm người chơi đứng cạnh, lò khi có ổ, thớt khi còn ổ
+ * dở), nên mỗi lần nó đổi là vòng thử chọn ra chỗ sạch KHÁC và bong bóng nhảy ngay frame kế.
  *
- * Vì sao cần: `keepOut` là ĐỘNG. Nó gồm "trạm người chơi đang đứng cạnh", mà người chơi
- * thì bước dọc quầy; gồm cái lò "khi trong lò có ổ" và cái thớt "khi còn ổ dở" — hai
- * thứ bật tắt giữa chừng một câu nói. Mỗi lần danh sách đó đổi, vòng thử ở dưới lại
- * chọn ra một chỗ sạch KHÁC và bong bóng NHẢY sang đó ngay trong frame kế. Đứng ở quầy
- * nói chuyện thì nó nhảy liên tục — người chơi báo "hội thoại bay lung tung hết".
- *
- * Nên chỗ cũ được tính rẻ đi: nó chỉ thua khi chỗ mới tốt hơn HẲN, không phải khi tốt
- * hơn một chút. Cộng với cú nội suy bên `CustomerActor`, bong bóng đứng yên gần như
- * suốt, và lúc phải dời thì nó TRƯỢT sang chứ không nhảy.
- *
- * 0,45 chứ không 0: bằng 0 là dính cứng vĩnh viễn — che mất cái vòng độ giòn lúc ổ sắp
- * cháy thì không chỗ nào gỡ được nữa, mà đó đúng là thứ `keepOut` sinh ra để tránh.
+ * Chỗ cũ tính rẻ đi nên chỉ thua khi chỗ mới tốt hơn HẲN. ⚠️ 0,45 chứ không 0 — bằng 0 là dính
+ * cứng vĩnh viễn, che mất vòng độ giòn lúc ổ sắp cháy thì không chỗ nào gỡ được.
  */
 export const BUBBLE_STICKY = 0.45;
 
 /**
- * CHỌN CHỖ ĐẶT MỘT BONG BÓNG — hàm THUẦN, để test được mà không cần Phaser.
+ * Hàm THUẦN, để test được mà không cần Phaser.
  *
- * Thứ tự là chỗ bản cũ sai: nó né chồng lấn xong MỚI kẹp vào mép khung nhìn, nên ở quầy
- * — nơi bong bóng hay chạm mép trên — cú kẹp đẩy ngược cái vừa được nâng lên xuống lại,
- * đúng vào cái nó vừa tránh. Ở đây mỗi chỗ thử đều KẸP TRƯỚC rồi mới tính điểm xấu.
- *
- * Trả về tâm bong bóng. Không chỗ nào sạch thì trả chỗ xấu ÍT NHẤT — thà lệch một chút
- * còn hơn đè khít lên nhau.
+ * ⚠️ Mỗi chỗ thử đều KẸP TRƯỚC rồi mới tính điểm xấu: né chồng lấn xong mới kẹp thì cú kẹp đẩy
+ * ngược cái vừa được nâng lên xuống lại, đúng vào cái nó vừa tránh.
  */
 export function pickBubbleSpot(
   centre: { x: number; y: number },
@@ -63,14 +47,9 @@ export function pickBubbleSpot(
   /*
    * Đúng chỗ · cao một nấc · cao hai nấc · THẤP một nấc · lệch phải · lệch trái.
    *
-   * Nấc XUỐNG phải có, và đây đúng là chỗ bản cũ không có đường ra: lúc bong bóng đã
-   * chạm mép TRÊN khung nhìn thì "nâng lên" không còn nghĩa gì — mọi nấc cao đều bị kẹp
-   * về cùng một chỗ, và nó nằm đè lên cái bong bóng nó đang tránh. Ở quầy thì chạm mép
-   * trên là chuyện thường. Xuống dưới che mất thân người một lúc, nhưng thà vậy còn hơn
-   * hai khối chữ chồng khít lên nhau.
-   *
-   * Lệch NGANG để cuối: nó làm bong bóng rời khỏi cột của chủ nó rõ hơn là lệch dọc, mà
-   * "ai vừa nói câu đó" là thông tin không được mất.
+   * ⚠️ Nấc XUỐNG phải có: chạm mép TRÊN khung nhìn thì mọi nấc cao đều bị kẹp về cùng một chỗ, và
+   * nó nằm đè lên cái bong bóng nó đang tránh. Lệch NGANG để cuối — nó làm bong bóng rời khỏi cột
+   * của chủ nó rõ hơn lệch dọc.
    */
   const tries: { dx: number; dy: number; sticky?: boolean }[] = [
     { dx: 0, dy: 0 }, { dx: 0, dy: -lift }, { dx: 0, dy: -lift * 2 }, { dx: 0, dy: lift },
@@ -78,12 +57,8 @@ export function pickBubbleSpot(
     { dx: 0, dy: lift * 2 },
   ];
   /*
-   * Chỗ cũ xếp ĐẦU HÀNG, trước cả "đúng chỗ".
-   *
-   * Thứ tự ở đây có nghĩa: vòng lặp `break` ngay khi gặp chỗ đầu tiên sạch hoàn toàn.
-   * Nên để chỗ cũ lên đầu là nói "còn sạch thì đừng đụng vào" — chính là cái chặn đứng
-   * việc bong bóng nhảy mỗi lần `keepOut` đổi. Bỏ qua khi chỗ cũ TRÙNG "đúng chỗ"
-   * (lệch 0,0): thêm một bản sao vào đầu hàng thì chỉ tốn một vòng, không đổi kết quả.
+   * Chỗ cũ xếp ĐẦU HÀNG, trước cả "đúng chỗ": vòng lặp `break` ngay khi gặp chỗ sạch đầu tiên, nên
+   * để nó lên đầu là nói "còn sạch thì đừng đụng vào".
    */
   if (prev && (prev.dx !== 0 || prev.dy !== 0)) tries.unshift({ dx: prev.dx, dy: prev.dy, sticky: true });
   let best = { x: centre.x, y: centre.y, bad: Infinity };

@@ -60,7 +60,7 @@ export const labelOf = (id: Ingredient) => BY_ID.get(id)!.label;
 export const CAPACITY = 16;
 
 /** Mấy thứ cho thêm được mà khách không phật lòng — nguồn của `FREE_EXTRA`. */
-const NICETY: ReadonlySet<Ingredient> = new Set<Ingredient>(["dochua", "ot", "tuongot", "hanhngo"]);
+export const NICETY: ReadonlySet<Ingredient> = new Set<Ingredient>(["dochua", "ot", "tuongot", "hanhngo"]);
 
 const NHAN = INGREDIENTS.filter((i) => i.kind === "nhan").map((i) => i.id);
 /** "Cho một ổ đầy đủ" ở Sài Gòn = thịt nguội + chả lụa + pate (P1-03 §2.2). */
@@ -330,6 +330,19 @@ export function generosityOf(spec: OrderSpec, dish: readonly Ingredient[]) {
     value += Math.max(0, (got.get(id) ?? 0) - want) * PORTION_VALUE[id];
   }
   return value;
+}
+
+/**
+ * Mấy thứ "dễ thương" người chơi bỏ DƯ so với đơn — theo ĐÚNG thứ tự xếp lớp của `INGREDIENTS`.
+ * Cùng một phép đếm với `generosityOf` (chỉ nhóm `NICETY`), chỉ khác là ở đây cần TÊN để nói
+ * thành lời: "con cho thêm đồ chua với ớt cho bà nè". Bỏ dư một miếng pate không nằm trong
+ * danh sách này — cái đó là `RATIO_OVER`, một lỗi, không phải một tấm lòng.
+ */
+export function extraPortions(spec: OrderSpec, dish: readonly Ingredient[]): Ingredient[] {
+  const got = portionsOf(dish);
+  return INGREDIENTS
+    .filter((i) => NICETY.has(i.id) && (got.get(i.id) ?? 0) > (spec.levels[i.id] ?? 0))
+    .map((i) => i.id);
 }
 
 /** Ổ bánh ĐÚNG đơn — cái người chơi phải làm ra khi nghe câu gọi món. Dùng cho test và bot. */

@@ -19,7 +19,6 @@ import { LATE_LINE, SUPPLIERS, afterMarket, dawnCheck, discounted, state, type S
 
 const DAWN = "dawnDay";
 
-/** Mỗi ổ dùng trung bình bao nhiêu phần mỗi thứ (đo từ phân bố đơn hàng của `order.ts`). */
 export const USE_PER_LOAF: Partial<Record<GoodId, number>> = {
   BANH: 1, PATE_NHA: 1.0, THIT_NGUOI: 0.9, CHA_LUA: 0.9, XIU_MAI: 0.6, TRUNG: 0.6,
   RAU: 3.4, OT: 1.1, SOT: 1.1, DO_CHUA_NL: 1.7,
@@ -39,7 +38,6 @@ export function dawn(w: SaveFile) {
   w.econ.today = newToday(day);
   const wasted = expire(w.inventory, day);
   w.econ.today.wasted = wasted.map((x) => `${fmtUnits(x.units)} ${GOODS[x.good].unit} ${GOODS[x.good].label}`);
-  // Ngày 1: cô Ba đã đi chợ từ bốn giờ sáng (và tặng một hũ đồ chua ngâm từ ba bữa trước)
   if (day === 1 && !w.flags.starterBasket) {
     w.flags.starterBasket = true;
     const b = basketFor(w.inventory, 20, 1);
@@ -50,9 +48,7 @@ export function dawn(w: SaveFile) {
   // P3-02 §2.6.1: nợ người bán quá hạn → một lần trễ, trần ×0,75 vĩnh viễn — họ NÓI một câu
   w.suppliers ??= {};
   w.econ.morningLines = dawnCheck(w.suppliers, day).map((id) => `${SUPPLIERS[id].name}: "${LATE_LINE[id] ?? "Con nhớ tiền bữa trước nghen."}"`);
-  // P4 — cô Ba (và người trong hẻm) nói một câu lúc đi chợ: không popup, không dấu chấm than
   if (w.story) w.econ.morningLines.push(...morningLines(day, w.story, { hasQr: has(w.equipment, "BANG_QR") }));
-  // P3-05 — hôm nay là ngày dời xe (tờ giấy dán đã đủ ngày)
   const plan = w.econ.movePlan;
   if (plan && plan.moveDay === day) {
     const from = w.econ.stand;
@@ -61,7 +57,6 @@ export function dawn(w: SaveFile) {
     // ngày. Trừ thêm 1 thì nút "mai dời" ra 0 = "dời không báo ai" — và chị Lan mất hẳn.
     const notice = Math.max(0, plan.moveDay - plan.postedDay);
     const r = resolveFollowers(w.saveId, day, from, plan.to, notice, (id) => w.npcs[id]?.tier ?? "ACQUAINTANCE", (id) => !!w.npcs[id]?.gone);
-    // cọc = 3 ngày tiền thuê ở chỗ mới; cọc chỗ cũ chủ cũ trả lại (P3-05 §2.3, CANON §13.1)
     const back = w.econ.deposit ?? 0;
     w.money.cash += back;
     // chỉ ghi nhận số cọc THẬT SỰ đóng được — ghi đủ mà trả thiếu thì lần dời sau hoàn đủ,
@@ -83,14 +78,12 @@ export function dawn(w: SaveFile) {
     }
     w.econ.morningLines.push('Cô Ba: "Xe mà, dời được. Người thì hơi khó."');
   }
-  // tiền lẻ mặc định nếu người chơi không chọn ở chợ (bot / bỏ qua): 100k
   w.econ.float = w.econ.floatLeft = 100_000;
   const rent = morningRent(w.econ, w.money);
   if (rent.lost) w.econ.notices = [...(w.econ.notices ?? []), "LOST_PRIME_STAND"];
   return { wasted, rent };
 }
 
-/** Giỏ đủ làm `loaves` ổ, trừ phần còn trong kho. Pate lấy loại của bà Tám. */
 export function basketFor(inv: InventoryState, loaves: number, day: number, pate: GoodId = "PATE_NHA") {
   const out: Partial<Record<GoodId, number>> = {};
   for (const g of GOOD_IDS) {
@@ -106,7 +99,6 @@ export function basketFor(inv: InventoryState, loaves: number, day: number, pate
   return out;
 }
 
-/** Giá một đơn vị hôm nay, ĐÃ tính mối quen với người bán (đồng). */
 export function unitPriceVnd(g: GoodId, day: number, suppliers?: Record<string, SupplierState>) {
   const id = GOODS[g].seller as SupplierId;
   const p = priceOf(g, day);
@@ -142,11 +134,9 @@ export function noteBasketLoaves(story: StoryState, day: number, loaves: number)
   story.basketLoaves[day] = (story.basketLoaves[day] ?? 0) + loaves;
 }
 
-/** Mua cả giỏ (bot / "mua như hôm qua"). Thiếu tiền thì bớt dần món cuối cho vừa két. */
 export function buyBasket(w: SaveFile, b: Partial<Record<GoodId, number>>) {
   const day = w.progress.dayIndex;
   const basket = { ...b };
-  // bánh mì trước, rồi pate/thịt, rau sau — thiếu tiền thì cắt từ cuối danh sách
   const order: GoodId[] = ["BANH", "PATE_NHA", "PATE_THUONG", "THIT_NGUOI", "CHA_LUA", "RAU", "DO_CHUA_NL", "XIU_MAI", "TRUNG", "OT", "SOT", "DO_CHUA_SAN"];
   while (basketCost(basket, day, w.suppliers) > w.money.cash) {
     const g = [...order].reverse().find((x) => (basket[x] ?? 0) > 0);
@@ -157,7 +147,6 @@ export function buyBasket(w: SaveFile, b: Partial<Record<GoodId, number>>) {
   w.money.cash -= cost;
   w.econ.today.market += cost;
   if (w.story) noteBasketLoaves(w.story, day, basket.BANH ?? 0);
-  // biết mình bị báo giá cao mà vẫn mua ở mối quen
   if (w.story && (basket.PATE_NHA ?? 0) > 0 && quenMat("PATE_NHA", day, w.suppliers)) moment(w.story, "QUEN_MAT_DAT_HANG");
   for (const [g, n] of Object.entries(basket)) if (n) buy(w.inventory, g as GoodId, n, day);
   w.inventory.lastBasket = basket;
@@ -167,13 +156,10 @@ export function buyBasket(w: SaveFile, b: Partial<Record<GoodId, number>>) {
 
 export const fmtUnits = (u: number) => (Math.round(u * 10) / 10).toLocaleString("vi-VN");
 
-/** Vào cảnh tối: trừ chi phí cố định + rút về nhà, ghi dòng sổ cái. Một lần mỗi tối. */
 export function eveningCounting(w: SaveFile) {
   const day = w.progress.dayIndex;
-  // chi phí cố định + tiền "nuôi" đồ nghề mới (gas, điện tủ mát, đá bình trà…) — chạy cả ngày nghỉ
   eveningCount(w.econ, w.money, day, fixedCostVnd(day) + extraDailyVnd(w.equipment ?? newEquipState()));
   const e = w.econ.today, t = w.progress.today;
-  // mọi dòng tiền RA của hôm nay (âm = tiền vô: bán đồ nghề, hốt hụi, lấy lại cọc)
   const cost = e.market + e.rent + e.deposit + e.fixed + e.sendHome + e.obligations
     + e.hui + e.tools + e.debtRepay + e.story;
   const row = { day, revenue: t.revenue, cost, served: t.served, lost: t.lost };
@@ -181,16 +167,13 @@ export function eveningCounting(w: SaveFile) {
   if (i >= 0) w.ledger[i] = row; else w.ledger.push(row);
 }
 
-/** Bot: trả hết khoản bắt buộc đang mở (nếu đủ tiền). Người thật bấm từng nút ở cảnh tối. */
 export function botPayDues(w: SaveFile, medicine = false) {
   const day = w.progress.dayIndex;
   for (const d of duesOpen(w.econ, day)) if (d.mandatory || medicine) pay(w.econ, w.money, d, day);
 }
 
-/** Đi ngủ: khoản quá ân hạn thành fail mềm. */
 export function bedtime(w: SaveFile) {
   const out = processDefaults(w.econ, w.money, w.progress.dayIndex, resellable(w.equipment ?? newEquipState()).length > 0);
-  // bot: phải bán thì bán món rẻ nhất (người thật tự chọn ở chợ sáng mai)
   return out;
 }
 
@@ -229,14 +212,13 @@ export function forcedSell(w: SaveFile, id: EquipId) {
   const v = sellEquip(id, w.equipment, w.money, 0.5 / 0.6);
   if (v > 0) {
     w.money.cash -= v;
-    w.econ.today.tools -= v;                       // bán đồ nghề: tiền vô
-    w.econ.today.obligations += v;                 // …rồi đi thẳng qua tiền học
+    w.econ.today.tools -= v;
+    w.econ.today.obligations += v;
   }
   w.econ.mustSell = false;
   return v;
 }
 
-/** Có dời qua chỗ này được không. Vỡ tiền thuê rồi thì đầu hẻm thành của chú Kiệt — trần là L2. */
 export function canMoveTo(w: SaveFile, to: StandId): string | null {
   const e = w.econ, day = w.progress.dayIndex;
   if (to === e.stand) return "đang đứng đây";
@@ -255,14 +237,12 @@ export function postMove(w: SaveFile, to: StandId, inDays: number) {
   w.econ.movePlan = { to, postedDay: day, moveDay: day + Math.max(1, inDays) };
 }
 
-/** Hỏi dì Năm / hỏi người trong nghề về một chỗ — biết giá thuê, số xe, mái che (không biết khách thật). */
 export function scout(w: SaveFile, s: StandId) {
   if (!w.econ.scouted.includes(s)) w.econ.scouted.push(s);
 }
 
 export { standClosed, STANDS };
 
-/** Tham số chỗ đứng + trời cho Service (P3-01 weather, P3-05 stands). */
 export function standDeps(w: SaveFile) {
   const day = w.progress.dayIndex, s = (w.econ?.stand ?? "L1") as StandId;
   const wx = weatherOf(day);

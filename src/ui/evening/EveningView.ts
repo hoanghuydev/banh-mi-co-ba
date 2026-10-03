@@ -54,7 +54,6 @@ const STYLE = `
 `;
 
 const money = (v: number) => `${Math.round(v).toLocaleString("vi-VN")}₫`;
-/** Dòng sổ ròng: quy ước của `EconToday` là DƯƠNG = tiền RA khỏi két. */
 const signed = (v: number) => `${v < 0 ? "+" : "−"}${money(Math.abs(v))}`;
 
 /**
@@ -85,7 +84,6 @@ export class EveningView {
   private root: HTMLDivElement;
   private deferred = new Set<string>();
   private msg = "";
-  /** Trang phải đang mở: sổ nợ nần hay đồ nghề. */
   private tab: "debts" | "gear" | "stand" = "debts";
   private askSign = false;
 
@@ -131,7 +129,6 @@ export class EveningView {
     if (et.story) row("chuyện trong hẻm", `−${money(et.story)}`);
     if (et.hui) row(et.hui < 0 ? "hốt hụi" : "góp hụi", signed(et.hui));
     if (et.obligations) row("tiền học, tiền thuốc", `−${money(et.obligations)}`);
-    // than/đá: `fixed` chỉ là phần két trả nổi — phần cô Ba bù ghi riêng, không trừ vào két
     row("than, đá, túi, xăng", `−${money(et.fixed)}`);
     if (et.coBaCovered) row("cô Ba bù giùm", `(${money(et.coBaCovered)})`);
     // "gửi thiếu −0₫" đọc như lỗi hiển thị, mà số thiếu THẬT thì không hiện ở đâu
@@ -148,7 +145,6 @@ export class EveningView {
     if (this.tab === "gear") { book.append(this.gear()); this.finishRender(book); return; }
     if (this.tab === "stand") { book.append(this.stands()); this.finishRender(book); return; }
 
-    // ── phải: sổ nghĩa vụ (chữ viết tay) + lời nhắc
     const R = this.el("div", "ev-col ev-right");
     // P4-03 — chuyện trong hẻm: làm hay không là chuyện của con (E2: đưa vật / thân thể; không bấm = không làm gì)
     const acts = eveningActions(day, w.story);
@@ -170,7 +166,6 @@ export class EveningView {
       }
     }
     R.append(this.el("div", "ev-h", "Sổ nợ nần"));
-    // điện thoại: em gọi — báo trước 6 ngày, gọi lại mỗi tối tới khi đóng (P3-06 §2.2)
     const hoc = [...upcoming(e, day, 6), ...duesOpen(e, day)].find((d) => d.kind === "TIEN_HOC");
     if (hoc) {
       R.append(this.el("div", "ev-say", `Điện thoại — em: "Chị ơi em thi thử được tám phẩy hai."`));
@@ -198,7 +193,6 @@ export class EveningView {
       box.append(btns);
       R.append(box);
     }
-    // hốt hụi — cảnh, không phải menu; hai lựa chọn: hốt / để kỳ sau (P3-06 §2.3)
     const period = canTakeHui(e, day);
     if (period && !this.deferred.has(`hui_take_${period}`)) {
       const now = huiPayoutVnd(period), next = huiPayoutVnd(period + 1);
@@ -220,9 +214,7 @@ export class EveningView {
       box.append(btns);
       R.append(box);
     }
-    // ── sổ nợ khách (P3-03 §2.6): máy chỉ biết SỐ NGƯỜI chưa ghi — số tiền là trí nhớ của con
     const debts = w.money.debtsOwedToPlayer ?? [];
-    // P4-03 SK-20: trước ngày 9 chưa có cuốn sổ caro — bán chịu thì chỉ còn trí nhớ hai bên
     const unwritten = creditBookOpen(day) ? debts.filter((d) => d.day === day && d.playerWrote === null) : [];
     const openWritten = debts.filter((d) => d.playerWrote !== null && d.settledOnDay === undefined && day - d.day < 14);
     if (unwritten.length || openWritten.length) R.append(this.el("div", "ev-h", "Sổ bán chịu"));
@@ -252,7 +244,6 @@ export class EveningView {
       R.append(box);
     }
     for (const d of openWritten) R.append(this.el("div", "ev-note ev-ink", `${displayName(w.notebook, d.npcId, "khách")} · ngày ${d.day} · ${money(d.playerWrote!)}`));
-    // đối sổ cuối kỳ — cô Ba nói một câu, KHÔNG phán xét
     if (RECONCILE_DAYS.includes(day)) {
       const gap = debtGap(debts, day);
       if (gap > 150_000 * ECON.scale) R.append(this.el("div", "ev-say", `Cô Ba: "Bán chịu nhiều mà ghi ít quá con. Thiếu chừng ${Math.round(gap / 10000) * 10} ngàn đó."`));
@@ -266,7 +257,6 @@ export class EveningView {
   private finishRender(book: HTMLElement) {
     const day = this.w.progress.dayIndex;
     const foot = this.el("div", "ev-foot");
-    // P4-02 §2.2: bà Sáu chỉ chỗ ngày 16 — trước đó không có trang "Chỗ đứng"
     const tabs = standsOpen(day) ? [["debts", "Sổ nợ nần"], ["gear", "Đồ nghề"], ["stand", "Chỗ đứng"]] as const : [["debts", "Sổ nợ nần"], ["gear", "Đồ nghề"]] as const;
     for (const [id, label] of tabs) {
       const b = this.el("button", `ev-btn${this.tab === id ? " primary" : ""}`, label);
@@ -302,7 +292,6 @@ export class EveningView {
     }
     R.append(cells);
     if (this.askSign) {
-      // P3-04 E3 — chọn tên ghi lên bảng hiệu. Không lựa chọn nào bị phạt.
       R.append(this.el("div", "ev-say", "Bảng hiệu ghi tên gì?"));
       const opts: [string, "CO_BA" | "PLAYER" | "BLANK"][] = [["BÁNH MÌ CÔ BA", "CO_BA"], [`Tên của con (${w.playerName})`, "PLAYER"], ["Không ghi chữ, vẽ ổ bánh thôi", "BLANK"]];
       for (const [t, v] of opts) {
@@ -399,7 +388,6 @@ export class EveningView {
   private buy(id: EquipId) {
     const w = this.w;
     if (!buyEquip(id, w.equipment, w.money, w.econ)) return;
-    // không popup, không toast: món mới cứ thế có mặt trên xe sáng mai (P3-04 §2.7)
     if (EQUIP[id].costsMorning) { w.flags.lateOpenDay = w.progress.dayIndex + 1; this.msg = 'Cô Mai: "Mai con đi làm giấy ngân hàng với cô, trưa về bán."'; }
     else this.msg = "";
     if (id === "BANG_HIEU") this.askSign = true;

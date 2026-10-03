@@ -1,18 +1,10 @@
 /**
- * NGƯỜI QUA ĐƯỜNG — cái hẻm có người đi ngang, và đa số họ không mua gì.
+ * NGƯỜI QUA ĐƯỜNG — cái hẻm có người đi ngang, và đa số họ không mua gì. Không có họ thì "có
+ * người nhìn" hết là tin tức, và người chơi học một phản xạ sai rất bền: thấy bóng người = sắp có đơn.
  *
- * Cả trò chơi dựng trên "có người nhìn mình làm"; nếu người duy nhất đi ngang cũng là người sắp
- * xếp hàng thì "có người" không còn là tin tức nào nữa, và người chơi học một phản xạ sai rất
- * bền: thấy bóng người = sắp có đơn.
- *
- * ⚠️ TỰ HỌ thì KHÔNG ĐỤNG TỚI KINH TẾ: không gọi món, không xếp hàng, không tính vào `ahead`,
- * không chiếm `peakCap`, không vào `audience`, và không bao giờ TỰ đổi ý thành khách. Một ngày có
- * họ và một ngày không, nếu người chơi cứ đứng sau quầy, phải ra đúng cùng một con số bán được.
- *
- * Cửa DUY NHẤT để họ thành khách là người chơi tự đi mời (`inviteChance`, act `INVITE`) — nên cái
- * nền vẫn chỉ là cái nền.
- *
- * Thuần dữ liệu + toán, nên `tools/sim.ts` và test chạy được y như trong game.
+ * ⚠️ TỰ HỌ KHÔNG ĐỤNG TỚI KINH TẾ: không gọi món, không xếp hàng, không tính vào `ahead`, không
+ * chiếm `peakCap`, không vào `audience`, không bao giờ TỰ đổi ý thành khách. Cửa duy nhất là người
+ * chơi tự đi mời.
  */
 import type { Rng } from "../core/rng";
 import type { TimeBand } from "../core/clock";
@@ -27,13 +19,8 @@ import { WALKIN_STYLES } from "../content/npcs";
 export const PASSERS_MAX = 5;
 
 /**
- * Cách nhau bao nhiêu GIÂY THẬT giữa hai người, theo khung giờ.
- *
- * ⚠️ Giây THẬT chứ không phải phút game: đồng hồ game tua nhanh khi quầy trống, nên tính theo phút
- * game thì đúng lúc hẻm vắng nhất lại là lúc người đi ngang ùa ra thành một đám.
- *
- * Một người đi hết chiều ngang bản đồ mất ~11 s, chỉ ~8 s trong khung hình — nên 2,6–6 s ở giờ
- * cao điểm ra chừng một hai người trong khung.
+ * ⚠️ Giây THẬT chứ không phút game: đồng hồ tua nhanh khi quầy trống, nên tính theo phút game thì
+ * đúng lúc hẻm vắng nhất lại là lúc họ ùa ra một đám.
  */
 export const GAP_SEC: Record<TimeBand, readonly [number, number]> = {
   PRE_OPEN: [6, 14],
@@ -96,12 +83,10 @@ export function nextGapSec(band: TimeBand, raining: boolean, rng: Rng): number {
 }
 
 /**
- * Dựng một lượt đi ngang. `counterX` là cột của chỗ đưa hàng — chỗ ngoái nhìn phải nằm ngang tầm
- * cái xe, chứ ngoái ở cuối hẻm thì không ai hiểu họ đang nhìn gì.
+ * `counterX` là cột chỗ đưa hàng — chỗ ngoái nhìn phải ngang tầm cái xe.
  *
- * ⚠️ Thứ tự rút số là HỢP ĐỒNG (test `p6-passersby` neo vào nó): hướng · dải · dáng người · tốc độ
- * · có ngoái không · ngó mấy giây · lệch chỗ ngó. Chèn thêm một lần rút vào giữa là đổi hết mọi
- * người của mọi ngày.
+ * ⚠️ Thứ tự rút số là HỢP ĐỒNG (`p6-passersby` neo vào): hướng · dải · dáng · tốc độ · có ngoái ·
+ * ngó mấy giây · lệch chỗ ngó. Chèn một lần rút vào giữa là đổi hết mọi người của mọi ngày.
  */
 export function planPasser(rng: Rng, counterX: number): PassPlan {
   const rightward = rng.next() < 0.5;
@@ -121,13 +106,10 @@ export function planPasser(rng: Rng, counterX: number): PassPlan {
 }
 
 /**
- * Mờ dần ở hai đầu đường — người ta ĐI VÀO khung hình chứ không hiện ra. Hai đầu dải nằm ngoài
- * khung nhìn ở phần lớn vị trí camera nhưng không phải MỌI vị trí, và một người bật ra giữa vỉa hè
- * là thứ nhìn ra ngay.
+ * Người ta ĐI VÀO khung hình chứ không hiện ra.
  *
- * ⚠️ Đây là quãng mờ DUY NHẤT của người đi ngang, và nó đo bằng Ô BẢN ĐỒ. Đã từng có thêm một hệ
- * số mờ theo mép khung nhìn: nó làm người ta tan ra giữa đường, lại nhấp nháy theo bước chân của
- * người chơi vì camera bám người chơi. Lý do dài hơn ở `entities/CustomerActor.ts`.
+ * ⚠️ Quãng mờ DUY NHẤT, và đo bằng Ô BẢN ĐỒ. Đã thử thêm hệ số mờ theo mép khung nhìn và bỏ: nó
+ * làm người ta tan ra giữa đường, lại nhấp nháy theo bước chân người chơi vì camera bám người chơi.
  */
 export const FADE_TILES = 1.5;
 
@@ -140,15 +122,9 @@ export function passerAlpha(x: number): number {
 // ──────────────────────────────────────────────────────────── mời khách vô
 
 /**
- * Quán vắng thì bước ra mời một câu — và người ta vô hay không là chuyện của người ta. Đây là việc
- * DUY NHẤT làm được khi không có ai ở quầy, nên nó phải THẬT: có tay nghề, có rủi ro, không bao
- * giờ chắc ăn. Ba cái hãm:
- *  1. trần 0,8 — không câu nào kéo được mọi người vô
- *  2. hàng chờ ăn mạnh nhất, nên cơ chế này tự biết điều: chỉ đáng dùng lúc VẮNG
- *  3. `warmth` là điểm quan hệ kiếm được TRONG CHÍNH cuộc này — "mời khéo" nghĩa là nói mấy câu
- *     tử tế TRƯỚC rồi mới mời; trần +0,15, nịnh giỏi cỡ nào cũng không bằng một cái hàng ngắn
- *
- * Hết bánh thì bằng 0 — mời người ta vô rồi nói hết hàng là tệ hơn không mời.
+ * Việc DUY NHẤT làm được khi quầy trống, nên nó phải THẬT: có tay nghề, có rủi ro, không bao giờ
+ * chắc ăn. Ba cái hãm: trần 0,8 · hàng chờ ăn mạnh nhất (nên cơ chế tự biết điều — chỉ đáng dùng
+ * lúc vắng) · `warmth` là điểm kiếm được TRONG CHÍNH cuộc này, trần +0,15.
  */
 export const INVITE_MAX = 0.8;
 export const INVITE_BASE = 0.2;

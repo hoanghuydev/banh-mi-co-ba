@@ -1,17 +1,10 @@
 /**
- * NEO THOẠI VÀO THẾ GIỚI — P2-07, gộp vào MỘT bảng đen ở P2-09 §2.2.
+ * NEO THOẠI VÀO THẾ GIỚI — đo trước khi làm: 1.534 nút thoại, 46 nút có `act`, tức 97% lời nói
+ * không làm gì cả.
  *
- * Đo trước khi làm: **1.534 nút thoại, 46 nút có `act`** — 97% lời nói không làm gì cả.
- * Chủ dự án gọi đúng tên: *free word*. Nó không nổ ra thành bug nào, nên nếu không có
- * lưới thì nó mọc lại mỗi lần viết nội dung.
- *
- * Lưới này canh bốn chuyện:
- *  1. máy đọc khoá còn đúng ba dạng (phẳng · phủ định · có tham số);
- *  2. mọi khoá trong nội dung — `need` LẪN `while` — đều CÓ THẬT trong bảng đen;
- *  3. câu HỨA một chuyện thì phải có cổng/act làm chuyện đó;
- *  4. **một chế độ hỏng duy nhất** — khoá lạ NÉM LỖI, không im lặng trả `false`.
- *     Đây là điểm của việc gộp, và nếu ai đó "tối ưu" nó về `return false` thì 374 nút
- *     `SỬA` lại im lặng biến mất như trước.
+ * Canh bốn chuyện: khoá còn đúng ba dạng · mọi khoá trong nội dung đều CÓ THẬT trong bảng đen ·
+ * câu HỨA phải có cổng/act làm chuyện đó · ⚠️ khoá lạ NÉM LỖI chứ không im lặng trả `false` — "tối
+ * ưu" nó về `return false` là 374 nút lại im lặng biến mất như trước.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -38,7 +31,7 @@ const W = (over: Partial<WorldSnapshot> = {}): WorldSnapshot => ({
   visit: { gaveTea: false, gaveFood: false, apologised: false, promised: [], inviteRefused: false },
   day: { met: false, told: [] },
   season: { remembers: false },
-  hot: false, rain: false, peak: false, queue: 0, shadeFree: false, seatFree: false, ganhOut: false, ovenHot: false, band: "SANG", dayIndex: 5,
+  hot: false, rain: false, peak: false, queue: 0, shadeFree: false, seatFree: false, ganhOut: false, cartLan: false, cartChung: false, ovenHot: false, band: "SANG", dayIndex: 5,
   ...over,
 });
 
@@ -201,13 +194,7 @@ test("W-6 câu BUỘC TỘI phải kiểm chuyện đó đã xảy ra thật", (
 });
 
 /*
- * W-7 ĐÃ DỜI SANG `tools/validate-talks.ts` (lưới `T002`).
- *
- * Bản cũ chép tay lại bảng TĨNH/ĐỘNG vào đây, nên có HAI bản của cùng một luật — và
- * chúng lệch nhau thật: lúc xếp lại `w.hot`/`w.rain` sang nhóm tĩnh (thời tiết tra theo
- * NGÀY nên không đổi trong một buổi), tôi sửa bảng của validator mà quên bảng ở đây, và
- * cùng một nút bị một bên khen một bên chê.
- *
- * `tests/content-tools.test.ts` đã bắt `validateTalks` trên nội dung thật phải 0 ERROR,
- * nên luật vẫn được canh — chỉ còn đúng một bản.
+ * W-7 ĐÃ DỜI SANG `tools/validate-talks.ts` (lưới `T002`) — chép tay bảng TĨNH/ĐỘNG vào đây là có
+ * HAI bản của cùng một luật, và chúng đã lệch nhau thật. `tests/content-tools.test.ts` bắt
+ * `validateTalks` phải 0 ERROR trên nội dung thật, nên luật vẫn được canh.
  */
