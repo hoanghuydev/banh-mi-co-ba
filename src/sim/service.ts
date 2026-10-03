@@ -559,6 +559,15 @@ export class Service {
    * bánh không tắt ngay lúc rút ổ ra khỏi lò.
    */
   get ovenHot() { return this.ovenBusy || this.nowSec - this.lastBatchOutAt < OVEN_SMELL_SEC; }
+  /**
+   * MẺ VỪA RA LÒ — không có `ovenBusy ||`, và đó là cả điểm khác biệt.
+   *
+   * `ovenHot` đo ra **100%** lúc mở cuộc: đang bán thì lò gần như lúc nào cũng nhen, nên
+   * `OVEN_SMELL_SEC` nằm sau một `||` luôn đúng và 90 giây kia không có nghĩa gì. Hai cuộc
+   * khoá vào nó ("thơm quá {you} ơi", "mẻ mới ra lò") vì thế chạy mọi lúc, kể cả khi mẻ
+   * gần nhất ra cách đây nửa tiếng.
+   */
+  get meVuaRa() { return this.nowSec - this.lastBatchOutAt < OVEN_SMELL_SEC; }
   private storyTimeline: { at: number; text: string }[] = [];
   private walkinIdx = 0;
   // ── người qua đường (sim/passersby.ts) ─────────────────────────────────────
@@ -2280,6 +2289,7 @@ export class Service {
       cartLan: this.cart === "LAN",
       cartChung: this.cart === "CHUNG",
       ovenHot: this.ovenHot,
+      meVuaRa: this.meVuaRa,
       band: bandOfMinutes(this.nowMin),
       dayIndex: this.deps.day,
     };

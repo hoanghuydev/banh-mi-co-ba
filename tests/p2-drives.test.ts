@@ -177,12 +177,17 @@ test("D-15 `when.world` rút cả CUỘC ra, không phải ẩn một lựa ch�
    * *"{call} ngửi thấy mùi than hông?"* và ăn một dấu `?`.
    */
   const mui = TALKS.find((t) => t.id === "duong.mui")!;
-  assert.deepEqual(mui.when?.world, ["w.ovenHot"], "cuộc về mùi bánh phải khoá ở TẦNG CUỘC");
+  /*
+   * ⚠️ `w.meVuaRa` chứ KHÔNG phải `w.ovenHot`: cái sau có `ovenBusy ||` ở trước nên lúc
+   * đang bán nó đúng gần như 100%, tức cuộc này coi như không khoá gì. Mùi bánh là một
+   * KHOẢNH KHẮC (mẻ vừa ra trong `OVEN_SMELL_SEC`), không phải trạng thái "lò đang nhen".
+   */
+  assert.deepEqual(mui.when?.world, ["w.meVuaRa"], "cuộc về mùi bánh phải khoá ở TẦNG CUỘC");
 
   const ctx = (ovenHot: boolean): TalkCtx => ({
     npcId: "QUA_DUONG", day: 5, slot: "MID", rain: false, tier: "ACQUAINTANCE",
     visits: 0, flags: {}, usedToday: [], usedSeason: [], practice: "DI_NGANG",
-    holds: (k) => (k === "w.ovenHot" ? ovenHot : true),
+    holds: (k) => (k === "w.meVuaRa" ? ovenHot : true),
   });
   const ids = (on: boolean) => eligible(TALKS.filter((t) => t.npc === "QUA_DUONG"), ctx(on), "PLAYER").map((t) => t.id);
   assert.ok(ids(true).includes("duong.mui"), "lò đang nhen ⇒ rút được");

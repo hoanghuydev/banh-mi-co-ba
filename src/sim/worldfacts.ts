@@ -88,6 +88,14 @@ export type WorldSnapshot = {
   cartLan: boolean;
   cartChung: boolean;
   ovenHot: boolean;
+  /**
+   * MẺ VỪA RA LÒ — hẹp hơn `ovenHot` và đó là cả lý do nó tồn tại.
+   *
+   * `ovenHot` đúng cả lúc lò ĐANG NHEN, mà đang bán thì lò gần như lúc nào cũng nhen —
+   * đo ra 100%. Hai cuộc khoá vào nó ("thơm quá", "mẻ mới ra lò") coi như không khoá gì.
+   * Cái mùi mà hai cuộc đó nói tới là một KHOẢNH KHẮC, không phải một trạng thái.
+   */
+  meVuaRa: boolean;
   band: string;
   /**
    * Ngày thứ mấy của mùa — cho `w.day(N)`.
@@ -168,6 +176,7 @@ export function queryOf(w: WorldSnapshot, q = new Query()): Query {
   q.set("worldCartLan", w.cartLan);
   q.set("worldCartChung", w.cartChung);
   q.set("worldOvenHot", w.ovenHot);
+  q.set("worldMeVuaRa", w.meVuaRa);
   q.set("queueLength", Math.max(0, Math.round(w.queue)));
   q.set("day", Math.max(1, Math.round(w.dayIndex)));
   return q;

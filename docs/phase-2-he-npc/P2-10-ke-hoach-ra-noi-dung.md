@@ -1160,6 +1160,61 @@ nén đúng **12,0%**. Lưới `VE-1`…`VE-4` đọc thẳng mã vẽ — khôn
 | Trải điểm chọn chuyện | 1,58 → **1,77** |
 | Núm còn là mã chết | `ATT_FLOOR` (có chứng minh) · `OVEN_SMELL_SEC` (lỗi khoá nội dung) |
 
+## 6novodecies. `w.ovenHot` — VÀ BA LỖI TRONG CHÍNH CÁI MÁY ĐO
+
+Đợt trước tôi ghi `OVEN_SMELL_SEC` là "không tune được" rồi để đó. Quay lại làm nốt, và
+nó kéo theo ba lỗi nằm trong **chính mấy cái máy đo** tôi vẫn dựa vào.
+
+### Mùi bánh là một KHOẢNH KHẮC, không phải một trạng thái
+
+`get ovenHot()` là `ovenBusy || (vừa ra mẻ trong OVEN_SMELL_SEC)`. Đang bán thì lò gần như
+lúc nào cũng nhen, nên vế đầu luôn đúng và 90 giây kia **nằm sau một `||` không bao giờ
+sai**. Hai cuộc khoá vào nó — `duong.mui` (*"{call} ngửi thấy mùi than hông?"*) và
+`walkin.meraLo` (*"mẻ mới ra lò"*) — vì thế chạy cả lúc mẻ gần nhất ra cách đây nửa tiếng.
+
+Tách `w.meVuaRa` = CHỈ vế thứ hai. `ovenHot` giữ nguyên cho chỗ khác, và bảng đen ghi
+thẳng *"KHÔNG dùng nó để khoá câu nói về MÙI"*. Lưới `MB-1`…`MB-3` ghim đúng ranh giới:
+lò đang nhen mà chưa ra mẻ ⇒ `ovenHot` đúng, `meVuaRa` SAI.
+
+### Ba lỗi trong máy đo — và cả ba đều là "đo ngắn hơn cái được đo"
+
+Đây là phần đáng ghi hơn cả cái fact.
+
+**1. Ép tay rồi đọc như số thật.** `probe-facts.ts` đặt `svc.ovenBusy = true` ở đầu mỗi
+buổi để bot có hàng mà bán. Hệ quả: `w.ovenHot` in ra **100%** — con số của CÁI ÉP, không
+phải của ván chơi. Đo lại bằng tay: bot `greedy` **không nhen lò lần nào** trong 120.000
+frame, tức mọi fact dính cái lò nó không chạm tới được. Giờ khối ép tay có ghi chú, và
+dòng cảnh báo đổi thành "KHÔNG BAO GIỜ ĐÚNG (bot này)".
+
+**2. Mười bảy khoá đòi tham số bị hỏi trần.** `w.queue`, `t.tier`, `m.visits`… hỏi không
+có tham số thì bao giờ cũng sai, và cả mười bảy nằm trong cột "KHÔNG BAO GIỜ ĐÚNG". Mười
+bảy dòng nhiễu lẫn với mấy dòng nói thật — đúng cái cách một bảng đo biến thành tờ giấy
+chứng nhận sạch. Giờ chúng đi riêng một mục.
+
+**3. Phép đo dừng trước khi cái cần đo xảy ra.** Vòng lặp chạy 9.000 frame = tới **8h42**,
+mà khung `TRUA` bắt đầu **9h30**. Nên `w.band(TRUA)` in ra *"không bao giờ đúng"* trong
+khi nó đúng suốt khúc 9h30–11h00 của **mọi** buổi. Chạy hết buổi thì nó là **92%**.
+
+Và vì lỗi thứ ba, bảng tần suất cũ lệch hẳn ở trục thời gian: `w.band(SOM)` từng ghi 57%,
+đo đủ buổi còn **4%**. Thêm một ghi chú vào đầu file, vì con số đúng vẫn dễ đọc sai: bảng
+này đo **một khoảnh khắc bất kỳ**, không phải **một cuộc bất kỳ** — khúc vắng khách kéo
+dài ăn hết trọng số.
+
+### Số đo
+
+| | |
+|---|---|
+| Lưới | 560 → **563** |
+| `w.ovenHot` lúc mở cuộc | 100% (ép tay) → tách ra `w.meVuaRa`, khoá đúng cái nó nói |
+| `w.band(TRUA)` | "không bao giờ đúng" → **92%** |
+| `w.band(SOM)` | 57% → **4%** (số cũ đo trên buổi bị cắt) |
+| Khoá đòi tham số bị tính nhầm | 17 → 0 |
+
+Ba đợt liền, ba lần cùng một hình dạng: `\b` sau chữ có dấu · vòng đo dừng sớm · giá trị
+ép tay đọc thành số thật. Không cái nào làm game crash, cả ba đều làm tôi khai sai. Quy
+tắc rút ra cho đợt sau: **mỗi phép đo phải nói được nó KHÔNG đo được cái gì**, và câu đó
+phải nằm ngay cạnh con số.
+
 ## 7. Truy vết
 
 | Khẳng định | Nguồn |

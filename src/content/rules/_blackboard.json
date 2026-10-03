@@ -629,7 +629,12 @@
     "worldOvenHot": {
       "scope": "Global",
       "type": "bool",
-      "_note": "lò đang nhen / mẻ vừa ra — mùi bánh là lý do tồn tại của cuộc duong.mui"
+      "_note": "lò ĐANG NHEN hoặc mẻ vừa ra. ⚠️ Đang bán thì lò gần như lúc nào cũng nhen nên fact này đo ra 100% — KHÔNG dùng nó để khoá câu nói về MÙI, dùng worldMeVuaRa."
+    },
+    "worldMeVuaRa": {
+      "scope": "Global",
+      "type": "bool",
+      "_note": "mẻ vừa ra lò trong vòng OVEN_SMELL_SEC — một KHOẢNH KHẮC, không phải trạng thái. Tách khỏi worldOvenHot vì cái đó có `ovenBusy ||` ở trước nên 90 giây kia vô nghĩa, và hai cuộc nói về mùi bánh (duong.mui, walkin.meraLo) coi như không khoá gì."
     },
     "worldSeatFree": {
       "scope": "World",
@@ -841,6 +846,9 @@
     },
     "w.ovenHot": {
       "worldOvenHot": true
+    },
+    "w.meVuaRa": {
+      "worldMeVuaRa": true
     },
     "w.queue": {
       "queueLength": ">=$"
