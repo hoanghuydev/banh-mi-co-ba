@@ -161,7 +161,7 @@ chứ không phải của bộ máy. Khi rà tới file tương ứng thì làm 
 | Act | Của ai | Nhắc | Ghi chú |
 |---|---|---|---|
 | ~~`THEY_SIT`~~ | chung | 24 | ✅ **xong** — xem §6octies |
-| `FILM` / `STOP_FILM` | bé Su | 13 | quay phim là lý do tồn tại của nhân vật |
+| ~~`FILM` / `STOP_FILM`~~ | bé Su | 13 | ✅ **xong** — xem §6nonies |
 | `MOVE_CART` | chú Kiệt | 11 | hai cái xe tranh chỗ là arc của ông |
 | `CARRY_GANH` · `MOVE_GANH` | bà Sáu | 11 | cái gánh là vật thể trung tâm |
 | `RAO` | bà Sáu dạy | 7 | ba mảnh đã có, chưa ai nối |
@@ -615,6 +615,38 @@ phải 0 — ngồi lâu vẫn sốt ruột, và cái ghế không được thà
 
 Lưới `G-3` bắt được một nút hứa HAI việc một lúc (*"Bà ngồi nghỉ chút đi bà. Con rót bà ly
 trà."* mang `OFFER_TEA`) — một nút, một lời hứa; đã tách.
+
+## 6nonies. `FILM` — CÁI CLIP THÔI LÀ MỘT CON SỐ KỊCH BẢN
+
+`storyCrowdMul` đã có sẵn từ lâu: `day > clipDay && day <= clipDay + 3` ⇒ **×1,4 lượng
+khách ba ngày**. Nhưng `clipDay` do `endOfDay` đặt cứng ở ngày 5 (che tay → 16, làm đẹp
+→ 9, bình thường → 10) — tức cái clip là một mốc lịch, không phải hệ quả của việc bé Su
+quay được cái gì. Trong khi đó mười ba câu *"ừ con quay đi"* không làm ai giơ điện thoại
+lên.
+
+Nối lại thành một vòng:
+
+```
+cho quay (FILM) → máy chạy N giây → cả đoạn bị chấm liên tục
+   quầy sạch  → clipDay nhích sớm (chỉ được dời SỚM, không xoá nhánh kịch bản ngày 5)
+   quầy dơ    → clipBad = hôm nay, không có clip tốt
+cất máy (STOP_FILM) → đoạn huỷ, không ghi gì
+```
+
+`DIRT_ON_CAMERA = 0,35` — **thấp hơn ngưỡng khách phàn nàn**: ống kính xoi hơn mắt người
+đứng mua, và đó đúng là chuyện người bán hàng sợ khi có người giơ máy lên. Rủi ro đọc
+được trước khi bấm (CANON T5): quầy dơ thì nhìn màn hình là thấy.
+
+`CLIP_DUNG_SAU = 4` ngày — bé Su còn phải dựng. Đủ xa để người chơi quên mất mình đã cho
+quay, rồi lượng khách tự nhảy lên và họ phải tự nối hai chuyện lại; một hệ quả dạy luật
+chơi mà không cần một dòng chữ giải thích.
+
+9 nút nội dung được nối (6 cho quay · 3 cấm quay). Chỉ nối câu CHO PHÉP / CẤM — không nối
+câu hỏi (*"con quay cái này chi vậy con?"*) hay câu nhắc chuyện cũ (*"cái clip bữa
+trước…"*): một act là một VIỆC XẢY RA, không phải một chủ đề.
+
+`tests/p2-quay.test.ts`, 4 lưới — trong đó `Q-3` canh đúng chỗ dễ mục nhất: clip tới sớm
+thì **lượng khách phải nhảy thật**, không phải một con số nằm im trong `flags`.
 
 ## 7. Truy vết
 

@@ -281,7 +281,11 @@
                 "w.queue(1)"
               ]
             }
-          ]
+          ],
+          "act": {
+            "kind": "FILM",
+            "forSec": 20
+          }
         }
       ],
       "openMood": "CUOI",

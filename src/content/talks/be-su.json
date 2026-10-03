@@ -20,7 +20,11 @@
             "say": "Ừ, con quay đi. Cô làm tiếp đây.",
             "tone": "THUONG",
             "rel": 1,
-            "reply": "Dạ con quay lẹ thôi cô."
+            "reply": "Dạ con quay lẹ thôi cô.",
+            "act": {
+              "kind": "FILM",
+              "forSec": 20
+            }
           },
           {
             "say": "Quay xong cho cô coi với nghen con.",
@@ -128,7 +132,11 @@
               "tone": "AM",
               "rel": 3,
               "reply": "Dạ! Cô dễ thương ghê á cô.",
-              "mood": "CUOI"
+              "mood": "CUOI",
+              "act": {
+                "kind": "FILM",
+                "forSec": 20
+              }
             },
             {
               "say": "Ăn xong đi học, đừng la cà.",
@@ -148,7 +156,10 @@
               "silent": true,
               "mood": "BUC"
             }
-          ]
+          ],
+          "act": {
+            "kind": "STOP_FILM"
+          }
         },
         {
           "say": "Con quay cô xấu là cô hổng bán cho con nữa đó.",
@@ -168,7 +179,11 @@
               "tone": "THUONG",
               "rel": 1,
               "reply": "Dạ!",
-              "ref": "chao"
+              "ref": "chao",
+              "act": {
+                "kind": "FILM",
+                "forSec": 20
+              }
             },
             {
               "say": "Con nịnh cô chi vậy con.",
@@ -461,7 +476,10 @@
             "say": "Thôi nghỉ quay đi con, đỡ mệt.",
             "tone": "THUONG",
             "rel": -1,
-            "reply": "Dạ… chắc vậy quá cô."
+            "reply": "Dạ… chắc vậy quá cô.",
+            "act": {
+              "kind": "STOP_FILM"
+            }
           },
           {
             "say": "Ăn đi rồi đi học, trễ rồi.",
@@ -1180,7 +1198,10 @@
             "intensity": 60
           },
           "reply": "…Dạ. Con xin lỗi cô.",
-          "mood": "BUC"
+          "mood": "BUC",
+          "act": {
+            "kind": "STOP_FILM"
+          }
         },
         {
           "say": "Con dạt qua bên này chút nghen con, có người tới mua.",
@@ -1303,7 +1324,11 @@
               "tone": "AM",
               "rel": 2,
               "reply": "Dạ thiệt hả cô? Để con quay lúc cô kéo khay ra, khúc đó khói bay đẹp lắm.",
-              "mood": "CUOI_TUOI"
+              "mood": "CUOI_TUOI",
+              "act": {
+                "kind": "FILM",
+                "forSec": 20
+              }
             },
             {
               "say": "Hẻm mình ngày nào chả vậy, con quay chi cho mệt.",
@@ -1315,7 +1340,11 @@
               "say": "Ừ. Con quay đi, cô làm tiếp đây.",
               "tone": "LANH",
               "reply": "Dạ.",
-              "mood": "LANH"
+              "mood": "LANH",
+              "act": {
+                "kind": "FILM",
+                "forSec": 20
+              }
             }
           ]
         },

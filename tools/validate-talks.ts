@@ -94,7 +94,7 @@ const LAN_DAU = /(lần đầu|mới (thấy|gặp) (cô|chú|anh|chị|bà|em)|
 /** Câu NHẮC CHUYỆN CŨ — phải có bằng chứng chuyện đó đã xảy ra. */
 const CHUYEN_CU = /(bữa trước|hôm bữa|mấy bữa nay|lần trước|bữa nọ|hổm rày)/iu;
 /** `act` có THỜI LƯỢNG — thiếu `forSec` thì scene không biết giữ người ta bao lâu. */
-const ACT_CO_GIO = new Set(["GIVE_BREAD", "OFFER_TEA", "STAND_IN_SHADE", "LOOK_INSIDE", "STEP_ASIDE", "THEY_SIT"]);
+const ACT_CO_GIO = new Set(["GIVE_BREAD", "OFFER_TEA", "STAND_IN_SHADE", "LOOK_INSIDE", "STEP_ASIDE", "THEY_SIT", "FILM"]);
 /**
  * `act` là một VIỆC CÒN NỢ — thưởng phải nằm ở `onKept`, trả lúc LÀM chứ không lúc nói.
  *

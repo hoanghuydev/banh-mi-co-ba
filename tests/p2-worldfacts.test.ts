@@ -30,7 +30,7 @@ const W = (over: Partial<WorldSnapshot> = {}): WorldSnapshot => ({
   cash: 0, teaLeft: 10, stock: 20,
   them: {
     phase: "waiting", practice: "DOI_BANH", passing: false, served: false, named: true,
-    cutLine: false, blocking: false, glanced: false, lookingInside: false, inShade: false, sitting: false,
+    cutLine: false, blocking: false, glanced: false, lookingInside: false, inShade: false, sitting: false, filming: false,
     onPhone: false, eating: false, hasOrder: true, waitRatio: 0,
     purpose: null, state: null, tier: "ACQUAINTANCE", visits: 1,
   },

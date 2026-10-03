@@ -43,6 +43,8 @@ export type WorldSnapshot = {
     inShade: boolean;
     /** Đang ngồi trên ghế (`THEY_SIT`). */
     sitting: boolean;
+    /** Đang chĩa điện thoại vào cái xe (`FILM`). */
+    filming: boolean;
     onPhone: boolean;
     eating: boolean;
     hasOrder: boolean;
@@ -131,6 +133,7 @@ export function queryOf(w: WorldSnapshot, q = new Query()): Query {
   q.set("npcLookingInside", t.lookingInside);
   q.set("npcInShade", t.inShade);
   q.set("npcSitting", t.sitting);
+  q.set("npcFilming", t.filming);
   q.set("npcOnPhone", t.onPhone);
   q.set("npcEating", t.eating);
   q.set("npcHasOrder", t.hasOrder);

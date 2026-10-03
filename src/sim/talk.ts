@@ -115,6 +115,17 @@ export type TalkAct =
    * ngồi chạy không tải.
    */
   | { kind: "THEY_SIT"; forSec: ForSec }
+  /**
+   * HỌ QUAY PHIM — bé Su (13 nhắc), và `walkin.quayclip` (anh làm kênh review).
+   *
+   * `P2-08` §2 nhóm C ghi *"quay phim là lý do tồn tại của nhân vật"*, mà tới đợt này
+   * mười ba câu "ừ con quay đi" vẫn không làm ai giơ điện thoại lên. Cái clip thì đã có
+   * sẵn chỗ trong kinh tế từ lâu (`story.clipDay` → ×1,4 lượng khách ba ngày), chỉ là nó
+   * do kịch bản đặt chứ không do việc bé Su quay cái gì.
+   */
+  | { kind: "FILM"; forSec: ForSec }
+  /** Bảo họ cất máy — đoạn quay huỷ, không ra clip nào. */
+  | { kind: "STOP_FILM" }
   | { kind: "LEAVE_SHADE" }
   /** Họ quay nhìn vào quầy. */
   | { kind: "LOOK_INSIDE"; forSec: ForSec }

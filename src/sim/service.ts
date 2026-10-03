@@ -98,6 +98,23 @@ const PASSER_TALK_TAIL = 4;
  * mở LẠI cùng một cuộc, không chặn mở cuộc khác — nên trần phải nằm riêng ở đây.
  */
 const PASSER_TALKS_MAX = 2;
+
+/**
+ * Quầy dơ tới mức nào thì LỌT VÀO KHUNG HÌNH — act `FILM`.
+ *
+ * Thấp hơn ngưỡng khách phàn nàn: ống kính xoi hơn mắt người đứng mua, và đó đúng là
+ * chuyện người bán hàng sợ khi có người giơ máy lên.
+ */
+const DIRT_ON_CAMERA = 0.35;
+
+/**
+ * Quay xong thì mấy ngày nữa cái clip mới lên — bé Su còn phải dựng.
+ *
+ * Bốn ngày: đủ xa để người chơi quên mất mình đã cho quay, rồi lượng khách tự nhảy lên và
+ * họ phải tự nối hai chuyện lại. Đó là cách một hệ quả dạy luật chơi mà không cần một
+ * dòng chữ nào giải thích.
+ */
+const CLIP_DUNG_SAU = 4;
 /**
  * CÂU CUỐI CÒN NỢ — người vừa nói chuyện còn được cầm micro ngần này giây sau khi phiên
  * đã đóng (xem `talkVoice`). ⚠️ Phải dài hơn `StallScene.REPLY_DELAY_SEC`.
@@ -1905,6 +1922,7 @@ export class Service {
     for (const c of this.customers) {
       if (c.inShade && c.now >= c.shadeUntil) this.leaveShade(c);
       if (c.sitting && c.now >= c.sitUntil) this.standUp(c);
+      if (c.filming) this.tickFilm(c);
       if (c.eating && c.now >= c.eatUntil) c.eating = false;
       if (c.lookInsideUntil && c.now >= c.lookInsideUntil) c.lookInsideUntil = 0;
     }
@@ -2782,6 +2800,7 @@ export class Service {
           : c.gazeState === "WATCH",
         inShade: c.inShade,
         sitting: c.sitting,
+        filming: c.filming,
         onPhone: c.gazeState === "PHONE",
         eating: c.eating,
         hasOrder: !!c.order,
@@ -3368,6 +3387,12 @@ export class Service {
       case "THEY_SIT":
         this.theySit(c, act.forSec);
         break;
+      case "FILM":
+        this.startFilm(c, act.forSec);
+        break;
+      case "STOP_FILM":
+        this.stopFilm(c);
+        break;
       case "LEAVE_SHADE":
         this.leaveShade(c);
         break;
@@ -3567,6 +3592,66 @@ export class Service {
       c.pass.until = c.now + sec;
     }
     this.out.push({ kind: "log", text: `${this.label(c)} ngồi xuống ghế.` });
+  }
+
+  /**
+   * CHO QUAY — và cái clip đó phụ thuộc vào mình làm gì trong lúc máy đang chạy.
+   *
+   * Đây là chỗ `story.flags.clipDay` thôi là một con số kịch bản và thành HỆ QUẢ: clip
+   * tới sớm (×1,4 lượng khách ba ngày, `storyCrowdMul`) nếu đoạn quay sạch; dính chuyện
+   * xấu thì không những không tới sớm mà còn để lại `clipBad` cho `su.drama.mang` nhắc.
+   *
+   * Rủi ro ĐỌC ĐƯỢC TRƯỚC KHI BẤM (CANON T5): quầy dơ hay tay bẩn thì người chơi nhìn
+   * thấy trên màn hình trước khi gật đầu cho quay.
+   */
+  private startFilm(c: Customer, forSec: ForSec) {
+    if (c.filming) return;
+    c.filming = true;
+    c.filmUntil = c.now + (forSecOf(forSec) ?? 20);
+    c.filmSpoiled = this.filmDirtyNow();
+    this.out.push({ kind: "log", text: `${this.label(c)} giơ điện thoại lên quay.` });
+  }
+
+  /** Quầy đang có gì lọt vào khung hình không — chấm liên tục, không chỉ lúc bắt đầu. */
+  private filmDirtyNow() {
+    return this.dirt >= DIRT_ON_CAMERA || this.handsDirty;
+  }
+
+  private tickFilm(c: Customer) {
+    if (this.filmDirtyNow()) c.filmSpoiled = true;
+    if (c.now < c.filmUntil) return;
+    this.endFilm(c, true);
+  }
+
+  /** Bảo cất máy — đoạn quay huỷ, không ra clip nào, không ghi gì. */
+  private stopFilm(c: Customer) {
+    if (!c.filming) return;
+    this.endFilm(c, false);
+    this.out.push({ kind: "log", text: `${this.label(c)} cất máy.` });
+  }
+
+  private endFilm(c: Customer, quayXong: boolean) {
+    const hong = c.filmSpoiled;
+    c.filming = false;
+    c.filmUntil = 0;
+    c.filmSpoiled = false;
+    if (!quayXong) return;
+    const st = this.deps.story;
+    if (!st) return;
+    if (hong) {
+      st.flags.clipBad = this.deps.day;
+      this.out.push({ kind: "log", text: `đoạn quay dính cảnh quầy chưa dọn.` });
+      return;
+    }
+    /*
+     * Chỉ được DỜI SỚM, không bao giờ dời muộn: ngày 5 đã có một nhánh kịch bản đặt
+     * `clipDay` (che tay → 16, làm đẹp → 9, bình thường → 10). Cho quay thêm thì cái clip
+     * tới sớm hơn, chứ không được xoá mất nhánh kia.
+     */
+    const cu = Number(st.flags.clipDay ?? 99);
+    const moi = this.deps.day + CLIP_DUNG_SAU;
+    if (moi < cu) st.flags.clipDay = moi;
+    this.out.push({ kind: "log", text: `${this.label(c)} quay xong một đoạn ưng ý.` });
   }
 
   private standUp(c: Customer) {

@@ -232,6 +232,16 @@ export class Customer implements Observer {
   sitting = false;
   sitUntil = 0;
   /**
+   * Đang QUAY PHIM (`FILM`) — bé Su chĩa điện thoại vào cái xe, tới lúc này thì cất máy.
+   *
+   * `filmSpoiled` ghi lại đoạn quay đó có dính chuyện gì xấu không: quầy dơ, tay chưa
+   * rửa, rớt ổ bánh, hay mình gắt một câu. Cuối đoạn mới chấm — vì một cái clip là cả
+   * đoạn, không phải một khoảnh khắc.
+   */
+  filming = false;
+  filmUntil = 0;
+  filmSpoiled = false;
+  /**
    * ĐỨNG CHẮN ngay chỗ đưa hàng. Khác `cutLine` (sai thứ tự) và khác `aside` (đã dạt rồi): đây
    * là chuyện CHỖ ĐỨNG trong lúc chưa tới lượt. Không có cờ này thì câu "xích qua chút giùm"
    * nói bừa.
