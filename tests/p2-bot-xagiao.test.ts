@@ -74,6 +74,20 @@ test("BX-4 danh sách săn XOAY VÒNG — act hiếm cũng tới lượt", () =>
     "không xoay vòng thì bot bấm mãi cái act đầu tiên nó gặp");
 });
 
+test("BX-4b bot TRẢ LỜI người vừa mở lời — nếu không thì mù hẳn 81/86 cuộc", () => {
+  /*
+   * 81/86 cuộc khai `NPC_ONLY`: người chơi KHÔNG bấm ra được, chúng chỉ tới qua lời mời
+   * của chính họ. Bot chỉ mở bằng `"PLAYER"` thì `okSource` gạt sạch — đo được `su.toan`
+   * rụng 53/53 mẫu đúng ở cổng đó, và `PAY`·`TAKE_CASH`·`RAO`·`BARTER` báo "nhánh chết"
+   * trong khi chúng sống nguyên.
+   */
+  const src = readFileSync(new URL("../src/sim/headless.ts", import.meta.url), "utf8");
+  const than = src.slice(src.indexOf("private socialise()"), src.indexOf("private act("));
+  assert.match(than, /hasOffer/, "bot không ngó tới lời mời — nó chỉ nghe được cuộc tự mình mở");
+  assert.ok(than.indexOf("hasOffer") < than.indexOf("SOCIAL_STREET"),
+    "phải trả lời người vừa mở lời TRƯỚC khi bỏ đi mời người đi ngang");
+});
+
 test("BX-5 mọi act bot săn đều CÓ THẬT trong kho thoại", async () => {
   const TALKS = await TalkStore.loadAll();
   const co = new Set<string>();

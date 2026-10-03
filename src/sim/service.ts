@@ -512,6 +512,8 @@ export class Service {
   private talkVoiceUntil = 0;
   /** HÀNG ĐỢI chứ không phải một ô: một ô thì người thứ hai im suốt lượt ghé vì `smalltalked` đã chạy trước. */
   private offers: { c: Customer; talk: Talk; at: number }[] = [];
+  /** Có ai đang CHỜ MÌNH TRẢ LỜI không — cho bot/công cụ; `StallScene` đọc qua `pendingTalk`. */
+  get hasOffer() { return this.offers.length > 0; }
   readonly talks = new TalkStore();
   private lastOfferAt = -Infinity;
   /** ⚠️ Trong SAVE chứ không trong instance: "lưu và về sảnh" dựng `Service` mới, lách được trần ngày. */

@@ -1285,6 +1285,63 @@ không làm được.
 | Cửa mới của `Service` | `optionActs()` — chỉ cho bot/công cụ, KHÔNG cho `StallScene` |
 | `probe-facts.ts` | thêm `--bot social` |
 
+## 6unvicies. "ĐỨNG YÊN" LÀ CHẾT HAY LÀ HIẾM — VÀ MỘT NỬA KHO BOT KHÔNG NGHE THẤY
+
+`probe-social.ts` quét 27 act cùng lúc bằng cách xoay vòng, nên mỗi act chỉ được chừng
+1/27 số cuộc. Mười act ra 0 lần, và tới đó thì chưa trả lời được câu đáng hỏi: nhánh đó
+**không với tới được**, hay chỉ là **bot chưa đủ lượt**? `tools/probe-act.ts` dồn cả mùa
+cho MỘT act, và đếm riêng số lần cuộc chứa nó ĐỦ ĐIỀU KIỆN chạy. Ba dấu:
+
+```
+✓ chạy   ·   ~ cuộc CÓ mở ra mà bot không bấm trúng (hiếm)   ·   ✗ cuộc chưa bao giờ đủ điều kiện
+```
+
+### Lỗi lớn nhất: bot chỉ nghe được cuộc do CHÍNH NÓ mở
+
+`81/86 cuộc khai `NPC_ONLY`** — người chơi KHÔNG bấm ra được, chúng chỉ tới qua lời mời
+của chính NPC. Bot chỉ gọi `openTalk()` ở thế "mình mở lời", nên `okSource` gạt sạch.
+
+Đo tận nơi: `su.toan` rụng **53/53 mẫu** đúng ở cổng `okSource` — không phải vì ngày, vì
+khung cảnh, hay vì cờ. Và vì phép đo ban đầu cũng chỉ hỏi `"PLAYER"`, nó **đồng ý với
+chính cái lỗi đó** và báo `PAY` · `TAKE_CASH` · `RAO` · `BARTER` là "nhánh chết" trong khi
+chúng sống nguyên. Một cái máy đo chia chung giả định với cái nó đo thì nó chỉ xác nhận
+giả định.
+
+Sửa hai đầu: bot ưu tiên **trả lời người vừa mở lời** (`Service.hasOffer`) trước khi đi
+mời ai; và máy đo hỏi **cả hai chiều** `"PLAYER"` + `"NPC"`.
+
+### Hai lỗi nhỏ hơn, cùng một hình dạng
+
+* **Tay bot lúc nào cũng trống.** `StallScene` gán `playerHand` mỗi frame; bot để nguyên
+  `"empty"`, nên `p.holdsFilled`/`p.holdsBread` không bao giờ đúng và `GIVE_BREAD`
+  (*"bẻ miếng ăn thử cho biết"*) với `BARTER` (đổi ổ lấy chén tàu hũ) đo ra 0. Bot ĐANG
+  làm ổ bánh thật — giờ nó khai đúng cái đang cầm. ⚠️ Mốc "đã có nhân" không phải cờ
+  `wrapped` (chỉ bật 3 giây chót ⇒ `loaf_filled` đúng **1/74 lần mở cuộc**), mà là 40%
+  chặng cuối.
+* **Lấy mẫu thưa hơn cửa sổ cần đo.** Đếm mỗi 211 frame thì không thấy mấy cuộc chỉ sống
+  trong khung cảnh rất hẹp (`NAN_LAI` đúng chừng 8% thời gian). Lại là "đo ngắn hơn cái
+  được đo", lần thứ năm.
+
+### Kết quả
+
+| | trước mục này | sau |
+|---|---|---|
+| Cuộc mở được / 20 buổi | 892 | **1.226** |
+| act chạy được | 15 | **16**, và `GIVE_BREAD` từ ✗ thành ✓ |
+| Chẩn đoán | "10 act nhánh chết" | `PAY`, `LEND_ITEM` là **~ hiếm** (132 và 95 lượt cuộc mở ra được), không chết |
+
+Mấy act còn `✗` — `TAKE_CASH` · `RAO` · `BARTER` · `MOVE_GANH` · `OVERHEARD_BY` ·
+`CLEAR_DEBT` — giờ là một danh sách NGẮN và CÓ ĐỊA CHỈ, không phải một cảm giác. Thí dụ
+`su.toan` (chứa `TAKE_CASH`) khoá `practice: NAN_LAI`: bé Su trả lại tiền thối dư thì
+không ai mặc cả, nên khung cảnh đó không bao giờ tới. Đó là việc của một đợt rà NỘI DUNG,
+và nó cần chủ dự án chốt chứ không phải tôi đoán.
+
+| | |
+|---|---|
+| Lưới | 568 → **569** |
+| Máy mới | `tools/probe-act.ts` — dồn cả mùa cho một act, tách CHẾT khỏi HIẾM |
+| Cửa mới | `Service.hasOffer` |
+
 ## 7. Truy vết
 
 | Khẳng định | Nguồn |

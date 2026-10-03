@@ -91,6 +91,9 @@ const SOCIAL_MAX_BEATS = 7;
 /** Bao nhiêu phần số lần mở lời là BƯỚC RA ĐƯỜNG mời người đi ngang, phần còn lại nói với khách ở quầy. */
 const SOCIAL_STREET = 0.45;
 
+/** Còn bao nhiêu phần chặng làm thì coi như ổ ĐÃ CÓ NHÂN trên tay — xem khối ở `act()`. */
+const HAND_FILLED_FROM = 0.4;
+
 export type Inject = (t: number, h: HeadlessStall) => void;
 
 export class HeadlessStall {
@@ -180,6 +183,24 @@ export class HeadlessStall {
        * `StallScene` làm khi người chơi đi ra lề: cùng một đường, không có cửa sau.
        */
       /** ⚠️ KHÔNG lọc `phase !== "leaving"`: người đi ngang MANG phase đó suốt — họ đang đi qua mà. */
+      /*
+       * CÓ NGƯỜI VỪA MỞ LỜI THÌ TRẢ LỜI HỌ TRƯỚC — và đây là chỗ bot cũ mù hẳn một nửa kho.
+       *
+       * 81/86 cuộc khai `NPC_ONLY`: người chơi KHÔNG bấm ra được, chúng chỉ tới qua lời mời
+       * của chính họ. Bot chỉ mở bằng `"PLAYER"` nên `okSource` gạt sạch — đo ra `su.toan`
+       * rụng **53/53 mẫu** ở đúng cổng đó, và cả `PAY`·`TAKE_CASH`·`RAO`·`BARTER` báo
+       * "nhánh chết" trong khi chúng sống nguyên.
+       *
+       * `playerAt = null` ⇒ `talkTarget()` nhắm người đang chờ mình trả lời.
+       */
+      if (s.hasOffer) {
+        s.playerAt = null;
+        s.playerOnStreet = false;
+        if (!s.openTalk()) return;
+        this.talkBeats = 0;
+        this.hunt++;
+        return;
+      }
       const duong = s.customers.filter((c) => c.ambient && c.pass);
       if (duong.length && this.bot.next() < SOCIAL_STREET) {
         const ai = duong[this.bot.int(0, duong.length)];
@@ -219,7 +240,7 @@ export class HeadlessStall {
     const s = this.service;
     this.socialise();
     const c = s.front;
-    if (!c || c.phase !== "waiting" || !c.order) { this.work = null; return; }
+    if (!c || c.phase !== "waiting" || !c.order) { this.work = null; this.service.playerHand = "empty"; return; }
     // Lượt mà khách đã LẮC ĐẦU một lần thì bỏ luôn, đừng lấy ổ bánh khác ra làm lại.
     // Chỗ này xảy ra khi kho hết nhân: ổ nào gói ra cũng là ổ chưa có nhân, mà 7 trong
     // 12 người không nhận (`service.takesHollowLoaf`). Con bot không có nước đi nào khác
@@ -239,6 +260,20 @@ export class HeadlessStall {
       this.work = { left: this.bot.range(p.workSec[0], p.workSec[1]), forVisit: c.id, dropped: false, dish, wrapped: false };
     }
     const w = this.work;
+    /*
+     * TRÊN TAY ĐANG CÓ CÁI GÌ. `StallScene` gán `service.playerHand = player.hand` mỗi
+     * frame; bot thì để nguyên `"empty"` cả buổi, nên `p.holdsBread` / `p.holdsFilled`
+     * không bao giờ đúng — và `GIVE_BREAD` (5 nhắc, "bẻ miếng ăn thử") với `BARTER` (2
+     * nhắc, đổi ổ lấy chén tàu hũ) đo ra 0 lần, trông như nhánh chết. Bot ĐANG làm ổ bánh
+     * thật, nên khai đúng cái nó đang cầm.
+     *
+     * ⚠️ Mốc "đã có nhân" KHÔNG phải `w.wrapped`: cờ đó chỉ bật ở 3 giây chót, nên đo ra
+     * `loaf_filled` đúng **1 lần / 74 lần mở cuộc** và `p.holdsFilled` coi như không bao
+     * giờ đúng. Người chơi thật bỏ nhân xong là cầm ổ ĐẦY đi ra quầy — một quãng dài.
+     * Lấy 40% chặng cuối làm quãng đó.
+     */
+    const tongCong = p.workSec[1];
+    this.service.playerHand = w.left <= tongCong * HAND_FILLED_FROM ? "loaf_filled" : "loaf_hot";
     w.left -= dt;
     if (!w.dropped && w.left < 2 && this.bot.next() < p.dropRate * dt) {
       w.dropped = true;
@@ -267,6 +302,7 @@ export class HeadlessStall {
     const known = c.npc && (this.ctx.world.npcs[c.memKey]?.heard ?? 0) >= 3 && this.bot.next() < (p.anticipate ?? 0);
     const res = s.serveDish(served, { quality: dishQuality(this.breadQ, parts), readyAt: known ? c.orderedAt - 1 : undefined });
     this.work = null;
+    s.playerHand = "empty";
     if (!res.ok) this.refused.add(c.id);
   }
 
