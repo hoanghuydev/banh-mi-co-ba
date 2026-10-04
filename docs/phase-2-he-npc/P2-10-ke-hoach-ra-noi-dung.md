@@ -1342,6 +1342,62 @@ và nó cần chủ dự án chốt chứ không phải tôi đoán.
 | Máy mới | `tools/probe-act.ts` — dồn cả mùa cho một act, tách CHẾT khỏi HIẾM |
 | Cửa mới | `Service.hasOffer` |
 
+## 6duovicies. MƯỜI BA CUỘC BỊ CHÔN — BÀ SÁU VÀ CHÚ KIỆT KHÔNG BAO GIỜ ĐỨNG Ở QUẦY
+
+`tools/probe-khung.ts` so khung cảnh mỗi người CÓ TÊN thật sự ở, với khung cảnh kho thoại
+của họ KHAI. Hai dòng làm cả bảng đứng lại:
+
+```
+BA_SAU      ở: DI_NGANG 100%
+CHU_KIET    ở: DI_NGANG 100%
+```
+
+Hai người này là **bạn hàng ngoài đường**, không phải khách: bà Sáu gánh tàu hũ đi qua,
+chú Kiệt đẩy xe bánh mì đi qua. Họ KHÔNG BAO GIỜ xếp hàng, gọi món hay đợi bánh. Mà
+**13 cuộc của họ** gắn thẻ `GOI_MON` / `XEP_HANG` / `QUAY_VANG` / `DOI_BANH` / `NAN_LAI`
+và **không một cuộc nào gắn `DI_NGANG`**:
+
+> `sau.doi` · `sau.xetai` · `sau.omcua` · `sau.ganh` · `sau.rao` · `sau.chonmoi`
+> `kiet.lo` · `kiet.gia` · `kiet.bienhieu` · `kiet.mua` · `kiet.khachchung` · `kiet.gundam` · `kiet.hethang`
+
+`okPractice` gạt sạch. Mười ba cuộc — cả arc cái gánh và cả arc tranh chỗ với chú Kiệt —
+nằm trong kho mà **không một lần nào rút ra được**, và không có lỗi nào nổ. Thêm
+`DI_NGANG` vào thẻ của cả 13: `RAO` · `BARTER` · `MOVE_GANH` từ **✗ chưa bao giờ đủ điều
+kiện** thành **~ 285–341 lượt mở ra được**.
+
+### Và một mâu thuẫn TOÁN HỌC: `FULL` + `NAN_LAI`
+
+`su.toan` (bé Su trả lại hai ngàn thối dư) khai `depth: FULL`, `practice: ["NAN_LAI"]`.
+Hai dòng trong `Service` loại trừ nhau:
+
+* `practiceOf()` trả `NAN_LAI` **chỉ khi** `someoneWaiting(c)`;
+* `canRun()` với `FULL` đòi `canOpenDeep()` = **`!someoneWaiting(c)`**.
+
+Nên cuộc đó không bao giờ chạy được — 22 buổi đo không một lượt nào đủ điều kiện. Không
+phải hiếm: **bất khả thi**.
+
+Thêm cổng **T018**: `FULL` mà CHỈ gắn `NAN_LAI` là ERROR; `FULL` có gắn kèm `NAN_LAI` là
+WARN (thẻ đó là chữ chết trên cuộc `FULL`) — hiện 6 cuộc dính WARN, để người viết quyết
+bỏ thẻ hay hạ `depth`.
+
+### Ba act còn lại — và vì sao chúng KHÔNG phải lỗi
+
+* `OVERHEARD_BY` cần cờ `sauMangDung` + ngày 12–17: nó là **mắt xích thứ hai** của một
+  chuỗi, phải có người chơi làm cái thứ nhất trước.
+* `CLEAR_DEBT` cần `m.borrowing` — tức phải `LEND_ITEM` (cho mượn áo mưa) trước đã.
+* `TAKE_CASH` còn vướng trần `TALK_DEEP_PER_DAY` + cổng `PEAK` của `canOpenDeep`: bot mở
+  1.226 cuộc một mùa nên đốt sạch ngân sách cuộc `FULL` vào chuyện khác.
+
+Ba cái đó là **thứ tự sự kiện và ngân sách**, không phải thẻ gắn trật. Khác hẳn 13 cuộc ở
+trên, và phân biệt được chúng là toàn bộ giá trị của mấy cái máy đo đợt này.
+
+| | |
+|---|---|
+| Cuộc được cứu | **13** (toàn bộ arc cái gánh + arc tranh chỗ) |
+| `RAO`·`BARTER`·`MOVE_GANH` | ✗ chết → ~ 285–341 lượt mở ra được |
+| Cổng mới | **T018** — `FULL` không sống nổi trong `NAN_LAI` |
+| Máy mới | `tools/probe-khung.ts` — so khung THẬT với khung KHAI |
+
 ## 7. Truy vết
 
 | Khẳng định | Nguồn |

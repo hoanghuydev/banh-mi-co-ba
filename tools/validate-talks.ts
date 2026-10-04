@@ -2,7 +2,7 @@
  * npm run validate:talks — validator cho CÂY THOẠI. Song sinh với `validate-rules.ts` và có mặt
  * vì cùng một lý do: một cổng viết sai không crash, nó chỉ làm một câu KHÔNG BAO GIỜ HIỆN.
  *
- * Mười bảy kiểm tra T001–T017. ERROR chặn commit; WARN in ra nhưng cho qua — ranh giới giữa hai
+ * Mười tám kiểm tra T001–T018. ERROR chặn commit; WARN in ra nhưng cho qua — ranh giới giữa hai
  * mức là "có làm hỏng thật không", không phải "có xấu không" (validator quá nghiêm thì writer tắt
  * nó đi).
  */
@@ -392,6 +392,33 @@ export function validateTalks(dir: string): Report {
       r.add("T017", "ERROR", file, `${t.id}${path}`,
         `câu đáp chốt vụ mua mà không có \`INVITE\` và không khoá \`!t.passing\` — `
         + `một người đi ngang nói "${node.reply}" rồi đi tiếp, không đơn nào sinh ra`);
+    }
+  }
+
+  /*
+   * T018 — MỘT CUỘC `FULL` KHÔNG SỐNG NỔI TRONG KHUNG `NAN_LAI`. Mâu thuẫn toán học, không
+   * phải chuyện hiếm:
+   *
+   *   `Service.practiceOf()` trả `NAN_LAI` CHỈ KHI `someoneWaiting(c)` — người vừa được
+   *   phục vụ còn nán lại trong lúc còn người chờ.
+   *   `Service.canRun()` với `depth: FULL` đòi `canOpenDeep()` = **`!someoneWaiting(c)`**.
+   *
+   * Hai cái loại trừ nhau. Cuộc `FULL` mà CHỈ gắn `NAN_LAI` thì không bao giờ rút ra được —
+   * `su.toan` (bé Su trả lại hai ngàn thối dư) nằm đúng chỗ đó, và `tools/probe-act.ts` đo
+   * 22 buổi không một lượt nào đủ điều kiện. Gắn thêm thẻ khác thì sống, nhưng riêng thẻ
+   * `NAN_LAI` trên một cuộc `FULL` vẫn là chữ chết — cảnh báo để người viết biết.
+   */
+  for (const { t, file } of talks) {
+    if (t.depth !== "FULL") continue;
+    const pr = [t.practice ?? []].flat();
+    if (!pr.length || !pr.includes("NAN_LAI")) continue;
+    if (pr.every((p) => p === "NAN_LAI")) {
+      r.add("T018", "ERROR", file, t.id,
+        "cuộc `FULL` mà chỉ sống ở khung `NAN_LAI` — `practiceOf` trả khung đó CHỈ KHI còn "
+        + "người chờ, mà `canOpenDeep` cấm `FULL` đúng lúc đó. Không bao giờ chạy được.");
+    } else {
+      r.add("T018", "WARN", file, t.id,
+        "thẻ `NAN_LAI` trên một cuộc `FULL` là chữ chết (xem khối T018) — bỏ đi hoặc hạ `depth`.");
     }
   }
 

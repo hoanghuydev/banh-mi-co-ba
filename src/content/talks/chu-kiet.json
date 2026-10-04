@@ -163,7 +163,8 @@
         "GOI_MON",
         "XEP_HANG",
         "QUAY_VANG",
-        "DOI_BANH"
+        "DOI_BANH",
+        "DI_NGANG"
       ]
     },
     {
@@ -357,7 +358,8 @@
         "XEP_HANG",
         "QUAY_VANG",
         "NAN_LAI",
-        "DOI_BANH"
+        "DOI_BANH",
+        "DI_NGANG"
       ]
     },
     {
@@ -542,7 +544,8 @@
         "XEP_HANG",
         "QUAY_VANG",
         "NAN_LAI",
-        "DOI_BANH"
+        "DOI_BANH",
+        "DI_NGANG"
       ]
     },
     {
@@ -759,7 +762,8 @@
       "openMood": "BUC",
       "practice": [
         "XEP_HANG",
-        "QUAY_VANG"
+        "QUAY_VANG",
+        "DI_NGANG"
       ]
     },
     {
@@ -950,7 +954,8 @@
       "practice": [
         "GOI_MON",
         "XEP_HANG",
-        "QUAY_VANG"
+        "QUAY_VANG",
+        "DI_NGANG"
       ]
     },
     {
@@ -1140,7 +1145,8 @@
         "GOI_MON",
         "XEP_HANG",
         "QUAY_VANG",
-        "DOI_BANH"
+        "DOI_BANH",
+        "DI_NGANG"
       ]
     },
     {
@@ -1539,7 +1545,8 @@
       "practice": [
         "GOI_MON",
         "XEP_HANG",
-        "QUAY_VANG"
+        "QUAY_VANG",
+        "DI_NGANG"
       ],
       "tree": [
         {
