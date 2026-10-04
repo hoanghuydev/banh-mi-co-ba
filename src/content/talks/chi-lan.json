@@ -775,7 +775,14 @@
               "intensity": 50
             },
             "reply": "…Vâng. Cảm ơn em.",
-            "mood": "THUONG"
+            "mood": "THUONG",
+            "act": {
+              "kind": "STAND_IN_SHADE",
+              "forSec": 90
+            },
+            "while": [
+              "w.shadeFree"
+            ]
           },
           {
             "say": "Dạ ổ của chị đây chị.",
@@ -862,7 +869,14 @@
               "ref": "ket"
             }
           ],
-          "mood": "THUONG"
+          "mood": "THUONG",
+          "act": {
+            "kind": "STAND_IN_SHADE",
+            "forSec": 45
+          },
+          "while": [
+            "w.shadeFree"
+          ]
         },
         {
           "say": "Dạ chị đứng đó chị, mà chị lui vô chút, nước nhỏ ngay đầu chị.",

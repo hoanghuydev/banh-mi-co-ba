@@ -1211,7 +1211,13 @@
             },
             "reply": "Ờ. Bà đợi tạnh.",
             "calm": 22,
-            "mood": "THUONG"
+            "mood": "THUONG",
+            "act": {
+              "kind": "LEAVE_SHADE"
+            },
+            "while": [
+              "t.inShade"
+            ]
           },
           {
             "say": "Dạ bà cứ đứng đó bà.",
@@ -1289,7 +1295,14 @@
               "mood": "BUC"
             }
           ],
-          "mood": "NGAC_NHIEN"
+          "mood": "NGAC_NHIEN",
+          "act": {
+            "kind": "STAND_IN_SHADE",
+            "forSec": 45
+          },
+          "while": [
+            "w.shadeFree"
+          ]
         },
         {
           "say": "Xấp vé của bà ướt hết rồi kìa bà.",

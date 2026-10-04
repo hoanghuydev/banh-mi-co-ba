@@ -101,3 +101,34 @@ test("CA-5 cuộc `OVERHEARD_BY` khoá sau một cờ mà cờ đó CÓ người
       `${t.id} chờ cờ "${co}" mà không cuộc nào đặt được nó — chuỗi đứt ở giữa`);
   }
 });
+
+test("CA-6 `LEAVE_SHADE` là mắt xích THỨ HAI — chưa vô trú thì không tiễn được", async () => {
+  /*
+   * *"Tạnh rồi bà đi nghen bà. Đừng đi lúc còn mưa."* chỉ có nghĩa khi bà ĐANG trú. Khoá
+   * `while: t.inShade`, nên nó là chuỗi hai mắt xích y như arc áo mưa — và y như arc đó,
+   * "đúng lý thuyết" không đủ: phải kéo thử.
+   */
+  const { svc, ai } = await moQuan();
+  assert.ok(ai, "cả buổi không ai CÓ TÊN ghé");
+
+  svc.shadeFree = true;
+  svc.applyTalkOption(ai, { act: { kind: "LEAVE_SHADE" } });
+  assert.equal(ai.inShade, false, "chưa vô trú mà tiễn cũng xong — act chạy không tải");
+
+  svc.applyTalkOption(ai, { act: { kind: "STAND_IN_SHADE", forSec: 90 } });
+  assert.equal(ai.inShade, true, "mời vô trú mà không vô");
+  svc.applyTalkOption(ai, { act: { kind: "LEAVE_SHADE" } });
+  assert.equal(ai.inShade, false, "tiễn rồi mà vẫn đứng nguyên trong bóng mát");
+});
+
+test("CA-7 tiễn xong thì chỗ mát TRỐNG RA cho người sau", async () => {
+  const { svc, ai } = await moQuan();
+  assert.ok(ai, "cả buổi không ai CÓ TÊN ghé");
+  svc.shadeFree = true;
+  svc.applyTalkOption(ai, { act: { kind: "STAND_IN_SHADE", forSec: 90 } });
+  svc.tickNpcs(0.05, { minutes: svc.nowMin, pressure: true, dayOver: false });
+  assert.equal(svc.shadeFree, false, "một người đang trú mà chỗ mát vẫn khai là trống");
+  svc.applyTalkOption(ai, { act: { kind: "LEAVE_SHADE" } });
+  svc.tickNpcs(0.05, { minutes: svc.nowMin, pressure: true, dayOver: false });
+  assert.equal(svc.shadeFree, true, "tiễn rồi mà chỗ mát vẫn kẹt — người sau không vô được");
+});

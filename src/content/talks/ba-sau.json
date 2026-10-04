@@ -115,7 +115,22 @@
               "tone": "AM",
               "rel": 3,
               "reply": "Ha! Vậy mới đúng. Để tui múc.",
-              "mood": "CUOI_TUOI"
+              "mood": "CUOI_TUOI",
+              "act": {
+                "kind": "BARTER",
+                "nhan": "chén tàu hũ"
+              },
+              "need": [
+                "!p.soldOut",
+                "p.holdsFilled"
+              ]
+            },
+            {
+              "say": "Dạ tiền thì tiền, mà con cảm ơn bà nghen.",
+              "tone": "THUONG",
+              "rel": 1,
+              "reply": "Ờ. Con nói chuyện dễ nghe. Mai tui ghé nữa.",
+              "mood": "CUOI"
             },
             {
               "say": "Dạ hai chục bà.",

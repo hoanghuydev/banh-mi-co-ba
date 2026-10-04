@@ -601,7 +601,14 @@
               "intensity": 50
             },
             "reply": "…Ờ. Tao đứng chút.",
-            "mood": "THUONG"
+            "mood": "THUONG",
+            "act": {
+              "kind": "STAND_IN_SHADE",
+              "forSec": 90
+            },
+            "while": [
+              "w.shadeFree"
+            ]
           },
           {
             "say": "Chú kéo xe sát vô đây đi chú.",

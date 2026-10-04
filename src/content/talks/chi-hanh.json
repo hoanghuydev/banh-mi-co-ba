@@ -400,7 +400,14 @@
               "silent": true
             }
           ],
-          "mood": "THUONG"
+          "mood": "THUONG",
+          "act": {
+            "kind": "STAND_IN_SHADE",
+            "forSec": 30
+          },
+          "while": [
+            "w.shadeFree"
+          ]
         },
         {
           "say": "Chị kể chuyện nhà chi với em vậy chị.",
