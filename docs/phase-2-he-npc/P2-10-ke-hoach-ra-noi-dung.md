@@ -1432,6 +1432,46 @@ khác.
 | Lưới | 569 → **573** |
 | Sửa | `EveningView.gear()` vẽ món bị khoá, kèm điều kiện bằng tiếng người |
 
+## 6quatervicies. DỌN NỢ T018, VÀ KIỂM CHUỖI HAI MẮT XÍCH
+
+### Chín thẻ `NAN_LAI` chết trên cuộc `FULL`
+
+T018 bắt được 9 cuộc `FULL` còn đeo thẻ `NAN_LAI`. Thẻ đó trên một cuộc `FULL` là **chữ
+chết** — `practiceOf()` chỉ trả `NAN_LAI` khi còn người chờ, mà `canOpenDeep()` cấm `FULL`
+đúng lúc đó. Gỡ cả chín: `bay.dienthoai` · `bay.mua` · `su.toan` · `lan.doncu` ·
+`kiet.bienhieu` · `mai.tieutam` · `mai.sobay` · `phuc.quen` · `walkin.chemac`.
+
+Gỡ thẻ chết **không làm mất một câu nào** — mấy cuộc đó vẫn sống ở `GOI_MON`/`XEP_HANG`/
+`QUAY_VANG`/`DOI_BANH` như cũ. Nó chỉ làm cái bảng thẻ nói đúng sự thật, để lần sau đọc
+`practice` là biết cuộc đó chạy ở đâu, không phải đoán.
+
+### Chuỗi hai mắt xích — "đúng lý thuyết" là chỗ tôi sai nhiều nhất
+
+`probe-act.ts` xếp `CLEAR_DEBT` và `OVERHEARD_BY` vào ô ✗ kèm lời giải thích: chúng là
+**mắt xích thứ hai**, phải có người chơi làm cái thứ nhất trước. Lời đó đúng — nhưng một
+chuỗi **đứt ở giữa** nhìn y hệt một chuỗi **chưa ai chạm tới**, và mấy đợt vừa rồi tôi sai
+đúng ở chỗ nhận ra hai cái đó là một.
+
+Nên kéo chuỗi bằng tay qua đường chạy thật, kiểm từng khớp (`CA-1`…`CA-5`):
+
+| khớp | kiểm |
+|---|---|
+| cho mượn | sổ CỦA HỌ ghi `borrowed`, áo mưa của mình giảm 1 |
+| có nợ | cuộc trả đồ (`when.world: m.borrowing`) MỞ RA; chưa nợ thì ĐÓNG |
+| trả xong | sổ sạch, áo mưa về đúng 1 cái |
+| trả khi không nợ | **không đẻ thêm áo mưa** — bấm hoài không in ra đồ |
+| `OVERHEARD_BY` | cờ nó chờ có người đặt được, chuỗi không đứt giữa |
+
+Chuỗi áo mưa khép kín. Và `CA-1` lộ ra một luật đúng mà tôi suýt viết test sai: `lendItem`
+**từ chối người lạ** — tám dáng người lạ dùng chung một `memKey` cả mùa, ghi nợ vào đó là
+ghi lên sổ người khác.
+
+| | |
+|---|---|
+| Lưới | 573 → **578** |
+| T018 WARN | 9 → **0** |
+| `validate:talks` | sạch |
+
 ## 7. Truy vết
 
 | Khẳng định | Nguồn |
