@@ -340,7 +340,18 @@ test("L-9 cuộc nào khách TỰ bắt chuyện cũng phải khai giá của vi
   for (const t of TALKS.filter((x) => x.initiates)) {
     assert.ok(t.ignore, `${t.id}: tự bắt chuyện mà không khai \`ignore\` — làm thinh thành miễn phí`);
     assert.ok((t.ignore!.rel ?? DEFAULT_IGNORE_REL) < 0, `${t.id}: làm thinh mà không mất gì`);
-    assert.ok((t.initiates ?? 0) > 0 && (t.initiates ?? 0) <= 0.35, `${t.id}: initiates ${t.initiates} quá dày`);
+    /*
+     * ⚠️ `initiates` KHÔNG phải tần suất tuyệt đối — nó là PHẦN CHIA của một ngân sách
+     * cứng: `TALK_OFFERS_PER_DAY` chặn số lượt người ta tự bắt chuyện mỗi buổi, và đó mới
+     * là cái giữ lời hứa "phải HIẾM".
+     *
+     * Trần 0,35 cũ là cái thắt THỨ HAI cho cùng một việc, và nó bóp chết đúng mấy cảnh
+     * hàng xóm hiếm-vì-điều-kiện: đo `tools/probe-offer2.ts` ra **6,4% lượt thử thành
+     * lời mời ⇒ ~0,9 lượt/buổi** trong khi trần là 3 — ngân sách không hề cạn, mà cảnh
+     * cái gánh thì cả mùa không gặp. Nới trần per-cuộc lên 0,8 và để `OF-1` dưới đây giữ
+     * lời hứa bằng ĐO THẬT.
+     */
+    assert.ok((t.initiates ?? 0) > 0 && (t.initiates ?? 0) <= 0.8, `${t.id}: initiates ${t.initiates} quá dày`);
   }
   const share = TALKS.filter((t) => t.initiates).length / TALKS.length;
   assert.ok(share <= 0.5, `${(share * 100).toFixed(0)}% số cuộc là khách tự bắt chuyện — quán này không bán được gì`);

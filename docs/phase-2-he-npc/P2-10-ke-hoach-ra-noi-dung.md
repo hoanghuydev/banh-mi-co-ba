@@ -1472,6 +1472,85 @@ ghi lên sổ người khác.
 | T018 WARN | 9 → **0** |
 | `validate:talks` | sạch |
 
+## 6quinvicies. XẾP THEO ĐỘ HIẾM — VÀ BA CHỖ THẮT NỐI TIẾP NHAU
+
+Chủ dự án: *"hiếm thì cũng được nhưng sắp xếp theo độ hiếm đi. Cho một số xuất hiện
+thường xuyên hơn tý."* `tools/rank-act.ts` dựng cái thang đó, và nó lộ ra một **vách**:
+chín act "mỗi buổi", rồi rơi thẳng xuống 0. Không có bậc giữa.
+
+Vì chín act dày nằm ở kho người chơi tự mở được (`ANY`, người đi ngang), còn mọi act hiếm
+đều là `NPC_ONLY` — chúng tranh nhau **ngân sách lời mời**. Đi tìm chỗ thắt, và phải gỡ
+BA chỗ nối tiếp nhau mới thông; mỗi lần gỡ một chỗ thì chỗ sau mới lộ ra.
+
+### Thắt 1 — `TALK_INITIATE_BASE`, cái van thứ hai cho cùng một việc
+
+`tools/probe-offer2.ts` chép lại bảy cổng của `offerTalk()` và đếm chỗ rụng:
+
+```
+không cuộc nào chạy được 44,5% · trượt roll 27,3% · chưa giãn 100 giây 21,8%
+MỜI ĐƯỢC 6,4%  ⇒  ~0,9 lượt/buổi, trong khi trần là 3
+```
+
+Trần **không hề thắt**. Chỗ thắt là cái roll: một cuộc đã qua hết mọi cổng rồi còn bị ném
+đi 70% số lần. `TALK_OFFERS_PER_DAY` vốn đã chặn số lượt — roll này là cái van thứ hai cho
+đúng việc đó. 0,3 → **0,55**: lượt mời 0,9 → 1,6/buổi, vẫn dưới trần.
+
+### Thắt 2 — hàng xóm đi ngang KHÔNG CÓ ĐƯỜNG NÀO mở miệng
+
+`smalltalk()` — đường **duy nhất** dẫn tới `offerTalk()` — mở đầu bằng
+`if (c.phase !== "waiting") return`. Mà bà Sáu và chú Kiệt `DI_NGANG` **100%**: họ gánh,
+họ đẩy xe đi qua, không bao giờ xếp hàng. Cộng với `NPC_ONLY` (bấm F không ra), 13 cuộc
+của hai người đó **không có đường nào mở được** — kể cả sau khi đã vá thẻ khung cảnh ở
+§6duovicies. Cho người CÓ TÊN đang đi ngang dùng chung cửa `offerTalk`, vẫn qua đủ bảy
+cổng, không có đường riêng.
+
+### Thắt 3 — và đây là chỗ tôi đoán sai ba lần trước khi chịu đo
+
+Gỡ xong hai cái trên, mấy cảnh đó **vẫn 0 lần**. Tôi đoán: trần ngày? roll? khoảng giãn?
+Sai cả ba. Đo đúng bảy cổng riêng cho bà Sáu: **242 lượt chết ở `pickRunnable` trả null**
+— trong khi vòng kiểm bên ngoài thấy `sau.doi`/`sau.ganh`/`sau.rao` đủ điều kiện.
+
+Khác nhau ở **sàn điểm** bên trong `pickTalk`. Khung `DI_NGANG` đẩy `VIEC_RIENG` lên 55,
+mà `satisfiesOf` mặc định TRỪ `VIEC_RIENG` (nói chuyện = cắt ngang việc của người ta), nên
+mọi cuộc của họ rơi xuống dưới sàn. Luật đó đúng cho **người lạ đang vội** — và sai hẳn
+cho **một người hàng xóm DỪNG LẠI vì chính họ muốn nói**.
+
+Khai thẳng `drives` cho 13 cuộc (`KE_CHUYEN 42 · DUOC_HOI 18 · VIEC_RIENG −2`): họ dừng vì
+họ muốn nói, cắt ngang là chuyện của chính họ. **`CARRY_GANH` · `MOVE_CART` · `RAO` chạy
+lần đầu tiên.**
+
+Và chỉ tới lúc này `TALK_OFFERS_PER_DAY` **mới thành** chỗ thắt (357/598 lượt của bà Sáu
+chết ở đó) — nên 3 → 4 bây giờ mới có nghĩa. Nâng nó ở bước một là vặn vào không khí.
+
+### Lời hứa "phải HIẾM" đổi chỗ
+
+`L-9` giữ lời hứa đó bằng trần `initiates ≤ 0,35` của từng cuộc. Đó là cái van thứ hai, và
+nó bóp chết đúng mấy cảnh hiếm-vì-điều-kiện. Nới lên 0,8, và thay bằng `OF-1` đo **chính
+con số người chơi cảm thấy**: 1–4 lượt/buổi, không buổi nào vượt trần.
+
+Chín cuộc vừa được nâng `initiates` nay phải khai `ignore` (L-9 đòi, và đòi đúng: làm thinh
+phải có giá). Viết tám đoạn, mỗi người một kiểu — bà Sáu tủi thân, chú Kiệt cay, anh Dũng
+đang ướt thì cáu, chị Lan rút vào im lặng.
+
+### Cái thang sau khi gỡ
+
+| bậc | act |
+|---|---|
+| mỗi buổi | `STEP_ASIDE` 221 · `INVITE` 150 · `STAND_IN_SHADE` 91 · `WALK_ON` 84 · `ORDER_CHANGE` 71 · `PROMISE` 65 · `PROMISE_DEED` 59 · `OFFER_TEA` 33 · `LOOK_INSIDE` 25 |
+| vài bữa một lần | `FILM` 9 · `REFUSE` 6 |
+| cả mùa một hai lần | `CARRY_GANH` 2 · `MOVE_CART` 2 · `RAO` 1 · `DISCOUNT` 1 · `STOP_FILM` 1 · `FREE_LOAF` 1 |
+| còn 0, và BIẾT vì sao | `LEND_ITEM`/`CLEAR_DEBT` (chờ mưa, chuỗi đã kiểm ở `CA-1`…`CA-4`) · `OVERHEARD_BY` (chờ cờ) · `GIVE_BREAD` (`p.holdsFilled`) · `PAY`/`TAKE_CASH`/`THEY_SIT`/`CREDIT_LOAF`/`BARTER`/`MOVE_GANH` (nhánh thứ hai của cuộc đã chạy) |
+
+Ghi lại cho sòng phẳng: đợt này tôi đoán sai ba lần liên tiếp (trần ngày, roll, khoảng
+giãn) trước khi chịu chép bảy cổng ra mà đếm. Lần nào cũng có một lý do nghe rất hợp lý.
+Cái đếm mất mười phút và trả lời ngay.
+
+| | |
+|---|---|
+| Lưới | 578 → **579** |
+| Số act CHẠY được | 16 → **17** (lần đầu có `RAO`, `CARRY_GANH`) |
+| Lượt mời/buổi | 0,9 → **~1,6** (trần 4) |
+
 ## 7. Truy vết
 
 | Khẳng định | Nguồn |

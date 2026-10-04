@@ -2,15 +2,15 @@
   "_note": "Năm chỗ đứng — P3-05 §2.2. CD-1: LUÔN đúng MỘT xe, MỘT chỗ; không chuỗi, không quầy thứ hai, không NPC trông hộ. Đừng-1: chỗ không có người chơi KHÔNG được mô phỏng — chỉ là bảng tra. Tiền thuê theo NGÀY ở econ.json (CANON §13.1). `walkIn` = standLocationMul thực nhận (đã trừ phần xe khác giành). `gaze`/`patience` = hệ số so với đầu hẻm (0,72 / 105 s của doc). Bản dựng chỉ có MỘT bản đồ quán — dời chỗ là đổi bảng số + đổi người ghé, chưa đổi cảnh.",
   "stands": {
     "L1": { "name": "Đầu hẻm", "push": 0, "walkIn": 1.00, "gaze": 1.00, "patience": 1.00, "gossip": 1.00, "rain": 0.60, "rivals": 1,
-            "blurb": "chỗ của cô Ba — người quen đông nhất" },
+            "blurb": "Ngay đầu hẻm, ai ra vô cũng ngang qua. Chỗ này cô Ba đứng mấy chục năm rồi." },
     "L2": { "name": "Cổng trường", "push": 4, "walkIn": 1.05, "gaze": 0.29, "patience": 0.84, "gossip": 2.40, "rain": 0.85, "rivals": 1,
-            "blurb": "học trò đông mà tiền ít — chuyện gì cũng lan nhanh" },
+            "blurb": "Giờ tan trường thì chật người. Tụi nhỏ mua ít, mà chuyện gì tụi nó cũng biết trước mình." },
     "L3": { "name": "Chợ sáng", "push": 6, "walkIn": 1.15, "gaze": 1.13, "patience": 0.70, "gossip": 1.70, "rain": 0.82, "rivals": 4, "shelter": true,
-            "blurb": "đông từ bốn giờ sáng, có mái che — nhưng ba bốn xe khác giành" },
+            "blurb": "Bốn giờ sáng đã đông nghẹt. Tới trễ một chút là hết chỗ đẹp, đứng lọt thỏm phía trong." },
     "L4": { "name": "Khu văn phòng", "push": 11, "walkIn": 1.20, "gaze": 0.68, "patience": 0.50, "gossip": 0.45, "rain": 0.55, "rivals": 1,
-            "blurb": "trả giá cao, không ai chờ nổi" },
+            "blurb": "Dân văn phòng trả giá cao, mà không ai chờ. Xếp hàng quá ba phút là họ quay đi." },
     "L5": { "name": "Góc khuất", "push": 2, "walkIn": 0.65, "gaze": 0.94, "patience": 1.12, "gossip": 0.80, "rain": 0.78, "rivals": 0, "shelter": true,
-            "blurb": "vắng, rẻ, có mái hiên — người quen vẫn tìm tới" }
+            "blurb": "Vắng lắm. Bù lại ai quen rồi thì vẫn lặn lội tìm vô tận đây." }
   },
   "distance": {
     "_note": "DISTANCE_MUL của P3-05 §2.3 — cùng hẻm 1,00 · gần 300 m 0,70 · khác khu 0,35. Cặp không có trong bảng tính là khác khu.",

@@ -165,7 +165,18 @@
         "QUAY_VANG",
         "DOI_BANH",
         "DI_NGANG"
-      ]
+      ],
+      "initiates": 0.65,
+      "ignore": {
+        "reply": "Hứ. Nói với mày như nói với cái cột.",
+        "rel": -2,
+        "mood": "BUC"
+      },
+      "drives": {
+        "KE_CHUYEN": 42,
+        "DUOC_HOI": 18,
+        "VIEC_RIENG": -2
+      }
     },
     {
       "id": "kiet.gia",
@@ -360,7 +371,18 @@
         "NAN_LAI",
         "DOI_BANH",
         "DI_NGANG"
-      ]
+      ],
+      "initiates": 0.6,
+      "ignore": {
+        "reply": "Làm thinh hả. Ờ, để coi ai bán được lâu hơn.",
+        "rel": -3,
+        "mood": "BUC"
+      },
+      "drives": {
+        "KE_CHUYEN": 42,
+        "DUOC_HOI": 18,
+        "VIEC_RIENG": -2
+      }
     },
     {
       "id": "kiet.bienhieu",
@@ -545,7 +567,12 @@
         "QUAY_VANG",
         "DOI_BANH",
         "DI_NGANG"
-      ]
+      ],
+      "drives": {
+        "KE_CHUYEN": 42,
+        "DUOC_HOI": 18,
+        "VIEC_RIENG": -2
+      }
     },
     {
       "id": "kiet.mua",
@@ -763,7 +790,18 @@
         "XEP_HANG",
         "QUAY_VANG",
         "DI_NGANG"
-      ]
+      ],
+      "initiates": 0.6,
+      "ignore": {
+        "reply": "…Ờ. Mưa thì ai cũng ướt, hỏi thăm một câu cũng không.",
+        "rel": -2,
+        "mood": "BUC"
+      },
+      "drives": {
+        "KE_CHUYEN": 42,
+        "DUOC_HOI": 18,
+        "VIEC_RIENG": -2
+      }
     },
     {
       "id": "kiet.khachchung",
@@ -955,7 +993,12 @@
         "XEP_HANG",
         "QUAY_VANG",
         "DI_NGANG"
-      ]
+      ],
+      "drives": {
+        "KE_CHUYEN": 42,
+        "DUOC_HOI": 18,
+        "VIEC_RIENG": -2
+      }
     },
     {
       "id": "kiet.gundam",
@@ -1146,7 +1189,12 @@
         "QUAY_VANG",
         "DOI_BANH",
         "DI_NGANG"
-      ]
+      ],
+      "drives": {
+        "KE_CHUYEN": 42,
+        "DUOC_HOI": 18,
+        "VIEC_RIENG": -2
+      }
     },
     {
       "id": "kiet.moiloi",
@@ -1603,7 +1651,12 @@
           "reply": "…Ờ. Vậy thôi.",
           "mood": "LANH"
         }
-      ]
+      ],
+      "drives": {
+        "KE_CHUYEN": 42,
+        "DUOC_HOI": 18,
+        "VIEC_RIENG": -2
+      }
     }
   ]
 }

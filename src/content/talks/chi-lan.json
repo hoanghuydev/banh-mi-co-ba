@@ -920,7 +920,13 @@
         "XEP_HANG",
         "GOI_MON",
         "DOI_BANH"
-      ]
+      ],
+      "initiates": 0.65,
+      "ignore": {
+        "reply": "…Vâng. Chị đứng ngoài cũng được.",
+        "rel": -2,
+        "mood": "BUON"
+      }
     },
     {
       "id": "lan.moiloi",

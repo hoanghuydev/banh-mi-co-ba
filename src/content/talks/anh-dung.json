@@ -1059,7 +1059,13 @@
         "XEP_HANG",
         "QUAY_VANG",
         "DOI_BANH"
-      ]
+      ],
+      "initiates": 0.75,
+      "ignore": {
+        "reply": "Em ơi anh ướt hết rồi nè… thôi, anh chạy đại.",
+        "rel": -2,
+        "mood": "MET"
+      }
     },
     {
       "id": "dung.moiloi",

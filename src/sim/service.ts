@@ -69,13 +69,35 @@ const SLOTS: readonly { x: number; y: number; zone: Zone }[] = QUEUE_SLOTS;
 const GATE = CUSTOMER_GATE;
 const WALK_SPEED = 1.7;
 
-const TALK_OFFERS_PER_DAY = 3;
+/**
+ * Mỗi buổi CẢ HẺM có ngần này lượt người ta tự bắt chuyện với mình. Đây là cái giữ lời
+ * hứa "phải HIẾM" — không phải trần `initiates` của từng cuộc (xem `L-9`).
+ *
+ * 3 → 4 sau khi đo: trước đợt này cái trần KHÔNG hề thắt (6,4% lượt thử thành lời mời ⇒
+ * ~0,9 lượt/buổi), nên nâng nó là vặn vào không khí. Sau khi gỡ hai chỗ thắt thật —
+ * `TALK_INITIATE_BASE` và `drives` của mấy cuộc hàng xóm — thì nó MỚI thành cái chặn
+ * (357/598 lượt thử của bà Sáu chết ở đây). Lúc đó nâng mới có nghĩa.
+ */
+export const TALK_OFFERS_PER_DAY = 4;
 const TALK_OFFER_GAP_SEC = 100;
 
 /** Áp cho CẢ HAI đường (bấm phím lẫn khách tự mở lời). `BARK`/`SHORT` không tiêu vào trần này. */
 const TALK_DEEP_PER_DAY = 2;
 
-const TALK_INITIATE_BASE = 0.3;
+/**
+ * Một cuộc ĐÃ qua hết mọi cổng rồi còn bị roll này ném đi bao nhiêu phần.
+ *
+ * 0,3 là hai lần thắt cổ chai cho cùng một việc: `TALK_OFFERS_PER_DAY` đã chặn số lượt
+ * rồi, roll này chặn thêm lần nữa. Đo `tools/probe-offer2.ts` (8 buổi, 110 lượt thử):
+ *
+ *   không cuộc nào chạy được 44,5% · trượt roll 27,3% · chưa giãn đủ 100 giây 21,8%
+ *   MỜI ĐƯỢC **6,4%** ⇒ ~0,9 lượt/buổi, trong khi trần là 3.
+ *
+ * Tức cái trần KHÔNG hề thắt — nâng nó lên là vặn vào không khí (đúng bài học `ATT_K`).
+ * Chỗ thắt thật là roll này. 0,55 đưa lên ~1,5 lượt/buổi, vẫn nằm dưới trần, nên trần
+ * vẫn là cái chặn cuối chứ không phải roll.
+ */
+const TALK_INITIATE_BASE = 0.55;
 
 const PASSER_TALK_TAIL = 4;
 /** `talkedThisVisit` chỉ chặn mở LẠI cùng một cuộc, không chặn mở cuộc khác — trần phải nằm riêng. */
@@ -1256,6 +1278,22 @@ export class Service {
             return;
           }
           if (p.nod && (c.npc?.id !== "CHU_KIET" || this.stallRunning)) this.react(c, "FLOURISH", 1, "NOD");
+          /*
+           * HÀNG XÓM ĐI NGANG CŨNG GỌI MÌNH ĐƯỢC.
+           *
+           * `smalltalk()` — đường DUY NHẤT dẫn tới `offerTalk()` — mở đầu bằng
+           * `if (c.phase !== "waiting") return`, tức chỉ người ĐANG ĐỨNG ĐỢI BÁNH mới tự
+           * bắt chuyện. Mà bà Sáu và chú Kiệt `DI_NGANG` **100%**: họ gánh/đẩy xe đi qua,
+           * không bao giờ xếp hàng. Cộng với `NPC_ONLY` (người chơi bấm F không ra), 13
+           * cuộc của hai người đó KHÔNG CÓ ĐƯỜNG NÀO mở được — kể cả sau khi đã vá thẻ
+           * khung cảnh. Đo: `RAO`·`BARTER`·`MOVE_GANH`·`CARRY_GANH` = 0 lần / 16 buổi.
+           *
+           * Mà mấy cuộc đó viết đúng cho cảnh này: *"Con ơi… tui để gánh xuống đây chút
+           * nghen"* là một người đi ngang GỌI mình. Nên cho người CÓ TÊN đang đi ngang
+           * dùng chung cửa `offerTalk` — vẫn qua đủ bảy cổng và trần lượt/ngày như mọi
+           * người, không có đường riêng.
+           */
+          if (c.npc && this.offerTalk(c)) return;
           this.queueLines(c, c.plan?.pass?.lines, 0.3);
           if (this.deps.story) onPass(this.deps.story, c.npc?.id ?? null, c.plan?.tag, this.deps.day);
         }
@@ -1277,6 +1315,12 @@ export class Service {
       if (c.now < p.until) {
         // Chưa tới chỗ được mời thì ĐI TỚI; tới rồi thì đứng cho hết quãng.
         if (!near(c, spot, 0.3)) walk(c, spot, dt, p.speed);
+        /*
+         * Thử gọi mình SUỐT quãng đứng, không chỉ đúng cái frame vừa tới nơi. Bảy cổng của
+         * `offerTalk` phần lớn là chuyện NHẤT THỜI (mình đang bận tay, chưa giãn đủ 100
+         * giây, hàng chờ mời đầy) — thử một frame rồi thôi thì gần như luôn trượt.
+         */
+        if (c.npc) this.offerTalk(c);
         return;
       }
       walk(c, exit, dt, (p.speed ?? 1) * (c.now < c.greetUntil ? GREET_SLOW : 1));

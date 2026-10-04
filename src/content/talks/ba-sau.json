@@ -144,7 +144,18 @@
         "QUAY_VANG",
         "DOI_BANH",
         "DI_NGANG"
-      ]
+      ],
+      "initiates": 0.65,
+      "ignore": {
+        "reply": "Ờ… thôi. Tui hỏi vậy thôi con.",
+        "rel": -2,
+        "mood": "BUON"
+      },
+      "drives": {
+        "KE_CHUYEN": 42,
+        "DUOC_HOI": 18,
+        "VIEC_RIENG": -2
+      }
     },
     {
       "id": "sau.xetai",
@@ -322,7 +333,12 @@
         "XEP_HANG",
         "QUAY_VANG",
         "DI_NGANG"
-      ]
+      ],
+      "drives": {
+        "KE_CHUYEN": 42,
+        "DUOC_HOI": 18,
+        "VIEC_RIENG": -2
+      }
     },
     {
       "id": "sau.omcua",
@@ -502,7 +518,12 @@
         "XEP_HANG",
         "QUAY_VANG",
         "DI_NGANG"
-      ]
+      ],
+      "drives": {
+        "KE_CHUYEN": 42,
+        "DUOC_HOI": 18,
+        "VIEC_RIENG": -2
+      }
     },
     {
       "id": "sau.ganh",
@@ -724,7 +745,18 @@
         "QUAY_VANG",
         "XEP_HANG",
         "DI_NGANG"
-      ]
+      ],
+      "initiates": 0.75,
+      "ignore": {
+        "reply": "…Thôi được rồi. Tui gánh đi chỗ khác.",
+        "rel": -3,
+        "mood": "BUON"
+      },
+      "drives": {
+        "KE_CHUYEN": 42,
+        "DUOC_HOI": 18,
+        "VIEC_RIENG": -2
+      }
     },
     {
       "id": "sau.rao",
@@ -914,7 +946,18 @@
         "NAN_LAI",
         "DOI_BANH",
         "DI_NGANG"
-      ]
+      ],
+      "initiates": 0.7,
+      "ignore": {
+        "reply": "Ờ. Tui già rồi, nói nhiều. Con bán đi.",
+        "rel": -2,
+        "mood": "BUON"
+      },
+      "drives": {
+        "KE_CHUYEN": 42,
+        "DUOC_HOI": 18,
+        "VIEC_RIENG": -2
+      }
     },
     {
       "id": "sau.chonmoi",
@@ -930,7 +973,7 @@
         "minVisits": 6
       },
       "weight": 13,
-      "initiates": 0.22,
+      "initiates": 0.6,
       "ignore": {
         "reply": "Ờ. Thôi, tui nói sau. Con bán đi.",
         "rel": -2,
@@ -1109,7 +1152,12 @@
         "XEP_HANG",
         "QUAY_VANG",
         "DI_NGANG"
-      ]
+      ],
+      "drives": {
+        "KE_CHUYEN": 42,
+        "DUOC_HOI": 18,
+        "VIEC_RIENG": -2
+      }
     },
     {
       "id": "sau.moiloi",

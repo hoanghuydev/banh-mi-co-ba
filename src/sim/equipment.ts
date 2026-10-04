@@ -24,10 +24,24 @@ export type EquipDef = {
   feel: string; drawbacks: string[];
 };
 
-const J = EQUIP_JSON as unknown as { cart: { baseSlots: number; resale: number; start: EquipId[] }; items: Record<EquipId, EquipDef> };
+const J = EQUIP_JSON as unknown as {
+  cart: { baseSlots: number; resale: number; start: EquipId[] };
+  groups: Record<string, string>;
+  items: Record<EquipId, EquipDef>;
+};
 export const EQUIP = J.items;
 export const EQUIP_IDS = Object.keys(EQUIP) as EquipId[];
 export const CART = J.cart;
+/**
+ * Tên nhóm bằng tiếng người, theo THỨ TỰ bày ra trang Đồ nghề.
+ *
+ * Hai mươi món xếp thành một cột phẳng thì không ai đọc hết — mắt phải có chỗ bám
+ * (gom theo nhóm là luật gần nhau của Gestalt, và cắt một danh sách dài thành sáu
+ * khúc ngắn là cách duy nhất giữ nó trong tầm nhớ ngắn hạn). Thứ tự của `groups`
+ * trong JSON LÀ thứ tự trên màn hình, nên đổi thứ tự ở đó là đổi được cả trang.
+ */
+export const EQUIP_GROUPS = J.groups;
+export const GROUP_IDS = Object.keys(J.groups);
 
 export type EquipState = { owned: string[]; installed: string[]; wear: Record<string, number> };
 
