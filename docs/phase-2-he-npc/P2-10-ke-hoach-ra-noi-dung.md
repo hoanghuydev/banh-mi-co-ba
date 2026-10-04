@@ -171,9 +171,9 @@ chứ không phải của bộ máy. Khi rà tới file tương ứng thì làm 
 | ~~`ORDER_CHANGE`~~ | anh Bảo · chị Lan | 4 | ✅ **xong** — xem §6quaterdecies |
 | ~~`OVERHEARD_BY`~~ | bà Sáu | 2 | ✅ **xong** — xem §6sedecies |
 
-**Bảng nợ act đã TRẢ HẾT.** 26 act khai trong `TalkAct`, 26 act có `case` trong
+**Bảng nợ act đã TRẢ HẾT.** 28 act khai trong `TalkAct`, 28 act có `case` trong
 `applyAct` (ép bằng `assertActHandled(act: never)` — thiếu nhánh là lỗi BIÊN DỊCH, không
-phải lỗi im lặng), 25/26 có nội dung gọi tới. Còn đúng một act chưa ai gọi: `LEAVE_SHADE`
+phải lỗi im lặng), 27/28 có nội dung gọi tới. Còn đúng một act chưa ai gọi: `LEAVE_SHADE`
 — và nó KHÔNG chết, vì `shadeUntil` hết hạn thì `leaveShade()` tự chạy; nó chỉ chưa có
 một câu thoại nào bảo người ta đi tiếp SỚM. Không viết thoại chỉ để lấp một act.
 
@@ -1550,6 +1550,49 @@ Cái đếm mất mười phút và trả lời ngay.
 | Lưới | 578 → **579** |
 | Số act CHẠY được | 16 → **17** (lần đầu có `RAO`, `CARRY_GANH`) |
 | Lượt mời/buổi | 0,9 → **~1,6** (trần 4) |
+
+## 6sexvicies. "XONG HẾT CHƯA" — TRẢ LỜI BẰNG SỐ, KHÔNG BẰNG CẢM GIÁC
+
+### Phần BỘ MÁY: xong
+
+| | |
+|---|---|
+| Act khai / có `case` | **28 / 28** — thiếu nhánh là lỗi BIÊN DỊCH (`assertActHandled`) |
+| Act có nội dung gọi tới | **27 / 28** (`LEAVE_SHADE` tự chạy khi hết hạn, không cần câu thoại) |
+| Cổng validator | **T001–T018**, 0 lỗi 0 cảnh báo |
+| `lint:lines` · `tsc` | 0 ERROR · sạch |
+| Lưới | **579**, xanh hết |
+| 15 kho thoại | rà xong cả 15 |
+| Vật trong map | xe · gánh · dù · ghế · áo mưa — đủ, và đúng chỗ |
+
+Hai bảng nợ trong tài liệu đã **hết hạn mà vẫn ghi CHƯA**, sửa luôn ở đợt này: `P2-07`
+§3.5 còn ghi `GIVE_BREAD`/`STAND_IN_SHADE`/`LEAVE_SHADE`/`WALK_ON` là **CHƯA** (cả bốn
+xong từ lâu), và §5 ở trên còn đếm "26 act" (giờ 28). Tài liệu nói sai về chính mình là
+một dạng nợ: lần sau đọc nó sẽ làm lại việc đã làm.
+
+### Phần NỐI TỪNG NÚT: chưa, và đây là con số
+
+Mấy tờ rà `docs/audit/thoai/*.md` đánh dấu **246 nút** "câu này đáng ra phải có hành động
+thật". Kho hiện có **242 nút mang act / 2.185 nút (11%)**. Hai con số gần bằng nhau, nhưng
+**phân bố thì không**:
+
+| act | tờ rà đòi | kho đang có |
+|---|---|---|
+| `WALK_ON` | 35 | 37 ✓ |
+| `GIVE_BREAD` | 31 | **5** |
+| `STAND_IN_SHADE` | 22 | **10** |
+| `PROMISE_DEED` | 17 | 21 ✓ |
+| `MOVE_CART` | 9 | 9 ✓ |
+| `OFFER_TEA` | 7 | 21 ✓ |
+
+Nên câu trả lời sòng phẳng cho *"xong hết conversation feature chưa"*:
+
+> **Bộ máy xong. Việc nối từng câu thoại vào hành động thì còn** — đậm nhất ở
+> `GIVE_BREAD` (*"bẻ miếng ăn thử cho biết"*, 5/31) và `STAND_IN_SHADE` (10/22).
+
+Và đó là việc **rà nội dung từng file**, không phải việc code: mỗi nút phải đọc câu thoại
+rồi quyết nó có đáng mang act không — `tools/audit-loi.ts` dò được chỗ nghi, nhưng quyết
+thì phải người đọc.
 
 ## 7. Truy vết
 

@@ -111,17 +111,23 @@ chính file rà, kèm lý do.
 
 ### 3.5. HÀNH ĐỘNG — `does`, và mọi hành động đều phải CÓ THẬT
 
+> ⚠️ **Bảng này đã HẾT NỢ** — cập nhật sau `P2-10` §6sedecies. 28 act khai trong `TalkAct`,
+> **28/28 có `case`** trong `applyAct`, và `assertActHandled(act: never)` biến một act thiếu
+> nhánh thành lỗi BIÊN DỊCH chứ không phải một lời nói miễn phí. Giữ bảng lại vì cột "xảy
+> ra gì" vẫn là hợp đồng; cột cuối thì không còn chỗ nào ghi CHƯA.
+
 | khoá | xảy ra gì | kéo dài | đã có code chưa |
 |---|---|---|---|
-| `GIVE_BREAD` | ổ rời tay người chơi, họ cầm lấy, ăn | tới khi ăn xong | **CHƯA** |
-| `OFFER_TEA` | tốn một ly; họ nhận **hoặc từ chối** theo tính cách + tâm trạng + mục đích | ~8 s | một phần (`refuseTea`) |
+| `GIVE_BREAD` | ổ rời tay người chơi, họ cầm lấy, ăn | tới khi ăn xong | CÓ |
+| `OFFER_TEA` | tốn một ly; họ nhận **hoặc từ chối** theo tính cách + tâm trạng + mục đích | ~8 s | CÓ (`refuseTea`) |
 | `STEP_ASIDE` | họ **bước hẳn ra khỏi hàng**, đứng nép ở `ASIDE_SPOT` (lề bên phải quầy); cả hàng sau lưng dồn lên một bậc, người kế lên trước quầy | tới khi người được nhường đi khỏi (không có ai để nhường: `ASIDE_HOLD_SEC` = 6 s) | CÓ |
-| `STAND_IN_SHADE` | họ **đi tới ô hóng mát** và đứng đó | `forSec`, rồi **đi tiếp đúng mục đích cũ** | **CHƯA — cần ô mới** |
-| `LEAVE_SHADE` | họ rời chỗ mát, đi tiếp | ngay | **CHƯA** |
-| `LOOK_INSIDE` | họ quay nhìn vào quầy | `forSec` | một phần (`gaze`) |
+| `STAND_IN_SHADE` | họ **đi tới ô hóng mát** và đứng đó | `forSec`, rồi **đi tiếp đúng mục đích cũ** | CÓ (`world/map.SHADE_SPOT`, và cái dù vẽ ĐÚNG chỗ đó) |
+| `LEAVE_SHADE` | họ rời chỗ mát, đi tiếp | ngay | CÓ — nhưng **chưa câu thoại nào gọi**; hết `shadeUntil` thì `leaveShade()` tự chạy |
+| `LOOK_INSIDE` | họ quay nhìn vào quầy | `forSec` | CÓ |
 | `INVITE` | roll `inviteChance` | ngay | CÓ |
 | `REFUSE` / `PAY` / `DISCOUNT` / `PROMISE` / `FREE_LOAF` | như cũ | — | CÓ |
-| `WALK_ON` | họ đi tiếp, kết thúc cuộc | ngay | **CHƯA** |
+| `WALK_ON` | họ đi tiếp, kết thúc cuộc | ngay | CÓ |
+| `THEY_SIT` · `FILM` · `STOP_FILM` · `CARRY_GANH` · `MOVE_GANH` · `BARTER` · `MOVE_CART` · `RAO` · `LEND_ITEM` · `CLEAR_DEBT` · `ORDER_CHANGE` · `TAKE_CASH` · `OVERHEARD_BY` · `PROMISE_DEED` · `CREDIT_LOAF` | thêm sau `P2-07` — xem `P2-10` §6octies→§6sedecies | — | CÓ |
 
 > **`forSec` là bắt buộc với mọi hành động có thời lượng.** Chủ dự án nói thẳng:
 > *"không phải bảo họ vào đứng mát là họ vào đó đứng luôn cả ngày, cả game"*. Hết giờ thì
