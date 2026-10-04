@@ -277,6 +277,15 @@ export class EveningView {
    * Đồ nghề — P3-04 §4 UI: giá, chỗ trên xe, tiền mỗi ngày, và MỘT câu về cảm giác. KHÔNG
    * BAO GIỜ hiện con số hiệu ứng. Chỗ trống trên xe vẽ thành ô mờ, không phải "8/14".
    */
+  /**
+   * Mấy cờ mở khoá nói bằng tiếng người. Không khai "flag `rainyDaySeen`" — người chơi
+   * không đọc tên biến, họ đọc *"đợi một bữa mưa"*.
+   */
+  private static readonly UNLOCK_WORDS: Record<string, string> = {
+    rainyDaySeen: "đợi một bữa mưa",
+    dirtyHandsConfirmed: "đợi lúc có người chê tay mình dơ",
+  };
+
   private gear() {
     const w = this.w, day = w.progress.dayIndex, e = w.equipment;
     const R = this.el("div", "ev-col ev-right");
@@ -307,11 +316,24 @@ export class EveningView {
       }
       return R;
     }
+    /*
+     * MÓN CHƯA MỞ KHOÁ VẪN PHẢI THẤY — mờ đi và nói rõ còn thiếu gì.
+     *
+     * Chủ dự án: *"Ủa mua dù, bàn ghế kiểu gì thế? Tôi có thấy chỗ nào mua đâu?"* Đúng:
+     * bản trước `continue` thẳng, nên món chưa tới ngày (hay chưa gặp ngày mưa) KHÔNG
+     * TỒN TẠI ở đâu trên màn hình. Người chơi không thể muốn một thứ họ chưa từng thấy,
+     * và cái dù là chỗ dựa của mười câu "đứng cho mát" — không biết nó có thì không bao
+     * giờ mua.
+     *
+     * Vẫn KHÔNG nói con số hiệu ứng (P3-04 §4), chỉ nói món đó là gì và còn thiếu gì.
+     */
     for (const id of EQUIP_IDS) {
       const d = EQUIP[id];
       const own = has(e, id);
-      if (!own && (d.starting || !unlocked(id, e, day, w.flags))) continue;
+      if (!own && d.starting) continue;
+      const khoa = !own && !unlocked(id, e, day, w.flags);
       const box = this.el("div", "ev-due");
+      if (khoa) box.style.opacity = "0.5";
       const head = own ? `${d.name} · đang có` : `${d.name} · ${priceVnd(id) ? money(priceVnd(id)) : "không tốn tiền"}`
         + `${d.slots > 0 ? ` · ${d.slots} chỗ` : d.slots < 0 ? ` · thêm ${-d.slots} chỗ` : ""}${d.daily_k ? " · tốn thêm mỗi ngày" : ""}`;
       box.append(this.el("div", "ev-ink", head), this.el("div", "ev-note", d.feel));
@@ -324,6 +346,16 @@ export class EveningView {
           sell.onclick = () => { sellEquip(id, e, w.money, 1, w.econ); this.msg = `đã bán ${d.name} — lấy lại sáu phần mười`; this.render(); };
           btns.append(sell);
         }
+      } else if (khoa) {
+        /** Nói ĐIỀU KIỆN, không nói "chưa có ai bán" trống không — người chơi cần biết chờ cái gì. */
+        const u = EQUIP[id].unlock;
+        const can: string[] = [];
+        if (u?.minDay && day < u.minDay) can.push(`qua ngày ${u.minDay}`);
+        if (u?.afterFlag && !w.flags[u.afterFlag]) can.push(EveningView.UNLOCK_WORDS[u.afterFlag] ?? "còn chờ dịp");
+        if (u?.requiresAny?.length && !u.requiresAny.some((x) => has(e, x))) {
+          can.push(`cần có ${u.requiresAny.map((x) => EQUIP[x].name.toLowerCase()).join(" hoặc ")}`);
+        }
+        btns.append(this.el("span", "ev-note", `chưa bán — ${can.join(", ") || "còn chờ dịp"}`));
       } else {
         const why = whyNot(id, e, w.money.cash, day, w.flags);
         const b = this.el("button", "ev-btn primary", "mua");

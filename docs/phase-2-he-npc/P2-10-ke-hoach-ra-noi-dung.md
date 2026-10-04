@@ -1398,6 +1398,40 @@ trên, và phân biệt được chúng là toàn bộ giá trị của mấy c�
 | Cổng mới | **T018** — `FULL` không sống nổi trong `NAN_LAI` |
 | Máy mới | `tools/probe-khung.ts` — so khung THẬT với khung KHAI |
 
+## 6tervicies. "TÔI CÓ THẤY CHỖ NÀO MUA ĐÂU" — MÓN CHƯA MỞ KHOÁ KHÔNG TỒN TẠI TRÊN MÀN HÌNH
+
+Tôi bảo chủ dự án *"mua `DU_CHE` ở trang tối là thấy"*. Trả lời:
+
+> *"Ủa mua dù, bàn ghế kiểu gì thế? Tôi có thấy chỗ nào mua đâu?"*
+
+Đi coi `EveningView.gear()` thì thấy đúng một dòng:
+
+```ts
+if (!own && (d.starting || !unlocked(id, e, day, w.flags))) continue;
+```
+
+Món chưa mở khoá **bị bỏ qua hoàn toàn** — không mờ, không xám, không một dòng chữ. Nên
+trước ngày 8 (và trước khi gặp một bữa mưa) cái dù KHÔNG TỒN TẠI ở đâu trên màn hình.
+Người chơi không thể muốn một thứ họ chưa từng thấy, mà cái dù là chỗ dựa của mười câu
+*"đứng cho mát"*.
+
+Sửa: vẽ mờ 50%, và nói **điều kiện còn thiếu bằng tiếng người** — `"chưa bán — qua ngày 8,
+đợi một bữa mưa"`, không phải tên cờ `rainyDaySeen`. Vẫn giữ nguyên luật P3-04 §4: không
+bao giờ hiện con số hiệu ứng.
+
+### Và một chỗ tôi nói sai, sửa luôn ở đây
+
+Tôi khai cái dù giá **540.000đ** nên chủ dự án *"chưa đủ tiền"*. Sai: `price_k: 540` là số
+THÔ trong `equipment.json`, giá thật đi qua `ECON.scale` ra **216.000đ**. Với 458.000đ
+trong két ngày 8, cái dù **mua được ngay**. Đọc dữ liệu thô rồi khai thành giá trong game
+là đúng cái lỗi "giá trị ép tay đọc thành số thật" của mấy đợt trước, lần này ở một chỗ
+khác.
+
+| | |
+|---|---|
+| Lưới | 569 → **573** |
+| Sửa | `EveningView.gear()` vẽ món bị khoá, kèm điều kiện bằng tiếng người |
+
 ## 7. Truy vết
 
 | Khẳng định | Nguồn |
