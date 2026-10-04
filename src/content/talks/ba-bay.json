@@ -1477,7 +1477,14 @@
               "rel": 2,
               "calm": 10,
               "reply": "…Ờ. Bà dời qua đó chút vậy.",
-              "mood": "THUONG"
+              "mood": "THUONG",
+              "act": {
+                "kind": "STAND_IN_SHADE",
+                "forSec": 25
+              },
+              "while": [
+                "w.shadeFree"
+              ]
             },
             {
               "say": "Thôi bà. Con làm tiếp đây.",

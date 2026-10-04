@@ -1624,8 +1624,14 @@
               "reply": "Ờ. Tao nói thiệt đó, đừng có giận.",
               "mood": "NGHIEM",
               "need": [
-                "p.holdsFilled"
-              ]
+                "p.holdsFilled",
+                "!p.soldOut",
+                "!v.gaveFood"
+              ],
+              "act": {
+                "kind": "GIVE_BREAD",
+                "forSec": "TOI_KHI_AN_XONG"
+              }
             }
           ]
         },

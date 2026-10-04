@@ -1176,7 +1176,16 @@
               "tone": "AM",
               "rel": 2,
               "reply": "Ờ… ừ. Đói mà ngủ là {self} tỉnh dậy xót ruột lắm.",
-              "mood": "MET"
+              "mood": "MET",
+              "act": {
+                "kind": "GIVE_BREAD",
+                "forSec": "TOI_KHI_AN_XONG"
+              },
+              "need": [
+                "p.holdsFilled",
+                "!p.soldOut",
+                "!v.gaveFood"
+              ]
             },
             {
               "say": "Dạ {call} về nghỉ nghen.",

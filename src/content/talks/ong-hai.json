@@ -369,7 +369,14 @@
             "rel": 2,
             "calm": 22,
             "reply": "Ờ… ờ. Nhích thì nhích.",
-            "mood": "MET"
+            "mood": "MET",
+            "act": {
+              "kind": "STAND_IN_SHADE",
+              "forSec": 25
+            },
+            "while": [
+              "w.shadeFree"
+            ]
           }
         ]
       },
@@ -912,7 +919,14 @@
             "rel": 3,
             "calm": 26,
             "reply": "…Ờ. Chú vô. Chú vô rồi chú hổng nói gì nữa.",
-            "mood": "THUONG"
+            "mood": "THUONG",
+            "act": {
+              "kind": "STAND_IN_SHADE",
+              "forSec": 25
+            },
+            "while": [
+              "w.shadeFree"
+            ]
           },
           {
             "say": "Dạ.",

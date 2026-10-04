@@ -1594,6 +1594,59 @@ Và đó là việc **rà nội dung từng file**, không phải việc code: m
 rồi quyết nó có đáng mang act không — `tools/audit-loi.ts` dò được chỗ nghi, nhưng quyết
 thì phải người đọc.
 
+## 6septvicies. NỐI NỐT `GIVE_BREAD` + `STAND_IN_SHADE` — VÀ TEST THEO LỐI ĐI PHÁ
+
+Chủ dự án: *"làm nốt 2 act đó đi. cuối cùng last test các case để xem nó hoạt động ok
+chưa. test theo tư duy counter chứ đừng đồng ý."*
+
+### Không nối đủ 31 — và vì sao KHÔNG nối mới là việc đúng
+
+Tờ rà đòi `GIVE_BREAD` 31 nút. Đọc từng câu thì phần lớn là **câu đưa ổ ĐÃ BÁN** —
+*"Dạ ổ của chị đây chị."* Ổ đó đã đi qua `serveDish`; gắn `GIVE_BREAD` lên đó nghĩa là:
+
+* ghi một vết nhớ `CARED_FOR_THEM` (hào phóng) cho một vụ **mua bán bình thường**, và
+* đốt luôn cờ `v.gaveFood`, nên lần MỜI ĂN thật sau đó bị khoá (`!v.gaveFood`).
+
+Tức nối đủ 31 là **bán mà hoá ra cho không**. Rà cả kho bằng mắt, còn đúng:
+
+| act | nối thêm | nút |
+|---|---|---|
+| `STAND_IN_SHADE` | **4** | `dung.congai` · `bay.moiloi` (tờ rà chỉ đích danh) · `hai.say` · `hai.duoi` |
+| `GIVE_BREAD` | **2** | `kiet.hethang` · `duong.nhinra` |
+
+Và **gỡ 3 nút** đang gắn sai: `walkin.cau` · `walkin.nhamquan` · `walkin.donvp` — cả ba là
+câu đưa hàng. Lưới `PHA-4` giữ ranh giới đó bằng máy để không ai nối lại.
+
+### Chín lưới viết theo lối ĐI TÌM LỖI
+
+Không hỏi "trường hợp thường có chạy không" mà hỏi **"bấm kiểu gì thì nó vỡ"**: bấm hai
+lần · bấm khi tay không · chỗ mát đã có người · người đã ăn rồi · mời rồi họ có ĐI tới
+không · `forSec` có thiếu không · cổng gắn `need` hay `while`.
+
+**Hai lưới đỏ ngay lần chạy đầu — cả hai là lỗi thật:**
+
+* `PHA-2` — **bấm hai lần thì HAI ổ rời tay bằng một ổ trên tay.** `giveBread` chỉ hỏi
+  *"tay có cầm ổ nào không"*, mà `StallScene` gán lại `playerHand` mỗi frame. Vá bằng
+  `if (c.eating || c.visit.gaveFood) return` — dùng ĐÚNG cái cờ mà nội dung đã khoá
+  (`!v.gaveFood`), nên hai chỗ không thể lệch nhau.
+* `PHA-4` — ba câu đưa hàng mang `GIVE_BREAD` như trên.
+
+Nếu viết lưới theo lối "chạy thử một ca thuận rồi gật" thì **cả hai đều lọt**: ca thuận
+chạy đúng. Chỉ có câu hỏi "bấm hai lần thì sao" mới lôi được chúng ra.
+
+### Số đo sau cùng
+
+| | |
+|---|---|
+| Lưới | 579 → **588** |
+| `STAND_IN_SHADE` | 10 → **14 nút** · chạy **70 lần / 10 buổi** |
+| `GIVE_BREAD` | 5 → **4 nút đúng** (nối 2, gỡ 3 sai) · cuộc chứa nó mở ra 5.007 lượt ⇒ **hiếm, không chết** |
+| Lỗi thật bắt được | **2** |
+
+`GIVE_BREAD` còn 0 lần trong lượt chơi của bot vì nó đòi **tay đang cầm ổ ĐÃ CÓ NHÂN**, mà
+con bot gói xong là đưa ngay. Người thật hay đứng cầm ổ vừa gói mà nói chuyện, nên con số
+của người sẽ khác — và tôi KHÔNG lấy số của bot để kết luận thay cho người.
+
 ## 7. Truy vết
 
 | Khẳng định | Nguồn |

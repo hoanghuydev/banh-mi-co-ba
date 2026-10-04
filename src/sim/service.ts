@@ -2964,6 +2964,15 @@ export class Service {
   /** Ổ RỜI TAY thật, nếu không thì "ăn thử cho biết" là thiện cảm không tốn gì. */
   private giveBread(c: Customer, forSec: ForSec) {
     if (!this.playerHand.startsWith("loaf")) return;
+    /*
+     * ⚠️ MỘT Ổ, MỘT LẦN. Bản trước chỉ hỏi "tay có cầm ổ nào không" — mà `StallScene` gán
+     * `playerHand` mỗi frame, nên trong cùng một phiên thoại bấm hai nút cho ăn là **hai**
+     * ổ rời tay bằng một ổ trên tay. Lưới `PHA-2` bắt được đúng cái đó.
+     *
+     * `visit.gaveFood` là mốc đúng: nó cũng chính là cổng `!v.gaveFood` mà nội dung dùng,
+     * nên hai chỗ không thể lệch nhau.
+     */
+    if (c.eating || c.visit.gaveFood) return;
     this.out.push({ kind: "takeHand", npcId: c.memKey, name: this.label(c) });
     c.eating = true;
     c.eatUntil = c.now + (forSecOf(forSec) ?? 25);

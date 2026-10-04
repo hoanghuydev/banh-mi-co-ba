@@ -806,7 +806,14 @@
               "rel": 2,
               "calm": 18,
               "reply": "Ờ. Đứng trong này mát hơn thiệt.",
-              "mood": "THUONG"
+              "mood": "THUONG",
+              "act": {
+                "kind": "STAND_IN_SHADE",
+                "forSec": 25
+              },
+              "while": [
+                "w.shadeFree"
+              ]
             }
           ]
         },

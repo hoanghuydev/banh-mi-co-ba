@@ -319,11 +319,7 @@
             "reply": "Ờ.",
             "need": [
               "p.holdsFilled"
-            ],
-            "act": {
-              "kind": "GIVE_BREAD",
-              "forSec": "TOI_KHI_AN_XONG"
-            }
+            ]
           },
           {
             "say": "Dạ anh thông cảm giùm em.",
@@ -588,11 +584,7 @@
             "mood": "CUOI",
             "need": [
               "p.holdsFilled"
-            ],
-            "act": {
-              "kind": "GIVE_BREAD",
-              "forSec": "TOI_KHI_AN_XONG"
-            }
+            ]
           },
           {
             "say": "Dạ bữa sau anh ghé nữa nghen anh.",
@@ -774,11 +766,7 @@
             "mood": "CUOI",
             "need": [
               "p.holdsFilled"
-            ],
-            "act": {
-              "kind": "GIVE_BREAD",
-              "forSec": "TOI_KHI_AN_XONG"
-            }
+            ]
           },
           {
             "say": "Bữa sau em chốt đơn rồi hẵng qua nghen em.",
