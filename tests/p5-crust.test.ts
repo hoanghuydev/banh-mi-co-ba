@@ -93,8 +93,8 @@ test("giữa dải GIÒN thì không ai nói gì — vùng tốt vẫn rộng nh
   assert.equal(diffed(ev).defects.length, 0);
 });
 
-test("lò gas có `burnAt` riêng: dải tốt của nó KHÔNG bị đọc thành cháy cạnh", () => {
-  // `CRUST.SINGED` (0,88) < 1,05 < `burnAt` lò gas (1,7): lò thường thì sém, lò gas thì chưa.
+test("lò điện có `burnAt` riêng: dải tốt của nó KHÔNG bị đọc thành cháy cạnh", () => {
+  // `CRUST.SINGED` (0,88) < 1,05 < `burnAt` lò điện (1,7): lò thường thì sém, lò điện thì chưa.
   const { h, ev, c } = atCounter();
   h.service.serveDish(dishFor(c.order!), { crust: 0.8, burnAt: 1.7 });
   assert.equal(diffed(ev).defects.length, 0, "0,80 vẫn nằm trong dải GIÒN của mọi lò");

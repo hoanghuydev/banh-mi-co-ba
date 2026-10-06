@@ -8,6 +8,7 @@ import { PAL as P } from "../art/palette";
 import { music } from "../audio/music";
 import { sfx } from "../audio/sfx";
 import { MarketView } from "../ui/market/MarketView";
+import { coBaFace } from "../art/faces";
 
 /**
  * Đi chợ sáng — P0-01 §2.3 / P3-01 §2.1. Chạy theo LƯỢT: đồng hồ KHÔNG trôi ở đây
@@ -45,6 +46,9 @@ export class MarketScene extends Phaser.Scene {
     this.view = new MarketView(this.game, this.ctx.world, {
       textScale: st.textScale,
       showTotal: st.marketRunningTotal,
+      // Mặt cô Ba cho bong bóng dẫn bữa đầu. Nướng ở đây vì `MarketView` là lớp DOM, không
+      // cầm scene — mà `faceCrop` thì cần texture của scene.
+      face: coBaFace(this),
       onDone: (r) => this.done(r.spent, r.bought.map((b) => ({ itemId: b.good, qty: b.units }))),
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {

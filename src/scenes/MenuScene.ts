@@ -1,9 +1,8 @@
 import Phaser from "phaser";
 import { fitDesignFrame } from "../core/render";
 import { Stack, button, buttonHeight, label, panel, textScale, toggle, UI } from "../ui/theme";
-import { PAL as P } from "../art/palette";
-import { COUNTER, textureFor } from "../art";
-import { BASKET_TEX, BASKET_W, artScale, fitPhoto } from "../art/photo";
+import { drawAlleyBackdrop } from "../ui/backdrop";
+import { DEFAULT_PLAYER_NAME, cleanName } from "../content/intro";
 import {
   SaveService, SaveTooNewError, loadSettings, saveSettings, type SaveFile, type Settings,
 } from "../core/save";
@@ -15,6 +14,12 @@ import { CUES, MUSIC_STEPS, music } from "../audio/music";
 import { sfx } from "../audio/sfx";
 
 type Page = "main" | "settings" | "audio" | "about" | "telemetry" | "confirmNew";
+
+/** Tên người chơi ở dòng phụ của nút "Chơi tiếp" — tên mặc định thì khỏi nhắc. */
+const playerLabel = (name: string) => {
+  const n = cleanName(name ?? "");
+  return n && n !== DEFAULT_PLAYER_NAME ? n : "";
+};
 
 /**
  * Sảnh menu. Mọi trang dựng lại từ đầu trong một container -> chuyển trang là
@@ -59,45 +64,7 @@ export class MenuScene extends Phaser.Scene {
 
 
   private drawBackdrop() {
-    const g = this.add.graphics();
-    for (let i = 0; i < GAME_H; i += 4) {
-      const t = i / GAME_H;
-      g.fillStyle(Phaser.Display.Color.Interpolate.ColorWithColor(
-        Phaser.Display.Color.IntegerToColor(P.skyTop),
-        Phaser.Display.Color.IntegerToColor(P.skyLow), 100, t * 100,
-      ).color as unknown as number, 1);
-      g.fillRect(0, i, GAME_W, 5);
-    }
-
-    g.fillStyle(P.sun, 0.1);
-    g.fillPoints([
-      { x: GAME_W * 0.52, y: 0 }, { x: GAME_W * 0.78, y: 0 },
-      { x: GAME_W * 0.46, y: GAME_H }, { x: GAME_W * 0.2, y: GAME_H },
-    ], true);
-
-    g.fillStyle(0x2f3a41, 0.32);
-    g.fillPoints([{ x: 0, y: 0 }, { x: 190, y: 0 }, { x: 96, y: GAME_H }, { x: 0, y: GAME_H }], true);
-    g.fillPoints([
-      { x: GAME_W, y: 0 }, { x: GAME_W - 210, y: 0 },
-      { x: GAME_W - 110, y: GAME_H }, { x: GAME_W, y: GAME_H },
-    ], true);
-
-    g.fillStyle(0x1b2126, 0.25);
-    g.fillRect(0, GAME_H - 96, GAME_W, 96);
-
-    const S = 2.0;
-    this.add.image(GAME_W - 262, GAME_H - 26, COUNTER.case(0)).setOrigin(0.5, 1).setScale(S).setAlpha(0.5);
-    const end = this.add.image(GAME_W - 190, GAME_H + 4, COUNTER.end).setOrigin(0.5, 1).setScale(S).setAlpha(0.5);
-    // Rổ bánh là ẢNH THẬT đặt rời (xem `art/photo.ts`), không còn nướng trong texture
-    // khúc quầy — không đặt lại ở đây thì mặt quầy của sảnh trơ ra một khoảng trống.
-    // Dùng chung đúng phép đặt của `StallScene.addOnCounter`, chỉ nhân thêm hệ số phóng.
-    if (this.textures.exists(BASKET_TEX)) {
-      fitPhoto(this.add.image(end.x, end.y - (COUNTER.TOP_ABOVE_FOOT - BASKET_W / 4) * S, BASKET_TEX))
-        .setOrigin(0.5, 1).setScale(S / artScale(BASKET_TEX)).setAlpha(0.5);
-    }
-    // `fitPhoto` chứ không `setScale` thẳng: hình người chơi là ẢNH THẬT nướng dư pixel.
-    fitPhoto(this.add.image(GAME_W - 292, GAME_H - 84, textureFor("s").key), 1.9)
-      .setOrigin(0.5, 1).setAlpha(0.5);
+    drawAlleyBackdrop(this);
   }
 
 
@@ -146,7 +113,10 @@ export class MenuScene extends Phaser.Scene {
       () => this.continueRun(), {
         width: 300, disabled: !save || over,
         hint: tooNew ? "cập nhật game rồi chơi tiếp"
-          : save ? `ngày ${save.progress.dayIndex} · ${save.money.cash.toLocaleString("vi-VN")}₫` : undefined,
+          // Tên con đứng TRƯỚC ngày và tiền: nó là thứ nhận ra ván của mình, hai con số kia
+          // chỉ là tiến độ. Tên trống (bỏ qua bước đặt tên) thì dòng này y như cũ.
+          : save ? [playerLabel(save.playerName), `ngày ${save.progress.dayIndex}`,
+            `${save.money.cash.toLocaleString("vi-VN")}₫`].filter(Boolean).join(" · ") : undefined,
       }), 14));
 
     body.add(st.button(button(this, x, 0, "Cài đặt", () => this.show("settings"), { width: 300 }), 14));
@@ -180,7 +150,9 @@ export class MenuScene extends Phaser.Scene {
 
   private askTelemetryThenStart() {
     if (loadSettings().telemetry === null) { this.show("telemetry"); return; }
-    this.scene.start("day", { mode: "new" });
+    // Mùa mới đi qua MÀN MỞ ĐẦU, không vô thẳng ngày 1: ở đó cô Ba giao xe và hỏi tên con —
+    // mà cái tên thì `DayScene` cần ngay lúc dựng `newGame()`, sau đó không sửa được nữa.
+    this.scene.start("intro");
   }
 
   private pageConfirmNew() {
@@ -423,7 +395,8 @@ export class MenuScene extends Phaser.Scene {
     // giai đoạn sau" — đó là ghi chú của người làm game, người chơi không mua cái đó.
     // Nó tả CHỖ và CÁI GIÁ, đúng hai thứ cần biết trước khi bấm chơi.
     const what = st.place(label(this, x, 0, [
-      "Cô Ba đi nằm. Xe bánh mì đầu hẻm giao lại cho mình.",
+      "Cô Ba bán bánh mì ở đầu hẻm ba chục năm. Cô nghỉ.",
+      "Mình mua lại cái xe của cô, sơn lại, viết tên mình lên bảng.",
       "",
       "Khách đứng cách mình nửa mét. Họ thấy hết:",
       "tay mình có rửa không, ổ bánh có cháy không,",

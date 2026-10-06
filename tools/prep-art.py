@@ -148,10 +148,23 @@ def despeckle(im, floor=0.004):
     return im
 
 
+# Ngưỡng `cut_black` riêng cho từng tấm — chỉ khai khi khác mặc định.
+#
+# Mặc định 14/44 hợp với mấy tấm nền ĐEN TUYỀN (lum ~0). Nền của cái dù là xám-đen
+# (lum ~24): ở ngưỡng cũ nó chỉ mất 37% độ đục, tức là quanh cây dù còn nguyên một
+# mảng tối VUÔNG VỨC bằng cả khung ảnh. Chỗ tối nhất của chính cây dù đã trên 30 nên
+# nâng lên 30/46 vẫn không ăn vào vật.
+BG_CUT = {
+    "patio_umbrella.png": (30, 46),
+}
+
+
 def clean(name):
     """Ảnh sẵn sàng dùng: có alpha thì giữ NGUYÊN, chưa có thì mới tách nền đen."""
     im, has_alpha = raw(name)
-    return trim(despeckle(im if has_alpha else cut_black(im)))
+    if has_alpha:
+        return trim(despeckle(im))
+    return trim(despeckle(cut_black(im, *BG_CUT.get(name, (14, 44)))))
 
 
 def trim(im, pad=0):
@@ -370,6 +383,13 @@ PROPS = [
     ("prop_bin", "recycling_bin" + R, 320),
     ("prop_sign", "wooden_a_frame_sign" + R, 320),
     ("prop_extinguisher", "fire_extinguisher" + R, 288),
+    # Cái dù che là đạo cụ CAO NHẤT trong bộ (110 px thiết kế, hơn cả cái kệ 86), nên
+    # nó là tấm cần dư pixel nhất — để 384 như mấy tấm kia là lúc thu về cỡ dùng chỉ
+    # còn hơn 3 lần, hụt một nhịp chia đôi của `shrink`.
+    ("prop_umbrella", "patio_umbrella.png", 448),
+    # Tấm này artist cắt bằng Photoroom chứ không removebg — tên file giữ nguyên dấu vết đó, y
+    # như mọi tấm `-removebg-preview` khác. Đã có alpha sẵn nên `clean()` không đụng tới nền.
+    ("prop_fridge", "refrigerator-Photoroom.png", 384),
 ]
 
 # món trên tay: xoay về NGANG vì nó nằm trên hai bàn tay người chơi
@@ -448,8 +468,22 @@ def open_loaf():
 
 
 def main():
+    """
+    Rửa cả bộ, hoặc chỉ mấy tấm được gọi tên:
+
+        python3 tools/prep-art.py                  cả bộ
+        python3 tools/prep-art.py prop_umbrella    đúng một tấm
+
+    Artist gửi lẻ MỘT file là chuyện thường. Rửa lại cả bộ lúc đó vừa lâu vừa ghi đè
+    40 tấm không ai sửa — rồi cái diff to tới mức không ai soi được tấm vừa đổi.
+    """
     os.makedirs(OUT, exist_ok=True)
     made = 0
+    only = set(sys.argv[1:])
+
+    def want(key):
+        """Khớp cả tên ĐÚNG và tên theo NHÓM: `f_walk` gọi luôn `f_walk0..3`."""
+        return not only or any(o == key or key.startswith(o) for o in only)
 
     def save(name, im):
         nonlocal made
@@ -457,38 +491,57 @@ def main():
         made += 1
         print(f"  {name}.png  {im.width}×{im.height}")
 
-    print("ô sàn")
+    if any(want(f"{k}{i}") for k, _, _ in FLOORS for i in range(4)):
+        print("ô sàn")
     for key, src, spins in FLOORS:
+        if not any(want(f"{key}{i}") for i in range(len(spins))):
+            continue
         flat = unwrap(raw(src)[0])
         paint = unwrap(raw(ROAD_PAINT)[0]) if key == "f_road" else None
         for i, spin in enumerate(spins):
+            if not want(f"{key}{i}"):
+                continue
             if i == 1 and paint:
                 save(f"{key}{i}", floor_tile(paint, ROAD_PAINT_SPIN))
             else:
                 save(f"{key}{i}", floor_tile(flat, spin))
 
-    print("đạo cụ")
+    if any(want(k) for k, _, _ in PROPS):
+        print("đạo cụ")
     for key, src, longest in PROPS:
-        save(key, fit(clean(src), longest))
+        if want(key):
+            save(key, fit(clean(src), longest))
 
-    print("món trên tay")
+    if any(want(k) for k, _, _ in HELD):
+        print("món trên tay")
     for key, src, flat in HELD:
+        if not want(key):
+            continue
         im = clean(src)
         save(key, fit(level(im) if flat else im, 288))
 
-    print("nhân")
+    if any(want(k) for k, _ in INGREDIENTS):
+        print("nhân")
     for key, src in INGREDIENTS:
-        save(key, fit(clean(src), 224))
+        if want(key):
+            save(key, fit(clean(src), 224))
 
-    print("vật nhỏ")
+    if any(want(k) for k, _, _ in SMALL):
+        print("vật nhỏ")
     for key, src, longest in SMALL:
-        save(key, fit(clean(src), longest))
+        if want(key):
+            save(key, fit(clean(src), longest))
 
-    print("ổ bánh rạch đôi")
-    lid, trough = open_loaf()
-    save("loaf_lid", lid)
-    save("loaf_trough", trough)
+    if want("loaf_lid") or want("loaf_trough"):
+        print("ổ bánh rạch đôi")
+        lid, trough = open_loaf()
+        if want("loaf_lid"):
+            save("loaf_lid", lid)
+        if want("loaf_trough"):
+            save("loaf_trough", trough)
 
+    if only and not made:
+        sys.exit(f"không có tấm nào tên {', '.join(sorted(only))}")
     print(f"\nxong — {made} file trong public/art/")
 
 

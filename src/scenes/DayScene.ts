@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { fitDesignFrame } from "../core/render";
 import { bedtime, dawn, eveningCounting, neighborTick } from "../sim/day";
 import { settleNight } from "../sim/night";
+import { markBroke } from "../sim/broke";
 import { duesOpen, pay } from "../sim/obligations";
 import { bus, type EventKey, type EventMap } from "../core/eventbus";
 import { GameContext } from "../core/context";
@@ -11,6 +12,8 @@ import { gcBags } from "../core/rng";
 import { DEV_TOOLS } from "../core/flags";
 import { dev } from "../dev/registry";
 import { refillPresets } from "../sim/presets";
+import { tourDone } from "../sim/tour";
+import { DEFAULT_PLAYER_NAME } from "../content/intro";
 import { sfx } from "../audio/sfx";
 
 /**
@@ -28,9 +31,10 @@ import { sfx } from "../audio/sfx";
  * Scene con nhận ctx bằng INJECTION lúc launch và chỉ phát event — không dùng giá
  * trị trả về của scene. Dữ liệu truyền đi hẹp, một chiều.
  */
-export type DayStart = { mode: "new" } | { mode: "continue" };
+/** `name` do `IntroScene` đưa qua; thiếu (dev gọi thẳng `scene.start("day")`) thì lấy tên mặc định. */
+export type DayStart = { mode: "new"; name?: string } | { mode: "continue" };
 
-const CHILDREN = ["market", "stall", "evening", "ending"] as const;
+const CHILDREN = ["market", "stall", "evening", "ending", "broke"] as const;
 type Child = typeof CHILDREN[number];
 
 const MONEY_SAVE_THRESHOLD = 20_000;
@@ -53,7 +57,8 @@ export class DayScene extends Phaser.Scene {
       probe.clear();
     }
     const fresh = !world;
-    this.ctx = new GameContext(world ?? newGame("Cháu cô Ba"), bus);
+    const named = data.mode === "new" ? data.name?.trim() : "";
+    this.ctx = new GameContext(world ?? newGame(named || DEFAULT_PLAYER_NAME), bus);
     this.ctx.world.telemetry.sessionCount++;
     if (DEV_TOOLS) dev.ctx = this.ctx;
 
@@ -121,7 +126,14 @@ export class DayScene extends Phaser.Scene {
       this.open("ending", { resume: true });
       return;
     }
-    const at: Record<string, Child> = { Market: "market", Stall: "stall", Evening: "evening", Ending: "ending" };
+    // Vào lại một ván đã hết vốn: KHÔNG được rơi về buổi sáng. Bản chụp đầu ngày vẫn còn,
+    // nhưng người chơi phải tự chọn dùng nó ở màn dừng — tự động lùi giùm là lặng lẽ xoá
+    // mất cú vỡ mà họ vừa gây ra.
+    if (ctx.world.flags.broke) {
+      this.open("broke", { canReplay: !!ctx.save.readDayStart(ctx.world.saveId, p.dayIndex) });
+      return;
+    }
+    const at: Record<string, Child> = { Market: "market", Stall: "stall", Evening: "evening", Ending: "ending", Broke: "broke" };
     this.open(at[p.scene] ?? "market", { resume: true });
   }
 
@@ -182,7 +194,7 @@ export class DayScene extends Phaser.Scene {
     this.closeChildren();
     // Màn kết có `SceneKey` riêng ("Ending"), nên reload giữa màn kết quay lại đúng chỗ.
     // Cờ `endingReached` giữ lại làm lưới đỡ cho save ghi bởi bản dựng cũ.
-    const key = ({ market: "Market", stall: "Stall", evening: "Evening", ending: "Ending" } as const)[child];
+    const key = ({ market: "Market", stall: "Stall", evening: "Evening", ending: "Ending", broke: "Broke" } as const)[child];
     this.ctx.setScene(key);
     this.scene.launch(child, { ctx: this.ctx, day: this, ...extra });
   }
@@ -197,7 +209,12 @@ export class DayScene extends Phaser.Scene {
     const { ctx } = this;
     const on = <K extends EventKey>(k: K, fn: (p: EventMap[K]) => void) => { this.off.push(bus.on(k, fn)); };
 
-    on("market:done", () => this.open("stall"));
+    on("market:done", () => {
+      // Rời chợ = xong việc đi chợ của bữa đầu (`sim/tour`). Đặt ở đây chứ không trong
+      // `MarketScene`: chỗ này là chỗ duy nhất biết chắc buổi chợ đã khép lại.
+      tourDone(ctx.world, "CHO");
+      this.open("stall");
+    });
     on("stall:closed", (p) => {
       const w = ctx.world;
       bus.emit("day:ended", {
@@ -230,10 +247,23 @@ export class DayScene extends Phaser.Scene {
         this.quitToMenu();
         return;
       }
+      // HẾT VỐN: chốt ở đây chứ không ở `bedtime()`, vì mọi khoản tiêu trong đêm (góp hụi,
+      // tiền học, SẮM ĐỒ NGHỀ) chỉ đủ mặt sau khi cảnh tối đóng lại. Chốt sớm hơn thì một
+      // cú mua ba triệu lúc 10 giờ đêm không được tính vào chính cái đáy nó vừa tạo ra.
+      if (markBroke(w)) {
+        ctx.save.request("SCENE_CHANGE");
+        this.open("broke", { canReplay: !!ctx.save.readDayStart(w.saveId, w.progress.dayIndex) });
+        return;
+      }
       w.progress.dayIndex++;
       w.progress.dayStartSnapshotRef = null;
       this.beginDay();
     });
+
+    // Chơi lại sáng nay: `replayDay()` thay `ctx.world` bằng bản chụp đầu ngày, mà bản chụp
+    // đó được ghi TRƯỚC khi có cờ `broke` — nên cờ tự biến mất, khỏi phải gỡ bằng tay.
+    on("broke:replay", () => { if (!this.replayDay()) this.quitToMenu(); });
+    on("broke:done", () => this.quitToMenu());
 
     on("npc:left", () => ctx.save.request("CUSTOMER_DONE"));
     on("perception:confirmed", (p) => {

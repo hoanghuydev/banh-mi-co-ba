@@ -4,6 +4,7 @@ import { PAL } from "./palette";
 import { FACE_SLOPE, shade } from "./canvas";
 import { WALL_H } from "./building";
 import { FONT } from "../ui/theme";
+import { shopName } from "../content/intro";
 
 /**
  * Bảng hiệu đỏ chữ vàng (CANON §14), gắn trên MẶT VÁCH của tường sau quán.
@@ -19,8 +20,17 @@ const HALF_W = 78;
 const HALF_H = 18;
 /** Cách mép trên của tường bao nhiêu px, đo dọc theo mặt vách. */
 const DROP = 26;
+/** Cỡ chữ tên quán lúc chưa phải thu, và sàn không thu xuống dưới nữa. */
+const BASE_PX = 18;
+const MIN_PX = 9;
 
-export function createSign(scene: Phaser.Scene, sx: number, sy: number, depth: number) {
+/**
+ * `playerName` — tên con đặt ở màn mở đầu. Quán là CỦA CÔ ẤY, nên tấm bảng mang tên cô ấy:
+ * "BÁNH MÌ HOÀNG HUY". Cô Ba đã cạo tên mình ra khỏi tấm tôn trước khi bán lại cái xe
+ * (`content/intro`), nên bỏ trống tên thì bảng còn trơ hai chữ "BÁNH MÌ" — cố ý, không phải
+ * thiếu dữ liệu.
+ */
+export function createSign(scene: Phaser.Scene, sx: number, sy: number, depth: number, playerName = "") {
   // Mép trên mặt vách "left" tại hoành độ sx (xem `facePoint` ở art/canvas.ts).
   const cy = sy - WALL_H + TH / 2 + DROP;
   const at = (u: number, v: number) => ({ x: sx + u, y: cy + u * FACE_SLOPE + v });
@@ -38,13 +48,24 @@ export function createSign(scene: Phaser.Scene, sx: number, sy: number, depth: n
   g.strokePoints(quad(-HALF_W + 6, HALF_W - 6, -HALF_H + 5, HALF_H - 5), true, true);
 
   const mid = at(0, 0);
-  const t = scene.add.text(mid.x, mid.y, "BÁNH MÌ CÔ BA", {
-    fontFamily: FONT, fontSize: "18px", fontStyle: "700",
+  const t = scene.add.text(mid.x, mid.y, shopName(playerName), {
+    fontFamily: FONT, fontSize: `${BASE_PX}px`, fontStyle: "700",
     color: Phaser.Display.Color.IntegerToColor(PAL.signYellow).rgba,
   })
     .setOrigin(0.5)
     .setRotation(Math.atan2(TH, TW))                   // nằm đúng trong mặt phẳng tường
     .setDepth(depth + 1);
+
+  /*
+   * THU CHỮ CHO VỪA TẤM TÔN.
+   *
+   * Tên quán giờ do người chơi gõ: "BÁNH MÌ TƯ" ngắn hơn một nửa "BÁNH MÌ NGUYỄN THỊ HOA".
+   * Cỡ chữ cố định thì tên dài tràn ra khỏi hai mép bảng và đọc ra như chữ dán đè lên tường.
+   * Đo rồi thu — người sơn bảng ngoài đời cũng làm đúng vậy: chữ nhiều thì viết nhỏ lại.
+   * Sàn 9 px: dưới nữa thì ở cỡ thật trên màn hình nó chỉ còn là một vệt vàng.
+   */
+  const room = (HALF_W - 7) * 2;
+  if (t.width > room) t.setFontSize(Math.max(MIN_PX, Math.floor(BASE_PX * room / t.width)));
 
   return [g, t] as const;
 }

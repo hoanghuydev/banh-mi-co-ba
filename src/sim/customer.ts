@@ -28,6 +28,17 @@ export const LEAVE_AT = 1.6;
 /** Cộng THẲNG chứ không nhân: 6 s là 6 s với tất cả, nên người ít kiên nhẫn được đỡ nhiều hơn theo tỉ lệ. */
 export const PATIENCE_BONUS_SEC = 6;
 
+/**
+ * RÓT MỘT LY LÀ MUA THÊM 20 GIÂY. Chủ dự án: *"Rót nước trà sẽ tăng hảo cảm + tăng thời gian chờ.
+ * Thời gian chờ nên tăng lên tầm 20 giây."*
+ *
+ * Cộng vào `waitT` (sức chờ) chứ không trừ `waitSec` (quãng đã chờ) như `soothe`: dỗ một câu thì
+ * xoá bớt chuyện đã qua, còn đưa ly nước trà thì người ta chịu đứng thêm — hai việc khác nhau, và
+ * cái sau là thứ người chơi bỏ 210 nghìn ra mua. Cộng THẲNG 20 s nên người ít kiên nhẫn được đỡ
+ * nhiều hơn theo tỉ lệ, y như `PATIENCE_BONUS_SEC`.
+ */
+export const TEA_PATIENCE_SEC = 20;
+
 export const TEA = {
   sipDelay: 0.6,
   cooldown: 45,
@@ -43,8 +54,12 @@ export const teaSuspectAtCup = (soi: number) =>
 
 export type VisitPlan = ArcDay & { key?: string; name?: string; style?: number; paysWith?: number };
 
-/** 0,55 chứ không 0 — ngồi lâu vẫn sốt ruột; cái ghế không được thành một nút tắt kiên nhẫn. */
-const SIT_PATIENCE_MUL = 0.55;
+/**
+ * 0,55 chứ không 0 — ngồi lâu vẫn sốt ruột; cái ghế không được thành một nút tắt kiên nhẫn.
+ * Xuất ra vì thẻ `GHE_BAN` hứa "kiên nhẫn trôi chậm 45%" và `tests/p3-equipment.test.ts` (TB-5)
+ * đối chiếu chữ với số.
+ */
+export const SIT_PATIENCE_MUL = 0.55;
 
 export class Customer implements Observer {
   phase: CustomerPhase = "arriving";
@@ -68,7 +83,8 @@ export class Customer implements Observer {
 
   // ── chờ (kênh THỜI GIAN, P1-02 §2.7) ─────────────────────────────────────────
   waitSec = 0;
-  readonly waitT: number;
+  /** KHÔNG `readonly` nữa: ly nước trà nới sức chờ ra (`waitMore`). Mốc bỏ đi vẫn là `waitT · LEAVE_AT`. */
+  waitT: number;
   waitStage = 0;
 
   // ── trà đá ─────────────────────────────────────────────────────────────────
@@ -315,6 +331,11 @@ export class Customer implements Observer {
     this.waitSec = Math.max(0, this.waitSec - this.waitSec * (Math.min(100, amount) / 100));
   }
 
+  /** Nới SỨC CHỜ thêm `sec` giây — ly nước trà. Khác `soothe` (xoá quãng đã chờ), xem `TEA_PATIENCE_SEC`. */
+  waitMore(sec: number) {
+    this.waitT += sec;
+  }
+
   /** Còn trong 45 s kể từ ly trước? */
   get teaOnCooldown() { return this.clock - this.lastTeaAt < TEA.cooldown; }
 
@@ -328,6 +349,14 @@ export class Customer implements Observer {
     const onCd = this.teaOnCooldown;
     this.teaCount++;
     this.holdingTeaFor = 7;
+    /*
+     * 20 GIÂY TRẢ Ở ĐÂY, TRƯỚC CỔNG COOLDOWN. Hảo cảm (`CARED_FOR_THEM`) thì có nhỏ dần và có
+     * cooldown — vì đó là tình cảm, mà tình cảm không farm được. Thời gian chờ thì KHÔNG: ly nước
+     * trà thứ hai vẫn là một ly nước trà, và người đứng nắng vẫn chịu đứng thêm vì nó. Trần chống
+     * lạm dụng đã có ở chỗ khác và đủ chặt: còn cầm ly thì không nhận ly nữa, và `teaSuspectAtCup`
+     * cho người soi bắt bài ở ly thứ ba.
+     */
+    this.waitMore(TEA_PATIENCE_SEC);
     if (onCd) return 0;
     this.lastTeaAt = this.clock;
     this.sipIn = TEA.sipDelay;

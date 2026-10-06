@@ -17,25 +17,29 @@ import { cool, isWarm } from "../sim/loaf";
 import { Steam } from "../ui/stall/Steam";
 import { WipePuff } from "../ui/stall/WipePuff";
 import { Rain } from "../ui/stall/Rain";
-import { ShopLight } from "../ui/stall/ShopLight";
 import { BubblePool } from "../ui/stall/BubblePool";
 import { TalkPanel } from "../ui/stall/TalkPanel";
 import { MoneyPops } from "../ui/stall/MoneyPops";
 import { GossipCorner } from "../ui/stall/GossipCorner";
 import { NotebookView } from "../ui/notebook/NotebookView";
+import { MenuBoardView } from "../ui/menu/MenuBoardView";
 import { logNote } from "../sim/notebook";
 import { chorePin } from "../ui/chorePin";
+import { TOUR_TOTAL, fillGap, tourAt, tourDone, tourIndex, tourSkip, touring } from "../sim/tour";
+import { TourCoach } from "../ui/tour/TourCoach";
+import { coBaFace } from "../art/faces";
 import { CLAIM } from "../sim/gossip";
 import { NPCS } from "../content/npcs";
 import { dishQuality, isRain, portionsFor, putBack, stockOf, take, goodsFor } from "../sim/econ";
 import { RITUAL_LINES, RITUAL_PRAYER, RITUAL_STEPS } from "../sim/till";
-import { dirtMul, has } from "../sim/equipment";
+import { dirtMul, has, type EquipId } from "../sim/equipment";
 import { labelOf } from "../sim/order";
 import { OverhearScene, type Tier } from "../sim/overhear";
 import { dev } from "../dev/registry";
 import type { DayScene } from "./DayScene";
 import { diffDish, type Ingredient } from "../sim/order";
-import { Oven, CRUST, OVEN_SLOTS, bandOfCrust } from "../sim/oven";
+import { isBare } from "../sim/menu";
+import { CRUST, OVEN_SLOTS, Oven, bandOfCrust, ovenFor, type CrustBand } from "../sim/oven";
 import { Grip, RUN_TEMPO, WALK_TEMPO } from "../sim/grip";
 import { orderDefectKey } from "../core/stimid";
 import type { Occluder } from "../sim/perception";
@@ -45,14 +49,14 @@ import { AssemblyPanel } from "../ui/AssemblyPanel";
 import { TH, TW, depthOf, toScreen } from "../world/iso";
 import { COUNTER_Y } from "../world/map";
 import { RENDER_SCALE } from "../core/render";
-import { StallCamera } from "../world/camera";
+import { StallCamera, ZOOM } from "../world/camera";
 import { artScale, fitPhoto, BOARD_TEX, BOARD_W, BASKET_TEX, BASKET_W } from "../art/photo";
-import { CART_CHUNG, CART_LAN, CART_XA, GANH_IN, GANH_OUT, SEAT_SPOT, SHADE_SPOT, SIGN_TILE, SKY_FROM_Y, WORLD_H, WORLD_W, assertWalkable, floorAt, isSunlit, tileAt } from "../world/map";
+import { BUYABLE_TILES, CART_CHUNG, CART_LAN, CART_XA, GANH_IN, GANH_OUT, MENU_DEPTH_AT, MENU_REACH, MENU_SPOT, MENU_TILE, SEAT_SPOT, SHADE_SPOT, SIGN_TILE, SKY_FROM_Y, WORLD_H, WORLD_W, assertWalkable, floorAt, isSunlit, openTilesFor, setOpenTiles, tileAt, type TileCode } from "../world/map";
 import {
-  HAND_LABEL, STATIONS, blockedReason, stationAtTile, stationNear, type Hand, type Station,
+  HAND_LABEL, STATIONS, assertMenuSpotFree, blockedReason, stationAtTile, stationNear, type Hand, type Station,
 } from "../world/stations";
 import {
-  BASE, COUNTER, FX, HELD, PROP, TILE, buildTextures, createSign, floorTextureAt, footY, heldFootPad,
+  BASE, COUNTER, FX, HELD, PROP, TILE, buildTextures, createMenuBoard, createSign, floorTextureAt, footY, heldFootPad,
   heldTexture, preloadArt, spriteEdges, textureForTile,
 } from "../art";
 import { Player } from "../entities/Player";
@@ -86,6 +90,8 @@ const CHORE_EDGE = 8;
 const CHORE_TOP = 58;
 const CHORE_LIFT = 26;
 const WIPE_DIRT = 0.15;
+/** Bốn màu của vòng độ giòn — dùng cho cả cung nền mờ lẫn cung sáng đang chạy. */
+const RAW_COL = 0xe8e2d4, CRISP_COL = 0xd9a441, SINGE_COL = 0xa0582c, BURNT_COL = 0x3a2a22;
 /** Viết thẳng số thay vì `1 − FLY_DIRT_MIN`: phép trừ đó trả về 0,35000000000000003, nhỉnh hơn ngưỡng đúng một hạt bụi. */
 const WIPED_CLEAN = 0.7;
 
@@ -118,6 +124,15 @@ const SKIP_AFTER = 1.5;
 const COVER_SLOW = 1.3;
 
 /**
+ * Cái dù lùi sau `SHADE_SPOT` bao nhiêu ô — xem `addUmbrella`.
+ *
+ * 0,45 là khoảng nhỏ nhất còn ăn thua: `depthOf` làm tròn theo tổng x+y nên muốn người đứng mát
+ * vẽ ĐÈ lên cây dù thì hai bên phải cách nhau hẳn một mức, mà tán dù rộng gần hai ô nên lùi
+ * ngần này vẫn che kín chỗ người đứng.
+ */
+const UMBRELLA_BACK = 0.45;
+
+/**
  * Quán bánh mì ở góc hẻm — scene này chỉ ĐIỀU PHỐI.
  * ⚠️ KHÔNG dùng Container để gom cảnh: Container của Phaser không depth-sort con.
  */
@@ -136,6 +151,9 @@ export class StallScene extends Phaser.Scene {
   private corner: GossipCorner | null = null;
   private overhearTier: Tier = 0;
   private notebook: NotebookView | null = null;
+  private menuBoard: MenuBoardView | null = null;
+  /** Bong bóng dẫn bữa đầu — chỉ dựng ở ngày 1, và chỉ khi còn việc chưa làm. */
+  private coach: TourCoach | null = null;
   /** Theo từng ổ, không phải một biến dùng chung — nếu không thì gác ổ A rồi nướng ổ B là A bị chấm bằng thông số của B. */
   private breadQ = 1;
   private ritualOffered = false;
@@ -160,7 +178,6 @@ export class StallScene extends Phaser.Scene {
   private boardSteam!: Steam;
   private wipePuff!: WipePuff;
   private rain: Rain | null = null;
-  private light!: ShopLight;
   /** Không phải thùng rác — chỗ đặt tạm để rảnh tay, nhặt lên lúc nào cũng được, giữ nguyên thông số. */
   private floor: { x: number; y: number; hand: Hand; warmth: number; crust: number; q: number; dish: Ingredient[] }[] = [];
   /** ⚠️ Đi theo Ổ BÁNH chứ không theo BÀN TAY, y như `handCrust`; không có đường nào tẩy ngoài việc bỏ ổ đó đi. */
@@ -189,6 +206,22 @@ export class StallScene extends Phaser.Scene {
   private labelY = new Map<string, { x: number; y: number }>();
   /** ⚠️ ĐỈNH CỦA CHÍNH CÁI VẬT, không phải `labelY` (đỉnh cả khối quầy, cao hơn mặt thớt 38 px). */
   private choreAt = new Map<string, { x: number; y: number }>();
+  /**
+   * Ô để KHOANH TRÒN của người dẫn bữa đầu — tâm và bán kính THẬT của vật, toạ độ thế giới.
+   *
+   * Không dùng chung `choreAt`: mốc kia nằm ở MÉP TRÊN vật (dấu ❗ treo lên trên), lấy nó làm tâm
+   * vòng tròn thì cái vòng trôi lên nóc — chỗ cao chỗ thấp tuỳ vật cao thấp. Đo bằng
+   * `spriteEdges` (mép pixel ĐỤC, không phải mép khung texture) nên vòng ôm đúng cái lò, cái kệ.
+   */
+  private tourSpot = new Map<string, { x: number; y: number; r: number }>();
+  /**
+   * ĐÓNG BĂNG MỘT NHỊP ở bước lò — chỉ ngày 1, chỉ đúng khoảnh khắc ổ vừa tới khúc vàng.
+   *
+   * Khoảnh khắc đó dài có mấy giây thật (`CRUST.READY` → `singeAt`), mà nó là thứ duy nhất
+   * cả cái lò dạy. Người mới còn đang đọc dòng chữ thì ổ đã sém. Nên game đứng lại đúng một
+   * nhịp, chỉ vô cái vòng, rồi chạy tiếp ngay khi người chơi bấm E.
+   */
+  private tourFreeze = false;
   private grip = new Grip();
   private gripGfx!: Phaser.GameObjects.Graphics;
   /**
@@ -256,12 +289,8 @@ export class StallScene extends Phaser.Scene {
     this.finaleAt = -1;
     this.pendingDebt = null;
     this.debtQueued = false;
-    this.oven = new Oven();
+    this.oven = ovenFor(has(this.world.equipment, "LO_DIEN"));
     this.grip = new Grip();
-    // ⚖️ `burnAt` lò gas 1,25 → 1,70 đi kèm `CRUST.BURNT` 1,00 → 1,30: `rateMul` 1,35 bóp mọi cửa sổ lại
-    // 1/1,35, nên ngưỡng cháy phải nới theo mới giữ được lời hứa "cửa sổ trước khi cháy RỘNG HƠN".
-    if (has(this.world.equipment, "LO_GAS")) { this.oven.rateMul = 1.35; this.oven.burnAt = 1.7; }
-    if (has(this.world.equipment, "KHUNG_GIA_CO")) this.grip.lossMul = 0.85;
     this.handsBusyUntil = 0;
     this.handsBusyFrom = 0;
     this.handsBusyWhat = "";
@@ -301,7 +330,11 @@ export class StallScene extends Phaser.Scene {
   }
 
   create() {
-    if (import.meta.env.DEV) assertWalkable();
+    // Soi bản đồ GỐC, trước khi mở mấy ô đạo cụ chưa mua: cổng này canh chính cái bản đồ, mà bản
+    // đồ thì đứng yên — để nó soi bản đồ đã nới thì ngày nào chưa mua ghế nó cũng dễ dãi hơn.
+    if (import.meta.env.DEV) { assertWalkable(); assertMenuSpotFree(); }
+    /** ⚠️ TRƯỚC mọi thứ biết đi — xem `openTiles` bên `world/map.ts`. */
+    setOpenTiles(openTilesFor((id) => has(this.world.equipment, id as EquipId)));
 
     buildTextures(this);
 
@@ -309,13 +342,13 @@ export class StallScene extends Phaser.Scene {
     // Dọn TRƯỚC `placeProps` — chính nó gọi `addStationLabel` để nạp lại.
     this.labelY.clear();
     this.choreAt.clear();
+    this.tourSpot.clear();
     this.basketImgs = [];
     this.floorImgs = [];
     this.cam = new StallCamera(this, this.sceneBounds(ground, this.placeProps()));
     /** `backgroundColor` là thứ duy nhất vẽ ra ngoài hình bao của cảnh, còn lớp phủ chỉ phủ `worldView`. */
     this.cameras.main.setBackgroundColor(this.raining ? "#5f686c" : "#6f838d");
     this.rain = Rain.for(this, this.world.progress.weather, this.settings.reducedMotion);
-    this.light = new ShopLight(this);
 
     this.ring = this.add.image(0, 0, FX.ring).setOrigin(0.5, 0.5).setVisible(false);
 
@@ -365,7 +398,12 @@ export class StallScene extends Phaser.Scene {
     this.assembly = new AssemblyPanel(this,
       (dish, even) => this.intents.push(() => this.finishDish(dish, even)),
       (dish) => { this.boardLoaf = dish; },
-      (id) => this.intents.push(() => this.onPlace(id)),
+      // Bước "bỏ nhân" xong khi ổ ĐỦ BA PHẦN (pate · nhân mặn · rau), không phải khi bỏ được
+      // miếng đầu tiên: miếng đầu chỉ dạy cách bấm, ba phần mới dạy cái ổ bánh.
+      (id) => this.intents.push(() => {
+        if (!fillGap(this.assembly.dish)) tourDone(this.world, "NHAN");
+        this.onPlace(id);
+      }),
       (i) => this.usePreset(i),
       (id, stack) => {
         // Đếm theo HÀNG TRONG KHO, không theo id nguyên liệu: `dualeo` và `hanhngo` cùng rút từ một hàng RAU.
@@ -376,8 +414,8 @@ export class StallScene extends Phaser.Scene {
       () => this.orderIsEmptyLoaf(),
       (i) => this.consumePreset(i),
     );
-    if (has(this.world.equipment, "DAO_BEN")) this.assembly.wrapSnapMs = 1500;
-    if (has(this.world.equipment, "KEP_GAP")) this.assembly.addCooldownMs = 350;
+    // Kẹp gắp KHÔNG còn bị `addCooldownMs`: nó là món "mua là được", không phải một cuộc đánh đổi
+    // tay-nhanh-đổi-tay-sạch. Dao bén (vốn đặt `wrapSnapMs`) đã bỏ khỏi cây thiết bị.
     this.drawEquipment();
     this.bindInput();
     this.wire();
@@ -440,7 +478,21 @@ export class StallScene extends Phaser.Scene {
 
     music.duck(false);
     this.syncMusic();
+    /*
+     * Bong bóng dẫn bữa đầu. Chỉ dựng khi còn việc chưa làm (`touring`) — ngày 2 trở đi thì
+     * lớp DOM này không tồn tại, không có gì để quên tắt.
+     */
+    if (touring(this.world)) {
+      this.coach = new TourCoach({
+        face: coBaFace(this),
+        textScale: this.settings.textScale,
+        onSkip: () => { tourSkip(this.world); this.coach?.destroy(); this.coach = null; },
+      });
+    }
+
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.coach?.destroy();
+      this.coach = null;
       const st = this.world.stall;
       st.board = this.boardLoaf
         ? { dish: [...this.boardLoaf], warmth: this.boardWarmth, crust: this.boardCrust, q: this.boardQ }
@@ -462,7 +514,6 @@ export class StallScene extends Phaser.Scene {
       this.wipePuff.destroy();
       this.rain?.destroy();
       this.rain = null;
-      this.light.destroy();
       this.talk.destroy();
       // ⚠️ Không gỡ thì mỗi ngày thêm một bộ listener, và listener cũ trỏ vào scene đã huỷ.
       this.cam.destroy();
@@ -571,15 +622,51 @@ export class StallScene extends Phaser.Scene {
     return new Phaser.Geom.Rectangle(minX, minY, w, h);
   }
 
+  /**
+   * ĐỒ CHƯA MUA THÌ KHÔNG ĐƯỢC CÓ MẶT TRÊN CẢNH.
+   *
+   * Chủ dự án: *"ghế nhựa + bàn nhỏ đã hiển thị trong khi chưa mua. Ẩn đi"* · *"ẩn cái bình nước
+   * hiện tại của game đi"* · *"bảng hiệu thì ẩn đi, nào mua sẽ hiện"*. Bốn ô này nằm sẵn trong
+   * `world/map.ts` từ bản dựng đầu (hai ô `s`, một ô `b`, một ô `T`, một ô `A`) — nên người chơi
+   * nhìn ra xe đã thấy đủ đồ rồi mà trang Đồ nghề vẫn bắt trả tiền cho chúng. Một món đồ đã thấy
+   * trước khi mua thì cú mua không đổi gì trên màn hình, và "cái xe LÀ bảng thành tựu" hoá thành
+   * chữ suông.
+   *
+   * ⚠️ `A` LÀ TẤM BẢNG GỖ CHỮ A "bánh mì ngon" đứng trên vỉa hè ở đầu quầy (17,7) — ĐÓ mới là
+   * `BANG_HIEU`. Lượt trước tôi gác nhầm sang tấm banner đỏ trên vách sau (`art/sign.ts`), và chủ
+   * dự án chỉ lại: *"cái bảng hiệu là cái bảng hiệu chỗ ra vào quầy á… mặc định là bảng hiệu cái
+   * hình bánh mì ngon á. Dùng cái bảng đó."* Tấm banner đỏ trên vách là TÊN CỦA QUÁN — quán cô Ba
+   * có trước ngày 1, nên nó treo đó từ đầu và không bán. Thứ mình bỏ tiền mua là tấm bảng đứng ra
+   * mặt tiền kéo người đi ngang, và đó đúng là cái "+15% khách ghé" trên thẻ.
+   *
+   * Gác ở ĐÂY, chỗ dựng đạo cụ, chứ không ở bản đồ: bản đồ là dữ liệu tĩnh, còn chuyện mua được
+   * hay chưa đổi theo từng ngày. Cảnh dựng lại mỗi sáng nên mua tối nay là sáng mai thấy.
+   *
+   * Ô nào ứng với món nào thì tra `BUYABLE_TILES` bên `world/map.ts` — ở đó vì nửa còn lại của
+   * cùng một chuyện nằm ở đó: ẩn rồi thì cũng THÔI CHẶN CHÂN (xem `openTiles`). Hai nửa tách ra
+   * hai bảng là có ngày ẩn cái ghế mà vẫn để lại một cái ghế vô hình chặn đường — đúng lỗi chủ
+   * dự án bắt được: *"chỗ ô của ghế vẫn bị chiếm chỗ chứ không hề bỏ ra"*.
+   */
+  private propHidden(code: TileCode) {
+    const id = BUYABLE_TILES[code];
+    return id !== undefined && !has(this.world.equipment, id as EquipId);
+  }
+
   private placeProps() {
     const placed: Phaser.GameObjects.Image[] = [];
     for (let ty = 0; ty < WORLD_H; ty++) {
       for (let tx = 0; tx < WORLD_W; tx++) {
         const code = tileAt(tx, ty);
-        const key = textureForTile(code, tx, ty, {
+        if (this.propHidden(code)) continue;
+        const eOven = has(this.world.equipment, "LO_DIEN");
+        let key = textureForTile(code, tx, ty, {
           isCounterEnd: code === "Q" && (tileAt(tx - 1, ty) !== "Q" || tileAt(tx + 1, ty) !== "Q"),
           isStation: stationAtTile(tx, ty) !== null,
+          eOven,
         });
+        // `ovenE` CHỈ CÓ ẢNH THẬT, không có bản vẽ code. Ảnh chưa về (hay tải hỏng) thì lùi về
+        // cái lò than còn hơn để chỗ lò trống trơn — người chơi vừa trả 1.800 nghìn cho nó.
+        if (key === PROP.ovenE && !this.textures.exists(key)) key = PROP.oven;
         if (!key || !this.textures.exists(key)) continue;
 
         const img = this.addAt(key, tx, ty);
@@ -593,8 +680,30 @@ export class StallScene extends Phaser.Scene {
     }
 
     // Depth phải vượt TOÀN BỘ hàng tường y=0: bảng trải ngang qua mấy ô, mỗi ô có depth riêng tăng dần.
+    // KHÔNG gác theo `BANG_HIEU`: banner đỏ trên vách là TÊN QUÁN của cô Ba, có trước ngày 1.
+    // Món mua được là tấm bảng gỗ đứng ở đầu quầy — xem `propHidden`.
     const { sx, sy } = toScreen(SIGN_TILE.x, SIGN_TILE.y);
-    createSign(this, sx, sy, depthOf(WORLD_W, 0) + 1);
+    // Tên con (màn mở đầu) treo trên tấm ván nhỏ dưới banner — xem `art/sign.ts`.
+    createSign(this, sx, sy, depthOf(WORLD_W, 0) + 1, this.world.playerName);
+
+    /*
+     * Bảng menu treo cùng mặt vách, khúc bên phải — nhưng KHÁC bảng hiệu ở chỗ depth.
+     *
+     * Bảng hiệu lấy `depthOf(WORLD_W, 0) + 1`, tức trên TẤT CẢ: nó treo cao giữa vách,
+     * không có gì đứng chắn. Tấm menu thì đứng sát góc và người chơi đi ngay dưới nó, nên
+     * cùng cách đó là tấm bảng nổi lên trên cả nhà bên lẫn người chơi — "nằm trên cùng"
+     * thay vì "nằm trên tường". `MENU_DEPTH_AT` là mốc đặt nó đúng tầng.
+     */
+    const m = toScreen(MENU_TILE.x, MENU_TILE.y);
+    createMenuBoard(this, m.sx, m.sy, depthOf(MENU_DEPTH_AT.x, MENU_DEPTH_AT.y));
+    // Dấu dẫn của bữa đầu cắm ở CHỖ ĐỨNG ĐỌC (`MENU_SPOT`), không ở tấm bảng: tấm bảng treo
+    // cao trên vách, mà việc cần làm là ĐI TỚI ĐÂY ĐỨNG. Cùng mốc với mấy dấu trạm khác nên
+    // `bang()` nhô lên đúng một kiểu.
+    const ms = toScreen(MENU_SPOT.x, MENU_SPOT.y);
+    this.choreAt.set("menu", { x: ms.sx, y: footY(ms.sy) });
+    // Vòng khoanh lấy TÂM Ô (`toScreen` đã trả về tâm mặt trên của ô), không lấy `footY` —
+    // `footY` tụt thêm nửa ô cộng `BASE`, tức vòng rơi xuống dưới chỗ phải đứng.
+    this.tourSpot.set("menu", { x: ms.sx, y: ms.sy, r: 30 });
 
     return placed;
   }
@@ -645,6 +754,10 @@ export class StallScene extends Phaser.Scene {
     // Dấu "thớt dơ" neo vào CÁI THỚT, không vào nóc tủ kính của khúc quầy.
     const e = spriteEdges(this, made.sprite);
     this.choreAt.set("board", { x: e.cx, y: e.top - 5 });
+    this.tourSpot.set("board", {
+      x: e.cx, y: (e.top + e.bottom) / 2,
+      r: Math.max(e.right - e.left, e.bottom - e.top) / 2 + 5,
+    });
     // `boardLoafImg` chưa dựng ở thời điểm này (`placeProps` chạy trước) — ghi depth rồi áp sau.
     this.boardDepth = made.sprite.depth + 0.5;
   }
@@ -656,6 +769,10 @@ export class StallScene extends Phaser.Scene {
     const x = e.cx, y = e.top - 5;
     this.labelY.set(st.id, { x, y });
     this.choreAt.set(st.id, { x, y });
+    this.tourSpot.set(st.id, {
+      x, y: (e.top + e.bottom) / 2,
+      r: Math.max(e.right - e.left, e.bottom - e.top) / 2 + 5,
+    });
   }
 
 
@@ -686,7 +803,12 @@ export class StallScene extends Phaser.Scene {
       if (ev.code === "Tab") { ev.preventDefault(); this.openNotebook(); return; }
       if (this.assembly.isOpen) { this.assembly.handleKey(ev.code); return; }
       if (ev.code === "KeyQ") this.intents.push(() => this.discard());
-      else if (ev.code === "KeyE" || ev.code === "Space") this.intents.push(() => this.press());
+      else if (ev.code === "KeyE" || ev.code === "Space") {
+        // Cú E này vừa THẢ BĂNG vừa là cú lấy ổ ra: `intents` chỉ chạy ở pha `craft`, mà pha đó
+        // đang bị đóng băng — không thả ở đây thì phím rơi vào khoảng không và game đứng luôn.
+        this.tourFreeze = false;
+        this.intents.push(() => this.press());
+      }
       else if (ev.code === "KeyR") this.intents.push(() => this.liftFromBoard());
       else if (ev.code === "KeyF") this.intents.push(() => this.askFront());
       else if (ev.code === "KeyG") this.intents.push(() => this.writeDebt());
@@ -706,6 +828,9 @@ export class StallScene extends Phaser.Scene {
         frameDeltas.push(raw);
         if (frameDeltas.length > 5400) frameDeltas.shift();
         this.clock.busy = this.service.busy || this.talkHoldsClock || this.finaleAt >= 0;
+        // `runFrame` bỏ qua TOÀN BỘ frame khi dt = 0 (xem `sim/frame`), nên một dòng này đóng
+        // băng cả đồng hồ, cái lò lẫn sức chờ của khách — không có hệ nào chạy lén tiếp.
+        if (this.tourHolding()) return 0;
         return this.closed ? 0 : this.clock.advance(raw);
       },
       input: (dt) => {
@@ -719,6 +844,13 @@ export class StallScene extends Phaser.Scene {
           run: this.keys.SHIFT.isDown && !this.keys.C.isDown,
         }, dt);
         this.near = stationNear(this.player.x, this.player.y, this.near);
+        /*
+         * CHƯA MUA BÌNH NƯỚC TRÀ THÌ KHÔNG CÓ TRẠM TRÀ. `STATIONS` là dữ liệu tĩnh, mà cái bình là
+         * đồ mua — nên cổng nằm ở đây, ngay sau cú chọn trạm: lọc sẵn trong `stationNear` thì phải
+         * đẩy state đồ nghề xuống `world/stations.ts` (và `headless` / test gọi hàm đó mà không
+         * dựng `world`). Cái thùng cũng không được VẼ ra — xem `propHidden`.
+         */
+        if (this.near?.id === "tea" && !has(this.world.equipment, "BINH_TRA")) this.near = null;
         if (this.assembly.isOpen && this.near?.id !== "board") this.assembly.park();
         if (this.busy && this.near?.id !== this.busy.st.id) this.busy = null;
       },
@@ -726,7 +858,9 @@ export class StallScene extends Phaser.Scene {
         for (const act of this.intents.splice(0)) act();
         this.tickDebt();
         this.tickStation(dt * 1000);
+        this.tickTourOven();
         for (const _ of this.oven.tick(dt)) {
+          this.world.notebook.today.burnt++;
           bus.emit("stim:emitted", { stimId: "BURNT_OR_COLD", zone: "OVEN", salience: SALIENCE.BURNT_OR_COLD, at: this.elapsed, smell: true });
           this.hud.toast("khét rồi!", "bad", this.popClock);
         }
@@ -769,7 +903,7 @@ export class StallScene extends Phaser.Scene {
       dialog: (dt) => {
         this.service.tickDialog(dt);
         this.tickOverhear(dt);
-    this.tickVia();
+        this.tickVia();
         this.drainService();
         telemetry.dialogDeferred = this.service.dialogDeferred;
         // Khoảng lặng ngày 40 phải được mở TRƯỚC cú đóng quầy theo đồng hồ, trong CÙNG frame.
@@ -843,13 +977,12 @@ export class StallScene extends Phaser.Scene {
     this.drawGrip();
     this.drawDirt();
     this.drawChores();
+    this.drawCoach();
     this.drawBasket();
     this.drawFloorItems();
     this.drawCover();
     this.corner?.draw(this.overhearTier, this.clock.minutes, this.time.now, this.settings.reducedMotion);
     this.rain?.draw(this.cam.world.worldView, dt, this.time.now, this.settings.reducedMotion);
-    // ⚠️ Phải gọi SAU lớp mưa: vũng sáng cộng lên TRÊN lớp phủ.
-    this.light.draw(this.raining);
     const ticket = this.frontTicket();
     this.hud.dockFeed(this.assembly.isOpen);
     this.hud.update({
@@ -932,6 +1065,7 @@ export class StallScene extends Phaser.Scene {
       const slow = this.dirt > FLY_DIRT_MIN ? " — thớt dơ, lau lâu hơn" : "";
       return this.boardPrompt() ?? (this.player.hand === "empty" ? `thớt — bấm E để lau thớt${slow}` : null);
     }
+    if (this.nearMenuBoard()) return "bảng menu — bấm E đọc công thức";
     const who = this.service.talkTargetNow;
     if (who && !this.talk.isOpen) {
       return this.service.talkVerb(who) === "mời"
@@ -943,7 +1077,7 @@ export class StallScene extends Phaser.Scene {
 
   private ovenPrompt(): string {
     const h = this.player.hand, n = this.oven.count;
-    const lo = has(this.world.equipment, "LO_GAS") ? "lò gas" : "lò than";
+    const lo = has(this.world.equipment, "LO_DIEN") ? "lò điện" : "lò than";
     if (h === "loaf_cold") return this.oven.hasRoom ? `${lo} — bấm E bỏ ổ vô (${n}/${OVEN_SLOTS})` : `${lo} — lò đầy rồi`;
     if (h === "empty") return n ? `${lo} — bấm E lấy ổ chín nhất ra` : `${lo} — lò trống, lấy ổ bánh ở kệ trước`;
     return `${lo} — tay đang cầm đồ`;
@@ -1069,7 +1203,7 @@ export class StallScene extends Phaser.Scene {
     if (this.boardLoaf) return false;                            // ⛔ còn ổ dở trên thớt
     if (this.floor.length) return false;                         // ⛔ còn đồ rơi dưới sàn
     // ⛔ lò đã qua vạch giòn: mấy giây nữa là sém, đây không phải lúc ngoảnh đi
-    if (this.oven.slots.some((l) => l && bandOfCrust(l.crust, this.oven.burnAt) !== "RAW")) return false;
+    if (this.oven.slots.some((l) => l && bandOfCrust(l.crust, this.oven.burnAt, this.oven.singeAt) !== "RAW")) return false;
     return true;
   }
 
@@ -1116,11 +1250,13 @@ export class StallScene extends Phaser.Scene {
     }
   }
 
-  /** Thời gian giữ phím của trạm, đã tính đồ nghề: vòi rửa 3 s → 1 s, bình trà 0,6 → 0,25 s. */
+  /**
+   * Thời gian giữ phím của trạm. Trạm trà chỉ TỒN TẠI khi đã có bình nước trà (xem cổng ở
+   * `update.input`), nên 0,25 s là thời gian rót DUY NHẤT — không còn hai mức nhanh/chậm.
+   * Vòi rửa mất cổng `VOI_BON` cùng lúc món đó bị bỏ: cái bồn trên bản đồ giữ 1,5 s của nó.
+   */
   private holdOf(st: Station) {
-    const e = this.world.equipment;
-    if (st.id === "sink" && has(e, "VOI_BON")) return 500;
-    if (st.id === "tea" && has(e, "BINH_TRA")) return 250;
+    if (st.id === "tea") return 250;
     return st.holdMs;
   }
 
@@ -1129,6 +1265,8 @@ export class StallScene extends Phaser.Scene {
     if (this.paused || this.closed) return;
     // Đang dở một việc: dòng nhắc đã ghi rõ "đang lau thớt…" kèm thanh tiến trình.
     if (this.handsBusy) return;
+    // Bảng menu chỉ nhận E khi KHÔNG trạm nào trong tầm — xem `nearMenuBoard()`.
+    if (this.nearMenuBoard()) { this.openMenuBoard(); return; }
     const st = this.near;
     if (st?.id === "oven") { this.pressOven(); return; }
     if (st?.id === "basket") { this.pressBasket(); return; }
@@ -1145,6 +1283,7 @@ export class StallScene extends Phaser.Scene {
         depthOf(st.tx + 0.5, st.ty + 0.5) + 3, sec * 1000, this.settings.reducedMotion,
       );
       this.wipeBoard();
+      this.world.notebook.today.wipes++;
       this.audio.wipeFor(sec);                   // trải đủ lượt lau, không chỉ một nhát ở đầu
       this.hud.toast("lau thớt", "good", this.popClock);
       return;
@@ -1308,8 +1447,9 @@ export class StallScene extends Phaser.Scene {
         this.hands = "CLEAN";
         this.dirtyEpisode++;
         this.addDirt(-0.1);
-        // P3-04 C1: rửa ở vòi ngay trước mặt khách — ai đang nhìn tay thì thấy
-        if (has(this.world.equipment, "VOI_BON")) this.service.washedVisibly();
+        // Rửa ngay trước mặt khách — ai đang nhìn tay thì thấy. Không còn cổng `VOI_BON`: cái bồn
+        // là một TRẠM có sẵn trên bản đồ từ ngày 1, nên việc rửa lúc nào cũng diễn ra ở chỗ thấy được.
+        this.service.washedVisibly();
         return;
 
       default:
@@ -1332,6 +1472,7 @@ export class StallScene extends Phaser.Scene {
   /** So ngay với đơn của người đứng trước mặt: sai thì phát `ORDER_DEFECT` tại slot BOARD — khách ĐANG NHÌN thì sẽ thấy. */
   /** Mở bảng với đúng phần nhân đang nằm trên ổ gác ở thớt. */
   private openBoard(slice = true) {
+    tourDone(this.world, "THOT");
     // Nhát dao rạch dọc ổ — "âm chữ ký của game" (P5-03 §4.2 A). Nó nổ ở ĐÂY vì đây
     // là lúc ổ bánh thật sự được mở ra, dù trên màn hình chỉ là một cái bảng hiện lên.
     // Ổ ĐÃ GÓI mở lại thì không có nhát dao nào nữa: nó đã bị rạch ở cú mở đầu tiên.
@@ -1342,6 +1483,7 @@ export class StallScene extends Phaser.Scene {
   }
 
   private finishDish(dish: Ingredient[], evenWrap = false) {
+    tourDone(this.world, "GOI");
     this.audio.wrap();
     this.boardLoaf = null;
     this.grip.reset();                                 // cầm ổ mới gói lên: tay chắc lại từ đầu
@@ -1358,11 +1500,6 @@ export class StallScene extends Phaser.Scene {
     const parts: { ing: Ingredient; q: number }[] = [];
     for (const ing of dish) for (const q of take(this.world.inventory, ing, 1, day)) parts.push({ ing, q });
     this.dishQ = dishQuality(this.breadQ, parts);
-    if (has(this.world.equipment, "DAO_BEN") && this.service.audience.length >= 4 && this.ctx.rng.stream("ambient").next() < 0.015) {
-      this.hands = "MONEY";                              // băng lại xong phải rửa tay
-      this.beBusy(6, "đang băng tay");
-      this.hud.toast("đứt tay rồi, băng lại cái đã", "bad", this.popClock);
-    }
 
     // Lỗi trong ổ phát tại BOARD với KHOÁ RIÊNG của ổ này + người này.
     this.addDirt(0.002);                               // giấy gói, vụn bánh
@@ -1390,7 +1527,7 @@ export class StallScene extends Phaser.Scene {
   /** Bỏ đúng thứ khách đã DẶN KHÔNG là lỗi xảy ra NGAY lúc đó, trước cả lúc đưa. */
   private onPlace(id: Ingredient) {
     this.audio.place(id);
-    if (!has(this.world.equipment, "KEP_GAP")) this.touchFood();
+    this.touchFood();
     this.addDirt(0.004);
     const c = this.service.front;
     if (!c?.order || c.order.levels[id] !== 0) return;
@@ -1411,9 +1548,9 @@ export class StallScene extends Phaser.Scene {
       ? this.service.serveTea()
       : this.service.serveDish(this.dish, {
         cold, crust: this.handCrust, quality: this.dishQ, readyAt: this.dishReadyAt,
-        // `burnAt` THẬT của cái lò đang dùng — lò gas có ngưỡng riêng, lấy hằng số thì dải tốt
+        // `burnAt` THẬT của cái lò đang dùng — lò điện có ngưỡng riêng, lấy hằng số thì dải tốt
         // của nó bị đọc thành "cháy cạnh" (xem `serveDish`).
-        burnAt: this.oven.burnAt,
+        burnAt: this.oven.burnAt, singeAt: this.oven.singeAt,
         // Người NHÌN THẤY lúc nó rơi thì biết chắc; người không thấy thì chỉ cắn phải sạn.
         soiled: this.handSoiled,
       });
@@ -1468,11 +1605,34 @@ export class StallScene extends Phaser.Scene {
     this.handSoiled = false;
     this.grip.reset();
     if (hand === "loaf_cold") this.touchFood();
+    /*
+     * Hai bước cuối của bữa đầu chốt ở ĐÂY, chỗ duy nhất món lên tay — kệ, lò, và cả ổ nhặt
+     * dưới sàn đều đi qua hàm này. Treo vô từng chỗ bấm thì sót, mà sót thì dòng dẫn kẹt lại
+     * bảo người ta đi lấy cái họ đang cầm.
+     *
+     * Ổ CHÁY thì KHÔNG tính là xong bước lò — nó không gác lên thớt được, nên cho qua bước là
+     * đẩy người chơi vào một bước kế không làm nổi. Người dẫn ở lại bước lò và đổi câu: bỏ ổ
+     * khét đi, lấy ổ khác (xem `ovenAim`).
+     */
+    if (hand === "loaf_cold") tourDone(this.world, "BANH");
+    if (hand === "loaf_hot") tourDone(this.world, "LO");
   }
 
-  /** Tay dính tiền thì đó là `DIRTY_HANDS` ở vùng TAY. Cùng một đợt tay dơ thì cùng một khoá. */
+  /**
+   * Tay dính tiền thì đó là `DIRTY_HANDS` ở vùng TAY. Cùng một đợt tay dơ thì cùng một khoá.
+   *
+   * CÁI KẸP GẮP GỠ HẲN CHUYỆN NÀY, ở đây chứ không ở từng chỗ gọi. Chủ dự án: *"kẹp gắp thì không
+   * cần rửa tay"* — nên cổng phải nằm tại CỬA của hệ tay dơ, không phải riêng cú bỏ nhân: gác ở
+   * `onPlace` thôi thì cầm tiền xong lấy ổ ở kệ vẫn bắn `DIRTY_HANDS`, và người chơi vừa bỏ tiền
+   * mua cái kẹp vẫn phải chạy đi rửa tay.
+   */
   private touchFood() {
+    if (has(this.world.equipment, "KEP_GAP")) return;
     if (this.hands !== "MONEY") return;
+    // đếm SAU cái cổng: "tay cầm tiền xong đụng vô đồ ăn" mới là việc cái kẹp gắp gỡ được.
+    // Đếm ở chỗ gọi (mỗi lần bỏ một thứ nhân) thì ra con số của số nguyên liệu, không phải
+    // của số lần tay dơ chạm đồ ăn.
+    this.world.notebook.today.bareHands++;
     bus.emit("stim:emitted", {
       stimId: "DIRTY_HANDS", zone: "HANDS", salience: SALIENCE.DIRTY_HANDS, at: this.elapsed,
       key: `DIRTY_HANDS:${this.dirtyEpisode}`,
@@ -1485,7 +1645,7 @@ export class StallScene extends Phaser.Scene {
 
   /** CÀNG BẨN CÀNG LÂU (×1,0 → ×2,0). Chưa gấp ba để không thành cái vòng xoáy mà `wipeBoard` vừa gỡ ra. */
   private wipeSeconds() {
-    const base = has(this.world.equipment, "KHAN_3_MAU") ? 1.2 : 2.5;
+    const base = 2.5;                                  // khăn ba màu đã bỏ khỏi cây thiết bị
     return base * (1 + this.dirt);
   }
 
@@ -1516,10 +1676,10 @@ export class StallScene extends Phaser.Scene {
     this.assembly.setPresets(this.world.stall.presets);
   }
 
-  /** Chỉ lúc đó bảng kẹp nhân mới cho gói ổ trống. */
+  /** Chỉ lúc đó bảng kẹp nhân mới cho gói ổ trống. Một món duy nhất trên bảng là ổ trơn. */
   private orderIsEmptyLoaf() {
     const it = this.service.front?.order?.intent;
-    return !!it && !it.nhan.length && !it.dayDu && it.rau === "khong";
+    return !!it && isBare(it.mon);
   }
 
   /** Mất 1 giây, KHÔNG phát sự kiện nào. Rớt (`DROPPED_FOOD`) chỉ đến từ tay lỏng. */
@@ -1599,9 +1759,10 @@ export class StallScene extends Phaser.Scene {
       return;
     }
     if (h !== "empty") { this.hud.toast("tay đang cầm đồ", "info", this.popClock); return; }
+    if (this.tourBlocksTake()) { this.hud.toast("chưa giòn — chờ vòng vàng đã", "info", this.popClock); return; }
     const l = this.oven.take();
     if (!l) { this.hud.toast("lò đang trống", "info", this.popClock); return; }
-    const band = bandOfCrust(l.crust, this.oven.burnAt);
+    const band = bandOfCrust(l.crust, this.oven.burnAt, this.oven.singeAt);
     // Ổ cháy thì KHÔNG có tiếng vỏ giòn — cái vỏ đó không còn giòn nữa. Tiếng khét
     // đã chạy vòng từ lúc nó cháy trong lò (`audio.tick`), không cần nhắc lại.
     if (band === "BURNT") this.audio.ovenDoor(); else this.audio.loafOut();
@@ -1869,7 +2030,13 @@ export class StallScene extends Phaser.Scene {
     return out;
   }
 
-  /** Vòng độ giòn trên cửa lò — một vòng mỗi slot, khắc vạch ở 0,45 / 0,88 / 1,00 (P1-04 B5). */
+  /**
+   * Vòng độ giòn trên cửa lò — một vòng mỗi slot. Ba nấc (non · giòn · sém) vẽ thành ba cung nền
+   * mờ, cung sáng là chỗ ổ bánh đang đứng, hai vạch trắng là hai ranh giới.
+   *
+   * ⚠️ MỌI MỐC ĐỌC TỪ `this.oven`, KHÔNG TỪ `CRUST`: lò điện có `singeAt`/`burnAt` riêng, lấy
+   * hằng số là vòng nói một đằng màu một nẻo.
+   */
   private drawOven() {
     const g = this.ovenGfx;
     g.clear();
@@ -1884,22 +2051,205 @@ export class StallScene extends Phaser.Scene {
       g.fillStyle(0x1b2429, 0.9).fillCircle(cx, baseY, R + 3);
       g.lineStyle(2, 0x6d7b84, 1).strokeCircle(cx, baseY, R);
       if (!l) continue;
-      // Vòng chia theo `burnAt` THẬT của lò này, không theo hằng số: lò gas có ngưỡng
+      // Vòng chia theo `burnAt` THẬT của lò này, không theo hằng số: lò điện có ngưỡng
       // cháy riêng, lấy hằng số thì vòng đầy trước khi ổ cháy — vạch đỏ nói dối.
-      const burnAt = this.oven.burnAt;
-      const band = bandOfCrust(l.crust, burnAt);
-      const col = band === "RAW" ? 0xe8e2d4 : band === "CRISP" ? 0xd9a441 : band === "SINGED" ? 0xa0582c : 0x3a2a22;
+      const burnAt = this.oven.burnAt, singeAt = this.oven.singeAt;
+      const band = bandOfCrust(l.crust, burnAt, singeAt);
+      const col = band === "RAW" ? RAW_COL : band === "CRISP" ? CRISP_COL : band === "SINGED" ? SINGE_COL : BURNT_COL;
+      const ang = (n: number) => -Math.PI / 2 + (n / burnAt) * Math.PI * 2;
+
+      /*
+       * BA NẤC PHẢI THẤY TRƯỚC KHI ĐI TỚI. Chủ dự án: *"tôi đang không rõ 3 nấc của cái nướng
+       * bánh"* — và cái vòng cũ chỉ tô MỘT cung đang chạy rồi khắc hai vạch trắng. Người chơi
+       * muốn biết "còn mấy giây nữa thì sém" thì phải đoán, vì phần vòng chưa tới không có màu.
+       *
+       * Giờ vẽ nền ba cung mờ trước (non · giòn · sém), rồi cung sáng chạy đè lên. Nhìn một cái
+       * là thấy khúc vàng nằm ở đâu và mình đang đứng chỗ nào trong nó.
+       */
+      g.lineStyle(4, RAW_COL, 0.22);
+      g.beginPath(); g.arc(cx, baseY, R, ang(0), ang(CRUST.READY)); g.strokePath();
+      g.lineStyle(4, CRISP_COL, 0.3);
+      g.beginPath(); g.arc(cx, baseY, R, ang(CRUST.READY), ang(singeAt)); g.strokePath();
+      g.lineStyle(4, SINGE_COL, 0.3);
+      g.beginPath(); g.arc(cx, baseY, R, ang(singeAt), ang(burnAt)); g.strokePath();
+
       const frac = Math.min(1, l.crust / burnAt);
       g.lineStyle(4, col, 1);
       g.beginPath();
       g.arc(cx, baseY, R, -Math.PI / 2, -Math.PI / 2 + frac * Math.PI * 2);
       g.strokePath();
-      for (const n of [CRUST.READY, CRUST.SINGED]) {
-        const a = -Math.PI / 2 + (n / burnAt) * Math.PI * 2;
+
+      /*
+       * ⚠️ VẠCH THỨ HAI ĐỌC `oven.singeAt`, KHÔNG ĐỌC `CRUST.SINGED`.
+       *
+       * Đây là lỗi chủ dự án nhìn ra: với lò điện (`burnAt` 1,9 · `singeAt` 1,30) vạch trắng vẽ
+       * ở 0,88/1,9 = 46,3% vòng trong khi MÀU đổi ở 1,30/1,9 = 68,4% — lệch 22% cả vòng. Nên
+       * nửa sau cái vòng đọc ra là "sắp cháy tới nơi" trong khi ổ bánh vẫn đang vàng giòn, và
+       * cú nâng cấp 1.800 nghìn trông như làm bánh dễ cháy hơn.
+       */
+      for (const n of [CRUST.READY, singeAt]) {
+        const a = ang(n);
         g.lineStyle(2, 0xffffff, 0.9);
         g.lineBetween(cx + Math.cos(a) * (R - 4), baseY + Math.sin(a) * (R - 4), cx + Math.cos(a) * (R + 4), baseY + Math.sin(a) * (R + 4));
       }
-      if (band === "BURNT") g.fillStyle(0x3a2a22, 1).fillCircle(cx, baseY, R - 3);
+      if (band === "BURNT") g.fillStyle(BURNT_COL, 1).fillCircle(cx, baseY, R - 3);
+    }
+  }
+
+  /**
+   * Bong bóng dẫn bữa đầu — khoanh tròn thứ cần bấm, cô Ba nói một câu bên cạnh.
+   *
+   * Chạy MỖI FRAME vì camera còn trượt theo người chơi: cái vòng phải dính vào cái lò chứ không
+   * dính vào màn hình. `TourCoach` chỉ ghi lại chữ khi chữ thật sự đổi, nên gọi liên tục không
+   * làm bong bóng nhấp nháy.
+   *
+   * Tắt hẳn khi có lớp khác đang mở (sổ tay, bảng menu, pause): khoanh một chỗ bị che là chỉ
+   * vào tấm màn.
+   */
+  private drawCoach() {
+    const c = this.coach;
+    if (!c) return;
+    const w = this.world;
+    if (!touring(w) || this.paused || this.closed || this.notebook?.open || this.menuBoard?.open) {
+      c.hide();
+      return;
+    }
+    const aim = this.coachAim();
+    if (!aim) { c.hide(); return; }
+    c.pointDesign(this.game.canvas, GAME_W, GAME_H,
+      { ...aim, step: tourIndex(w), total: TOUR_TOTAL });
+  }
+
+  /**
+   * Ô cần khoanh, theo TOẠ ĐỘ KHUNG THIẾT KẾ.
+   *
+   * Hai loại mốc, hai phép quy đổi:
+   *   · trạm trong quán — toạ độ THẾ GIỚI, phải trừ `worldView` rồi nhân `ZOOM` (camera thế giới
+   *     zoom `ZOOM × RENDER_SCALE`, mà khung thiết kế đã chia sẵn `RENDER_SCALE`);
+   *   · bảng kẹp nhân — đã là toạ độ thiết kế sẵn (`scrollFactor(0)`), lấy thẳng.
+   */
+  private coachAim(): { x: number; y: number; w: number; h: number; shape?: "circle" | "rect"; text: string } | null {
+    const w = this.world;
+    const ring = (id: string, text: string) => {
+      const at = this.tourSpot.get(id);
+      if (!at) return null;
+      const v = this.cam.world.worldView;
+      const d = at.r * ZOOM;
+      return {
+        x: (at.x - v.x) * ZOOM - d, y: (at.y - v.y) * ZOOM - d,
+        w: d * 2, h: d * 2, shape: "circle" as const, text,
+      };
+    };
+
+    if (tourAt(w, "MENU")) return ring("menu", "Lại chỗ này, bấm E đọc bảng menu.");
+    if (tourAt(w, "BANH")) return ring("shelf", "Qua kệ, bấm E lấy một ổ bánh.");
+    if (tourAt(w, "LO")) return this.ovenAim(ring);
+    if (tourAt(w, "THOT")) return ring("board", "Gác ổ lên thớt — bấm E.");
+    if (tourAt(w, "NHAN")) {
+      if (!this.assembly.isOpen) return ring("board", "Mở ổ ra: tới thớt bấm E.");
+      return { ...this.assembly.trayBounds(), shape: "rect", text: this.fillText() };
+    }
+    if (tourAt(w, "GOI")) {
+      if (!this.assembly.isOpen) return ring("board", "Mở ổ ra: tới thớt bấm E.");
+      return { ...this.assembly.wrapBounds(), shape: "rect", text: "Đủ rồi — bấm Gói lại." };
+    }
+    return null;
+  }
+
+  /** Độ giòn của ổ chín nhất đang nằm trong lò — `null` nếu lò trống. */
+  private ovenBand(): CrustBand | null {
+    if (!this.oven.count) return null;
+    const best = this.oven.slots.reduce<number>((m, l) => (l ? Math.max(m, l.crust) : m), 0);
+    return bandOfCrust(best, this.oven.burnAt, this.oven.singeAt);
+  }
+
+  /**
+   * Còn đang đóng băng hay không. Hỏi lại ĐIỀU KIỆN chứ không tin mỗi cái cờ: bỏ qua phần dẫn,
+   * qua bước khác, hay ổ sém mất rồi — bất cứ cái nào cũng phải thả băng ngay. Một cái cờ đọc
+   * mù là một cái cờ có ngày kẹt, mà kẹt ở đây nghĩa là game đứng hình không lý do.
+   */
+  private tourHolding() {
+    if (!this.tourFreeze) return false;
+    const ok = this.tourOvenMoment();
+    if (!ok) this.tourFreeze = false;
+    return ok;
+  }
+
+  /**
+   * Đúng cái khoảnh khắc đáng đứng lại: bữa đầu · bước lò · tay không · ổ vừa tới khúc vàng ·
+   * VÀ NGƯỜI CHƠI ĐANG ĐỨNG NGAY LÒ.
+   *
+   * ⚠️ Vế cuối không phải cho đẹp, nó chống KẸT: đóng băng là tắt luôn pha `input`, nên đứng
+   * xa lò mà bị đóng băng thì không đi tới lò được nữa, mà cú E thả băng ở xa lò lại không lấy
+   * được ổ — thả xong frame sau đóng lại ngay. Chỉ đứng tại lò mới có nhịp dừng này, và lúc đó
+   * `near` cũng không đổi được nữa (pha `input` đã tắt) nên điều kiện giữ nguyên tới khi bấm E.
+   */
+  private tourOvenMoment() {
+    return tourAt(this.world, "LO")
+      && this.player.hand === "empty"
+      && this.near?.id === "oven"
+      && this.ovenBand() === "CRISP";
+  }
+
+  /** Ổ vừa chạm khúc vàng ở bữa đầu → đứng lại một nhịp. Chỉ bật, việc tắt là của `tourHolding`. */
+  private tickTourOven() {
+    if (this.tourOvenMoment()) this.tourFreeze = true;
+  }
+
+  /** Bữa đầu: CHẶN cú E lấy ổ còn non. Người mới bỏ vô cái là bấm lấy ra liền, rồi không hiểu vì sao khách chê ổ nguội. */
+  private tourBlocksTake() {
+    return tourAt(this.world, "LO") && this.player.hand === "empty" && this.ovenBand() === "RAW";
+  }
+
+  /**
+   * BƯỚC LÒ — dẫn theo ĐỘ GIÒN ĐANG CHẠY, không chỉ nói "bấm E".
+   *
+   * Người mới hay táy máy: bỏ ổ vô lò rồi bấm E lấy ra liền, ra ổ còn nguội mà không hiểu vì sao
+   * khách chê. Nên ở đây người dẫn CHỜ cùng người chơi: lúc vỏ còn nhạt thì bảo đừng đụng, tới
+   * lúc vòng độ giòn chuyển vàng mới bảo lấy ra. Cái vòng đó (`drawRing`) vốn đã vẽ sẵn trên lò —
+   * chỗ này chỉ dạy người ta ĐỌC nó, một lần, rồi thôi.
+   */
+  private ovenAim(ring: (id: string, text: string) => { x: number; y: number; w: number; h: number; shape?: "circle" | "rect"; text: string } | null) {
+    const h = this.player.hand;
+    if (h === "loaf_burnt") return ring("bin", "Khét rồi — đem bỏ thùng rác.");
+    if (h === "loaf_cold") return ring("oven", "Tới lò, bấm E bỏ ổ vô.");
+    if (h !== "empty") return ring("bin", "Tay đang cầm đồ — bỏ xuống đã.");
+    const band = this.ovenBand();
+    if (!band) return ring("shelf", "Lò trống. Lấy ổ bánh ở kệ trước.");
+    // Từ đây trở xuống KHOANH BA CÁI VÒNG, không khoanh cái lò: thứ người chơi phải học đọc
+    // là ba cái vòng đó. Khoanh cái lò lần nữa thì họ nhìn cái lò và cái vòng vẫn vô hình.
+    if (band === "RAW") {
+      return this.crustAim("Ba cái vòng là ba ngăn lò. Vòng chạy tới khúc vàng mới là giòn — chờ đã.");
+    }
+    if (band === "CRISP") return this.crustAim("Khúc vàng rồi, bánh được. Bấm E lấy ra.");
+    if (band === "SINGED") return this.crustAim("Qua khúc cam — sém rồi. Lấy ra ngay.");
+    return this.crustAim("Hết vòng là khét. Lấy ra, bỏ thùng rác, lấy ổ khác.");
+  }
+
+  /**
+   * Ô khoanh BA VÒNG ĐỘ GIÒN trên lò (xem `drawOven`), toạ độ khung thiết kế.
+   *
+   * Dính theo `labelY` của lò y hệt chỗ vẽ chúng, không gõ lại con số: dời cái lò một ô là cả
+   * ba vòng đi theo, mà vòng khoanh thì đứng lại — và không có gì báo.
+   */
+  private crustAim(text: string) {
+    const lab = this.labelY.get("oven");
+    if (!lab) return null;
+    const v = this.cam.world.worldView;
+    const R = 11, GAP = 30, PAD = 7;
+    const halfW = (GAP + R + PAD) * ZOOM, halfH = (R + PAD) * ZOOM;
+    const cx = (lab.x - v.x) * ZOOM, cy = (lab.y - 24 - v.y) * ZOOM;
+    return { x: cx - halfW, y: cy - halfH, w: halfW * 2, h: halfH * 2, shape: "rect" as const, text };
+  }
+
+  /** Thiếu phần nào nói phần đó — ổ bánh học bằng BA PHẦN, không học bằng con số (`sim/tour.fillGap`). */
+  private fillText(): string {
+    switch (fillGap(this.assembly.dish)) {
+      case "PATE": return this.assembly.dish.length
+        ? "Thiếu pate — quết một lớp đã."
+        : "Ổ nào cũng ba phần: pate, một thứ nhân mặn, rồi rau. Bấm vô miếng nhân để bỏ vô ổ.";
+      case "MAN": return "Giờ tới nhân mặn — thịt nguội, chả lụa, xíu mại hay trứng.";
+      default: return "Còn rau nữa: đồ chua, dưa leo, hành ngò.";
     }
   }
 
@@ -1916,7 +2266,7 @@ export class StallScene extends Phaser.Scene {
     // Tay dính tiền: đi tới vòi, giữ E.
     if (this.hands === "MONEY") this.bang(g, this.choreAt.get("sink"), bob);
     // Vòng độ giòn đã nói điều này bằng màu, nhưng chỉ đọc được khi đang nhìn vào lò.
-    if (this.oven.slots.some((l) => l && bandOfCrust(l.crust, this.oven.burnAt) === "BURNT")) {
+    if (this.oven.slots.some((l) => l && bandOfCrust(l.crust, this.oven.burnAt, this.oven.singeAt) === "BURNT")) {
       this.bang(g, this.choreAt.get("oven"), bob);
     }
     // Món nằm dưới chân quầy bị chính thân người chơi che — dấu này cần hơn cả hai cái trên.
@@ -2111,7 +2461,7 @@ export class StallScene extends Phaser.Scene {
   private syncMusic() {
     const cue: CueId = this.clock.isPeak ? "cao_diem"
       : this.clock.minutes < PEAK_START_MIN ? "to_mo"
-      : "lang";
+        : "lang";
     music.play(this, cue);
   }
 
@@ -2226,45 +2576,113 @@ export class StallScene extends Phaser.Scene {
   /** Mỗi món đồ nghề phải NHÌN THẤY trên xe. Vẽ bằng code, tĩnh, một lần lúc dựng cảnh. */
   private drawEquipment() {
     const e = this.world.equipment;
-    const g = this.add.graphics();
-    const at = (tx: number, ty: number, up = 0) => { const p = toScreen(tx, ty); return { x: p.sx, y: footY(p.sy) - up }; };
+    // `at` không còn tham số `up`: nó chỉ còn một người gọi sau khi cái lò điện thôi vẽ ở đây.
+    const at = (tx: number, ty: number) => { const p = toScreen(tx, ty); return { x: p.sx, y: footY(p.sy) }; };
     const depth = (tx: number, ty: number) => depthOf(tx, ty) + 5;
-    if (has(e, "LO_GAS")) { const p = at(7.9, 1.6, 8); g.setDepth(depth(7.9, 1.6)); g.fillStyle(0x3d6fa8, 1).fillRoundedRect(p.x - 6, p.y - 22, 12, 22, 4).fillStyle(0xd8dde2, 1).fillRect(p.x - 3, p.y - 26, 6, 4); }
+    /*
+     * LÒ ĐIỆN KHÔNG VẼ Ở ĐÂY. Chủ dự án: *"thay lò prop_oven bằng cái lò này… không render cái
+     * lò bằng code dạng kia nữa."* Trước đợt này nó là một cái hộp bo góc màu xanh 12×22 px dán
+     * CẠNH cái lò than — nên mua xong thì trên xe có hai cái lò, một cái than đang đỏ lửa và một
+     * hình chữ nhật xanh không ai đọc ra là gì.
+     *
+     * Nâng cấp phải THAY thứ đang đứng đó. Ô `O` của bản đồ đổi ảnh sang `prop_e-oven` —
+     * xem `placeProps` và `art/index.ts` `textureForTile`.
+     */
     const draw = (tx: number, ty: number, fn: (x: number, y: number, gg: Phaser.GameObjects.Graphics) => void) => {
       const gg = this.add.graphics().setDepth(depth(tx, ty));
       const p = at(tx, ty);
       fn(p.x, p.y, gg);
     };
-    if (has(e, "VOI_BON")) draw(14.6, 4.3, (x, y, gg) => { gg.fillStyle(0x9aa6ae, 1).fillRect(x - 2, y - 58, 3, 14).fillRect(x - 2, y - 58, 12, 3); gg.fillStyle(0x6fb4e0, 0.9).fillCircle(x + 9, y - 51, 2); });
     if (has(e, "LONG_BAN")) draw(8.5, 4.3, (x, y, gg) => { gg.fillStyle(0xdfe8ec, 0.55).fillEllipse(x, y - 52, 44, 18); gg.lineStyle(1.5, 0x8a979f, 0.9).strokeEllipse(x, y - 52, 44, 18); });
-    if (has(e, "THUNG_RAC")) draw(3.4, 3.4, (x, y, gg) => { gg.fillStyle(0x3f7d5a, 1).fillRoundedRect(x - 7, y - 20, 14, 20, 3).fillStyle(0x2f5f44, 1).fillRect(x - 8, y - 22, 16, 3); });
+    if (has(e, "DU_CHE")) this.addUmbrella();
     /*
-     * ⚠️ CÁI DÙ PHẢI ĐỨNG ĐÚNG CHỖ MÁT. Trước đợt này nó vẽ ở (12,6 · 5,6) — sau quầy —
-     * trong khi `SHADE_SPOT` là (15,0 · 8,2) ngoài vỉa hè: lệch 3,5 ô. Nên mười câu
-     * "đứng dưới dù cho mát" đẩy người ta ra một khoảng vỉa hè TRỐNG, không có gì che.
-     * Đúng chỗ chủ dự án chỉ: *"họ chả thèm chạy lại chỗ cái ô để đứng hay đang đứng
-     * trong bóng mát"*. Lấy thẳng toạ độ từ `world/map` để nó không trôi được nữa.
+     * BÌNH NƯỚC TRÀ không vẽ ở đây: nó là đạo cụ `T` thật trên bản đồ (13,1), và `propHidden` mở
+     * ô đó ra lúc mua. Vẽ thêm một cái bình nhỏ cạnh cái thùng là hai cái bình cho một món đồ.
+     * BẢNG HIỆU cũng vậy — `createSign` dựng tấm bảng thật trên vách, không phải cái khung vàng
+     * trước đây vẽ lơ lửng ở (10,5 · 0,4).
      */
-    if (has(e, "DU_CHE")) draw(SHADE_SPOT.x, SHADE_SPOT.y, (x, y, gg) => {
-      gg.lineStyle(2, 0x6b5a4a, 1).lineBetween(x, y, x, y - 92);
-      gg.fillStyle(0xc0443a, 0.92).fillTriangle(x - 46, y - 88, x + 46, y - 88, x, y - 110);
-      gg.fillStyle(0x000000, 0.1).fillEllipse(x, y + 2, 76, 26);          // vệt bóng dưới chân dù
+    if (has(e, "QUAT_DIEN")) draw(14.2, 4.3, (x, y, gg) => {
+      gg.fillStyle(0x6a7076, 1).fillRect(x - 1.5, y - 46, 3, 46);        // chân đứng
+      gg.fillStyle(0x30353a, 1).fillEllipse(x, y, 16, 5);                // đế
+      gg.fillStyle(0xd7dde1, 0.9).fillCircle(x, y - 52, 11);             // lồng quạt
+      gg.lineStyle(1, 0x7c858c, 1).strokeCircle(x, y - 52, 11);
+      gg.fillStyle(0x9aa3a9, 1).fillCircle(x, y - 52, 3);
     });
-    if (has(e, "BINH_TRA")) draw(13.6, 1.6, (x, y, gg) => { gg.fillStyle(0xe25c3c, 1).fillRoundedRect(x - 8, y - 46, 16, 20, 4).fillStyle(0xf2efe9, 1).fillRect(x - 2, y - 30, 4, 4); });
     if (has(e, "BANG_QR")) draw(12.2, 4.2, (x, y, gg) => { gg.fillStyle(0xf8f8f4, 1).fillRect(x - 7, y - 62, 14, 16); gg.fillStyle(0x222222, 1).fillRect(x - 5, y - 60, 4, 4).fillRect(x + 1, y - 60, 4, 4).fillRect(x - 5, y - 54, 4, 4).fillRect(x + 1, y - 52, 2, 2); });
     if (has(e, "LOA_RAO")) draw(10.2, 0.6, (x, y, gg) => { gg.fillStyle(0x3a3f45, 1).fillTriangle(x - 8, y - 86, x + 8, y - 80, x + 8, y - 92).fillRect(x - 12, y - 90, 5, 8); });
-    if (has(e, "BANG_HIEU")) draw(10.5, 0.4, (x, y, gg) => { gg.lineStyle(3, 0xf2c14e, 1).strokeRoundedRect(x - 70, y - 124, 140, 26, 5); });
     /* Cùng một lỗi với cái dù, nặng hơn: vẽ ở (5,5 · 8,4) trong khi người ta ngồi ở `SEAT_SPOT` (16,6 · 10,4) — lệch 11 ô. */
     if (has(e, "GHE_BAN")) draw(SEAT_SPOT.x, SEAT_SPOT.y, (x, y, gg) => {
       gg.fillStyle(0x2f6fb3, 1).fillRect(x - 10, y - 12, 20, 4).fillRect(x - 9, y - 8, 3, 8).fillRect(x + 6, y - 8, 3, 8);
     });
     if (has(e, "GIA_TREO")) draw(8.5, 4.0, (x, y, gg) => { gg.lineStyle(2, 0x8a7a60, 1).lineBetween(x - 60, y - 86, x + 60, y - 86); });
-    if (has(e, "THOT_RIENG")) draw(3.6, 4.4, (x, y, gg) => { gg.fillStyle(0xd9b98a, 1).fillRoundedRect(x - 9, y - 48, 18, 6, 2); });
-    if (has(e, "DAO_BEN")) draw(4.3, 4.4, (x, y, gg) => { gg.fillStyle(0xcfd6db, 1).fillRect(x - 6, y - 50, 11, 2).fillStyle(0x3a2a20, 1).fillRect(x + 5, y - 51, 5, 3); });
     if (has(e, "KEP_GAP")) draw(4.8, 4.5, (x, y, gg) => { gg.lineStyle(1.5, 0xbfc7cc, 1).lineBetween(x - 5, y - 49, x + 6, y - 46).lineBetween(x - 5, y - 47, x + 6, y - 46); });
-    if (has(e, "KHAN_3_MAU")) draw(5.4, 4.5, (x, y, gg) => { [0x5aa05a, 0xe0c040, 0xc84a3a].forEach((c, i) => gg.fillStyle(c, 1).fillRect(x - 7 + i * 5, y - 46, 4, 6)); });
-    if (has(e, "TU_MAT")) draw(2.6, 2.4, (x, y, gg) => { gg.fillStyle(0xe8eef1, 1).fillRoundedRect(x - 12, y - 40, 24, 40, 3).lineStyle(1, 0x9aa6ae, 1).strokeRoundedRect(x - 12, y - 40, 24, 40, 3); });
+    if (has(e, "TU_MAT")) this.addFridge();
     if (has(e, "NOI_U")) draw(9.4, 1.6, (x, y, gg) => { gg.fillStyle(0xb8bec3, 1).fillEllipse(x, y - 34, 18, 10).fillStyle(0x8a9095, 1).fillRect(x - 9, y - 34, 18, 8); });
+  }
+
+  /**
+   * CÁI DÙ CHE — ảnh thật (`PROP.umbrella`), không còn vẽ bằng code.
+   *
+   * ⚠️ PHẢI ĐỨNG ĐÚNG CHỖ MÁT. Trước đợt này nó vẽ ở (12,6 · 5,6) — sau quầy — trong khi
+   * `SHADE_SPOT` là (15,0 · 8,2) ngoài vỉa hè: lệch 3,5 ô. Nên mười câu "đứng dưới dù cho mát"
+   * đẩy người ta ra một khoảng vỉa hè TRỐNG, không có gì che. Đúng chỗ chủ dự án chỉ: *"họ chả
+   * thèm chạy lại chỗ cái ô để đứng hay đang đứng trong bóng mát"*. Lấy thẳng toạ độ từ
+   * `world/map` để nó không trôi được nữa.
+   */
+  private addUmbrella() {
+    /*
+     * LÙI RA SAU chỗ đứng mát, đúng `UMBRELLA_BACK` ô trên CẢ HAI trục — tức lùi thẳng theo
+     * hướng xa camera, nên trên màn hình nó chỉ đi LÊN chứ không trôi ngang: tán dù vẫn nằm
+     * chính giữa đầu người đứng, mà cây cột với cái đế đá thì ra sau lưng họ.
+     *
+     * Cột trùng đúng chỗ người đứng là chuyện bản vẽ code cũ bỏ qua được (cột của nó rộng 2 px),
+     * ảnh thật thì không: cái đế đá choán cả ô, và `depthOf` cho hai vật cùng một tổng x+y thì ai
+     * vẽ sau nấy đè — ra cảnh người đứng LÚN trong đế dù.
+     */
+    const tx = SHADE_SPOT.x - UMBRELLA_BACK, ty = SHADE_SPOT.y - UMBRELLA_BACK;
+    this.addPhotoProp(PROP.umbrella, tx, ty, (x, y, gg) => {
+      gg.lineStyle(2, 0x6b5a4a, 1).lineBetween(x, y, x, y - 92);
+      gg.fillStyle(0xc0443a, 0.92).fillTriangle(x - 46, y - 88, x + 46, y - 88, x, y - 110);
+      gg.fillStyle(0x000000, 0.1).fillEllipse(x, y + 2, 76, 26);         // vệt bóng dưới chân dù
+    });
+  }
+
+  /**
+   * TỦ LẠNH — ảnh thật (`PROP.fridge`), không còn vẽ bằng code.
+   *
+   * ⚠️ 2,6 → 3,5 trên trục x. Hình vẽ code cũ rộng 24 px nên đứng ở x=2,6 nó đọc ra là "cái thùng
+   * trắng dựa vào vách trái"; nhưng x=2 LÀ Ô TƯỜNG (`MAP` hàng y2: `###...`), nên điểm chạm đất
+   * của nó nằm bên trong bức tường. Ảnh thật rộng 36 px thì cái mẹo đó hết che được — nửa cái tủ
+   * chui vào vách. x=3,5 là cột trong cùng còn đi được, tức cái tủ đứng hẳn trên sàn mà lưng vẫn
+   * sát vách.
+   */
+  private addFridge() {
+    this.addPhotoProp(PROP.fridge, 3.5, 2.4, (x, y, gg) => {
+      gg.fillStyle(0xe8eef1, 1).fillRoundedRect(x - 12, y - 40, 24, 40, 3);
+      gg.lineStyle(1, 0x9aa6ae, 1).strokeRoundedRect(x - 12, y - 40, 24, 40, 3);
+    });
+  }
+
+  /**
+   * Một món đồ nghề dựng bằng ẢNH THẬT, ở toạ độ thế giới có phần lẻ (đồ nghề không nằm trên lưới
+   * ô như đạo cụ của `placeProps`).
+   *
+   * `veDuPhong` là bản vẽ code cũ của chính món đó, chỉ chạy khi ảnh chưa về hay tải hỏng: người
+   * chơi vừa trả tiền cho món này và cả chục câu thoại trỏ vào chỗ nó đứng, nên để trống là mất
+   * nhiều hơn là vẽ tạm. Cùng lý do mà `placeProps` cho lò điện lùi về lò than.
+   */
+  private addPhotoProp(
+    key: string, wx: number, wy: number,
+    veDuPhong: (x: number, y: number, gg: Phaser.GameObjects.Graphics) => void,
+  ) {
+    const { sx, sy } = toScreen(wx, wy);
+    const y = footY(sy);
+    const depth = depthOf(wx, wy);
+    if (this.textures.exists(key)) {
+      this.add.image(sx, y, key).setOrigin(0.5, 1).setScale(1 / artScale(key)).setDepth(depth);
+      return;
+    }
+    veDuPhong(sx, y, this.add.graphics().setDepth(depth));
   }
 
   /** Cô Ba nói MỘT câu rồi hẻm trống 40 giây. Bấm phím bất kỳ là qua màn kết. Không nhạc, không swell. */
@@ -2293,6 +2711,48 @@ export class StallScene extends Phaser.Scene {
       this.off.push(off);
     }
     if (this.finaleAt >= 0 && this.elapsed - this.finaleAt >= FINALE_SECONDS) this.close("PLAYER");
+  }
+
+  /**
+   * Đứng trong tầm với của tấm bảng treo vách chưa — và KHÔNG trạm nào đang tranh.
+   *
+   * `!this.near` không phải thừa. Bán kính đọc bảng (1,8 ô) và bán kính với tới trạm
+   * (1,6 ô) chồng lên nhau ở khúc giữa bảng và cái bồn rửa, nên đứng trong khúc đó mà xét
+   * bảng trước là cú E định rửa tay lại mở ra tấm bảng. Luật rõ ràng: CÓ TRẠM THÌ TRẠM
+   * THẮNG. `assertMenuSpotFree()` bảo đảm chỗ ngay dưới bảng không trạm nào với tới, nên
+   * lúc nào cũng còn một chỗ đứng đọc được.
+   */
+  private nearMenuBoard() {
+    if (this.near) return false;
+    return Math.hypot(this.player.x - MENU_SPOT.x, this.player.y - MENU_SPOT.y) <= MENU_REACH;
+  }
+
+  /**
+   * E ở bảng menu — ĐỨNG ĐỌC. Pause hoàn toàn, y như sổ tay (CANON §15.2 mục 2: pause
+   * đóng băng cả sự kiên nhẫn của khách).
+   *
+   * Đọc bảng không tốn thời gian trong game, nhưng tốn ĐƯỜNG ĐI: bảng treo tuốt khúc
+   * phải của vách, nên giữa giờ cao điểm chạy qua đó là bỏ quầy một quãng thật. Đó là
+   * cái giá đúng — phạt bằng đồng hồ thì thành phạt người chơi vì chưa thuộc bài, mà
+   * cái bảng sinh ra chính là để họ thuộc bài.
+   */
+  private openMenuBoard() {
+    if (this.overlay || this.closed || this.notebook?.open || this.menuBoard?.open) return;
+    if (this.assembly.isOpen) this.assembly.park();
+    this.paused = true;
+    this.clock.paused = true;
+    this.wipePuff.setPaused(true);
+    this.rain?.setPaused(true);
+    this.busy = null;
+    this.intents = [];
+    this.tweens.pauseAll();
+    bus.emit("ui:pauseToggled", { paused: true, source: "PLAYER" });
+    tourDone(this.world, "MENU");
+    this.menuBoard = new MenuBoardView(this.game, {
+      textScale: this.settings.textScale,
+      playerName: this.world.playerName,
+      onClose: () => { this.menuBoard = null; this.resume(); },
+    });
   }
 
   /** Tab — sổ tay giữa ngày. Mở sổ = pause hoàn toàn; đóng sổ = bán tiếp. */

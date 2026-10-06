@@ -25,6 +25,7 @@ import { SALIENCE } from "./perception";
 import { runFrame } from "./frame";
 import { diffDish, dishFor, type Ingredient } from "./order";
 import { orderDefectKey } from "../core/stimid";
+import { openTilesFor, setOpenTiles } from "../world/map";
 
 export type Policy = {
   name: string;
@@ -56,15 +57,15 @@ export type Policy = {
   socialActs?: readonly string[];
 };
 
-/** Đồ nghề của bot xã giao — ghế và bình trà mua SỚM, vì không có chúng thì act không chạy. */
+/** Đồ nghề của bot xã giao — ghế và bình nước trà mua SỚM, vì không có chúng thì act không chạy. */
 export const BUILD_XA_GIAO: [number, EquipId][] = [
-  [1, "GHE_BAN"], [1, "BINH_TRA"], [2, "DU_CHE"], [3, "KEP_GAP"], [4, "THUNG_RAC"],
-  [5, "KHAN_3_MAU"], [6, "THOT_RIENG"], [8, "LONG_BAN"], [12, "VOI_BON"],
+  [1, "GHE_BAN"], [1, "BINH_TRA"], [2, "DU_CHE"], [3, "KEP_GAP"], [5, "QUAT_DIEN"], [8, "LONG_BAN"],
 ];
 
+/** Bot "lo cái quầy": kẹp gắp → giữ đồ → nới chỗ. Sáu món của lượt rút gọn đã biến khỏi hai danh sách này. */
 export const BUILD_VE_SINH: [number, EquipId][] = [
-  [2, "KEP_GAP"], [4, "THUNG_RAC"], [5, "KHAN_3_MAU"], [5, "THOT_RIENG"], [6, "LONG_BAN"], [14, "BANG_QR"],
-  [12, "VOI_BON"], [15, "DAO_BEN"], [19, "GIA_TREO"], [22, "TU_MAT"], [29, "GHE_BAN"], [33, "BINH_TRA"],
+  [2, "KEP_GAP"], [6, "LONG_BAN"], [8, "NOI_U"], [14, "BANG_QR"],
+  [19, "GIA_TREO"], [22, "TU_MAT"], [29, "GHE_BAN"], [33, "BINH_TRA"],
 ];
 
 export const POLICIES: Record<string, Policy> = {
@@ -128,6 +129,10 @@ export class HeadlessStall {
       bus.emit("day:started", { dayIndex: w.progress.dayIndex, daySeed: this.ctx.rng.daySeed, weather: w.progress.weather });
     }
     this.ctx.setScene("Stall");
+    // Cùng một nước đi với `StallScene.create`: đạo cụ chưa mua thì không chặn chân ai. Quên dòng
+    // này là bản chạy không-render đi một bản đồ KHÁC bản đồ người chơi đi, mà cả công cụ này
+    // dựng lên để đo cái người chơi gặp.
+    setOpenTiles(openTilesFor((id) => has(w.equipment, id as EquipId)));
     this.pressure = opts.pressure ?? true;
     this.ctx.clock.scaleMul = this.pressure ? 1 : 0.5;
     this.bot = this.ctx.rng.derive(`bot:${policy.name}`);

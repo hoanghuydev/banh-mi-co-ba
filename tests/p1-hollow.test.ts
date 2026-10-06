@@ -189,7 +189,7 @@ test("ổ chưa có nhân không RÚT vé im lặng — để dành cả hai mư
 test("khách GỌI bánh mì không: ổ trống là ổ ĐÚNG — không lỗi, không ai lắc đầu", () => {
   const { h, ev, c } = atCounter();
   refuses(c);                                         // kể cả người dễ nổi nhất
-  c.order = specOf({ nhan: [], rau: "khong", ot: 0, tuong: 0, usual: false });
+  c.order = specOf({ mon: "khong", rau: "khong", ot: 0, tuong: 0, usual: false });
 
   const res = h.service.serveDish(BARE);
   assert.equal(res.ok, true, "cái bẫy dịch lớn nhất của game — đừng để luật ổ trống đụng tới nó");

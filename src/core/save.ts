@@ -184,7 +184,9 @@ export function newGame(name: string, saveId = uuid()): SaveFile {
     savedAt: now,
     buildId: BUILD_ID,
     checksum: "",
-    playerName: name || "Cháu cô Ba",
+    // Khớp `DEFAULT_PLAYER_NAME` ở `content/intro.ts`. Gõ cứng chứ không import: `core/` không
+    // được biết `content/` tồn tại (P0-01 §6) — đổi một chỗ thì đổi cả hai.
+    playerName: name || "Cô chủ",
     progress: {
       dayIndex: 1, band: "PRE_OPEN", gameMinutes: 6 * 60, scene: "Market",
       weather: weatherOf(1), standPoint: "DAU_HEM", dayStartSnapshotRef: null,

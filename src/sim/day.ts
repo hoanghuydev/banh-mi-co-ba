@@ -12,7 +12,7 @@ import {
 } from "./econ";
 import { duesOpen, eveningCount, morningRent, newEconState, newToday, pay, processDefaults, rentVnd } from "./obligations";
 import { CAL, ECON, fixedCostVnd, isRain } from "./econ";
-import { extraDailyVnd, has, newEquipState, resellable, sellEquip, type EquipId } from "./equipment";
+import { equipPatienceMul, extraDailyVnd, has, newEquipState, resellable, sellEquip, type EquipId } from "./equipment";
 import { moment, morningLines, type StoryState } from "./story";
 import { resolveFollowers, standClosed, standDayMul, MOVE, STANDS, type StandId } from "./stands";
 import { LATE_LINE, SUPPLIERS, afterMarket, dawnCheck, discounted, state, type SupplierId, type SupplierState } from "./suppliers";
@@ -250,7 +250,8 @@ export function standDeps(w: SaveFile) {
     standMul: standDayMul(s, day, isRain(wx)),
     followers: w.econ?.followers ?? null,
     standClosed: standClosed(s, day),
-    patienceMul: STANDS[s].patience,
+    // Chỗ đứng × đồ nghề: quạt điện +15% (`equipPatienceMul`) — thẻ món đó hứa đúng con số này.
+    patienceMul: STANDS[s].patience * equipPatienceMul(w.equipment),
     gazeMul: STANDS[s].gaze * CAL.weatherInfo[wx].gazeMul,
   };
 }

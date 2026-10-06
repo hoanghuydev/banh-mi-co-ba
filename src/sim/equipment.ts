@@ -1,27 +1,51 @@
 /**
- * Thiết bị — P3-04. Cái xe LÀ bảng thành tựu (§2.7): không huy hiệu, không thông báo nổi, không
- * thanh tiến trình. Mỗi món hiện trên xe, đổi cảm giác một thao tác, và có một cái giá.
+ * Thiết bị — cái xe LÀ bảng thành tựu (§2.7): không huy hiệu, không thông báo nổi, không thanh
+ * tiến trình. Mỗi món hiện trên xe (hay trên vỉa hè), đổi cảm giác một thao tác, và có một cái giá
+ * bằng tiền.
  *
- * Sức chứa (TB-4): 12 ô, đầu mùa lò than (2) + thùng xốp (2) chiếm 4 → còn 8. Giá treo và
- * khung gia cố mỗi cái +2. Không bao giờ mua hết được — đó là để lựa chọn có nghĩa.
- * Bán lại 60% giá (và đó cũng là đường fail mềm của tiền học — P3-06 §2.4).
+ * ĐỢT RÚT GỌN (quyết định của chủ dự án). Sáu món đã bỏ — dao bén, thớt riêng, khung gia cố, khăn
+ * ba màu, thùng rác nắp đạp, vòi + bồn rửa — vì món nào không CHỈ TAY VÀO ĐƯỢC trên màn hình thì
+ * nó không phải một món đồ, nó là một con số nhân giấu sau lưng. Lý do từng món ở `equipment.json`
+ * khoá `_bo`. Thêm QUAT_DIEN: thấy được, một chỉ số, một câu.
  *
- * Hiệu ứng KHÔNG nằm ở đây thành số trừu tượng: mỗi hệ tự hỏi `has(w, id)` và tự đổi đúng
- * chỗ của nó (lò, bảng kẹp, bồn rửa…). UI không bao giờ hiện con số hiệu ứng.
+ * LỢI ÍCH NÓI BẰNG SỐ. Luật cũ cấm UI hiện con số hiệu ứng, và nó bị thi hành thành KHÔNG NÓI GÌ —
+ * chủ dự án đọc trang Đồ nghề rồi hỏi *"tôi đọc không biết mua để làm gì"*. Giờ mỗi món khai
+ * `gain`: một hai dòng quy ra chỉ số (`+15% khách ghé`, `chờ thêm 20 giây`). Không còn `drawbacks`
+ * — mua là được, cái giá đã nằm ở tiền mua và tiền mỗi ngày.
+ *
+ * Sức chứa: 12 ô nền, đầu mùa lò than (2) + thùng xốp (2) chiếm 4. Giá treo +2 → trần 14, mà mua
+ * hết thì cần 16: thiếu đúng một hai món chứ không còn là một bài toán. Bán lại 60% giá (cũng là
+ * đường fail mềm của tiền học).
+ *
+ * Hiệu ứng KHÔNG nằm hết ở đây: mỗi hệ tự hỏi `has(w, id)` và tự đổi đúng chỗ của nó (lò, bảng
+ * kẹp, trạm trà…). Mấy hàm cuối file là chỗ cho hiệu ứng DÙNG CHUNG nhiều hệ.
  */
 import EQUIP_JSON from "../content/econ/equipment.json";
 import { ECON } from "./econ";
 import type { EconBook } from "./obligations";
 
-export type EquipId = "LO_THAN" | "THUNG_XOP" | "LO_GAS" | "DAO_BEN" | "THOT_RIENG" | "KEP_GAP" | "TU_MAT" | "NOI_U"
-  | "LONG_BAN" | "VOI_BON" | "THUNG_RAC" | "KHAN_3_MAU" | "GHE_BAN" | "DU_CHE" | "BINH_TRA" | "BANG_QR" | "LOA_RAO"
-  | "BANG_HIEU" | "GIA_TREO" | "KHUNG_GIA_CO" | "DEN_CA_TOI";
+export type EquipId = "LO_THAN" | "THUNG_XOP" | "LO_DIEN" | "KEP_GAP" | "TU_MAT" | "NOI_U" | "LONG_BAN"
+  | "GHE_BAN" | "DU_CHE" | "BINH_TRA" | "QUAT_DIEN" | "LOA_RAO" | "BANG_HIEU" | "BANG_QR" | "GIA_TREO";
 
 export type EquipDef = {
   name: string; group: string; price_k: number; slots: number; daily_k: number; starting?: boolean;
   resellable?: boolean; resale_k?: number; replaces?: EquipId; costsMorning?: boolean;
-  unlock?: { minDay: number; requiresAny?: EquipId[]; afterFlag?: string };
-  feel: string; drawbacks: string[];
+  /**
+   * Cổng mở khoá. CÒN ĐÚNG MỘT MÓN dùng tới: bảng QR, `minDay` 14, và đó là chuyện kịch bản chứ
+   * không phải nhịp kinh tế — nó đi theo cảnh SK-23, một cảnh có ngày cố định.
+   *
+   * Khoá theo NGÀY cho mọi món khác đã gỡ từ trước. Đợt này gỡ luôn hai cổng còn lại của thế
+   * giới: `afterFlag` của cái dù (*"dù che thì cần gì đợi mưa. Muốn mua ngày nào mua chứ"*) và
+   * `requiresAny` của tủ mát (nó trỏ vào hai món vừa bị bỏ). Cái phanh duy nhất còn lại là HẬU
+   * QUẢ: tiêu sạch vốn thì sáng mai không mua nổi hàng, và `sim/broke.ts` cho mùa đó dừng thật.
+   *
+   * `requiresAny` / `afterFlag` GIỮ LẠI trong kiểu và trong `unlocked()`: muốn chặn một món riêng
+   * lẻ thì thêm lại một dòng JSON là xong.
+   */
+  unlock?: { minDay?: number; requiresAny?: EquipId[]; afterFlag?: string };
+  feel: string;
+  /** LỢI ÍCH, quy ra chỉ số. Mỗi phần tử một dòng trên thẻ. Món đầu mùa để trống. */
+  gain: string[];
 };
 
 const J = EQUIP_JSON as unknown as {
@@ -77,7 +101,7 @@ export function newEquipState(): EquipState {
 export function unlocked(id: EquipId, e: EquipState, day: number, flags: Record<string, unknown>) {
   const u = EQUIP[id].unlock;
   if (!u) return !EQUIP[id].starting;
-  if (day < u.minDay) return false;
+  if (u.minDay !== undefined && day < u.minDay) return false;
   if (u.requiresAny && !u.requiresAny.some((x) => has(e, x))) return false;
   if (u.afterFlag && !flags[u.afterFlag]) return false;
   return true;
@@ -124,7 +148,7 @@ export function sellEquip(id: EquipId, e: EquipState, m: { cash: number }, share
   m.cash += v;
   if (book) book.today.tools -= v;                 // tiền VÔ — dòng đồ nghề hôm nay thành âm
   e.owned = e.owned.filter((x) => x !== id);
-  // bán lò gas thì lò than của cô Ba vẫn còn đó; bán tủ mát thì lại xài thùng xốp
+  // bán lò điện thì lò than của cô Ba vẫn còn đó; bán tủ mát thì lại xài thùng xốp
   const d = EQUIP[id];
   if (d.replaces && !has(e, d.replaces)) e.owned.push(d.replaces);
   e.installed = [...e.owned];
@@ -133,22 +157,37 @@ export function sellEquip(id: EquipId, e: EquipState, m: { cash: number }, share
 
 export const resellable = (e: EquipState) => e.owned.filter((id) => EQUIP[id as EquipId]?.resellable !== false && !EQUIP[id as EquipId]?.starting) as EquipId[];
 
-// ─────────────────────────────────────────────────────────────── hiệu ứng (chỗ mỗi hệ hỏi)
+// ─────────────────────────────────────────────────────── hiệu ứng dùng chung nhiều hệ
+/*
+ * MỖI CON SỐ Ở ĐÂY CÓ MỘT DÒNG CHỮ ĐỐI DIỆN trong `equipment.json` khoá `gain`. Đó là hợp đồng
+ * với người chơi: thẻ ghi "+20% khách ghé" thì `walkInMul` phải trả 1,20. Đổi một bên mà quên bên
+ * kia là nói dối người ta một cách lặng lẽ — `tests/p3-equipment.test.ts` canh đúng chỗ đó.
+ */
 
-/** Hệ số khách vãng lai từ đồ nghề: loa rao +18%, bảng hiệu +12%, dù che (mưa ×1,2 · nắng −4%). */
-export function walkInMul(e: EquipState | undefined, rain: boolean, sunny: boolean, loaOn = true) {
+/**
+ * Hệ số khách vãng lai: bảng hiệu +20% · loa rao +15% · dù che +10% (bữa mưa +30%).
+ *
+ * ⚖️ BẢNG HIỆU MẠNH HƠN LOA, VÀ ĐẮT HƠN. Trước đợt này loa +18% giá 380k còn bảng +12% giá 750k —
+ * tức cái rẻ hơn mạnh hơn, và không ai đọc ra điều đó vì con số nằm trong mã. Giờ con số in ngay
+ * trên thẻ nên cái lệch đó thành một lời nói dối đọc được. Đổi thành một cuộc trao đổi thật: loa
+ * rẻ (380k) nhưng ăn 4k mỗi ngày, bảng đắt (650k) nhưng trả một lần là xong — qua 40 ngày hai
+ * đường tiền gần bằng nhau, và người chơi chọn theo túi tiền hôm nay chứ không theo một đáp án đúng.
+ */
+export function walkInMul(e: EquipState | undefined, rain: boolean, _sunny = false, loaOn = true) {
   let m = 1;
-  if (has(e, "LOA_RAO") && loaOn) m *= 1.18;
-  if (has(e, "BANG_HIEU")) m *= 1.12;
-  if (has(e, "DU_CHE")) m *= rain ? 1.2 : sunny ? 0.96 : 1;
+  if (has(e, "LOA_RAO") && loaOn) m *= 1.15;
+  if (has(e, "BANG_HIEU")) m *= 1.2;
+  // Cái dù KHÔNG còn trừ ngược lúc nắng: thẻ hứa một con số dương thì nó phải dương ở mọi thời tiết.
+  if (has(e, "DU_CHE")) m *= rain ? 1.3 : 1.1;
   return m;
 }
-/** Quầy bẩn dần chậm hơn / nhanh hơn. */
+
+/** Quầy bẩn chậm hơn: lồng bàn / tủ kính −20%. Không món nào làm quầy bẩn NHANH hơn nữa. */
 export function dirtMul(e: EquipState | undefined) {
-  let m = 1;
-  if (has(e, "THOT_RIENG")) m *= 0.88;
-  if (has(e, "LONG_BAN")) m *= 0.80;
-  if (has(e, "THUNG_RAC")) m *= 0.85;
-  if (has(e, "GHE_BAN")) m *= 1.15;
-  return m;
+  return has(e, "LONG_BAN") ? 0.8 : 1;
+}
+
+/** Kiên nhẫn của MỌI khách đang chờ: quạt điện +15%. Nhân vào `patienceMul` của chỗ đứng. */
+export function equipPatienceMul(e: EquipState | undefined) {
+  return has(e, "QUAT_DIEN") ? 1.15 : 1;
 }

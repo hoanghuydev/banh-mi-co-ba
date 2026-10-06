@@ -1,0 +1,118 @@
+{
+  "_note": "BẢNG MENU TREO VÁCH — nguồn sự thật DUY NHẤT cho 'ổ nào có gì'. Trước file này, 'món' không tồn tại: đơn hàng là một tổ hợp nguyên liệu (`nhan: [\"xiumai\"]`), nên bánh mì xíu mại trong game KHÔNG có pate, và giá tính bằng cách ĐẾM số nhân — hễ cho pate vô là giá tự nhảy bậc. Đời thật thì ngược: xe nào cũng quết pate trước, và giá ghi theo MÓN. Từ đây `sim/order.ts` đọc file này: khách gọi TÊN MÓN, món khai nhân của nó, lời dặn thêm chỉ còn là phần SỬA trên nền đó. Cái bảng người chơi đọc (E ở vách) và cái bảng `diffDish` chấm điểm là CÙNG MỘT bảng — lệch được thì không có chỗ nào để lệch.",
+  "_gia": "`tier` tra sang `econ.json: menu_k` — tiền chỉ có một nguồn (P3-01). Năm món một nhân cùng bậc `thuong`, 'đầy đủ' bậc `dayDu`, 'bánh mì không' bậc `khong`; xin thêm một thứ nhân trên ổ đầy đủ thì lên `dacBiet`. Bảng ghi đúng cái game đang tính, không ghi giá tự nghĩ ra.",
+  "rauNen": {
+    "_note": "RAU NỀN — khay rau của xe, ổ nào cũng rắc như nhau (P1-03 §2.2). 'Rau đầy đủ' là MẶC ĐỊNH nên không khách nào nói ra; họ chỉ nói khi muốn BỚT. 'Cho ít rau' = một nửa, KHÔNG phải bỏ thứ nào (P1-03 §2.3 luật vàng).",
+    "dochua": 2,
+    "dualeo": 2,
+    "hanhngo": 2,
+    "ot": 1,
+    "tuongot": 1
+  },
+  "items": [
+    {
+      "id": "thit",
+      "name": "bánh mì thịt nguội",
+      "call": "thịt nguội",
+      "tier": "thuong",
+      "nhan": {
+        "pate": 1,
+        "thit": 1
+      },
+      "note": ""
+    },
+    {
+      "id": "chalua",
+      "name": "bánh mì chả lụa",
+      "call": "chả lụa",
+      "tier": "thuong",
+      "nhan": {
+        "pate": 1,
+        "chalua": 1
+      },
+      "note": ""
+    },
+    {
+      "id": "xiumai",
+      "name": "bánh mì xíu mại",
+      "call": "xíu mại",
+      "tier": "thuong",
+      "nhan": {
+        "pate": 1,
+        "xiumai": 1
+      },
+      "note": ""
+    },
+    {
+      "id": "opla",
+      "name": "bánh mì ốp la",
+      "call": "ốp la",
+      "tier": "thuong",
+      "nhan": {
+        "pate": 1,
+        "opla": 1
+      },
+      "note": ""
+    },
+    {
+      "id": "pate",
+      "name": "bánh mì pate",
+      "call": "pate",
+      "tier": "thuong",
+      "nhan": {
+        "pate": 1
+      },
+      "note": "Chỉ pate, không nhân mặn."
+    },
+    {
+      "id": "daydu",
+      "name": "bánh mì đầy đủ",
+      "call": "đầy đủ",
+      "tier": "dayDu",
+      "nhan": {
+        "pate": 1,
+        "thit": 1,
+        "chalua": 1
+      },
+      "note": ""
+    },
+    {
+      "_note": "`onBoard: false` = KHÔNG ghi lên bảng, nhưng VẪN gọi được. Xe nào cũng bán bánh mì không mà chẳng xe nào viết nó lên bảng. Dòng dữ liệu thì không gỡ được: bé Su, bà Sáu (đổi hàng) và SK-31 gọi đúng tên món này trong `content/arcs.ts`, và P4-05 §2.7 A xếp nó là BẪY LỚN NHẤT của người chơi mới (tưởng khách quên nói nhân) — gỡ khỏi dữ liệu là `itemOf()` trả undefined và cả mùa vỡ.",
+      "id": "khong",
+      "name": "bánh mì không",
+      "call": "bánh mì không",
+      "tier": "khong",
+      "onBoard": false,
+      "nhan": {},
+      "note": "Chỉ ổ bánh. Không ai viết lên bảng, nhưng ai cũng gọi được."
+    }
+  ],
+  "them": {
+    "_note": "TỪ VỰNG GỌI MÓN — lấy từ `season/order-phrases.json` (nguồn: CANON §14, P4-01, P4-05 §2.7). Đây là nửa thứ hai của cái bảng: tên món nói ổ có GÌ, mấy câu này nói khách SỬA được gì.",
+    "rows": [
+      {
+        "say": "cho nhiều ___",
+        "means": "x2 món đó"
+      },
+      {
+        "say": "cho ít rau",
+        "means": "giảm một nửa"
+      },
+      {
+        "say": "không ớt/hành/ngò/tương ớt",
+        "means": "không cho món đó vào bánh mì"
+      },
+      {
+        "say": "không rau",
+        "means": "chỉ cho nhân bánh mì"
+      }
+    ]
+  },
+  "nuoc": [
+    {
+      "name": "trà đá",
+      "price": "rót giùm, hổng tính tiền",
+      "note": "Phải có bình nước trà mới rót được."
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 import type { Slot } from "../core/eventbus";
-import { COUNTER_Y, STATION_ROW_Y } from "./map";
+import { COUNTER_Y, MENU_SPOT, STATION_ROW_Y } from "./map";
 
 /**
  * Trạm làm việc trong quầy — DỮ LIỆU, không phải code. Thêm một công đoạn = thêm một dòng ở đây,
@@ -21,7 +21,7 @@ export const HAND_LABEL: Record<Hand, string> = {
   loaf_hot: "ổ bánh nóng",
   loaf_burnt: "ổ bánh cháy",
   loaf_filled: "ổ bánh đã kẹp",
-  tea: "ly trà đá",
+  tea: "ly nước trà",
 };
 
 export const HAND_COLOR: Record<Hand, number> = {
@@ -127,7 +127,11 @@ export const STATIONS: Station[] = [
     slot: "HANDS", needs: ["empty"], gives: "empty", holdMs: 1500,
   },
   {
-    id: "tea", tx: 13, ty: STATION_ROW_Y, name: "thùng trà đá", verb: "rót ly trà đá",
+    /**
+     * BÌNH NƯỚC TRÀ — trạm này chỉ TỒN TẠI khi đã mua `BINH_TRA` (`StallScene` lọc ở `update.input`,
+     * và `propHidden` giữ cái thùng khỏi hiện trên bản đồ). Tên đổi theo tên món đồ cho khớp.
+     */
+    id: "tea", tx: 13, ty: STATION_ROW_Y, name: "bình nước trà", verb: "rót ly nước trà",
     slot: "UNDER_COUNTER", needs: ["empty"], gives: "tea", holdMs: 600,
   },
 ];
@@ -170,6 +174,21 @@ export function stationNear(wx: number, wy: number, current?: Station | null): S
   const dCur = dist2(current);
   if (dCur <= REACH * REACH && bestD > dCur * STICKY) return current;
   return best;
+}
+
+/**
+ * Chỗ đứng đọc BẢNG MENU phải nằm NGOÀI tầm với của mọi trạm.
+ *
+ * E là một phím, và `press()` trao nó cho `this.near` trước khi nghĩ tới cái gì khác: bảng
+ * treo cạnh một cái trạm thì cú E định đọc bảng rơi thẳng vào cái bồn rửa. Hàng y1 chỉ còn
+ * vài khúc trống và phần lớn đều sát một trạm, nên chuyện này dễ xảy ra lúc ai đó dời bảng
+ * cho "đẹp hơn" — và nó hỏng ÂM THẦM, chỉ lộ ra khi có người đứng đó bấm E.
+ */
+export function assertMenuSpotFree() {
+  const st = stationNear(MENU_SPOT.x, MENU_SPOT.y);
+  if (st) {
+    throw new Error(`Chỗ đứng đọc bảng menu (${MENU_SPOT.x}, ${MENU_SPOT.y}) nằm trong tầm với của trạm "${st.id}" — cú E sẽ rơi vào trạm đó, không mở bảng.`);
+  }
 }
 
 /** Vì sao chưa dùng được trạm — nói thẳng ra, không để người chơi bấm vào khoảng không. */

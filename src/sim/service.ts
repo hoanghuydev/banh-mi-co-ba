@@ -41,6 +41,7 @@ import {
 import { CLAIM, activeHeard, disprove, nameOf, poolOf, witness, type GossipState } from "./gossip";
 import { beginDay, displayName, logNote, logOrder, nameCheck, type Notebook } from "./notebook";
 import { CAL, crowdMul, dongVi, isRain, loafPriceVnd, tasteThreshold, tierOf, weatherOf } from "./econ";
+import { nhanOf } from "./menu";
 import { peakCap } from "./season";
 import { has, walkInMul as equipWalkIn, type EquipId, type EquipState } from "./equipment";
 import {
@@ -564,7 +565,13 @@ export class Service {
   private lastTarget: Customer | null = null;
   private actReply: { text: string; mood: TalkMood } | null = null;
   private pledges = new Map<string, { promised: string[]; discount: number; free: boolean }>();
-  teaLeft = TEA_PER_DAY;
+  /**
+   * Số ly rót được hôm nay. 0 khi CHƯA MUA bình nước trà — và con số 0 đó là cái khoá duy nhất
+   * cần có: `p.hasTea` (`_blackboard.json` = `playerTeaLeft >= 1`) gác mọi nhánh thoại mời trà,
+   * nên chưa có bình thì mười tám câu "uống miếng trà đá cái đã" tự im, không phải đi dán
+   * `needEquip` vào từng chỗ. Constructor nâng lên khi đã mua.
+   */
+  teaLeft = 0;
   dirt = 0;
   handsDirty = false;
   /** Van NGỮ CẢNH, khác ba van tần suất ở trên: `false` ở bảy cửa sổ cấm (cầm ổ nóng, bảng kẹp nhân mở, FLOURISH, lò SÉM, tay bận, khách đang gọi, còn đồ rơi). */
@@ -643,7 +650,9 @@ export class Service {
     this.dialogRng = deps.hub.stream("dialog-shufflebag");
     this.barks = new Barks(this.dialogRng, deps.bags, deps.day);
     this.speaker = new Speaker(this.dialogRng, deps.bags, deps.day, deps.dialog, 0);
-    if (has(deps.equip, "BINH_TRA")) this.teaLeft = 40;
+    // Có bình thì rót thoải mái cả buổi; chưa có thì `teaLeft` giữ 0 (xem khai báo ở trên) và
+    // trạm trà cũng không tồn tại trên bản đồ (`StallScene.propHidden`).
+    if (has(deps.equip, "BINH_TRA")) this.teaLeft = TEA_PER_DAY * 2;
     this.talks.ensure(SHARED_POOL);
     this.buildSchedule();
     if (deps.story) this.storyTimeline = timeline(deps.day, { atAlley: !deps.followers });
@@ -940,6 +949,8 @@ export class Service {
         if (rank(to) <= rank(from)) continue;
         this.react(c, o.id, to === "GLIMPSED" ? 1 : to === "NOTICED" ? 2 : 3);
         if (to === "CONFIRMED" && (o.id === "DROPPED_FOOD" || o.id === "DIRTY_HANDS" || o.id === "BURNT_OR_COLD")) {
+          // người này đã NHÌN RÕ tay mình, không phải liếc qua — màn tối được phép nhắc lại
+          if (o.id === "DIRTY_HANDS" && this.deps.notebook) this.deps.notebook.today.handsSeen++;
           this.remember(c, o.id, SALIENCE[o.id] * o.certainty);
         } else if (to === "NOTICED" && o.id === "FLOURISH") this.remember(c, "FLOURISH", SALIENCE.FLOURISH);
         if (to === "CONFIRMED") this.deps.bus.emit("perception:confirmed", { npcId: c.memKey, stimId: o.id });
@@ -1676,7 +1687,7 @@ export class Service {
     q.set("customersServedToday", this.servedCount);
     if (this.dirtRemarked) q.set("dirtRemarkedToday", true);
     q.set("playerHandsDirty", this.handsDirty);
-    if (has(this.deps.equip, "LO_GAS")) q.set("equipGasOven", true);
+    if (has(this.deps.equip, "LO_DIEN")) q.set("equipLoDien", true);
 
     const m = this.mem(c.memKey);
     const p = c.personality;
@@ -1803,7 +1814,7 @@ export class Service {
   /** Mỗi lỗi tra ĐÚNG khoá của nó: thấy lúc làm → ANTICIPATED, không thấy → DISCOVERED. Không bao giờ trừ tiền bánh. */
   serveDish(
     dish: Ingredient[],
-    opts: { cold?: boolean; crust?: number; quality?: number; readyAt?: number; soiled?: boolean; burnAt?: number } = {},
+    opts: { cold?: boolean; crust?: number; quality?: number; readyAt?: number; soiled?: boolean; burnAt?: number; singeAt?: number } = {},
   ): ServeResult {
     const c = this.front;
     if (!c || c.phase !== "waiting") return { ok: false, reason: "chưa có ai chờ lấy bánh" };
@@ -1856,11 +1867,14 @@ export class Service {
     if (opts.cold) raw.push(mkDefect("WRONG_TEMP", null));
     /** HAI đầu của vòng độ giòn, cùng một luật: rút sớm quá thì chưa giòn, trễ quá thì sém cạnh. */
     const burnAt = opts.burnAt ?? CRUST.BURNT;
-    const band = opts.crust === undefined ? null : bandOfCrust(opts.crust, burnAt);
+    // Ngưỡng chớm sém của CHÍNH cái lò đang dùng — lò điện đẩy nó lên 1,30, nên ổ crust 1,0 ra từ
+    // lò điện là GIÒN chứ không phải sém. Lấy hằng số ở đây là chấm lỗi cho một ổ bánh ngon.
+    const singeAt = opts.singeAt ?? CRUST.SINGED;
+    const band = opts.crust === undefined ? null : bandOfCrust(opts.crust, burnAt, singeAt);
     const crustLow = band === "RAW";
     const crustSinged = band === "SINGED";
     if (crustLow) raw.push(underdoneDefect(opts.crust!));
-    else if (crustSinged) raw.push(singedDefect(opts.crust!, burnAt));
+    else if (crustSinged) raw.push(singedDefect(opts.crust!, burnAt, singeAt));
     if (opts.quality !== undefined && 1 - opts.quality >= tasteThreshold(c.personality.soi)) raw.push(mkDefect("TASTE_OFF", null));
     const defects: DiffedDefect[] = raw.map((d) => {
       const key = d.kind === "WRONG_TEMP" || d.kind === "STUFFED" || d.kind === "TASTE_OFF" ? null : orderDefectKey(c.id, d.kind, d.item);
@@ -1976,17 +1990,10 @@ export class Service {
       }
     }
 
-    if (c.npc && !defects.length && has(this.deps.equip, "THOT_RIENG") && c.personality.soi >= 0.8) {
-      const m = this.mem(c.memKey);
-      m.seen ??= {};
-      if (!m.seen.thotRieng) {
-        m.seen.thotRieng = this.deps.day;
-        this.remember(c, "CARED_FOR_THEM", 50);
-        this.noteRel("làm ăn sạch sẽ", 50);
-        this.say(c, "Con này làm ăn sạch sẽ à nghen.", 2, true, 55);
-      }
-    }
-
+    /*
+     * CÂU "LÀM ĂN SẠCH SẼ À NGHEN" đi theo cái thớt riêng — món đó đã bỏ, nên câu này cũng đi.
+     * Giữ lại mà nối vào món khác là lấy một lời khen có địa chỉ đem gắn vào chỗ nó không thuộc về.
+     */
     // Kênh 1+2 lúc nhận bánh: lỗi → mặt "sai món" (nặng nhẹ theo lỗi, xem DEFECT_FACE_I3);
     // nếp "cho thêm" vừa gãy → vẫn nhận bánh (dáng HAND_OUT) nhưng mặt sượng một nhịp;
     // còn lại → tích cực (nhớ đơn thì nặng hơn).
@@ -2132,6 +2139,7 @@ export class Service {
     if (!c || c.phase === "leaving") return { ok: false, reason: "chưa có ai để mời" };
     if (c.holdingTea) return { ok: false, reason: `${this.label(c)} còn cầm ly kia` };
     if (this.teaSuspect(c)) return this.refuseTea(c);
+    if (!has(this.deps.equip, "BINH_TRA")) return { ok: false, reason: "chưa có bình nước trà" };
     if (this.teaLeft <= 0) return { ok: false, reason: "hết đá rồi" };
 
     const cup = (this.teaToday.get(c.memKey) ?? 0) + 1;
@@ -2149,7 +2157,13 @@ export class Service {
       for (const s of r.say) c.script.push({ at: this.nowSec + (s.delay ?? 1), text: s.text, by: s.by && s.by !== c.memKey ? s.by : undefined });
       if (r.say.length && c.holdLeft > 0) c.holdLeft = Math.min(c.holdLeft, 6);
     }
-    /** Thưởng trả Ở ĐÂY, lúc ly trà tới tay — trả lúc hứa thì cách chơi tối ưu là hứa rồi quên. */
+    /**
+     * Thưởng trả Ở ĐÂY, lúc ly nước trà tới tay — trả lúc hứa thì cách chơi tối ưu là hứa rồi quên.
+     *
+     * HAI THỨ, HAI ĐƯỜNG. `takeTea` nới sức chờ thêm `TEA_PATIENCE_SEC` (20 s) cho MỌI ly, không
+     * cooldown — đó là cái người chơi đọc trên thẻ món đồ. Hảo cảm (`CARED_FOR_THEM`) thì vẫn qua
+     * `mul`: nhỏ dần theo ngày, có cooldown 45 s, và người soi bắt bài rồi thì thôi cả mùa.
+     */
     c.visit.gaveTea = true;
     this.keepDeed(c, "ROT_TRA");
     const mul = c.takeTea(cup);
@@ -2991,6 +3005,9 @@ export class Service {
       c.visit.gaveTea = true;
       return;
     }
+    // Chưa có bình thì ĐỪNG HỨA: một lời hứa không có đường thực hiện là một món nợ cài sẵn.
+    // (Thực tế nhánh này không tới được — `p.hasTea` đã gác — nhưng act còn chạy được từ kịch bản.)
+    if (!has(this.deps.equip, "BINH_TRA")) return;
     // Không rót được ngay thì câu nói thành một lời hứa có hạn, không phải nuốt lời.
     this.promiseDeed(c, { what: "ROT_TRA", dueSec: DEED_DUE.ROT_TRA });
   }
@@ -3216,9 +3233,12 @@ export class Service {
 
     const it = c.order.intent;
     for (const toi of Array.isArray(act.toi) ? act.toi : [act.toi]) {
-      if (toi === "dayDu") it.dayDu = true;
+      // "Vậy em làm đầy đủ cho anh nghen" = đổi hẳn sang MÓN đầy đủ trên bảng, chứ không
+      // bật một cờ `dayDu` nằm cạnh danh sách nhân cũ — hồi đó đổi cờ mà danh sách nhân
+      // vẫn y nguyên, nên ổ "đầy đủ" ra bốn thứ nhân.
+      if (toi === "dayDu") it.mon = "daydu";
       else if (toi === "itRau") it.rau = "it";
-      else if (toi === "themNhan" && !it.nhieu) it.nhieu = it.nhan[0] ?? "pate";
+      else if (toi === "themNhan" && !it.nhieu) it.nhieu = nhanOf(it.mon)[0] ?? "pate";
       else if (toi === "khongOt") { it.ot = 0; it.tuong = 0; }
     }
     c.order.levels = levelsOf(it);
@@ -3612,9 +3632,9 @@ function underdoneDefect(crust: number): Defect {
 }
 
 /** Nặng dần từ lúc chớm sém tới sát ngưỡng cháy của CHÍNH cái lò đang dùng — xem `SINGED_FLOOR`. */
-function singedDefect(crust: number, burnAt: number): Defect {
-  const span = Math.max(0.01, burnAt - CRUST.SINGED);
-  const over = clamp01((crust - CRUST.SINGED) / span);
+function singedDefect(crust: number, burnAt: number, singeAt: number = CRUST.SINGED): Defect {
+  const span = Math.max(0.01, burnAt - singeAt);
+  const over = clamp01((crust - singeAt) / span);
   const mag = SINGED_FLOOR + (SINGED_CEIL - SINGED_FLOOR) * over;
   return { ...mkDefect("WRONG_TEMP", null, mag), label: SINGED_LABEL, text: SINGED_TEXT };
 }

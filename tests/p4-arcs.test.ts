@@ -7,7 +7,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { NPCS } from "../src/content/npcs";
 import { QUIRKS, arcToday, extraVisits, usualOf, type ArcCtx } from "../src/content/arcs";
-import { INGREDIENTS, diffDish, dishFor, levelsOf, type Ingredient, type OrderIntent, type OrderSpec } from "../src/sim/order";
+import { INGREDIENTS, diffDish, dishFor, levelsOf, type OrderIntent, type OrderSpec } from "../src/sim/order";
+import type { MenuItemId } from "../src/sim/menu";
 import { newGame, type SaveFile } from "../src/core/save";
 import { HeadlessStall, POLICIES, nextDay } from "../src/sim/headless";
 import { newStoryState } from "../src/sim/story";
@@ -32,6 +33,23 @@ test("L2 — mọi NPC có đúng một thứ không liên quan tới nghề, l�
 
 // ───────────────────────── T2: đọc lại câu nói ra bảng định lượng (không nhìn spec)
 
+/**
+ * Đọc một câu gọi món ra `OrderIntent` mà KHÔNG nhìn `spec`.
+ *
+ * Từ khi có bảng menu, cái phải đọc ra chỉ còn là TÊN MÓN cộng mấy lời dặn thêm: công
+ * thức nằm trên bảng, và `levelsOf` tra bảng đó. Nhờ vậy test này không còn chép tay
+ * "đầy đủ = pate + thịt + chả lụa" lần thứ hai — đổi bảng là đổi cả hai đầu cùng lúc.
+ */
+const ALIAS: readonly [MenuItemId, RegExp][] = [
+  ["khong", /bánh mì không|ổ bánh không/],
+  ["daydu", /đầy đủ/],
+  ["thit", /thịt/],
+  ["chalua", /chả lụa/],
+  ["xiumai", /xíu mại/],
+  ["opla", /ốp la|trứng/],
+  ["pate", /pate|pa-tê/],
+];
+
 function read(phrase: string, base?: OrderIntent): OrderIntent {
   const s = phrase.toLowerCase();
   // "Như mọi bữa, mà…" = đơn quen (TRÍ NHỚ của người chơi) + phần nói thêm
@@ -40,17 +58,14 @@ function read(phrase: string, base?: OrderIntent): OrderIntent {
     if (/không ớt|khỏi ớt/.test(s)) it.ot = 0;
     return it;
   }
-  const it: OrderIntent = { nhan: [], rau: "day-du", ot: 1, tuong: 1, usual: false };
-  if (/bánh mì không|ổ bánh không/.test(s)) Object.assign(it, { rau: "khong", ot: 0, tuong: 0 });
-  if (/đầy đủ/.test(s)) { it.dayDu = true; it.nhan = ["pate", "thit", "chalua"]; }
-  else {
-    const n: Ingredient[] = [];
-    if (/pate|pa-tê/.test(s)) n.push("pate");
-    if (/thịt/.test(s)) n.push("thit");
-    if (/chả lụa/.test(s)) n.push("chalua");
-    if (/xíu mại/.test(s)) n.push("xiumai");
-    if (/ốp la|trứng/.test(s)) n.push("opla");
-    it.nhan = n;
+  const found = ALIAS.find(([, re]) => re.test(s));
+  assert.ok(found, `câu không gọi tên món nào trên bảng: "${phrase}"`);
+  const it: OrderIntent = { mon: found[0], rau: "day-du", ot: 1, tuong: 1, usual: false };
+  if (it.mon === "khong") Object.assign(it, { rau: "khong", ot: 0, tuong: 0 });
+  // "hai trứng" / "nhiều <nhân>" = thứ nhân đó lên hai phần
+  if (/hai trứng/.test(s)) it.nhieu = "opla";
+  for (const i of INGREDIENTS) {
+    if (i.kind === "nhan" && new RegExp(`nhiều ${i.label}`).test(s)) it.nhieu = i.id;
   }
   if (/ít rau|ít ngò|ít rau mùi/.test(s)) it.rau = "it";
   if (/không rau/.test(s)) it.rau = "khong";

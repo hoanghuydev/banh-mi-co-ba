@@ -12,6 +12,8 @@ import {
   SUPPLIERS, afterMarket, borrow, creditCeiling, greetingOf, isClosed, repay, state, type SupplierId,
 } from "../../sim/suppliers";
 import { NOTICE_LINES, rentVnd, upcoming } from "../../sim/obligations";
+import { TOUR_TOTAL, tourAt, tourIndex, tourSkip } from "../../sim/tour";
+import { TourCoach } from "../tour/TourCoach";
 
 /**
  * Đi chợ sáng — P3-01 §2.1 pha MORNING, P3-03 §2.5 (giá), §2.1 (hạn dùng). Chạy theo LƯỢT:
@@ -133,7 +135,16 @@ export class MarketView {
   private msg = "";
   private keyGuard = (ev: KeyboardEvent) => { ev.stopPropagation(); if (ev.code === "Escape" && this.confirming) { this.confirming = false; this.render(); } };
 
-  constructor(private game: Phaser.Game, private w: SaveFile, private opts: { textScale: number; showTotal?: boolean; onDone: (r: MarketResult) => void }) {
+  /** Bong bóng dẫn bữa đầu — chỉ dựng ở ngày 1 lúc còn ở bước đi chợ. */
+  private coach: TourCoach | null = null;
+  private onResize = () => this.aimCoach();
+
+  constructor(private game: Phaser.Game, private w: SaveFile, private opts: {
+    textScale: number; showTotal?: boolean;
+    /** Chân dung cô Ba (`art/faces`) — scene đưa xuống vì lớp DOM này không cầm scene. */
+    face?: string;
+    onDone: (r: MarketResult) => void;
+  }) {
     if (!document.getElementById("mk-style")) {
       const st = document.createElement("style");
       st.id = "mk-style"; st.textContent = STYLE;
@@ -146,6 +157,13 @@ export class MarketView {
     this.root.addEventListener("keyup", (e) => e.stopPropagation(), true);
     document.body.appendChild(this.root);
     if (game.input.keyboard) game.input.keyboard.enabled = false;
+    if (tourAt(w, "CHO")) {
+      this.coach = new TourCoach({
+        face: opts.face, textScale: opts.textScale,
+        onSkip: () => { tourSkip(w); this.coach?.destroy(); this.coach = null; },
+      });
+      window.addEventListener("resize", this.onResize);
+    }
     this.render();
   }
 
@@ -200,6 +218,31 @@ export class MarketView {
     book.append(main, this.foot(overCold));
     r.append(book);
     this.restore(scroll, focusKey);
+    this.aimCoach();
+  }
+
+  /**
+   * Khoanh đúng cái nút phải bấm TIẾP THEO, không khoanh cả cái chợ.
+   *
+   * Ba chặng, đọc từ chính trạng thái của trang chứ không từ một bộ đếm riêng: giỏ trống thì chỉ
+   * vô dấu +, có đồ rồi thì chỉ vô nút đi bán, đang ở bước xác nhận thì chỉ vô nút trả tiền.
+   * Không có bộ đếm nghĩa là người chơi bấm lung tung cỡ nào cái vòng cũng không lạc.
+   */
+  private aimCoach() {
+    const c = this.coach;
+    if (!c) return;
+    if (!tourAt(this.w, "CHO")) { c.hide(); return; }
+    const step = tourIndex(this.w), total = TOUR_TOTAL;
+    const q = (sel: string) => this.root.querySelector(sel);
+    if (this.confirming) {
+      c.pointEl(q('[data-k="pay"]'), "Coi lại giỏ rồi bấm Trả tiền.", step, total);
+      return;
+    }
+    if (!this.picked().length) {
+      c.pointEl(q('[data-k^="plus:"]'), "Bấm + để bỏ đồ vô giỏ. Đồ hôm qua còn trong thùng, coi thiếu gì thì bù.", step, total);
+      return;
+    }
+    c.pointEl(q('[data-k="done"]'), "Lấy đủ rồi thì bấm đây.", step, total);
   }
 
   /**
@@ -258,7 +301,6 @@ export class MarketView {
     said.push(...rumours(day));
     said.push(...alleyRumours(day, w.npcs.CHU_KIET?.tier === "FRIEND"));
     if (standClosed(e.stand, day)) said.push(`Bữa nay ${STANDS[e.stand].name.toLowerCase()} không bán được, người ta chắn hết rồi.`);
-    if (day === 1) said.push("Cô Ba đi chợ từ bốn giờ sáng rồi, đồ có sẵn trong thùng. Con coi thiếu gì thì mua thêm.");
     if (e.today.wasted.length) said.push(`Sáng nay bỏ đi: ${e.today.wasted.join(", ")} — hư rồi.`);
     if (said.length) {
       const talk = this.el("div", "mk-talk");
@@ -417,10 +459,10 @@ export class MarketView {
     const acts = this.el("div", "mk-acts");
     const same = this.el("button", "mk-btn", "Mua như hôm qua");
     same.dataset.k = "same";
-    // Ngày 1 `lastBasket` là rổ CÔ BA đã đi mua từ bốn giờ sáng — hàng đã nằm trong thùng
-    // rồi. Chép lại là mua đúp: thùng xốp lập tức 8,8/8 ô, bấm gì cũng không checkout được.
+    // Ngày 1 `lastBasket` là rổ đã mua từ hôm qua — hàng đã nằm trong thùng rồi. Chép lại là
+    // mua đúp: thùng xốp lập tức 8,8/8 ô, bấm gì cũng không checkout được.
     same.disabled = day === 1;
-    if (day === 1) same.title = "Đồ bữa nay cô Ba mua sẵn rồi.";
+    if (day === 1) same.title = "Đồ bữa nay còn trong thùng rồi.";
     same.onclick = () => { this.basket = { ...w.inventory.lastBasket }; this.msg = ""; this.render(); };
     const clear = this.el("button", "mk-btn", "Bỏ hết");
     clear.dataset.k = "clear";
@@ -593,6 +635,9 @@ export class MarketView {
 
   close() {
     if (!this.root.isConnected) return;
+    window.removeEventListener("resize", this.onResize);
+    this.coach?.destroy();
+    this.coach = null;
     this.root.remove();
     if (this.game.input.keyboard) this.game.input.keyboard.enabled = true;
   }

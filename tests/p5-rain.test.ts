@@ -172,41 +172,33 @@ test("giảm chuyển động thì gió ĐỨNG YÊN hẳn — không còn một
   for (let t = 0; t < 20_000; t += 311) assert.equal(windAt(d, t), a);
 });
 
-test("lớp phủ nén tương phản chứ không bôi đen: alpha đủ để thấy, không đủ để mù", () => {
+test("lớp phủ chỉ HẠ TÔNG, không bôi đen: thấy là trời mưa, không phải trời tối", () => {
   for (const w of RAINY) {
     const a = rainGrade(w)!;
     /*
-     * `alpha` = 1 − hệ số tương phản còn lại. P5-02 §2.1.5 đòi nén xuống quanh một nửa
-     * (×0,72 của lớp `veil` chồng lên ×0,75 của lớp `dim` — xem phép gộp trong
-     * `world/rain.rainGrade`). Dưới 0,35 là mưa không ra mưa; trên 0,60 là khung hình
-     * bạc phếch và mặt người hết đọc được, tức là đổi T3 lấy không khí.
+     * `alpha` = phần sáng bị tấm phủ ăn mất. Bản cũ theo spec hai lớp của P5-02 §2.1.5 ăn gần một
+     * nửa và trên khung hình thật đọc ra là "tối thui" — xem ghi chú ở `world/rain.rainGrade`.
+     * Mưa nói bằng HẠT và NỀN ƯỚT; tấm phủ chỉ hạ tông chừng 10%.
+     *
+     * Dưới 0,05 là không còn đổi gì (bỏ hẳn tấm phủ cho rồi); trên 0,15 là bò trở lại chỗ cũ —
+     * mà từ khi bỏ đèn trong quán thì không còn gì kéo khu làm việc sáng lại nữa.
      */
-    assert.ok(a >= 0.35 && a <= 0.6, `${w}: lớp phủ alpha ${a} ngoài khoảng cho phép`);
+    assert.ok(a >= 0.05 && a <= 0.15, `${w}: lớp phủ alpha ${a} ngoài khoảng cho phép`);
   }
 });
 
-test("lớp phủ gộp PHẢI ra đúng phép biến đổi của hai lớp cũ — không được lệch tông", () => {
+test("hạ tông 10% thì mặt người VẪN đọc được — mức xám còn lại không tụt quá một bậc", () => {
   /*
-   * Lưới chắn cho phép gộp đại số ở `rainGrade`. Dựng lại HAI lớp cũ bằng số của spec
-   * (§2.1.5) rồi so với một lớp duy nhất.
-   *
-   * Ngưỡng 3/255 chứ không phải 0: lớp NHÂN cũ có hệ số khác nhau theo từng kênh (màu
-   * `rain.sky` không trung tính), mà một tấm phủ thường chỉ có một alpha cho cả ba —
-   * sai số cấu trúc, lớn nhất 2,2/255, dưới một nấc màu mắt phân biệt được. Cái test
-   * này canh là nó đừng BÒ LÊN: chỉnh alpha mà quên tính lại màu thì lệch ngay chục nấc.
+   * Kiểm cái mà alpha chỉ nói gián tiếp: một mảng sáng (mặt người, ổ bánh, áo trắng) sau khi
+   * qua tấm phủ còn lại bao nhiêu. `d ↦ d·(1−a) + grade·a`.
    */
   const rgb = (hex: number) => [(hex >> 16) / 255, ((hex >> 8) & 255) / 255, (hex & 255) / 255];
-  const two = (dimA: number, veilA: number, d: number, i: number) => {
-    const dim = rgb(PAL.rain.sky)[i], amb = rgb(PAL.rain.ambient)[i];
-    return (d * (dim * dimA + 1 - dimA)) * (1 - veilA) + amb * veilA;
-  };
-  const one = (a: number, d: number, i: number) => d * (1 - a) + rgb(PAL.rain.grade)[i] * a;
-  for (const [w, dimA, veilA] of [["MUA_RAO", 0.45, 0.32], ["MUA_DAM", 0.35, 0.28]] as const) {
-    for (const d of [0, 0.5, 1]) {
-      for (let i = 0; i < 3; i++) {
-        const gap = Math.abs(two(dimA, veilA, d, i) - one(rainGrade(w)!, d, i));
-        assert.ok(gap < 3 / 255, `${w} kênh ${i} ở mức ${d}: lệch ${(gap * 255).toFixed(2)}/255`);
-      }
+  for (const w of RAINY) {
+    const a = rainGrade(w)!;
+    for (let i = 0; i < 3; i++) {
+      const out = 1 * (1 - a) + rgb(PAL.rain.grade)[i] * a;
+      assert.ok(out >= 0.85, `${w} kênh ${i}: trắng tụt xuống ${out.toFixed(3)} — tối quá`);
+      assert.ok(out <= 0.99, `${w} kênh ${i}: trắng còn ${out.toFixed(3)} — tấm phủ không làm gì`);
     }
   }
 });

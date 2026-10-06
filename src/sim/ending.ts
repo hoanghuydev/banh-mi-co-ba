@@ -9,7 +9,6 @@
  */
 import DONG_CUOI from "../content/lines/co-ba-dong-cuoi.json";
 import type { SaveFile } from "../core/save";
-import { has } from "./equipment";
 
 export type EndingState = {
   presentOnDay40: string[];
@@ -36,7 +35,7 @@ export const NEVER = ["CHU_TU", "ONG_HAI"] as const;
 function conditional(w: SaveFile): string[] {
   const f = w.story?.flags ?? {};
   const out: string[] = [];
-  if (has(w.equipment, "DEN_CA_TOI") || f.dungStory) out.push("ANH_DUNG");
+  if (f.dungStory) out.push("ANH_DUNG");                 // đèn ca tối đã bỏ — xem `content/arcs.ts` ANH_DUNG d40
   if (!f.suCover) out.push("BE_SU");
   out.push("CHI_HANH");                                  // M5 "nghen" luôn tới trước ngày 36 trong bản dựng (M3 muộn nhất ngày 20)
   if ((f.baoRespect || f.baoAsksChili) && !f.baoSneak) out.push("ANH_BAO");

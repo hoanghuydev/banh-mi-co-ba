@@ -76,6 +76,22 @@ export type Notebook = {
 export type DayFacts = {
   day: number;
   dropped: number;
+  /**
+   * DẤU VẾT CỦA ĐÔI TAY HÔM NAY — bốn con số dưới đây KHÔNG dùng để chấm điểm.
+   *
+   * Trang Đồ nghề ở màn tối lấy chúng ra để nói *"bữa nay con bốc nhân bằng tay sáu lần"*
+   * ngay dưới cái kẹp gắp chưa mua. Luật P3-04 §4 cấm hiện con số HIỆU ỨNG CỦA MÓN ĐỒ —
+   * nó không cấm nhắc lại chuyện vừa xảy ra với chính người chơi, và đó là khác biệt giữa
+   * "món này +18%" (cấm) với "bữa nay cháy ba ổ" (chuyện của mình).
+   *
+   * Chỉ đếm thứ NGƯỜI CHƠI tự thấy được: tay mình làm gì, ổ nào cháy, ai lên tiếng về tay
+   * mình. KHÔNG đếm người đi ngang không ghé — người đứng bán không có cách nào biết con số
+   * đó, và `Service.balkedCount` cố ý không cho màn tối đọc vì đúng lý do này.
+   */
+  bareHands: number;
+  wipes: number;
+  burnt: number;
+  handsSeen: number;
   served: number;
   lost: number;
   newFaces: number;
@@ -91,7 +107,8 @@ export type DayFacts = {
 };
 
 export const newDayFacts = (day: number): DayFacts => ({
-  day, dropped: 0, served: 0, lost: 0, newFaces: 0, strangers: 0, firstUsual: [], healed: [], heardBad: false, heardGood: false,
+  day, dropped: 0, bareHands: 0, wipes: 0, burnt: 0, handsSeen: 0,
+  served: 0, lost: 0, newFaces: 0, strangers: 0, firstUsual: [], healed: [], heardBad: false, heardGood: false,
   visitors: [], usualServed: [], cleanServedFront: [], served_: {},
 });
 

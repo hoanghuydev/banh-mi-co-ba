@@ -85,6 +85,7 @@ export type EconState = {
   ritualSkips: number;
   neighborAnnoyance: number;
   loaOffUntil: number;
+  /** @deprecated Save cũ còn mang; không ai ghi và không ai đọc nữa — xem `EveningView.gear()`. */
   signName?: "CO_BA" | "PLAYER" | "BLANK";
   /** Tiền học vỡ mà xe còn đồ bán được → sáng mai phải chọn bán một món (P3-06 §2.4). */
   mustSell: boolean;

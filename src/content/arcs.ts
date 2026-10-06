@@ -14,6 +14,7 @@
  */
 import type { Ingredient, OrderIntent, OrderSpec } from "../sim/order";
 import { levelsOf } from "../sim/order";
+import type { MenuItemId } from "../sim/menu";
 import { weekdayOf, type Weekday } from "../sim/schedule";
 
 // ─────────────────────────────────────────────────────────────── kiểu
@@ -68,11 +69,16 @@ const KIET_TALK: Line[] = [
 const WD = (d: number): Weekday => weekdayOf(d);
 const isWork = (d: number) => !["SAT", "SUN"].includes(WD(d));
 
-export function spec(intent: Partial<OrderIntent>, phrase?: string, short?: string): OrderSpec {
-  const it: OrderIntent = { nhan: [], rau: "day-du", ot: 1, tuong: 1, usual: false, ...intent };
+/**
+ * ⚠️ `mon` BẮT BUỘC: mỗi đơn phải trỏ vào một món CÓ TRÊN BẢNG (`content/recipes/menu.json`).
+ * Hồi `nhan: []` còn là mặc định, một `spec({ ot: 2 })` gõ thiếu vẫn biên dịch được và ra
+ * một ổ bánh mì không — sai âm thầm, chỉ lộ ra lúc khách trả 10k cho ổ đầy đủ.
+ */
+export function spec(intent: Partial<OrderIntent> & { mon: MenuItemId }, phrase?: string, short?: string): OrderSpec {
+  const it: OrderIntent = { rau: "day-du", ot: 1, tuong: 1, usual: false, ...intent };
   return { intent: it, levels: levelsOf(it), phrase, short };
 }
-const KHONG: Partial<OrderIntent> = { nhan: [], rau: "khong", ot: 0, tuong: 0 };
+const KHONG: Partial<OrderIntent> & { mon: MenuItemId } = { mon: "khong", rau: "khong", ot: 0, tuong: 0 };
 const withAlt = (s: OrderSpec, alt?: OrderSpec["alt"]): OrderSpec => (alt ? { ...s, alt } : s);
 const NO_HANH: Ingredient[] = ["hanhngo"];
 
@@ -87,44 +93,44 @@ export function usualOf(npcId: string, c: ArcCtx, atMin = 0): OrderSpec | null {
   switch (npcId) {
     case "BA_BAY":
       // khẩu vị ẩn: KHÔNG ớt — bà chưa từng nói, bà chỉ gỡ ra, đặt lên tờ giấy gói
-      return withAlt(spec({ nhan: ["thit"], rau: "it" }, "Cho bà ổ thịt, ít rau thôi con, bà nhai không nổi.", "Ổ của bà đó con."), { ot: 0 });
+      return withAlt(spec({ mon: "thit", rau: "it" }, "Cho bà ổ thịt, ít rau thôi con, bà nhai không nổi.", "Ổ của bà đó con."), { ot: 0 });
     case "CHU_TU":
       // ML-02: từ ngày 23 chú bớt ớt mà không nói — tự bớt thì chú nhìn lên một giây
-      return withAlt(spec({ dayDu: true, nhan: ["pate", "thit", "chalua"], ot: 2 }, "Cho chú ổ đầy đủ, nhiều ớt, cho xin bịch.", "Như mọi bữa nghen con."), d >= 23 ? { ot: 0 } : undefined);
+      return withAlt(spec({ mon: "daydu", ot: 2 }, "Cho chú ổ đầy đủ, nhiều ớt, cho xin bịch.", "Như mọi bữa nghen con."), d >= 23 ? { ot: 0 } : undefined);
     case "ANH_DUNG":
       // ML-08: không nước sốt nhiều — anh chỉ lau tay vào quần
-      return withAlt(spec({ nhan: ["xiumai"] }, "Ổ xíu mại, gói lẹ giùm anh, anh có cuốc.", "Như cũ nghen em, anh có cuốc."), { tuongot: 0 });
+      return withAlt(spec({ mon: "xiumai" }, "Ổ xíu mại, gói lẹ giùm anh, anh có cuốc.", "Như cũ nghen em, anh có cuốc."), { tuongot: 0 });
     case "CHI_LAN":
       // 23 ngày y hệt từng chữ — chị KHÔNG BAO GIỜ nói tắt (P4-01 NPC-04)
-      return spec({ nhan: ["chalua"], ot: 0, bo: NO_HANH }, "Cho em ổ chả lụa, không ớt, không hành. Gói mang về.");
+      return spec({ mon: "chalua", ot: 0, bo: NO_HANH }, "Cho em ổ chả lụa, không ớt, không hành. Gói mang về.");
     case "BE_SU":
       // trà sữa (P4-01: từ ngày 14) CHƯA có trong bản dựng — bé giữ đơn bánh mì không cả mùa
       return spec(KHONG, "Cho con ổ bánh mì không, chấm sữa á cô.");
     case "ONG_HAI":
       // HAI đơn quen: sáng thì nhớ mình thích gì; sau 10 giờ thì không (P4-01 NPC-06)
       return atMin >= at(10)
-        ? spec({ dayDu: true, nhan: ["pate", "thit", "chalua"] }, "Ổ gì cũng được con ơi. Ờ... đầy đủ. Đầy đủ đi.")
-        : spec({ nhan: ["opla"] }, "Cho chú ổ ốp la, hai trứng. Chú ăn tại chỗ. Cho xin ly trà đá.", "Như bữa sáng nghen con.");
+        ? spec({ mon: "daydu" }, "Ổ gì cũng được con ơi. Ờ... đầy đủ. Đầy đủ đi.")
+        : spec({ mon: "opla", nhieu: "opla" }, "Cho chú ổ ốp la, hai trứng. Chú ăn tại chỗ. Cho xin ly trà đá.", "Như bữa sáng nghen con.");
     case "CO_MAI":
-      if (d >= 30) return spec({ dayDu: true, nhan: ["pate", "thit", "chalua"], bo: NO_HANH, usual: true }, undefined, "Cho cô một ổ.");
+      if (d >= 30) return spec({ mon: "daydu", bo: NO_HANH, usual: true }, undefined, "Cho cô một ổ.");
       // ML-06: ổ đầy đủ là của con Hương — và Hương ăn cay
-      return withAlt(spec({ dayDu: true, nhan: ["pate", "thit", "chalua"] }, "Cho cô hai ổ, một đầy đủ một không hành. Cô ăn với con Hương.", "Như mọi bữa nghen con, hai ổ."), { ot: 2 });
+      return withAlt(spec({ mon: "daydu" }, "Cho cô hai ổ, một đầy đủ một không hành. Cô ăn với con Hương.", "Như mọi bữa nghen con, hai ổ."), { ot: 2 });
     case "THAY_PHUC":
-      return spec({ nhan: ["pate"], rau: "it", bo: NO_HANH }, "Cho thầy ổ pate, ít rau, đừng bỏ ngò. Ăn tại chỗ.", "Như mọi bữa nghen con.");
+      return spec({ mon: "pate", rau: "it", bo: NO_HANH }, "Cho thầy ổ pate, ít rau, đừng bỏ ngò. Ăn tại chỗ.", "Như mọi bữa nghen con.");
     case "CHI_HANH": {
       // arc hoà nhập đo bằng TỪ VỰNG (P4-01 NPC-09): M3 tự sửa (13, hoặc 20 nếu chưa đủ ba lần
       // làm đúng) · M5 chữ "nghen" (27, và chỉ khi M3 đã tới)
       const m3 = d >= 20 || (d >= 13 && c.count("usual:CHI_HANH") >= 3);
-      const pate = { nhan: ["pate"] as Ingredient[], rau: "it" as const };
+      const pate = { mon: "pate" as const, rau: "it" as const };
       if (m3 && d >= 27) return spec(pate, "Cho chị ổ pate, ít ngò, ly trà đá. Cảm ơn em nghen.");
       if (m3) return spec(pate, "Cho chị một ổ pa-tê... à, cho ít ngò. Ly trà đá nữa em.");
       return spec(pate, "Chị lấy một cái bánh mì pa-tê. Cho chị xin ít rau mùi. Với một cốc trà đá.");
     }
     case "ANH_BAO":
       // ML-11: người chơi TỰ bỏ thêm ớt 4 lần → anh tự nói "cho em nhiều ớt chút"
-      if (c.flags.baoAsksChili) return spec({ dayDu: true, nhan: ["pate", "thit", "chalua"], ot: 2 }, "Dạ... ổ đầy đủ, cho em nhiều ớt chút. Dạ.");
+      if (c.flags.baoAsksChili) return spec({ mon: "daydu", ot: 2 }, "Dạ... ổ đầy đủ, cho em nhiều ớt chút. Dạ.");
       // ML-11: anh ăn cay được hơn anh gọi — anh không biết mình được phép xin
-      return withAlt(spec({ dayDu: true, nhan: ["pate", "thit", "chalua"] }, "Dạ... ổ đầy đủ. Dạ.", "Dạ... như mọi bữa. Dạ."), { ot: 2 });
+      return withAlt(spec({ mon: "daydu" }, "Dạ... ổ đầy đủ. Dạ.", "Dạ... như mọi bữa. Dạ."), { ot: 2 });
     case "BA_SAU":
       return spec({ ...KHONG, usual: false }, "Đổi hôn con? Chén tàu hũ lấy ổ bánh không.");
     default:
@@ -141,8 +147,8 @@ export function arcToday(npcId: string, c: ArcCtx, atMin: number | null): ArcDay
       if (d === 18) return { absent: true };
       if (d === 36) return { at: at(6, 20), after: ["Bà đi coi hát về nè. Tuồng hay dữ lắm."] };
       if (d === 40) return { at: at(6, 15), served: { any: ["Mai bà lại mua nghen."] } };
-      if (d === 13 && WD(d) === "SAT") return { more: [spec({ dayDu: true, nhan: ["pate", "thit", "chalua"] }, "Thêm một ổ đầy đủ nữa con. Ổ này bà gửi.")], tag: "BAY_M2" };
-      if (WD(d) === "SAT") return { more: [spec({ dayDu: true, nhan: ["pate", "thit", "chalua"] }, "Thêm một ổ đầy đủ nữa con. Ổ này bà gửi.")] };
+      if (d === 13 && WD(d) === "SAT") return { more: [spec({ mon: "daydu" }, "Thêm một ổ đầy đủ nữa con. Ổ này bà gửi.")], tag: "BAY_M2" };
+      if (WD(d) === "SAT") return { more: [spec({ mon: "daydu" }, "Thêm một ổ đầy đủ nữa con. Ổ này bà gửi.")] };
       // SK-13 ngày 6 ở `story` (cần biết người chơi đã mời trà chưa); cải lương mỗi ~5 ngày sau đó
       if (c.flags.caiLuong && atMin !== null && d % 5 === 1) return { after: ["Bà nói thiệt, đào bây giờ ca không có hơi."] };
       return null;
@@ -150,7 +156,7 @@ export function arcToday(npcId: string, c: ArcCtx, atMin: number | null): ArcDay
     case "CHU_TU": {
       if (d >= 30) return { absent: true };
       if (d === 22) return {
-        order: spec({ dayDu: true, nhan: ["pate", "thit", "chalua"], ot: 0 }, "Như mọi bữa, mà thôi khỏi ớt con. Bữa nay chú ăn lạt."),
+        order: spec({ mon: "daydu", ot: 0 }, "Như mọi bữa, mà thôi khỏi ớt con. Bữa nay chú ăn lạt."),
         tag: "TU-S1",
       };
       if (d === 26) return {
@@ -159,7 +165,7 @@ export function arcToday(npcId: string, c: ArcCtx, atMin: number | null): ArcDay
       };
       if (d === 29) return {
         at: at(7, 10), tag: "TU-S3",
-        order: spec({ nhan: ["thit"], rau: "it", ot: 0 }, "Bữa nay chú ăn ít. Cho chú ổ thịt thôi, ít rau, khỏi ớt."),
+        order: spec({ mon: "thit", rau: "it", ot: 0 }, "Bữa nay chú ăn ít. Cho chú ổ thịt thôi, ít rau, khỏi ớt."),
       };
       if (atMin !== null && c.rain) return { at: atMin - 5 };
       return null;
@@ -173,11 +179,14 @@ export function arcToday(npcId: string, c: ArcCtx, atMin: number | null): ArcDay
       if (d === 17) return { after: [{ text: "Chắc anh chạy đêm. Ngày giờ đông tài xế quá.", delay: 3 }], tag: "DUNG-S3" };
       if (d === 34) {
         const girl = c.flags.dungStory
-          ? [spec({ nhan: ["xiumai"], usual: true }, undefined, "Cho con ổ như ba.")]
+          ? [spec({ mon: "xiumai", usual: true }, undefined, "Cho con ổ như ba.")]
           : [];
         return { at: at(7, 30), more: girl, after: c.flags.dungStory ? [] : ["Lâu quá hả em. Anh chạy đêm quen rồi."], tag: "DUNG-M5" };
       }
-      if (d === 40) return (c.owns("DEN_CA_TOI") || c.flags.dungStory)
+      // Đèn ca tối đã bỏ khỏi cây thiết bị (nó không bán thêm ổ nào — `tools/audit-gain.ts`), nên
+      // đường duy nhất giữ anh Dũng lại là `dungStory`: rót cho anh ly nước trà lúc anh ngồi im
+      // ở SK-15. Mua một kết truyện bằng 420 nghìn vốn đã là cái cổng dở hơn trong hai cái.
+      if (d === 40) return c.flags.dungStory
         ? { at: at(7, 20), served: { any: ["Thôi khỏi, anh ngồi đây ăn."] }, tag: "DUNG-KET" }
         : { absent: true };
       if (atMin === null && c.rain) return { at: at(7, 25) };
@@ -191,7 +200,7 @@ export function arcToday(npcId: string, c: ArcCtx, atMin: number | null): ArcDay
       if (d === 14) return { at: at(9, 30), pass: { stay: 3 }, tag: "LAN-M2" };
       if (d === 15 && c.flags.coasterUsed) return { served: { any: [{ text: "Hôm nay có đồ chua mới hả?", delay: 1.2 }] } };
       if (d === 19) return { at: at(7, 11), tag: "LAN-S1" };
-      if (d === 20) return { order: spec({ nhan: ["chalua"], ot: 0, bo: NO_HANH }, "Cho em ổ chả lụa, không ớt, không hành."), tag: "LAN-S2" };
+      if (d === 20) return { order: spec({ mon: "chalua", ot: 0, bo: NO_HANH }, "Cho em ổ chả lụa, không ớt, không hành."), tag: "LAN-S2" };
       if (d === 23) return { after: [{ text: "...Dạ, thôi em.", delay: 2.5 }], tag: "LAN-S4" };
       return null;
     }
@@ -227,7 +236,7 @@ export function arcToday(npcId: string, c: ArcCtx, atMin: number | null): ArcDay
       if (d === 30) return { served: { ok: [{ text: "Ừ. Còn một thôi.", delay: 1.5 }] }, tag: "MAI-M5" };
       if (d === 40) return { at: at(8, 10) };
       // ổ thứ hai là của cô — cô ghét ớt
-      if (d < 30) return { more: [withAlt(spec({ dayDu: true, nhan: ["pate", "thit", "chalua"], bo: NO_HANH }, "Còn ổ đầy đủ không hành nữa con."), { ot: 0 })] };
+      if (d < 30) return { more: [withAlt(spec({ mon: "daydu", bo: NO_HANH }, "Còn ổ đầy đủ không hành nữa con."), { ot: 0 })] };
       return null;
     }
     case "THAY_PHUC": {
@@ -236,7 +245,7 @@ export function arcToday(npcId: string, c: ArcCtx, atMin: number | null): ArcDay
       if (d === 19) return { after: [{ text: "Cuối tuần thầy đạp xe đi Vũng Tàu.", delay: 3 }] };
       if (d === 22) return { after: ["Đèo bên đó dốc thấy mồ, mà thầy lên được."] };
       if (d === 32) return { served: { any: [c.flags.notebookEntries ? "Con ghi kỹ hơn thầy tưởng." : "Không sao. Có người nhớ bằng tay, có người nhớ bằng bụng."] }, tag: "PHUC-M4" };
-      if (d === 40) return { at: at(6), more: [spec({ nhan: ["pate"], rau: "it", bo: NO_HANH }, "Thêm một ổ pate nữa, ít rau, đừng bỏ ngò. Để dành.")] };
+      if (d === 40) return { at: at(6), more: [spec({ mon: "pate", rau: "it", bo: NO_HANH }, "Thêm một ổ pate nữa, ít rau, đừng bỏ ngò. Để dành.")] };
       if (c.flags.phucLostShort && Number(c.flags.phucLostShort) === d - 1) return { noShort: true };
       return null;
     }
@@ -249,8 +258,8 @@ export function arcToday(npcId: string, c: ArcCtx, atMin: number | null): ArcDay
     case "ANH_BAO": {
       if (d >= 19 && d <= 21) return {
         at: at(6, 20),
-        order: spec({ dayDu: true, nhan: ["pate", "thit", "chalua"] }, "Cho em hai ổ đầy đủ, em đi thi."),
-        more: [spec({ dayDu: true, nhan: ["pate", "thit", "chalua"] }, "Ổ nữa đầy đủ luôn. Dạ.")],
+        order: spec({ mon: "daydu" }, "Cho em hai ổ đầy đủ, em đi thi."),
+        more: [spec({ mon: "daydu" }, "Ổ nữa đầy đủ luôn. Dạ.")],
       };
       if (d === 29) return { order: spec(KHONG, "Cho em ổ bánh mì không thôi."), tag: "SK-31" };
       if (d === 30 && c.flags.baoSneak) return { absent: true };
@@ -307,7 +316,7 @@ export function extraVisits(c: ArcCtx): ExtraVisit[] {
   // thích đi đâu (R1). Chị hỏi "Còn ổ nào không em?" — ổ gì là TRÍ NHỚ của người chơi, như ngày 1.
   if (d === 40) out.push({
     key: "lan-40", npcId: "CHI_LAN", at: at(10, 20), tag: "SK-42",
-    order: spec({ nhan: ["chalua"], ot: 0, bo: NO_HANH, usual: true }, "Cho em ổ chả lụa, không ớt, không hành. Gói mang về.", "Còn ổ nào không em?"),
+    order: spec({ mon: "chalua", ot: 0, bo: NO_HANH, usual: true }, "Cho em ổ chả lụa, không ớt, không hành. Gói mang về.", "Còn ổ nào không em?"),
     served: { ok: [{ text: "...Em còn nhớ.", delay: 1.5 }], any: [{ text: "Cảm ơn em.", delay: 4.2 }, { text: "Em bán ở đây tới chừng nào?", delay: 8.5 }] },
   });
   // SK-27 · ở lại hẻm hôm đờn ca: bà Bảy ghé — lần DUY NHẤT bà ngồi lại, nghe cải lương bằng loa ngoài
@@ -319,34 +328,34 @@ export function extraVisits(c: ArcCtx): ExtraVisit[] {
     key: "sk18", npcId: null, at: at(7, 17), style: 0, tag: "SK-18",
     after: [{ text: "Cái bánh mì! Rau mùi! Ha ha, ngoài Bắc mới dzô hả chị?", delay: 0.5 }, { text: "Ê, kỳ vậy cha nội.", by: "ONG_HAI", delay: 3 }],
   });
-  if (d >= 9 && d <= 19) out.push({ key: "sk26", npcId: null, at: at(7, 32), style: 0, name: "anh áo cam", order: spec({ nhan: ["xiumai"], rau: "khong" }, "Cho một ổ xíu mại, không rau."), tag: "SK-26" });
+  if (d >= 9 && d <= 19) out.push({ key: "sk26", npcId: null, at: at(7, 32), style: 0, name: "anh áo cam", order: spec({ mon: "xiumai", rau: "khong" }, "Cho một ổ xíu mại, không rau."), tag: "SK-26" });
   // SK-07 · khách cáu vô cớ — và bạn không làm gì sai. KHÔNG có nhánh làm anh ta dịu lại.
   if (d === 15) out.push({
     key: "sk07", npcId: null, at: at(7, 24), style: 5, tag: "SK-07",
     served: { any: [{ text: "Sao lâu vậy em? Tui đứng đây nãy giờ nè.", delay: 0.4 }, { text: "Thôi. Cảm ơn.", delay: 3.2 }] },
   });
-  if (d === 21) out.push({ key: "sk07b", npcId: null, at: at(7, 50), style: 5, order: spec({ nhan: ["thit"] }, "Cho một ổ thịt nguội. Cảm ơn em nghen."), tag: "SK-07b" });
+  if (d === 21) out.push({ key: "sk07b", npcId: null, at: at(7, 50), style: 5, order: spec({ mon: "thit" }, "Cho một ổ thịt nguội. Cảm ơn em nghen."), tag: "SK-07b" });
   if (d === 28) out.push({
     key: "sk17", npcId: null, at: at(7, 36), style: 7, name: "bạn chú Hải", tag: "SK-17",
-    order: spec({ nhan: ["opla"], usual: true }, undefined, "Chú Hải nói làm cho tui một ổ giống ổng."),
+    order: spec({ mon: "opla", nhieu: "opla", usual: true }, undefined, "Chú Hải nói làm cho tui một ổ giống ổng."),
   });
-  if ((d === 33 || d === 37) && c.flags.strangerCame) out.push({ key: "sk17b", npcId: null, at: at(8, 20), style: 7, name: "bạn chú Hải", order: spec({ nhan: ["opla"], ot: 0 }, "Cho tui ổ ốp la, hai trứng, khỏi ớt nghen.") });
+  if ((d === 33 || d === 37) && c.flags.strangerCame) out.push({ key: "sk17b", npcId: null, at: at(8, 20), style: 7, name: "bạn chú Hải", order: spec({ mon: "opla", nhieu: "opla", ot: 0 }, "Cho tui ổ ốp la, hai trứng, khỏi ớt nghen.") });
   // SK-33 · vợ chú Tư — lời giải thích DUY NHẤT (công tắc "họ để lại lời nhắn" → sớm hơn, ngày 30)
   const wifeDay = c.flags.leaveMessages ? 30 : 33;
   if (d === wifeDay) out.push({
     key: "sk33", npcId: null, at: at(7), style: 3, name: "cô lạ", tag: "SK-33",
-    order: spec({ dayDu: true, nhan: ["pate", "thit", "chalua"], ot: 2 }, "Cho cô hai ổ đầy đủ, nhiều ớt."),
-    more: [spec({ dayDu: true, nhan: ["pate", "thit", "chalua"], ot: 2 }, "Ổ nữa đầy đủ, nhiều ớt, y vậy con.")],
+    order: spec({ mon: "daydu", ot: 2 }, "Cho cô hai ổ đầy đủ, nhiều ớt."),
+    more: [spec({ mon: "daydu", ot: 2 }, "Ổ nữa đầy đủ, nhiều ớt, y vậy con.")],
     after: [{ text: wifeDay === 30 ? "Ổng gửi con nè: \"Chú đi làm chỗ mới. Xa quá con ơi. Cảm ơn con 30 bữa cơm sáng.\"" : "Ổng gửi lời hỏi thăm con. Ổng đi làm xa, sáu giờ đã phải ra bến xe rồi.", delay: 2.5 }],
     served: { ok: [{ text: "Ờ. Ổng nói con nhớ.", delay: 1 }] },
   });
   // SK-38 · trẻ con nhặt được ví (bản dựng: nhánh "để ví lên quầy" — chủ ví ghé lúc gần trưa)
   if (d === 37) {
     out.push({ key: "sk38a", npcId: null, at: at(8, 40), style: 6, name: "tụi nhỏ", pass: { lines: ["Cô ơi cô, tụi con lượm được ở đằng kia nè."], stay: 4 }, tag: "SK-38" });
-    out.push({ key: "sk38b", npcId: null, at: at(10, 25), style: 7, name: "chú mất ví", order: spec({ dayDu: true, nhan: ["pate", "thit", "chalua"] }, "Trời ơi cái ví của tui. Cảm ơn con. Cho chú một ổ đầy đủ."), tag: "SK-38b" });
+    out.push({ key: "sk38b", npcId: null, at: at(10, 25), style: 7, name: "chú mất ví", order: spec({ mon: "daydu" }, "Trời ơi cái ví của tui. Cảm ơn con. Cho chú một ổ đầy đủ."), tag: "SK-38b" });
   }
   if (d === 39 || d === 40) {
-    if (c.flags.walletReturned) out.push({ key: "sk38c", npcId: null, at: at(8, 5), style: 7, name: "chú mất ví", order: spec({ dayDu: true, nhan: ["pate", "thit", "chalua"] }, "Cho chú một ổ đầy đủ nghen con.") });
+    if (c.flags.walletReturned) out.push({ key: "sk38c", npcId: null, at: at(8, 5), style: 7, name: "chú mất ví", order: spec({ mon: "daydu" }, "Cho chú một ổ đầy đủ nghen con.") });
   }
   return out;
 }

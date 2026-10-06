@@ -62,6 +62,8 @@ export class AssemblyPanel {
   private yHint = 0;
   private yTray = 0;
   private yAct = 0;
+  /** Tâm ngang của bảng — giữ lại để `trayBounds`/`wrapBounds` khỏi tính lại. */
+  private cx = 0;
 
   constructor(
     private scene: Phaser.Scene,
@@ -78,7 +80,7 @@ export class AssemblyPanel {
     buildFood(scene);
     this.layout();
 
-    const cx = PANEL_LEFT + this.pw / 2, cy = PANEL_TOP + this.ph / 2;
+    const cx = this.cx = PANEL_LEFT + this.pw / 2, cy = PANEL_TOP + this.ph / 2;
     const top = PANEL_TOP;
     this.root = scene.add.container(0, 0).setDepth(9_400_000).setScrollFactor(0).setVisible(false);
     this.root.add(panel(scene, cx, cy, this.pw, this.ph, UI.paper, 1).setScrollFactor(0));
@@ -150,8 +152,36 @@ export class AssemblyPanel {
     this.root.y = dy;
   }
 
+  /** Phần nhân ĐANG nằm trên ổ. Chỉ đọc — người dẫn bữa đầu hỏi "còn thiếu gì" (`sim/tour.fillGap`). */
+  get dish(): readonly Ingredient[] {
+    return this.stack;
+  }
+
   get loafPoint() {
     return { x: this.loafImg.x, y: this.loafImg.y + this.root.y };
+  }
+
+  /**
+   * Khay nhân và nút "Gói lại", theo TOẠ ĐỘ KHUNG THIẾT KẾ (đã cộng `root.y` của `placeBelow`).
+   *
+   * Chỉ có một chỗ dùng: bong bóng dẫn bữa đầu khoanh tròn đúng hai chỗ này (`ui/tour/TourCoach`).
+   * Trả toạ độ chứ không trả object: lớp dẫn là DOM, nó không được phép cầm GameObject của Phaser
+   * rồi lỡ tay sửa gì trong đó.
+   */
+  trayBounds() {
+    const w = TRAY_COLS * this.tw + (TRAY_COLS - 1) * 8;
+    return {
+      x: this.cx - w / 2, y: PANEL_TOP + this.yTray - this.th / 2 + this.root.y,
+      w, h: (TRAY_ROWS - 1) * this.rowStep + this.th,
+    };
+  }
+
+  wrapBounds() {
+    const h = buttonHeight(MAX_SCALE_BTN);
+    return {
+      x: this.cx + (this.tw + 8) - this.tw / 2, y: PANEL_TOP + this.yAct - h / 2 + this.root.y,
+      w: this.tw, h,
+    };
   }
 
   setWarm(warm: boolean, time: number, reducedMotion: boolean) {

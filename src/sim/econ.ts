@@ -16,6 +16,7 @@ import ECON_JSON from "../content/econ/econ.json";
 import GOODS_JSON from "../content/econ/goods.json";
 import CAL_JSON from "../content/econ/calendar.json";
 import type { Ingredient } from "./order";
+import { itemOf, type MenuItemId } from "./menu";
 
 export type Weather = "NANG_GAT" | "MAT" | "AM_U" | "MUA_RAO" | "MUA_DAM" | "OI";
 export type GoodId = "BANH" | "PATE_NHA" | "PATE_THUONG" | "THIT_NGUOI" | "CHA_LUA" | "XIU_MAI" | "TRUNG"
@@ -203,12 +204,21 @@ export const coldSlotCap = (inv?: InventoryState) => (inv?.storage === "tu_mat" 
 // ─────────────────────────────────────────────────────────────── giá ổ + chất lượng ổ
 
 export type Tier = "khong" | "thuong" | "dayDu" | "dacBiet";
-export function tierOf(intent: { nhan: readonly string[]; nhieu?: string; dayDu?: boolean }): Tier {
-  const n = intent.nhan.length;
-  if (!n && !intent.dayDu) return "khong";
-  if ((intent.dayDu || n >= 3) && intent.nhieu) return "dacBiet";
-  if (intent.dayDu || n >= 2) return "dayDu";
-  return "thuong";
+
+/**
+ * BẬC GIÁ CỦA MỘT ĐƠN — đọc từ MÓN trên bảng, không còn ĐẾM số nhân.
+ *
+ * Đếm nhân là cái khoá cửa không cho bánh mì xíu mại có pate: thêm miếng pate cho đúng
+ * đời thật là `n` nhảy từ 1 lên 2, và ổ 25k thành ổ 32k mà không ai sửa giá. Giờ bậc nằm
+ * ngay trên bảng (`menu.json: items[].tier`), nên công thức và giá tách nhau ra.
+ *
+ * `dacBiet` vẫn là chuyện của LỜI DẶN, không của món: xin thêm một thứ nhân trên ổ đầy
+ * đủ thì lên bậc đặc biệt (P3-01 `menu_k`). Trên ổ một nhân thì không — xin nhiều xíu mại
+ * không làm ổ xíu mại thành ổ đặc biệt.
+ */
+export function tierOf(intent: { mon: MenuItemId; nhieu?: string }): Tier {
+  const t = itemOf(intent.mon).tier;
+  return t === "dayDu" && intent.nhieu ? "dacBiet" : t;
 }
 export const loafPriceVnd = (t: Tier) => vnd(ECON.menu_k[t]);
 

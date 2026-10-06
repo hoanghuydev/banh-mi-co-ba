@@ -11,7 +11,6 @@ import { music } from "../audio/music";
 import { sfx } from "../audio/sfx";
 import { settleNight } from "../sim/night";
 import { eveningLines } from "../sim/story";
-import { has } from "../sim/equipment";
 
 /**
  * Buổi tối — P0-01 §2.3. Đếm tiền, ghi sổ, một cảnh yên tĩnh. Chạy theo LƯỢT.
@@ -52,7 +51,9 @@ export class EveningScene extends Phaser.Scene {
     this.add.rectangle(GAME_W / 2, GAME_H / 2, GAME_W, GAME_H, 0x141a20, 1);
     const s = loadSettings();
     // P4 — chuyện buổi tối: cô Ba, cô Mai, bé Su nói một câu (SK-14, SK-34…). Không ô thoại.
-    const story = eveningLines(w.progress.dayIndex, w.story, { hasLamp: has(w.equipment, "DEN_CA_TOI") });
+    // `hasLamp` đổi chủ: đèn ca tối đã bỏ, nên câu "19h40 anh Dũng ghé" treo vào CHUYỆN của anh
+    // (`dungStory` — mình đã rót cho anh ly nước trà ở SK-15) chứ không treo vào một món đồ.
+    const story = eveningLines(w.progress.dayIndex, w.story, { hasLamp: !!w.story?.flags?.dungStory });
     this.view = new EveningView(w, { textScale: s.textScale, lines: [...neighbor, ...story], onBook: () => this.openBook(), onSleep: () => this.settle() });
     this.input.keyboard?.on("keydown-TAB", (ev: KeyboardEvent) => { ev.preventDefault(); this.openBook(); });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {

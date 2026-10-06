@@ -38,9 +38,53 @@ export function tileAt(tx: number, ty: number): TileCode {
   return MAP[ty][tx] as TileCode;
 }
 
-/** Ô nào chặn chân người chơi. Ghế nhựa cũng chặn — đi vòng qua ghế là chuyện đời thường. */
+/**
+ * ĐẠO CỤ MUA ĐƯỢC — ký tự bản đồ ↦ mã món đồ nghề mở khoá nó.
+ *
+ * Bốn ô này nằm sẵn trong `MAP` từ bản dựng đầu, nhưng ngày nào chưa mua thì không được có mặt
+ * trên cảnh (xem `StallScene.propHidden`). Bảng này là MỘT NGUỒN cho cả hai nửa của chuyện đó:
+ * không vẽ ra, VÀ không chặn chân ai.
+ *
+ * ⚠️ Giá trị để kiểu `string` chứ không `EquipId`: `world/` không được biết tới `sim/`.
+ * `tests/p3-equipment` canh lại bốn mã này có thật trong `EQUIP`.
+ */
+export const BUYABLE_TILES: Readonly<Record<string, string>> = {
+  s: "GHE_BAN",      // ghế nhựa
+  b: "GHE_BAN",      // bàn nhỏ — cùng một món với ghế
+  T: "BINH_TRA",     // thùng nước trà đá
+  A: "BANG_HIEU",    // bảng gỗ chữ A "bánh mì ngon" ở đầu quầy
+};
+
+/**
+ * Ô đạo cụ CHƯA MUA — rỗng cho tới khi một buổi bán khai ra (`StallScene`, `sim/headless`).
+ *
+ * Trạng thái sống trong một module dữ liệu là chuyện đáng ngờ, nên: nó được đặt ĐÚNG MỘT LẦN lúc
+ * dựng buổi bán, trước khi có ai bước chân, và chỉ nhận một giá trị suy thẳng từ đồ nghề đã lưu —
+ * nên cùng save + cùng seed vẫn ra cùng một buổi. Đường kia là luồn danh sách này qua `hitsWall`
+ * xuống tới `walk()` nằm sâu trong `sim/service.ts`, chỗ không biết gì về đồ nghề.
+ */
+let openTiles: ReadonlySet<string> = new Set();
+
+/** Ô nào đang MỞ hôm nay, suy từ đồ nghề đã mua. `owns` chính là `has(equipment, id)`. */
+export function openTilesFor(owns: (id: string) => boolean): string[] {
+  return Object.keys(BUYABLE_TILES).filter((code) => !owns(BUYABLE_TILES[code]));
+}
+
+/** ⚠️ Gọi TRƯỚC khi ai đó bắt đầu đi. Gọi với danh sách rỗng là trả bản đồ về nguyên trạng. */
+export function setOpenTiles(codes: Iterable<string>) {
+  openTiles = new Set(codes);
+}
+
+/**
+ * Ô nào chặn chân người chơi. Ghế nhựa cũng chặn — đi vòng qua ghế là chuyện đời thường.
+ *
+ * Trừ cái ghế CHƯA MUA: chủ dự án chỉ ra *"chỗ ô của ghế vẫn bị chiếm chỗ"* — ghế ẩn rồi mà chân
+ * vẫn đâm vào nó. Một vật vô hình chặn đường là lỗi tệ hơn hẳn một vật thừa, vì người chơi không
+ * có cách nào đọc ra chuyện gì đang xảy ra.
+ */
 export function isBlocked(tx: number, ty: number) {
-  return tileAt(tx, ty) !== ".";
+  const code = tileAt(tx, ty);
+  return code !== "." && !openTiles.has(code);
 }
 
 /** `world/stations.ts` đọc hai hằng số này thay vì chép tay số hàng. */
@@ -204,6 +248,7 @@ export function assertWalkable() {
     if (hitsWall(p.x, p.y)) bad.push(`${name} (${p.x}, ${p.y}) -> ô "${tileAt(p.x | 0, p.y | 0)}"`);
   };
   check("SPAWN", SPAWN);
+  check("MENU_SPOT", MENU_SPOT);
   check("CUSTOMER_GATE", CUSTOMER_GATE);
   check("STREET_BIN", STREET_BIN);
   check("ASIDE_SPOT", ASIDE_SPOT);
@@ -293,6 +338,40 @@ export function assertWalkable() {
  * nên rất dễ đè lên nhãn trạm hoặc che mất cánh cửa.
  */
 export const SIGN_TILE = { x: 10.5, y: 0.5 };
+
+/**
+ * BẢNG MENU — treo trên cùng mặt vách, ở khúc BÊN PHẢI, và chỗ này không phải tuỳ tiện.
+ *
+ * Người chơi phải ĐỨNG CẠNH nó mới bấm E đọc được, mà `stationNear` bắt mọi trạm trong
+ * bán kính 1,6 ô. Chạy thử hết hàng y1 thì khúc đứng được CHỈ CÒN MỘT: mọi chỗ trống khác
+ * đều lọt vào tầm với của một trạm — (5,5) là cái kệ, (6,5)/(9,0) là cái lò, (12,0) là
+ * thùng rác, (14,5) là thùng trà. Từ x = 17,2 trở đi mới ra khỏi bán kính của bồn rửa
+ * (x15), nên bảng treo ở x17 và chỗ đứng là (17,5 · 1,5).
+ *
+ * ⚠️ Chỗ gác đúng khoảng cách này là `stations.assertMenuSpotFree()` — ở đó vì bán kính với
+ * tới là chuyện của `stations.ts`, mà `world/map.ts` không được biết tới nó (vòng lặp module).
+ */
+/**
+ * ⚠️ x = 16,6 với bề ngang 40 px (`art/menuboard`) là để tấm bảng phủ ĐÚNG ba ô tường
+ * x = 15 · 16 · 17, không chạm ô x = 18. Đó là điều kiện để nó có một `depth` đặt vừa
+ * khít: trên ba ô tường ấy, mà vẫn dưới người chơi đứng ở hàng y = 1 và dưới nhà bên.
+ * Nới bảng rộng ra là mất chỗ khít đó — xem `MENU_DEPTH_AT`.
+ */
+export const MENU_TILE = { x: 16.6, y: 0.5 };
+
+/**
+ * Điểm dùng để tính `depth` của tấm bảng: ngay SAU mép phải của nó, còn trước ô tường
+ * kế tiếp. `depthOf` xếp theo (x + y) nên một vật trải qua nhiều ô chỉ có đúng MỘT độ
+ * sâu — không có cách nào lồng nó xen kẽ vào dãy ô tường. Chọn mốc này thì:
+ *   · ba ô tường nó treo lên (depth 16000 · 17000 · 18000) nằm DƯỚI  → bảng hiện ra
+ *   · người chơi đứng đọc ở (17,5 · 1,5) (depth 19000) nằm TRÊN      → không bị bảng đè
+ *   · nhà bên và khúc tường góc (≥ 21000) nằm TRÊN                   → bảng không tràn ra
+ */
+export const MENU_DEPTH_AT = { x: MENU_TILE.x + 1.5, y: MENU_TILE.y };
+/** Chỗ đứng đọc bảng. Ngay dưới bảng, trong khu làm việc. */
+export const MENU_SPOT = { x: 17.5, y: 1.5 };
+/** Với tới bảng trong bán kính này (ô) — rộng hơn trạm một chút vì nó treo trên cao. */
+export const MENU_REACH = 1.6;
 
 /**
  * KHÚC X CỦA MẶT TIỀN QUÁN — suy từ dãy ô quầy, không gõ tay.

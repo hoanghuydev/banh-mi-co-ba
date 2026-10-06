@@ -91,15 +91,16 @@ export function windAt(d: RainDensity, tMs: number) {
 }
 
 /**
- * Spec đòi hai tấm phủ (NHÂN hạ sáng + THƯỜNG nén tương phản), nhưng chồng lên nhau chúng vẫn chỉ
- * là MỘT phép tuyến tính `d ↦ d·k + b` — tức một tấm phủ THƯỜNG duy nhất. Bỏ được 2,4 triệu pixel
- * phải tô mỗi frame cộng một lần đổi blend mode; chênh lớn nhất 2,2/255, `tests/p5-rain` kẹp lại.
+ * MỘT tấm phủ THƯỜNG duy nhất `d ↦ d·(1−a) + grade·a`.
  *
- * ⚠️ Chỉ làm được vế TRẦN ("không còn gì trắng hẳn"). Vế SÀN là việc của khâu VẼ ASSET — đừng đi
- * vặn alpha cho khớp con số 30%.
+ * ⚠️ CỐ Ý RẤT NHẸ. Bản trước hạ sáng gần một nửa (0,484 / 0,415) theo spec hai lớp của P5-02
+ * §2.1.5, và trên khung hình thật cả buổi bán ngày mưa đọc ra là "tối thui" chứ không phải "trời
+ * đang mưa" — nhất là từ khi bỏ bốn cây đèn trong quán, thứ duy nhất kéo lại khu làm việc. Mưa bây
+ * giờ nói bằng HẠT MƯA (`ui/stall/Rain.ts`) và NỀN ƯỚT (`art/tiles.wet`); tấm phủ chỉ còn làm một
+ * việc: hạ tông chừng 10% cho khung bớt chói, vẫn đọc được mặt người.
  */
 export function rainGrade(weather: Weather): number | null {
-  if (weather === "MUA_RAO") return 0.484;
-  if (weather === "MUA_DAM") return 0.415;
+  if (weather === "MUA_RAO") return 0.11;
+  if (weather === "MUA_DAM") return 0.085;
   return null;
 }

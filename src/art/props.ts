@@ -11,10 +11,19 @@ export const PROP = {
   oven: "oven", tea: "tea", shelf: "shelf",
   stool: "stool", table: "table", bike: "bike", pothos: "pothos",
   crate: "crate", bin: "bin", sink: "sink",
-  // Ba vật CHỈ CÓ ẢNH THẬT, không có bản vẽ code (xem `art/photo.ts`): chiếc Vespa
+  // Bốn vật CHỈ CÓ ẢNH THẬT, không có bản vẽ code (xem `art/photo.ts`): chiếc Vespa
   // đậu cạnh xe số cho hai chiếc xe không giống hệt nhau, tấm bảng gỗ dựng ngoài vỉa
-  // hè, và bình chữa cháy treo cạnh lò than — lò than là rủi ro có thật của game này.
-  scooter: "scooter", sign: "sign", fire: "fire",
+  // hè, bình chữa cháy treo cạnh lò than — lò than là rủi ro có thật của game này — và
+  // CÁI LÒ ĐIỆN, thứ thay chỗ lò than trên bản đồ khi người chơi mua `LO_DIEN`.
+  //
+  // ⚠️ `ovenE` KHÔNG có bản vẽ code, nên `StallScene.placeProps` phải lùi về `oven` nếu
+  // ảnh chưa về — thiếu nhánh đó thì mua cái lò xong là chỗ lò trống trơn.
+  scooter: "scooter", sign: "sign", fire: "fire", ovenE: "oven_e",
+  // CÁI DÙ CHE và CÁI TỦ LẠNH cũng chỉ có ảnh thật, nhưng khác bốn cái trên ở chỗ chúng
+  // KHÔNG nằm trên lưới ô: `StallScene.drawEquipment` dựng chúng lúc người chơi đã mua
+  // `DU_CHE` / `TU_MAT`. Trước đợt này cả hai là hình vẽ Graphics ngay trong scene — một
+  // cây cột 2 px cộng tam giác đỏ, và một hình chữ nhật bo góc 24×40.
+  umbrella: "umbrella", fridge: "fridge",
   // Ba vật ĐỘNG — chúng không nằm trong lưới ô như mọi đạo cụ khác, vì chỗ của chúng
   // là một nước đi của người chơi: cái gánh bà Sáu (`CARRY_GANH`), xe bánh mì chú Kiệt
   // (`MOVE_CART`), và bộ ghế nhựa chỉ hiện khi đã mua `GHE_BAN` (`THEY_SIT`).

@@ -1,58 +1,206 @@
 {
-  "_note": "Cây thiết bị — P3-04 §2.4. Bốn luật gốc: TB-1 mỗi món NHÌN THẤY trên xe + đổi CẢM GIÁC một thao tác + chạm ≥1 hệ khác · TB-2 không món nào BỎ một thao tác của người chơi (chỉ rút ngắn / nới cửa sổ / giảm rủi ro) · TB-3 món nào cũng có ≥1 cái giá · TB-4 xe có sức chứa hữu hạn. Giá gốc của doc (nghìn đồng) — code nhân ECON.scale. Đèn LED (E4) CHƯA có vì bản dựng chưa có bán buổi tối. UI KHÔNG BAO GIỜ hiện con số hiệu ứng — chỉ một câu về cảm giác.",
-  "_viet": "VIẾT `feel` VÀ `drawbacks` NHƯ NGƯỜI BÁN HÀNG KỂ, KHÔNG NHƯ TỜ QUẢNG CÁO. Ba cái bẫy đã sập một lần, đừng sập lại: (a) mọi dòng cùng một khuôn `<mệnh đề> — <mệnh đề>.` thì đọc hai mươi dòng là ra giọng máy, nên đổi dáng câu liên tục: có dòng một câu cụt, có dòng hai câu, có dòng mở bằng tiếng động; (b) đừng xài lại một cụm cho nhiều món (`quầy đỡ dơ` từng nằm ở ba món) — mỗi món phải nói được bằng chi tiết CHỈ nó có; (c) đừng lấy `drawbacks` để nhắc lại con số UI đã hiện (`chiếm một chỗ trên xe`, `tốn gas mỗi ngày`) — chỗ và tiền ngày đã nằm ở hàng thẻ rồi, chỗ này phải là cái giá người chơi không đọc ra được từ con số. Nói cái TAY làm, cái TAI nghe, cái người ta nói — không nói `hiệu quả`, `tối ưu`, `trải nghiệm`.",
-  "cart": { "baseSlots": 12, "resale": 0.6, "start": ["LO_THAN", "THUNG_XOP"] },
+  "_note": "Cây thiết bị. Ba luật còn lại sau đợt rút gọn: TB-1 mỗi món NHÌN THẤY trên xe (hoặc trên vỉa hè) + đổi cảm giác một thao tác · TB-2 không món nào BỎ một thao tác bắt buộc của người chơi (chỉ rút ngắn / nới cửa sổ / giảm rủi ro) · TB-4 xe có sức chứa hữu hạn, nhưng rộng tay: 12 ô nền + giá treo = 14, mà mua hết thì cần 16 — thiếu đúng một hai món, không phải một bài toán. Giá gốc (nghìn đồng) — code nhân ECON.scale.",
+  "_bo": "ĐÃ BỎ (quyết định của chủ dự án): dao bén · thớt riêng sống/chín · khung gia cố + bánh xe · khăn ba màu · thùng rác nắp đạp · vòi + bồn rửa · ĐÈN CA TỐI. Đèn ca tối bỏ vì một lý do khác hẳn sáu món kia: nó HỨA SUÔNG. Thẻ ghi \"bán được ca tối — thêm khách chạy đêm\" mà đo ra 914 → 914 ổ, chênh đúng 0 (`tools/audit-gain.ts`) — bản dựng không có ca bán tối nào. Thứ nó thật sự làm là giữ anh Dũng trong màn kết, và việc đó đã có một đường khác, đúng hơn: rót cho anh ly nước trà lúc anh ngồi im (SK-15 → cờ `dungStory`). Một món đồ 420 nghìn mua một kết truyện là chuyện nên mua bằng việc làm, không bằng tiền. Lý do chung: hoặc không vẽ ra được trên xe ở cỡ pixel này (dao, thớt, khăn — ba vật thể dài 10px nằm chồng nhau ở góc quầy), hoặc trùng với thứ CÓ SẴN trong cảnh (bồn rửa đã là một trạm trên bản đồ từ ngày 1, thùng rác đã có một cái trong quầy và một cái đầu hẻm), hoặc chỉ là một con số nhân giấu sau lưng (khung gia cố = `grip.lossMul`). Món nào không chỉ tay vào được thì không phải một món đồ, nó là một chỉ số — và người chơi không mua chỉ số.",
+  "_viet": "MỖI MÓN: `feel` một câu người bán kể (KHÔNG phải tờ quảng cáo), rồi `gain` là LỢI ÍCH QUY RA SỐ. Chủ dự án: *\"nên viết theo kiểu. Mua thì +10% khả năng khách ghé hay gì đó. Nói chung ghi kiểu đơn giản và quy ra chỉ số để user dễ nắm.\"* Nên: mỗi dòng `gain` một con số đọc ra ngay (+20% khách ghé · chờ thêm 20 giây · để được 6 ngày thay vì 2). KHÔNG CÒN `drawbacks`: mua là được, không phải cân đo. Tiền mua và tiền mỗi ngày đã là cái giá, và chúng hiện sẵn trên thẻ.",
+  "_do": "SỐ TRÊN THẺ LÀ SỐ ĐO, KHÔNG PHẢI SỐ KHAI. Chủ dự án: *\"mấy con số + đó có đúng thật không hay chỉ đang giả\"* — câu đó lòi ra bốn dòng sai, và lưới TB-5 không bắt được dòng nào vì nó chỉ so chữ với HẰNG SỐ, không so với HÀNH VI. Chạy `npx tsx tools/audit-gain.ts` để đo lại: nó bật/tắt từng món trong sim thật rồi đếm. Sửa hằng số thì chạy lại và chép số mới vào đây.",
+  "_so": "CON SỐ Ở ĐÂY PHẢI KHỚP MÃ. `gain` là hợp đồng với người chơi, không phải chữ trang trí — đổi `walkInMul` / `dirtMul` / `equipPatienceMul` trong `sim/equipment.ts`, `rateMul`+`burnAt` trong `StallScene`, `shelfDays` trong `sim/econ.ts`, `TEA_PATIENCE_SEC` + `SIT_PATIENCE_MUL` trong `sim/customer.ts` thì sửa luôn dòng chữ tương ứng. `tests/p3-equipment.test.ts` canh phần canh được.",
+  "cart": {
+    "baseSlots": 12,
+    "resale": 0.6,
+    "start": [
+      "LO_THAN",
+      "THUNG_XOP"
+    ]
+  },
   "groups": {
     "LAM_BANH": "Làm bánh",
     "BAO_QUAN": "Giữ đồ",
-    "VE_SINH": "Rửa ráy",
     "TIEP_KHACH": "Chỗ cho khách",
     "VAN_HANH": "Kêu khách, thu tiền",
     "CAI_XE": "Cái xe"
   },
   "items": {
-    "LO_THAN":      { "name": "Lò than của cô Ba", "group": "LAM_BANH", "price_k": 0, "slots": 2, "daily_k": 25, "starting": true, "resellable": false,
-                      "feel": "Than đỏ thì bánh thơm nức, than tàn thì bánh nguội ngắt. Cả buổi mắt phải liếc chừng cái lò.", "drawbacks": ["than tàn giữa buổi là phải ngưng tay, quạt nhóm lại từ đầu"] },
-    "THUNG_XOP":    { "name": "Thùng xốp + đá", "group": "BAO_QUAN", "price_k": 0, "slots": 2, "daily_k": 18, "starting": true, "resellable": true, "resale_k": 60,
-                      "feel": "Đá tan tới trưa là hết lạnh. Pate để qua một đêm thì được, qua hai đêm thì đừng.", "drawbacks": ["trưa nắng đá tan nhanh, mở nắp ra là nghe mùi thịt xuống"] },
-    "LO_GAS":       { "name": "Lò gas hai tầng", "group": "LAM_BANH", "price_k": 1800, "slots": 3, "daily_k": 27, "replaces": "LO_THAN", "unlock": { "minDay": 12 },
-                      "feel": "Vặn một cái là lửa lên đều. Trở tay chậm một nhịp bánh cũng chưa kịp cháy.", "drawbacks": ["bánh hết mùi khói, khách quen mười năm cắn một miếng là biết liền", "bình gas hết giữa buổi thì đứng chờ người ta chở bình mới qua"] },
-    "DAO_BEN":      { "name": "Dao bén", "group": "LAM_BANH", "price_k": 180, "slots": 0, "daily_k": 0, "unlock": { "minDay": 3 },
-                      "feel": "Rạch một đường, ruột bánh tự hé ra sẵn, khỏi banh tay.", "drawbacks": ["đang đông mà vội là đứt tay như chơi"] },
-    "THOT_RIENG":   { "name": "Thớt riêng sống / chín", "group": "LAM_BANH", "price_k": 120, "slots": 1, "daily_k": 0, "unlock": { "minDay": 5 },
-                      "feel": "Thịt sống một thớt, đồ chín một thớt. Người kỹ tính liếc qua là thấy.", "drawbacks": ["hai cái thớt thì hai lần rửa, tối về mới thấy mỏi"] },
-    "KEP_GAP":      { "name": "Kẹp gắp inox", "group": "LAM_BANH", "price_k": 95, "slots": 0, "daily_k": 0, "unlock": { "minDay": 2 },
-                      "feel": "Tay vừa thối tiền xong, khỏi chùi vô khăn rồi mới dám bốc nhân.", "drawbacks": ["gắp bằng kẹp chậm hơn bốc tay, lúc hàng đông thấy rõ"] },
-    "TU_MAT":       { "name": "Tủ mát 100 lít", "group": "BAO_QUAN", "price_k": 3200, "slots": 3, "daily_k": 22, "replaces": "THUNG_XOP", "unlock": { "minDay": 18, "requiresAny": ["THOT_RIENG", "VOI_BON"] },
-                      "feel": "Đồ để tới mai vẫn còn tươi. Muốn lấy sỉ một lần cho rẻ cũng được.", "drawbacks": ["máy chạy cả ngày nghỉ, bữa không bán tiền điện vẫn chạy"] },
-    "NOI_U":        { "name": "Nồi ủ xíu mại", "group": "BAO_QUAN", "price_k": 450, "slots": 1, "daily_k": 6, "unlock": { "minDay": 9 },
-                      "feel": "Mở nắp ra còn bốc khói, khỏi bắc lên hâm lại giữa buổi.", "drawbacks": ["ủ lâu nước sốt rút lại, cuối buổi ăn mặn hơn đầu buổi"] },
-    "LONG_BAN":     { "name": "Lồng bàn / tủ kính", "group": "BAO_QUAN", "price_k": 260, "slots": 1, "daily_k": 0, "unlock": { "minDay": 6 },
-                      "feel": "Đậy lại một cái là ruồi hết bu. Khách đứng ngó vô cũng đỡ ngại.", "drawbacks": ["mỗi lần lấy nhân là một lần giở nắp ra đậy nắp vô"] },
-    "VOI_BON":      { "name": "Vòi + bồn rửa", "group": "VE_SINH", "price_k": 680, "slots": 2, "daily_k": 8, "unlock": { "minDay": 7, "afterFlag": "dirtyHandsConfirmed" },
-                      "feel": "Nước chảy rột rột ngay trước mặt khách. Cả hàng đang đứng chờ đều nghe.", "drawbacks": ["can nước xài cạn là phải xách đi hứng", "rửa một lần mất mấy giây, người đợi đứng nhìn mấy giây đó"] },
-    "THUNG_RAC":    { "name": "Thùng rác nắp đạp", "group": "VE_SINH", "price_k": 150, "slots": 1, "daily_k": 0, "unlock": { "minDay": 4 },
-                      "feel": "Giấy gói với bịch ni lông có chỗ bỏ, khỏi chất đống dưới chân xe.", "drawbacks": ["đạp nắp bỏ rác cũng ăn mất một nhịp tay"] },
-    "KHAN_3_MAU":   { "name": "Khăn ba màu", "group": "VE_SINH", "price_k": 60, "slots": 0, "daily_k": 3, "unlock": { "minDay": 5 },
-                      "feel": "Khăn xanh lau thớt, khăn trắng lau tay, khăn vàng lau mặt bàn. Quen rồi khỏi nhìn cũng vớ đúng cái.", "drawbacks": ["tối về còn nguyên một thau khăn phải giặt"] },
-    "GHE_BAN":      { "name": "Ghế nhựa + bàn nhỏ", "group": "TIEP_KHACH", "price_k": 320, "slots": 2, "daily_k": 0, "unlock": { "minDay": 5 },
-                      "feel": "Có chỗ ngồi là người ta nán lại. Nán lại thì nói chuyện, mà chuyện trong hẻm toàn nghe được ở mấy cái ghế này.", "drawbacks": ["ngồi lâu thì chuyện lan nhanh, hay dở gì cũng lan", "ăn tại chỗ là đổ vụn, lau hoài không hết"] },
-    "DU_CHE":       { "name": "Dù che lớn", "group": "TIEP_KHACH", "price_k": 540, "slots": 1, "daily_k": 0, "unlock": { "minDay": 8, "afterFlag": "rainyDaySeen" },
-                      "feel": "Mưa xuống, người ta tạt vô đứng chờ chứ không chạy luôn.", "drawbacks": ["bữa nắng cái dù che mất cái xe, ở xa ngó vô không thấy gì"] },
-    "BINH_TRA":     { "name": "Bình trà đá 10 lít", "group": "TIEP_KHACH", "price_k": 210, "slots": 1, "daily_k": 24, "unlock": { "minDay": 4 },
-                      "feel": "Rót một ly trà đá đưa ra, người ta đợi thêm mấy phút cũng không càu nhàu.", "drawbacks": ["sáng nào cũng phải nấu trà, mua đá, khiêng bình lên xe"] },
-    "DEN_CA_TOI":   { "name": "Đèn + bình giữ nhiệt ca tối", "group": "VAN_HANH", "price_k": 420, "slots": 1, "daily_k": 6, "unlock": { "minDay": 14 },
-                      "feel": "Trời tối hù mà cái xe còn sáng. Người tan ca khuya thấy đèn là tấp vô.", "drawbacks": ["ngồi thêm ca tối thì ngủ trễ, bốn giờ sáng dậy nặng cả đầu"],
-                      "_p4": "P3-04 E4 (đèn LED) từng bỏ; P4-02 §2.5 B-C cần nó: mua từ ngày 14 thì anh Dũng đổi ca đêm vẫn còn là khách. Bản dựng CHƯA có cảnh bán tối — chỉ có câu anh Dũng ghé 19h40 ở màn tối." },
-    "BANG_QR":      { "name": "Bảng QR", "group": "VAN_HANH", "price_k": 0, "slots": 0, "daily_k": 0, "costsMorning": true, "unlock": { "minDay": 14 },
-                      "feel": "Khách giơ điện thoại quét cái tách, khỏi lục giỏ tìm tiền lẻ thối.", "drawbacks": ["mất nguyên một buổi sáng lên ngân hàng làm giấy tờ", "mấy cô chú lớn tuổi quét hoài không ra, đứng loay hoay trước xe"] },
-    "LOA_RAO":      { "name": "Loa rao", "group": "VAN_HANH", "price_k": 380, "slots": 1, "daily_k": 4, "unlock": { "minDay": 10 },
-                      "feel": "\"Bánh mì Sài Gòn, đặc ruột thơm bơ…\" — nó rao giùm cả buổi, người đi ngang nghe là quay đầu.", "drawbacks": ["nghe riết hàng xóm khó chịu, rồi có người ra nói thẳng", "loa rống thì chuyện ở góc hẻm nghe không ra chữ nào"] },
-    "BANG_HIEU":    { "name": "Bảng hiệu đỏ chữ vàng", "group": "VAN_HANH", "price_k": 750, "slots": 1, "daily_k": 0, "unlock": { "minDay": 14 },
-                      "feel": "Cái xe có tên. Người ta chỉ đường cho nhau cũng dễ.", "drawbacks": ["phải quyết tên gì ghi lên đó, rồi sống với cái tên đó"] },
-    "GIA_TREO":     { "name": "Giá treo nóc xe", "group": "CAI_XE", "price_k": 620, "slots": -2, "daily_k": 0, "unlock": { "minDay": 13 },
-                      "feel": "Đồ ít xài treo hết lên nóc. Mặt xe rộng ra, nhìn xuống thấy việc liền.", "drawbacks": ["với lên cao lấy đồ chậm, đang đông thì ngại với"] },
-    "KHUNG_GIA_CO": { "name": "Khung gia cố + bánh xe", "group": "CAI_XE", "price_k": 1100, "slots": -2, "daily_k": 0, "unlock": { "minDay": 20 },
-                      "feel": "Đẩy qua ổ gà, cái xe thôi kêu răng rắc, đồ trên mặt cũng thôi nhảy.", "drawbacks": ["một khoản tiền lớn nằm chết trong cái khung, ngày nào cũng vậy"] }
+    "LO_THAN": {
+      "name": "Lò than của cô Ba",
+      "group": "LAM_BANH",
+      "price_k": 0,
+      "slots": 2,
+      "daily_k": 25,
+      "starting": true,
+      "resellable": false,
+      "feel": "Lò này cô Ba nhen từ hồi chưa có con. Nó không có nút vặn.",
+      "gain": []
+    },
+    "THUNG_XOP": {
+      "name": "Thùng xốp + đá",
+      "group": "BAO_QUAN",
+      "price_k": 0,
+      "slots": 2,
+      "daily_k": 18,
+      "starting": true,
+      "resellable": true,
+      "resale_k": 60,
+      "feel": "Đá bỏ lúc sáng, trưa là thành nước. Pate qua một đêm còn được, qua hai đêm thì thôi.",
+      "gain": []
+    },
+    "LO_DIEN": {
+      "name": "Lò điện hai tầng",
+      "group": "LAM_BANH",
+      "price_k": 1800,
+      "slots": 3,
+      "daily_k": 27,
+      "replaces": "LO_THAN",
+      "feel": "Vặn số, nó giữ đúng số đó. Trở tay chậm một nhịp bánh vẫn chưa sao.",
+      "_vat": "Mua rồi thì ô `O` trên bản đồ ĐỔI ẢNH sang `public/art/prop_e-oven.png` (`PROP.ovenE`) — cái lò than biến mất, lò điện đứng vào đúng chỗ đó. KHÔNG vẽ thêm vật gì bằng code cạnh nó: chủ dự án *\"không render cái lò bằng code dạng kia nữa\"*. Bản trước dán một hộp bo góc xanh 12×22 px cạnh lò than, nên mua xong trên xe có hai cái lò.",
+      "gain": [
+        "Tốc độ nướng +25%",
+        "Giảm 15% khả năng cháy"
+      ]
+    },
+    "KEP_GAP": {
+      "name": "Kẹp gắp inox",
+      "group": "LAM_BANH",
+      "price_k": 95,
+      "slots": 0,
+      "daily_k": 0,
+      "feel": "Tay vừa cầm tiền xong, gắp luôn, khỏi chùi.",
+      "gain": [
+        "Khỏi phải rửa tay nữa — hết hẳn chuyện khách chê tay dơ"
+      ]
+    },
+    "TU_MAT": {
+      "name": "Tủ mát 100 lít",
+      "group": "BAO_QUAN",
+      "price_k": 3200,
+      "slots": 3,
+      "daily_k": 22,
+      "replaces": "THUNG_XOP",
+      "feel": "Đồ để qua mai vẫn tươi. Thứ Năm thịt rẻ thì ôm luôn một thể.",
+      "gain": [
+        "Đồ lạnh để được lâu gấp 3 (pate 2 ngày → 6 ngày)",
+        "Chứa được 20 phần đồ lạnh thay vì 8"
+      ]
+    },
+    "NOI_U": {
+      "name": "Nồi ủ xíu mại",
+      "group": "BAO_QUAN",
+      "price_k": 450,
+      "slots": 1,
+      "daily_k": 6,
+      "feel": "Mở nắp ra còn bốc khói.",
+      "gain": [
+        "Xíu mại để được 2 ngày thay vì 1 — khỏi bỏ hàng dư"
+      ]
+    },
+    "LONG_BAN": {
+      "name": "Lồng bàn / tủ kính",
+      "group": "BAO_QUAN",
+      "price_k": 260,
+      "slots": 1,
+      "daily_k": 0,
+      "feel": "Đậy một cái là ruồi hết bu.",
+      "gain": [
+        "Quầy bẩn chậm hơn 20%"
+      ]
+    },
+    "GHE_BAN": {
+      "name": "Ghế nhựa + bàn nhỏ",
+      "group": "TIEP_KHACH",
+      "price_k": 320,
+      "slots": 2,
+      "daily_k": 0,
+      "feel": "Có chỗ ngồi thì người ta nán lại. Mà nán lại là nói chuyện — chuyện trong hẻm nghe được hết ở mấy cái ghế này.",
+      "gain": [
+        "2 chỗ ngồi — khách ngồi thì kiên nhẫn trôi chậm 45%",
+        "Mở được lời mời \"ngồi đây đi\""
+      ]
+    },
+    "DU_CHE": {
+      "name": "Dù che lớn",
+      "group": "TIEP_KHACH",
+      "price_k": 540,
+      "slots": 1,
+      "daily_k": 0,
+      "feel": "Mưa xuống, người ta tạt vô đứng chứ không chạy luôn.",
+      "gain": [
+        "+10% khách lạ ghé, bữa mưa +30%",
+        "Có chỗ cho khách đứng mát trước xe"
+      ]
+    },
+    "BINH_TRA": {
+      "name": "Bình nước trà",
+      "group": "TIEP_KHACH",
+      "price_k": 210,
+      "slots": 1,
+      "daily_k": 24,
+      "feel": "Rót ly nước trà đưa ra. Đợi thêm mấy phút cũng không ai càu nhàu.",
+      "gain": [
+        "Rót một ly: khách chờ thêm 20 giây",
+        "Tăng hảo cảm — người ta nhớ mình có chăm khách"
+      ]
+    },
+    "QUAT_DIEN": {
+      "name": "Quạt điện đứng",
+      "group": "TIEP_KHACH",
+      "price_k": 280,
+      "slots": 1,
+      "daily_k": 5,
+      "feel": "Quạt quay qua quay lại, thổi vô chỗ người ta đứng chờ.",
+      "gain": [
+        "+15% kiên nhẫn cho mọi khách đang chờ"
+      ]
+    },
+    "LOA_RAO": {
+      "name": "Loa rao",
+      "group": "VAN_HANH",
+      "price_k": 380,
+      "slots": 1,
+      "daily_k": 4,
+      "feel": "\\\"Bánh mì Sài Gòn, đặc ruột thơm bơ…\\\" Nó rao giùm cả buổi.",
+      "gain": [
+        "+15% khách lạ ghé"
+      ]
+    },
+    "BANG_HIEU": {
+      "name": "Bảng hiệu đứng trước xe",
+      "group": "VAN_HANH",
+      "price_k": 650,
+      "slots": 1,
+      "daily_k": 0,
+      "feel": "Tấm bảng gỗ chữ A dựng ra mép vỉa hè. Đứng đầu hẻm ngó xuống là đọc được chữ.",
+      "gain": [
+        "+20% khách lạ ghé",
+        "Trả một lần, không tốn đồng nào mỗi ngày"
+      ],
+      "_vat": "ĐÂY LÀ Ô `A` (17,7) trên bản đồ — tấm bảng gỗ \"bánh mì ngon\", ảnh `prop_sign.png`. KHÔNG phải tấm banner đỏ trên vách sau (`art/sign.ts`): banner đó là TÊN QUÁN của cô Ba, có trước ngày 1 và không bán. Chủ dự án: *\"cái bảng hiệu là cái bảng hiệu chỗ ra vào quầy á… mặc định là bảng hiệu cái hình bánh mì ngon á. Dùng cái bảng đó.\"*"
+    },
+    "BANG_QR": {
+      "name": "Bảng QR",
+      "group": "VAN_HANH",
+      "price_k": 0,
+      "slots": 0,
+      "daily_k": 0,
+      "unlock": {
+        "minDay": 14
+      },
+      "costsMorning": true,
+      "feel": "Khách giơ điện thoại quét cái tách. Khỏi lục giỏ tìm tiền lẻ.",
+      "gain": [
+        "Khách quên đem tiền ít hơn 2/3 (8% → 2% mỗi lượt)",
+        "Ngày 36–38 khỏi mất 15% khách vì chưa có quẹt thẻ"
+      ],
+      "_khoa": "Ngày 14 KHÔNG phải để giãn nhịp: SK-23 là một cảnh có ngày cố định (cô Mai dẫn đi làm giấy ngân hàng). Mở sớm là để cảnh đó mời người ta mua thứ họ đã mua rồi."
+    },
+    "GIA_TREO": {
+      "name": "Giá treo nóc xe",
+      "group": "CAI_XE",
+      "price_k": 620,
+      "slots": -2,
+      "daily_k": 0,
+      "feel": "Đồ ít xài treo hết lên nóc. Mặt xe rộng ra.",
+      "gain": [
+        "+2 ô chứa trên xe (12 → 14)"
+      ]
+    }
   }
 }

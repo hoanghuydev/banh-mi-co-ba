@@ -29,6 +29,7 @@ export {
 export { HELD, heldTexture, heldFootPad, type HeldLook } from "./held";
 export { opaqueBox, opaqueEdges, spriteEdges, type Edges, type OpaqueBox, type SpriteBox } from "./opaque";
 export { createSign } from "./sign";
+export { createMenuBoard } from "./menuboard";
 export { FX } from "./fx";
 export { TILE, BUILD, COUNTER, PROP };
 
@@ -89,7 +90,7 @@ export function floorTextureAt(kind: Floor, tx: number, ty: number) {
  */
 export function textureForTile(
   code: TileCode, tx: number, ty: number,
-  opts: { isCounterEnd: boolean; isStation: boolean },
+  opts: { isCounterEnd: boolean; isStation: boolean; eOven?: boolean },
 ): string | null {
   switch (code) {
     // Tường lặp 16 ô liền nhau -> chọn biến thể theo TOẠ ĐỘ (giống ô sàn) để mắt
@@ -100,7 +101,9 @@ export function textureForTile(
     case "Q": return opts.isCounterEnd ? COUNTER.end
       : opts.isStation ? COUNTER.work
       : COUNTER.case(tx % COUNTER.CASE_COUNT);          // xen kẽ hai kiểu bày trong tủ
-    case "O": return PROP.oven;
+    // Mua lò điện thì ô lò ĐỔI ẢNH, không vẽ thêm một cái hộp xanh cạnh cái lò cũ.
+    // Nâng cấp phải thay thứ đang đứng đó, không phải dán một miếng lên cạnh nó.
+    case "O": return opts.eOven ? PROP.ovenE : PROP.oven;
     case "T": return PROP.tea;
     case "K": return PROP.shelf;
     case "s": return PROP.stool;

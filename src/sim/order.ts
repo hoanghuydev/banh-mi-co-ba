@@ -1,4 +1,5 @@
 import type { Rng } from "../core/rng";
+import { MENU_IDS, RAU_CO_GIAN, RAU_NEN, isBare, itemOf, nhanOf, type MenuItemId } from "./menu";
 
 /**
  * Đơn hàng, nguyên liệu và ĐỊNH LƯỢNG. CANON T2: món ăn LÀ lựa chọn hội thoại — người chơi không
@@ -51,24 +52,42 @@ export const CAPACITY = 16;
 export const NICETY: ReadonlySet<Ingredient> = new Set<Ingredient>(["dochua", "ot", "tuongot", "hanhngo"]);
 
 const NHAN = INGREDIENTS.filter((i) => i.kind === "nhan").map((i) => i.id);
-/** "Cho một ổ đầy đủ" ở Sài Gòn = thịt nguội + chả lụa + pate (P1-03 §2.2). */
-const DAY_DU: readonly Ingredient[] = ["pate", "thit", "chalua"];
+
+/**
+ * KHÁCH VÃNG LAI GỌI GÌ — bốc một MÓN trên bảng, không còn tự ghép tổ hợp nguyên liệu.
+ *
+ * Hồi còn ghép tổ hợp, `randomIntent` sinh ra được "ổ pate với ốp la" — một món không có
+ * trên bảng nào, không ai ngoài đời gọi, mà người chơi vẫn bị chấm điểm theo nó. Bảng
+ * trọng số này nằm ở đây (chứ không ở `menu.json`) vì nó là chuyện HÔM NAY AI MUA GÌ, không
+ * phải chuyện cái xe bán gì; dàn ra thành mảng phẳng để chỉ tốn ĐÚNG MỘT lần rút số.
+ */
+const WALK_IN_WEIGHT: Readonly<Record<MenuItemId, number>> = {
+  daydu: 22, thit: 18, chalua: 18, xiumai: 16, opla: 12, pate: 10, khong: 4,
+};
+const WALK_IN_BAG: readonly MenuItemId[] = MENU_IDS.flatMap((id) =>
+  Array.from({ length: WALK_IN_WEIGHT[id] }, () => id));
 
 /**
  * Ý định gọi món. Cả CÂU NÓI lẫn BẢNG ĐỊNH LƯỢNG đều suy ra từ đây, nên hai thứ
  * không bao giờ lệch nhau — câu nói tự nó đủ để làm đúng ổ bánh (có test bất biến).
  */
 export type OrderIntent = {
-  /** Loại nhân mặn, mặc định mức 1 — kể tên ra là được một phần. */
-  nhan: Ingredient[];
-  /** Một loại nhân được xin thêm — lên mức 2, nấc cuối. */
+  /**
+   * MÓN TRÊN BẢNG — cái khách gọi tên, và cái duy nhất quyết định ổ bánh có nhân gì.
+   *
+   * Trước đây chỗ này là một danh sách nguyên liệu (`nhan: Ingredient[]`) cộng một cờ
+   * `dayDu`, tức mỗi đơn hàng tự khai lại công thức của nó. Hai hệ quả: bánh mì xíu mại
+   * không có pate (không ai khai là có), và giá tính bằng cách ĐẾM số nhân nên quết thêm
+   * miếng pate là nhảy bậc giá. Giờ công thức nằm ở `content/recipes/menu.json`, đúng
+   * một chỗ, và chính là tấm bảng người chơi đọc trên vách.
+   */
+  mon: MenuItemId;
+  /** Một thứ nhân của món được xin thêm — lên mức 2, nấc cuối. */
   nhieu?: Ingredient;
-  /** Gọi "một ổ đầy đủ" — ba nhân tiêu chuẩn, không cần kể tên. */
-  dayDu?: boolean;
   /**
    * "it" = "cho ít rau": rau MỘT NỬA — không phải cấm thứ nào (P1-03 §2.3 luật vàng).
-   * "khong" = "không rau" / "bánh mì không" — P4-05 §2.7 A: chỉ ổ bánh. Bẫy lớn nhất của
-   * người chơi mới (tưởng khách quên) — ML-04 bé Su, ML-12 anh Bảo ngày 29.
+   * "khong" = "không rau" — P4-05 §2.7 A. Bẫy lớn nhất của người chơi mới (tưởng khách
+   * quên) — ML-04 bé Su, ML-12 anh Bảo ngày 29. Ổ "bánh mì không" tự nó đã trơn.
    */
   rau: "day-du" | "it" | "khong";
   /** Thứ khách NÓI bỏ ra ("không hành", "đừng bỏ ngò") — mức 0, bỏ vô là UNWANTED. */
@@ -99,18 +118,22 @@ export type OrderSpec = {
 export function levelsOf(it: OrderIntent): Partial<Record<Ingredient, number>> {
   const lv: Partial<Record<Ingredient, number>> = {};
   /**
-   * Nhân KHÔNG được gọi tên = mức 0, KHÔNG phải "khách không nhắc tới". Gọi tên nhân chính là cách
-   * nói ra cả hai vế: "cho một ổ pate" đã nói rằng ổ đó không có chả lụa.
+   * Nhân KHÔNG có trong món = mức 0, KHÔNG phải "khách không nhắc tới". Gọi tên món chính là
+   * cách nói ra cả hai vế: "cho một ổ xíu mại" đã nói rằng ổ đó không có chả lụa.
    *
    * ⚠️ Để mức `undefined` thì `diffDish` bỏ qua, và bỏ đại một miếng pate vào ổ bánh mì không vẫn
    * được chấm hoàn hảo — T2 chết ngay chỗ đó.
    */
   for (const n of NHAN) lv[n] = 0;
-  for (const n of it.nhan) lv[n] = it.nhieu === n ? 2 : 1;
-  const veg = it.rau === "day-du" ? 2 : it.rau === "it" ? 1 : 0;
-  lv.dochua = veg; lv.dualeo = veg; lv.hanhngo = veg;
-  lv.ot = it.ot;
-  lv.tuongot = it.tuong;
+  for (const [id, phan] of Object.entries(itemOf(it.mon).nhan)) {
+    lv[id as Ingredient] = it.nhieu === id ? 2 : phan;
+  }
+  // Ổ trơn thì khay rau không chạm tới nó — "bánh mì không" là ổ bánh, hết.
+  const bare = isBare(it.mon);
+  const mul = bare || it.rau === "khong" ? 0 : it.rau === "it" ? 0.5 : 1;
+  for (const id of RAU_CO_GIAN) lv[id] = Math.round((RAU_NEN[id] ?? 0) * mul);
+  lv.ot = bare ? 0 : it.ot;
+  lv.tuongot = bare ? 0 : it.tuong;
   for (const b of it.bo ?? []) lv[b] = 0;
   return lv;
 }
@@ -118,16 +141,12 @@ export function levelsOf(it: OrderIntent): Partial<Record<Ingredient, number>> {
 export const specOf = (intent: OrderIntent): OrderSpec => ({ intent, levels: levelsOf(intent) });
 
 function randomIntent(rng: Rng, usual: boolean): OrderIntent {
-  const dayDu = rng.next() < 0.15;
-  const nhan = dayDu ? [...DAY_DU] : [rng.pick(NHAN)];
-  if (!dayDu && rng.next() < 0.3) {                    // thỉnh thoảng gọi hai nhân
-    nhan.push(rng.pick(NHAN.filter((n) => n !== nhan[0])));
-  }
-  const nhieu = rng.next() < 0.25 ? rng.pick(nhan) : undefined;
+  const mon = rng.pick(WALK_IN_BAG);
+  if (mon === "khong") return { mon, rau: "khong", ot: 0, tuong: 0, usual };
+  const nhan = nhanOf(mon);
   return {
-    nhan,
-    nhieu: dayDu ? undefined : nhieu,
-    dayDu: dayDu || undefined,
+    mon,
+    nhieu: rng.next() < 0.25 ? rng.pick(nhan) : undefined,
     rau: rng.next() < 0.7 ? "day-du" : "it",
     ot: rng.next() < 0.25 ? 2 : rng.next() < 0.3 ? 0 : 1,
     tuong: rng.next() < 0.2 ? 2 : rng.next() < 0.25 ? 0 : 1,
@@ -156,19 +175,19 @@ export function sayOrder(spec: OrderSpec): string {
   const it = spec.intent;
   if (it.usual) return spec.short ?? "Như mọi bữa nghen con.";
   if (spec.phrase) return spec.phrase;
-  if (!it.nhan.length && !it.dayDu && it.rau === "khong") return "Cho một ổ bánh mì không.";
+  const item = itemOf(it.mon);
+  if (isBare(it.mon)) return `Cho một ổ ${item.call}.`;
 
-  const parts = [it.dayDu
-    ? "Cho một ổ đầy đủ"
-    : `Cho một ổ ${it.nhan.map((n) => (it.nhieu === n ? `nhiều ${labelOf(n)}` : labelOf(n))).join(" với ")}`];
+  const parts = [`Cho một ổ ${item.call}`];
+  if (it.nhieu) parts.push(`cho nhiều ${labelOf(it.nhieu)}`);
   if (it.rau === "it") parts.push("cho ít rau");
   else if (it.rau === "khong") parts.push("không rau");
   // Mọi thứ khách CẤM đều phải thành lời: mức 0 mà không ai nói ra thì bỏ vô là một khoản
-  // phạt UNWANTED câm — đúng thứ T2 cấm. Chỉ bỏ qua những thứ CÂU NÀY đã nói rồi:
-  // nhân không được kể tên (đã hàm ý mức 0), "không rau", "không ớt", "không tương".
-  const spoken = new Set<Ingredient>(it.nhan);
-  for (const i of INGREDIENTS) if (i.kind === "nhan" && !it.nhan.includes(i.id)) spoken.add(i.id);
-  if (it.rau === "khong") { spoken.add("dochua"); spoken.add("dualeo"); spoken.add("hanhngo"); }
+  // phạt UNWANTED câm — đúng thứ T2 cấm. Chỉ bỏ qua những thứ CÂU NÀY đã nói rồi: nhân
+  // KHÔNG có trong món (gọi tên món đã hàm ý mức 0), "không rau", "không ớt", "không tương".
+  const spoken = new Set<Ingredient>();
+  for (const i of INGREDIENTS) if (i.kind === "nhan" && item.nhan[i.id] === undefined) spoken.add(i.id);
+  if (it.rau === "khong") for (const r of RAU_CO_GIAN) spoken.add(r);
   if (it.ot === 0) spoken.add("ot");
   if (it.tuong === 0) spoken.add("tuongot");
   for (const b of it.bo ?? []) {

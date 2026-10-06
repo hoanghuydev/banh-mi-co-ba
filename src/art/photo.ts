@@ -99,6 +99,9 @@ const SIT = 10;
 /** Lấy mốc theo NGƯỜI (`BODY_H` = 64): cái ghế nhựa phải thấp hơn hẳn, cái tủ phải cao hơn. */
 const STANDING: Record<string, [src: string, o: Standing]> = {
   [PROP.oven]: ["prop_oven", { h: 70 }],
+  // Cùng tỉ lệ khung với lò than (0,773) nên nó rơi đúng chỗ cũ; cao hơn 4 px để cú nâng
+  // cấp ĐỌC RA ĐƯỢC từ xa mà vẫn hẹp hơn một ô (74 × 0,773 = 57 < TW 60).
+  [PROP.ovenE]: ["prop_e-oven", { h: 74 }],
   [PROP.shelf]: ["prop_shelf", { h: 86 }],
   [PROP.tea]: ["prop_tea", { h: 68 }],
   [PROP.sink]: ["prop_sink", { h: 58, dx: -2 }],
@@ -116,6 +119,15 @@ const STANDING: Record<string, [src: string, o: Standing]> = {
   // Bình chữa cháy là khối ĐỨNG, đáy phẳng và hẹp — không có phần bụng phình ra
   // phía trước như cái lò hay cái tủ, nên tụt đủ `SIT` px là nhìn ra lún xuống sàn.
   [PROP.fire]: ["prop_extinguisher", { h: 44, dy: SIT - 5 }],
+  // Vật CAO NHẤT trong bộ. Mốc không phải "cao bao nhiêu px cho đẹp" mà là TỈ LỆ VỚI
+  // NGƯỜI: dù sân thật cao cỡ 2,2 m so với người 1,6 m, nên 100 px trên `BODY_H` = 64.
+  // Bản vẽ code cũ để 110 — ở đó tán dù ngang tầm mái hiên và đọc ra như một cái ô
+  // dựng trên sân khấu chứ không phải cái dù cắm ngoài vỉa hè.
+  [PROP.umbrella]: ["prop_umbrella", { h: 100 }],
+  // Tủ lạnh hai ngăn cỡ gia đình: cao ~1,55 m, tức THẤP HƠN người một chút — 62 trên
+  // `BODY_H` = 64. Cao hơn bồn rửa (58), thấp hơn cái lò (70). Hình vẽ code cũ để 40 px,
+  // ở đó nó ngang tầm cái ghế nhựa và đọc ra như một cái thùng xốp dựng đứng.
+  [PROP.fridge]: ["prop_fridge", { h: 62 }],
 };
 
 // ──────────────────────────────────────────────────────────── người chơi 8 hướng

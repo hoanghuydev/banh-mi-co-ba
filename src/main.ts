@@ -5,11 +5,13 @@ import { DEV_TOOLS } from "./core/flags";
 import "./core/session";
 import { BootScene } from "./scenes/BootScene";
 import { MenuScene } from "./scenes/MenuScene";
+import { IntroScene } from "./scenes/IntroScene";
 import { DayScene } from "./scenes/DayScene";
 import { MarketScene } from "./scenes/MarketScene";
 import { StallScene } from "./scenes/StallScene";
 import { EveningScene } from "./scenes/EveningScene";
 import { EndingScene } from "./scenes/EndingScene";
+import { BrokeScene } from "./scenes/BrokeScene";
 import { music } from "./audio/music";
 import { sfx } from "./audio/sfx";
 
@@ -18,6 +20,7 @@ import { sfx } from "./audio/sfx";
  * CANON §2: client-only, offline-first. Không server, không netcode.
  *
  * Năm scene của P0-01 §2.3: Boot → (Menu) → Day (thường trực) ⟶ Market → Stall → Evening.
+ * `Intro` chen vào giữa Menu và Day, chỉ ở nhánh "mùa mới": cô Ba giao xe và hỏi tên con.
  */
 // Phải chạy TRƯỚC khi dựng game: nó thay factory `add.text` của Phaser.
 installTextResolution();
@@ -38,7 +41,7 @@ const game = new Phaser.Game({
   // KHÔNG khoá fps. "30 fps" của CANON §2 / P0-01 §2.8 là SÀN phải giữ được trên máy yếu
   // (ngân sách 33 ms/frame), không phải trần: mọi hệ đều chạy theo `dt` nên 60/120 Hz vẫn
   // ra đúng luật, chỉ mượt hơn. Khoá cứng 30 thì di chuyển và kéo–thả thấy giật.
-  scene: [BootScene, MenuScene, DayScene, MarketScene, StallScene, EveningScene, EndingScene],
+  scene: [BootScene, MenuScene, IntroScene, DayScene, MarketScene, StallScene, EveningScene, EndingScene, BrokeScene],
 });
 
 // Nhạc và tiếng động sống ngoài scene để đi từ sảnh vào quán không bị đứt tiếng

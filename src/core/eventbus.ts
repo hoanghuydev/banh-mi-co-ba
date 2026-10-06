@@ -111,6 +111,9 @@ export type EventMap = {
   "stall:closed":             { reason: StallCloseReason; served: number; revenue: number; lost: number };
   "evening:done":             { dayIndex: number };
   "ending:done":              { dayIndex: number };
+  /** Hết vốn (sim/broke): `replay` quay về bản chụp đầu ngày, `done` là về sảnh. */
+  "broke:replay":             { dayIndex: number };
+  "broke:done":               { dayIndex: number };
 };
 
 export type EventKey = keyof EventMap;

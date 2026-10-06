@@ -89,11 +89,11 @@
       "scope": "Player",
       "type": "bool"
     },
-    "equipGasOven": {
+    "equipLoDien": {
       "scope": "Global",
       "type": "bool",
       "conditional": true,
-      "_note": "P3-04 A1 — đã đổi lò than sang lò gas"
+      "_note": "P3-04 A1 — đã đổi lò than sang lò điện"
     },
     "npcId": {
       "scope": "Customer",

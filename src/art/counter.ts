@@ -20,7 +20,13 @@ import { BASE, diamond, heightFor, prop, shade, slab, standing, type Pen } from 
  * mà khung nhôm vẫn trùng khít nên vẫn đọc ra MỘT cái tủ liền.
  */
 const BODY = 32;
-const CASE = 30;
+/**
+ * Chiều cao tủ kính, tính từ MẶT QUẦY lên nóc.
+ *
+ * ⚠️ SÀN LÀ 24: bảng giá dựng trong tủ (biến thể 1) cao tới `base − 22`, nên hạ dưới đó là cái
+ * bảng chọc thủng nóc kính. Hạ nữa thì phải hạ cả bảng — và bảng thấp hơn thì chữ trên nó hết đọc.
+ */
+const CASE = 25;
 
 export const COUNTER = {
   end: "counter_end",

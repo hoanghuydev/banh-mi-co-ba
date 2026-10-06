@@ -6,12 +6,13 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
-  CAL, dishQuality, isRain, lotQuality, newInventory, priceOf, stockOf, take, tasteThreshold, tierOf, weatherOf, buy,
+  CAL, dishQuality, isRain, loafPriceVnd, lotQuality, newInventory, priceOf, stockOf, take, tasteThreshold, tierOf, weatherOf, buy,
 } from "../src/sim/econ";
 import {
   canTakeHui, duesOpen, eveningCount, morningRent, newEconState, pay, processDefaults, takeHui,
 } from "../src/sim/obligations";
 import { newGame } from "../src/core/save";
+import { MENU_ITEMS } from "../src/sim/menu";
 import { standClosed } from "../src/sim/stands";
 import { HeadlessStall, POLICIES, nextDay } from "../src/sim/headless";
 import { weekdayOf } from "../src/sim/schedule";
@@ -68,10 +69,14 @@ test("chất lượng ổ: pate rẻ một mình KHÔNG vượt ngưỡng chị 
   assert.ok(1 - bad >= lan);
 });
 
-test("giá ổ theo loại: 1 nhân thường · 2 nhân / đầy đủ · đầy đủ + xin thêm = đặc biệt", () => {
-  assert.equal(tierOf({ nhan: ["pate"] }), "thuong");
-  assert.equal(tierOf({ nhan: ["pate", "thit"] }), "dayDu");
-  assert.equal(tierOf({ nhan: ["pate", "thit", "chalua"], dayDu: true, nhieu: "pate" }), "dacBiet");
+test("giá đọc từ BẢNG MENU, không đếm nhân: món một nhân thường · đầy đủ · đầy đủ + xin thêm = đặc biệt", () => {
+  assert.equal(tierOf({ mon: "pate" }), "thuong");
+  assert.equal(tierOf({ mon: "xiumai" }), "thuong", "ổ xíu mại CÓ pate mà vẫn là giá món một nhân — đây là chỗ cách đếm nhân sai");
+  assert.equal(tierOf({ mon: "daydu" }), "dayDu");
+  assert.equal(tierOf({ mon: "daydu", nhieu: "pate" }), "dacBiet");
+  assert.equal(tierOf({ mon: "xiumai", nhieu: "xiumai" }), "thuong", "xin nhiều xíu mại không làm ổ thường thành ổ đặc biệt");
+  assert.equal(tierOf({ mon: "khong" }), "khong");
+  for (const it of MENU_ITEMS) assert.ok(loafPriceVnd(it.tier) > 0, it.id);
 });
 
 test("hụi: trễ lần 1 cô Mai ứng; lần 2 bị cho ra khỏi dây (trả lại 55%) — không có game over", () => {
@@ -140,7 +145,7 @@ test("vỡ tiền học khi xe có đồ nghề → phải bán một món (SOLD
   const w = newGame("sell", "p3-sell");
   for (let d = 1; d <= 24; d++) {
     if (d > 1) nextDay(w, undefined, { payDues: false });
-    new HeadlessStall(w, { ...POLICIES.greedy, build: [[2, "KEP_GAP"], [4, "THUNG_RAC"]] }).run();
+    new HeadlessStall(w, { ...POLICIES.greedy, build: [[2, "KEP_GAP"], [4, "LONG_BAN"]] }).run();
   }
   assert.ok(w.econ.losses.includes("SOLD_EQUIPMENT"));
   assert.ok(!w.econ.losses.includes("CART_DOWNGRADED"));

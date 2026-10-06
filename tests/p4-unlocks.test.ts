@@ -31,11 +31,15 @@ test("bốn cổng còn lại mở đúng ngày (9 · 9 · 11 · 16)", () => {
   assert.ok(!standsOpen(15) && standsOpen(16));
 });
 
-test("cổng thiết bị ngày 14 (bảng QR · đèn ca tối) có người thi hành — ở equipment.json", () => {
+/**
+ * Đèn ca tối ĐÃ BỎ khỏi cây thiết bị: đo ra nó không bán thêm một ổ nào (914 → 914, xem
+ * `tools/audit-gain.ts`) vì bản dựng chưa có ca bán tối. Việc nó từng gánh — giữ anh Dũng trong
+ * màn kết — chuyển hẳn sang cờ `dungStory` (rót cho anh ly nước trà ở SK-15), và `tests/p4-ket.*`
+ * canh đường đó. Nên cổng ngày 14 giờ còn đúng một món.
+ */
+test("cổng thiết bị ngày 14 (bảng QR) có người thi hành — ở equipment.json", () => {
   const e = newEquipState(), flags = {};
-  for (const id of ["BANG_QR", "DEN_CA_TOI"] as const) {
-    assert.equal(EQUIP[id].unlock?.minDay, 14, `${id} lệch ngày 14 của P4-02 §2.2`);
-    assert.ok(!unlocked(id, e, 13, flags), `${id} mở sớm`);
-    assert.ok(unlocked(id, e, 14, flags), `${id} chưa mở ngày 14`);
-  }
+  assert.equal(EQUIP.BANG_QR.unlock?.minDay, 14, "BANG_QR lệch ngày 14 của P4-02 §2.2");
+  assert.ok(!unlocked("BANG_QR", e, 13, flags), "BANG_QR mở sớm");
+  assert.ok(unlocked("BANG_QR", e, 14, flags), "BANG_QR chưa mở ngày 14");
 });

@@ -262,3 +262,19 @@ export const WALKIN_NAMES = [
   "khách lạ", "chị đeo khẩu trang", "cô xách giỏ", "bà cụ",
   "cô nón lá", "anh chạy xe", "chị áo hồng", "chú đeo kính",
 ];
+
+/**
+ * CÔ BA — mentor của CANON §7.4, cố ý KHÔNG nằm trong `NPCS`.
+ *
+ * Cô không phải khách: không có lịch ghé, không có đơn ruột, không có trí nhớ để người
+ * chơi làm hỏng. Nhét cô vô mảng kia là mỗi hệ đọc `NPCS` (lịch, đồn thổi, sổ tay, bảng
+ * chấm điểm) lại phải nhớ loại trừ cô ra — và sẽ có chỗ quên.
+ *
+ * Chỉ còn một chỗ cần tới dáng của cô: chân dung ở màn mở đầu (`scenes/IntroScene`).
+ * Ba dấu hiệu tuổi tác giống bà Bảy nhưng KHÁC người: tóc búi bạc hơn, lưng còng, và cái
+ * tạp dề — thứ bà Bảy không bao giờ có, vì bà bán vé số còn cô Ba đứng bếp ba chục năm.
+ */
+export const CO_BA_BODY: BodyStyle = {
+  skin: 0xdeb085, hair: 0xcac4bb, shirt: 0x8a6a4e, trousers: 0x3a3a42,
+  apron: 0xe6d8b6, stoop: true, hairStyle: "bun", build: "round",
+};

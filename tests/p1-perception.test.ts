@@ -8,6 +8,7 @@ import { GazeMachine } from "../src/sim/gaze";
 import { Rng } from "../src/core/rng";
 import { orderDefectKey } from "../src/core/stimid";
 import { diffDish, dishFor, generosityOf, sayOrder, specOf, mkDefect, type Ingredient } from "../src/sim/order";
+import { MENU_IDS, nhanOf } from "../src/sim/menu";
 import { Bus } from "../src/core/eventbus";
 import { newGame } from "../src/core/save";
 import { HeadlessStall, POLICIES } from "../src/sim/headless";
@@ -115,7 +116,7 @@ test("câu gọi món TỰ NÓ quyết định ổ bánh: làm theo câu là 0 l
   const rng = new Rng(11);
   for (let i = 0; i < 300; i++) {
     const spec = specOf({
-      nhan: [rng.pick(["pate", "thit", "chalua", "xiumai", "opla"] as const)],
+      mon: rng.pick(MENU_IDS),
       rau: rng.next() < 0.5 ? "it" : "day-du",
       ot: rng.pick([0, 1, 2] as const), tuong: rng.pick([0, 1, 2] as const), usual: false,
     });
@@ -124,13 +125,13 @@ test("câu gọi món TỰ NÓ quyết định ổ bánh: làm theo câu là 0 l
 });
 
 test("'cho ít rau' là rau MỘT NỬA, không cấm hành ngò (P1-03 §2.3 luật vàng)", () => {
-  const spec = specOf({ nhan: ["pate"], rau: "it", ot: 1, tuong: 1, usual: false });
+  const spec = specOf({ mon: "pate", rau: "it", ot: 1, tuong: 1, usual: false });
   assert.equal(spec.levels.hanhngo, 1);
   assert.ok(!sayOrder(spec).includes("đầy đủ"));
 });
 
 test("thang hai nấc: kể tên là một phần, 'nhiều' là hai phần — không còn nấc nào khác", () => {
-  const spec = specOf({ nhan: ["pate", "thit"], nhieu: "thit", rau: "day-du", ot: 2, tuong: 1, usual: false });
+  const spec = specOf({ mon: "daydu", nhieu: "thit", rau: "day-du", ot: 2, tuong: 1, usual: false });
   assert.equal(spec.levels.pate, 1);
   assert.equal(spec.levels.thit, 2);
   assert.equal(spec.levels.dochua, 2);
@@ -144,7 +145,7 @@ test("thang hai nấc: kể tên là một phần, 'nhiều' là hai phần — 
  * nó phải nặng hơn hồi bốn nấc, và tuyệt đối không được tụt xuống "trong dung sai".
  */
 test("lệch một nấc vẫn là WRONG_RATIO, cả thiếu lẫn thừa", () => {
-  const spec = specOf({ nhan: ["pate"], nhieu: "pate", rau: "day-du", ot: 1, tuong: 1, usual: false });
+  const spec = specOf({ mon: "pate", nhieu: "pate", rau: "day-du", ot: 1, tuong: 1, usual: false });
   const thieu = dishFor(spec).filter((x, i) => !(x === "pate" && i === 0));   // pate 2 → 1
   const d1 = diffDish(spec, thieu);
   assert.equal(d1.length, 1);
@@ -153,7 +154,7 @@ test("lệch một nấc vẫn là WRONG_RATIO, cả thiếu lẫn thừa", () =
   assert.equal(d1[0].dir, "under");
   assert.ok(d1[0].magnitude > 0.25, "nặng hơn mức lệch một nấc của thang bốn nấc");
 
-  const nheo = specOf({ nhan: ["pate"], rau: "day-du", ot: 1, tuong: 1, usual: false });
+  const nheo = specOf({ mon: "pate", rau: "day-du", ot: 1, tuong: 1, usual: false });
   const thua = [...dishFor(nheo), "pate" as Ingredient];                      // pate 1 → 2
   const d2 = diffDish(nheo, thua);
   assert.equal(d2.length, 1);
@@ -169,7 +170,7 @@ test("lệch một nấc vẫn là WRONG_RATIO, cả thiếu lẫn thừa", () =
  * không thành lỗi, vừa còn đếm được, không thì `Service.freeExtra()` không bao giờ bắn.
  */
 test("cho thêm một phần đồ chua / ớt: không phải lỗi, và vẫn đếm là hào phóng", () => {
-  const spec = specOf({ nhan: ["pate"], rau: "it", ot: 1, tuong: 1, usual: false });
+  const spec = specOf({ mon: "pate", rau: "it", ot: 1, tuong: 1, usual: false });
   const hao = [...dishFor(spec), "dochua" as Ingredient, "ot" as Ingredient];
   assert.deepEqual(diffDish(spec, hao), []);
   assert.ok(generosityOf(spec, hao) > 0, "Service.freeExtra() sống bằng dấu > 0 này");
@@ -184,7 +185,7 @@ test("cho thêm một phần đồ chua / ớt: không phải lỗi, và vẫn �
  * rẻ nhất trong game; tính bằng giá chợ thì không ai cày nổi.
  */
 test("hào phóng tính theo giá chợ: ớt rẻ hơn đồ chua, và cho hết cỡ vẫn chưa bằng một lát thịt", () => {
-  const spec = specOf({ nhan: ["pate"], rau: "it", ot: 1, tuong: 1, usual: false });
+  const spec = specOf({ mon: "pate", rau: "it", ot: 1, tuong: 1, usual: false });
   const them = (id: Ingredient) => generosityOf(spec, [...dishFor(spec), id]);
   assert.ok(them("ot") < them("dochua"), "một nhúm ớt 0,35k không bằng một gắp đồ chua 0,44k");
   assert.ok(them("hanhngo") < them("tuongot"));
@@ -237,7 +238,7 @@ test("ANTICIPATED khi đứng nhìn thẳng lúc gói, DISCOVERED khi không ai 
     c.gazeOverride = gaze;
     takesAnything(c);                              // quên hẳn nhân chính = ổ trống, xem HOLLOW_REFUSED
     const dish = dishFor(c.order!);
-    const drop = dish.indexOf(c.order!.intent.nhan[0]);
+    const drop = dish.indexOf(nhanOf(c.order!.intent.mon)[0]);
     dish.splice(drop, 2);                          // quên hẳn nhân chính
     for (const d of diffDish(c.order!, dish)) {
       bus.emit("stim:emitted", { stimId: "ORDER_DEFECT", zone: "BOARD", salience: d.sCounter * d.magnitude, at: h.elapsed, key: orderDefectKey(c.id, d.kind, d.item) });

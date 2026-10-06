@@ -16,8 +16,8 @@
       "when": { "npcId": "BA_BAY", "ctxSawDropToday": true, "queueLength": "<=3" },
       "say": ["Bỏ đi con, cô chờ được mà.", "Làm lại ổ khác đi, cô không gấp."] },
 
-    { "id": "bay.gas.aroma", "concept": "DELIVERY",
-      "when": { "npcId": "BA_BAY", "defectCount": 0, "equipGasOven": true, "npcVisitCount": ">=12" },
+    { "id": "bay.lodien.aroma", "concept": "DELIVERY",
+      "when": { "npcId": "BA_BAY", "defectCount": 0, "equipLoDien": true, "npcVisitCount": ">=12" },
       "say": ["Hồi đó cái lò than của cô Ba thơm lắm. Mà thôi, nhanh cũng được."], "odds": 18, "norepeat": true },
 
     { "id": "bay.flourish", "concept": "NOTICE_EVENT",

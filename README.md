@@ -192,14 +192,19 @@ src/
   core/        clock · rng · save · eventbus · context · flags · platform · telemetry · types
                khung P0, không biết gì về Phaser
   world/       iso (phép chiếu) · map (bản đồ quán + phố) · stations (luật trạm)
-  sim/         perception (§5) · order (§14, T2) · customer · service · frame · headless
+  sim/         perception (§5) · menu (bảng món) · order (§14, T2) · customer · service · frame · headless
+               tour  dẫn bữa đầu, 7 việc: chợ → bảng menu → lấy bánh → nướng → thớt → nhân → gói
                luật chơi, không đụng Phaser — chạy headless được
-  content/     npcs (§9) · lines/*.json (§11) · days/ · rules/ · redlines.json   dữ liệu viết tay
-  art/         palette · canvas · tiles · building · counter · sign · props · character · fx · index
+  content/     npcs (§9) · lines/*.json (§11) · days/ · rules/ · recipes/menu.json · redlines.json
+               dữ liệu viết tay
+  art/         palette · canvas · tiles · building · counter · sign · menuboard · props · character · fx · index
                photo        art v2 — ảnh artist đè lên bản vẽ code (xem "Art v2" bên dưới)
   entities/    Player · CustomerActor                     vị trí, va chạm, sprite, bong bóng thoại
-  ui/          theme · Hud · AssemblyPanel · stall/BubblePool   lớp thông tin + bảng kẹp nhân
-  scenes/      Boot · Menu · Day (thường trực, sở hữu GameContext) → Market → Stall → Evening
+  ui/          theme · backdrop · Hud · AssemblyPanel · menu/MenuBoardView · intro/IntroView
+               tour/TourCoach  bong bóng dẫn bữa đầu (khoanh tròn + cô Ba + nút Bỏ qua)
+               lớp thông tin + bảng kẹp nhân + bảng menu treo vách (E ở vách) + màn mở đầu
+  scenes/      Boot · Menu · Intro (màn mở đầu + đặt tên) · Day (thường trực, sở hữu GameContext)
+               → Market → Stall → Evening
   dev/         overlay F1–F8 + console — chỉ có ở dev build, tree-shake khỏi bản phát hành
 tools/         sim · validate-rules · lint-lines · content-stats · check-gates   (Node, qua tsx)
                prep-art.py  rửa ảnh artist art-raw/ -> public/art/   (Python + Pillow)
@@ -381,6 +386,11 @@ Trộn hai thang này là mọi kích thích tắt ngay trước khi ai kịp nh
 Kinh tế (hạn dùng, giá chợ, nghĩa vụ — MarketScene mới là khung), arc nhân vật + cảnh nhỏ khi đoán
 đúng 3 điều (P4), overrides lịch có báo trước 3–4 ngày (chú Tư dời chỗ, anh Dũng đổi ca — P4),
 kênh cải chính qua nguồn (#2) của tin đồn, phụ đề tiếng Anh, đóng gói Electron.
+
+**Về tên quán:** mùa mới mở bằng **màn mở đầu** (`scenes/IntroScene`): cô Ba — bà bán bánh mì
+cũ của hẻm — nói chuyện với người chơi rồi hỏi tên. Tên đó thành **tên quán** trên bảng hiệu
+ngoài vách và trên bảng menu bấm E ("BÁNH MÌ HOÀNG HUY"), và nằm trong `SaveFile.playerName`.
+Bỏ trống được: bảng còn trơ hai chữ "BÁNH MÌ". Script + bốn luật viết thoại: `docs/phase-4-noi-dung/P4-06-man-mo-dau.md`.
 
 **Về tên khách:** tên trên đầu khách và trên phiếu là tên **con tự ghi** trong sổ (chưa ghi thì `—`).
 Tên nghe được qua lời khách, lời đồn, và lời cô Ba. Ghi sai tên rồi đưa bánh là **gọi sai tên** (WRONG_NAME).
