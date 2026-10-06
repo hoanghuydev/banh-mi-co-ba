@@ -149,7 +149,7 @@ test("DV-1b bán được 0 ổ thì cái loa PHẢI lên tiếng", () => {
   w.notebook.today.day = w.progress.dayIndex;
   w.econ.today.counted = true;
   w.progress.today = { served: 0, lost: 0, revenue: 0, talksDeep: 0, talkOffers: 0 };
-  assert.match(gearEvidence("LOA_RAO", w)!, /im re/);
+  assert.match(gearEvidence("LOA_RAO", w)!, /im ắng/);
   // nhưng chỉ sau khi đã đóng sổ — giữa buổi thì chưa có gì để nói
   w.econ.today.counted = false;
   assert.equal(gearEvidence("LOA_RAO", w), null, "chưa đếm tiền xong mà đã than ế");
@@ -161,7 +161,7 @@ test("DV-2 dấu vết đọc đúng con số của buổi bán", () => {
   assert.match(gearEvidence("KEP_GAP", w)!, /6 lần/);
   assert.match(gearEvidence("GHE_BAN", w)!, /3 người/);
   assert.match(gearEvidence("BINH_TRA", w)!, /3 người/);
-  assert.equal(gearEvidence("DU_CHE", w), "Bữa nay mưa.");
+  assert.equal(gearEvidence("DU_CHE", w), "Hôm nay mưa.");
   assert.match(gearEvidence("NOI_U", w)!, /xíu mại/);
 });
 

@@ -96,7 +96,7 @@ export class AssemblyPanel {
     }
     // Không bắt người chơi kẹt trong bảng: khách khác đang chờ ly trà, bánh trong lò sắp
     // cháy… thì gác ổ lại trên thớt, đi làm việc khác, quay lại kẹp tiếp.
-    this.root.add(button(scene, cx + this.pw / 2 - Math.round(60 * this.sw), top + this.yPreset, "để đó", () => this.park(), {
+    this.root.add(button(scene, cx + this.pw / 2 - Math.round(60 * this.sw), top + this.yPreset, "Gác lại", () => this.park(), {
       width: Math.round(96 * this.sw), hint: "Esc", maxScale: MAX_SCALE_BTN,
     }).setScrollFactor(0));
 
@@ -137,7 +137,7 @@ export class AssemblyPanel {
     this.root.add([this.loafImg, this.fillLayer, this.steam.graphics]);
 
     // khe kẹp nhân, rộng hơn hình một chút cho dễ thả trúng
-    // Vùng thả KHÔNG được chạm hàng nút phía trên (preset, "để đó") — nhả tay trúng nút là bấm nút.
+    // Vùng thả KHÔNG được chạm hàng nút phía trên (preset, "Gác lại") — nhả tay trúng nút là bấm nút.
     this.dropZone = new Phaser.Geom.Rectangle(
       x - FOOD.LOAF_W / 2 + 10, y - LOAF_H / 2 + 6, FOOD.LOAF_W - 20, LOAF_H - 12);
     this.hint = this.text(x, PANEL_TOP + this.yHint, "kéo miếng nhân thả vào đây", 11, UI.muted, "400");
@@ -308,8 +308,8 @@ export class AssemblyPanel {
   private add(id: Ingredient) {
     if (!this.open) return;
     const have = portionsOf(this.stack).get(id) ?? 0;
-    if (have >= this.maxOf(id)) { this.flash(`${labelOf(id)} hết chỗ rồi`); return; }
-    if (this.stack.length >= CAPACITY) { this.flash("ổ đầy rồi, kẹp không vô nữa"); return; }
+    if (have >= this.maxOf(id)) { this.flash(`${labelOf(id)} — hết chỗ`); return; }
+    if (this.stack.length >= CAPACITY) { this.flash("ổ đã đầy — không kẹp thêm được"); return; }
     const out = this.canAdd(id, this.stack);
     if (out) { this.flash(out); return; }
     const now = this.scene.time.now;
@@ -355,11 +355,11 @@ export class AssemblyPanel {
     // kẹp tay không lấy lại được. Hỏi một lần trước khi xoá.
     if (this.stack.length && this.presetArm !== i) {
       this.presetArm = i;
-      this.flash(`P${i + 1} thay hết ${this.stack.length} phần đang kẹp — bấm lần nữa`);
+      this.flash(`P${i + 1} thay hết ${this.stack.length} phần đang kẹp — bấm lại để xác nhận`);
       return;
     }
     const dish = this.onPreset(i);
-    if (!dish) { this.presetArm = null; this.flash("phần chia sẵn đó hết rồi"); return; }
+    if (!dish) { this.presetArm = null; this.flash("phần chia sẵn đã hết"); return; }
     const probe: Ingredient[] = [];
     for (const id of dish) {
       const out = this.canAdd(id, probe);
@@ -382,7 +382,7 @@ export class AssemblyPanel {
     // đổi chén tàu hũ lấy ổ không, và SK-31 ngày 29 (bắt buộc) có hẳn nhánh "làm đúng ổ
     // bánh mì không". Đơn nào cho phép thì scene nói qua `allowEmptyLoaf`.
     if (!this.stack.length && !this.allowEmptyLoaf()) {
-      this.flash("ổ còn trống, kẹp nhân trước đã");
+      this.flash("ổ còn trống — kẹp nhân trước");
       return;
     }
     // Gói liền tay sau miếng cuối = khéo. Ổ chưa đặt miếng nào trong phiên này

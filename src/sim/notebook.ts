@@ -1,6 +1,9 @@
 /**
- * Sổ tay cô Ba — P2-05. Mặt phẳng để người chơi NHẬN RA hệ thống (bài học Oblivion,
- * mô hình Bombers' Notebook). Logic thuần, không DOM, không Phaser.
+ * Sổ tay của chính người bán — P2-05. Mặt phẳng để người chơi NHẬN RA hệ thống (bài học
+ * Oblivion, mô hình Bombers' Notebook). Logic thuần, không DOM, không Phaser.
+ *
+ * MỘT GIỌNG: quán là của người chơi, nên mọi dòng chữ trong đây là chữ của chính họ. Không
+ * có nhân vật nào ghi giùm — cô Ba chỉ ở màn mở đầu (P4-06).
  *
  * PHÂN CHIA LAO ĐỘNG TUYỆT ĐỐI (§2.2) — mỗi ô chỉ một bên được đụng:
  *   cột TRÁI  = máy viết dữ liệu thô đã xảy ra · chỉ đọc · append-only · ĐÚNG 6 trường
@@ -16,6 +19,7 @@ import { weekdayOf, type Weekday } from "./schedule";
 import SO_TAY from "../content/lines/so-tay.json";
 import { ShuffleBag, type BagState, type Rng } from "../core/rng";
 import type { GossipState } from "./gossip";
+import type { RelState } from "./memory";
 
 // ─────────────────────────────────────────────────────────────── cột trái
 
@@ -143,6 +147,21 @@ export function nameCheck(nb: Notebook, npcId: NpcId): boolean | null {
   return !Object.entries(KEY).some(([id, k]) => id !== npcId && k !== KEY[npcId] && w.includes(k));
 }
 
+/**
+ * TÊN SỔ TỰ GỌI — tên người chơi đã ghi, chưa ghi thì gọi bằng `asName`.
+ *
+ * Cuốn sổ là chữ của chính người bán (P2-05b §3), nên nó KHÔNG được gọi đúng tên một người
+ * mà cô ấy chưa học được: vừa vỡ fiction, vừa phát không cái tên mà `nameCheck`/WRONG_NAME
+ * đang bắt người chơi phải nghe ra. Hồi cuốn sổ còn là của cô Ba thì dùng tên thật được —
+ * bả biết cả hẻm. Giờ thì không.
+ *
+ * ⚠️ Khác `displayName` (trả `—`): chỗ này đi vào GIỮA CÂU, nên phải là một cụm gọi được.
+ */
+export function penName(nb: Notebook | undefined, npcId: NpcId): string {
+  const written = nb?.pages[npcId]?.name?.trim();
+  return written || NPC.get(npcId)?.asName || "người ta";
+}
+
 export function displayName(nb: Notebook | undefined, npcId: NpcId, fallback: string) {
   if (!NPC.has(npcId)) return fallback;
   return nb?.pages[npcId]?.name?.trim() || "—";
@@ -199,13 +218,25 @@ export function valueLabel(slot: HypothesisSlot, v: string): string {
  * Danh sách lựa chọn — CHỈ những gì người chơi ĐÃ GẶP (§2.3 luật chống brute-force 1):
  * danh sách lớn dần đúng theo hiểu biết của người chơi. Nó là thanh tiến trình không số.
  */
+/** Giá trị đang đoán ở ô NGƯỢC LẠI (`hay ăn` ↔ `không ăn`), kể cả đã xác nhận. */
+function opposite(nb: Notebook, npcId: NpcId, slot: HypothesisSlot): string | null {
+  if (slot !== "HAY_AN" && slot !== "KHONG_AN_DUOC") return null;
+  const other: HypothesisSlot = slot === "HAY_AN" ? "KHONG_AN_DUOC" : "HAY_AN";
+  return nb.pages[npcId]?.hypotheses.find((h) => h.slot === other)?.value ?? null;
+}
+
 export function options(nb: Notebook, npcId: NpcId, slot: HypothesisSlot): string[] {
   const mine = nb.log.filter((e) => e.npcId === npcId && e.orderText);
   if (!mine.length) return [];
   if (slot === "HAY_AN" || slot === "KHONG_AN_DUOC") {
     const said = new Set<string>();
     for (const e of nb.log) if (e.orderText) for (const ing of INGREDIENTS) if (e.orderText.includes(ing.label)) said.add(ing.id);
-    return INGREDIENTS.map((i) => i.id).filter((id) => said.has(id));
+    // Hai ô này NGƯỢC NHAU: `truth` đòi `usual >= 2` cho ô này và `usual === 0` cho ô kia,
+    // nên "hay ăn ớt" + "không ăn ớt" là một câu tự mâu thuẫn — KHÔNG BAO GIỜ xác nhận
+    // được cái nào. Mà giả thuyết sai thì cố ý im lặng (§2.3), nên người chơi sẽ không bao
+    // giờ biết, và hai ô đó ngồi ăn mất hai trong năm chỗ đoán cho tới hết mùa.
+    const taken = opposite(nb, npcId, slot);
+    return INGREDIENTS.map((i) => i.id).filter((id) => said.has(id) && id !== taken);
   }
   if (slot === "THUONG_GHE") return [...new Set(mine.map((e) => bandId(e.minute)))];
   if (slot === "NGAY_TRONG_TUAN") return mine.length >= 3 ? Object.keys(WEEK_PATTERNS) : [];
@@ -215,16 +246,23 @@ export function options(nb: Notebook, npcId: NpcId, slot: HypothesisSlot): strin
 
 export function guess(nb: Notebook, npcId: NpcId, slot: HypothesisSlot, value: string, day: number): string | null {
   const p = page(nb, npcId, day);
+  // Chặn ở ĐÂY nữa chứ không chỉ ở `options`: save cũ có thể đã lỡ đoán ngược nhau, và
+  // "chưa gặp điều này" là một lý do SAI cho trường hợp đó — người chơi gặp rồi, chỉ là
+  // đang đoán ngược ở ô bên kia.
+  if (opposite(nb, npcId, slot) === value) {
+    const other = slot === "HAY_AN" ? "KHONG_AN_DUOC" : "HAY_AN";
+    return `ô "${SLOT_LABEL[other]}" đang đoán ${valueLabel(slot, value)} — xoá ô đó trước`;
+  }
   if (!options(nb, npcId, slot).includes(value)) return "chưa gặp điều này ở người này";
   const h = p.hypotheses.find((x) => x.slot === slot);
   if (h) {
-    if (h.state === "CONFIRMED") return "cô Ba đánh dấu rồi";
+    if (h.state === "CONFIRMED") return "Đã xác nhận — không đổi được";
     if (h.value === value) return null;
-    if (h.dayChanged === day) return "mai hãy đổi — mỗi ngày đổi một lần thôi";
+    if (h.dayChanged === day) return "mỗi ngày chỉ đổi được một lần · mai đổi lại";
     h.value = value; h.dayChanged = day; h.dayGuessed = day;
     return null;
   }
-  if (p.hypotheses.filter((x) => x.state === "OPEN").length >= MAX_OPEN_HYPOTHESES) return "đang đoán 5 điều rồi — xoá bớt một cái";
+  if (p.hypotheses.filter((x) => x.state === "OPEN").length >= MAX_OPEN_HYPOTHESES) return `đang đoán ${MAX_OPEN_HYPOTHESES} điều · hết chỗ — xoá bớt một ô`;
   p.hypotheses.push({ slot, value, dayGuessed: day, state: "OPEN", dayChanged: day });
   return null;
 }
@@ -291,7 +329,11 @@ export function checkHypotheses(nb: Notebook, day: number, usualOf: (id: NpcId) 
 
 
 type NoteDef = { priority: number; concept: string; variants: string[]; speakonce?: boolean };
-const ST = SO_TAY as unknown as { notes: Record<string, NoteDef>; confirm: Record<HypothesisSlot, string[]> };
+const ST = SO_TAY as unknown as {
+  notes: Record<string, NoteDef>;
+  confirm: Record<HypothesisSlot, string[]>;
+  quanHe: Record<RelReadState, string[]>;
+};
 export const NOTE_RULES = ST.notes;
 export const CONFIRM_LINES = ST.confirm;
 
@@ -300,6 +342,74 @@ const fill = (s: string, name: string, value = "") => {
   const out = s.replace(/\{name\}/g, (_m, i: number) => (i === 0 ? name : mid(name))).replace(/\{value\}/g, value);
   return out.charAt(0).toUpperCase() + out.slice(1);
 };
+
+// ──────────────────────────────────────────────── đọc quan hệ (P2-05b)
+
+/**
+ * ĐỘ HIỂU — thước đo NGƯỜI CHƠI, không phải thước đo NPC.
+ *
+ * Đếm giả thuyết đã `CONFIRMED`: tức là đếm những điều người chơi ĐOÁN ĐÚNG và đã CHỨNG
+ * MINH bằng tay ở quầy. T3 cấm hiện chỉ số *quan hệ*; con số này không dẫn một chút nào
+ * từ `relationPoints`, nên nó không phải cái T3 đang canh. Trang sổ vốn đã hiện
+ * `đang đoán 2/5` ngay dưới ô Cô đoán — đây là cùng một loại số.
+ *
+ * ⚠️ `total` trả ra để chỗ gọi hiện CẢ Ô TRỐNG (`○○○`), không chỉ hiện phần đã điền:
+ * vòng lặp chưa đóng mới là thứ kéo người chơi ra quầy để ý tiếp (§4 — Zeigarnik).
+ */
+export type Known = { done: number; total: number; vignette: boolean };
+
+export function knownOf(nb: Notebook, id: NpcId): Known {
+  const p = nb.pages[id];
+  return {
+    done: p ? p.hypotheses.filter((h) => h.state === "CONFIRMED").length : 0,
+    total: SLOTS.length,
+    vignette: p?.vignetteUnlocked ?? false,
+  };
+}
+
+/**
+ * TÌNH CẢM — giữ ĐỊNH TÍNH. Tám trạng thái, ra bằng MỘT CÂU mình tự ghi, không bao giờ ra
+ * một con số (T3) hay một cái thanh (L2).
+ *
+ * Thứ tự dò là **ưu tiên việc làm được**, không phải ưu tiên độ lớn: cái người chơi cần
+ * là (a) có chuyện gì chưa xong, (b) có cái gì đang chặn, (c) đang lên hay đang xuống.
+ * Độ lớn là câu ít hành động được nhất trong cả bốn — và nó cũng đúng là câu mà một trái
+ * tim có số trả lời.
+ */
+export type RelReadState =
+  | "RIVAL" | "VET_CHUA_LANH" | "TRAN_TIN" | "MOI_GHE" | "FRIEND" | "DANG_XUONG" | "DANG_LEN" | "QUEN_MAT";
+
+/** Dưới ngần này lượt ghé thì chưa có gì để nói — và trang sổ ghi thẳng là chưa có gì. */
+const KNOWN_AFTER_VISITS = 3;
+/** "Đang đụng trần": điểm đã sát trần tin, tức là cái tường vô hình đang có thật. */
+const CEIL_PRESS = 5;
+
+export function relReadState(s: RelState): RelReadState {
+  if (s.tier === "RIVAL") return "RIVAL";
+  // Chỉ LONG/CORE: một ổ nguội hôm nay là chuyện trong ngày, chưa phải cái vết. Cùng tiêu
+  // chí `hasLong(-1)` mà `nextTier` dùng để hạ bucket — một nguồn sự thật, không hai.
+  // `heal()` đổi tại chỗ kind sang `HEALED_*` VÀ valence sang 1, nên chỉ cần soi valence.
+  const wound = s.memory.long.some((m) => m.valence === -1) || s.memory.core?.valence === -1;
+  if (wound) return "VET_CHUA_LANH";
+  if (s.tier !== "FRIEND" && s.trustCeiling < 100 && s.relationPoints >= s.trustCeiling - CEIL_PRESS) return "TRAN_TIN";
+  if (s.visits < KNOWN_AFTER_VISITS) return "MOI_GHE";
+  if (s.tier === "FRIEND") return "FRIEND";
+  const t = s.trail ?? [];
+  if (t.filter((d) => d === "DOWN").length >= 2) return "DANG_XUONG";
+  if (t.filter((d) => d === "UP").length >= 2) return "DANG_LEN";
+  return "QUEN_MAT";
+}
+
+/**
+ * ⚠️ `rng` phải là một mạch TIỀN ĐỊNH theo (saveId, npcId, ngày) — đừng đưa RNG của mùa
+ * vào đây. Lớp UI dựng lại trang sau mỗi lần gõ một chữ vào ô ghi chú; rút ngẫu nhiên
+ * thật thì câu đó nhảy chữ dưới ngón tay người chơi.
+ */
+export function relWords(s: RelState, name: string, rng: Rng): { state: RelReadState; line: string } {
+  const state = relReadState(s);
+  const vs = ST.quanHe[state];
+  return { state, line: fill(vs[Math.floor(rng.next() * vs.length)], name) };
+}
 
 /**
  * P2-05 §2.5 — mốc tiến trình KHÔNG CÓ CON SỐ: người trong hẻm định vị nhà bằng hàng quán.
@@ -326,12 +436,23 @@ export type EveningCtx = {
   absences: { npcId: NpcId; missed: number }[];
   landmark: 0 | 1 | 2 | 3 | 4;
   confirmations: Confirmation[];
+  /**
+   * P2-05b §5 — ai vừa bị HẠ TRẦN TIN tối nay. `hard` = đã tới `CEILING_MAX_BURNS`, tức
+   * là trần tụt dưới ngưỡng FRIEND và người đó VĨNH VIỄN không lên bạn được nữa.
+   *
+   * Luật §2.8 hạ trần hoàn toàn im lặng, và `nextTier` thì đòi `p <= trustCeiling` để lên
+   * FRIEND — nên nếu không có dòng này, người chơi phục vụ tử tế thêm hai chục bữa, đập
+   * vào một cái tường không ai thấy, rồi kết luận là game hỏng. T3 cấm hiện CHỈ SỐ; nó
+   * không cấp phép cho một luật KHÔNG HỌC ĐƯỢC, và T5 thì đòi ngược lại.
+   */
+  trust?: { npcId: NpcId; hard: boolean }[];
   bags: Record<string, BagState>;
   rng: Rng;
   spokenOnce: string[];
 };
 
-const NAME = (id: NpcId) => NPC.get(id)?.name ?? id;
+/** Trang cuối ngày là chữ của chính mình → gọi người bằng cái tên MÌNH biết, không phải tên thật. */
+const NAME = (nb: Notebook, id: NpcId) => penName(nb, id);
 
 /**
  * 2–3 dòng, KHÔNG phán đúng sai, KHÔNG giải thích cơ chế (§2.4). Chấm theo độ cụ thể
@@ -339,19 +460,24 @@ const NAME = (id: NpcId) => NPC.get(id)?.name ?? id;
  */
 export function composeEvening(nb: Notebook, c: EveningCtx): EveningNote {
   const t = nb.today.day === c.day ? nb.today : newDayFacts(c.day);
-  const cands: { id: string; name?: string }[] = [];
+  const cands: { id: string; name?: string; once?: string }[] = [];
   const longAbs = c.absences.filter((a) => a.missed >= 5).sort((a, b) => b.missed - a.missed)[0];
   const shortAbs = c.absences.filter((a) => a.missed >= 2 && a.missed < 5).sort((a, b) => b.missed - a.missed)[0];
   if (c.lastDay) cands.push({ id: "day40" });
   if (t.dropped) cands.push({ id: "dropped" });
-  if (longAbs) cands.push({ id: "absentLong", name: NAME(longAbs.npcId) });
-  if (t.healed[0]) cands.push({ id: "healed", name: NAME(t.healed[0]) });
+  if (longAbs) cands.push({ id: "absentLong", name: NAME(nb, longAbs.npcId) });
+  if (t.healed[0]) cands.push({ id: "healed", name: NAME(nb, t.healed[0]) });
   if (t.heardBad) cands.push({ id: "gossipBad" });
   if (c.landmark > nb.landmarkTier) cands.push({ id: `landmark${c.landmark}` });
   if (t.heardGood) cands.push({ id: "gossipGood" });
   if (t.firstUsual.length) cands.push({ id: "firstUsual" });
   if (t.visitors.includes("BA_BAY")) cands.push({ id: "baBay" });
-  if (shortAbs) cands.push({ id: "absentShort", name: NAME(shortAbs.npcId) });
+  // Khoá `once` theo TỪNG NGƯỜI: câu này ghi một lần cho bà Bảy, và vẫn còn một lần
+  // cho chú Tư. Dùng khoá chung `note:trustCeil` là người thứ hai mất tiếng mãi mãi.
+  for (const x of c.trust ?? []) {
+    cands.push({ id: x.hard ? "trustCeilHard" : "trustCeil", name: NAME(nb, x.npcId), once: `note:trust:${x.npcId}:${x.hard ? "hard" : "first"}` });
+  }
+  if (shortAbs) cands.push({ id: "absentShort", name: NAME(nb, shortAbs.npcId) });
   if (c.weather === "MUA_RAO" || c.weather === "MUA_DAM") cands.push({ id: "rain" });
   if (t.newFaces || t.strangers >= 4) cands.push({ id: "newFace" });
   if (t.lost) cands.push({ id: "lost" });
@@ -359,7 +485,8 @@ export function composeEvening(nb: Notebook, c: EveningCtx): EveningNote {
   if (c.weather === "NANG_GAT") cands.push({ id: "sunny" });
   cands.push({ id: "ordinary" });
 
-  const ranked = cands.map((x) => ({ ...x, def: NOTE_RULES[x.id] })).filter((x) => x.def && !(x.def.speakonce && c.spokenOnce.includes(`note:${x.id}`)))
+  const onceKey = (x: { id: string; once?: string }) => x.once ?? `note:${x.id}`;
+  const ranked = cands.map((x) => ({ ...x, def: NOTE_RULES[x.id] })).filter((x) => x.def && !(x.def.speakonce && c.spokenOnce.includes(onceKey(x))))
     .sort((a, b) => b.def.priority - a.def.priority);
   const lines: string[] = [];
   const used = new Set<string>();
@@ -372,12 +499,12 @@ export function composeEvening(nb: Notebook, c: EveningCtx): EveningNote {
     const i = bag.draw(c.rng, c.day);
     c.bags[key] = bag.toJSON();
     lines.push(fill(x.def.variants[i], x.name ?? ""));
-    if (x.def.speakonce) c.spokenOnce.push(`note:${x.id}`);
+    if (x.def.speakonce) c.spokenOnce.push(onceKey(x));
   }
   const confirmations = c.confirmations.map((k) => {
     const h = nb.pages[k.npcId]?.hypotheses.find((x) => x.slot === k.slot);
     const vs = CONFIRM_LINES[k.slot];
-    const line = fill(vs[Math.floor(c.rng.next() * vs.length)], NAME(k.npcId), h ? valueLabel(k.slot, h.value) : "");
+    const line = fill(vs[Math.floor(c.rng.next() * vs.length)], NAME(nb, k.npcId), h ? valueLabel(k.slot, h.value) : "");
     return { ...k, line };
   });
   nb.landmarkTier = c.landmark;

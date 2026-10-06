@@ -63,6 +63,18 @@ export type RelState = {
   /** ⚠️ Ngưỡng cộng dồn TỪ MỐC NÀY, không cộng trong một ngày: một người ghé quầy mười lăm phút thì một ngày hiếm khi đủ. */
   reflectedDay?: number;
   /**
+   * HƯỚNG CỦA BA LƯỢT GHÉ CÓ CHUYỂN ĐỘNG GẦN NHẤT — nguồn duy nhất cho "đang ấm lên /
+   * đang nguội" trên trang sổ (P2-05b §3). Mới nhất nằm CUỐI.
+   *
+   * Đếm theo LƯỢT GHÉ chứ không theo ngày, cùng lý do như `extraStreak`: mười hai người
+   * trong hẻm không ai ghé đủ bốn mươi bữa, nên "ba ngày qua" với phần lớn họ là một cái
+   * cửa sổ rỗng. Chỉ ghi lượt NÀO CÓ CHUYỂN ĐỘNG ròng (xem `settleRelMoved`) — ngày phục
+   * vụ trơn không có gì xảy ra thì không đẩy vào, vì nó không phải một tín hiệu.
+   *
+   * ⚠️ T3: đây là HƯỚNG, không phải độ lớn. Không bao giờ cộng nó lại thành một con số.
+   */
+  trail?: ("UP" | "DOWN")[];
+  /**
    * ĐANG MƯỢN ĐỒ CỦA MÌNH — act `LEND_ITEM`, trả bằng `CLEAR_DEBT`.
    *
    * Theo MÙA chứ không theo lượt ghé: cho mượn cái áo mưa hôm nay thì mai họ mới mang
@@ -90,6 +102,15 @@ export const CEILING_MAX_BURNS = 4;
 export const REL_K_POS = 0.12, REL_K_NEG = 0.2;
 /** Một lượt phục vụ tử tế không có chuyện gì — quen mặt dần. ⚠️ bản dựng đặt; đo bằng `npm run sim`. */
 export const SERVED_WELL_PTS = 1.0;
+/** Ba lượt: đủ để phân biệt "một bữa lỡ tay" với "mấy bữa nay nguội", chưa đủ để thành một bảng điểm. */
+export const TRAIL_LEN = 3;
+
+/** Đẩy một hướng vào `trail`, giữ đúng `TRAIL_LEN` cái mới nhất. Gọi từ `settleRelMoved`. */
+export function pushTrail(s: RelState, dir: "UP" | "DOWN") {
+  const t = (s.trail ??= []);
+  t.push(dir);
+  if (t.length > TRAIL_LEN) t.splice(0, t.length - TRAIL_LEN);
+}
 
 export const VALENCE: Record<BaseKind, -1 | 1> = {
   WRONG_NAME: -1, MADE_THEM_WAIT: -1, BURNT_OR_COLD: -1, DROPPED_FOOD: -1, ORDER_DEFECT: -1, DIRTY_HANDS: -1,

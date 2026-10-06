@@ -7,9 +7,10 @@
  * ra đúng cái người chơi thấy. Không tiêu RNG.
  */
 import { NPCS } from "../content/npcs";
+import type { NpcId } from "../core/types";
 import type { Bus } from "../core/eventbus";
 import { newNpcState, type SaveFile } from "../core/save";
-import { nightly, record } from "./memory";
+import { CEILING_MAX_BURNS, nightly, record } from "./memory";
 import { reflect } from "./recall";
 import { gossipTick, newGossipState, witness } from "./gossip";
 import { checkHypotheses, composeEvening, landmarkTier, newNotebook } from "./notebook";
@@ -60,6 +61,8 @@ export function settleNight(w: SaveFile, bus?: Bus) {
     }
   }
 
+  // P2-05b §5 — ai vừa bị hạ trần tin tối nay, để trang sổ nói ra bằng chữ (một lần/người)
+  const trust: { npcId: NpcId; hard: boolean }[] = [];
   for (const npc of NPCS) {
     const s = (w.npcs[npc.id] ??= newNpcState());
     /*
@@ -77,9 +80,10 @@ export function settleNight(w: SaveFile, bus?: Bus) {
     const r = nightly(s, npc.personality, day);
     for (const id of r.promoted) bus?.emit("memory:promoted", { npcId: npc.id, memoryId: id });
     if (r.from !== r.to) bus?.emit("relationship:tierChanged", { npcId: npc.id, from: r.from, to: r.to });
+    if (r.burn) trust.push({ npcId: npc.id, hard: s.burnCount >= CEILING_MAX_BURNS });
   }
 
-  // P2-05 — tick mực đỏ cho giả thuyết đúng VÀ đã chứng minh hôm nay, rồi trang của cô Ba
+  // P2-05 — khoanh bút đỏ cho giả thuyết đúng VÀ đã chứng minh hôm nay, rồi trang cuối ngày
   const nb = (w.notebook ??= newNotebook());
   const story = w.story ?? newStoryState();
   const actx = arcCtx(story, day, { rain: false, owns: () => false, hasWrongName: () => false });
@@ -88,9 +92,9 @@ export function settleNight(w: SaveFile, bus?: Bus) {
     day, lastDay: day >= SEASON_DAYS, weather: w.progress.weather,
     absences: nb.met.map((id) => ({ npcId: id, missed: w.npcs[id]?.gone ? 0 : w.npcs[id]?.missStreak ?? 0 })).filter((a) => a.missed >= 2),
     landmark: landmarkTier(w.gossip, nb.today.strangers, w.npcs.BA_SAU?.tier === "FRIEND"),
-    confirmations, bags: w.shuffleBags, rng: Rng.forSeason(w.saveId, `note:${day}`), spokenOnce: w.dialogState.spokenOnce,
+    confirmations, trust, bags: w.shuffleBags, rng: Rng.forSeason(w.saveId, `note:${day}`), spokenOnce: w.dialogState.spokenOnce,
   });
-  // P4-02 §2.5 phanh #2: tối hôm có người không tới, cô Ba ghi 2–3 dòng — KHÔNG phán đúng sai
+  // P4-02 §2.5 phanh #2: tối hôm có người không tới, sổ ghi 2–3 dòng — KHÔNG tự chấm điểm
   const override = eveningNoteOverride(day, story, daySpec(day).notebookLine);
   const note = nb.eveningNotes.find((n) => n.day === day);
   if (override && note) note.lines = override.split("\n");

@@ -22,7 +22,7 @@ import {
 import { ASIDE_SPOT, CART_CHUNG, CART_LAN, CART_XA, CUSTOMER_GATE, GANH_IN, GANH_OUT, QUEUE_SLOTS, SEAT_CAPACITY, SEAT_SPOT, SHADE_CAPACITY, SHADE_SPOT, STREET_BIN, hitsWall } from "../world/map";
 import { PASSERS_MAX, PASSER_NAMES, inviteChance, nextGapSec, planPasser } from "./passersby";
 import { rollVisit } from "./schedule";
-import { SILENT_ABSENCE, extraHabit, record, servedWell, visitProbabilityMul, type BaseKind, type Memory } from "./memory";
+import { SILENT_ABSENCE, extraHabit, pushTrail, record, servedWell, visitProbabilityMul, type BaseKind, type Memory } from "./memory";
 import { SHARED_POOL, TalkStore } from "../content/talks";
 import { allHold, firstBroken, holds, type WorldSnapshot } from "./worldfacts";
 import { bandOfMinutes, type DriveId, type PracticeId } from "../content/vocab";
@@ -84,6 +84,24 @@ const TALK_OFFER_GAP_SEC = 100;
 
 /** Áp cho CẢ HAI đường (bấm phím lẫn khách tự mở lời). `BARK`/`SHORT` không tiêu vào trần này. */
 const TALK_DEEP_PER_DAY = 2;
+
+/**
+ * HAI CỔNG T2 CHẶN CUỘC SÂU, VÀ LỜI GIẢI THÍCH CHO TỪNG CỔNG — một chỗ duy nhất.
+ *
+ * `canOpenDeep` và `talkUnavailable` cùng gọi hàm này, nên **cổng và câu nói không bao giờ
+ * lệch nhau**: chặn mà không có câu là người chơi thấy NPC gật suông rồi tưởng game hỏng
+ * (đúng cái đã xảy ra), còn có câu mà không chặn là nói dối.
+ *
+ * Trần ngày đứng TRƯỚC PEAK: hết trần rồi thì chờ qua khung đông cũng không nói được, nên
+ * "để mai" mới đúng — hứa "để lát" lúc đó là hứa một thứ không có thật.
+ *
+ * ⚠️ Không con số, không tên luật (P2-05 §2.4 luật 2 — không giải thích cơ chế).
+ */
+export function deepGateReason(deepToday: number, nowMin: number): string | null {
+  if (deepToday >= TALK_DEEP_PER_DAY) return "Nói nhiều rồi. Để mai đi.";
+  if (bandOf(nowMin) === "PEAK") return "Giờ này đông quá, để nói chuyện sau.";
+  return null;
+}
 
 /**
  * Một cuộc ĐÃ qua hết mọi cổng rồi còn bị roll này ném đi bao nhiêu phần.
@@ -206,7 +224,7 @@ const DEED_DUE: Record<string, number> = {
 
 const DEED_LABEL: Record<string, string> = {
   ROT_TRA: "rót cho người ta ly trà", DUA_BANH: "đưa người ta miếng bánh",
-  BUNG_GANH: "bưng giùm cái gánh", LAY_SO: "lấy giùm cuốn sổ", DOI_DON: "sửa lại cái đơn",
+  BUNG_GANH: "bưng giúp cái gánh", LAY_SO: "lấy giúp cuốn sổ", DOI_DON: "sửa lại cái đơn",
 };
 
 /** Nhắc → nói nặng → bỏ đi. Nóng tính bỏ nấc một; người lạ bỏ cả ba. */
@@ -457,7 +475,7 @@ const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
  */
 const SOILED_CAUGHT = 95;
 const SOILED_GRIT = 30;
-const SOILED_REFUSE_TOAST = "khách thấy ổ đó rớt rồi";
+const SOILED_REFUSE_TOAST = "khách thấy ổ đó rơi rồi";
 
 /**
  * Thiếu miếng đồ chua là tay làm sai, ổ trống là CHƯA LÀM — nên nó không qua túi im lặng và có
@@ -1043,9 +1061,13 @@ export class Service {
     if (!c.npc || !note) return;
     const delta = this.mem(c.memKey).relationPoints - before;
     if (Math.abs(delta) < REL_MOVE_MIN) return;
+    const dir = delta > 0 ? "UP" : "DOWN";
+    // Cùng một lúc: toast tức thời ở quầy (trôi mất), và một nét vào `trail` để tối mở sổ
+    // ra vẫn đọc được. Toast là phản hồi DÒNG, `trail` là phản hồi TỒN — P2-05b §2.
+    pushTrail(this.mem(c.memKey), dir);
     this.deps.bus.emit("relationship:moved", {
       npcId: c.memKey,
-      dir: delta > 0 ? "UP" : "DOWN",
+      dir,
       strength: Math.abs(delta) >= REL_MOVE_STRONG ? "RO" : "NHE",
       note: note.text,
     });
@@ -1546,7 +1568,7 @@ export class Service {
       this.lostCount++;
       if (this.deps.notebook) this.deps.notebook.today.lost++;
       this.speakConcept(c, "FAREWELL", { leaveReason: "SOILED_FOOD" }, 92);
-      this.out.push({ kind: "log", text: `${this.label(c)} không nhận ổ bánh — thấy nó rớt xuống đất rồi.` });
+      this.out.push({ kind: "log", text: `${this.label(c)} không nhận ổ bánh — thấy nó rơi xuống đất rồi.` });
     }
     if (reason === "impatient") {
       this.lostCount++;
@@ -1562,7 +1584,7 @@ export class Service {
     if (reason === "balked") {
       this.balkedCount++;
       this.speakConcept(c, "FAREWELL", { leaveReason: "BALKED" }, 80);
-      this.out.push({ kind: "log", text: `${this.label(c)} ngó hàng rồi quay về — đông quá.` });
+      this.out.push({ kind: "log", text: `${this.label(c)} nhìn hàng rồi quay về — đông quá.` });
     }
     this.talks.release(this.talkKey(c));
     this.speaker.sync(this.nowSec);
@@ -2125,7 +2147,7 @@ export class Service {
     const missed = extraHabit(this.mem(c.memKey), extra > 0 ? "GAVE" : extra < 0 ? "REFUSED" : "NONE");
     if (missed <= 0) return 0;
     this.remember(c, "MISSED_EXTRA", missed);
-    this.noteRel("mấy bữa có, bữa nay không", missed);
+    this.noteRel("mấy hôm có, hôm nay không", missed);
     return missed;
   }
 
@@ -2201,9 +2223,7 @@ export class Service {
 
   /** ⚠️ "Không ai đang chờ" KHÔNG gồm chính người mình đang nói chuyện (`except`) — tính cả họ thì một người đứng chờ bánh không bao giờ mở miệng được. */
   private canOpenDeep(except: Customer | null = null): boolean {
-    return !this.someoneWaiting(except)
-      && this.deepToday < TALK_DEEP_PER_DAY
-      && bandOf(this.nowMin) !== "PEAK";
+    return !this.someoneWaiting(except) && !deepGateReason(this.deepToday, this.nowMin);
   }
 
   /** `FULL` chỉ ở kênh LỜI; `SHORT`/`BARK` nói được cả lúc đang bán nhưng chỉ với người mình đang phục vụ. Luật là NÓI VỚI ĐÚNG NGƯỜI ĐANG ĐỨNG TRƯỚC MẶT. */
@@ -2431,15 +2451,18 @@ export class Service {
       if ((this.passerTalks.get(c.id) ?? 0) >= PASSER_TALKS_MAX) {
         return `${who} nói chuyện nãy giờ rồi — người ta còn đi.`;
       }
-      if (this.someoneWaiting(c)) return "Còn người đang chờ bánh — để lát hẵng mời.";
-      if (this.soldOut) return "Hết bánh rồi, mời người ta vô chi nữa.";
-      return `${who} đi lướt qua, không ngó lại.`;
+      if (this.someoneWaiting(c)) return "Còn người đang chờ bánh — để lát hãy mời.";
+      if (this.soldOut) return "Hết bánh — mời vào cũng không có gì bán.";
+      return `${who} đi lướt qua, không nhìn lại.`;
     }
     if (c.phase === "queueing") return `${who} đang chờ tới lượt.`;
-    if (c.phase === "waiting" && c.waitRatio >= 0.6) return `${who} ngó đồng hồ — thôi làm cho người ta đi.`;
+    if (c.phase === "waiting" && c.waitRatio >= 0.6) return `${who} nhìn đồng hồ — thôi làm cho người ta đi.`;
     if (this.someoneWaiting(c)) return "Còn người đang chờ bánh — để lát.";
-    if (c.dayMood.value < 0) return `${who} bữa nay hổng có tâm trạng.`;
-    if (this.mem(c.memKey).tier === "RIVAL") return `${who} ngó đi chỗ khác.`;
+    if (c.dayMood.value < 0) return `${who} hôm nay không có tâm trạng.`;
+    if (this.mem(c.memKey).tier === "RIVAL") return `${who} nhìn đi chỗ khác.`;
+    /** `someoneWaiting` đã trả về ở trên, nên tới đây `canOpenDeep` chỉ còn trượt vì hai cổng này. */
+    const gate = deepGateReason(this.deepToday, this.nowMin);
+    if (gate) return gate;
     if (this.heldTalk.has(c.id) || !this.canOpenDeep(c)) return `${who} gật đầu một cái rồi quay đi.`;
     const tier = this.mem(c.memKey).tier;
     return tier === "FRIEND"
@@ -2953,7 +2976,7 @@ export class Service {
     m.visits++;
     m.lastSeenDay = this.deps.day;
     this.assignSlots();
-    this.out.push({ kind: "log", text: `${this.label(c)} ghé vô thiệt.` });
+    this.out.push({ kind: "log", text: `${this.label(c)} ghé vào thật.` });
     this.deps.bus.emit("npc:arrived", {
       npcId: c.memKey, visitId: c.id, slot: "SEATED_FAR", atHhmm: fmtHhmm(this.nowMin),
     });
@@ -3021,7 +3044,7 @@ export class Service {
       c.pass.spot = { x: SHADE_SPOT.x, y: SHADE_SPOT.y };
       c.pass.until = c.now + (forSecOf(forSec) ?? 25);
     }
-    this.out.push({ kind: "log", text: `${this.label(c)} bước vô chỗ mát đứng.` });
+    this.out.push({ kind: "log", text: `${this.label(c)} bước vào chỗ mát đứng.` });
   }
 
   /** Ngồi làm kiên nhẫn trôi chậm, nên cái ghế 320 nghìn có một con số đo được. Hết chỗ thì IM, không phải lời hứa suông. */
@@ -3090,7 +3113,7 @@ export class Service {
     void GANH_IN; void GANH_OUT;
     this.out.push({
       kind: "log",
-      text: minhBung ? `mình bưng gánh vô trong giùm ${this.label(c)}.` : `${this.label(c)} dời gánh vô sát vách.`,
+      text: minhBung ? `mình bưng gánh vào trong giúp ${this.label(c)}.` : `${this.label(c)} dời gánh vào sát vách.`,
     });
   }
 
@@ -3182,7 +3205,7 @@ export class Service {
     this.remember(c, "REMEMBERED_STORY", SALIENCE.CARED_FOR_THEM);
     this.out.push({
       kind: "log",
-      text: tre <= 1 ? `${this.label(c)} mang trả ${item}.` : `${this.label(c)} mang trả ${item} sau ${tre} bữa.`,
+      text: tre <= 1 ? `${this.label(c)} mang trả ${item}.` : `${this.label(c)} mang trả ${item} sau ${tre} hôm.`,
     });
   }
 
@@ -3286,7 +3309,7 @@ export class Service {
     const pledge = this.pledges.get(c.id) ?? { promised: [], discount: 0, free: false };
     pledge.free = true;
     this.pledges.set(c.id, pledge);
-    this.out.push({ kind: "log", text: `ghi nợ một ổ cho ${this.label(c)} — nhớ ghi vô sổ.` });
+    this.out.push({ kind: "log", text: `ghi nợ một ổ cho ${this.label(c)} — nhớ ghi vào sổ.` });
   }
 
   /** Người ta NGHE hay KHÔNG là chuyện của họ — một phép thử quan hệ, không phải một cái nút. */
@@ -3357,7 +3380,7 @@ export class Service {
     /** `arriving` chứ không `queueing`: nhánh `queueing` thấy `slot === 0` là gọi món NGAY, kể cả lúc còn đứng ngoài lề. */
     if (c.phase === "queueing") c.phase = "arriving";
     this.assignSlots();
-    this.out.push({ kind: "log", text: `${this.label(c)} bước trở vô hàng.` });
+    this.out.push({ kind: "log", text: `${this.label(c)} bước trở vào hàng.` });
   }
 
   /** "Bớt cô ba ngàn" ra khỏi doanh thu thật, nên nó là một quyết định kinh tế chứ không phải câu xã giao. */

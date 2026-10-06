@@ -5,7 +5,7 @@
 Bản này có **sảnh menu**, **quán bánh mì ở góc phố**, **di chuyển**, **chuỗi thao tác làm một ổ bánh**,
 và **vòng lặp bán hàng với khách thật**: khách tới → gọi món → bạn kẹp nhân → đưa → họ phản ứng → trả tiền.
 Từ P2: **12 khách có tên** với lịch ghé theo thứ trong tuần, **nhớ** chuyện bạn làm (và quên dần),
-**kể cho nhau nghe** (bạn nghe lỏm được ở góc hẻm), và **sổ tay cô Ba** để bạn tự ghi tên, ghi đoán.
+**kể cho nhau nghe** (bạn nghe lỏm được ở góc hẻm), và **cuốn sổ của chính bạn** để tự ghi tên, ghi đoán.
 Kinh tế nằm ở phase sau (xem `../docs/CANON.md` §17).
 
 ## Chạy
@@ -47,7 +47,7 @@ Client-only, offline-first: **không server, không netcode** (CANON §2). Save 
 | đứng ở bồn rửa, giữ `E` 3 s | rửa tay — nhận tiền xong tay **dính tiền**, bốc bánh bằng tay đó là khách thấy (DIRTY_HANDS) |
 | `E` ở thớt trống, tay không | lau thớt — quầy bẩn dần (vụn bánh → ruồi) làm khách soi kỹ hơn |
 | `P` / `Esc` / nút ⏸ | tạm dừng (đóng băng đồng hồ, sự kiên nhẫn **và** mức nhận thấy của khách) |
-| `Tab` | **sổ tay cô Ba** — pause hoàn toàn. Trái: máy ghi ai · mấy giờ · gọi gì · lần thứ mấy. Phải: **con tự ghi** tên, ghi chú, "cô đoán" |
+| `Tab` | **sổ tay** — pause hoàn toàn. Trái "ghi vội lúc bán": ai · mấy giờ · gọi gì · lần thứ mấy. Phải "ngồi nghĩ lại": **mình tự ghi** tên, ghi chú, "mình đoán" |
 | đứng yên lúc có người nói chuyện ở góc hẻm | nghe lỏm được **nội dung**; giữ `Shift` (nghiêng người) thì nghe được cả **ai nói** — nhưng khách trước quầy thấy mình lơ đễnh |
 | `G` (vài giây sau khi khách nói "ghi sổ nghen") | **ghi nợ** vào sổ — không bấm thì chỉ còn trí nhớ hai bên, mà trí nhớ thì lệch dần (P3-02) |
 
@@ -392,6 +392,18 @@ cũ của hẻm — nói chuyện với người chơi rồi hỏi tên. Tên đ
 ngoài vách và trên bảng menu bấm E ("BÁNH MÌ HOÀNG HUY"), và nằm trong `SaveFile.playerName`.
 Bỏ trống được: bảng còn trơ hai chữ "BÁNH MÌ". Script + bốn luật viết thoại: `docs/phase-4-noi-dung/P4-06-man-mo-dau.md`.
 
-**Về tên khách:** tên trên đầu khách và trên phiếu là tên **con tự ghi** trong sổ (chưa ghi thì `—`).
+**Về cuốn sổ:** sổ là của **chính người bán**, ngôi thứ nhất, không ai ghi giùm — cô Ba chỉ ở
+màn mở đầu để dựng bối cảnh rồi thôi. Một giọng, hai cây bút: trái *"ghi vội lúc bán"* (máy ghi,
+không sửa được), phải *"ngồi nghĩ lại"* (chữ tay, sửa tự do).
+
+**Về đọc quan hệ:** sổ có **hai trục rời nhau**. *Độ hiểu* — mình đã chắc mấy điều về một người —
+đếm được, và **nói ra bằng chữ** chứ không bằng tỉ số trần trụi: *"chắc 3 điều · còn 3 điều chưa
+rõ"*, cộng mấy vạch dưới mỗi khuôn mặt. Đó là thước đo **người chơi**, nên nó được phép đếm.
+*Tình cảm* thì **không bao giờ có số, không thanh, không trái tim** (CANON T3): nó ra bằng **một
+dòng bút đỏ** trên đầu trang mỗi người — *"chú Tư nói chuyện nhiều hơn hồi trước"*. Và khi lòng
+tin đã bị hạ trần vĩnh viễn (P2-03 §2.8), sổ **ghi thẳng ra** chứ không để người chơi đập vào một
+cái tường vô hình. Thiết kế + 13 game tham khảo: `docs/phase-2-he-npc/P2-05b-doc-quan-he.md`.
+
+**Về tên khách:** tên trên đầu khách và trên phiếu là tên **mình tự ghi** trong sổ (chưa ghi thì `—`).
 Tên nghe được qua lời khách, lời đồn, và lời cô Ba. Ghi sai tên rồi đưa bánh là **gọi sai tên** (WRONG_NAME).
 Xem lộ trình phase ở `../docs/CANON.md` §17.

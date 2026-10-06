@@ -41,7 +41,7 @@
 | Nền tảng v1 | **PC (Steam) + demo web itch.io**. Mobile là **v2**, sau khi bán 30k bản |
 | Giá v1 | **$9.99 / 59.000₫** + demo web miễn phí. ($12.99–14.99 **chỉ nếu** có publisher trả tiền marketing) |
 | Độ phân giải thiết kế | 2.5D isometric/cận-2D, 30fps mục tiêu, nền bake vào RenderTexture |
-| Ngôn ngữ | **Tiếng Việt giọng miền Nam** (gốc) + **phụ đề tiếng Anh**. Lồng tiếng **người thật**, không AI voice |
+| Ngôn ngữ | **Tiếng Việt giọng miền Nam** (gốc) + **phụ đề tiếng Anh**. Lồng tiếng **người thật**, không AI voice. Giọng Nam là giọng **nhân vật** — chữ của giao diện viết tiếng phổ thông, xem [`VAN-PHONG-UI.md`](VAN-PHONG-UI.md) |
 | Đại từ xưng hô | **KHÔNG dịch.** Giữ nguyên "cô / con / chú / chị / anh / em" trong bản Anh. Giải thích một lần ở đầu game |
 
 **Cấu trúc thư mục đề xuất (mọi doc dùng chung đường dẫn này):**

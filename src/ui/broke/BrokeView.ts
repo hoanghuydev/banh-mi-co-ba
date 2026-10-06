@@ -145,7 +145,7 @@ export class BrokeView {
     page.append(art_.firstElementChild!);
 
     const body = this.el("div", "bk-body");
-    body.append(this.el("div", "bk-h", "Hết vốn rồi."));
+    body.append(this.el("div", "bk-h", "Hết vốn."));
     body.append(this.el("div", "bk-sub", `Cô Ba: "Thôi con. Sáng mai không có tiền lấy hàng thì mình không dọn ra được."`));
 
     // BỐN DÒNG CỘNG LẠI, rồi một dòng chốt. Người chơi phải đọc ra được là chuyện này tới từ
@@ -163,7 +163,7 @@ export class BrokeView {
     row("trong ống", money(r.cash));
     row("rổ nhỏ nhất cho sáng mai", money(r.need));
     row("bán đồ trên xe", r.resale > 0 ? money(r.resale) : "xe không còn gì bán", r.resale <= 0);
-    row("mối ngoài chợ cho nợ thêm", r.credit > 0 ? money(r.credit) : "không ai cho nợ nữa", r.credit <= 0);
+    row("nguồn hàng ngoài chợ cho nợ thêm", r.credit > 0 ? money(r.credit) : "không ai cho nợ thêm", r.credit <= 0);
     const thieu = Math.max(0, r.need - (r.cash + r.resale + r.credit));
     const sum = this.el("div", "bk-r sum");
     sum.append(this.el("span", "", "gom hết cũng còn thiếu"), this.el("span", "", money(thieu)));

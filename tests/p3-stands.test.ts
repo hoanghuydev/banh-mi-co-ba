@@ -37,11 +37,11 @@ test("ngập chợ 17–18 chắn chợ sáng; đám cưới ngày 38 (SK-39) KH
 test("dời chỗ: phải coi trước; nghỉ 6 ngày mới dời tiếp; mất chỗ vì nợ thì không về đầu hẻm được", () => {
   const w = newGame("st", "p3-stand");
   w.progress.dayIndex = 10;
-  assert.equal(canMoveTo(w, "L3"), "chưa coi chỗ này");
+  assert.equal(canMoveTo(w, "L3"), "chưa xem chỗ này");
   scout(w, "L3");
   assert.equal(canMoveTo(w, "L3"), null);
   w.econ.lastMoveDay = 7;
-  assert.equal(canMoveTo(w, "L3"), "mới dời, để yên vài bữa");
+  assert.equal(canMoveTo(w, "L3"), "mới dời, để yên vài hôm");
   w.econ.stand = "L5";
   w.econ.lastMoveDay = -99;
   w.econ.losses.push("LOST_PRIME_STAND");

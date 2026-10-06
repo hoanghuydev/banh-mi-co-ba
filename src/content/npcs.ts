@@ -28,6 +28,15 @@ export type NpcDef = {
   id: string;
   name: string;
   role: string;
+  /**
+   * CÁCH GỌI KHI CHƯA BIẾT TÊN — dùng trong chính cuốn sổ của người chơi (P2-05b §3.5).
+   *
+   * Sổ là chữ của người bán, nên nó không được phép gọi đúng tên một người mà cô ấy chưa
+   * học được: vừa vỡ fiction, vừa phát không cái tên mà `nameCheck`/WRONG_NAME đang bắt
+   * người chơi phải nghe ra. Chưa ghi tên thì sổ gọi bằng cách này — đúng kiểu người bán
+   * hàng gọi khách quen mà chưa biết tên.
+   */
+  asName: string;
   personality: Personality;
   body: BodyStyle;
   schedule: ScheduleRule[];
@@ -48,7 +57,7 @@ const at = (h: number, m = 0) => h * 60 + m;
 
 export const NPCS: NpcDef[] = [
   {
-    id: "BA_BAY", name: "Bà Bảy", role: "bán vé số",
+    id: "BA_BAY", name: "Bà Bảy", role: "bán vé số", asName: "bà bán vé số",
     personality: { soi: 0.9, nongTinh: 0.6, deTha: 0.8, thanThien: 0.7 },
     // tóc búi bạc + kính lão + lưng còng: ba tín hiệu tuổi tác, đọc được ở 62 px
     body: {
@@ -63,7 +72,7 @@ export const NPCS: NpcDef[] = [
     poses: { DROPPED_FOOD: "LEAN_IN", DIRTY_HANDS: "PEEK_OVER", MADE_THEM_WAIT: "SETTLE_IN", BURNT_OR_COLD: "LEAN_IN", WRONG_NAME: "TILT_HEAD" },
   },
   {
-    id: "CHU_TU", name: "Chú Tư", role: "bảo vệ công ty",
+    id: "CHU_TU", name: "Chú Tư", role: "bảo vệ công ty", asName: "chú bảo vệ",
     personality: { soi: 0.3, nongTinh: 0.3, deTha: 0.9, thanThien: 0.6 },
     body: {
       skin: 0xd9a97e, hair: 0x2b2420, shirt: 0x41628c, trousers: 0x2f3a49,
@@ -77,7 +86,7 @@ export const NPCS: NpcDef[] = [
     poses: { DROPPED_FOOD: "SHRUG", MADE_THEM_WAIT: "CHECK_TIME", BURNT_OR_COLD: "SHRUG", WRONG_NAME: "SHRUG" },
   },
   {
-    id: "ANH_DUNG", name: "Anh Dũng", role: "tài xế công nghệ",
+    id: "ANH_DUNG", name: "Anh Dũng", role: "tài xế công nghệ", asName: "anh chạy xe",
     personality: { soi: 0.2, nongTinh: 0.5, deTha: 0.7, thanThien: 0.5 },
     body: {
       skin: 0xe0b085, hair: 0x241e1b, shirt: 0x2f7d52, trousers: 0x2a3138,
@@ -90,7 +99,7 @@ export const NPCS: NpcDef[] = [
     poses: { DROPPED_FOOD: "SHRUG", MADE_THEM_WAIT: "SHIFT_WEIGHT", WRONG_NAME: "SHIFT_WEIGHT" },
   },
   {
-    id: "CHI_LAN", name: "Chị Lan", role: "nhân viên văn phòng",
+    id: "CHI_LAN", name: "Chị Lan", role: "nhân viên văn phòng", asName: "chị đi làm sớm",
     personality: { soi: 0.9, nongTinh: 0.1, deTha: 0.2, thanThien: 0.3 },
     // tóc ngắn ngang vai + túi xách tối + áo sơ mi sáng: đồ đi làm, đọc ra từ xa
     body: {
@@ -109,7 +118,7 @@ export const NPCS: NpcDef[] = [
     poses: { DROPPED_FOOD: "STEP_BACK_HALF", DIRTY_HANDS: "LEAN_BACK", MADE_THEM_WAIT: "CHECK_TIME", BURNT_OR_COLD: "LEAN_BACK", WRONG_NAME: "FREEZE" },
   },
   {
-    id: "BE_SU", name: "Bé Su", role: "học sinh cấp 2",
+    id: "BE_SU", name: "Bé Su", role: "học sinh cấp 2", asName: "con nhỏ học sinh",
     personality: { soi: 0.4, nongTinh: 0.4, deTha: 0.9, thanThien: 1.0 },
     // đồng phục áo trắng quần xanh + tóc cột: học sinh, không lẫn với ai
     body: {
@@ -125,7 +134,7 @@ export const NPCS: NpcDef[] = [
     poses: { DROPPED_FOOD: "LEAN_IN", MADE_THEM_WAIT: "PHONE_DOWN", WRONG_NAME: "LEAN_IN" },
   },
   {
-    id: "ONG_HAI", name: "Ông Hải", role: "khách hay nhậu",
+    id: "ONG_HAI", name: "Ông Hải", role: "khách hay nhậu", asName: "ông hay nhậu",
     personality: { soi: 0.5, nongTinh: 0.9, deTha: 0.5, thanThien: 0.6 },
     // người to, tóc muối tiêu, áo nâu: đứng chiếm chỗ
     body: {
@@ -145,7 +154,7 @@ export const NPCS: NpcDef[] = [
     poses: { DROPPED_FOOD: "LEAN_IN", MADE_THEM_WAIT: "LEAN_IN", WRONG_NAME: "LEAN_BACK" },
   },
   {
-    id: "CO_MAI", name: "Cô Mai", role: "chủ tạp hoá đối diện",
+    id: "CO_MAI", name: "Cô Mai", role: "chủ tạp hoá đối diện", asName: "cô tạp hoá",
     personality: { soi: 0.6, nongTinh: 0.4, deTha: 0.6, thanThien: 0.8 },
     // tóc búi đen + áo hoa hồng + dáng tròn: bà chủ tiệm, KHÔNG còng (khác bà Bảy)
     body: {
@@ -159,7 +168,7 @@ export const NPCS: NpcDef[] = [
     poses: { DROPPED_FOOD: "TILT_HEAD", MADE_THEM_WAIT: "PEEK_OVER", BURNT_OR_COLD: "TILT_HEAD", WRONG_NAME: "TILT_HEAD" },
   },
   {
-    id: "THAY_PHUC", name: "Thầy Phúc", role: "giáo viên hưu trí",
+    id: "THAY_PHUC", name: "Thầy Phúc", role: "giáo viên hưu trí", asName: "ông thầy giáo",
     personality: { soi: 0.8, nongTinh: 0.2, deTha: 0.7, thanThien: 0.5 },
     // tóc bạc trắng + kính + áo sơ mi kem + lưng hơi còng
     body: {
@@ -176,7 +185,7 @@ export const NPCS: NpcDef[] = [
     poses: { DROPPED_FOOD: "NOD", DIRTY_HANDS: "TILT_HEAD", MADE_THEM_WAIT: "IDLE", WRONG_NAME: "NOD" },
   },
   {
-    id: "CHI_HANH", name: "Chị Hạnh", role: "người Bắc mới vô Sài Gòn",
+    id: "CHI_HANH", name: "Chị Hạnh", role: "người Bắc mới vô Sài Gòn", asName: "chị người Bắc",
     personality: { soi: 0.5, nongTinh: 0.3, deTha: 0.6, thanThien: 0.4 },
     // tóc cột + giỏ nâu + áo xanh nhạt
     body: {
@@ -193,7 +202,7 @@ export const NPCS: NpcDef[] = [
     poses: { DROPPED_FOOD: "LEAN_BACK", MADE_THEM_WAIT: "SHIFT_WEIGHT", WRONG_NAME: "TURN_AWAY_QUARTER" },
   },
   {
-    id: "ANH_BAO", name: "Anh Bảo", role: "sinh viên",
+    id: "ANH_BAO", name: "Anh Bảo", role: "sinh viên", asName: "cậu sinh viên",
     personality: { soi: 0.3, nongTinh: 0.2, deTha: 0.8, thanThien: 0.4 },
     // nón kết + áo khoác tối: cắm mặt điện thoại — gaze thấp nhất hẻm
     body: {
@@ -206,7 +215,7 @@ export const NPCS: NpcDef[] = [
     poses: { DROPPED_FOOD: "PHONE_DOWN", MADE_THEM_WAIT: "PHONE_DOWN", WRONG_NAME: "PHONE_UP" },
   },
   {
-    id: "BA_SAU", name: "Bà Sáu", role: "gánh tàu hũ",
+    id: "BA_SAU", name: "Bà Sáu", role: "gánh tàu hũ", asName: "bà gánh tàu hũ",
     personality: { soi: 0.4, nongTinh: 0.3, deTha: 0.8, thanThien: 0.9 },
     // nón lá + áo bà ba xanh + lưng còng: người bán rong đi ngang hẻm
     body: {
@@ -220,7 +229,7 @@ export const NPCS: NpcDef[] = [
     poses: { MADE_THEM_WAIT: "SETTLE_IN", WRONG_NAME: "SHRUG" },
   },
   {
-    id: "CHU_KIET", name: "Chú Kiệt", role: "xe bánh mì bên kia hẻm",
+    id: "CHU_KIET", name: "Chú Kiệt", role: "xe bánh mì bên kia hẻm", asName: "chú bên kia hẻm",
     personality: { soi: 0.7, nongTinh: 0.6, deTha: 0.3, thanThien: 0.4 },
     // TẠP DỀ — người bán duy nhất đứng phía khách: nhìn là biết đồng nghiệp
     body: {

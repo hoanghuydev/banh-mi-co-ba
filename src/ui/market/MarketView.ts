@@ -235,11 +235,11 @@ export class MarketView {
     const step = tourIndex(this.w), total = TOUR_TOTAL;
     const q = (sel: string) => this.root.querySelector(sel);
     if (this.confirming) {
-      c.pointEl(q('[data-k="pay"]'), "Coi lại giỏ rồi bấm Trả tiền.", step, total);
+      c.pointEl(q('[data-k="pay"]'), "Xem lại giỏ rồi bấm Trả tiền.", step, total);
       return;
     }
     if (!this.picked().length) {
-      c.pointEl(q('[data-k^="plus:"]'), "Bấm + để bỏ đồ vô giỏ. Đồ hôm qua còn trong thùng, coi thiếu gì thì bù.", step, total);
+      c.pointEl(q('[data-k^="plus:"]'), "Bấm + để bỏ đồ vào giỏ. Đồ hôm qua còn trong thùng, xem thiếu gì thì bù.", step, total);
       return;
     }
     c.pointEl(q('[data-k="done"]'), "Lấy đủ rồi thì bấm đây.", step, total);
@@ -300,8 +300,8 @@ export class MarketView {
     if (upcoming(e, day, 2).some((d) => d.kind === "HUI")) said.push(`Cô Mai: "Mốt góp hụi nghen con."`);
     said.push(...rumours(day));
     said.push(...alleyRumours(day, w.npcs.CHU_KIET?.tier === "FRIEND"));
-    if (standClosed(e.stand, day)) said.push(`Bữa nay ${STANDS[e.stand].name.toLowerCase()} không bán được, người ta chắn hết rồi.`);
-    if (e.today.wasted.length) said.push(`Sáng nay bỏ đi: ${e.today.wasted.join(", ")} — hư rồi.`);
+    if (standClosed(e.stand, day)) said.push(`Hôm nay ${STANDS[e.stand].name.toLowerCase()} không bán được — người ta chắn hết.`);
+    if (e.today.wasted.length) said.push(`Sáng nay bỏ đi: ${e.today.wasted.join(", ")} — đã hư.`);
     if (said.length) {
       const talk = this.el("div", "mk-talk");
       for (const l of said) talk.append(this.el("div", "", l));
@@ -324,7 +324,7 @@ export class MarketView {
       // Nghỉ giỗ KHÔNG phải là hết hàng: calendar.json `lo_ba_tam_nghi` (ngày 28–30) định
       // giá sẵn cho lò khác — bánh 4,2 ngàn thay vì 3,5 và ruột xấu hơn (breadQ0 0,90). Cái
       // sai là tấm blurb cũ ("giá không bao giờ đổi") nói ngược với con số ngay dưới nó.
-      else if (closed) card.append(this.el("div", "mk-blurb", "lò khác bán đỡ mấy bữa, bánh đắt hơn mà ruột cũng không bằng"));
+      else if (closed) card.append(this.el("div", "mk-blurb", "lò khác bán đỡ mấy hôm, bánh đắt hơn mà ruột cũng không bằng"));
       else card.append(this.el("div", "mk-blurb", SELLERS[sid]?.blurb ?? ""));
       for (const g of goods) card.append(this.row(g));
       body.append(card);
@@ -380,7 +380,7 @@ export class MarketView {
       row.append(b);
     }
     fl.append(row);
-    if (this.float * 1000 > w.money.cash) fl.append(this.el("div", "mk-float-h", `Trong ống có ${money(w.money.cash)}, đổi được bấy nhiêu thôi.`));
+    if (this.float * 1000 > w.money.cash) fl.append(this.el("div", "mk-float-h", `Trong ống có ${money(w.money.cash)}, chỉ đổi được chừng đó.`));
     side.append(fl);
     return side;
   }
@@ -439,7 +439,7 @@ export class MarketView {
       const plan = this.creditPlan(total);
       const short = total > w.money.cash + plan.credit;
       foot.append(this.el("span", `mk-msg${short || overCold ? " warn" : ""}`,
-        short ? "Không đủ tiền. Bớt lại ít món." : overCold ? "Thùng xốp không đủ chỗ." : "Coi lại rồi trả tiền."));
+        short ? "Không đủ tiền. Bớt lại ít món." : overCold ? "Thùng xốp không đủ chỗ." : "Xem lại rồi trả tiền."));
       const acts = this.el("div", "mk-acts");
       const back = this.el("button", "mk-btn", "Sửa lại");
       back.dataset.k = "back";
@@ -462,7 +462,7 @@ export class MarketView {
     // Ngày 1 `lastBasket` là rổ đã mua từ hôm qua — hàng đã nằm trong thùng rồi. Chép lại là
     // mua đúp: thùng xốp lập tức 8,8/8 ô, bấm gì cũng không checkout được.
     same.disabled = day === 1;
-    if (day === 1) same.title = "Đồ bữa nay còn trong thùng rồi.";
+    if (day === 1) same.title = "Đồ hôm nay đã có trong thùng.";
     same.onclick = () => { this.basket = { ...w.inventory.lastBasket }; this.msg = ""; this.render(); };
     const clear = this.el("button", "mk-btn", "Bỏ hết");
     clear.dataset.k = "clear";
@@ -532,7 +532,7 @@ export class MarketView {
     // người chơi chọn, và màn hình chỉ còn một cái tiêu đề với không một cái nút.
     if (!items.length) {
       const foot = this.el("div", "mk-foot");
-      foot.append(this.el("span", "mk-msg warn", "Trên xe không còn món nào bán được nữa."));
+      foot.append(this.el("span", "mk-msg warn", "Trên xe không còn món nào bán được."));
       const out = this.el("button", "mk-btn primary", "Đẩy xe đi bán");
       out.onclick = () => { w.econ.mustSell = false; this.render(); };
       foot.append(out);

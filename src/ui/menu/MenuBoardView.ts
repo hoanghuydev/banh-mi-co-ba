@@ -207,14 +207,14 @@ export class MenuBoardView {
       m.appendChild(hd);
       const chips = this.ingChips(it);
       if (chips.childElementCount) m.appendChild(chips);
-      else m.appendChild(this.el("div", "trong", "không bỏ gì hết — ổ bánh trơn."));
+      else m.appendChild(this.el("div", "trong", "không bỏ gì — ổ bánh trơn."));
       if (it.note.trim()) m.appendChild(this.el("div", "note", it.note));
       p.appendChild(m);
     }
 
     const sec = this.el("div", "mb-sec");
     sec.appendChild(this.el("div", "mb-h", "Khách dặn thêm"));
-    sec.appendChild(this.el("div", "mb-sub", "Nghe được câu nào thì sửa ổ theo câu đó — bảng không sửa giùm."));
+    sec.appendChild(this.el("div", "mb-sub", "Nghe được câu nào thì sửa ổ theo câu đó — bảng không tự sửa."));
     for (const t of MENU_TIPS) {
       const row = this.el("div", "mb-tip");
       row.appendChild(this.el("span", "s", t.say));

@@ -109,11 +109,11 @@ export class MenuScene extends Phaser.Scene {
 
     // P0-02 §2.7 luật 1: save của phiên bản MỚI hơn thì từ chối, nói rõ, không đoán mò.
     body.add(st.button(button(this, x, 0,
-      tooNew ? "Bản lưu của bản mới hơn" : over ? "Hết mùa rồi" : save ? "Chơi tiếp" : "Chưa có ván nào",
+      tooNew ? "Bản lưu của bản mới hơn" : over ? "Hết mùa" : save ? "Chơi tiếp" : "Chưa có ván nào",
       () => this.continueRun(), {
         width: 300, disabled: !save || over,
         hint: tooNew ? "cập nhật game rồi chơi tiếp"
-          // Tên con đứng TRƯỚC ngày và tiền: nó là thứ nhận ra ván của mình, hai con số kia
+          // Tên người chơi đứng TRƯỚC ngày và tiền: nó là thứ nhận ra ván của mình, hai con số kia
           // chỉ là tiến độ. Tên trống (bỏ qua bước đặt tên) thì dòng này y như cũ.
           : save ? [playerLabel(save.playerName), `ngày ${save.progress.dayIndex}`,
             `${save.money.cash.toLocaleString("vi-VN")}₫`].filter(Boolean).join(" · ") : undefined,
@@ -178,7 +178,7 @@ export class MenuScene extends Phaser.Scene {
       primary: true, width: 320, hint: "hoặc bấm Esc",
     }), 14));
     body.add(st.button(button(this, x, 0, "Xoá, chơi mùa mới", () => this.askTelemetryThenStart(), {
-      width: 320, hint: "ván đang chơi mất luôn",
+      width: 320, hint: "ván đang chơi sẽ mất",
     }), 14));
     this.enableScroll(body, st.y, GAME_H - 20);
   }
@@ -353,7 +353,7 @@ export class MenuScene extends Phaser.Scene {
 
     tg("Tắt âm báo tiêu cực", () => (s.disableNegativeAudioCues ? "bật" : "tắt"),
       () => put({ disableNegativeAudioCues: !s.disableNegativeAudioCues }),
-      "vẫn nghe bánh rớt, bánh khét, ruồi bay — chỉ bỏ tiếng chê");
+      "vẫn nghe bánh rơi, bánh khét, ruồi bay — chỉ bỏ tiếng chê");
     tg("Báo khi có người để ý", () => (s.a11yPerceptionPing ? "bật" : "tắt"),
       () => put({ a11yPerceptionPing: !s.a11yPerceptionPing }),
       "một tiếng gõ gỗ, lệch về phía người đang nhìn");
@@ -400,7 +400,7 @@ export class MenuScene extends Phaser.Scene {
       "",
       "Khách đứng cách mình nửa mét. Họ thấy hết:",
       "tay mình có rửa không, ổ bánh có cháy không,",
-      "mình có còn nhớ bữa qua họ gọi gì không.",
+      "mình có còn nhớ hôm qua họ gọi gì không.",
       "",
       "Bốn mươi ngày. Hết mùa là hết, không chơi lại.",
     ].join("\n"), 14, UI.ink, "400").setAlign("center"), 26);

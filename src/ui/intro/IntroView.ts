@@ -298,7 +298,7 @@ export class IntroView {
     const form = this.el("form", "in-dat");
 
     const o = this.el("div", "in-o");
-    const lab = this.el("label", "", "Tên con");
+    const lab = this.el("label", "", "Tên");
     lab.htmlFor = "in-ten-input";
     const inp = this.el("input");
     inp.id = "in-ten-input";
@@ -320,7 +320,7 @@ export class IntroView {
     const ok = this.el("button", "in-btn primary", "Xong");
     ok.type = "submit";
     ok.disabled = true;
-    const bo = this.el("button", "in-btn", "Thôi, để trống");
+    const bo = this.el("button", "in-btn", "Để trống");
     bo.type = "button";
     bo.onclick = () => this.setName("");
     nut.append(ok, bo);

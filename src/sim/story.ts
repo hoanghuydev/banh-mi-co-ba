@@ -125,7 +125,7 @@ export function walkinLine(day: number, st: StoryState, idx: number): string | n
 
 export function timeline(day: number, o: { atAlley: boolean }): { at: number; text: string }[] {
   const T: { at: number; text: string }[] = [];
-  if (day === 24) T.push({ at: 7 * 60 + 15, text: "Cúp điện. Cả khu tắt đèn. Bảng QR hết xài được." });
+  if (day === 24) T.push({ at: 7 * 60 + 15, text: "Cúp điện. Cả khu tắt đèn. Bảng QR không dùng được." });
   if (day === 34) T.push({ at: 10 * 60 + 45, text: 'Bà Sáu về, xách lại cái gánh: "Cảm ơn con nghen."' });
   if (day === 38 && o.atAlley) T.push({ at: 10 * 60, text: "Nhà đám mang ra cho một mâm — xôi, thịt kho. Cô Ba đẩy lon bia qua cho chú Hải." });
   return T;
@@ -188,9 +188,9 @@ export function morningLines(day: number, st: StoryState, o: { hasQr: boolean })
   if (day === 3 && st.flags.coMaiChange) L.push('Cô Mai (đứng bên tiệm, giơ xấp tiền lẻ cột thun): "Tiền lẻ nè con. Sáng nào cô cũng để sẵn."');
   if (day === 7) L.push('Cô Ba: "Con đi đi. Cô đứng coi xe."');
   if (day === 12) L.push('Cô Ba: "Mối nào mình trả đúng hẹn thì người ta nhớ. Trễ một lần là người ta nhớ lâu hơn nữa."');
-  if (day === 18) L.push("Cô Ba không xuống xe được. Bữa nay con bán một mình.");
+  if (day === 18) L.push("Cô Ba không xuống xe được. Hôm nay bán một mình.");
   if (day === 23) L.push("Một người lạ mua pate cùng sạp, trả giá một câu, được bớt.");
-  if (day === 24) L.push("Mưa từ sáu giờ. Nước lên ngập lối vô.");
+  if (day === 24) L.push("Mưa từ sáu giờ. Nước lên ngập lối vào.");
   if (day === 36 && !o.hasQr) L.push('Bé Su: "Bên chú Kiệt có quẹt thẻ rồi đó cô."');
   if (day === 38) L.push('Cô Ba: "Nhà giữa hẻm cưới. Rạp dựng từ năm giờ, lối vô hẹp lắm."');
   if (day === 40) L.push("Hẻm, năm giờ năm mươi. Đèn đường còn sáng.");
@@ -251,7 +251,7 @@ export function doAction(st: StoryState, id: string, day: number): string {
   switch (id) {
     case "kiet_dochua": st.flags.kietHelped = day; return 'Chú Kiệt: "Ờ. Cảm ơn."';
     case "dinh_ca": st.flags.dinhCa = day; return "Mai đẩy xe ra sân đình.";
-    case "sign_decal": st.flags.signChoice = "decal"; st.flags.signboard = "in_decal"; return "Tiệm decal hẹn mốt có bảng.";
+    case "sign_decal": st.flags.signChoice = "decal"; st.flags.signboard = "in_decal"; return "Tiệm decal hẹn hai ngày nữa có bảng.";
     case "sign_hai": st.flags.signChoice = "hai"; return "Để chú Hải ghé buổi sáng.";
     case "kiet_banh": st.flags.kietBread = day; return "Sáng mai đem qua.";
   }

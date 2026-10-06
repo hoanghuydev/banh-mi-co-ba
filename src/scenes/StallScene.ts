@@ -409,7 +409,7 @@ export class StallScene extends Phaser.Scene {
         // Đếm theo HÀNG TRONG KHO, không theo id nguyên liệu: `dualeo` và `hanhngo` cùng rút từ một hàng RAU.
         const mine = new Set(goodsFor(id));
         const inStack = stack.filter((x) => goodsFor(x).some((g) => mine.has(g))).length;
-        return portionsFor(this.world.inventory, id, this.world.progress.dayIndex) > inStack ? null : `hết ${labelOf(id)} rồi`;
+        return portionsFor(this.world.inventory, id, this.world.progress.dayIndex) > inStack ? null : `hết ${labelOf(id)}`;
       },
       () => this.orderIsEmptyLoaf(),
       (i) => this.consumePreset(i),
@@ -751,7 +751,7 @@ export class StallScene extends Phaser.Scene {
     }
     // Bề dày thớt = tổng cao trừ hai nửa ê-líp (đáy và mặt trên cùng hình).
     this.boardTopY = made.topY - (made.sprite.displayHeight - BOARD_W / 2);
-    // Dấu "thớt dơ" neo vào CÁI THỚT, không vào nóc tủ kính của khúc quầy.
+    // Dấu "thớt bẩn" neo vào CÁI THỚT, không vào nóc tủ kính của khúc quầy.
     const e = spriteEdges(this, made.sprite);
     this.choreAt.set("board", { x: e.cx, y: e.top - 5 });
     this.tourSpot.set("board", {
@@ -862,7 +862,7 @@ export class StallScene extends Phaser.Scene {
         for (const _ of this.oven.tick(dt)) {
           this.world.notebook.today.burnt++;
           bus.emit("stim:emitted", { stimId: "BURNT_OR_COLD", zone: "OVEN", salience: SALIENCE.BURNT_OR_COLD, at: this.elapsed, smell: true });
-          this.hud.toast("khét rồi!", "bad", this.popClock);
+          this.hud.toast("khét rồi", "bad", this.popClock);
         }
         this.tickGrip(dt);
         this.addDirt(0.0015 * Math.max(0, this.clock.minutes - this.lastMinutes));
@@ -1059,10 +1059,10 @@ export class StallScene extends Phaser.Scene {
     if (this.near?.id === "bin") {
       return this.player.hand === "empty"
         ? "thùng rác — tay không có gì để bỏ"
-        : `thùng rác — bấm E bỏ ${HAND_LABEL[this.player.hand]} đi`;
+        : `thùng rác — bấm E bỏ ${HAND_LABEL[this.player.hand]}`;
     }
     if (this.near?.id === "board") {
-      const slow = this.dirt > FLY_DIRT_MIN ? " — thớt dơ, lau lâu hơn" : "";
+      const slow = this.dirt > FLY_DIRT_MIN ? " — thớt bẩn, lau lâu hơn" : "";
       return this.boardPrompt() ?? (this.player.hand === "empty" ? `thớt — bấm E để lau thớt${slow}` : null);
     }
     if (this.nearMenuBoard()) return "bảng menu — bấm E đọc công thức";
@@ -1078,7 +1078,7 @@ export class StallScene extends Phaser.Scene {
   private ovenPrompt(): string {
     const h = this.player.hand, n = this.oven.count;
     const lo = has(this.world.equipment, "LO_DIEN") ? "lò điện" : "lò than";
-    if (h === "loaf_cold") return this.oven.hasRoom ? `${lo} — bấm E bỏ ổ vô (${n}/${OVEN_SLOTS})` : `${lo} — lò đầy rồi`;
+    if (h === "loaf_cold") return this.oven.hasRoom ? `${lo} — bấm E bỏ ổ vào (${n}/${OVEN_SLOTS})` : `${lo} — lò đầy rồi`;
     if (h === "empty") return n ? `${lo} — bấm E lấy ổ chín nhất ra` : `${lo} — lò trống, lấy ổ bánh ở kệ trước`;
     return `${lo} — tay đang cầm đồ`;
   }
@@ -1144,7 +1144,7 @@ export class StallScene extends Phaser.Scene {
       if (ev.kind === "repay") {
         w.money.cash += ev.amount;
         w.progress.today.revenue += ev.amount;
-        this.hud.toast(`${ev.name} trả tiền bữa trước ${ev.amount.toLocaleString("vi-VN")}₫`, "good", this.popClock);
+        this.hud.toast(`${ev.name} trả tiền hôm trước ${ev.amount.toLocaleString("vi-VN")}₫`, "good", this.popClock);
         bus.emit("money:changed", { delta: ev.amount, balance: w.money.cash, reason: "DEBT_REPAID" });
         continue;
       }
@@ -1431,11 +1431,11 @@ export class StallScene extends Phaser.Scene {
         this.dish = [];
         this.handSoiled = false;
         this.busy = null;
-        this.beBusy(this.workSeconds(BIN_SEC), "đang bỏ vô thùng", "quick");
+        this.beBusy(this.workSeconds(BIN_SEC), "đang bỏ vào thùng", "quick");
         this.audio.bin();
         this.addDirt(0.004);                            // vụn bánh rơi quanh miệng thùng
         if (wasBurnt) { this.hud.say("cô Ba: \"bánh đó con để cô ăn.\""); moment(this.world.story, "BANH_DO_CON_DE_CO_AN"); }  // CANON §7.4: cô buồn chứ không la
-        else this.hud.toast("bỏ vô thùng", "info", this.popClock);
+        else this.hud.toast("bỏ vào thùng", "info", this.popClock);
         return;
       }
 
@@ -1759,7 +1759,7 @@ export class StallScene extends Phaser.Scene {
       return;
     }
     if (h !== "empty") { this.hud.toast("tay đang cầm đồ", "info", this.popClock); return; }
-    if (this.tourBlocksTake()) { this.hud.toast("chưa giòn — chờ vòng vàng đã", "info", this.popClock); return; }
+    if (this.tourBlocksTake()) { this.hud.toast("chưa giòn — chờ vòng vàng", "info", this.popClock); return; }
     const l = this.oven.take();
     if (!l) { this.hud.toast("lò đang trống", "info", this.popClock); return; }
     const band = bandOfCrust(l.crust, this.oven.burnAt, this.oven.singeAt);
@@ -2018,7 +2018,7 @@ export class StallScene extends Phaser.Scene {
     this.dish = [];
     this.busy = null;
     this.addDirt(0.04);                                // DROP_MESS — cộng với 0,02 của `putFloor`
-    this.hud.toast("rớt rồi…", "bad", this.popClock);
+    this.hud.toast("rơi rồi…", "bad", this.popClock);
     moment(this.world.story, "BANH_DO_CON_DE_CO_AN");  // rớt thì bỏ — đúng luật (P4-05 §2.2 B)
   }
 
@@ -2141,7 +2141,7 @@ export class StallScene extends Phaser.Scene {
       };
     };
 
-    if (tourAt(w, "MENU")) return ring("menu", "Lại chỗ này, bấm E đọc bảng menu.");
+    if (tourAt(w, "MENU")) return ring("menu", "Tới chỗ này, bấm E đọc bảng menu.");
     if (tourAt(w, "BANH")) return ring("shelf", "Qua kệ, bấm E lấy một ổ bánh.");
     if (tourAt(w, "LO")) return this.ovenAim(ring);
     if (tourAt(w, "THOT")) return ring("board", "Gác ổ lên thớt — bấm E.");
@@ -2204,7 +2204,7 @@ export class StallScene extends Phaser.Scene {
   /**
    * BƯỚC LÒ — dẫn theo ĐỘ GIÒN ĐANG CHẠY, không chỉ nói "bấm E".
    *
-   * Người mới hay táy máy: bỏ ổ vô lò rồi bấm E lấy ra liền, ra ổ còn nguội mà không hiểu vì sao
+   * Người mới hay táy máy: bỏ ổ vào lò rồi bấm E lấy ra liền, ra ổ còn nguội mà không hiểu vì sao
    * khách chê. Nên ở đây người dẫn CHỜ cùng người chơi: lúc vỏ còn nhạt thì bảo đừng đụng, tới
    * lúc vòng độ giòn chuyển vàng mới bảo lấy ra. Cái vòng đó (`drawRing`) vốn đã vẽ sẵn trên lò —
    * chỗ này chỉ dạy người ta ĐỌC nó, một lần, rồi thôi.
@@ -2212,14 +2212,14 @@ export class StallScene extends Phaser.Scene {
   private ovenAim(ring: (id: string, text: string) => { x: number; y: number; w: number; h: number; shape?: "circle" | "rect"; text: string } | null) {
     const h = this.player.hand;
     if (h === "loaf_burnt") return ring("bin", "Khét rồi — đem bỏ thùng rác.");
-    if (h === "loaf_cold") return ring("oven", "Tới lò, bấm E bỏ ổ vô.");
-    if (h !== "empty") return ring("bin", "Tay đang cầm đồ — bỏ xuống đã.");
+    if (h === "loaf_cold") return ring("oven", "Tới lò, bấm E bỏ ổ vào.");
+    if (h !== "empty") return ring("bin", "Tay đang cầm đồ — bỏ xuống trước.");
     const band = this.ovenBand();
     if (!band) return ring("shelf", "Lò trống. Lấy ổ bánh ở kệ trước.");
     // Từ đây trở xuống KHOANH BA CÁI VÒNG, không khoanh cái lò: thứ người chơi phải học đọc
     // là ba cái vòng đó. Khoanh cái lò lần nữa thì họ nhìn cái lò và cái vòng vẫn vô hình.
     if (band === "RAW") {
-      return this.crustAim("Ba cái vòng là ba ngăn lò. Vòng chạy tới khúc vàng mới là giòn — chờ đã.");
+      return this.crustAim("Ba cái vòng là ba ngăn lò. Vòng chạy tới khúc vàng mới là giòn — chờ thêm.");
     }
     if (band === "CRISP") return this.crustAim("Khúc vàng rồi, bánh được. Bấm E lấy ra.");
     if (band === "SINGED") return this.crustAim("Qua khúc cam — sém rồi. Lấy ra ngay.");
@@ -2246,8 +2246,8 @@ export class StallScene extends Phaser.Scene {
   private fillText(): string {
     switch (fillGap(this.assembly.dish)) {
       case "PATE": return this.assembly.dish.length
-        ? "Thiếu pate — quết một lớp đã."
-        : "Ổ nào cũng ba phần: pate, một thứ nhân mặn, rồi rau. Bấm vô miếng nhân để bỏ vô ổ.";
+        ? "Thiếu pate — quết một lớp trước."
+        : "Ổ nào cũng ba phần: pate, một thứ nhân mặn, rồi rau. Bấm vào miếng nhân để bỏ vào ổ.";
       case "MAN": return "Giờ tới nhân mặn — thịt nguội, chả lụa, xíu mại hay trứng.";
       default: return "Còn rau nữa: đồ chua, dưa leo, hành ngò.";
     }
@@ -2507,7 +2507,7 @@ export class StallScene extends Phaser.Scene {
     if (!waiting) { this.day.quitToMenu(); return; }
     this.overlay?.destroy(true);
     this.overlay = this.modal("Về sảnh bây giờ?", [
-      ["Bán nốt đã", () => this.showPauseMenu("Tạm dừng")],
+      ["Bán nốt", () => this.showPauseMenu("Tạm dừng")],
       ["Dẹp, về sảnh", () => this.quitWithCustomers()],
     ], `Còn ${waiting} người đang đứng chờ. Về bây giờ là dọn hàng trước mặt họ:\nhọ về không, và họ có nhớ. Vào lại vẫn đúng giờ này.`);
     this.overlayBack = () => this.showPauseMenu("Tạm dừng");
@@ -2530,7 +2530,7 @@ export class StallScene extends Phaser.Scene {
     this.overlay = this.modal("Chơi lại ngày này?", [
       ["Chơi lại từ sáng", () => this.day.replayDay()],
       ["Thôi, bán tiếp", () => this.showPauseMenu("Tạm dừng")],
-    ], "Chơi lại ngày này sẽ đưa mọi thứ về sáng sớm. Chợ vẫn bán giá đó,\nkhách vẫn tới giờ đó — chỉ có con là biết trước.");
+    ], "Chơi lại ngày này sẽ đưa mọi thứ về sáng sớm. Chợ vẫn bán giá đó,\nkhách vẫn tới giờ đó — chỉ có mình là biết trước.");
     this.overlayBack = () => this.showPauseMenu("Tạm dừng");
   }
 

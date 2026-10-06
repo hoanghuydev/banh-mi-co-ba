@@ -1,32 +1,102 @@
 {
-  "_note": "Trang cuối ngày của cô Ba — P2-05 §2.4. Ba luật viết: (1) KHÔNG phán đúng sai — cô thuật lại và cảm thán, chấm điểm là việc của khách (T1); (2) KHÔNG giải thích cơ chế — cô là một người, không phải tooltip; (3) giọng miền Nam, ngắn, đôi lúc lảng sang chuyện khác. Câu mẫu chép từ bảng §2.4; phần còn lại là bản nháp của dev, cần người viết duyệt. {name} = tên người trong hẻm (cô Ba biết mặt biết tên cả hẻm).",
+  "_note": "Trang cuối ngày — P2-05 §2.4. GIỌNG: chính người bán tự ghi cho mình, ngôi thứ nhất, xưng 'mình' hoặc không xưng. KHÔNG có cô Ba trong này: quán là của người chơi, cô Ba chỉ ở màn mở đầu. Ba luật viết: (1) KHÔNG tự chấm điểm — thuật lại và cảm thán, chấm điểm là việc của khách (T1); (2) KHÔNG giải thích cơ chế — đây là sổ của một người, không phải tooltip; (3) giọng miền Nam, ngắn, đôi lúc lảng sang chuyện khác. {name} = tên người trong hẻm.",
   "notes": {
-    "day40":        { "priority": 10, "concept": "SEASON", "variants": ["Bốn chục ngày rồi đó con. Cô không nhớ bán được bao nhiêu. Cô chỉ nhớ ai còn ghé."] },
-    "dropped":      { "priority": 8, "concept": "HYGIENE", "variants": ["Ổ bánh đó con để cô ăn. Đừng có bỏ, uổng.", "Bữa nay tay con hơi run. Hồi cô mới bán cô còn làm rớt cả khay.", "Rớt thì bỏ, làm ổ khác. Hồi đó cô cũng vậy hoài."] },
-    "absentLong":   { "priority": 7, "concept": "ABSENCE", "variants": ["Lâu quá rồi không thấy {name} ghé. Con có thấy đi ngang không?", "Mấy bữa rồi vắng {name}. Cô cũng không biết nữa.", "Không thấy {name} lâu rồi. Chắc có chuyện gì đó."] },
-    "healed":       { "priority": 7, "concept": "HEAL", "variants": ["Thấy {name} cười với con. Vậy là xong chuyện rồi đó.", "Bữa nay {name} nói chuyện với con vui vẻ. Cô thấy cũng mừng.", "{name} hết để bụng rồi đó con. Người ta vậy đó."] },
-    "gossipBad":    { "priority": 6, "concept": "GOSSIP", "variants": ["Bữa nay nghe có người nói ra nói vô. Kệ đi con.", "Hẻm này chuyện gì cũng tới tai người ta. Kệ, làm cho đàng hoàng là được.", "Có người hỏi chuyện gì đó. Chắc có người nói ra nói vô."] },
-    "gossipGood":   { "priority": 5, "concept": "GOSSIP", "variants": ["Có người khen con bên kia hẻm đó. Cô nghe cô cũng nở mũi.", "Nghe người ta nhắc cái xe mình. Ngộ ghê.", "Bữa nay có người nói tốt về con. Cô nghe lại thôi."] },
+    "day40":        { "priority": 10, "concept": "SEASON", "variants": ["Bốn chục ngày rồi. Không nhớ bán được bao nhiêu. Chỉ nhớ ai còn ghé."] },
+    "dropped":      { "priority": 8, "concept": "HYGIENE", "variants": ["Ổ đó để mình ăn. Bỏ thì uổng.", "Bữa nay tay hơi run. Mới bán mà, chắc còn vậy dài dài.", "Rớt thì bỏ, làm ổ khác. Có gì đâu."] },
+    "trustCeilHard": { "priority": 8, "concept": "TRUST", "speakonce": true, "variants": ["{name} vẫn ghé. Mà thân như hồi đầu thì... thôi. Người ta vậy rồi.", "{name} không mở lòng lại với mình nữa đâu. Cứ làm cho đàng hoàng là được.", "{name} còn tới, còn mua. Mà cái hồi còn vui vẻ thì qua rồi."] },
+    "trustCeil":    { "priority": 7, "concept": "TRUST", "speakonce": true, "variants": ["Bữa nay thấy {name} khác. Có mấy chuyện người ta không quên được.", "{name} còn ghé, mà lòng người ta chừa lại một khoảng rồi.", "Nghe {name} nói nửa câu rồi thôi. Chắc còn nhớ chuyện cũ."] },
+    "absentLong":   { "priority": 7, "concept": "ABSENCE", "variants": ["Lâu quá rồi không thấy {name} ghé. Không biết có đi ngang không.", "Mấy bữa rồi vắng {name}. Cũng không biết nữa.", "Không thấy {name} lâu rồi. Chắc có chuyện gì đó."] },
+    "healed":       { "priority": 7, "concept": "HEAL", "variants": ["Thấy {name} cười với mình. Vậy là xong chuyện rồi.", "Bữa nay {name} nói chuyện vui vẻ trở lại. Mừng.", "{name} hết để bụng rồi. Người ta vậy đó."] },
+    "gossipBad":    { "priority": 6, "concept": "GOSSIP", "variants": ["Bữa nay nghe có người nói ra nói vô. Kệ.", "Hẻm này chuyện gì cũng tới tai người ta. Kệ, làm cho đàng hoàng là được.", "Có người hỏi chuyện gì đó. Chắc có người nói ra nói vô."] },
+    "gossipGood":   { "priority": 5, "concept": "GOSSIP", "variants": ["Nghe có người khen mình bên kia hẻm. Cũng nở mũi.", "Nghe người ta nhắc cái xe mình. Ngộ ghê.", "Bữa nay có người nói tốt về mình. Nghe lại thôi."] },
     "landmark1":    { "priority": 6, "concept": "SEASON", "speakonce": true, "variants": ["Nghe người ta chỉ đường có nhắc tới cái xe. Ngộ ghê."] },
-    "landmark2":    { "priority": 6, "concept": "SEASON", "speakonce": true, "variants": ["Bữa nay có người kêu đúng tên cái xe. Cô nghe cũng lạ."] },
+    "landmark2":    { "priority": 6, "concept": "SEASON", "speakonce": true, "variants": ["Bữa nay có người kêu đúng tên cái xe. Nghe cũng lạ."] },
     "landmark3":    { "priority": 6, "concept": "SEASON", "speakonce": true, "variants": ["Có người lạ tới. Nói là nghe ai đó chỉ."] },
-    "landmark4":    { "priority": 9, "concept": "SEASON", "speakonce": true, "variants": ["Bà Sáu chỉ đường cho người ta bằng cái xe của mình. Cô nghe cô muốn khóc."] },
-    "firstUsual":   { "priority": 5, "concept": "SALES", "variants": ["Có người khen con nhớ đồ người ta hay ăn. Cô nghe cô cũng nở mũi.", "Nhớ món người ta là quý lắm đó con. Hồi xưa cô cũng vậy.", "Người ta tới mà khỏi nói, con cũng biết. Vậy mới là bán hàng."] },
-    "baBay":        { "priority": 5, "concept": "SEASON", "variants": ["Bà Bảy có ghé hả. ...Thôi. Con nhớ đừng bỏ ớt cho bả.", "Bà Bảy khoẻ hông con. ...Ừa. Thôi con ngủ sớm đi.", "Bà Bảy hả. ...Ừ. Bả vẫn bán vé số ở đầu hẻm hả con."] },
+    "landmark4":    { "priority": 9, "concept": "SEASON", "speakonce": true, "variants": ["Bà Sáu chỉ đường cho người ta bằng cái xe của mình. Nghe muốn khóc."] },
+    "firstUsual":   { "priority": 5, "concept": "SALES", "variants": ["Có người khen mình nhớ đồ người ta hay ăn. Cũng nở mũi.", "Nhớ món người ta là quý lắm. Phải ráng nhớ.", "Người ta tới mà khỏi nói, mình cũng biết. Vậy mới là bán hàng."] },
+    "baBay":        { "priority": 5, "concept": "SEASON", "variants": ["Bà Bảy có ghé. Nhớ đừng bỏ ớt cho bả.", "Bà Bảy bữa nay nói ít. Chắc trong người không khoẻ.", "Bà Bảy vẫn bán vé số ở đầu hẻm. Bả đứng đó lâu rồi."] },
     "absentShort":  { "priority": 4, "concept": "ABSENCE", "variants": ["Mấy bữa rồi không thấy {name}. Chắc bận.", "Hai bữa nay không thấy {name} ghé.", "Bữa nay vắng {name}. Chắc có việc."] },
-    "rain":         { "priority": 4, "concept": "WEATHER", "variants": ["Mưa cả buổi. Ít khách mà cũng đỡ mệt. Con có ướt không đó.", "Trời mưa người ta ngồi lâu. Để ý mấy cái ghế nghen.", "Mưa vậy mà cũng có người ghé. Quý lắm."] },
-    "newFace":      { "priority": 4, "concept": "SALES", "variants": ["Bữa nay có người lạ ghé. Không biết người ta chỉ đường sao mà tới được.", "Có mặt mới ghé đó con. Nhớ mặt người ta nghen.", "Thêm một người biết cái xe mình rồi."] },
+    "rain":         { "priority": 4, "concept": "WEATHER", "variants": ["Mưa cả buổi. Ít khách mà cũng đỡ mệt. Ướt hết áo.", "Trời mưa người ta ngồi lâu. Nhớ để ý mấy cái ghế.", "Mưa vậy mà cũng có người ghé. Quý lắm."] },
+    "newFace":      { "priority": 4, "concept": "SALES", "variants": ["Bữa nay có người lạ ghé. Không biết người ta chỉ đường sao mà tới được.", "Có mặt mới ghé. Phải nhớ mặt người ta.", "Thêm một người biết cái xe mình rồi."] },
     "lost":         { "priority": 4, "concept": "SALES", "variants": ["Có người đợi không nổi rồi về. Đông quá thì cũng vậy.", "Bữa nay có người về không. Kỳ lắm, mà thôi.", "Người ta vội, không đợi được. Chuyện thường."] },
-    "goodDay":      { "priority": 3, "concept": "SALES", "variants": ["Bữa nay thấy mấy đứa nhỏ ghé đông. Hồi cô còn bán, cũng cỡ vầy là vui rồi.", "Đông ghê. Con đi nghỉ sớm đi.", "Bán được bữa nay là mừng rồi."] },
-    "sunny":        { "priority": 2, "concept": "WEATHER", "variants": ["Nắng chang chang. Nhớ để nước cho bà Sáu với, gánh nặng lắm.", "Nắng quá con. Uống nước nhiều vô.", "Trời nắng mà gió cũng mát."] },
-    "ordinary":     { "priority": 1, "concept": "DAY", "variants": ["Bữa nay bán được. Trời cũng không nắng lắm. Nhớ đậy nắp thùng đồ chua.", "Một ngày nữa rồi đó con. Rửa cái thớt rồi đi ngủ.", "Cũng bình thường. Mai dậy sớm nghen.", "Hết một bữa. Cô đi ngủ trước nghen con."] }
+    "goodDay":      { "priority": 3, "concept": "SALES", "variants": ["Bữa nay mấy đứa nhỏ ghé đông. Cỡ vầy là vui rồi.", "Đông ghê. Nghỉ sớm thôi.", "Bán được bữa nay là mừng rồi."] },
+    "sunny":        { "priority": 2, "concept": "WEATHER", "variants": ["Nắng chang chang. Nhớ để nước cho bà Sáu với, gánh nặng lắm.", "Nắng quá. Nhớ uống nước nhiều vô.", "Trời nắng mà gió cũng mát."] },
+    "ordinary":     { "priority": 1, "concept": "DAY", "variants": ["Bữa nay bán được. Trời cũng không nắng lắm. Nhớ đậy nắp thùng đồ chua.", "Một ngày nữa rồi. Rửa cái thớt rồi đi ngủ.", "Cũng bình thường. Mai dậy sớm.", "Hết một bữa. Đi ngủ."] }
   },
+  "_confirm": "Dấu khoanh bút đỏ lúc tối, khi một điều mình đoán đã được CHỨNG MINH ở quầy (§2.3). Vẫn là chữ của chính mình — khác cây bút, không khác người. KHÔNG BAO GIỜ có dòng cho giả thuyết sai: sai thì không có gì xảy ra hết.",
   "confirm": {
-    "HAY_AN": ["Ừa. {name} ăn {value} thiệt.", "Con ghi trúng rồi đó. {name} hồi nào tới giờ thích {value}.", "Giỏi. {name} là phải có {value}."],
-    "KHONG_AN_DUOC": ["Ừa, {name} không đụng tới {value}.", "Con để ý hay đó. {name} không ăn {value} đâu.", "Đúng rồi, {name} bỏ {value} ra hoài."],
-    "THUONG_GHE": ["Giỏi. {name} ghé tầm {value} hoài.", "Ừa, {name} tới giờ đó đó.", "Con canh giờ hay ghê. {name} tầm {value} là tới."],
-    "NGAY_TRONG_TUAN": ["Ừa, {name} {value}.", "Con ghi trúng rồi đó. {name} {value} mà.", "Đúng rồi. {name} {value}, cô cũng để ý vậy."],
-    "LAM_NGHE": ["Ừa, {name} {value} đó.", "Con biết hả. {name} {value} lâu rồi.", "Đúng rồi. {name} {value}, cực lắm."],
-    "TINH_Y": ["{name} {value} lắm con.", "Ừa, {name} là vậy đó. {value}.", "Con nhìn người cũng được đó. {name} {value} thiệt."]
+    "HAY_AN": ["Trúng rồi. {name} ăn {value} thiệt.", "Ghi trúng rồi. {name} hồi nào tới giờ thích {value}.", "{name} là phải có {value}. Nhớ luôn."],
+    "KHONG_AN_DUOC": ["Đúng, {name} không đụng tới {value}.", "Để ý thấy liền: {name} không ăn {value} đâu.", "Đúng rồi, {name} bỏ {value} ra hoài."],
+    "THUONG_GHE": ["Trúng. {name} ghé tầm {value} hoài.", "{name} tới giờ đó thiệt.", "Canh giờ trúng rồi. {name} tầm {value} là tới."],
+    "NGAY_TRONG_TUAN": ["Đúng, {name} {value}.", "Ghi trúng rồi. {name} {value} mà.", "{name} {value}. Để ý mấy bữa là ra."],
+    "LAM_NGHE": ["Đúng, {name} {value}.", "{name} {value} lâu rồi. Giờ mới biết.", "{name} {value}. Cực lắm."],
+    "TINH_Y": ["{name} {value} lắm.", "{name} là vậy đó. {value}.", "Nhìn người cũng được đó chớ. {name} {value} thiệt."]
+  },
+  "_quanHe": "Dòng bút đỏ trên đầu trang mỗi người — P2-05b §3. Thước TÌNH CẢM giữ ĐỊNH TÍNH: không số, không thanh, không màu tên (T3). Cùng một giọng với `notes`: chính mình ghi cho mình. Thứ tự dò trạng thái là ƯU TIÊN VIỆC LÀM ĐƯỢC (xem relReadState).",
+  "quanHe": {
+    "RIVAL": [
+      "{name} còn giận mình. Chưa nguôi đâu.",
+      "{name} còn để bụng chuyện gì đó.",
+      "{name} chưa chịu mình. Từ từ rồi tính.",
+      "Mặt {name} còn nặng. Đừng hỏi tới.",
+      "{name} còn khó với mình. Chuyện này cần thời gian.",
+      "{name} nhắc chuyện cũ hoài. Chưa xong đâu."
+    ],
+    "VET_CHUA_LANH": [
+      "Chuyện bữa đó {name} chưa bỏ qua. Phải để ý.",
+      "{name} còn nhớ chuyện cũ. Làm cho đàng hoàng vài bữa coi sao.",
+      "Giữa mình với {name} còn vướng cái gì đó.",
+      "{name} không nói ra, mà biết là còn vướng.",
+      "{name} còn ngại. Chắc tại chuyện bữa trước.",
+      "Chuyện cũ với {name} chưa êm. Làm lại cho người ta coi."
+    ],
+    "TRAN_TIN": [
+      "{name} thương mình, mà không còn tin mình như hồi trước nữa.",
+      "Có mấy chuyện người ta không quên được. {name} vẫn vậy.",
+      "{name} tới hoài, mà có cái gì chặn lại. Người ta giữ lòng.",
+      "{name} không mở lòng hết với mình nữa đâu.",
+      "{name} quý mình tới đó thôi. Lòng người ta có cái ngưỡng.",
+      "{name} còn chừa một khoảng. Chuyện hồi trước đó."
+    ],
+    "MOI_GHE": [
+      "{name} mới ghé mấy bữa. Chưa biết gì nhiều về người ta.",
+      "Còn chưa quen {name}. Để ý thêm vài bữa.",
+      "Chưa đủ bữa để biết {name} ra sao.",
+      "Chưa biết gì nhiều về {name}. Từ từ.",
+      "{name} ghé có mấy lần. Nói gì cũng còn sớm.",
+      "{name} lạ lắm. Người ta cũng mới mà."
+    ],
+    "FRIEND": [
+      "{name} coi mình như người nhà rồi.",
+      "{name} thương mình thiệt.",
+      "{name} tin mình rồi. Giữ cho được.",
+      "Bữa nào {name} cũng nhắc. Quý lắm.",
+      "{name} với mình là chỗ thân rồi.",
+      "Người như {name} mà quý ai là quý thiệt."
+    ],
+    "DANG_XUONG": [
+      "Bữa nay {name} ít nói.",
+      "Mấy bữa nay {name} hơi lạt. Phải để ý coi.",
+      "{name} không vui như hồi trước. Không biết tại sao.",
+      "{name} nguội nguội. Coi lại coi.",
+      "{name} dạo này lặng. Chắc có chuyện.",
+      "{name} đứng xa xa hơn hồi trước."
+    ],
+    "DANG_LEN": [
+      "{name} nói chuyện nhiều hơn hồi trước.",
+      "{name} dạo này cười hoài.",
+      "{name} ấm lên rồi đó.",
+      "{name} đứng lại lâu hơn mấy bữa trước.",
+      "Bữa nay {name} còn hỏi thăm. Ngộ ghê.",
+      "{name} có vẻ mến mình. Cứ vậy đi."
+    ],
+    "QUEN_MAT": [
+      "{name} quen mặt rồi. Cũng bình thường.",
+      "{name} ghé đều. Không có gì.",
+      "{name} vậy đó, không hơn không kém.",
+      "{name} với mình cũng được rồi. Cứ vậy.",
+      "{name} là khách quen. Vậy cũng quý.",
+      "Không có gì để nói về {name} bữa nay."
+    ]
   }
 }

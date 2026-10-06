@@ -37,6 +37,7 @@ Nguồn gốc mọi quyết định: [`../idea.md`](../idea.md) (Phần I — re
 | File | Nội dung |
 |---|---|
 | [`CANON.md`](CANON.md) | **Hằng số dùng chung.** 11 sự kiện, 4 chiều tính cách, 12 NPC, công thức perception, lằn ranh đỏ |
+| [`VAN-PHONG-UI.md`](VAN-PHONG-UI.md) | **Văn phong chữ trong game.** UI viết tiếng phổ thông, giọng Nam chỉ ở lời thoại — khuôn nút/nhãn/thông báo/hướng dẫn, bảng đổi từ |
 | [`phu-luc/A-quyet-dinh-co-che-moi.md`](phu-luc/A-quyet-dinh-co-che-moi.md) | Phán quyết 4 cơ chế đề xuất thêm — chấm theo T1–T5 |
 | [`phu-luc/B-bang-tra-so-lieu.md`](phu-luc/B-bang-tra-so-lieu.md) | Mọi con số gom một chỗ để tune |
 

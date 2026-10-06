@@ -231,7 +231,7 @@ export class EveningView {
     // không giấu. Thứ tự theo lúc tiền đi trong ngày (chợ sáng → tiền chỗ → tối đếm).
     row(`bán được ${t.served} ổ`, `+${money(t.revenue)}`, "in");
     if (et.market) row("chợ sáng", `−${money(et.market)}`);
-    if (et.debtRepay) row("trả nợ mối ở chợ", `−${money(et.debtRepay)}`);
+    if (et.debtRepay) row("trả nợ nguồn hàng ở chợ", `−${money(et.debtRepay)}`);
     if (et.rent) row("tiền chỗ", `−${money(et.rent)}`);
     if (et.deposit) row(et.deposit < 0 ? "cọc chỗ cũ trả lại" : "cọc chỗ mới", signed(et.deposit), et.deposit < 0 ? "in" : "out");
     if (et.tools) row(et.tools < 0 ? "bán đồ nghề" : "sắm đồ nghề", signed(et.tools), et.tools < 0 ? "in" : "out");
@@ -239,7 +239,7 @@ export class EveningView {
     if (et.hui) row(et.hui < 0 ? "hốt hụi" : "góp hụi", signed(et.hui), et.hui < 0 ? "in" : "out");
     if (et.obligations) row("tiền học, tiền thuốc", `−${money(et.obligations)}`);
     row("than, đá, túi, xăng", `−${money(et.fixed)}`);
-    if (et.coBaCovered) row("cô Ba bù giùm", `(${money(et.coBaCovered)})`);
+    if (et.coBaCovered) row("cô Ba bù giúp", `(${money(et.coBaCovered)})`);
     // "gửi thiếu −0₫" đọc như lỗi hiển thị, mà số thiếu THẬT thì không hiện ở đâu
     row("gửi về nhà", et.sendHome ? `−${money(et.sendHome)}` : "chưa gửi được");
     if (et.sendHomeShort) row("còn thiếu", `(${money(et.sendHomeShort)})`);
@@ -344,7 +344,7 @@ export class EveningView {
       out.push(says);
     }
     const dues = duesOpen(e, day);
-    if (!dues.length) out.push(this.el("div", "ev-empty", "Bữa nay không ai đòi gì."));
+    if (!dues.length) out.push(this.el("div", "ev-empty", "Hôm nay không ai đòi gì."));
     for (const d of dues) {
       const box = this.el("div", "ev-due");
       const top = this.el("div", "ev-top");
@@ -395,7 +395,7 @@ export class EveningView {
     const unwritten = creditBookOpen(day) ? debts.filter((d) => d.day === day && d.playerWrote === null) : [];
     const openWritten = debts.filter((d) => d.playerWrote !== null && d.settledOnDay === undefined && day - d.day < 14);
     if (unwritten.length || openWritten.length) out.push(this.el("div", "ev-grp", "Sổ bán chịu"));
-    if (unwritten.length) out.push(this.el("div", "ev-note", `Bữa nay có ${unwritten.length} người mua chịu mà con chưa ghi.`));
+    if (unwritten.length) out.push(this.el("div", "ev-note", `Hôm nay có ${unwritten.length} người mua chịu mà chưa ghi sổ.`));
     for (const d of unwritten) {
       const box = this.el("div", "ev-due");
       const hm = `${Math.floor(d.minute / 60)}h${String(d.minute % 60).padStart(2, "0")}`;
@@ -413,7 +413,7 @@ export class EveningView {
         if (!(v > 0)) return;
         d.playerWrote = Math.min(Math.max(v, lo), hi);
         // nhớ nhầm thì im (đó là cơ chế); chỉ nói khi con số vượt hẳn ra ngoài đời thật
-        this.msg = v === d.playerWrote ? "" : "Con ghi lộn tay rồi. Sổ ghi lại theo cỡ ổ bánh.";
+        this.msg = v === d.playerWrote ? "" : "Ghi nhầm — sổ ghi lại theo cỡ ổ bánh.";
         this.render();
       };
       btns.append(inp, ok);
@@ -439,11 +439,11 @@ export class EveningView {
    */
   /**
    * Mấy cờ mở khoá nói bằng tiếng người. Không khai "flag `rainyDaySeen`" — người chơi
-   * không đọc tên biến, họ đọc *"đợi một bữa mưa"*.
+   * không đọc tên biến, họ đọc *"đợi một hôm mưa"*.
    */
   private static readonly UNLOCK_WORDS: Record<string, string> = {
-    rainyDaySeen: "đợi một bữa mưa",
-    dirtyHandsConfirmed: "đợi lúc có người chê tay mình dơ",
+    rainyDaySeen: "đợi một hôm mưa",
+    dirtyHandsConfirmed: "đợi lúc có người chê tay mình bẩn",
   };
 
   /**
@@ -584,7 +584,7 @@ export class EveningView {
         // `w.econ` là cuốn sổ hôm nay — bán đồ nghề là tiền VÔ, phải có một dòng (`today.tools`)
         sellEquip(id, w.equipment, w.money, 1, w.econ);
         this.ask = null;
-        this.msg = "Bán rồi.";
+        this.msg = "Đã bán.";
         this.render();
       };
       const no = this.el("button", "ev-btn quiet", "thôi");
@@ -735,7 +735,7 @@ export class EveningView {
         const says = this.el("div", "ev-says");
         says.append(this.el("div", "ev-say", s.blurb));
         box.append(says);
-      } else box.append(this.el("div", "ev-why", "Chưa ghé coi."));
+      } else box.append(this.el("div", "ev-why", "Chưa ghé xem."));
       const btns = this.el("div", "btns");
       if (!e.scouted.includes(id)) {
         const ask = this.el("button", "ev-btn", "hỏi dì Năm");
@@ -743,7 +743,7 @@ export class EveningView {
         btns.append(ask);
       } else if (!here && !e.movePlan) {
         const why = canMoveTo(w, id);
-        for (const [n, label] of [[1, "mai dời"], [2, "hai bữa nữa"], [4, "bốn bữa nữa"]] as const) {
+        for (const [n, label] of [[1, "mai dời"], [2, "hai hôm nữa"], [4, "bốn hôm nữa"]] as const) {
           const b = this.el("button", "ev-btn", label);
           b.disabled = why !== null;
           b.onclick = () => { postMove(w, id, n); this.msg = ""; this.render(); };
@@ -762,7 +762,7 @@ export class EveningView {
     this.ask = null;
     if (!buyEquip(id, w.equipment, w.money, w.econ)) { this.render(); return; }
     if (EQUIP[id].costsMorning) { w.flags.lateOpenDay = w.progress.dayIndex + 1; this.msg = 'Cô Mai: "Mai con đi làm giấy ngân hàng với cô, trưa về bán."'; }
-    else this.msg = `${EQUIP[id].name} lên xe rồi.`;
+    else this.msg = `Đã lắp ${EQUIP[id].name} lên xe.`;
     if (id === "BANG_HIEU") this.msg = 'Dựng tấm bảng ra mép vỉa hè. Cô Ba đứng nhìn hơi lâu: "Ờ. Cũng tới lúc rồi."';
     this.render();
   }

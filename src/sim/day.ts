@@ -194,7 +194,7 @@ export function neighborTick(w: SaveFile) {
   if (e.neighborAnnoyance >= 18) {
     e.loaOffUntil = day + 5;
     e.neighborAnnoyance = 10;
-    lines.push('Hàng xóm: "Tắt cái loa giùm cái! Ngày nào cũng rao!" — năm bữa nay không mở loa được.');
+    lines.push('Hàng xóm: "Tắt cái loa giùm cái! Ngày nào cũng rao!" — năm hôm nay không mở loa được.');
   }
   return lines;
 }
@@ -223,8 +223,8 @@ export function canMoveTo(w: SaveFile, to: StandId): string | null {
   const e = w.econ, day = w.progress.dayIndex;
   if (to === e.stand) return "đang đứng đây";
   if (to === "L1" && e.losses.includes("LOST_PRIME_STAND")) return "đầu hẻm giờ chú Kiệt thuê rồi";
-  if (!e.scouted.includes(to)) return "chưa coi chỗ này";
-  if (day - e.lastMoveDay < MOVE.cooldownDays) return "mới dời, để yên vài bữa";
+  if (!e.scouted.includes(to)) return "chưa xem chỗ này";
+  if (day - e.lastMoveDay < MOVE.cooldownDays) return "mới dời, để yên vài hôm";
   return null;
 }
 

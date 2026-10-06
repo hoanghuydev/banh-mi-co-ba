@@ -1,7 +1,19 @@
-# P2-05 — Sổ tay cô Ba
+# P2-05 — Sổ tay
+
+> ⚠️ **ĐỔI GIỌNG (sau P2-05b).** Tài liệu này viết thời cuốn sổ còn là *"sổ tay cô Ba"*: cột
+> trái *"cô Ba ghi giùm"*, trang cuối ngày và tick mực đỏ là **lời cô Ba**. **Không còn đúng
+> nữa.** Quán là của người chơi; cô Ba chỉ xuất hiện ở màn mở đầu (`P4-06`) để dựng bối cảnh.
+> Cuốn sổ giờ là **chữ của chính người bán, ngôi thứ nhất** — cột trái *"ghi vội lúc bán"*,
+> cột phải *"ngồi nghĩ lại"*, dấu khoanh bút đỏ là **cùng một người, khác cây bút**.
+>
+> **Cơ chế bên dưới không đổi một dòng nào** — phân chia lao động §2.2, hệ giả thuyết §2.3,
+> trang cuối ngày §2.4, năm mốc §2.5 đều giữ nguyên. Chỉ đổi *ai đang viết*. Khi đọc file
+> này, cứ đổi "cô Ba ghi" → "mình ghi", "con" → "mình". Giọng mới bị khoá bằng test ở
+> `tests/p2-doc-quan-he.test.ts`.
 
 **Thuộc phase:** P2 — Hệ NPC đầy đủ
 **Phụ thuộc:** `P2-03` (trí nhớ, quan hệ, lịch sinh hoạt) · `P2-04` (đồn thổi — cấp chất liệu cho nhật ký & lời cô Ba) · `P2-01` (Rule DB) · nối vào `P3-01` (dự báo cầu) và `P4-03` (arc nhân vật, kết game)
+**Phụ lục:** `P2-05b-doc-quan-he.md` — đọc quan hệ trên trang sổ (hai trục: độ hiểu đếm được, tình cảm bằng chữ) + bịt lỗ trần tin + **đổi giọng sang ngôi thứ nhất**
 **Trạng thái:** **Chốt** về phân chia lao động và hệ giả thuyết · **Cần đo** ngưỡng mốc §2.5 · **Còn mở** bố cục trang trên màn hình dọc
 
 ---
@@ -75,10 +87,16 @@ type RawNote =
 
 | ❌ Không ghi | Vi phạm |
 |---|---|
-| Bất kỳ con số quan hệ nào, dù đổi tên thành "độ thân", "★", "♥" | **T3** |
+| Bất kỳ con số **tình cảm** nào, dù đổi tên thành "độ thân", "★", "♥" | **T3** |
 | Việc hôm đó người chơi làm **đúng hay sai** (*"bạn đã làm rớt bánh"*) | **T1** — chấm điểm là việc của khách, không phải của sổ |
 | Bất kỳ suy luận nào (*"chú Tư có vẻ thích ớt"*) | **Ranh giới §2.2** — đó là việc của cột phải. Máy cướp mất thì người chơi hết việc để làm |
 | Bất kỳ dự báo nào (*"mai chắc cần 5 ổ"*) | **CANON §13.2** — người chơi phải tự suy ra. Có nút tính giùm là cả P2-03 §2.10 vô nghĩa |
+
+> ⚠️ **Hàng đầu cấm con số TÌNH CẢM, không cấm con số ĐỘ HIỂU.** Thước đếm *người chơi
+> đã biết mấy điều về một người* (`n/6`, dẫn từ giả thuyết đã `CONFIRMED`) là thước đo
+> **người chơi**, không dẫn một chút nào từ `relationPoints`, và nó **được phép hiện số** —
+> trang này vốn đã hiện `đang đoán 2/5` từ trước. Xem `P2-05b-doc-quan-he.md` §3.1. Đừng gỡ
+> nó đi vì đọc hàng trên mà không đọc dòng này.
 
 **Vì sao ranh giới này phải tuyệt đối:** nếu máy viết cả diễn giải, sổ tay thành một bảng tra cứu và người chơi thành người đọc bảng. Nếu người chơi phải chép cả dữ liệu thô, sổ tay thành busywork và Minh sẽ chuyển sang Excel trong ngày thứ ba. **Chỉ có đúng một cách chia làm cả hai người hài lòng**, và đây là nó.
 
