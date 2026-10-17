@@ -7,6 +7,7 @@
  * khái niệm của người làm game. Người chơi chỉ thấy trời, người, và lời nói.
  */
 import SEASON from "../content/season/days.json";
+import { easePeak } from "./ease";
 import type { Weather } from "../core/types";
 
 export type Balance = "++" | "+" | "·" | "−" | "−−";
@@ -85,8 +86,11 @@ export function signalsOf(npc: string) {
  * Áp lực thông lượng (§2.7): tối đa mấy khách VÃNG LAI cùng đứng ở quầy. Chế độ không
  * giới hạn thời gian ép về 1 — kịch bản 40 ngày không đổi một chữ (P4-02 §4).
  *
- * ⚠️ CHƯA NỐI: chỗ sinh lịch khách vãng lai là `Service.buildSchedule` (sim/service.ts, vòng
- * `while (t < DAY_END_MIN - 10)`), nó chỉ rút theo `keep` chứ không đếm mấy người đang đứng.
- * Trần `target.peak` viết tay trong days.json vì vậy chưa có tác dụng.
+ * Thi hành ở `Service.spawn`: quá trần thì lượt ghé DỜI LẠI một phút, không mất.
+ *
+ * Hai trần, lấy cái nhỏ hơn: `target.peak` viết tay trong days.json (kịch bản mùa) và
+ * `easePeak` của sáu bữa đầu (`sim/ease.ts`) — ngày 1–2 chỉ MỘT khách vãng lai một lượt, để
+ * người chơi làm xong một ổ trọn vẹn trước khi có người thứ hai đứng nhìn.
  */
-export const peakCap = (day: number, noTimePressure: boolean) => (noTimePressure ? 1 : daySpec(day).target.peak);
+export const peakCap = (day: number, noTimePressure: boolean) =>
+  (noTimePressure ? 1 : Math.min(daySpec(day).target.peak, easePeak(day)));

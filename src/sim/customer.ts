@@ -254,8 +254,9 @@ export class Customer implements Observer {
     this.gazeM = new GazeMachine(npc?.gaze ?? WALKIN_GAZE, id, rng);
   }
 
-  rollOrder(canAskUsual: boolean) {
-    this.order = makeOrder(this.rng, this.usual, canAskUsual);
+  /** `day` chỉ để `order.ts` biết hôm nay sáu bữa đầu mở mấy món (`sim/ease.ts`). */
+  rollOrder(canAskUsual: boolean, day?: number) {
+    this.order = makeOrder(this.rng, this.usual, canAskUsual, day);
   }
 
   speak(text: string, seconds = 3.2, pri = 100) {

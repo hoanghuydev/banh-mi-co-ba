@@ -160,4 +160,13 @@ export const PAL = {
   paper: 0xf3f0e7,
 } as const;
 
-export const SHADOW = { color: 0x19222a, alpha: 0.26 } as const;
+/**
+ * Bóng đổ — dùng CHUNG cho người chơi, khách và mọi đạo cụ, nên đây là CẦN GẠT DUY NHẤT
+ * chỉnh độ đậm của tất cả. `art/fx.ts` là chỗ duy nhất đọc nó (các mốc gradient đều nhân
+ * với số này), không file nào khác đụng tới.
+ *
+ * 0,26 → 0,38: ở 0,26 tâm bóng chỉ ra alpha ~0,35 và trên nền gạch men trắng của quán thì
+ * gần như không đọc ra — đúng cái vùng nhoè làm bóng trông thật lại là thứ làm nó biến mất.
+ * 0,38 đưa tâm lên ~0,52, nhìn thấy rõ mà vẫn còn là bóng mềm chứ chưa thành vệt đặc.
+ */
+export const SHADOW = { color: 0x19222a, alpha: 0.38 } as const;

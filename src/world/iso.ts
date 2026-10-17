@@ -26,9 +26,12 @@ export function facingOf(wdx: number, wdy: number): Facing {
 }
 
 /**
- * Tám hướng — thêm bốn hướng CHÉO cho ai có đủ tám bộ hình (hiện là mỗi người chơi,
- * xem `art/photo.ts`). Ai chỉ có hình bốn hướng thì cứ dùng `facingOf` như cũ:
- * gộp hướng chéo về hình nghiêng là người đi chéo lại quay ngang, nhìn ra ngay.
+ * Tám hướng — thêm bốn hướng CHÉO. Dùng cho CẢ người chơi lẫn khách.
+ *
+ * ⚠️ Đừng quay lại `facingOf` bốn hướng cho người đang ĐI. Bốn hướng chọn theo trục
+ * lớn hơn, nên người ở ô `se` — trên màn hình đi xuống-phải đúng 26,57° — lại được vẽ
+ * bằng tấm `s` nhìn thẳng ra trước, lệch 63,4°. Ai chưa có bảng tám hướng thì
+ * `art/character.textureFor` tự gộp chéo về hình nghiêng, vẫn đúng hơn hình chính diện.
  */
 export type Facing8 = Facing | "se" | "sw" | "ne" | "nw";
 

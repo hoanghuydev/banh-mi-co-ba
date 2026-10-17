@@ -76,6 +76,104 @@ export function textureFor(facing: Facing8, who = "p", pose: Pose = "idle") {
   return { key: keyOf(who, f.dir, pose), flip: f.flip };
 }
 
+// ───────────────────────────────────────────────────────────── chu kỳ đi bộ
+
+/**
+ * Số frame một chu kỳ. Đổi số này là phải render lại (`--frames`) rồi gộp lại atlas —
+ * `photo.ts` đọc đúng chừng này tên ô, thiếu một ô là cả bộ rơi về ảnh đứng yên.
+ */
+export const WALK_FRAMES = 8;
+
+/**
+ * Hai chu kỳ đi: tay không, và vừa đi vừa bưng.
+ *
+ * ⚠️ Bộ `carry` KHÔNG phải để nhân đôi ảnh cho đẹp. Chu kỳ `walk` là đi TAY KHÔNG, hai tay
+ * vung hết biên — neo ổ bánh vào bàn tay đang vung thì ổ bánh vung theo, nhìn còn sai hơn
+ * là để nó trôi. Bộ `carry` giữ hai tay yên trước bụng nên bàn tay gần như đứng im
+ * (đo được: xê dịch ~1 px thiết kế qua cả tám frame), dán món vào đó mới ăn.
+ *
+ * MỘT bộ này dùng chung cho CẢ SÁU món cầm được, vì món vẫn là sprite riêng — đó là lý do
+ * không cần vẽ cô Ba cầm từng món một.
+ */
+export type Gait = "walk" | "carry";
+
+/** Hậu tố tên texture. `w` giữ nguyên cho bộ cũ; `h` = hold, tránh đụng `_c` của tư thế `carry`. */
+const GAIT_TAG: Record<Gait, string> = { walk: "w", carry: "h" };
+
+/**
+ * Tên texture của MỘT ô trong chu kỳ đi.
+ *
+ * Một chỗ đặt tên duy nhất cho cả nơi SƠN (`photo.paintWalk`) lẫn nơi VẼ (`walkTextureFor`).
+ * Hai chỗ tự ghép chuỗi riêng thì lệch nhau một ký tự là `walkTextureFor` trả về cái tên
+ * không có texture, mà Phaser gặp tên lạ là vẽ ra ô xanh lá chói loà giữa người.
+ */
+export function walkKey(who: string, facing: Facing8, gait: Gait, frame: number) {
+  return `${who}_${facing}_${GAIT_TAG[gait]}${frame}`;
+}
+
+/**
+ * Đi được bao nhiêu Ô thì hết MỘT chu kỳ chân (hai bước).
+ *
+ * ⚠️ Nhịp chân phải tính theo QUÃNG ĐƯỜNG, không theo thời gian. Bản đầu buộc nhịp vào
+ * `bob` (một đồng hồ chạy `11 rad/s`) nên ra 1,75 chu kỳ/giây ≈ 3,5 bước/giây — người
+ * thật đi khoảng 2 bước/giây, nên nhìn ra ngay là chân quậy liên tục trong khi người
+ * trôi đi thong thả.
+ *
+ * Buộc vào quãng đường thì bàn chân khớp mặt đất, và mọi tốc độ tự khắc đúng nhịp mà
+ * không phải viết thêm trường hợp riêng nào:
+ *
+ * | | ô/giây | chu kỳ/giây |
+ * |---|---|---|
+ * | người chơi đi (`Player.SPEED`) | 2,6 | 1,00 |
+ * | người chơi giữ Shift (`RUN_MUL`) | 3,77 | 1,45 |
+ * | khách (`service.WALK_SPEED`) | 1,7 | 0,65 |
+ *
+ * Khách chậm hơn nên bước THƯA hơn, và đó là đúng: sải chân là thuộc tính của người,
+ * không phải của tốc độ — chung một `STRIDE` thì bàn chân không bao giờ trượt trên sàn.
+ *
+ * Nhờ cách buộc này mà KHÔNG cần bộ ảnh riêng cho lúc chạy: cùng một bộ đi, chỉ quay
+ * nhanh hơn. Đỡ 1,3 MB atlas, và cũng đúng tông hơn — quán bánh mì cozy mà nhân vật
+ * đổi hẳn sang dáng chạy thì lạc giọng. Muốn chân mau hơn thì GIẢM số này.
+ */
+export const STRIDE = 2.6;
+
+const GAITS = new Map<string, Set<Gait>>();
+
+export function markGait(who: string, gait: Gait) {
+  const s = GAITS.get(who) ?? new Set<Gait>();
+  s.add(gait);
+  GAITS.set(who, s);
+}
+
+export function hasGait(who: string, gait: Gait) {
+  return GAITS.get(who)?.has(gait) ?? false;
+}
+
+/**
+ * Texture một frame của chu kỳ đi.
+ *
+ * ⚠️ CANON §16 Đừng-4 cấm frame-by-frame, có ngoại lệ hẹp cho ĐÚNG động tác ĐI. Mốc duyệt
+ * là DUNG LƯỢNG ĐO THẬT chứ không phải "ai được phép": người chơi cần cả `walk` lẫn `carry`
+ * nên tốn 2,6 MB, còn khách không bưng gì nên chỉ một bộ `walk` — đo được 1,1 MB cho anh Bảo.
+ * Đừng nối thêm TƯ THẾ chỉ vì `art-raw/tripo-anim/` có sẵn file: mốc để xin thêm là phải có
+ * TRẠNG THÁI THẬT trong game kích hoạt nó.
+ *
+ * KHÔNG có bộ riêng cho lúc chạy, và đó là chủ ý: `STRIDE` buộc nhịp chân vào quãng đường,
+ * nên giữ Shift là chính bộ đi này tự quay nhanh lên 1,45× — vừa đỡ 1,3 MB atlas, vừa đúng
+ * tông: quán bánh mì cozy mà nhân vật lao đi thì lạc giọng.
+ *
+ * Chưa sơn đủ bộ thì trả `null` để nơi gọi rơi về ảnh đứng yên, chứ không trả một
+ * cái tên đoán bừa — texture không tồn tại thì Phaser vẽ ra ô xanh lá chói loà.
+ */
+export function walkTextureFor(facing: Facing8, frame: number, gait: Gait = "walk", who = "p") {
+  // Thiếu bộ bưng thì lùi về bộ đi tay không — món lại trôi như cũ, nhưng vẫn còn bước chân,
+  // hơn là khựng hẳn về ảnh đứng yên.
+  const use: Gait = hasGait(who, gait) ? gait : "walk";
+  if (!hasGait(who, use)) return null;
+  const i = ((frame % WALK_FRAMES) + WALK_FRAMES) % WALK_FRAMES;
+  return { key: walkKey(who, facing, use, i), flip: false, gait: use, frame: i };
+}
+
 // ─────────────────────────────────────────────────────────────── kích thước thân
 
 /** ⚠️ Bốn con số này cộng lại ra đúng `BODY_H` — đụng vào một cái là phải cộng lại. */

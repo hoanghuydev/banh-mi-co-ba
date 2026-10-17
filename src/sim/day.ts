@@ -10,6 +10,7 @@ import type { SaveFile } from "../core/save";
 import {
   GOODS, GOOD_IDS, buy, expire, newInventory, priceOf, stockOf, vnd, weatherOf, type GoodId, type InventoryState,
 } from "./econ";
+import { easePatience } from "./ease";
 import { duesOpen, eveningCount, morningRent, newEconState, newToday, pay, processDefaults, rentVnd } from "./obligations";
 import { CAL, ECON, fixedCostVnd, isRain } from "./econ";
 import { equipPatienceMul, extraDailyVnd, has, newEquipState, resellable, sellEquip, type EquipId } from "./equipment";
@@ -250,8 +251,9 @@ export function standDeps(w: SaveFile) {
     standMul: standDayMul(s, day, isRain(wx)),
     followers: w.econ?.followers ?? null,
     standClosed: standClosed(s, day),
-    // Chỗ đứng × đồ nghề: quạt điện +15% (`equipPatienceMul`) — thẻ món đó hứa đúng con số này.
-    patienceMul: STANDS[s].patience * equipPatienceMul(w.equipment),
+    // Chỗ đứng × đồ nghề × sáu bữa đầu: quạt điện +15% (`equipPatienceMul`) — thẻ món đó hứa
+    // đúng con số này; `easePatience` là phần đỡ của `sim/ease.ts`, bằng 1 từ ngày 7.
+    patienceMul: STANDS[s].patience * equipPatienceMul(w.equipment) * easePatience(day),
     gazeMul: STANDS[s].gaze * CAL.weatherInfo[wx].gazeMul,
   };
 }

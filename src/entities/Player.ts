@@ -1,8 +1,9 @@
 import Phaser from "phaser";
-import { artScale, fitPhoto } from "../art/photo";
+import { artScale, fitPhoto, walkLift, holdAnchorAt } from "../art/photo";
 import { TH, depthOf, toScreen, facingOf8, type Facing8 } from "../world/iso";
 import { hitsWall, SPAWN } from "../world/map";
 import { BASE, BODY_H, FX, HELD, footY, holdAnchor, textureFor } from "../art";
+import { STRIDE, WALK_FRAMES, walkTextureFor } from "../art/character";
 import { heldTexture } from "../art/held";
 import { type Hand } from "../world/stations";
 
@@ -76,6 +77,8 @@ export class Player {
   bumped = false;
 
   private bob = 0;
+  /** Quãng đã đi liên tục, tính bằng ô — chỉ dùng để chọn frame chân. Đứng lại là reset. */
+  private gait = 0;
   /** Giây đã đi liên tục — mũi tên trên đầu mờ dần theo nó, đứng lại là sáng ngay. */
   private walked = 0;
   private body: Phaser.GameObjects.Image;
@@ -99,6 +102,7 @@ export class Player {
     this.heldCrust = 0;
     this.moving = false;
     this.bob = 0;
+    this.gait = 0;
     // Ngày mới mở ra là lúc dễ lạc nhất: mũi tên phải sáng sẵn, không phải chờ mờ hết rồi sáng lại.
     this.walked = 0;
   }
@@ -119,7 +123,7 @@ export class Player {
     // Đứng lại là RESET HẲN, không giảm dần: mũi tên sáng lại ngay khi người chơi thả
     // phím, vì đó mới đúng là lúc họ ngước lên tìm "mình đang ở đâu".
     this.walked = this.moving ? this.walked + dt : 0;
-    if (!this.moving) { this.bob = 0; return; }
+    if (!this.moving) { this.bob = 0; this.gait = 0; return; }
 
     const len = Math.hypot(wx, wy);
     const speed = SPEED * (this.running ? RUN_MUL : 1);
@@ -128,8 +132,12 @@ export class Player {
 
     // tách hai trục ra thử riêng -> chạm tường thì trượt dọc tường, không bị dính cứng
     const bx = hitsWall(this.x + wx, this.y), by = hitsWall(this.x, this.y + wy);
+    const x0 = this.x, y0 = this.y;
     if (!bx) this.x += wx;
     if (!by) this.y += wy;
+    // Cộng dồn quãng ĐÃ ĐI THẬT, sau khi va chạm đã cắt bớt — nên ấn vào tường là
+    // chân đứng im thay vì quậy tại chỗ.
+    this.gait += Math.hypot(this.x - x0, this.y - y0);
     // va thẳng vào thứ gì đó (không trượt được trục nào) = cú va
     this.bumped = (bx || wx === 0) && (by || wy === 0);
 
@@ -152,12 +160,37 @@ export class Player {
     // Cầm đồ thì đổi hẳn sang bộ texture tư thế bưng — không phải dán món lên
     // người đang buông thõng tay, nhìn ra ngay là món trôi lơ lửng trước bụng.
     const carrying = this.hand !== "empty";
-    const tex = textureFor(this.facing, "p", carrying ? "carry" : "idle");
+
+    const walking = this.moving && !reducedMotion;
+    /*
+     * Bưng đồ thì dùng chu kỳ `carry` — hai tay giữ yên trước bụng (xem `character.ts`) —
+     * và dùng CẢ LÚC ĐỨNG YÊN, ghim ở frame 0.
+     *
+     * ⚠️ Chỗ này là một cái bẫy: nếu đứng yên lại rơi về ảnh tĩnh `p_s_c` thì tay đổi từ
+     * "bưng trước bụng" sang "buông thõng", mà neo món theo đó nhảy từ ~28 px xuống 23 px.
+     * Ổ bánh giật một cái mỗi lần người chơi thả phím. Mà đứng yên trong lúc cầm ổ bánh thì
+     * đằng nào cũng PHẢI đang bưng, nên dùng chính frame bưng là vừa hết giật vừa đúng hơn.
+     *
+     * `reducedMotion` vẫn được tôn trọng: lúc đó `walking` tắt nên frame đứng im ở 0.
+     */
+    const cycling = walking || carrying;
+    const walkTex = cycling
+      ? walkTextureFor(this.facing,
+                       walking ? Math.floor((this.gait / STRIDE) * WALK_FRAMES) : 0,
+                       carrying ? "carry" : "walk")
+      : null;
+    const tex = walkTex ?? textureFor(this.facing, "p", carrying ? "carry" : "idle");
     this.body.setTexture(tex.key).setFlipX(tex.flip);
 
-    // CANON §16 Đừng-4: nhún bằng squash/stretch, không thêm một frame sprite nào
+    // CANON §16 Đừng-4: nhún bằng squash/stretch, không thêm một frame sprite nào.
+    // Ngoại lệ hẹp cho chu kỳ đi (xem CANON §16) — và khi chu kỳ đó đang chạy thì
+    // TẮT nhún code đi: frame render đã có sẵn nhún trong người (đo được 10 px),
+    // chồng thêm sine nữa là nảy hai tầng, nhìn ra ngay là lò xo chứ không phải bước chân.
     const amp = reducedMotion ? 0 : 1;
-    const hop = Math.abs(Math.sin(this.bob)) * 2.4 * amp;
+    // Một công tắc cho CẢ nhún lẫn squash, không phải hai: tắt mỗi nhún mà để squash
+    // chạy tiếp thì người vẫn phập phồng tại chỗ trong lúc chân đã bước đúng nhịp.
+    const bodyAmp = walkTex ? 0 : amp;
+    const hop = Math.abs(Math.sin(this.bob)) * 2.4 * bodyAmp;
     // Nghiêng người che tay: thu hẹp bóng dáng lại và dồn người về một bên. Vẽ tĩnh,
     // nên `reducedMotion` không phải tắt gì thêm.
     const lean = covering ? 5 : 0;
@@ -166,11 +199,26 @@ export class Player {
     // tám hướng người chơi là ẢNH THẬT nướng dư pixel, còn tư thế nào artist chưa gửi
     // thì rơi về bản vẽ code tỉ lệ 1:1 — không chia là cô to gấp đôi ở đúng hướng đó.
     const k = 1 / artScale(tex.key);
-    this.body.setScale(k * (covering ? 0.92 : 1), k * (1 + Math.sin(this.bob * 2) * 0.022 * amp));
+    this.body.setScale(k * (covering ? 0.92 : 1), k * (1 + Math.sin(this.bob * 2) * 0.022 * bodyAmp));
 
     // Bóng đổ nằm ĐÚNG tại điểm chạm đất (tâm ô), không phải ở đáy texture —
     // lệch chỗ này là nhân vật trông như đang lơ lửng.
-    this.shadow.setPosition(sx + lean, sy).setDepth(depth - 1).setScale(1 - hop * 0.04);
+    // Bóng phải phản ứng theo CHÂN, chứ không theo một đồng hồ riêng.
+    //
+    // ⚠️ Lúc chạy chu kỳ đi, `hop` bị tắt (nhún đã nằm sẵn trong frame render) — nên nếu
+    // chỉ nhìn `hop` thì người nhún mà bóng đứng im như đóng đinh, và đó chính là thứ
+    // tố cáo cái bóng là miếng dán. `walkLift` trả về độ nhấc chân ĐO TỪ chính frame đang vẽ.
+    const lift = walkTex ? walkLift(walkTex.key) : hop;
+    // Nhấc cao thì bóng CO LẠI và NHẠT ĐI. Hai thứ phải đi cùng nhau: chỉ co mà giữ nguyên
+    // độ đậm thì ra cái bóng nhỏ mà đen kịt, đọc thành một vũng dầu chứ không phải bóng.
+    //
+    // Hai hệ số NHỎ, và phải nhỏ: nhấc cao nhất trong chu kỳ đi đo được ~2,2 px trên thân
+    // người cao 65 px — tức 3,3%. Lần đầu mình để 0,075/0,12, ra bóng co 16% và nhạt 26%,
+    // nhìn thành nhân vật nảy tưng tưng chứ không phải bước đi. Ở mức này bóng co ~7% và
+    // nhạt ~11% ở đỉnh bước: đủ để thấy nó SỐNG, không đủ để thành nhịp đập.
+    this.shadow.setPosition(sx + lean, sy).setDepth(depth - 1)
+      .setScale(1 - lift * 0.03)
+      .setAlpha(1 - lift * 0.05);
 
     this.drawMark(sx + lean, sy, hop, reducedMotion, marker);
 
@@ -182,7 +230,12 @@ export class Player {
     // Neo đo TỪ BÀN CHÂN lên. Bàn chân KHÔNG nằm ở `footY(sy)` — đó là đáy
     // texture, thấp hơn chân `1 + BASE + TH/2` px (xem `prop` trong canvas.ts);
     // dùng thẳng footY là món rơi xuống ngang dép. Trừ `hop` để món nhún cùng nhịp.
-    const a = holdAnchor(this.facing);
+    // Đang chạy chu kỳ BƯNG thì neo bám theo đúng bàn tay của frame đang vẽ, lấy từ bảng
+    // `tools/render-character.py` xuất thẳng từ XƯƠNG. Lúc đứng yên (hay thiếu bảng) thì
+    // về neo cố định theo hướng như cũ.
+    const base = holdAnchor(this.facing);
+    const live = walkTex?.gait === "carry" ? holdAnchorAt(this.facing, walkTex.frame) : null;
+    const a = live ? { x: live.x, y: live.y, behind: base.behind } : base;
     const feet = footY(sy) - (1 + BASE + TH / 2);
     // Hình ổ bánh tra theo CẢ độ giòn, không chỉ theo tay đang cầm gì: ổ nướng dở để
     // nguội vẫn là `loaf_cold`, mà vẽ nó bằng hình bột sống là xoá mất công nướng

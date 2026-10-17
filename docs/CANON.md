@@ -445,6 +445,56 @@ Nhân: thịt / heo quay / pate / xíu mại / chả lụa / cá / gà / ốp la
 
 **Đừng-4: frame-by-frame animation.** Cuphead: >25 phút cho MỘT frame. Thay bằng **layered sprite** (6 lông mày × 6 mắt × 6 miệng = **216 trạng thái từ 18 file**) + kỹ thuật Rain World (vài node đầu/thân/tay + spring/lerp → lean, tilt, nhún vai, **không tốn thêm sprite**). Celeste: biến dạng chỉ tồn tại **1–2 frame**, chênh **một hàng pixel**.
 
+> **Ngoại lệ hẹp (P1, 2026-10-08): ai có model 3D đã rig thì được có chu kỳ đi bộ.**
+>
+> Luật này cấm vì **chi phí VẼ**: Cuphead tốn >25 phút cho một frame tay. Chỗ đó
+> không còn đúng khi frame do **máy sinh ra**: `tools/render-character.py` render
+> 8 hướng × 8 frame từ model 3D đã rig trong vài phút, sửa dáng thì chạy lại, không
+> ai phải vẽ gì. Cái luật bảo vệ là **giờ công của hoạ sĩ**, không phải bản thân con số frame.
+>
+> Cái vẫn còn đúng là **dung lượng**, nên ngoại lệ bị khoá chặt:
+>
+> | | |
+> |---|---|
+> | Ai | ai có model 3D đã rig trong `art-raw/model/`. Ai chưa có vẫn ảnh tĩnh + squash/stretch như cũ |
+> | Cái gì | `idle` + `walk` cho mọi người; riêng người chơi thêm `carry` — cùng một bước chân, khác nhau ở HAI TAY |
+> | Giá | người chơi 2,8 MB (có `carry`) · mỗi NPC **1,27 MB** |
+>
+> **Cập nhật 2026-10-09 — mở cho NPC, vì con số cũ đo sai.** Bản đầu ghi "mở cho cả 3 NPC
+> nữa là ~10 MB, không duyệt". Con số đó nhân thẳng 2,6 MB của người chơi cho mỗi NPC, mà
+> 2,6 MB ấy gồm **hai** chu kỳ: `walk` và `carry`. Khách **không bưng gì**, nên chỉ cần `walk`.
+> Đo thật sau khi làm: anh Bảo 1,27 MB, bà Bảy 1,27 MB. Ba NPC là ~3,8 MB chứ không phải 10.
+>
+> Đổi lại, **cắt được 1,4 MB** bảng tám hướng rời của người chơi + hai NPC đó: từ lúc có
+> atlas thì ảnh ĐỨNG YÊN cũng lấy từ chính atlas, nên tám file PNG kia tải về mà không
+> vẽ ra một pixel nào. Chi phí ròng của cả ba người: **+2,4 MB**.
+>
+> **Đứng yên và bước đi phải ra từ MỘT nguồn.** Đây không phải chuyện gọn gàng mà là một
+> lỗi nhìn thấy được: bảng xoay của artist và model 3D là hai bộ đèn khác nhau, và với cô Ba
+> còn là hai bản MODEL khác nhau — tạp dề trong bảng artist có dây chéo sau lưng và nơ thắt,
+> tạp dề của `chef.glb` thì không. Trộn hai nguồn là mỗi lần thả phím nhân vật đổi màu và
+> đổi luôn cái tạp dề. Vì vậy `--idle` render tư thế đứng từ chính model đó.
+>
+> `carry` không phải nhân đôi ảnh cho đẹp. `walk` là đi TAY KHÔNG, hai tay vung hết biên —
+> neo ổ bánh vào bàn tay đang vung thì ổ bánh vung theo, nhìn còn sai hơn là để nó trôi.
+> `carry` giữ tay yên trước bụng (đo được: bàn tay xê dịch ~1 px thiết kế qua cả tám frame).
+> Và **một** bộ này dùng chung cho CẢ SÁU món cầm được, vì món vẫn là sprite riêng — đó là
+> lý do KHÔNG phải vẽ cô Ba cầm từng món một (6 bộ = ~7,8 MB, không duyệt).
+>
+> **Không có bộ riêng cho lúc chạy, và đó là chủ ý.** `Player.STRIDE` buộc nhịp chân vào
+> QUÃNG ĐƯỜNG nên giữ Shift là chính bộ đi đó tự quay nhanh lên 1,45× — đỡ 1,3 MB, mà
+> quan trọng hơn là đúng tông: quán bánh mì cozy, nhân vật đổi hẳn sang dáng chạy thì lạc giọng.
+> (Bản thử có nối `run` rồi gỡ ra vì lý do này.)
+>
+> Mốc để xét "xin thêm tư thế": phải có **trạng thái sẵn trong game** kích hoạt nó, VÀ
+> phải hợp tông cozy. Tripo cho không 9 preset và cả 9 đều nằm trong `art-raw/tripo-anim/`,
+> nhưng 8 cái còn lại KHÔNG được nối: người bán bánh mì không leo trèo hay ném rổ, mà mỗi
+> tư thế nối vào là thêm ~1,3 MB atlas cho một thứ không bao giờ chạy.
+> **Có file sẵn không phải là lý do để dùng.**
+>
+> Phần còn lại của Đừng-4 **giữ nguyên**: nhún, nghiêng, né vẫn làm bằng
+> squash/stretch, tuyệt đối không thêm frame. Xem `docs/phu-luc/xuong-render-nhan-vat.md`.
+
 ---
 
 ## 17. Bản đồ phase

@@ -68,14 +68,120 @@ export const DROP_H = 28;
 export const RIPPLE_W = 32;
 const RIPPLE_H = 16;
 
+/**
+ * Bề ngang texture bóng. Phần ĐẬM chỉ rộng `SHADOW_CORE`, chỗ dư còn lại là vùng nhoè —
+ * nên con số này lớn hơn cái bóng người ta nhìn thấy khá nhiều.
+ */
+const SHADOW_W = 44, SHADOW_H = 22;
+/**
+ * Bề ngang phần đậm — bằng đúng sải chân, giữ nguyên cỡ cũ (24) để không ai phải chỉnh lại scale.
+ * Cũng là MỐC QUY ĐỔI cho bóng đạo cụ: `scale = bề ngang muốn có / SHADOW_CORE`, nên người chơi
+ * (sải chân 24) ra đúng scale 1.
+ */
+export const SHADOW_CORE = 24;
+
+/**
+ * Bề ngang bóng của từng đạo cụ, tính bằng px thiết kế. Không có tên trong bảng = KHÔNG có bóng,
+ * nên tường, cửa, nhà bên và mặt quầy tự khắc đứng ngoài (chúng ra key `BUILD.*`/`COUNTER.*`).
+ *
+ * ⚠️ Lấy theo BỀ NGANG VẬT CHE NẮNG, không theo chỗ nó chạm đất. Đo thực tế hai cột lệch nhau rất xa:
+ *
+ *      vật        bề ngang vẽ   bề ngang đáy
+ *      dù            109,5          24,0
+ *      ghế đẩu        28,9           2,1
+ *      bàn            75,5          40,1
+ *      bảng gỗ        41,5           3,8
+ *
+ * Cái dù mà lấy 24 thì ra một chấm bé tí dưới cây cột, trong khi thứ che nắng là cái TÁN rộng gấp
+ * bốn; cái ghế đẩu lấy 2,1 thì gần như không có bóng, dù mặt ghế vẫn chắn sáng. Nên các số dưới đây
+ * bám theo cột TRÁI, hạ bớt một chút vì nguồn sáng ở đây tản chứ không phải đèn chiếu thẳng đứng.
+ *
+ * Con số 76 của cái dù không phải bịa: bản vẽ-code dự phòng trong `StallScene` xưa nay vẫn vẽ
+ * `fillEllipse(x, y + 2, 76, 26)` dưới chân dù — giữ đúng nó để hai bản không lệch nhau.
+ */
+/**
+ * `w` bề ngang (px thiết kế) · `a` độ đậm so với bóng tiếp đất, mặc định 1.
+ *
+ * `a` < 1 dành cho vật KHÔNG nằm trên sàn. Vật càng cao khỏi mặt đất thì ánh sáng càng vòng
+ * được ra sau nó, bóng càng tán và nhạt — cái dù che ở tầm hai mét mà đổ bóng đặc như cái
+ * thùng rác thì nhìn ra ngay là sai. Cái bồn rửa là ví dụ rõ nhất: nó GẮN TƯỜNG, chỉ có một
+ * ống thoát mảnh chạm sàn, còn cả chậu nước thì lơ lửng tầm hông.
+ */
+export const PROP_SHADOW: Record<string, { w: number; a?: number }> = {
+  // đặt thẳng trên sàn — bóng tiếp đất, đậm đủ
+  oven: { w: 40 }, oven_e: { w: 42 }, shelf: { w: 40 }, tea: { w: 30 },
+  stool: { w: 22 }, pothos: { w: 22 }, bin: { w: 28 }, crate: { w: 30 },
+  sign: { w: 26 }, fire: { w: 15 }, fridge: { w: 28 },
+  // mặt bàn ở tầm đùi, chỉ bốn chân chạm sàn
+  table: { w: 56, a: 0.75 },
+  // thân xe gác trên hai bánh — phần che nắng nằm cách mặt đường một quãng
+  bike: { w: 58, a: 0.8 }, scooter: { w: 52, a: 0.8 },
+  // chậu nước tầm hông, gắn tường
+  sink: { w: 34, a: 0.6 },
+  // tán dù tầm hai mét: rộng nhất mà cũng nhạt nhất
+  umbrella: { w: 76, a: 0.45 },
+};
+
+/**
+ * Bóng đổ. Vẽ bằng CANVAS chứ không bằng `Graphics`, vì cần chuyển sắc.
+ *
+ * ⚠️ Bản cũ là một ê-líp ĐẶC, màu đều, mép cắt ngọt (`fillEllipse` + alpha 0,26). Mép ngọt
+ * là thứ tố cáo ngay: bóng thật không có đường biên: nó đậm nhất ngay dưới chỗ chạm đất rồi
+ * nhoè dần ra — chính vùng nhoè đó (nửa tối) mới làm người ta tin vật đang ĐỨNG TRÊN sàn
+ * chứ không phải có ai dán một miếng ê-líp xám xuống đất.
+ *
+ * Hai lớp, cùng một mẹo với vòng sáng dưới chân trạm ngay bên dưới:
+ *
+ *   · NHOÈ   trải hết khung, tắt dần về 0 — vùng nửa tối
+ *   · TIẾP ĐẤT ê-líp nhỏ và đậm ngay giữa — chỗ bàn chân ấn xuống sàn, không có nó thì
+ *             cả cái bóng loãng thành một vệt khói và nhân vật lại lơ lửng
+ *
+ * Ê-líp chứ không tròn: mặt đất trong iso nghiêng 2:1 (`TW`/`TH`), vẽ tròn là cái bóng
+ * dựng đứng lên khỏi mặt đường.
+ */
+function buildShadow(scene: Phaser.Scene) {
+  if (scene.textures.exists(FX.shadow)) scene.textures.remove(FX.shadow);
+  const tex = scene.textures.createCanvas(FX.shadow, SHADOW_W, SHADOW_H);
+  if (!tex) return;
+  const ctx = tex.getContext();
+  const cx = SHADOW_W / 2, cy = SHADOW_H / 2;
+  const r = SHADOW.color >> 16 & 0xff, g = SHADOW.color >> 8 & 0xff, b = SHADOW.color & 0xff;
+  const rgba = (a: number) => `rgba(${r},${g},${b},${a})`;
+
+  // Ép hình tròn thành ê-líp bằng cách bóp trục Y — gradient tròn vẽ trong hệ đã bóp thì
+  // ra đúng ê-líp mà vẫn giữ được độ tắt dần đều.
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(1, SHADOW_H / SHADOW_W);
+  const soft = ctx.createRadialGradient(0, 0, 0, 0, 0, SHADOW_W / 2);
+  // Các mốc dồn vào trong để vầng nhoè nhìn thấy được chỉ rộng ~30 px — sải chân có 24.
+  // Trải hết 44 px khung thì bóng loe ra gần gấp rưỡi bàn chân, đọc thành vũng sáng
+  // dưới đèn sân khấu chứ không phải bóng người đứng trên vỉa hè.
+  soft.addColorStop(0, rgba(SHADOW.alpha * 0.85));
+  soft.addColorStop(0.3, rgba(SHADOW.alpha * 0.55));
+  soft.addColorStop(0.55, rgba(SHADOW.alpha * 0.22));
+  soft.addColorStop(0.78, rgba(SHADOW.alpha * 0.05));
+  soft.addColorStop(1, rgba(0));
+  ctx.fillStyle = soft;
+  ctx.beginPath();
+  ctx.arc(0, 0, SHADOW_W / 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  const core = ctx.createRadialGradient(0, 0, 0, 0, 0, SHADOW_CORE / 2);
+  core.addColorStop(0, rgba(SHADOW.alpha * 0.75));
+  core.addColorStop(0.6, rgba(SHADOW.alpha * 0.4));
+  core.addColorStop(1, rgba(0));
+  ctx.fillStyle = core;
+  ctx.beginPath();
+  ctx.arc(0, 0, SHADOW_CORE / 2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  tex.refresh();
+}
+
 export function buildFx(scene: Phaser.Scene) {
-  // Bóng đổ: ê-líp dẹt bằng đúng sải chân, đặt ngay TẠI điểm chạm đất.
-  // Bóng to và rơi thấp là thứ làm nhân vật trông lơ lửng.
-  const g1 = scene.make.graphics({ x: 0, y: 0 }, false);
-  g1.fillStyle(SHADOW.color, SHADOW.alpha);
-  g1.fillEllipse(14, 6, 24, 10);
-  g1.generateTexture(FX.shadow, 28, 12);
-  g1.destroy();
+  buildShadow(scene);
 
   // Vòng dưới chân trạm: phản hồi điều khiển, không phải trang trí.
   //

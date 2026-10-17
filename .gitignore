@@ -4,3 +4,24 @@ dist
 dist-playtest
 __pycache__
 .cache
+
+# ── xưởng render nhân vật (docs/phu-luc/xuong-render-nhan-vat.md) ─────────────
+# Frame PNG trung gian: KHÔNG commit. Nó là thứ máy sinh ra từ `art-raw/model/`
+# + `art-raw/tripo-anim/`, chạy lại một lệnh là có — commit 8 MB ảnh dựng lại được
+# bất cứ lúc nào thì chỉ tổ phình repo.
+art-raw/render/
+
+# Thử nghiệm Mixamo, GIỮ LẠI TRÊN MÁY nhưng không commit: rig Tripo ở A-pose còn
+# Mixamo lấy T-pose làm gốc nên animation Mixamo không dùng thẳng được cho model này
+# (xem phần "Vì sao KHÔNG dùng Mixamo" trong doc trên). Không file nào trong game đụng tới.
+art-raw/mixamo/
+
+# Model gốc 9,7 MB: KHÔNG commit, tải lại từ Tripo khi cần render lại.
+#   https://studio.tripo3d.ai/3d-model/...-245d949d-5426-4a82-84ba-016078533d3d
+# Mở trang đó, dán `tripo-download/tripo_sniffer.js` vào Console, lấy file
+# `tripo_texture_*_meshopt.glb` (tên nói "texture" nhưng ĐÃ CÓ SẴN rig 65 xương),
+# giải nén meshopt rồi lưu thành `art-raw/model/chef.glb`:
+#   npx -y @gltf-transform/cli copy <tai-ve>.glb art-raw/model/chef.glb
+# File animation trong `art-raw/tripo-anim/` thì VẪN commit — chỉ 1,5 MB mà lấy lại
+# phải bấm qua từng mục trong tab lịch sử của trang Animate, đắt công hơn nhiều.
+art-raw/model/

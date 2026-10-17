@@ -1,8 +1,10 @@
 import Phaser from "phaser";
-import { depthOf, facingOf, toScreen, type Facing } from "../world/iso";
+import { depthOf, facingOf8, toScreen, type Facing8 } from "../world/iso";
+import { COUNTER_Y, QUEUE_SLOTS } from "../world/map";
 import { pickBubbleSpot, type Box } from "../world/bubbleLayout";
 import { BODY_H, FX, buildBody, footY, textureFor } from "../art";
-import { artScale } from "../art/photo";
+import { STRIDE, WALK_FRAMES, walkTextureFor } from "../art/character";
+import { artScale, walkLift } from "../art/photo";
 import type { Customer } from "../sim/customer";
 import { nowState } from "../sim/perception";
 import { FONT } from "../ui/theme";
@@ -106,6 +108,26 @@ const K = 120, DAMP = 14;
  */
 const SIT_DROP = 9;
 const SIT_SQUASH = 0.12;
+
+/**
+ * Hướng mặt của người ĐỨNG TRONG HÀNG — quay vào quầy, không giữ hướng bước cuối.
+ *
+ * ⚠️ `facing` chỉ đổi lúc ĐANG ĐI, nên không có dòng này thì người vừa tới nơi đứng
+ * nguyên hướng mình vừa bước: đi từ cổng vào là dừng lại quay LƯNG ra quầy, đứng gọi
+ * món mà mặt hướng ra đường.
+ *
+ * Quay vuông góc với mặt quầy — `(0, −1)` trong hệ ô, tức lên-phải 26,57° trên màn hình —
+ * chứ KHÔNG quay về chỗ người chơi đang đứng: quay theo người chơi thì cả hàng xoay
+ * qua xoay lại mỗi lần cô Ba nhích một bước, nhìn thành một đám rối. Vuông góc với quầy
+ * cũng đúng với cả hàng, từ người đầu tới người cuối, nên không phải tính theo từng chỗ.
+ */
+const COUNTER_FACING = facingOf8(0, COUNTER_Y - QUEUE_SLOTS[0].y);
+
+/** Đang đứng ở hàng chờ trước quầy — không tính người ngồi bàn và người qua đường. */
+function atCounter(c: Customer) {
+  return !c.ambient && !c.sitting
+    && (c.phase === "queueing" || c.phase === "ordering" || c.phase === "waiting");
+}
 type Spring = { v: number; x: number };
 const spring = (s: Spring, target: number, dt: number, d = DAMP) => {
   s.v += (-K * (s.x - target) - d * s.v) * dt;
@@ -132,10 +154,18 @@ export class CustomerActor {
   };
   private lastT = -1;
 
-  private facing: Facing = "n";
+  private facing: Facing8 = "n";
   private lastX: number;
   private lastY: number;
   private bob = 0;
+  /**
+   * Quãng đường ĐÃ ĐI, tính bằng ô — mốc quay chu kỳ chân của ai có atlas đi bộ.
+   *
+   * Cộng dồn quãng đường chứ không đọc đồng hồ, cùng lý do với `Player`: bàn chân
+   * trong ảnh phải khớp mặt đất. Khách đi chậm hơn cô Ba (1,7 so với 2,6 ô/giây) nên
+   * bước THƯA hơn đúng tỉ lệ, không phải chỉnh thêm gì — xem `character.STRIDE`.
+   */
+  private gait = 0;
 
   /**
    * ⚠️ Phải nhớ chứ không hỏi `pickBubbleSpot` mỗi frame: hàm đó RỜI RẠC (bảy nấc), và nấc thắng đổi
@@ -171,7 +201,22 @@ export class CustomerActor {
   draw(reducedMotion: boolean, time: number, nowSec: number) {
     const c = this.c;
     const moved = Math.hypot(c.x - this.lastX, c.y - this.lastY);
-    if (moved > 0.002) this.facing = facingOf(c.x - this.lastX, c.y - this.lastY);
+    const walking = moved > 0.002;
+    /*
+     * TÁM hướng, không phải bốn — và đây là chỗ đã làm dáng đi trông sai hẳn.
+     *
+     * `facingOf` bốn hướng chọn theo trục LỚN HƠN, nên người đi CHÉO (ở ô `se`, tức
+     * đi xuống-phải trên màn hình một góc 26,57°) lại được vẽ bằng tấm `s` — tấm nhìn
+     * thẳng vào người chơi, tức hướng 90°. Lệch **63,4°**: nhìn ra ngay là người đang
+     * bước ngang trong khi mặt quay thẳng ra trước.
+     *
+     * Hướng chéo của `facingOf8` không tốn thêm một tấm ảnh nào: ai có bảng tám hướng
+     * (`art/photo.NPC_PHOTOS`) thì bốn tấm chéo VỐN ĐÃ sơn sẵn mà chưa đời nào được vẽ,
+     * còn ai chưa có ảnh thì `textureFor` gộp `se`/`ne` về hình nghiêng `e` — cũng đúng
+     * hơn hình chính diện cũ, vì trên màn hình họ đang đi gần như ngang.
+     */
+    if (walking) this.facing = facingOf8(c.x - this.lastX, c.y - this.lastY);
+    else if (atCounter(c)) this.facing = COUNTER_FACING;
     this.lastX = c.x;
     this.lastY = c.y;
 
@@ -179,8 +224,29 @@ export class CustomerActor {
     const depth = depthOf(c.x, c.y);
     const amp = reducedMotion ? 0 : 1;
 
-    this.bob = moved > 0.002 ? this.bob + moved * 9 : 0;
-    const hop = Math.abs(Math.sin(this.bob)) * 2.2 * amp;
+    this.bob = walking ? this.bob + moved * 9 : 0;
+    this.gait = walking ? this.gait + moved : 0;
+
+    /**
+     * Chu kỳ đi — chỉ ai đã có atlas (`art/photo.NPC_PHOTOS[...].walk`) mới có, còn lại
+     * `walkTextureFor` trả `null` và người đó đứng yên nhún như cũ.
+     *
+     * Khác cô Ba ở chỗ KHÔNG dùng lúc đứng yên: khách không bưng gì nên không có bộ
+     * `carry`, mà đứng yên thì ảnh của artist đẹp hơn frame 0 của chu kỳ.
+     *
+     * `reducedMotion` vẫn được tôn trọng gián tiếp: người ngừng đi là `walking` tắt.
+     */
+    const walkTex = walking
+      ? walkTextureFor(this.facing, Math.floor((this.gait / STRIDE) * WALK_FRAMES), "walk", c.memKey)
+      : null;
+
+    // CANON §16 Đừng-4: nhún bằng squash/stretch, 0 sprite mới. Nhưng khi chu kỳ đi đang
+    // chạy thì TẮT nhún code — frame render đã có sẵn nhún trong người, chồng thêm sine
+    // nữa là nảy hai tầng, nhìn ra ngay là lò xo chứ không phải bước chân.
+    // Một công tắc cho CẢ nhún lẫn squash: tắt mỗi nhún mà để squash chạy tiếp thì người
+    // vẫn phập phồng tại chỗ trong lúc chân đã bước đúng nhịp.
+    const bodyAmp = walkTex ? 0 : amp;
+    const hop = Math.abs(Math.sin(this.bob)) * 2.2 * bodyAmp;
 
     const fidget = c.mood === "annoyed" ? Math.sin(time / 130) * 1.6 * amp
       : c.mood === "checking" ? Math.sin(time / 320) * 0.9 * amp : 0;
@@ -220,7 +286,7 @@ export class CustomerActor {
     /** Hai đầu dải nằm ngoài khung nhìn ở phần lớn vị trí camera nhưng không phải MỌI vị trí — nên quãng mờ đo bằng ô BẢN ĐỒ. */
     const fade = c.ambient ? passerAlpha(c.x) : 1;
 
-    const tex = textureFor(this.facing, c.memKey);
+    const tex = walkTex ?? textureFor(this.facing, c.memKey);
     this.body.setTexture(tex.key).setFlipX(tex.flip).setAlpha(fade);
     this.body.setPosition(sx + fidget + fx, footY(sy) - hop + fy - this.sp.up.x + this.sp.sit.x).setDepth(depth);
     this.body.setAngle(this.sp.rot.x * (tex.flip ? -1 : 1));
@@ -231,8 +297,15 @@ export class CustomerActor {
     const k = 1 / artScale(tex.key);
     /** Ngồi thì thân NGẮN lại chứ không chỉ tụt xuống — tụt không thôi trông như lún xuống đất. */
     const sitSquash = 1 - (this.sp.sit.x / SIT_DROP) * SIT_SQUASH;
-    this.body.setScale(k, k * (this.sp.sy.x + Math.sin(this.bob * 2) * 0.02 * amp) * sitSquash);
-    this.shadow.setPosition(sx, sy).setDepth(depth - 1).setAlpha(fade);
+    this.body.setScale(k, k * (this.sp.sy.x + Math.sin(this.bob * 2) * 0.02 * bodyAmp) * sitSquash);
+    // Bóng phải ăn theo BÀN CHÂN, không theo một đồng hồ riêng. Lúc chạy chu kỳ đi thì
+    // `hop` đã tắt, nên nhìn mỗi `hop` là bóng đóng đinh một chỗ trong khi người nhún —
+    // đúng thứ tố cáo cái bóng là miếng dán. `walkLift` đo độ nhấc từ CHÍNH frame đang vẽ.
+    // Hai hệ số giống hệt `Player`: ở đỉnh bước bóng co ~7% và nhạt ~11%.
+    const lift = walkTex ? walkLift(walkTex.key) : hop;
+    this.shadow.setPosition(sx, sy).setDepth(depth - 1)
+      .setScale(1 - lift * 0.03)
+      .setAlpha(fade * (1 - lift * 0.05));
 
     const headX = sx + fidget, headY = footY(sy) - BODY_H + 12 - hop;
     const name = this.label(c);

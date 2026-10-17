@@ -8,7 +8,10 @@ import { PROP } from "./props";
 import { HELD, type HeldLook } from "./held";
 import { FOOD } from "./food";
 import { FX, FLY_W, FLY_BOX } from "./fx";
-import { BODY_H, markEightWay, textureFor, type Pose } from "./character";
+import {
+  BODY_H, WALK_FRAMES, markEightWay, markGait, textureFor, walkKey,
+  type Gait, type Pose,
+} from "./character";
 import type { Facing8 } from "../world/iso";
 
 /**
@@ -21,6 +24,15 @@ import type { Facing8 } from "../world/iso";
  */
 
 const SRC = "photo/";
+
+/**
+ * Atlas chu kỳ đi — `tools/pack-atlas.py` sinh ra MỘT tấm cho mỗi nhân vật có animation.
+ * `file` là tên bộ ảnh trong `public/art/` (`player` -> `player.png` + `player.json`).
+ */
+const walkAtlas = (file: string) => `${SRC}${file}_walk`;
+
+/** Bảng neo bàn tay của bộ `carry`, `tools/pack-atlas.py` xuất ra cạnh atlas. */
+const HOLD_JSON = SRC + "player_hold";
 
 const FLY = "fly";
 
@@ -147,8 +159,11 @@ const PLAYER_H = 65;
  *
  * ⚠️ Ba bảng lệch với `content/npcs.ts` ở phần phụ kiện. KHÔNG sửa `npcs.ts` theo ảnh — từ lúc có
  * ảnh thật, `body` chỉ còn dùng để lấy MÀU cho huy hiệu nét mặt.
+ *
+ * `walk` là tên atlas chu kỳ đi trong `public/art/`, chỉ ai có model 3D đã rig mới có —
+ * xem `docs/phu-luc/xuong-render-nhan-vat.md`. Thiếu thì người đó vẫn đứng yên như cũ.
  */
-const NPC_PHOTOS: Record<string, { src: (d: Facing8) => string; h: number }> = {
+const NPC_PHOTOS: Record<string, { src: (d: Facing8) => string; h: number; walk?: string }> = {
   // Anh Dũng — nón bảo hiểm nửa đầu, áo khoác xanh lá. Bảng `anh-dung-list.png`:
   // bảng DUY NHẤT đủ tám hướng, không hướng nào phải lật ngang. (Bản render đầu,
   // `driver_char_list.png`, có hai ô nghiêng mới xoay ~70° nên `e`/`w` đọc ra thành
@@ -157,11 +172,13 @@ const NPC_PHOTOS: Record<string, { src: (d: Facing8) => string; h: number }> = {
   // Bà Bảy — tóc búi bạc, áo tím nhạt, đi chân đất. Bảng `ba-bay-list.png`.
   // Ảnh thiếu kính lão và lưng còng (`npcs.ts` có cả hai): còn tóc búi bạc làm dấu,
   // vẫn đủ tách khỏi người kế bên, nhưng mất hai trong ba tín hiệu tuổi tác.
-  BA_BAY: { src: (d) => `npc/ba-bay/${d}`, h: 64 },
+  // Có chu kỳ đi, render từ `art-raw/model/ba-bay.glb`.
+  BA_BAY: { src: (d) => `npc/ba-bay/${d}`, h: 64, walk: "ba-bay" },
   // Anh Bảo — sinh viên, kính tròn gọng đen, cardigan xám. Bảng `anh-bao-list.png`.
   // Ảnh có KÍNH mà không có NÓN KẾT, `npcs.ts` ghi ngược lại. Đổi một dấu lấy một
   // dấu nên vẫn không lẫn với ai; cái kính tròn to là thứ nhận ra nhanh nhất.
-  ANH_BAO: { src: (d) => `npc/anh-bao/${d}`, h: 65 },
+  // Có chu kỳ đi, render từ `art-raw/model/anh-bao.glb`.
+  ANH_BAO: { src: (d) => `npc/anh-bao/${d}`, h: 65, walk: "anh-bao" },
 };
 
 // ──────────────────────────────────────────────────────────────── món trên tay
@@ -214,8 +231,10 @@ export function preloadPhotos(scene: Phaser.Scene) {
     ...Object.values(CARRIED).map(([src]) => src),
     ...Object.values(FILLINGS).map(([src]) => src),
     ...OPEN_LOAF,
-    ...DIRS8.map(PLAYER_SRC),
-    ...Object.values(NPC_PHOTOS).flatMap((o) => DIRS8.map(o.src)),
+    // Bảng tám hướng RỜI chỉ còn cần cho ai CHƯA có atlas: ai có rồi thì ảnh đứng yên
+    // lấy từ chính atlas đó (xem `eightWay`), tải thêm tám file nữa là 1,4 MB tải về
+    // rồi không vẽ ra một pixel nào.
+    ...Object.values(NPC_PHOTOS).filter((o) => !o.walk).flatMap((o) => DIRS8.map(o.src)),
     FLY,
     BOARD,
     BASKET,
@@ -225,6 +244,24 @@ export function preloadPhotos(scene: Phaser.Scene) {
     asked.add(n);
     scene.load.image(SRC + n, `art/${n}.png`);
   }
+  // Chu kỳ đi nằm trong MỘT atlas mỗi người thay vì 64 file rời — xem
+  // `docs/phu-luc/xuong-render-nhan-vat.md`. Thiếu file thì `paintWalk()` bỏ qua,
+  // người đó quay về ảnh đứng yên chứ không vỡ.
+  preloadWalk(scene, "player", true);
+  for (const o of Object.values(NPC_PHOTOS)) {
+    if (o.walk) preloadWalk(scene, o.walk);
+  }
+}
+
+/** `hold` chỉ đúng với người chơi: khách không bưng gì nên không có bảng neo tay. */
+function preloadWalk(scene: Phaser.Scene, file: string, hold = false) {
+  const key = walkAtlas(file);
+  if (asked.has(key) || scene.textures.exists(key)) return;
+  asked.add(key);
+  scene.load.atlas(key, `art/${file}.png`, `art/${file}.json`);
+  // Nạp RIÊNG chứ không nhét vào atlas JSON: Phaser nuốt file atlas vào texture manager,
+  // moi lại phần phụ chú rất lắt léo. File này chỉ ~2,6 KB.
+  if (hold) scene.load.json(HOLD_JSON, `art/${file}_hold.json`);
 }
 
 function source(scene: Phaser.Scene, name: string): HTMLImageElement | null {
@@ -237,7 +274,7 @@ function source(scene: Phaser.Scene, name: string): HTMLImageElement | null {
 // ────────────────────────────────────────────────────────────────── bút vẽ ảnh
 
 /** Thu một phát từ 384 px xuống 70 px là trình duyệt chỉ lấy mẫu song tuyến tính — mỗi điểm đích đọc 4 điểm nguồn trong khi đáng ra phải gộp ~30, ra ảnh vừa rỗ vừa bệt. */
-function shrink(img: HTMLImageElement, w: number, h: number): CanvasImageSource {
+function shrink(img: HTMLImageElement | HTMLCanvasElement, w: number, h: number): CanvasImageSource {
   let src: CanvasImageSource = img;
   let sw = img.width, sh = img.height;
   while (sw > w * 2 && sh > h * 2) {
@@ -297,6 +334,40 @@ function standing(scene: Phaser.Scene, key: string, src: string, o: Standing) {
   made.tex.refresh();
 }
 
+/**
+ * Như `standing()` nhưng nguồn là MỘT Ô trong atlas, không phải một file rời.
+ *
+ * Phải cắt ô ra canvas riêng trước khi thu nhỏ: `shrink()` thu dần bằng cách vẽ cả
+ * tấm ảnh xuống một nửa mỗi vòng, mà atlas thì cả tấm là 64 ô ghép lại — thu thẳng
+ * là màu của ô bên cạnh loang sang, viền nhân vật dính một vệt lạ.
+ */
+function standingFromAtlas(
+  scene: Phaser.Scene, key: string, atlas: string, frame: string, o: Standing,
+) {
+  if (!scene.textures.exists(atlas)) return false;
+  const f = scene.textures.getFrame(atlas, frame);
+  if (!f) return false;
+  const img = scene.textures.get(atlas).getSourceImage();
+  if (!(img instanceof HTMLImageElement) && !(img instanceof HTMLCanvasElement)) return false;
+
+  const cut = document.createElement("canvas");
+  cut.width = f.cutWidth;
+  cut.height = f.cutHeight;
+  cut.getContext("2d")!.drawImage(
+    img, f.cutX, f.cutY, f.cutWidth, f.cutHeight, 0, 0, f.cutWidth, f.cutHeight);
+
+  const h = o.h;
+  const w = (f.cutWidth / f.cutHeight) * h;
+  const W = Math.max(TW + 2, Math.ceil(w) + 6);
+  const H = Math.ceil(h + BASE + TH / 2 + 1 - (o.dy ?? SIT));
+  const made = blank(scene, key, W, H, ART_SS);
+  if (!made) return false;
+  made.ctx.drawImage(shrink(cut, w * ART_SS, h * ART_SS),
+    Math.round(W / 2 - w / 2 + (o.dx ?? 0)), 0, w, h);
+  made.tex.refresh();
+  return true;
+}
+
 type Fit = { w?: number; h?: number };
 
 function boxed(scene: Phaser.Scene, key: string, src: string, size: number, fit: Fit) {
@@ -326,11 +397,24 @@ function floors(scene: Phaser.Scene) {
   }
 }
 
-/** ⚠️ Thiếu DÙ CHỈ MỘT hướng là cả bộ rơi về bản vẽ code — `textureFor` không đoán bừa được `p_se` có tồn tại hay không. */
+/**
+ * Tám hướng ĐỨNG YÊN, ưu tiên lấy từ chính atlas của chu kỳ đi.
+ *
+ * ⚠️ Đứng yên và bước đi phải ra từ MỘT nguồn. Bảng xoay của artist (`art-raw/*-list.png`)
+ * và model 3D trong `art-raw/model/` là hai bộ đèn khác nhau — với cô Ba còn là hai bản
+ * MODEL khác nhau: tạp dề trong bảng artist có dây chéo sau lưng và cái nơ thắt, tạp dề
+ * của `chef.glb` thì không có. Trộn hai nguồn thì mỗi lần thả phím nhân vật đổi màu và
+ * đổi luôn cái tạp dề, nhìn như nhấp nháy giữa hai người.
+ *
+ * Ai chưa render tư thế nghỉ (`render-character.py --idle`) thì vẫn rơi về bảng artist
+ * như cũ — vẫn lệch, nhưng còn hơn không có ảnh.
+ */
 function eightWay(
   scene: Phaser.Scene, who: string,
   src: (d: Facing8) => string, h: number, poses: readonly Pose[],
+  file?: string,
 ) {
+  if (file && eightWayFromAtlas(scene, who, file, h, poses)) return;
   if (DIRS8.some((d) => !source(scene, src(d)))) return;
   // Ghi sổ TRƯỚC khi sơn, không phải sau: chính `textureFor` dưới đây tra cái sổ đó
   // để ra tên tám hướng. Ghi sau là nó còn đang gộp về ba hướng, và cả tám tấm ảnh
@@ -345,15 +429,141 @@ function eightWay(
   }
 }
 
+/**
+ * Tám hướng đứng yên lấy từ ô `idle_<hướng>_00` của atlas. Trả `false` nếu atlas chưa có
+ * bộ đó — khi ấy nơi gọi quay về bảng ảnh rời.
+ *
+ * ⚠️ Ghi sổ tám hướng chỉ khi sơn ĐỦ cả tám, y như `eightWay`: `textureFor` tra cái sổ đó
+ * để ra tên, ghi sổ mà thiếu ô là Phaser vẽ ra một ô xanh lá chói.
+ */
+function eightWayFromAtlas(
+  scene: Phaser.Scene, who: string, file: string, h: number, poses: readonly Pose[],
+) {
+  const atlas = walkAtlas(file);
+  if (!scene.textures.exists(atlas)) return false;
+  if (DIRS8.some((d) => !scene.textures.getFrame(atlas, `idle_${d}_00`))) return false;
+  markEightWay(who);
+  for (const dir of DIRS8) {
+    for (const pose of poses) {
+      // Cùng một tấm cho cả buông tay lẫn bưng đồ, như bản cũ: lúc thật sự bưng thì
+      // `Player` ghim vào frame 0 của chu kỳ `carry` chứ không dùng tấm tĩnh này.
+      standingFromAtlas(scene, textureFor(dir, who, pose).key, atlas,
+                        `idle_${dir}_00`, { h, dy: 0 });
+    }
+  }
+  return true;
+}
+
 /** Sơn CẢ tư thế buông tay lẫn tư thế bưng đồ bằng cùng một tấm hình. */
 function player(scene: Phaser.Scene) {
-  eightWay(scene, "p", PLAYER_SRC, PLAYER_H, ["idle", "carry"]);
+  eightWay(scene, "p", PLAYER_SRC, PLAYER_H, ["idle", "carry"], "player");
+  paintWalk(scene, "p", "player", PLAYER_H, ["walk", "carry"]);
+  readHoldAnchors(scene);
+}
+
+/**
+ * Bàn chân frame này cách mặt đất bao nhiêu px thiết kế.
+ *
+ * ĐO từ chính tấm ảnh chứ không dựng lại bằng sine. Dãy đáy chân tám frame đo được là
+ * 359·364·361·361·359·366·363·369 — không phải một hình sin sạch, nên mọi công thức đoán
+ * đều lệch. Mà bóng chỉ thuyết phục khi nó ăn khớp ĐÚNG với bàn chân trong ảnh.
+ *
+ * Quét từ đáy lên và dừng ngay hàng đục đầu tiên, nên dù gọi 64 lần vẫn rẻ: bàn chân
+ * luôn nằm sát đáy khung.
+ */
+function footLift(scene: Phaser.Scene, key: string): number {
+  const src = scene.textures.get(key).getSourceImage();
+  if (!(src instanceof HTMLCanvasElement)) return 0;
+  const ctx = src.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return 0;
+  const ss = artScale(key);
+  for (let y = src.height - 1; y >= 0; y--) {
+    const row = ctx.getImageData(0, y, src.width, 1).data;
+    for (let x = 3; x < row.length; x += 4) {
+      if (row[x] > 40) return (src.height - 1 - y) / ss;
+    }
+  }
+  return 0;
+}
+
+/** Nhấc chân từng frame, px thiết kế. `Player` đọc để cho bóng co lại đúng lúc người nhổm lên. */
+const liftOf = new Map<string, number>();
+
+export function walkLift(key: string) {
+  return liftOf.get(key) ?? 0;
+}
+
+/**
+ * Chu kỳ đi của MỘT nhân vật, nướng từ atlas ra từng texture rời.
+ *
+ * ⚠️ Chỉ ghi sổ khi sơn ĐỦ 8 hướng × `WALK_FRAMES`. Thiếu dù một ô mà vẫn ghi sổ thì
+ * `walkTextureFor` trả về cái tên không có texture, và Phaser vẽ ô xanh lá chói —
+ * thà đứng yên còn hơn nhấp nháy một ô xanh giữa người.
+ *
+ * `who` là tiền tố texture (`p` cho người chơi, `memKey` cho khách), `file` là tên
+ * atlas trong `public/art/`. Hai thứ này KHÔNG trùng nhau: tiền tố phải khớp cái mà
+ * `CustomerActor` tra, còn tên file thì theo cách đặt tên của `pack-atlas.py`.
+ */
+function paintWalk(
+  scene: Phaser.Scene, who: string, file: string, h: number, gaits: readonly Gait[],
+) {
+  const atlas = walkAtlas(file);
+  if (!scene.textures.exists(atlas)) return;
+  const lifts: string[] = [];
+  // Mỗi chu kỳ ghi sổ RIÊNG: thiếu bộ bưng thì vẫn còn bộ đi tay không dùng được.
+  for (const gait of gaits) {
+    let n = 0;
+    for (const dir of DIRS8) {
+      for (let i = 0; i < WALK_FRAMES; i++) {
+        const key = walkKey(who, dir, gait, i);
+        const frame = `${gait}_${dir}_${String(i).padStart(2, "0")}`;
+        if (!standingFromAtlas(scene, key, atlas, frame, { h, dy: 0 })) break;
+        lifts.push(key);
+        n++;
+      }
+    }
+    if (n === DIRS8.length * WALK_FRAMES) markGait(who, gait);
+  }
+  if (!lifts.length) return;
+  // Mốc 0 là frame bàn chân XUỐNG THẤP NHẤT của CẢ HAI chu kỳ, không phải đáy khung: khung
+  // chung lấy theo hợp của mọi frame mọi hướng nên chỗ nào cũng chừa sẵn một chút lề dưới chân.
+  // Chung một mốc cho cả hai chu kỳ thì lúc đổi qua lại bóng không giật nấc.
+  const raw = lifts.map((k) => footLift(scene, k));
+  const floor = Math.min(...raw);
+  lifts.forEach((k, i) => liftOf.set(k, raw[i] - floor));
+}
+
+/**
+ * Nạp bảng neo bàn tay rồi quy từ TỈ LỆ Ô sang px thiết kế.
+ *
+ * File ghi theo tỉ lệ chiều cao ô chứ không ghi px, nên đổi `PLAYER_H` hay đổi `--height`
+ * lúc gộp atlas đều không phải sinh lại bảng.
+ */
+function readHoldAnchors(scene: Phaser.Scene) {
+  const raw = scene.cache.json.get(HOLD_JSON) as
+    Record<string, Record<string, [number, number]>> | undefined;
+  const carry = raw?.carry;
+  if (!carry) return;
+  for (const [k, v] of Object.entries(carry)) {
+    holdOf.set(k, { x: v[0] * PLAYER_H, y: v[1] * PLAYER_H });
+  }
+}
+
+/** Khoá là `<hướng>_<frame 2 chữ số>`, đúng tên ô trong atlas. */
+const holdOf = new Map<string, { x: number; y: number }>();
+
+/** Chỗ dán món lúc VỪA ĐI VỪA BƯNG, px thiết kế so với điểm chạm đất. Chưa có thì trả `null`. */
+export function holdAnchorAt(facing: string, frame: number) {
+  return holdOf.get(`${facing}_${String(frame).padStart(2, "0")}`) ?? null;
 }
 
 /** Chỉ tư thế buông tay: khách không bưng gì, nên `character.ts` cũng chỉ nướng từng ấy. */
 function npcPhotos(scene: Phaser.Scene) {
   for (const [who, o] of Object.entries(NPC_PHOTOS)) {
-    eightWay(scene, who, o.src, o.h, ["idle"]);
+    eightWay(scene, who, o.src, o.h, ["idle"], o.walk);
+    // Cũng vì không bưng gì: chỉ một chu kỳ `walk`, không có `carry`. Đó là lý do một
+    // người khách tốn 1,1 MB trong khi cô Ba tốn 2,6 MB.
+    if (o.walk) paintWalk(scene, who, o.walk, o.h, ["walk"]);
   }
 }
 

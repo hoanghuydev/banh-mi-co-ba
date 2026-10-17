@@ -42,6 +42,7 @@ import { CLAIM, activeHeard, disprove, nameOf, poolOf, witness, type GossipState
 import { beginDay, displayName, logNote, logOrder, nameCheck, type Notebook } from "./notebook";
 import { CAL, crowdMul, dongVi, isRain, loafPriceVnd, tasteThreshold, tierOf, weatherOf } from "./econ";
 import { nhanOf } from "./menu";
+import { easeBalk } from "./ease";
 import { peakCap } from "./season";
 import { has, walkInMul as equipWalkIn, type EquipId, type EquipState } from "./equipment";
 import {
@@ -765,7 +766,7 @@ export class Service {
     const authored = ctx ? authoredUsual(id, ctx, atMin) : null;
     if (authored) return authored;
     let u = this.usual.get(id);
-    if (!u) this.usual.set(id, (u = makeUsual(Rng.forSeason(this.deps.saveId, id))));
+    if (!u) this.usual.set(id, (u = makeUsual(Rng.forSeason(this.deps.saveId, id), this.deps.day)));
     return u;
   }
 
@@ -846,8 +847,13 @@ export class Service {
       && this.deps.hub.derive(`kiet:${v.seq}`).next() < KIET_STEAL;
     if (kietLay) this.out.push({ kind: "log", text: "một người ghé xe chú Kiệt thay vì xe mình." });
 
+    /**
+     * Sáu bữa đầu: ngày 1–2 không ai quay đầu (`easeBalk` = 0). Khách bỏ đi TRƯỚC KHI gọi món
+     * là cú khó đọc nhất của game — người chơi chỉ thấy một cái bóng rẽ ngang rồi mất, và
+     * bữa đầu thì họ chưa có cách nào biết đó là vì hàng dài.
+     */
     const balking = kietLay || (!plan && !this.deps.noTimePressure
-      && this.deps.hub.derive(`balk:${v.seq}`).next() < balkChance({
+      && this.deps.hub.derive(`balk:${v.seq}`).next() < easeBalk(this.deps.day) * balkChance({
         ahead, slots: SLOTS.length, person,
         relVisitMul: visitProbabilityMul(m), moodPatience: moodPatienceMul(mood),
         rushing: !!npc?.rush && nowMin >= npc.rush[0] && nowMin < npc.rush[1],
@@ -884,7 +890,7 @@ export class Service {
     else if (npc && this.deps.story && c.usual.phrase) {
       const short = c.usual.short && !plan?.noShort && this.canAskUsual(npc, m) && rng.next() < 0.5;
       c.order = short ? { ...c.usual, intent: { ...c.usual.intent, usual: true } } : c.usual;
-    } else c.rollOrder(this.canAskUsual(npc, m));
+    } else c.rollOrder(this.canAskUsual(npc, m), this.deps.day);
     if (!npc && !plan && this.deps.story) {
       const line = walkinLine(this.deps.day, this.deps.story, ++this.walkinIdx);
       if (line) c.plan = { after: [{ text: line, delay: 2.4 }] };

@@ -51,6 +51,7 @@ import { COUNTER_Y } from "../world/map";
 import { RENDER_SCALE } from "../core/render";
 import { StallCamera, ZOOM } from "../world/camera";
 import { artScale, fitPhoto, BOARD_TEX, BOARD_W, BASKET_TEX, BASKET_W } from "../art/photo";
+import { PROP_SHADOW, SHADOW_CORE } from "../art/fx";
 import { BUYABLE_TILES, CART_CHUNG, CART_LAN, CART_XA, GANH_IN, GANH_OUT, MENU_DEPTH_AT, MENU_REACH, MENU_SPOT, MENU_TILE, SEAT_SPOT, SHADE_SPOT, SIGN_TILE, SKY_FROM_Y, WORLD_H, WORLD_W, assertWalkable, floorAt, isSunlit, openTilesFor, setOpenTiles, tileAt, type TileCode } from "../world/map";
 import {
   HAND_LABEL, STATIONS, assertMenuSpotFree, blockedReason, stationAtTile, stationNear, type Hand, type Station,
@@ -709,8 +710,29 @@ export class StallScene extends Phaser.Scene {
   }
 
   /** `artScale`: `photo.ts` nướng dư pixel nên sprite phải thu lại đúng từng ấy lần; Graphics trả về 1. */
+  /**
+   * Thả bóng xuống chân một đạo cụ, nếu `PROP_SHADOW` có tên nó.
+   *
+   * Dùng chung đúng texture với bóng người chơi, chỉ phóng to theo `SHADOW_CORE` — nên lúc nào
+   * chỉnh lại gradient trong `fx.ts` thì cả người lẫn đồ đạc đổi theo cùng một nhịp, không có
+   * chuyện bóng người mềm mà bóng cái bàn vẫn là miếng ê-líp cũ.
+   *
+   * `sy` chứ không phải `footY(sy)`: bóng nằm ở ĐIỂM CHẠM ĐẤT (tâm ô), còn ảnh đạo cụ mới neo
+   * đáy vào `footY`. Lấy nhầm mốc là bóng tụt xuống dưới chân vật và nó trông như đang bay.
+   */
+  private addPropShadow(key: string, sx: number, sy: number, depth: number) {
+    const cfg = PROP_SHADOW[key];
+    if (!cfg) return;
+    this.add.image(sx, sy, FX.shadow)
+      .setOrigin(0.5, 0.5)
+      .setScale(cfg.w / SHADOW_CORE)
+      .setAlpha(cfg.a ?? 1)
+      .setDepth(depth - 1);
+  }
+
   private addAt(key: string, tx: number, ty: number) {
     const { sx, sy } = toScreen(tx + 0.5, ty + 0.5);
+    this.addPropShadow(key, sx, sy, depthOf(tx + 0.5, ty + 0.5));
     return this.add.image(sx, footY(sy), key)
       .setOrigin(0.5, 1)
       .setScale(1 / artScale(key))
@@ -2679,6 +2701,7 @@ export class StallScene extends Phaser.Scene {
     const y = footY(sy);
     const depth = depthOf(wx, wy);
     if (this.textures.exists(key)) {
+      this.addPropShadow(key, sx, sy, depth);
       this.add.image(sx, y, key).setOrigin(0.5, 1).setScale(1 / artScale(key)).setDepth(depth);
       return;
     }

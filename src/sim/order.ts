@@ -1,4 +1,5 @@
 import type { Rng } from "../core/rng";
+import { easeOf } from "./ease";
 import { MENU_IDS, RAU_CO_GIAN, RAU_NEN, isBare, itemOf, nhanOf, type MenuItemId } from "./menu";
 
 /**
@@ -66,6 +67,24 @@ const WALK_IN_WEIGHT: Readonly<Record<MenuItemId, number>> = {
 };
 const WALK_IN_BAG: readonly MenuItemId[] = MENU_IDS.flatMap((id) =>
   Array.from({ length: WALK_IN_WEIGHT[id] }, () => id));
+
+/**
+ * Cái rổ của một NGÀY — sáu bữa đầu chỉ có mấy món `sim/ease.ts` mở (`easeOf().mon`), từ
+ * ngày 7 là cả bảy món, tức đúng `WALK_IN_BAG` ở trên.
+ *
+ * Trọng số giữ nguyên rồi mới lọc, nên mấy món còn lại vẫn giữ đúng tỉ lệ với nhau — ngày 1
+ * vẫn là chả lụa nhiều hơn pate gần gấp đôi, y như ngày 20. Dàn phẳng và nhớ lại (`BAGS`) để
+ * mỗi lần gọi món vẫn chỉ tốn ĐÚNG MỘT lần rút số.
+ */
+const BAGS = new Map<string, readonly MenuItemId[]>();
+function walkInBag(day?: number): readonly MenuItemId[] {
+  const mon = easeOf(day).mon;
+  if (mon.length === MENU_IDS.length) return WALK_IN_BAG;
+  const key = mon.join(",");
+  let bag = BAGS.get(key);
+  if (!bag) BAGS.set(key, (bag = WALK_IN_BAG.filter((id) => mon.includes(id))));
+  return bag;
+}
 
 /**
  * Ý định gọi món. Cả CÂU NÓI lẫn BẢNG ĐỊNH LƯỢNG đều suy ra từ đây, nên hai thứ
@@ -140,28 +159,39 @@ export function levelsOf(it: OrderIntent): Partial<Record<Ingredient, number>> {
 
 export const specOf = (intent: OrderIntent): OrderSpec => ({ intent, levels: levelsOf(intent) });
 
-function randomIntent(rng: Rng, usual: boolean): OrderIntent {
-  const mon = rng.pick(WALK_IN_BAG);
+/**
+ * `day` là CỦA SÁU BỮA ĐẦU, không bắt buộc (xem `sim/ease.ts`): nó co cái rổ món lại và
+ * nhân `fuss` vào mọi lời dặn thêm. `fuss = 0` nghĩa là câu gọi món ngày 1 gọn đúng một
+ * mệnh đề — *"Cho một ổ chả lụa."* — không "cho nhiều", không "ít rau", không "khỏi ớt".
+ *
+ * ⚠️ Cấu trúc rút số GIỮ NGUYÊN từng dòng: `fuss` chỉ nhân vào NGƯỠNG so sánh, không thêm
+ * cũng không bớt một lần `rng.next()` nào. Nhờ vậy ngày 7 trở đi (`fuss = 1`) dãy số ra y
+ * hệt trước khi có file `ease.ts` — mọi lưới đo neo ở ngày 7/8 vẫn gặp đúng người cũ, đơn cũ.
+ */
+function randomIntent(rng: Rng, usual: boolean, day?: number): OrderIntent {
+  const f = easeOf(day).fuss;
+  const mon = rng.pick(walkInBag(day));
   if (mon === "khong") return { mon, rau: "khong", ot: 0, tuong: 0, usual };
   const nhan = nhanOf(mon);
   return {
     mon,
-    nhieu: rng.next() < 0.25 ? rng.pick(nhan) : undefined,
-    rau: rng.next() < 0.7 ? "day-du" : "it",
-    ot: rng.next() < 0.25 ? 2 : rng.next() < 0.3 ? 0 : 1,
-    tuong: rng.next() < 0.2 ? 2 : rng.next() < 0.25 ? 0 : 1,
+    nhieu: rng.next() < 0.25 * f ? rng.pick(nhan) : undefined,
+    // "ít rau" là lời dặn, nên nó mới là vế co lại: f = 0 → 1,0 → ai cũng rau đầy đủ.
+    rau: rng.next() < 1 - 0.3 * f ? "day-du" : "it",
+    ot: rng.next() < 0.25 * f ? 2 : rng.next() < 0.3 * f ? 0 : 1,
+    tuong: rng.next() < 0.2 * f ? 2 : rng.next() < 0.25 * f ? 0 : 1,
     usual,
   };
 }
 
 /** Đơn "ruột" của một NPC: cố định cả mùa, là thứ người chơi phải NHỚ. */
-export const makeUsual = (rng: Rng) => specOf(randomIntent(rng, false));
+export const makeUsual = (rng: Rng, day?: number) => specOf(randomIntent(rng, false, day));
 
 /** Đơn của một lượt: đa số là đơn ruột, thỉnh thoảng đổi ý. */
-export function makeOrder(rng: Rng, usual: OrderSpec, canAskUsual: boolean): OrderSpec {
+export function makeOrder(rng: Rng, usual: OrderSpec, canAskUsual: boolean, day?: number): OrderSpec {
   if (canAskUsual && rng.next() < 0.5) return specOf({ ...usual.intent, usual: true });
   if (rng.next() < 0.65) return usual;
-  return specOf(randomIntent(rng, false));
+  return specOf(randomIntent(rng, false, day));
 }
 
 /**
