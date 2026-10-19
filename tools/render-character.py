@@ -335,6 +335,53 @@ def set_idle_pose(arm):
     bpy.ops.object.mode_set(mode="OBJECT")
 
 
+def body_yaw(arm):
+    """Thân người đang quay về đâu, tính bằng ĐỘ trong hệ thế giới (+X = 0°, +Y = 90°).
+
+    Đo từ trục hai vai chứ không từ một xương lẻ: vai trái -> vai phải là "bên phải của
+    người", xoay nó 90° quanh trục đứng thì ra "phía trước của người". Trục này đúng cho
+    mọi rig humanoid và không phụ thuộc tay đang bị nắn kiểu gì — nên đo được cả lúc đang
+    bưng đồ, đúng lúc cần đo nhất.
+
+    Trả `None` nếu rig không có tên xương mixamorig: chỗ gọi tự bỏ qua phép kiểm.
+    """
+    pb = arm.pose.bones
+    l, r = pb.get("mixamorig:LeftArm"), pb.get("mixamorig:RightArm")
+    if not l or not r:
+        return None
+    m = arm.matrix_world
+    right = (m @ r.head) - (m @ l.head)
+    right.z = 0
+    if right.length < 1e-9:
+        return None
+    fwd = Vector((0, 0, 1)).cross(right.normalized())
+    return math.degrees(math.atan2(fwd.y, fwd.x))
+
+
+def check_facing(arm, pose, tol=10.0):
+    """Ở ô `s`, mặt người PHẢI nhìn về phía máy ảnh (−Y). Lệch quá `tol` thì dừng hẳn.
+
+    ⚠️ Phép kiểm này sinh ra từ một lần hỏng im lặng mất nguyên một bộ ảnh: `align_rest_pose`
+    nuốt phải góc xoay của `pivot` còn sót từ tư thế render trước, chốt tư thế nghỉ lệch 225°,
+    và `walk`/`carry` ra tám tấm quay lưng trong khi `idle` vẫn đúng. Log sạch, ảnh đủ, không
+    một dòng cảnh báo — xem `docs/phu-luc/xuong-render-nhan-vat.md`.
+
+    Gọi lúc pivot ĐANG ở góc của ô `s`, tức ngay đầu vòng lặp hướng. Đo trong hệ THẾ GIỚI là
+    cố ý: chính cái hệ mà máy ảnh nhìn vào mới là thứ cần đúng, còn hệ armature thì vẫn báo
+    "đạt" trong cả bản hỏng.
+    """
+    yaw = body_yaw(arm)
+    if yaw is None:
+        return
+    off = (yaw - (-90.0) + 180.0) % 360.0 - 180.0   # −90° = nhìn về −Y = phía máy ảnh
+    if abs(off) > tol:
+        sys.exit(
+            f"[render] {pose}: o `s` nguoi quay {yaw:+.1f}° (le {off:+.1f}° so voi phia may anh).\n"
+            f"         O `s` phai la MAT NHIN THANG vao nguoi choi. Lech dung boi so cua 45° thi\n"
+            f"         thu phu `--yaw0` (dang la goc model); lech kieu khac thi xem lai rig/anim.")
+    print(f"  huong than o o `s`: {yaw:+.1f}° (le {off:+.1f}°)")
+
+
 def hand_anchor(arm, cam):
     """Chỗ hai bàn tay gặp nhau, tính bằng PIXEL trên chính tấm ảnh vừa render.
 
@@ -389,8 +436,24 @@ def align_rest_pose(dst_arm, src_arm, meshes):
     bpy.context.view_layer.objects.active = dst_arm
     bpy.ops.object.mode_set(mode="POSE")
 
-    inv = dst_arm.matrix_world.inverted().to_3x3()
-    src_world = src_arm.matrix_world
+    # ⚠️ `matrix_local` (so với CHA), KHÔNG phải `matrix_world` — và đây là cái bẫy đã làm
+    # cả bộ `walk`/`carry` quay sai 225°. `main()` parent toàn bộ vào một `pivot` rồi xoay
+    # pivot để lấy tám hướng; hàm này lại chạy GIỮA vòng lặp tư thế, tức lúc pivot vẫn đang
+    # đứng ở góc của hướng render CUỐI CÙNG thuộc tư thế trước (`yaw0 + 315°` = 225°).
+    # Lấy `matrix_world` là nuốt luôn góc đó vào `inv`, nên tư thế nghỉ mới bị chốt lệch
+    # đúng 225° — rồi `armature_apply()` nướng cái lệch ấy thành vĩnh viễn.
+    #
+    # Hỏng kiểu im lặng, và hỏng RẤT khó thấy: xương lẫn da cùng quay nên người vẫn lành
+    # lặn, mọi phép đo theo hệ armature vẫn báo "đạt" (đo được `fwd` = −0,58° ở cả hai bản).
+    # Chỉ nhìn ảnh mới thấy: ô `s` ra sau gáy, mặt trước rơi vào ô `nw`. Tư thế `idle` thì
+    # ĐÚNG, vì nó render trước mọi animation nên chưa ai xoay pivot — hai bộ ảnh cùng một
+    # lần chạy mà một bộ đúng một bộ sai, chính là dấu vết của cái bẫy này.
+    #
+    # `matrix_local` bỏ pivot nhưng GIỮ phần xoay của chính object armature (Mixamo xuất
+    # FBX có sẵn một phép xoay 90° ở cấp object) — đúng thứ cần giữ. Hai rig cùng gốc thì
+    # phép này tự thành phép rỗng.
+    inv = dst_arm.matrix_local.inverted().to_3x3()
+    src_local = src_arm.matrix_local
 
     def hierarchy(arm):
         out = []
@@ -410,7 +473,7 @@ def align_rest_pose(dst_arm, src_arm, meshes):
         if not sb:
             continue
         # hướng VÀ xoắn của xương nguồn lúc nghỉ, kéo về hệ của armature đích
-        want = (inv @ (src_world @ sb.matrix_local).to_3x3()).normalized()
+        want = (inv @ (src_local @ sb.matrix_local).to_3x3()).normalized()
         pb.matrix = Matrix.Translation(pb.matrix.to_translation()) @ want.to_4x4()
         bpy.context.view_layer.update()
         n += 1
@@ -684,6 +747,14 @@ def main():
         for di, d in enumerate(DIRS):
             # xoay nhân vật, KHÔNG xoay máy ảnh -> tám hướng dùng chung một khung
             pivot.rotation_euler = (0, 0, math.radians(a.yaw0 + di * 45))
+            if di == 0 and arm:
+                # Kiểm NGAY ở ô đầu, trước khi đốt công render bảy hướng còn lại.
+                if act and nframes > 1:
+                    sc.frame_set(f0)
+                if carrying:
+                    set_carry_pose(arm)
+                bpy.context.view_layer.update()
+                check_facing(arm, pose)
             for fi in range(nframes):
                 if act and nframes > 1:
                     # bỏ frame cuối: chu kỳ khép kín nên frame cuối trùng frame đầu

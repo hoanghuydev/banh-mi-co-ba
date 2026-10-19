@@ -5,17 +5,29 @@ Thay cho việc chờ artist gửi bảng xoay: có model 3D **đã rig** là t�
 
 ## Hai bước
 
+⚠️ Đây là lệnh ĐANG dùng để dựng ba bộ ảnh trong `public/art/`. Chạy lại cả ba khi
+đụng vào `render-character.py` — ba người dùng chung một đường ống, nên bẫy nào cắn
+cô Ba thì cắn luôn hai người khách.
+
 ```bash
 # 1. render ra từng frame PNG
-blender -b -P tools/render-character.py -- \
-    --glb art-raw/model/chef.glb --name player \
-    --anim idle=art-raw/mixamo/Idle.fbx \
-    --anim walk=art-raw/mixamo/Walking.fbx \
-    --frames 8
+blender -b -P tools/render-character.py -- --glb art-raw/model/chef.glb --name player \
+    --idle \
+    --anim walk=art-raw/tripo-anim/tripo_walk.glb \
+    --anim carry=art-raw/tripo-anim/tripo_walk.glb --carry carry --frames 8
+blender -b -P tools/render-character.py -- --glb art-raw/model/anh-bao.glb --name anh-bao \
+    --idle --anim walk=art-raw/tripo-anim/tripo_walk.glb --frames 8
+blender -b -P tools/render-character.py -- --glb art-raw/model/ba-bay.glb --name ba-bay \
+    --idle --anim walk=art-raw/tripo-anim/tripo_walk.glb --frames 8
 
 # 2. gộp thành một atlas + JSON cho Phaser
-python3 tools/pack-atlas.py player --height 384
+python3 tools/pack-atlas.py player  --height 192
+python3 tools/pack-atlas.py anh-bao --height 192
+python3 tools/pack-atlas.py ba-bay  --height 192
 ```
+
+Animation lấy của **Tripo**, không phải Mixamo — xem "Vì sao KHÔNG dùng Mixamo" bên dưới.
+`--height 192`, không phải 384: xem bảng "Mấy chỗ đã phải dò".
 
 Ra `public/art/player.png` + `public/art/player.json`, tên mỗi ô là
 `<tư thế>_<hướng>_<frame>`, ví dụ `walk_se_03`.
@@ -54,7 +66,7 @@ tay vốn đã xuôi thì nó xuôi thêm 75° nữa, tay chui vào người.
 Hàm `align_rest_pose()` trong `render-character.py` bẻ rig về T-pose rồi chốt làm gốc
 mới — phần xương chạy đúng, nhưng vẫn còn lệch 90° nữa vì giá trị xoay trong action của
 Mixamo nằm ở hệ **armature** (nội bộ Y-up, bù bằng một phép xoay 90° ở cấp object),
-trong khi hàm căn theo hệ **thế giới**. Muốn khớp hẳn thì phải dựng lại bộ xương Tripo
+trong khi hàm căn theo hệ **so với cha**. Muốn khớp hẳn thì phải dựng lại bộ xương Tripo
 y hệt bộ xương Mixamo. Không bõ, vì Tripo đã có sẵn animation đúng cho chính rig này.
 
 Hàm đó vẫn giữ trong file: nó tự thành phép rỗng khi nguồn và đích cùng một rig, và
@@ -66,13 +78,39 @@ còn dùng được nếu sau này gặp model khác thật sự cần.
 |---|---|---|
 | `--yaw0` | 270 | Model Tripo quay mặt về +X; ô `s` phải là mặt nhìn thẳng vào người chơi (-Y) |
 | `--exposure` | 1.0 | Dò bằng cách so màu trung bình vùng yếm với `p_s.png` của artist — lệch 13/765 |
-| `--elev` | 26,565° | `atan(0.5)`, đúng góc của ô sàn hình thoi 2:1 |
+| `--elev` | 30° | Máy ảnh trực giao ngẩng `el` thì nền bị nén `sin(el)`, **không** `tan(el)`: `sin(30°)` = 0,5 ra đúng thoi 2:1. `atan(0.5)` = 26,565° ra thoi 2,24:1, lệch hướng mặt 2,47° ở bốn ô chéo |
 | `--height` (pack) | 192 | `PLAYER_H` 65 × `ART_SS` tối đa 3 = 195. Để 384 là phí đúng gấp đôi dung lượng |
 | view transform | Standard | Blender 4 mặc định **AgX**, nó khử bão hoà rất mạnh, nhân vật ra một đống xám |
 
 Đổi đèn hay đổi model thì phải **dò lại** `--exposure`, đừng bê nguyên số.
 
-## Hai cái bẫy đã gỡ
+## Mấy cái bẫy đã gỡ
+
+**Pivot còn đứng ở hướng cũ lúc căn tư thế nghỉ.** Bẫy nặng nhất tới giờ, và nó im re.
+`main()` parent cả bộ vào một `pivot` rồi xoay pivot để lấy tám hướng; `align_rest_pose()`
+lại chạy **giữa** vòng lặp tư thế, tức lúc pivot vẫn đứng ở góc của hướng render cuối cùng
+thuộc tư thế trước — `yaw0 + 315°` = **225°**. Bản cũ lấy `matrix_world` nên nuốt luôn góc
+đó: tư thế nghỉ bị chốt lệch **+135°** (= −225°), rồi `armature_apply()` nướng cái lệch ấy
+thành vĩnh viễn. Đo được ở ô `s`: thân quay **+44,1°** trong khi phải là −90° (phía máy ảnh).
+
+Hậu quả trong game: cô Ba **đi tới mà mặt quay ra sau**, và ổ bánh neo theo bàn tay nên
+rơi ra **sau lưng**. Tư thế bưng còn sai thêm một tầng: `set_carry_pose()` nắn tay theo
+"+X là phía trước", mà +X giờ không còn là phía trước của thân nữa, nên hai tay dang
+ngang thay vì chụm trước bụng — đúng chỗ người chơi đọc ra là "ngược tay".
+
+Vì sao khó thấy: xương lẫn da cùng quay nên người vẫn lành lặn, và **mọi phép đo trong hệ
+armature vẫn báo đạt** (đo được hướng thân `−0,58°` ở cả bản hỏng lẫn bản sửa). Dấu vết
+duy nhất là cùng một lần chạy mà `idle` **đúng** còn `walk`/`carry` **sai** — vì `idle`
+render trước mọi animation, lúc chưa ai xoay pivot. Nhìn ảnh thì ô `s` ra sau gáy, mặt
+trước trôi đúng **5 ô** sang `nw` (135° lệch ÷ 45° mỗi ô = 3, cộng tiếp cho tròn vòng).
+
+Sửa: `align_rest_pose()` dùng `matrix_local` (so với **cha**) thay cho `matrix_world`.
+Bỏ được pivot nhưng vẫn giữ phép xoay của chính object armature — đúng thứ cần giữ cho
+rig Mixamo. Hai rig cùng gốc thì phép này tự thành phép rỗng, như trước.
+
+Chặn tái phát: `check_facing()` đo trục hai vai ngay ở ô `s` của **mỗi** tư thế, trước khi
+đốt công render bảy hướng còn lại, và `sys.exit` nếu lệch quá 10°. Đã thử lại bản hỏng —
+`idle` qua (−0,0°), `walk` dừng ngay với `+134,1°`.
 
 **Mesh rác trong file Tripo.** Bản xuất kèm một `Icosphere` 42 đỉnh bọc quanh
 nhân vật — không material, không dính xương. Để lại thì hộp bao tính theo nó,
