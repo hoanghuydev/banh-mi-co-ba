@@ -1,5 +1,12 @@
 # P4-02 — Cấu trúc mùa 40 ngày
 
+> ## ⚡ REVAMP 2026-10-20 — ☠️ CHẾT TOÀN BỘ
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp + [`revamp/00-YEU-CAU.md`](../revamp/00-YEU-CAU.md). Phần ☠️ không dùng làm căn cứ.
+>
+> Cả doc là xương sống mùa 40 ngày (T4): nhịp 4 hồi, lịch mở khoá gossip/sổ tay/sổ nợ, tín hiệu báo trước arc, cân bằng tích/tiêu theo ngày — đều chết. Thay bằng: chơi vô hạn tới thắng/thua (R5), topping mở dần (R2), mốc truyện kích theo thành tích (R0.5).
+>
+> **Còn dùng được:** §5.1 phép đo thời lượng một ngày (R5); ý "đỉnh đông khách phải hiếm" + mưa −40% ở §2.7 làm đầu vào `Y(x)`/`ε` (R5); luật N5 "ngày 1–2 không cutscene".
+
 **Thuộc phase:** P4 — Nội dung
 **Phụ thuộc:** `CANON.md` §3 (11 sự kiện) · §12.6 (không gossip trong 2 giờ đầu) · §13 (4 ràng buộc kinh tế) · §15 (trợ năng + nguyên tắc kết) · §17 (bản đồ phase, cổng cứng) · P4-01 (dàn nhân vật, mốc arc) · P4-03 (thư viện sự kiện) · P4-04 (kết game)
 **Trạng thái:** **Chốt** nhịp 4 hồi, lịch 40 ngày, tín hiệu báo trước XĐ3, bảng cân bằng. **Cần đo** thời lượng thật một ngày (cổng bắt buộc, xem §5 và §6). **Còn mở** 🟡 vị trí chính xác của cú twist giờ thứ 2 nếu phép đo cho kết quả lệch.

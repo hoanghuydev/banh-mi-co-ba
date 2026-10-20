@@ -1,5 +1,9 @@
 # Bánh Mì Cô Ba — Tổng quan tài liệu thiết kế
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ MỤC LỤC CŨ, ĐỌC KÈM BANNER
+> Đang revamp theo [`revamp/00-YEU-CAU.md`](revamp/00-YEU-CAU.md). Tóm tắt cái chết/cái giữ ở khối đầu [`CANON.md`](CANON.md); phase mới **R0–R6 (+R0.5)** ở CANON §17.1.
+> Mỗi doc bên dưới có banner ☠️/⚠️/✅ ở đầu — đọc banner trước. Mục §4 (nguồn hàng tái dùng đồn thổi), §5.1 #1 (mốc đồn thổi), §6 (đo 40 ngày), §7.1 B2 (day-spec 40 ngày) ☠️.
+
 > Bạn bán bánh mì ở đầu hẻm Sài Gòn. Khách đứng cách bạn nửa mét và **nhìn thấy mọi thứ bạn làm**.
 
 Tài liệu này là **mục lục và bản đồ đường đi**. Mọi hằng số thiết kế nằm ở [`CANON.md`](CANON.md) — đọc file đó trước, đó là nguồn sự thật duy nhất.
@@ -19,15 +23,16 @@ Nguồn gốc mọi quyết định: [`../idea.md`](../idea.md) (Phần I — re
 
 ---
 
-## 2. Năm trụ cột — thước đo mọi quyết định
+## 2. Trụ cột — thước đo mọi quyết định
 
 | | Trụ cột | Cái gì sụp nếu vi phạm |
 |---|---|---|
 | **T1** | Khách chấm **QUÁ TRÌNH**, không chỉ chấm kết quả | Toàn bộ khác biệt cạnh tranh. Mọi game phục vụ khách khác đều chỉ chấm món cuối |
 | **T2** | **Món ăn LÀ lựa chọn hội thoại** | Gameplay và narrative tách làm hai lớp dán vào nhau → đúng lỗi "NPC dễ thương nhưng giả" |
-| **T3** | **Không hiện chỉ số quan hệ** | Hiện `+3 trust` là giết hết cảm giác người |
-| **T4** | **Một mùa có điểm kết** | Rơi vào bẫy "vòng lặp vô tận không có điểm kết" mà người chơi cozy đang chán |
+| ~~T3~~ | ☠️ ~~Không hiện chỉ số quan hệ~~ | Chết theo revamp — không còn hệ quan hệ |
+| ~~T4~~ | ☠️ ~~Một mùa có điểm kết~~ | Chết theo revamp — chơi vô hạn tới thắng 50tr / thua ATTP |
 | **T5** | **Attention phải NHÌN THẤY ĐƯỢC** | Cơ chế lõi thành xổ số. 4 persona độc lập cùng cảnh báo điều này |
+| **T6** | **Sao là chỉ số uy tín công khai duy nhất** | Hệ quả hành vi bị giấu hoặc tản ra nhiều chỉ số → người chơi không biết mình đang được chấm gì |
 
 ---
 

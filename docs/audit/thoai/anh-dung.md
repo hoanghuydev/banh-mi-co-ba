@@ -1,5 +1,8 @@
 # Rà thoại — `src/content/talks/anh-dung.json`
 
+> ## ⚡ REVAMP 2026-10-20 — ☠️ CHẾT TOÀN BỘ
+> Rà thoại theo giọng cũ + hệ trí nhớ/quan hệ đã chết. Toàn bộ thoại viết lại giọng Nam gen Z ở R6 (CANON §9, §17.1). Chỉ giữ để truy vết nội dung cũ.
+
 **Hợp đồng:** `docs/phase-2-he-npc/P2-07-neo-thoai-vao-the-gioi.md` · **8 cuộc · 111 nút**
 
 Anh Dũng — xe ôm công nghệ, NPC **có tên** (`kindOf` → `CHUYEN`: có trí nhớ, có cờ chuyện,

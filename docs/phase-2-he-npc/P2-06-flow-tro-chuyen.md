@@ -1,5 +1,22 @@
 # P2-06 — Flow trò chuyện v2: hai kênh, không đóng băng
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §2.9 câu lý do #3, #4 (tier), #7 (ký ức buồn), #8 (tier `RIVAL`/`anger`) | ☠️ | Sống nhờ quan hệ + trí nhớ NPC. Chỉ giữ lý do do người chơi/hoàn cảnh (#1, 2, 5, 6, 9–11) |
+> | §2.11 (B) ràng buộc "không `..`, không ghi sổ tay", §6–§8 dòng `GossipCorner` / `GOSSIP_START_DAY` / RB4 | ☠️ | Đồn thổi, nghe lỏm, sổ tay chết. Cảnh chào/tán gẫu NPC↔NPC vẫn giữ, làm nền |
+> | §2.12 cột `CHUYEN` "trí nhớ · lời hứa · arc" | 🔁 | Chỉ còn lời hứa trong lượt/ngày. Trí nhớ, arc chết |
+> | §3 khoá `usedSeason`, §2.9 "cạn cả mùa" | 🔁 | Không còn mùa → cạn = lặp vô hạn. Cần luật quay vòng (shuffle-bag), chốt ở R6 |
+> | §2.6, §5 `TALK_DEEP_PER_DAY`, §6 M3/M5 `seasonTalkCoverage` | ⏳ | Đo theo 40 ngày / 86 cuộc. Trần 2/ngày giữ tạm, đo lại theo độ lặp khi chơi vô hạn (R5) |
+> | §1, §4, §8 số "17,2 khách/ngày", "26 giây/ổ" | ⏳ | Số khách đổi theo `Y(x)` (R5) |
+> | §1, §6 checklist "`rel` không đổi", nhắc T3 | 🔁 | `rel` chết, T3 chết → luật "không hiện số" giờ theo T6. Checklist đổi thành "không tiêu cuộc" |
+> | §2.16 bong bóng trên đầu "cô Ba"; câu mẫu xưng "cô/con" | 🔁 | Cô Ba ☠️ → nhân vật chính Phương Anh, xưng hô theo tuổi NPC (R0.5) |
+> | Tên NPC, câu mẫu giọng Nam cũ | ⏳ | Tên riêng + giọng Nam gen Z ở R6 |
+>
+> **Còn dùng được:** luật hai kênh, `clock.busy`, NPC nói trước, cửa sổ ngắt quãng, ma trận xung đột, phím/mode, 4 loại hội thoại, chặn spam mời, §10–11 — nền T2, giữ nguyên qua R1–R0.5.
+
 **Thuộc phase:** P2 — Hệ NPC đầy đủ (sửa hồi tố hệ đã ship dưới nhãn "P5-01/P5-02" trong code)
 **Phụ thuộc:** `CANON.md` §1 (T1–T5) · §6 (delivery-diff) · §11 (kiến trúc thoại) · §12 (trí nhớ, đồn thổi) · §15 (trợ năng) · §16 (ba thứ đừng làm) — và `P2-01` (rule DB), `P2-02` (kênh phản ứng), `P2-04` (đồn thổi, nghe lỏm)
 **Trạng thái:** **ĐÃ THI CÔNG** (sim + UI + nội dung + lưới chắn) · **Cần đo** bằng người thật ở §5

@@ -1,5 +1,23 @@
 # P2-10 — Kế hoạch rà nội dung thoại: còn 14 file, đây là cách làm
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §6quinquies cổng `T016`, 12 cuộc `*.nhochuyen`, `{m.what}`, `retrieve()` | ☠️ | Trí nhớ NPC chết — gỡ cổng và nội dung |
+> | §6septies biến thể `m.tier(FRIEND/RIVAL)`; §6decies, §6sedecies thưởng `rel` / ký ức `CARED_FOR_THEM` | ☠️ | Quan hệ + trí nhớ chết. Hệ quả act đổ về sao/review (R4) |
+> | §4 đợt F, §5, §6terdecies `LEND_ITEM`/`CLEAR_DEBT` (áo mưa, `RelState.borrowed`), `CREDIT_LOAF`, `notebookEntries` | ☠️ | Arc áo mưa, sổ nợ, sổ tay chết |
+> | §6sedecies `OVERHEARD_BY` | ☠️ | Nghe lỏm chết |
+> | §6nonies `FILM` → `clipDay`, `storyCrowdMul`, nhánh kịch bản ngày 5 | 🔁 | Lịch theo ngày chết. Clip bé Su → review TikTok, tác động qua sao/`Y(x)` (R4/R5) |
+> | §6quaterdecies cảnh tám chuyện, `~cờ` hứa qua đêm | 🔁 | Cảnh tám giữ (nền, không tin đồn). `~cờ` chỉ là cờ chuyện, xét lại ở R6 |
+> | §6undecies `KIET_STEAL`, §6duodecies `RAO_TURN` | ⏳ | Cơ chế giữ được; số + vai chú Kiệt (đối thủ review ác ý) chốt ở R4/R5 |
+> | §6octies `GHE_BAN` 320k, §6tervicies mở khoá "qua ngày 8, đợi bữa mưa" | ⏳ | Giá + bảng mở khoá chốt bằng mô phỏng (R2) |
+> | Số đo theo "mùa", "40 ngày", "ngày 28" rải khắp §6* | 🔁 | Đo lại khi chơi vô hạn (R5) |
+> | §2, §4 thứ tự rà theo 12 NPC, toàn bộ nội dung đã viết, chi tiết đời Cô Ba, xưng hô "cô", "xe" trong thoại | ☠️ / ⏳ | Cô Ba ☠️ → Phương Anh, xưng hô theo tuổi NPC, xe → quán (R0.5); tên NPC + giọng Nam gen Z viết lại ở R6 |
+>
+> **Còn dùng được:** quy trình rà 6 bước (§3), validator `T001–T018`, công cụ `show:talk` / `probe:*`, act chung đã code (`THEY_SIT`, `GIVE_BREAD`, `STAND_IN_SHADE`, `WALK_ON`…), bài học §6bis — dùng lại cho đợt viết lại thoại R6.
+
 **Thuộc phase:** P2 · **Phụ thuộc:** `P2-07` (hợp đồng ba phần) · `P2-08` (năm danh sách) ·
 `P2-09` (kiến trúc giao tiếp, **đã thi công**)
 **Trạng thái:** đang làm · **1/15 file xong** (`qua-duong`)

@@ -1,4 +1,7 @@
 # 04 — NGHIÊN CỨU NGOÀI: hội thoại song song với công việc tay chân
+
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ LỊCH SỬ, CÒN THAM KHẢO
+> Hồ sơ gốc của P2-06 (T2 còn sống). Phần dựa trên quan hệ / trí nhớ / mùa 40 ngày ☠️ — xem banner của [`P2-06`](../../phase-2-he-npc/P2-06-flow-tro-chuyen.md) và [`CANON.md`](../../CANON.md) bản revamp.
 RESEARCHER #1 · 2026-10-02 · cho "Bánh Mì Cô Ba"
 
 **Câu hỏi lõi:** làm sao hội thoại và việc làm bánh diễn ra CÙNG LÚC mà không cái nào

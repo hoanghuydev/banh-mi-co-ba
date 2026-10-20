@@ -1,5 +1,18 @@
 # P4-06 — Màn mở đầu (script)
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp + [`revamp/00-YEU-CAU.md`](../revamp/00-YEU-CAU.md). Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §1 tiền đề · §2 · §4 beat sheet (cô Ba, xe cũ, 4 rưỡi sáng) | ☠️ | R0.5 (đề bài T0.5.5): màn giới thiệu kể bằng điện thoại — tin nhắn sếp 23h → đơn nghỉ → nhóm chat → mẹ chuyển khoản → ký thuê mặt bằng, đặt tên quán → app sao "chưa có đánh giá" |
+> | §3 bốn luật viết | 🔁 | Giữ làm luật viết. Số tiền trong thoại (17k chỗ, 40k/bữa, 25k ổ, vốn 1,4tr) ⏳ R2/R5 |
+> | §5 ràng buộc kỹ thuật | 🔁 | `playerName` → tên quán (mặc định "Bánh Mì Phương Anh", đổi được). Câu riêng của cô Ba khi để trống ☠️ (R0.5) |
+> | §6 đề xuất sửa CANON §7.4 | ☠️ | Bị đề bài R0.5 thay hẳn (bỏ cô Ba) |
+> | §7 dẫn bữa đầu (tour) | 🔁 | Khung tour giữ. Bước 1 `CHO` → nhà cung cấp (R3). Bước 6 "pate · nhân mặn · rau" lệch "mở đầu chỉ ốp la" (R2). Người nói cạnh bong bóng không còn là cô Ba (R0.5). Thêm bước app sao (R4) |
+>
+> **Còn dùng được:** `TourCoach` (một lớp DOM, không nuốt chuột, vòng ôm mép pixel), `tourFreeze` ở lò, luật "chỉ ngày 1, bỏ qua một cú bấm", ô đặt tên không bỏ qua được.
+
 > Viết TRƯỚC khi gõ một dòng thoại nào. Lời thoại ở `src/content/intro.ts` là bản dựng của
 > script này; sửa thoại mà không sửa ở đây là lần sau không ai biết câu đó để làm gì.
 

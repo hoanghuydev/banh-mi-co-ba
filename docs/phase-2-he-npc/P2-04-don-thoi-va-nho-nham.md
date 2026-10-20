@@ -1,5 +1,12 @@
 # P2-04 — Đồn thổi và nhớ nhầm
 
+> ## ⚡ REVAMP 2026-10-20 — ☠️ CHẾT TOÀN BỘ
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> Đồn thổi, nghe lỏm, nhớ nhầm, mutation graph, đồ thị NPC–NPC, `GOSSIP_START_DAY` — chết (CANON §12). Chức năng "chuyện tốt/xấu lan ra" chuyển sang **review công khai** (T6, R4). Chống ăn gian §2.10 (b) thay bằng: người dễ tha vẫn viết review kể lỗi (CANON §8b); §2.11 (h) chết theo.
+>
+> **Còn dùng được:** danh sách trắng/đen §2.12 làm tham khảo cho Đừng-3 bản nới (CANON §16) · mutation graph (*"cho thêm vì ế hàng"*…) làm chất liệu review hiểu sai/cà khịa ở R4.
+
 **Thuộc phase:** P2 — Hệ NPC đầy đủ
 **Phụ thuộc:** `P2-03` (trí nhớ & quan hệ — cung cấp `Memory`, `MemorySource`, `confidence`) · `P2-01` (Rule DB thoại) · `P2-02` (12 NPC) · `P1-02` (tầng nhận thấy) · cung cấp chất liệu cho `P2-05` (sổ tay)
 **Trạng thái:** **Chốt** về ràng buộc và danh sách trắng/đen · **Cần đo** mọi hệ số ở §5 · **Còn mở**: bố cục hình ảnh của bubble nghe lỏm
@@ -1013,7 +1020,7 @@ type GossipLogEntry = {
 | R4 | **CANON §8b** phân tầng khách | Cao | §2.10 — `deTha` và `thanThien` độc lập. 6/12 NPC ở ô bẫy, gồm cả hai nút khuếch đại |
 | R5 | **CANON §8h** khai thác nhớ nhầm chiều ngược | Trung | §2.11 `personalityBias` + ngân sách mùa. Chiến lược "farm khen oan" suy biến thành "làm tốt" |
 | R6 | **CANON §16 Đừng-3** — tin đồn lẻn vào hệ quả | **Cao** | §2.12 danh sách đen + bộ 7 assert chạy trên 500 mùa mỗi lần CI |
-| R7 | Vòng xoáy tiêu cực ở tầng xã hội | Cao | `GOOD_NEWS_MUL` 1.45 + hai nút khuếch đại đều `personalityBias` lệch tốt + `MIN_CONFIDENCE` tin xấu cao hơn |
+| R0.5 | Vòng xoáy tiêu cực ở tầng xã hội | Cao | `GOOD_NEWS_MUL` 1.45 + hai nút khuếch đại đều `personalityBias` lệch tốt + `MIN_CONFIDENCE` tin xấu cao hơn |
 | R8 | Nghe lỏm thành busywork (dừng tay 20s × 40 ngày) | Trung | Tối đa 1 cảnh/ngày, luôn rơi vào lõm khách, tier 1 (dừng tay) đã đủ lấy nội dung — chỉ **nguồn** mới đòi tier 2 |
 | R9 | Người chơi ngắt quãng (Ngọc Ánh) không bao giờ thấy chuỗi | **Cao** | Chuỗi đầu tiên có kịch bản + nhật ký thô ghi đủ 3 mốc (P2-05). Cô ấy nối lại được vào hôm sau |
 | R10 | Chú Kiệt thành nguồn tin xấu vô hạn | Trung | Kiệt `amplifier` 1.10 nhưng `credibility` **0.50** và chỉ có 4 cạnh ra, không cạnh nào tới nút khuếch đại. Tin qua Kiệt đi chậm |

@@ -1,5 +1,23 @@
 # P1-02 — Hệ NHẬN THẤY (perception): certainty tích luỹ, không roll xúc xắc
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN (lõi còn sống)
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | Header "Cung cấp cho" P2-02 trí nhớ, P2-03 đồn thổi | ☠️ | Đầu ra perception đổ về sao + review (R4) |
+> | §1 Lý do giấu certainty theo T3 | 🔁 | T3 chết; certainty vẫn không hiện số — nay vì T5 |
+> | §2.8 Công cụ 2 "Hỏi một câu" → `REMEMBERED_STORY` | ☠️ | Bỏ tác dụng phụ memory; công cụ hạ gaze giữ |
+> | §2.8 Công cụ 5 "Cô Ba đứng tiếp khách" | ☠️ | Bỏ hẳn nhân vật Cô Ba (R0.5). Còn 4 công cụ |
+> | §2.8 Công cụ 1 "ngày 1 cô Ba làm mẫu" · Công cụ 4 "đứng trái/phải xe" | 🔁 | Dạy qua hướng dẫn/màn giới thiệu (R0.5); vị trí theo map quán mới (R1) |
+> | §2.11.1 `WRONG_NAME` · §2.11.2 hệ số `bond` theo tier | ☠️ | Hết trí nhớ tên, hết quan hệ |
+> | §2.12.4 dirt → giảm số khách hôm sau | 🔁 | Thành yếu tố review; số khách chỉ qua sao (R4/R5) |
+> | §2.13 Pattern: seed gossip, hạ `trustCeiling` | ☠️ | Bộ đếm pattern giữ, đầu ra thành review *"dạo này bánh nhạt"* (R4) |
+> | §3 Schema: `trustCeiling`, hàng `REMEMBERED_*` · §5.1 bảng 11 sự kiện | ☠️ | Còn 8 sự kiện (CANON §3) |
+> | §5 Hằng số tune, ví dụ "25 ổ/ngày × 40 ngày" | ⏳ | Mô phỏng lại |
+>
+> **Còn dùng được:** gần như toàn bộ — certainty tích luỹ, `visibility`, gaze state machine, occluder, `traitMul`, `MADE_THEM_WAIT`, `STALL_CLEANLINESS`, 4 state hiển thị, `perceptionTick`. Là đầu vào review ở R4.
+
 **Thuộc phase:** P1 — Vertical slice
 **Phụ thuộc:** `P1-01` (vòng lặp một khách ở quầy) · `P0-02` (clock & fixed-step tick) · `P0-03` (rng seed theo ngày) · `P0-04` (save/autosave)
 **Cung cấp cho:** `P1-03` (delivery diff) · `P2-01` (rule DB thoại) · `P2-02` (trí nhớ 3 tầng) · `P2-03` (đồn thổi)

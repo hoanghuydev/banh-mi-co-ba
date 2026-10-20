@@ -1,5 +1,15 @@
 # Xưởng render nhân vật từ model 3D
 
+> ## ⚡ REVAMP 2026-10-20 — ✅ CÒN SỐNG
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | Nhắc "cô Ba" làm nhân vật chính; tên file model (`anh-bao`, `ba-bay`) | ⏳ | Cô Ba ☠️ → nhân vật chính Phương Anh (R0.5), cần model mới; tên NPC đổi R6. Đường ống render không đổi |
+> | §"Vừa đi vừa bưng" — sáu món | ⏳ | Danh mục món theo topping mở dần (R2) |
+>
+> **Còn dùng được:** toàn bộ đường ống Blender → atlas Phaser, các bẫy đã gỡ — cho mọi model nhân vật mới (Phương Anh R0.5, NPC R6).
+
 Thay cho việc chờ artist gửi bảng xoay: có model 3D **đã rig** là tự render ra
 đủ tám hướng, và — điều bảng xoay dán tay không làm được — đủ cả animation.
 

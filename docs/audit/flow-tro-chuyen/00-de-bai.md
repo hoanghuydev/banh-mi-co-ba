@@ -1,5 +1,8 @@
 # BRIEF CHUNG — Rà soát lại toàn bộ FLOW TRÒ CHUYỆN của "Bánh Mì Cô Ba"
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ LỊCH SỬ, CÒN THAM KHẢO
+> Hồ sơ gốc của P2-06 (T2 còn sống). Phần dựa trên quan hệ / trí nhớ / mùa 40 ngày ☠️ — xem banner của [`P2-06`](../../phase-2-he-npc/P2-06-flow-tro-chuyen.md) và [`CANON.md`](../../CANON.md) bản revamp.
+
 ## Game là gì
 2.5D isometric, Phaser + TypeScript, client-only. Người chơi bán bánh mì ở một con hẻm
 Sài Gòn. Một mùa = 40 ngày. Lõi thiết kế (docs/CANON.md §0): **"a game about being

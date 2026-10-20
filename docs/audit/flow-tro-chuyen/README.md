@@ -1,5 +1,8 @@
 # Rà soát flow trò chuyện — hồ sơ gốc
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ LỊCH SỬ, CÒN THAM KHẢO
+> Hồ sơ gốc của P2-06 (T2 còn sống). Phần dựa trên quan hệ / trí nhớ / mùa 40 ngày ☠️ — xem banner của [`P2-06`](../../phase-2-he-npc/P2-06-flow-tro-chuyen.md) và [`CANON.md`](../../CANON.md) bản revamp.
+
 **Ngày:** 2026-10-02 · **Kết quả:** `../../phase-2-he-npc/P2-06-flow-tro-chuyen.md`
 
 Hồ sơ này là **vật liệu thô** dẫn tới bản thiết kế P2-06. Giữ lại vì ba lý do: các con số

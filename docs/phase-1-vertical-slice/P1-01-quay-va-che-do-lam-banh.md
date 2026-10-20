@@ -1,5 +1,22 @@
 # P1-01 — Quầy và chế độ làm bánh
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §2.1–2.2 Bốn zone + sơ đồ quầy | 🔁 | Map thu nhỏ, chỉ giữ trạm có tác dụng: thớt 1–2 ô, bàn order 1 ô, chỗ để bánh 1 ô (R1). Xe → quán có mặt bằng (art R0.5) |
+> | §2.3 Quy trình 11 bước, danh sách nhân đầy đủ | 🔁 | Mở đầu chỉ ốp la, topping mở dần (R2). Thời gian thao tác ⏳ |
+> | §2.6 Khẩu vị ẩn: "không hiện số (T3)", suy ra qua sổ tay | 🔁 | T3, sổ tay chết. Khẩu vị lệch → yếu tố review (R4) |
+> | §2.6 Chiến lược "4 khách ruột" · đoạn nối `REMEMBERED_USUAL` | ☠️ | "Như mọi bữa" chết |
+> | §2.7 `DROPPED_FOOD`: dòng đồn thổi · cô Ba nhắc lúc ghi sổ tối | ☠️ | Đồn thổi, sổ tay chết. Hệ quả → review (R4) |
+> | §2.7, §2.8, §2.9 Phản ứng của cô Ba (lượm bánh, khăn khô, gật đầu, dòng cảnh tối) · R9 | ☠️ | Bỏ hẳn nhân vật Cô Ba (R0.5). Lời dạy chuyển sang hướng dẫn/điện thoại nếu cần |
+> | §2.8 `DIRTY_HANDS`: rửa tay 3 s, kích khi tay `MONEY` chạm đồ ăn | 🔁 | Rửa tay theo lô ~10 ổ (R1) — phải định nghĩa lại khi nào tay "bẩn" |
+> | §2.10–2.11, §5 Thông lượng, bảng giây, "số ổ cao điểm 18–24 do lịch NPC" | ⏳ | Số khách theo `Y(x)` × sao (R5); giây đo lại sau R1 |
+> | §6, R3 Tiêu chí "12 khẩu vị / 3 ngày", micro-cheat "40 ngày" | 🔁 | Không còn mốc 40 ngày; micro-cheat lộ qua review (R4) |
+>
+> **Còn dùng được:** nướng lại + `BURNT_OR_COLD`, hai đường thao tác + hoàn tác + xác nhận, preset, `grip`/rớt bánh, hai tay tách riêng, `FLOURISH` không ra tiền, phán quyết vệ sinh — nền cho R1–R2.
+
 **Thuộc phase:** P1 — Vertical slice
 **Phụ thuộc:** `P0-01-khung-scene-save-rng` (dự kiến) · `P0-02-dong-ho-va-nhip-ngay` (dự kiến) · `P1-02-tang-nhan-thay` (dự kiến) · `P1-04-ui-ux-hai-thiet-bi`
 **Trạng thái:** **Chốt** phần zone / quy trình / phán quyết vệ sinh · **Cần đo** bảng thời gian thao tác, ngưỡng `grip`, ngân sách cao điểm · **Còn mở** số slot lò sau nâng cấp (thuộc P3)
@@ -797,7 +814,7 @@ Chi tiết đầy đủ ở **`P1-04-ui-ux-hai-thiet-bi.md`**. Ở đây chỉ n
 | R4 | **Người chơi dùng `UNDER_COUNTER` làm chỗ trốn** | Luật zone bất di (§2.1): `UNDER_COUNTER` không chứa thao tác ảnh hưởng chất lượng. Kiểm bằng test tĩnh ở §6 |
 | R5 | **`FLOURISH` trượt thành QTE** trong lúc tune | Bốn khoá ở §2.9 là **ràng buộc kiến trúc, không phải hướng dẫn**: không tồn tại event `FLOURISH_FAILED`, không tồn tại prompt asset. Code review bắt buộc |
 | R6 | **`FLOURISH` trở thành đường bù trừ lỗi** | Salience 15 (thấp nhất danh mục) + `norepeat` 90 s + không chạm tiền. Không có công thức nào cộng flourish vào để trừ defect |
-| R7 | **Cao điểm thành trừng phạt** → mất chất cozy, phản lại định vị | Biên 1,35×. Cộng: chế độ "một khách một lượt" và chế độ không giới hạn thời gian (CANON §15) **không bị khoá khỏi nội dung nào** |
+| R0.5 | **Cao điểm thành trừng phạt** → mất chất cozy, phản lại định vị | Biên 1,35×. Cộng: chế độ "một khách một lượt" và chế độ không giới hạn thời gian (CANON §15) **không bị khoá khỏi nội dung nào** |
 | R8 | **Rửa tay bị bỏ qua vì quá đắt** → `DIRTY_HANDS` thành thuế cố định | Cho một lối thoát **có kỹ năng**: hai tay riêng biệt. Người chơi giỏi gần như không bao giờ phải rửa. Người chơi mới rửa nhiều. Chênh lệch đó **chính là** đường cong kỹ năng |
 | R9 | **Cô Ba trượt thành hệ thống phạt** (vi phạm CANON §7.4) | Mọi phản ứng của cô Ba trong §2.7 là **thoại + prop**, không trừ một con số nào. Không có biến `coBaDisappointment`. Nếu cần trạng thái, dùng `applycontext` có `duration` (CANON §11) |
 | R10 | **Trailer vô tình dùng cảnh nhặt bánh** | CANON §7.6. Ghi vào brief P6. Nhân vật **không có animation nhặt đồ từ đất** — asset đó không tồn tại nên không quay được |

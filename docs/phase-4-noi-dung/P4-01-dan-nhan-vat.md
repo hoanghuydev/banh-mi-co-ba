@@ -1,5 +1,24 @@
 # P4-01 — Dàn nhân vật: 12 NPC + cô Ba + người chơi
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp + [`revamp/00-YEU-CAU.md`](../revamp/00-YEU-CAU.md). Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §1 Mục tiêu (T3, T4) | ☠️ | Hai trụ đã chết, thay bằng T6 (sao + review công khai) |
+> | §2.2 + bảng "hệ quả chỉ số" từng hồ sơ | 🔁 | `deTha` → độ khoan dung khi chấm sao, `thanThien` → xác suất viết chữ (CANON §4). Bỏ phần memory decay, lên quan hệ, lan tin. Bảng persona chốt ở R4 |
+> | Hồ sơ NPC: đơn hàng quen (`REMEMBERED_USUAL`), vai trò gossip, arc 40 ngày, lịch theo ngày trong mùa | ☠️ | Order "như mọi bữa", đồn thổi, mùa 40 ngày đều chết |
+> | Hồ sơ NPC: tên, chức năng, khẩu vị ẩn | 🔁 | Tên đổi thành tên riêng (R6). Chức năng mới theo CANON §9 (chị Lan chỉ chấm sao, bé Su review TikTok, chú Kiệt review ác ý…). Hệ quả khẩu vị ẩn → yếu tố review (R4) |
+> | Hồ sơ NPC: thoại đặc trưng, chi tiết dính cô Ba (bất hoà bà Bảy…) | 🔁 | Giọng Nam gen Z (R6). Bỏ mọi chi tiết đời cô Ba (R0.5) |
+> | §2.B Cô Ba | ☠️ | R0.5 bỏ hẳn cô Ba. Mentor, sổ tay, đi chợ đều chết |
+> | §2.C Người chơi (cháu cô Ba) + bảng xưng hô | 🔁 | R0.5: Phương Anh 23–26 tuổi, nghỉ việc công ty, mở quán thật. Xưng hô: người lớn gọi con/em/bé, người trẻ gọi chị (đề bài T0.5.9) |
+> | §3 schema: `usual`, `gossip`, `playerAddressesAs` (WRONG_NAME), `arc` | ☠️ | Giữ `personality`, `quirk`, `art`, `voice` |
+> | §4 UI: sổ tay khách, tên chỉ hiện trong sổ tay | ☠️ | Sổ tay + WRONG_NAME chết. UI uy tín = app sao trên điện thoại (R4) |
+> | §5 tham số gossip, khoảng trống chị Lan, ngày báo trước chú Tư | ☠️ | Hết arc, hết đồn thổi |
+> | §5 số dòng thoại / NPC | ⏳ | Tính lại khi có kho review (R4) và thoại gen Z (R6) |
+>
+> **Còn dùng được:** 4 chỉ số tính cách (giữ nguyên số), ngoại hình/prop/màu nhận dạng, quirk + luật L2–L5 chống rập khuôn, khung layered sprite — làm đầu vào persona review (R4) và đổi tên (R6).
+
 **Thuộc phase:** P4 — Nội dung
 **Phụ thuộc:** `CANON.md` §4 (4 chiều tính cách) · §9 (12 NPC — tên và chỉ số **cố định**) · §11 (kiến trúc thoại) · §12 (trí nhớ & đồn thổi) · §14 + §14.1 (cơ chế Việt Nam & lằn ranh đỏ) · §16 Đừng-1 và Đừng-4 (layered sprite) · P4-02 (lịch 40 ngày) · P4-03 (sự kiện & arc)
 **Trạng thái:** **Chốt** phần định danh, chỉ số, đơn hàng quen, lịch sinh hoạt, arc. **Cần đo** số dòng thoại thực tế mỗi NPC sau vertical slice. **Còn mở** 2 chỗ đánh dấu 🟡.

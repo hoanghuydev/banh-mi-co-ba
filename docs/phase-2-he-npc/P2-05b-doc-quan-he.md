@@ -1,5 +1,12 @@
 # P2-05b — Đọc quan hệ trong sổ tay
 
+> ## ⚡ REVAMP 2026-10-20 — ☠️ CHẾT TOÀN BỘ
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> Trục độ hiểu/tình cảm, `trail`, dải mặt trong sổ, trần tin, phương án C — chết theo sổ tay + quan hệ (CANON §4, T3). Code đã dựng (`sim/notebook`, `sim/memory`, `ui/notebook`, `content/lines/so-tay.json`) ☠️, gỡ ở phase revamp chạm tới.
+>
+> **Còn dùng được:** §3.4 "con số phải nói ra nó đếm cái gì" và §3.6 ranh giới giọng (nhãn phổ thông, thoại giọng Nam) cho UI app sao R4 · bài học 13 game §7 làm tham khảo.
+
 **Thuộc phase:** P2 — Hệ NPC đầy đủ
 **Phụ thuộc:** `P2-05` (sổ tay — đây là phụ lục của nó) · `P2-03` §2.5 bucket, §2.8 trần tin · `P2-04` (đồn thổi)
 **Giọng:** sổ của chính người bán, ngôi thứ nhất — **không có cô Ba** (quán là của người chơi; cô Ba chỉ ở màn mở đầu P4-06)

@@ -1,5 +1,20 @@
 # P2-07 — Neo thoại vào thế giới: không còn một chữ nào miễn phí
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §3.2 khoá `t.tier(Z)` | ☠️ | Không còn độ thân |
+> | §4ter tầng "Cả mùa" `m.tier` · `m.remembers`, luật nhắc chuyện cũ | ☠️ | Trí nhớ NPC chết. `m.visits` (đếm lượt ghé) còn dùng |
+> | §3.5 act `CLEAR_DEBT` · `CREDIT_LOAF` · `LEND_ITEM` · `OVERHEARD_BY` | ☠️ | Sổ nợ, arc áo mưa, nghe lỏm chết |
+> | §4 giá của "?" = `rel −1`; §4bis người dễ tha "vẫn nhớ" | 🔁 | `rel` + trí nhớ chết. "?" và lời hứa có hạn giữ; hệ quả đổ về bỏ đi / yếu tố review (R4) |
+> | Xưng hô "cô/con" của nhân vật chính trong từ vựng + ví dụ | 🔁 | Cô Ba ☠️ → Phương Anh 23–26 tuổi; người lớn gọi `con/em/bé`, người trẻ gọi `chị` (R0.5) |
+> | §3.5 `DISCOUNT` · `FREE_LOAF` · `PROMISE` | 🔁 | Hệ quả không còn là `rel` → sao/review (R4); giá theo 3 mốc (R2) |
+> | §6bis.1 `kiet.bienhieu` "móc cho arc ông Hải", "cái xe có bảng" | ☠️ / 🔁 | Arc theo ngày chết. Xe → quán thật có biển hiệu (R0.5) |
+>
+> **Còn dùng được:** hợp đồng ba phần `need`/`while`/`does`, từ vựng `p.` `t.` `w.` `c.`, luật tĩnh/động, "?" < 5%, lời hứa có hạn, mục đích × tâm trạng, cách rà — nền cho thoại R6 và cho review R4 (review cũng phải neo vào việc thật).
+
 **Thuộc phase:** P2 — Hệ NPC · **Phụ thuộc:** `P2-06` (flow trò chuyện v2), `CANON` §1 (T1, T5), §8 (ăn gian), §16
 **Trạng thái:** **Hợp đồng chốt** · đang rà 1.534 nút
 

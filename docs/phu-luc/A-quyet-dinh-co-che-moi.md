@@ -1,5 +1,22 @@
 # PL-A — Quyết định về 4 cơ chế được đề xuất thêm
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §2.1–§2.2 Thước đo 5 trụ, bảng chấm cột T3/T4 | 🔁 | T3, T4 chết; thêm T6 (sao). Chấm lại với 4 trụ T1, T2, T5, T6 |
+> | §2.3 Phán quyết 1 Thiết bị | 🔁 | Phán quyết giữ; lý do T3/T4 ("gọn trong 40 ngày") ☠️ |
+> | §2.4 Phán quyết 2 Nguồn hàng — tái dùng trí nhớ/bucket/đồn thổi | ☠️ | Thay bằng nhà cung cấp 2–3 mức chất lượng, 3 thanh, giá biến động (R3) |
+> | §2.5 Phán quyết 3 Nơi bán — luật CD-2 (chi phí là quan hệ) | ☠️ | Quan hệ chết. CD-1 (một quầy) giữ; "đổi chỗ của xe" 🔁 xét lại vì xe → quán (R0.5) + map thu nhỏ (R1) |
+> | §2.6 Phán quyết 4 Từ chối nhân viên | 🔁 | Giữ (lập luận T1/T2 còn đúng); lập luận T4 ☠️ |
+> | §2.7.2 Cô Ba đứng tiếp khách | ☠️ | Cô Ba bỏ (R0.5). Công cụ hạ attention này cần thay hoặc bỏ — chốt R0.5 |
+> | §2.7.3 Bé Su phụ việc | ⏳ | Tên đổi R6 |
+> | §2.7.4 Khách tự đứng bán hộ: nhánh sổ nợ + đồn thổi | ☠️ | Sổ nợ, đồn thổi chết. Phần tiền thừa/thiếu cần soát lại với CANON §16 (ngẫu nhiên không đổi tiền đã thu) |
+> | §2.8 Sáu câu hỏi: Q4 (T3), Q5 (40 ngày) | 🔁 | Q4 → "có tạo chỉ số ngầm ngoài sao không" (T6); Q5 → "có còn nghĩa khi chơi vô hạn không" |
+>
+> **Còn dùng được:** luật từ chối nhân viên, luật "người phụ việc không chạm vào bánh", quy trình 6 câu hỏi (sửa Q4/Q5) — cho mọi phase R.
+
 **Thuộc phase:** Xuyên phase (định khung cho P3) · **Phụ thuộc:** `CANON.md` §1, §5, §7, §8, §10, §13, §14, §16 · **Trạng thái:** **Chốt**
 
 > Doc này là **bản phán quyết**. Ba cơ chế được nhận có doc thiết kế riêng; cơ chế bị từ chối có phương án thay được duyệt ngay trong doc này.

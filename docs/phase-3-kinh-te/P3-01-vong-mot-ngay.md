@@ -1,5 +1,22 @@
 # P3-01 — Vòng một ngày: 4 pha, thông lượng giờ cao điểm, mở hàng
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §2.1 Pha Sáng "đi chợ 4 sạp" (cô Ba đi chợ) | 🔁 | Thành đặt hàng nhà cung cấp 3 mức chất lượng (R3); cô Ba ☠️ (R0.5) |
+> | §2.1, §4 Pha Chiều/Tối: sổ nợ, sổ tay, hụi, tiền học, cảnh cô Ba đếm tiền + tiền thuốc cô Ba | ☠️ | Sổ tay/sổ nợ/fail mềm chết; cô Ba bỏ (R0.5). Pha Tối còn: chi phí cố định + mua thiết bị, bối cảnh viết lại theo quán của Phương Anh (R0.5) |
+> | §2.2–§2.3 Ngân sách thời gian, đồng hồ co giãn; "chỗ đứng đầu hẻm" | ⏳ | Đo lại khi map thu nhỏ (R1), số khách mới (R5); xe → quán (R0.5) |
+> | §2.4.3–§2.4.4 Đường cong lưu lượng, bảng thời tiết | ⏳ | Tổng khách giờ theo `Y(x)` × sao (R5). Đường cong trong ngày giữ hình, số chờ mô phỏng |
+> | §2.4.3, §2.4.5, §2.5.3 Lịch NPC có tên, cửa sổ nghe lỏm, grace theo `relationTier`/Friend, ghi `memory` | ☠️ | Lịch NPC, đồn thổi, quan hệ, trí nhớ chết. Kiên nhẫn chỉ còn theo tính cách |
+> | §2.6 Mở hàng / đốt vía | 🔁 | Bỏ điểm `tier === "Friend"`. Đang dựa vào niềm tin cô Ba (☠️) → giữ/bỏ, ai đảm nhận: chốt R0.5 |
+> | §2.7 (3)–(4) Đóng cửa sớm: `streakDays`, `gossip.seed`, `reputation.alleyDelta` | 🔁 | Hệ quả thành review/sao (R4). Số khách hôm sau chỉ đi qua sao (T6) |
+> | §2.7 (1) Chi phí cố định 100k/ngày, §2.8 EV lịch mưa | ⏳ | Giữ cơ chế, số mô phỏng lại (R2/R5). "Mutation rate" ở §2.8 ☠️ |
+> | §3, §5 `day: 1..40`, mọi số tune | ⏳ | Bỏ trần 40 ngày (R5). Số chờ mô phỏng |
+>
+> **Còn dùng được:** perception theo hàng đợi (§2.4.5), kiên nhẫn riêng từng người + trợ năng (§2.5), luật "áp lực là vật thể" (§4), chống đóng cửa sớm — cho R1/R4/R5.
+
 **Thuộc phase:** P3 — Kinh tế
 **Phụ thuộc:** `CANON.md` §1 (T1–T5), §5 (perception), §8 (a, c, l), §13.3, §14, §15 · `P3-03` (tồn kho & dự báo cầu) · `P3-04` (thiết bị & chỗ đứng) · `P2-*` (rule DB, trí nhớ)
 **Trạng thái:** **Cần đo** — toàn bộ ngân sách thời gian thật ở §2.2 là **giả thiết phải đo ở P0**, không phải con số đã chốt. Các cơ chế ở §2.3–§2.7 là **Chốt**.

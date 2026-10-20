@@ -1,5 +1,8 @@
 # Bảng ký lằn ranh đỏ — P4-05 §2.8
 
+> ## ⚡ REVAMP 2026-10-20 — ✅ CÒN SỐNG
+> Lằn ranh đỏ giữ nguyên. Thêm việc ở R4: **review** (kể cả review ác ý, nhầm quán, spam) cũng phải qua bảng ký này.
+
 > 🔴 **PM không được tạo build phát hành nếu một ô "trước mỗi build" còn trống.**
 > 🔴 **Dự án CHƯA có Chủ biên văn hoá (VH) là người Việt với quyền phủ quyết** — đây là hạng mục chặn duy nhất của cả P4 (P4-05 §6). Bảng dưới để trống có chủ ý: bản dựng không tự ký thay người.
 

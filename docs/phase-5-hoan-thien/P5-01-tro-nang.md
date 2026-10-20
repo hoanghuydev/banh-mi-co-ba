@@ -1,5 +1,20 @@
 # P5-01 — Trợ năng
 
+> ## ⚡ REVAMP 2026-10-20 — ✅ CÒN SỐNG
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp + [`revamp/00-YEU-CAU.md`](../revamp/00-YEU-CAU.md). Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §2.1.4 "sổ tay tối" · §2.1.5 nhật ký `ui/notebook/log.ts` | 🔁 | Sổ tay chết. Nhật ký câu thoại trong ngày giữ, dời khỏi `ui/notebook` |
+> | §2.2.1 danh sách pause: `gossipTicks` | ☠️ | Thêm: thông báo review / app điện thoại (R4) |
+> | §2.2.2 3 nấc thời gian: "achievement / ending / arc" | 🔁 | Thay bằng thắng/thua. Mô phỏng R5 phải kiểm chế độ không giới hạn thời gian không thành đường tới mốc thắng dễ |
+> | §2.5.1 mục 6 gọi tên khách (`WRONG_NAME`) · §2.5.2 "đã ghi memory" | ☠️ | CONFIRMED giờ ghi yếu tố review, không ghi memory |
+> | §2.6 công tắc #1 nhớ nhầm, #3 biến mất không chia tay, #4 sổ tay | ☠️ | Thêm công tắc "tắt thông báo review mới" (CANON §15, R4) |
+> | §2.9 chữ Steam (endings, notebook, false memory) · §3 schema switches | 🔁 | Viết lại sau R4/R5 |
+> | §7 R4, R6, R10 (kênh T3) | 🔁 | T3 chết; rủi ro còn lại là lộ certainty (CANON L2) |
+>
+> **Còn dùng được:** gần hết doc: cỡ chữ, hộp nền đục, pause mọi lúc, giảm chuyển động, 5 kênh âm thanh, chạm-để-đặt + hoàn tác + xác nhận, icon theo hình dáng, typography tiếng Việt.
+
 **Thuộc phase:** P5 — Hoàn thiện
 **Phụ thuộc:** `CANON.md` §15 (danh sách bắt buộc) · §5 (perception) · §11 (thoại) · §16 (Đừng-4) · `P5-02` (icon, typography, giảm chuyển động) · `P5-03` (5 bus âm thanh) · `P5-04` (chế độ không giới hạn thời gian ảnh hưởng cân bằng)
 **Trạng thái:** **Chốt** (trừ 3 dòng đánh dấu *Cần đo* trong §5)
@@ -901,7 +916,7 @@ export type AccessibilitySettings = {
 | R4 | **`allowFalseMemory = false` thành chế độ dễ** | Người chơi bật để tránh bị oan → mất cả một trục cảm xúc | Tắt nó **không** giảm hệ quả của lỗi thật; chỉ bỏ phần *bị kể sai*. Tin đồn đúng vẫn lan. P5-04 §2(h) kiểm chứng |
 | R5 | **`maxConcurrentCustomers = 1` phá kinh tế** (ít khách → ít tiền) | Người cần trợ năng bị phạt bằng tiền | Số khách/ngày **không đổi**, họ xếp hàng ngoài khung. Ngày dài hơn về phút thật. Test A23 |
 | R6 | **Giảm chuyển động xoá mất ngôn ngữ cơ thể** → mất kênh T3 duy nhất | Người bật giảm chuyển động không đọc được quan hệ | Không bao giờ xoá rig: biên độ ×0,40, giữ ×1,80, + `postureCaptions`. Đo ở A-4 |
-| R7 | **Font thiếu dấu lọt vào build** qua một asset/texture mới | Chữ vuông trong bản phát hành | CI `VN_PROBE` + preview trong menu dùng đúng chuỗi khó |
+| R0.5 | **Font thiếu dấu lọt vào build** qua một asset/texture mới | Chữ vuông trong bản phát hành | CI `VN_PROBE` + preview trong menu dùng đúng chuỗi khó |
 | R8 | **Mục Steam hứa thứ build không có** | Refund + mất niềm tin đúng nhóm khán giả quan tâm nhất | A26: hai người ký từng dòng. Nếu một tính năng bị cắt → **xoá dòng đó khỏi Steam trước khi cắt khỏi build** |
 | R9 | **Trợ năng bị đẩy xuống cuối lịch rồi bị cắt** | Cắt hết | Gate A5 nằm **trước** gate "Steam page live" (tuần 9 theo idea §23). Không có page nếu không có A5 |
 | R10 | **`postureCaptions` lộ chỉ số ẩn** → vi phạm T3 | Giết cảm giác người | Caption chỉ mô tả **pose đang render**, sinh từ `poseId` chứ không từ `trustPoints`. Review mã bắt buộc |

@@ -1,5 +1,21 @@
 # P0-03 — Đo lường và công cụ dev
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §1 Câu hỏi "40 ngày = bao nhiêu giờ" · §2.1 bảng ngoại suy cả mùa · A2 | ☠️ | Bỏ trần ngày. Câu hỏi mới: bao lâu tới mốc thắng, tỉ lệ thua (mô phỏng R2/R5) |
+> | §2.1 Telemetry: `gossip:*`, `notebook:*` · A13 | ☠️ | Đồn thổi, sổ tay chết. Thêm event review/sao (R4) |
+> | §2.2 Panel P3 Gossip graph · P4 Memory · lệnh console `gossip.*`, `stim.fire("WRONG_NAME")` | ☠️ | Hệ đã chết |
+> | §2.2 Panel P7 Econ (giá chợ, sổ nợ, nghĩa vụ) | 🔁 | Giá nhà cung cấp + chi phí cố định/ngày (R3); sổ nợ ☠️. Thêm panel sao/review (R4) |
+> | §2.2 `sim.headless(40)` · B6 | 🔁 | Thành `tools/sim.ts` — chạy tới thắng/thua, không theo 40 ngày (R2/R5) |
+> | §2.4 Câu hỏi cổng hỏi `WRONG_NAME` kiểu "quan hệ" · hàng "nghe lỏm gossip" | ☠️ | Dùng `ORDER_DEFECT` cho nhóm kết quả |
+> | A8 Tỉ lệ tích cực / tiêu cực ≥ 1,0 | 🔁 | Luật hết hiệu lực ở mức danh mục sự kiện (CANON §3); cân bằng qua sao |
+> | §5 Ngưỡng cảnh báo, mục tiêu phút/ngày | ⏳ | Đo lại khi map/quầy mới xong (R1) |
+>
+> **Còn dùng được:** telemetry cục bộ, panel Perception / Rule query / Clock & RNG / Perf, `validate-rules`, `lint-lines`, `content-stats`, giao thức playtest người lạ + chấm mù κ — dùng cho mọi phase R.
+
 **Thuộc phase:** P0 — Nền tảng
 **Phụ thuộc:** `P0-01` (EventBus, `GameContext`, dev build), `P0-02` (clock, rng, save) · `CANON.md` §5 (certainty), §8 (12 lỗ hổng), §11 (rule DB, số dòng thoại), §12 (memory/gossip), §15 (trợ năng), §17 (bản đồ phase, cổng P1)
 **Trạng thái:** **Chốt** về công cụ · **Còn mở** các ngưỡng cảnh báo ở §5 (chốt sau 3 ngày đo đầu tiên)
@@ -513,7 +529,7 @@ Toàn bộ công cụ ở doc này là **dev-only** và **không có mặt trong
 | R4 | **Hỏi cuối buổi** thay vì hỏi tại chỗ → người chơi suy luận ngược → điểm giả cao | Cao | Build tự pause ở `perception:confirmed`. Giao thức ghi rõ |
 | R5 | **Người điều phối gợi ý** (phản xạ tự nhiên khi thấy người chơi bí) | Cao | Kịch bản cố định + câu trả lời duy nhất được phép. Xem lại video để kiểm chính người điều phối |
 | R6 | Trượt cổng rồi **sửa bằng cách thêm thoại giải thích** → điểm lên, T1 chết | **Rất cao** | §2.4 cấm rõ ràng. Phải chẩn đoán nhánh A/B/C trước |
-| R7 | Rubric mơ hồ → 2 người chấm lệch → cổng vô nghĩa | Cao | κ ≥ 0,7 là điều kiện để kết quả được tính |
+| R0.5 | Rubric mơ hồ → 2 người chấm lệch → cổng vô nghĩa | Cao | κ ≥ 0,7 là điều kiện để kết quả được tính |
 | R8 | Validator **quá nghiêm** → writer bị chặn commit liên tục → tắt validator | Cao | Chỉ các lỗi làm hỏng thật mới là ERROR. Độ dài, biến thể thiếu, từ vùng miền là WARN. `--fix` cho lỗi máy sửa được |
 | R9 | `L008` (từ giọng Bắc) báo sai cho chị Hạnh → mất niềm tin vào linter | Trung bình | Allowlist theo NPC, có test dương tính giả ở §6 |
 | R10 | `L010` (lằn ranh đỏ §14.1) tự sinh danh sách từ khoá → vừa lọt vừa báo oan | Cao | **Danh sách do người Việt viết văn hoá duyệt**, không tự sinh. Linter là lưới thứ hai, không phải lưới duy nhất — CANON §14.1 vi phạm là **chết** |

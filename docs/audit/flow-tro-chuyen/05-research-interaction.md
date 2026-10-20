@@ -1,5 +1,8 @@
 # 05 — RESEARCH: hệ tương tác, input và chỉ báo (RESEARCHER #2)
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ LỊCH SỬ, CÒN THAM KHẢO
+> Hồ sơ gốc của P2-06 (T2 còn sống). Phần dựa trên quan hệ / trí nhớ / mùa 40 ngày ☠️ — xem banner của [`P2-06`](../../phase-2-he-npc/P2-06-flow-tro-chuyen.md) và [`CANON.md`](../../CANON.md) bản revamp.
+
 > Phạm vi: phím tương tác, chọn mục tiêu, chỉ báo, thông báo không chặn, trợ năng đầu vào,
 > modal vs diegetic. KHÔNG bàn nội dung thoại (đó là researcher khác).
 >

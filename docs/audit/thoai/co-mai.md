@@ -1,5 +1,8 @@
 # Rà thoại — CÔ MAI (`src/content/talks/co-mai.json`)
 
+> ## ⚡ REVAMP 2026-10-20 — ☠️ CHẾT TOÀN BỘ
+> Rà thoại theo giọng cũ + hệ trí nhớ/quan hệ đã chết. Toàn bộ thoại viết lại giọng Nam gen Z ở R6 (CANON §9, §17.1). Chỉ giữ để truy vết nội dung cũ.
+
 **Hợp đồng:** `docs/phase-2-he-npc/P2-07-neo-thoai-vao-the-gioi.md` · **8 cuộc · 104 nút**
 **Từ vựng:** chỉ §3. Khoá nào thiếu thì nằm ở mục *Đề xuất khoá mới* cuối file.
 

@@ -1,5 +1,8 @@
 # 01 — PANEL NGƯỜI CHƠI: 4 phiên chơi thật với flow trò chuyện
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ LỊCH SỬ, CÒN THAM KHẢO
+> Hồ sơ gốc của P2-06 (T2 còn sống). Phần dựa trên quan hệ / trí nhớ / mùa 40 ngày ☠️ — xem banner của [`P2-06`](../../phase-2-he-npc/P2-06-flow-tro-chuyen.md) và [`CANON.md`](../../CANON.md) bản revamp.
+
 > Đọc code trước khi viết: `src/sim/talk.ts`, `src/ui/stall/TalkPanel.ts`,
 > `src/sim/service.ts` (§trò chuyện 2285–2470, `applyAct`/`invite` 2577–2680,
 > `offerTalk` 2845, `smalltalk` 1480–1490, `leave` 1615, `talkKey`/`talkCtx` 2530–2555),

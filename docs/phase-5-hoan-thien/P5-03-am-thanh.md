@@ -1,5 +1,20 @@
 # P5-03 — Âm thanh
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp + [`revamp/00-YEU-CAU.md`](../revamp/00-YEU-CAU.md). Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §1 mục 1: `WRONG_NAME` là sự kiện âm thanh | ☠️ | Sự kiện đã chết |
+> | §2.4 định vị "nói lỏm ở góc hẻm" | ☠️ | Nghe lỏm chết |
+> | §3 tiếng rao: vai 2 (loa rao giọng cô Ba), vai 3 (kết mùa), taper theo ngày | ☠️ | Cô Ba bỏ (R0.5), mùa 40 ngày bỏ. Vai 1 (ambience) giữ |
+> | §4.2 SFX sổ tay (`sfx_viet_but`, `ui_mo_so_tay`) | ☠️ | Thêm SFX thông báo review / app sao (R4) |
+> | §6.3–6.5 cue `mus_arc_duong`, `mus_ngay_40`, khoảnh khắc `REMEMBERED_USUAL`, đốt vía cô Ba, 90s cuối ngày 40 | ☠️ | Thay bằng cue thắng/thua (R5/R0.5). Luật "nhạc im ở khoảnh khắc quan trọng" giữ |
+> | §7.2–7.4 số dòng thu, casting cô Ba là vai chính, buổi S0/S3 | 🔁 | Vai chính → Phương Anh; sếp cũ chỉ qua điện thoại (R0.5); thoại gen Z (R6). Số dòng ⏳ khi có kho review (R4) |
+> | §9 tiêu chí C9 (taper rao 40 ngày) | ☠️ | Hết mùa |
+>
+> **Còn dùng được:** kiến trúc 5 bus + ducking, âm thanh perception GLIMPSED/NOTICED, tắt âm báo tiêu cực, chống lặp (shuffle-bag, pitch, voice limit), luật VO người thật / không AI.
+
 **Thuộc phase:** P5 — Hoàn thiện
 **Phụ thuộc:** `CANON.md` §15.4 (5 kênh + tắt âm báo tiêu cực) · §14 (tiếng rao, cơ chế Việt Nam) · §11 (số dòng thoại, shuffle-bag, bark 3 tầng) · §5 (perception — `GLIMPSED`/`NOTICED` cần tín hiệu) · §2 (lồng tiếng người thật, giọng miền Nam) · `P5-01` §2.4 (hợp đồng trợ năng) · `P5-02` §2.3.5 (đồng bộ miệng ↔ VO)
 **Trạng thái:** **Chốt** về kiến trúc, danh sách và chính sách · **Còn mở** ở ngân sách lồng tiếng (§5.3 — chưa có số trong `idea.md`, **không bịa**)
@@ -710,7 +725,7 @@ npcAudioDelayMs = rand(200, 400)     // khớp với poseDelayMs của P5-02 §2
 | R4 | **Nhạc trượt vào lo-fi** — đây là phản xạ mặc định của mọi nhạc sĩ làm cozy game | Đúng lỗi idea §2.3 ("thẩm mỹ thay cho cơ chế") | Brief §6.2 ghi rõ nhạc cụ; cấm danh sách §6.1; duyệt cue đầu tiên trước khi làm 9 cue còn lại |
 | R5 | **Nhạc chạy liên tục** vì "nghe trống quá" | Nuốt mất im lặng — mà im lặng là một phản ứng của hệ thống (CANON §11) | C14 đo được: 52–65%. Nếu ai đó thấy trống → thêm **ambience**, không thêm nhạc |
 | R6 | **Sting phán xét bị thêm vào** vì "người chơi không biết mình sai" | Biến âm thanh thành bảng điểm → vi phạm T3 | C7 + C16. Nếu người chơi không biết mình sai thì **mặt NPC chưa đủ rõ** — sửa ở P5-02, không sửa ở đây |
-| R7 | **Thu VO cho rule chưa tồn tại** | Thu lại lần hai, tốn gấp đôi | Luật §7.4: không thu dòng nào rule chưa chạy trong build |
+| R0.5 | **Thu VO cho rule chưa tồn tại** | Thu lại lần hai, tốn gấp đôi | Luật §7.4: không thu dòng nào rule chưa chạy trong build |
 | R8 | **Quên chừa ngân sách pickup** | Không sửa được dòng dở sau playtest | 15% cứng trong bảng §7.8 |
 | R9 | **Còi xe làm người chơi khó chịu** | Tắt `duongPho` → mất cả ambience | Giới hạn riêng: 1 lần/25s, lowpass 6 kHz, trần −16 dB (§4.2 B) |
 | R10 | **Nghe lỏm không nghe ra nội dung** | CANON §12.4: *"Không có nghe lỏm thì bỏ luôn cả nhớ nhầm lẫn đồn thổi"* → mất một hệ thống lớn | C23 là tiêu chí cứng. Nếu fail → tăng gain, giảm lowpass, hoặc cho khách bước gần hơn |

@@ -1,5 +1,21 @@
 # P2-08 — Việc cần làm: năm danh sách rút từ bản rà 1.534 nút
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §1 #7 nhớ nhầm (26 chỗ), §4 `m.remembers` | ☠️ | Trí nhớ NPC chết — câu nhắc chuyện cũ xoá/viết lại ở R6 |
+> | §1 #9 `tu.quenvi` ghi nợ, §2C `LEND_ITEM`/`CLEAR_DEBT`/`CREDIT_LOAF`, §3 sổ ghi nợ + áo mưa | ☠️ | Sổ nợ, arc áo mưa chết |
+> | §2C `OVERHEARD_BY`, §4 "nghe lỏm được" | ☠️ | Nghe lỏm chết |
+> | §2C `MOVE_CART` ("arc của ông"), `FILM` | 🔁 | Act giữ được; vai đổi: chú Kiệt → review ác ý đối thủ, bé Su → review TikTok (R4) |
+> | §2B `PROMISE_DEED` "qua đêm", §5 câu nuốt lời qua đêm | 🔁 | Chỉ còn hứa trong lượt/ngày; hứa qua đêm cần xét lại ở R6 |
+> | §1 #11 "mở suốt 36 ngày", mốc ngày mở cuộc ở #7 | 🔁 | Cổng theo ngày/mùa → theo `visitCount` hoặc thành tích |
+> | §1 #10 giá viết cứng "64k" | ⏳ | Giá theo 3 mốc (R2) — thoại không được viết cứng giá |
+> | §0 số liệu 1.534 nút, mọi nội dung thoại | ⏳ | Số đã cũ (P2-10 đo 2.185 nút). Tên + giọng viết lại ở R6 |
+>
+> **Còn dùng được:** danh sách sự kiện thế giới (`t.cutLine`, `t.blocking`…) và act chung (`GIVE_BREAD`, `OFFER_TEA`, `WALK_ON`, `STEP_ASIDE`, `THEY_SIT`, `PROMISE_DEED` trong ngày) — đa số đã code (P2-10 §6sexvicies); tái dùng làm nguồn "việc làm thật" cho review R4.
+
 **Thuộc phase:** P2 · **Phụ thuộc:** `P2-07` (hợp đồng ba phần) · **Trạng thái:** đặc tả, **chưa code**
 **Nguồn:** `docs/audit/thoai/*.md` — 15 file, 4.811 dòng, rà đủ 1.534 nút
 

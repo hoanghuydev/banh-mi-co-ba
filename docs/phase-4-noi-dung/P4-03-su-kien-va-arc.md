@@ -1,5 +1,23 @@
 # P4-03 — Thư viện sự kiện nội dung, cơ chế "món ăn là lựa chọn hội thoại", và arc 12 NPC
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp + [`revamp/00-YEU-CAU.md`](../revamp/00-YEU-CAU.md). Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §1 Mục tiêu T3 · luật E3 "khác nhau ở ai còn ở đó" | ☠️ | T3 và ending "ai còn ở lại" chết. Hệ quả giờ đổ về sao/review |
+> | §2.0 khung SK: "Ngày" theo lịch P4-02, "hệ quả dài → cuối mùa" | 🔁 | Kích theo thành tích hoặc ngẫu nhiên; hệ quả = yếu tố review + sao (R4) |
+> | §2.1 SK gắn arc / cô Ba / sổ / nghe lỏm (vd SK-05, 13, 15, 20, 21, 24–30, 32–36, 40) | ☠️ | Sống nhờ arc, trí nhớ NPC, đồn thổi, sổ nợ, sổ tay, cô Ba |
+> | §2.1 SK đời sống (vd SK-01, 06, 07, 09, 10, 17, 19, 31, 38, 39) | 🔁 | Giữ làm tình huống ngẫu nhiên/vui hiếm, bỏ mốc ngày, đầu ra → review (R4) |
+> | §2.1 SK bé Su / chú Kiệt (SK-04, 11, 12, 14, 16, 37) · SK-22 mối hàng | 🔁 | Clip bé Su → review lan rộng; chú Kiệt → review ác ý (R4). Mối hàng → nhà cung cấp (R3) |
+> | §2.2 12 tình huống "món ăn là câu thoại" | 🔁 | T2 còn sống. Bỏ bước "ghi sổ tay" và tình huống dựa khách quen nhớ nhiều ngày; phản ứng → review (R4/R6) |
+> | §2.3 arc 12 NPC | ☠️ | Chết theo mùa 40 ngày |
+> | §2.4 lớp phụ "được tin giao thứ quý giá" | ☠️ | Dựa T3 + quan hệ + lịch mùa. Có thể hồi sinh thành sự kiện vui hiếm ở R4 |
+> | §2.5 tiếng rao | 🔁 | R1–R3 giữ làm ambience. Mốc ngày 5/9/21/35/40 chết. Rao của người chơi còn dùng, số ⏳ |
+> | §5 tham số | ⏳ | Chờ mô phỏng R2/R5 |
+>
+> **Còn dùng được:** luật E1/E2 (không ô chọn thoại), §2.2 làm khung T2, các tình huống đời sống làm kho sự kiện ngẫu nhiên cho review (R4), tiếng rao làm ambience.
+
 **Thuộc phase:** P4 — Nội dung
 **Phụ thuộc:** `CANON.md` §1 (**T2** — không dialogue tree) · §3 (11 sự kiện **cơ chế** — khác với sự kiện **nội dung** ở đây) · §5 (perception) · §6 (delivery-diff) · §11 (rule DB) · §12 (trí nhớ & đồn thổi) · §14 (cơ chế Việt Nam) · P4-01 (dàn nhân vật) · P4-02 (lịch 40 ngày) · P4-04 (kết game)
 **Trạng thái:** **Chốt** 40 sự kiện nội dung, 12 tình huống "món ăn là câu thoại", 12 arc. **Cần đo** tỉ lệ người chơi hiểu được hệ quả của mỗi sự kiện. **Còn mở** 🟡 3 chỗ đánh dấu.

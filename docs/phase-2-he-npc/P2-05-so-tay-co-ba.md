@@ -1,5 +1,12 @@
 # P2-05 — Sổ tay
 
+> ## ⚡ REVAMP 2026-10-20 — ☠️ CHẾT TOÀN BỘ
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> Sổ tay chết (CANON §2, §7.4). Hệ giả thuyết, trang cuối ngày, kênh báo trước 3–4 ngày, "lâu rồi không thấy ghé", thước đo tiến trình không con số — đều phục vụ T3/quan hệ/trí nhớ, nay chết. Thay bằng **app sao trên điện thoại** với số liệu minh bạch (T6, R4).
+>
+> **Còn dùng được:** phân tích 3 persona người chơi §2.1 và trợ năng/công tắc tắt §4.4 làm tham khảo khi thiết kế app sao R4.
+
 > ⚠️ **ĐỔI GIỌNG (sau P2-05b).** Tài liệu này viết thời cuốn sổ còn là *"sổ tay cô Ba"*: cột
 > trái *"cô Ba ghi giùm"*, trang cuối ngày và tick mực đỏ là **lời cô Ba**. **Không còn đúng
 > nữa.** Quán là của người chơi; cô Ba chỉ xuất hiện ở màn mở đầu (`P4-06`) để dựng bối cảnh.
@@ -657,7 +664,7 @@ CANON §15, công tắc **#4** trong 6 công tắc bắt buộc.
 | R4 | **Hệ giả thuyết làm rò chỉ số** (T3) | **Cao** | Không tick lúc bấm; xác nhận **diegetic**, mực đỏ + một câu; **không có trạng thái sai** |
 | R5 | Brute-force giả thuyết | Trung | 3 luật §2.3: danh sách chỉ chứa thứ đã quan sát · tối đa 5 OPEN · 1 lần đổi/ngày · **cộng `wasDemonstratedToday`** — luật cuối là luật thật sự chặn |
 | R6 | **Cô Ba thành tooltip** — bắt đầu giải thích cơ chế | Cao | 3 luật viết §2.4 + test quét câu giải thích. Cô Ba **gợi**, không giảng |
-| R7 | Cô Ba thành người chấm điểm → phá T1 | Cao | Test quét danh sách cấm. CANON §7.4: **cô buồn chứ không la** |
+| R0.5 | Cô Ba thành người chấm điểm → phá T1 | Cao | Test quét danh sách cấm. CANON §7.4: **cô buồn chứ không la** |
 | R8 | Tắt sổ tay làm mất kênh báo trước XĐ3 | **Cao** | Ba lớp §2.4; lớp 1 và 2 không đi qua sổ. Có test riêng |
 | R9 | Ngọc Ánh vẫn bỏ lỡ vì chơi quá ngắt quãng | Trung | Dòng báo trước **≥3 tối liên tiếp** + khối "lâu rồi không thấy" có **mặt** NPC + công tắc "họ để lại lời nhắn" |
 | R10 | Cảnh nhỏ bị tối ưu thành quest | Trung | Không thưởng vật chất; trễ 1–2 ngày; có 12 cảnh nên không thể "farm". Test diff `ledger` |

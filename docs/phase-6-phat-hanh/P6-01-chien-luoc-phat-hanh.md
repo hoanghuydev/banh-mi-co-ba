@@ -1,5 +1,18 @@
 # P6-01 — Chiến lược phát hành
 
+> ## ⚡ REVAMP 2026-10-20 — ✅ CÒN SỐNG
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp + [`revamp/00-YEU-CAU.md`](../revamp/00-YEU-CAU.md). Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §1, §2.6, §2.9, §3.1: T4 làm căn cứ ("ship trọn vẹn 40 ngày", cấm Early Access) | 🔁 | T4 chết; T4 mới chỉ giữ cấm daily login/stamina. Cấm EA/live ops cần chủ dự án chốt lại trên căn cứ khác |
+> | §3.1 `title: "Bánh Mì Cô Ba"` | 🔁 | → "Bye Sếp, Em Bán Bánh Mì"; tên tiếng Anh chốt sau (R0.5) |
+> | §2.5 góc tiếp cận cộng đồng "NPC nhớ bạn, arc nhân vật" | ☠️ | Thay: sao/review công khai, chủ đề "dám nghỉ việc mở quán" (R0.5) |
+> | §2.7 kế hoạch 12 tuần: đo "40 ngày = bao nhiêu giờ", tuần 7 "gossip chain hiển thị" | ☠️ | Thay: đo thời gian tới mốc thắng (R5), demo hiển thị sao/review (R4) |
+> | §3.2 ngân sách lồng tiếng (cô Ba) · §3.3 `eventId` WRONG_NAME · §6 checklist 40 ngày | 🔁 | Vai chính Phương Anh (R0.5); bỏ sự kiện chết; đo theo mốc thắng |
+>
+> **Còn dùng được:** thứ tự nền tảng PC → mobile, quy tắc chọn giá, regional pricing, rào cản phân phối VN, kênh phát hành, chính sách crack/DRM, cổng cứng 2.000 wishlist, bảng publisher.
+
 **Thuộc phase:** P6 — Phát hành
 **Phụ thuộc:** `CANON.md` §0 (một câu + tagline), §2 (nền tảng, giá, ngôn ngữ), §14.1 (lằn ranh đỏ), §17 (bản đồ phase + cổng cứng) · `P6-02-marketing-va-noi-dung-viral.md` (nội dung của chiến dịch này) · `P6-03-lo-trinh-sau-phat-hanh.md` (v2 mobile, hậu mãi)
 **Trạng thái:** **Chốt** — trừ ba mục đánh dấu **Cần đo**: chi phí lồng tiếng, chi phí pháp lý G1–G4, và giả định độ dài sản xuất trong bảng ngân sách §3.2.
@@ -519,7 +532,7 @@ function gateStatus(s: WeeklySnapshot): WeeklySnapshot["gateStatus"] {
 | R4 | **Game bị crack ngay ngày đầu** | **Chắc chắn 100%** | §2.6. Không chi cho DRM. Chi cho lồng tiếng thật + credits + ship trọn vẹn |
 | R5 | **Bị đánh giá là "mobile port" vì giá rẻ** | Trung bình | Đây chính là lý do chọn $9.99 chứ không $6.99 (Sarah). Kèm theo: capsule và screenshot phải trông như game PC, không dùng UI kiểu mobile trong ảnh chụp Steam |
 | R6 | **Seeding vào group bị coi là spam → bị cấm** | Trung bình | Có mặt ≥3 tuần trước khi post. Post **nội dung nghề** vào Hội Làm Game VN, không post trailer. voz: tông tự trào, không xin xỏ |
-| R7 | **Publisher ép Early Access hoặc live ops** | Trung bình | 3 lằn ranh đỏ hợp đồng ở §2.9. Phá T4 = từ chối, kể cả khi tiền tốt |
+| R0.5 | **Publisher ép Early Access hoặc live ops** | Trung bình | 3 lằn ranh đỏ hợp đồng ở §2.9. Phá T4 = từ chối, kể cả khi tiền tốt |
 | R8 | **Chi hết ngân sách 12 tuần rồi mới biết không qua cổng** | Cao | Bảng ngân sách tách **A (12 tuần)** và **B (sau cổng)**. Tuyệt đối không chi khoản B trước khi qua cổng |
 | R9 | **Vi phạm lằn ranh đỏ CANON §14.1 trong ẢNH MARKETING** (bản đồ mua từ marketplace lọt vào background của screenshot) | Trung bình | B4 ở tuần 11: rà soát **từng asset** trong **từng ảnh chụp** sẽ đăng. Xem thêm `P6-02` §2.8 |
 | R10 | **Dùng lại số liệu đã bị kiểm chứng đánh sập trong pitch/press kit** | Trung bình | Danh sách cấm ở `P6-03` §2.6. Mọi con số đưa ra ngoài phải truy được về `idea.md` §1 hoặc §17 |

@@ -1,5 +1,21 @@
 # P3-04 — Thiết bị và nâng cấp
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | Khối "Nền số học" đầu doc | ⏳ | Hụi, tiền học ☠️; 28k/ổ, 54 ổ/ngày, chi phí cố định — mô phỏng lại (R2/R5) |
+> | §2.2 Sức chứa xe, nhóm F "cái xe" (F1, F2) | 🔁 | Xe → quán có mặt bằng (R0.5) + map thu nhỏ (R1). F2 "khung gia cố cho dời chỗ" nhiều khả năng ☠️ theo P3-05 |
+> | §2.4 Hiệu ứng/mặt trái gắn đồn thổi, nghe lỏm, sổ nợ, quan hệ (A3, B1, D1, D2, D3, E1, E2) | 🔁 | Kênh đồn thổi/nghe lỏm/sổ nợ chết → viết lại mặt trái qua review/sao (R4) |
+> | §2.3 Kênh `FLOW` (traffic/conversion) | 🔁 | Số khách chỉ đi qua sao (T6); thiết bị chỉ được đổi conversion/review, chốt R5 |
+> | §2.5 Giá, slot, `/ngày` 17 món | ⏳ | Mô phỏng lại (R2/R5) |
+> | §2.6 Đường cong mua sắm 40 ngày, 3 lối chơi, "≥4 NPC Friend" | ☠️ | Mùa 40 ngày và quan hệ chết. Lối chơi tính lại theo mốc thắng (R5) |
+> | §2.7 "Cái xe ngày 1 / ngày 40", E3 bảng hiệu | 🔁 | Ý giữ (tiến trình nhìn thấy được trên quán), mốc ngày 40 ☠️; xe → quán, biển hiệu tên quán do người chơi đặt (R0.5) |
+> | §6 Tiêu chí đạt (nghĩa vụ, Friend) | ☠️ | Thay bằng tiêu chí mô phỏng R5 |
+>
+> **Còn dùng được:** 4 luật TB-1…TB-4, 6 kênh hiệu ứng (bỏ `AUTO`), cây thiết bị nhóm A–E làm danh mục gốc — cho R1/R2.
+
 **Thuộc phase:** P3 (Kinh tế) · **Phụ thuộc:** `phu-luc/A-quyet-dinh-co-che-moi.md` §2.3 · `P2-01` (perception) · `P3-01` (vòng một ngày) · **`P3-03` (nền số học)** · `P3-02` (nguồn hàng) · `P3-05` (chỗ đứng) · `P3-06` (nghĩa vụ & cân đối) · **Trạng thái:** **Chốt** (các con số: **Cần đo**)
 
 > ### ⚠️ Nền số học — doc này tiêu thụ, không định nghĩa lại

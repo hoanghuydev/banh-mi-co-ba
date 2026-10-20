@@ -1,5 +1,24 @@
 # PL-B — Bảng tra số liệu
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §2.1 Salience 11 sự kiện | 🔁 | Còn 8: `WRONG_NAME`, `REMEMBERED_USUAL`, `REMEMBERED_STORY` ☠️ |
+> | §2.4 `TOOL.CO_BA`, §2.14 `TAM_LINH_TONE` (niềm tin cô Ba) | ☠️ | Cô Ba bỏ (R0.5). Công cụ thay thế / chủ thể đốt vía chốt R0.5 |
+> | §2.5 `RELATION_TIERS`, `RIMWORLD_SPIRAL_MULT`, cột "vai trò" có arc/lan tin | ☠️ | Quan hệ, arc theo ngày, đồn thổi chết. 4 chiều tính cách giữ → persona review (R4); tên NPC đổi R6 |
+> | §2.6 Trí nhớ, §2.7 Đồn thổi (toàn mục) | ☠️ | Hệ chết; chức năng lan tin → review công khai (T6) |
+> | §2.8 Ngân sách dòng thoại | ⏳ | Tính lại khi có kho review (R4) + thoại gen Z (R6). Luật shuffle-bag, rule DB giữ |
+> | §2.9 Hạn dùng, giá chợ, mưa, chi phí cố định | ⏳ | Giá chợ → giá nhà cung cấp (R3); số mô phỏng lại |
+> | §2.9 `OBLIGATIONS` (hụi, tiền học), `RELATIONSHIP_RESPAWN` | ☠️ | Fail mềm, hụi, tiền học, quan hệ chết |
+> | §2.10 `SEASON_DAYS`, `SEASON_HOURS*`, `CHU_TU_DISAPPEAR_DAY`, `ENDING_PRINCIPLE` | ☠️ | Chơi vô hạn tới thắng/thua (R5) |
+> | §2.10 `RNG_STREAMS` stream `gossip` | 🔁 | Đổi vai thành stream `review` (R4) |
+> | §2.11 `A11Y_REQUIRED_TOGGLES` (nhớ nhầm, biến mất, sổ tay), `RELATIONSHIP_METER_SHOWN` | 🔁 | 3 công tắc + luật T3 ☠️; thêm "tắt thông báo review" (R4) |
+> | §2.13 `PLAYTEST_GATE_P1`, clip "khoảnh khắc đồn thổi" | 🔁 | Gắn bản đồ phase cũ/đồn thổi; viết lại theo R0–R6 và review |
+>
+> **Còn dùng được:** perception (`visibility`, certainty, công cụ hạ attention), hiệu năng/đóng gói, kinh doanh/phát hành, trợ năng, con số nghi thức VN — cho R1/R4.
+
 **Thuộc phase:** Phụ lục — dùng ở mọi phase
 **Phụ thuộc:** `CANON.md` (nguồn sự thật) · `idea.md` (nguồn gốc) · `P0-01`, `P0-02`, `P0-03` (định danh code và cách đo)
 **Trạng thái:** **Chốt** về giá trị · **Cần đo** về khoảng cho phép (cột 3 là đề xuất tune, không phải phán quyết)
@@ -426,7 +445,7 @@ Cả tài liệu này **là** bảng tham số. Danh sách dưới đây là nh�
 | R4 | Hai doc dùng hai giá trị khác nhau cho cùng một thứ | Cao | Mọi doc trỏ về bảng này thay vì chép số. `grep` tìm số trần trong `docs/` khi review |
 | R5 | Cột "Khoảng cho phép" bị đọc thành "giấy phép tự đổi" | Trung bình | §1 luật 2 nói rõ. Và khoảng chỉ có ý nghĩa cùng với cột "Cách đo" — đổi mà không đo thì không phải tune |
 | R6 | `MICRO_CHEAT_PATTERN_N` bị hoãn mãi vì khó | Cao | §8g: **lỗ hổng lớn nhất hiện tại**. Ghi vào §5 với phase chặn P2, không để trôi |
-| R7 | Số nghi thức §2.14 bị "làm tròn cho tiện" (7/9 lần thành 5 lần) | Trung bình | **Cố định**. Sai chi tiết văn hoá là mất uy tín với đúng tập người chơi mình cần nhất |
+| R0.5 | Số nghi thức §2.14 bị "làm tròn cho tiện" (7/9 lần thành 5 lần) | Trung bình | **Cố định**. Sai chi tiết văn hoá là mất uy tín với đúng tập người chơi mình cần nhất |
 | R8 | Số thị trường mới được thêm vào từ nguồn ngoài | Trung bình | CANON §18: **Không bịa số liệu thị trường mới.** Review doc kiểm cột Nguồn |
 
 ---

@@ -1,5 +1,24 @@
 # P1-04 — UI/UX hai thiết bị
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §1, §2.10, §7, §9 Lý do theo T3 (giấu chỉ số quan hệ) | 🔁 | T3 chết, hết quan hệ để giấu. Luật mới: sao là chỉ số công khai duy nhất (T6) |
+> | §2.10 CẤM "điểm số / sao cuối ngày" | 🔁 | Đảo chiều: sao + review hiện công khai trên app điện thoại (R4) |
+> | §2.1–2.2 Node `notebook` (cột phải / tấm trượt) · §3 layout `notebook` | ☠️ | Sổ tay chết. Chỗ trống dành cho tab điện thoại + badge (R4) |
+> | §2.1–2.2 Thẻ đơn mẫu "như mọi bữa" | ☠️ | Order này chết |
+> | §2.4 Hàng 4, 13 (sổ tay, nhật ký lời) · hàng 10 "ai thường tới giờ này" | ☠️ | Sổ tay, lịch NPC chết |
+> | §2.10 "Tên khách chỉ khi đã ghi sổ tay" · nội dung sổ tay | ☠️ | `WRONG_NAME`, sổ tay chết. Tên NPC đổi (R6) |
+> | §2.10 Thông báo "khách X nghe đồn Y" | ☠️ | Thay bằng thông báo review mới (R4) |
+> | §2.7 Ca 4 "nghe lỏm" · đi chợ ~5 phút · cảnh tối/sổ tay ~6 phút | ☠️ / 🔁 | Nghe lỏm chết; chợ → nhà cung cấp (R3) |
+> | §2.7, §5 Độ dài phiên, khung giờ ca, ngưỡng đo | ⏳ | Đo lại sau R1 |
+> | §2.1–2.2 Bố cục quầy · §2.7 "dọn xe" | 🔁 | Map thu nhỏ (R1); xe → quán (art R0.5) |
+> | §2.7 Ca 1 "dòng cô Ba" · §8 công cụ "cô Ba" | ☠️ | Bỏ hẳn nhân vật Cô Ba (R0.5) |
+>
+> **Còn dùng được:** một scene + layout là data, không hover, vùng chạm 44pt, hiển thị attention PA-B, icon theo hình dáng, bark bubble, phím tắt, trợ năng — dùng cho R1, R4.
+
 **Thuộc phase:** P1 — Vertical slice
 **Phụ thuộc:** `P1-01-quay-va-che-do-lam-banh` · `P1-02-tang-nhan-thay` (dự kiến) · `P1-03-bark-va-rule-db` (dự kiến) · `P0-01-khung-scene-save-rng` (dự kiến)
 **Trạng thái:** **Chốt** mô hình layout data-driven, phương án hiển thị attention, danh sách HUD cấm/cho · **Cần đo** ngưỡng đọc 0,5 s, độ dài ca mobile · **Còn mở** bộ icon cuối (đang là đặc tả hình dáng, chưa phải art)
@@ -783,7 +802,7 @@ Hai điểm tổng kết không nằm gọn trong mục nào ở trên:
 | R4 | **Mobile là v2 (CANON §2) nên portrait không được test** → ràng buộc mục ruỗng dần | Chạy **CI portrait** từ P1 dù không ship: mọi test ở §6 chạy cả 3 profile. Rẻ vì layout là data. Đây là lý do doc này tồn tại ở P1 chứ không ở P5 |
 | R5 | **Bark chồng nhau lúc cao điểm** đúng lúc cần đọc nhất | Trần 2/1 + hàng đợi hết hạn 2,5 s + ưu tiên `FRONT_CENTER` + 35% im lặng + tier-3 (*"Hửm."*) làm lưới an toàn (CANON §11) |
 | R6 | **Luật `take(1)` bị phá bởi UI thiện chí** ("cho người chơi biết còn lỗi gì nữa") | Ghi thành test snapshot ở §6. Bất kỳ PR nào thêm UI cho defect im lặng đều fail CI. Lý do: nhiều lỗi cùng lúc làm game **dễ hơn** (Lucas Pope, CANON §6) |
-| R7 | **Chỉ số quan hệ lén vào qua đường trợ năng** ("cho người mù màu thấy mức thân") | Hai công tắc ngoại lệ ở §2.10 là **danh sách đóng**. Thêm công tắc thứ ba cần một mục ở §9 |
+| R0.5 | **Chỉ số quan hệ lén vào qua đường trợ năng** ("cho người mù màu thấy mức thân") | Hai công tắc ngoại lệ ở §2.10 là **danh sách đóng**. Thêm công tắc thứ ba cần một mục ở §9 |
 | R8 | **44×44 pt bị ép nhỏ trên màn hình bé** | `growTo` nở vùng chạm từ tâm, tràn vào `gap`. Nếu vẫn không đủ → **giảm số icon hiện cùng lúc** (phân trang khay), không bao giờ giảm vùng chạm |
 | R9 | **Ca mobile không kết trọn** vì hàng không bao giờ rỗng | Lịch NPC (P2) phải **thiết kế ra khoảng lặng**, không để lịch ngẫu nhiên quyết định. `stopPointNow()` phải trả `HARD` ít nhất một lần giữa mỗi cặp ca — đây là ràng buộc lên P2, ghi vào §8 |
 | R10 | **Chữ tiếng Việt bị cắt dấu** ở cỡ 200% hoặc font fallback | `--lh-tight: 1.45` là sàn. Font nhúng, không dựa vào font hệ thống. Test chụp màn hình ở §6 |

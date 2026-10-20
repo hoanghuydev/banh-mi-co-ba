@@ -1,5 +1,8 @@
 # Rà thoại — ANH BẢO (`src/content/talks/anh-bao.json`)
 
+> ## ⚡ REVAMP 2026-10-20 — ☠️ CHẾT TOÀN BỘ
+> Rà thoại theo giọng cũ + hệ trí nhớ/quan hệ đã chết. Toàn bộ thoại viết lại giọng Nam gen Z ở R6 (CANON §9, §17.1). Chỉ giữ để truy vết nội dung cũ.
+
 **Hợp đồng:** `docs/phase-2-he-npc/P2-07-neo-thoai-vao-the-gioi.md` (kể cả §4.1 · §4bis ·
 §4ter mới thêm) · **8 cuộc · 94 nút**
 

@@ -1,5 +1,12 @@
 # P2-03 — Trí nhớ 3 tầng, quan hệ 3 bucket và lịch sinh hoạt NPC
 
+> ## ⚡ REVAMP 2026-10-20 — ☠️ CHẾT TOÀN BỘ
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> Trí nhớ NPC 3 tầng, bucket Rival/Acquaintance/Friend, trần tin tưởng, chuộc lỗi, T3 — chết (CANON §4, §12, T3). Hệ quả hành vi đổ về **sao + review công khai** (T6). Dự báo cầu §2.9–§2.10 thay bằng `Y(x)` theo sao (R5).
+>
+> **Còn dùng được:** `visitCount` (CANON §11) · ý lịch giờ ghé §2.9 (ai tới khung giờ nào) có thể tham khảo khi rải khách trong ngày ở R5 — mọi số ⏳.
+
 **Thuộc phase:** P2 — Hệ NPC đầy đủ
 **Phụ thuộc:** `P2-01` (Rule DB thoại) · `P2-02` (12 NPC & tính cách) · `P1-02` (tầng nhận thấy / `certainty`) · cung cấp đầu vào cho `P2-04` (đồn thổi), `P2-05` (sổ tay cô Ba), `P3-01` (dự báo cầu & tồn kho)
 **Trạng thái:** **Chốt** về cấu trúc và luật · **Cần đo** với mọi con số trong §5
@@ -833,7 +840,7 @@ Hệ trí nhớ **không có UI riêng**. Nó chỉ tồn tại qua ba mặt ph�
 | R4 | **CANON §8i** — spam hành vi rẻ | Trung | §2.6 `0.75^(n-1)` + `FREE_EXTRA` có `taper` 4 ngày, `floor` 0 |
 | R5 | **CANON §8g** — micro-cheat lặp 40 ngày | **Cao nhất** | `occurrences` đếm tuyến tính, **không** giảm dần. Ngưỡng pattern và dòng *"ê, dạo này bánh nhạt hơn hay tại tao?"* thuộc P2-01, nhưng **bộ đếm nằm ở đây** |
 | R6 | **CANON §8e** — save-scum | Trung | Autosave ngay khi `insertShort` chạy (không đợi cuối ngày) + seed cố định theo ngày |
-| R7 | Vòng xoáy tiêu cực kiểu RimWorld lẻn vào lúc tune | Trung | `offenseMul` là **hằng số trong code**, không phải bảng config. Đổi nó phải sửa code + qua review |
+| R0.5 | Vòng xoáy tiêu cực kiểu RimWorld lẻn vào lúc tune | Trung | `offenseMul` là **hằng số trong code**, không phải bảng config. Đổi nó phải sửa code + qua review |
 | R8 | **CANON §16 Đừng-1** — lịch sinh hoạt phình thành mô phỏng đời sống | Trung | `Schedule` **không có** state vị trí, không có pathing, không có nhu cầu. Chỉ là xác suất + bark + prop. Có test đếm: `ScheduleOverride` không được có trường nào ngoài schema §2.9 |
 | R9 | 12 NPC × 40 ngày làm save phình | Thấp | Memory `intensity < 2` bị dọn lúc save. Trần thực tế: 12 × (8+4+1) = **156 memory** |
 | R10 | Người chơi cảm thấy bị theo dõi / bị chấm điểm liên tục | Trung | ~35% lần "nhận thấy" **không nói gì** (CANON §11). Im lặng làm phần còn lại đáng tin |

@@ -1,5 +1,18 @@
 # P6-03 — Lộ trình sau phát hành
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp + [`revamp/00-YEU-CAU.md`](../revamp/00-YEU-CAU.md). Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §1, §2.1.1, §2.5, §3.1 `forbidden`: T4 làm căn cứ cấm EA/live ops/season | 🔁 | T4 chết; còn cấm daily login/stamina (CANON §1, dòng T4). Phần còn lại chờ chủ dự án chốt |
+> | §2.1.2 IAP: luật "không đổi số trong `memory.ts`/`gossip.ts`", "trang trí xe bánh mì" | 🔁 | Đổi thành `review`/sao + `econ`; xe → quán (R0.5) |
+> | §2.1.3 + §4 sổ tay là cứu cánh trên mobile | ☠️ | Sổ tay chết; app sao đã là UI điện thoại |
+> | §2.3 bản mở rộng: tái dùng memory/gossip, "mùa mới có điểm kết", `STANDALONE_SEASON` | 🔁 | Game giờ chơi vô hạn tới thắng/thua; engine tái dùng là perception + review + nhà cung cấp |
+> | §2.4 game thứ hai: dùng memory core slot, "2–3 lần/mùa 40 ngày" · §5 tần suất | 🔁 | Hết memory và mùa — viết lại cơ chế nếu giữ ý tưởng |
+>
+> **Còn dùng được:** §2.2 phán quyết cắt multiplayer, mobile F2P + IAP cosmetic, §2.5 hậu mãi/trả lời review, §2.6 bài học + quy trình kiểm chứng số, cổng kích hoạt bằng hằng số.
+
 **Thuộc phase:** P6 — Phát hành (phần hậu phát hành)
 **Phụ thuộc:** `P6-01-chien-luoc-phat-hanh.md` (thứ tự nền tảng, cổng cứng, cấp phép G1–G4) · `P6-02-marketing-va-noi-dung-viral.md` (luật không hứa cái chưa làm) · `CANON.md` §1 (T4), §2 (mobile là v2 sau 30k bản), §9 (12 NPC), §10 (4 cơ chế được đề xuất thêm), §14.1
 **Trạng thái:** **Chốt** về nguyên tắc và điều kiện kích hoạt · **Còn mở** về chi tiết thực hiện (§2.1.3 danh sách việc phải làm lại cho mobile cần nối với doc UI hai thiết bị của Phase 1 khi doc đó hoàn thành).

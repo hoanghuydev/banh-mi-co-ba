@@ -1,5 +1,16 @@
 # Cổng P1 — checklist một trang cho người điều phối
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | Trong buổi bước 4: nhóm "KẾT QUẢ / QUAN HỆ" có `WRONG_NAME` | ☠️ | Chỉ hỏi `ORDER_DEFECT` |
+> | Ghi phụ: "nghe lỏm đồn thổi" · JSON `overheardGossip` | ☠️ | Đồn thổi chết |
+> | Câu hỏi cổng "vì sao khách đó giận" | 🔁 | Giữ; R4 có thể thêm câu nối review: *"vì sao có review này"* |
+>
+> **Còn dùng được:** quy trình người lạ, tự pause, chấm mù 3 mức + κ, chẩn đoán A/B/C — dùng làm cổng sau R1 và R4.
+
 > Nguồn: `P0-03` §2.4. Câu hỏi DUY NHẤT: **"Bạn có biết vì sao khách đó giận không?"**
 > Đạt khi **≥ 7,0 / 10**. Dưới ngưỡng = hệ thống chưa đọc được — **không lượng thoại nào cứu được nó**.
 

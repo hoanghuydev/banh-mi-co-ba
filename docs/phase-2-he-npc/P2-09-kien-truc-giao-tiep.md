@@ -1,5 +1,22 @@
 # P2-09 — Kiến trúc giao tiếp: một bảng đen, một dòng ký ức, bảy khung cảnh
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §2.1 bảng trí nhớ, §2.4 `retrieve()` trên `RelState`, tầng `m.*` (trừ `m.visits`), `{m.what}`, luật "nhận chuyện cũ" | ☠️ | Trí nhớ NPC chết. `sim/recall.ts` gỡ |
+> | §2.4 Reflection (`m.habit`, `m.trusts`, `m.wary`) — "bản rẻ cho Cô Ba" | ☠️ | Kết luận về khách = cảm tình ngầm, phạm T6. Cô Ba cũng ☠️ (R0.5) |
+> | §2.8 `memoryWeights`, cột "ký ức nặng về", topic `GHI_NO`/`SO_NO`/`AO_MUA`/`SO_GHI` | ☠️ | Trí nhớ, sổ nợ, arc chết |
+> | §5 `retrieve.*` · `reflect.threshold`; §6 tiêu chí 3, 12; §7 rủi ro reflection / farm quan hệ | ☠️ | Theo hệ trí nhớ đã chết |
+> | §12 lỗi decay `temperFactor` (P2-03) | ☠️ | Hệ trí nhớ chết — không cần chủ dự án chốt nữa |
+> | §2.6 `onKept`/`onBroken` trả `rel`/`anger` | 🔁 | `rel` chết → hệ quả lời hứa: chờ/bỏ đi + yếu tố review (R4) |
+> | §2.12 nội dung NPC↔NPC rút từ `sim/gossip.ts`, `NGHE_LOM` qua `overhear.ts` | 🔁 | Đồn thổi, nghe lỏm chết. Cảnh chào/tám giữ, nội dung lấy pool tĩnh |
+> | §1, §2.7, §6 tiêu chí 13 "ranh giới T3" | 🔁 | T3 chết; luật "không hiện drive/score" giữ theo T6 |
+> | §2.8 bảng 12 NPC (tên, chuyện chìa ra), §6 tiêu chí 11 | ⏳ | Tên + vai đổi ở R6; vai review theo CANON §9 |
+>
+> **Còn dùng được:** một bảng đen + ngôn ngữ cổng (§2.2), thế giới chìa topic (§2.3), 7 practice (§2.5), lời hứa có hạn (§2.6), drive chọn chuyện (§2.7), `ANY`/`QUA_DUONG`/`WALKIN` (§2.9–2.11), validator — nền cho thoại R6 và cổng chọn review R4.
+
 **Thuộc phase:** P2 — Hệ NPC
 **Phụ thuộc:** `P2-01` (rule DB) · `P2-02` (tính cách, 5 kênh) · `P2-03` (trí nhớ 3 tầng) ·
 `P2-06` (flow v2) · `P2-07` (hợp đồng ba phần) · `P2-08` (năm danh sách việc) ·

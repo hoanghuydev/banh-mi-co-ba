@@ -1,5 +1,24 @@
 # P1-03 — Đơn hàng và delivery-time diff
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §2.2E Tham chiếu "như mọi bữa", "y chang bữa qua" (`usualRef`, `lastOrderRef`) · §2.3 nhánh "bình thường" theo `usual` | ☠️ | Đề bài bỏ order "như bữa hôm qua" |
+> | §2.11 `REMEMBERED_USUAL` (cả mục) | ☠️ | Sự kiện đã chết |
+> | §2.4 Câu vòng vo là "memory hook" cho `REMEMBERED_STORY` | ☠️ | Hết trí nhớ NPC; câu vòng vo chứa thông tin đơn vẫn giữ |
+> | §2.2A Danh sách nhân, giá theo cỡ | 🔁 | Topping mở dần + 3 mốc giá (R2) |
+> | §2.5.2 `hiddenTaste` → "tốc độ lên quan hệ" | ☠️→🔁 | Bỏ phần quan hệ; lệch khẩu vị → yếu tố review (R4) |
+> | §2.7.4 Ghi chú cặp thoại: seed gossip, giá trị quan hệ · giọng thoại | ☠️ / ⏳ | Đồn thổi, quan hệ chết; thoại viết lại gen Z (R6) |
+> | §2.8 Phản ứng trễ: ghi memory, nhân chứng cho gossip, sổ tay cô Ba | ☠️ | Khách không quay lại → để lại review (R4) |
+> | §2.9 `silentScore` "ngầm" chỉ vào tip | 🔁 | Lỗi còn lại vào sao, có thể hiện thành chữ trong review (CANON §6, R4) |
+> | §2.10 Dị ứng: `trustCeiling −0.15`, "tối đa 3/12 cả mùa", quay lại +3/+6 ngày | 🔁 | Hệ quả → 1★ / review; bỏ trần theo mùa (R4) |
+> | §2.12 Tip theo bucket quan hệ | ☠️→⏳ | Bucket chết; tip còn hay bỏ chốt ở R4 |
+> | §3 Schema `usualRef`, memory, tier | ☠️ | Như trên |
+>
+> **Còn dùng được:** không parse ngôn ngữ, bảng câu nói → thuộc tính, `OrderSpec`, `diff()` 5 loại defect, liên kết ANTICIPATED/DISCOVERED, phản ứng lúc ăn, `take(1)` cho lời tại quầy — lõi của review ở R4.
+
 **Thuộc phase:** P1 — Vertical slice
 **Phụ thuộc:** `P1-02` (hệ nhận thấy — **bắt buộc đọc trước**) · `P1-01` (vòng lặp một khách) · `P0-04` (save)
 **Cung cấp cho:** `P2-01` (rule DB thoại) · `P2-02` (trí nhớ) · `P2-03` (đồn thổi) · `P3-01` (kinh tế)

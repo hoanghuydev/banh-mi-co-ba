@@ -1,5 +1,22 @@
 # P2-01 — Rule database thoại (Elan Ruskin / Valve, GDC 2012)
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §2.3.1 fact quan hệ · trí nhớ · đồn: C11–C12, C16–C25, C29, P10, X2, X7, X12, X14 | ☠️ | Hệ quan hệ, trí nhớ NPC, đồn thổi, "như mọi bữa", `WRONG_NAME`/`REMEMBERED_*` đã chết. `C13 npcVisitCount`, `C14` còn dùng |
+> | §2.3.1 G1 `day 1..40`, G12 `coBaPresent`, G18 `seasonEvent` | ☠️ | Bỏ trần 40 ngày + mùa (R5); bỏ cô Ba (đề bài Phase 7) |
+> | §2.3.1 G7 `alleyReputation` | 🔁 | Thành **sao TB** (R4) |
+> | §2.6 `applycontext` "= toàn bộ cơ chế trí nhớ" | 🔁 | Giữ làm ngữ cảnh ngắn có `duration`; không gánh trí nhớ NPC qua ngày |
+> | §2.9 + R3 "im lặng vẫn ghi memory" | 🔁 | Im lặng vẫn **tính vào sao/review** (R4) |
+> | §2.7 ví dụ bà Bảy (`REMEMBERED_USUAL`, `FRIEND`) · §2.8 câu "cháu cô Ba" | 🔁 | Cơ chế `followup`/`speakonce` giữ; ví dụ dựa thứ đã chết, viết lại ở R6 |
+> | §3.3 concept `GOSSIP_TELL`, `GOSSIP_HEAR`, `ARC`, `CO_BA`, sổ nợ trong `PAY` | ☠️ | Đồn thổi, arc theo ngày, cô Ba, sổ nợ đã chết |
+> | §2.11 mật độ rule 12 NPC · §3.3 ngân sách 520 dòng · T-11, T-14 | ⏳ | Tính lại khi có kho review (R4) + tên riêng & thoại gen Z (R6) |
+> | Bảng 11 sự kiện / "11 sự kiện × 3 tầng" | 🔁 | Còn 8 sự kiện sống (CANON §3) |
+>
+> **Còn dùng được:** toàn bộ kiến trúc rule DB (Fact/Query/Criterion/Rule, chấm điểm theo `criteria.length`, `followup` tra lúc callback, `norepeat`, bark 3 tầng, shuffle-bag, validator) — nền cho thoại R6 và có thể cho kho review R4.
+
 **Thuộc phase:** P2 — Hệ NPC đầy đủ
 **Phụ thuộc:** `CANON.md` §3 (11 sự kiện) · §4 (4 chiều tính cách) · §5 (perception) · §6 (delivery-diff) · §9 (12 NPC) · §11 (số dòng + kiến trúc thoại) · §12 (trí nhớ, đồn thổi) · §14 (ngôn ngữ) · §16 (ba thứ đừng làm) — và `P2-02-tinh-cach-va-kenh-phan-ung.md` (song hành, không chặn)
 **Trạng thái:** **Chốt** về kiến trúc · **Cần đo** ở các tham số cooldown / odds / ngân sách dòng
@@ -1087,7 +1104,7 @@ Rule DB không có UI riêng, nhưng nó **quyết định hình dạng của bo
 | R4 | Writer sai chính tả key → rule **im lặng không bao giờ khớp** | §3.4 V1 | ERROR cấp CI + `freezeSymbols()` ném lỗi lúc load |
 | R5 | Bucket concept phình quá to lúc full release (~2.980 dòng) | §5 | Sort giảm theo score + `break` sớm làm chi phí gần như độc lập với số rule **điểm thấp**. Nếu vẫn chậm: index phụ theo `npcId` |
 | R6 | **Tin đồn/ngẫu nhiên chạm vào hệ quả** qua đường rule DB | CANON §16 Đừng-3 | Rule **chỉ được** ghi fact `ctx*` và phát `say`/`emote`/`pose`. Cấm `applycontext` ghi vào fact scope `Global`/`Player`. Validator V18 kiểm |
-| R7 | Rule DB bị dùng để **mô phỏng đời sống NPC ngoài quầy** | CANON §16 Đừng-1 | Nguyên tắc Orkin: cho NPC **nói ra** + **một prop** (fact `npcMoodProp`). Không có rule nào được đọc fact về nơi NPC vừa đi qua |
+| R0.5 | Rule DB bị dùng để **mô phỏng đời sống NPC ngoài quầy** | CANON §16 Đừng-1 | Nguyên tắc Orkin: cho NPC **nói ra** + **một prop** (fact `npcMoodProp`). Không có rule nào được đọc fact về nơi NPC vừa đi qua |
 | R8 | Shuffle-bag bị bỏ để "làm sau" | §3.3 | Nó là ×3,1 của cả ngân sách. Không có nó, 520 dòng nghe như 520 dòng. Đưa vào tiêu chí đạt T-9 |
 | R9 | Lồng tiếng người thật (CANON §2) không kịp cho 520 dòng | — | `voice` là **tuỳ chọn** trong Response. Ưu tiên `speakonce` + tier-1. Dòng không có voice vẫn chạy |
 | R10 | Vi phạm lằn ranh đỏ §14.1 lọt qua vì thoại nằm trong data, không ai review | CANON §14.1 | V15 blacklist cứng trong CI + review thoại bởi người Việt viết văn hoá (đứng đầu credits) |

@@ -1,5 +1,22 @@
 # P3-05 — Chỗ đứng và mở rộng
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | Khối "Nền số học" đầu doc | ⏳ | Hụi, tiền học ☠️; thuê chỗ theo ngày giữ, số mô phỏng lại (R2/R5) |
+> | §2.1 Phán quyết KHÔNG chuỗi, KHÔNG nhiều quầy | 🔁 | Phán quyết giữ (T1). Lập luận B/C dựa 40 ngày + ending ☠️. Thắng = mở chi nhánh 2 chỉ là màn kết (R0.5), không phải gameplay nhiều quầy |
+> | §2.2 Năm chỗ đứng L1–L5, §2.3 Đổi chỗ của xe | 🔁 | Xe → quán mặt bằng thuê, ký hợp đồng (R0.5): "dời xe" phải xét lại (nhiều khả năng ☠️), cùng map thu nhỏ (R1). Giá thuê L1–L5 ⏳ |
+> | §2.3.3 Luật CD-2 — chi phí đổi chỗ là quan hệ | ☠️ | Hệ quan hệ chết |
+> | §2.4.1 Chú Kiệt dời xe | ⏳ | Phụ thuộc cơ chế chỗ đứng (R1, R0.5); đối thủ vẫn là xe bên kia hẻm |
+> | §2.4.2 XĐ1.5 nhìn thấy đối thủ gian dối | 🔁 | Giữ; đối thủ thêm vai review ác ý (R4); tên đổi R6 |
+> | §2.5 Bảy sự kiện hẻm theo lịch 40 ngày | ☠️ | Mùa 40 ngày chết. Ý "sự kiện báo trước" có thể tái dùng cho giá/khách (R3/R5) |
+> | §2.6 Ràng buộc chống lạm dụng: dòng "Quan hệ" | ☠️ | Còn cooldown/cọc/chi phí ⏳ |
+> | §6 Tiêu chí đạt, §5 tham số | ⏳ | Bỏ chỉ tiêu Friend/khách quen; số mô phỏng lại |
+>
+> **Còn dùng được:** phán quyết một quầy duy nhất, luật CD-1/CD-3 (đi ngó chỗ trước), XĐ1.5 — cho R1/R4.
+
 **Thuộc phase:** P3 (Kinh tế) · **Phụ thuộc:** `phu-luc/A-quyet-dinh-co-che-moi.md` §2.5 · `P2-01` (perception) · `P2-02` (trí nhớ) · `P2-04` (đồn thổi) · `P3-01` (lịch thời tiết 40 ngày) · **`P3-03` (nền số học, `standLocationMul`)** · `P3-02` (nguồn hàng) · `P3-04` (thiết bị) · `P3-06` (nghĩa vụ & fail mềm) · **Trạng thái:** **Chốt** (các con số: **Cần đo**)
 
 > ### ⚠️ Nền số học — doc này tiêu thụ, không định nghĩa lại

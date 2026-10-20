@@ -1,5 +1,22 @@
 # P3-03 — Tồn kho, hạn dùng, dự báo cầu, giá chợ, sổ nợ
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §2.1 Hạn dùng, bảng `Q(d)`, đồ chua | ⏳ | Cơ chế giữ; số chờ R3 (thêm trục chất lượng hàng) |
+> | §2.2 Chiết khấu, sức chứa, mua thiếu/thừa | ⏳ | Giữ, càng cần vì giá biến động (CANON §8j). Số chờ R3 |
+> | §2.3 Hết hàng giữa buổi — hệ quả quan hệ | 🔁 | Hệ quả thành review/sao (R4), không còn quan hệ |
+> | §2.4 Dự báo cầu bằng sổ tay + lịch 12 NPC + công thức ẩn | ☠️ | Thay bằng công thức công khai `Y(x) = base(x) × R(sao) × (1+ε)` (R5) |
+> | §2.5.1–§2.5.4 Giá chợ: pattern thứ, 6 sự kiện, bảng 40 ngày | 🔁 | Thành giá nhà cung cấp biến động (R3). Lịch tĩnh 40 ngày ☠️ — game chơi vô hạn |
+> | §2.5.5 Giá đổi trong buổi chợ | ⏳ | Còn nghĩa hay không tuỳ UI nhà cung cấp (R3) |
+> | §2.6 Sổ nợ (toàn mục) | ☠️ | Sổ nợ chết (cần trí nhớ khách) |
+> | §2.7 Bảng QR, §2.8 Tiền lẻ | ⏳ | Giữ; bỏ nhánh "QR xoá sổ nợ". Số chờ R2/R5 |
+> | §3–§5 Schema, UI chợ, tham số | 🔁 | Bỏ phần sổ tay/sổ nợ/lịch NPC; UI chợ đổi theo R3 |
+>
+> **Còn dùng được:** hạn dùng + đồ chua, tồn kho/sức chứa chống tích trữ, QR và tiền lẻ — cho R3/R5.
+
 **Thuộc phase:** P3 — Kinh tế
 **Phụ thuộc:** `CANON.md` §8 (b, e, f, h, j), §12 (trí nhớ), §13.1, §13.2, §13.4, §14 · `P3-01` (vòng một ngày, lưu lượng khách, thời tiết) · `P3-04` (thiết bị: tủ mát, bảng QR, loa báo) · `P3-06` (nghĩa vụ) · `P2-*` (trí nhớ 3 tầng, sổ tay)
 **Trạng thái:** **Chốt** cho cơ chế và cấu trúc bảng · **Cần đo** cho giá trị tuyệt đối ở §2.5 và §5

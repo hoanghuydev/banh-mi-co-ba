@@ -1,5 +1,8 @@
 # 06 — LÝ THUYẾT: tại sao flow trò chuyện của *Bánh Mì Cô Ba* đau, và luật nào suy ra từ đó
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ LỊCH SỬ, CÒN THAM KHẢO
+> Hồ sơ gốc của P2-06 (T2 còn sống). Phần dựa trên quan hệ / trí nhớ / mùa 40 ngày ☠️ — xem banner của [`P2-06`](../../phase-2-he-npc/P2-06-flow-tro-chuyen.md) và [`CANON.md`](../../CANON.md) bản revamp.
+
 > Vai: GAME UX THEORIST. Tài liệu này **không đề xuất tính năng**. Nó giải thích cơ chế
 > nhận thức đằng sau 7 lỗi người chơi báo, rồi chưng cất ra **15 luật thiết kế** dùng làm
 > bộ lọc duyệt mọi đề xuất của các agent khác.

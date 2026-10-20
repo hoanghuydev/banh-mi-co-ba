@@ -1,5 +1,20 @@
 # P6-02 — Marketing và nội dung viral
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp + [`revamp/00-YEU-CAU.md`](../revamp/00-YEU-CAU.md). Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §1 phục vụ T3 | ☠️ | T3 chết; sao giờ ĐƯỢC hiện công khai (T6) |
+> | §2.1 clip flagship: `DIRTY_HANDS` → gossip → reputation, shot 7 "cả hẻm nhìn" | 🔁 | Giữ DIRTY_HANDS dẫn đầu; cú kết đổi thành review/sao rơi trên app điện thoại (R4) |
+> | §2.5 luật "mỗi clip là khoảnh khắc đồn thổi" + C02, C03, C06, C07, C15, C18, C19, C22, C29, C31, C33, C36 | ☠️ | Dựa trí nhớ, đồn thổi, sổ, arc, cô Ba, ngày 40 |
+> | §2.5 clip còn lại · C30 đi chợ | 🔁 | Giữ clip lỗi bị bắt; C30 → nhà cung cấp (R3). Thêm clip review hài (nhầm quán hủ tiếu, đối thủ ác ý), đau bụng/ATTP, sếp cũ comment mỉa (R4/R0.5) |
+> | §2.6 + §3.2 Steam page ("cháu cô Ba", "mùa 40 ngày", "không thanh tình cảm", ảnh gossip/sổ tay, công tắc nhớ nhầm) | ☠️ | Viết lại theo R0.5: Phương Anh bỏ sếp mở quán, sao + review, thắng chi nhánh 2 / thua ATTP; tên game mới |
+> | §2.8 cấm thanh trust · §2.4.3 nhắc công tắc nhớ nhầm | 🔁 | Trust không còn; clip nên khoe app sao |
+> | Trailer / capsule có xe bánh mì, cô Ba | 🔁 | Quán thay xe, bỏ cô Ba (R0.5) |
+>
+> **Còn dùng được:** §2.3 capsule một hình, §2.4 tagline + không dẫn bằng "cozy", §2.7 tiêu chí clip đạt, nhịp 3 clip/tuần, §2.8 cấm cảnh nhặt bánh.
+
 **Thuộc phase:** P6 — Phát hành
 **Phụ thuộc:** `P6-01-chien-luoc-phat-hanh.md` (kênh, lịch 12 tuần, cổng cứng) · `CANON.md` §0 (tagline + dẫn đầu bằng gì), §3 (11 sự kiện), §7.2 + §7.6 (không nhặt bánh, không đưa vào trailer), §9 (12 NPC), §14.1 (lằn ranh đỏ), §15 (trợ năng)
 **Trạng thái:** **Chốt** — trừ §2.4 (kế hoạch xử lý phản ứng r/CozyGamers) đánh dấu **Cần đo** cho tới khi có phản hồi thật từ clip đầu tiên.

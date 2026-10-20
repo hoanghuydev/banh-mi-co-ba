@@ -1,5 +1,24 @@
 # P5-04 — Cân bằng và chống ăn gian
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp + [`revamp/00-YEU-CAU.md`](../revamp/00-YEU-CAU.md). Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §1 + §2.10 ba lối chơi (L3 "tối ưu quan hệ"), "đi hết 40 ngày" | 🔁 | Thay bằng 3 lối của đề bài T5.1: ổn định / bẩn / xịn; đo thời gian tới mốc thắng + tỉ lệ thua ATTP bằng `tools/sim.ts` (R2/R5) |
+> | §2.0 từ vựng `trustCeiling`, bucket | ☠️ | Hệ quan hệ chết |
+> | (d) đốt NPC rồi để nguội · (h) nhớ nhầm chiều ngược | ☠️ | CANON §8 d/h chết |
+> | (b) phân tầng khách · (i) spam `FREE_EXTRA` · (k) từ chối phục vụ | 🔁 | Bịt bằng review: người dễ tha vẫn kể lỗi; diminishing returns trên sao; bị từ chối → 1★ chắc chắn (R4) |
+> | (g) micro-cheat §2.7 — bộ đếm theo NPC | 🔁 | Lộ ra thành review "dạo này bánh nhạt…". Không còn mốc 40 ngày nên lỗ lớn hơn (R4) |
+> | (e) autosave `MEMORY_WRITTEN`, stream `gossip` · (f) "phần hay ở quan hệ" | 🔁 | Stream → `review` (CANON L1). Bảng số công khai có chủ ý |
+> | Thiếu lỗ hổng mới m/n/o (né ngưỡng ATTP, phá giá mua sao, farm sao bằng bán ít) | 🔁 | Phải thêm (CANON §8, R3/R2/R5) |
+> | §2.8 metric 13–15, bước tune 6–8 (trí nhớ, đồn thổi, đường cong 40 ngày) | ☠️ | Thêm metric sao TB, review xấu/ngày, thời gian tới mốc thắng, tỉ lệ ATTP |
+> | §2.11 đường cong khó 40 ngày | ☠️ | Thay bằng `Y(x)` theo sao (R5) |
+> | §2.9, §5 mọi con số | ⏳ | Mô phỏng lại ở R2/R5 |
+> | §6.3 playtest theo cổng P1/P3/P4 | 🔁 | Đổi sang mốc R |
+>
+> **Còn dùng được:** cơ chế bịt (a)(c)(j)(l), nguyên tắc tune theo tầng + điều kiện dừng + luật ≤3 tham số/lần (§2.8.2–2.8.3), §2.12 chill, §2.13 cảnh báo số Good Pizza (40%).
+
 **Thuộc phase:** P5 — Hoàn thiện
 **Phụ thuộc:** `CANON.md` §8 (12 lỗ hổng) · §5 (perception) · §12 (trí nhớ, đồn thổi) · §13 (4 ràng buộc kinh tế) · §3 (11 sự kiện + salience) · §4 (tính cách) · §17 (cổng P1) · `P5-01` §2.2.2 (chế độ không giới hạn thời gian) · `P5-02` (đọc được bằng mắt) · `P5-03` (đọc được bằng tai)
 **Trạng thái:** **Chốt** về cơ chế bịt và quy trình · **Cần đo** ở mọi giá trị số trong §5 (đó là bản chất của cân bằng)
@@ -1399,7 +1418,7 @@ Xem **bảng tổng hợp §2.9**. Bổ sung phần quy trình:
 | R4 | **Copy số 80% của Good Pizza** | *"Hệ thống khắc nghiệt gấp đôi tham chiếu → phá đúng cái cozy"* | §2.13 viết rõ. **D11: grep config, 0 ngưỡng phạt nào ở 80** |
 | R5 | **Cửa sổ điện thoại thành dominant strategy** | *"Cả cơ chế attention sụp"* (idea §21a) | TC-A1: bot farm phải **≤ baseline** |
 | R6 | **Tune vô hạn** — mỗi lần đổi lại phá thứ khác | Không bao giờ xong | Thứ tự 9 bước §2.8.2 + điều kiện dừng §2.8.3 + luật ≤3 tham số/vòng |
-| R7 | **Cân bằng cho bot, không cân bằng cho người** | Số đẹp, chơi chán | Luật ưu tiên §2.8.3: **người thật thắng số liệu**. Playtest vòng 2 và 3 là cổng, không phải tham khảo |
+| R0.5 | **Cân bằng cho bot, không cân bằng cho người** | Số đẹp, chơi chán | Luật ưu tiên §2.8.3: **người thật thắng số liệu**. Playtest vòng 2 và 3 là cổng, không phải tham khảo |
 | R8 | **Chế độ `KHONG_GIOI_HAN` phá cân bằng** | Người dùng trợ năng bị coi là "chơi dễ" | Kinh tế không đổi một đồng (P5-01 §2.2.2). TC-S5 + D18 |
 | R9 | **Đường cong thành dốc đều** — dễ trôi vào khi thêm nội dung | Grind | `validateCurve()` chạy trong CI. V1–V8 |
 | R10 | **Ngày 40 bị làm thành ngày khó nhất** (phản xạ tự nhiên của designer) | Kết mùa thành bài kiểm tra thay vì khoảnh khắc nhìn lại | V6 assert: đỉnh ở **d30**. Ngày 40 `%soi` thấp nhất từ d15 |

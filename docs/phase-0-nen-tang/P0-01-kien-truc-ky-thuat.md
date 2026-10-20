@@ -1,5 +1,24 @@
 # P0-01 — Kiến trúc kỹ thuật
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §2.2 Thư mục: `sim/memory`, `sim/gossip`, `ui/notebook` | ☠️ | Trí nhớ, đồn thổi, sổ tay chết (CANON §2, §12) |
+> | §2.2 `sim/reputation` (3 bucket) · §3 `RelTier` | ☠️→🔁 | Hết quan hệ ngầm → module sao/review, thêm `ui/phone` (R4) |
+> | §2.3 `MarketScene` · payload chợ | 🔁 | Đi chợ → đặt nhà cung cấp 3 mức chất lượng (R3) |
+> | §2.3 `EveningScene` (ghi sổ tay, `newGossip`, `notebookPrompts`) · nhánh `dayIndex === 40` "kết mùa" · cảnh mở đầu | ☠️ | Sổ tay, đồn thổi, mùa 40 ngày chết. Kết = thắng tiền / thua ATTP (R4–R5) |
+> | §2.3 `expectedNpcs` từ `sim/schedule` | 🔁 | Số khách theo `Y(x)` × hệ số sao (R5) |
+> | §2.5 EventMap: nhóm `memory:*`, `gossip:*`, `relationship:*`, `notebook:*` · con số "44 event" (§6) | ☠️ | Gỡ khi phase chạm tới; thêm event review/sao (R4) |
+> | §2.6 Bubble pool 8 (2 slot cho nghe lỏm) | ⏳ | Nghe lỏm chết, đo lại kích thước pool |
+> | §3 `StimId`: `WRONG_NAME`, `REMEMBERED_USUAL`, `REMEMBERED_STORY` · `world` chứa gossip/sổ tay · `coreMemorySeed` · `gossipEnabled` | ☠️ | Còn 8 sự kiện (CANON §3) |
+> | §3 `AttentionTool` `CO_BA`, `NpcId` `CO_BA` · `ba_bay.json` `coreMemorySeed` bất hoà với cô Ba | ☠️ | Bỏ hẳn nhân vật Cô Ba (R0.5) |
+> | §2.3 Cảnh mở đầu (P4) · §3 `NpcId` · `budget`/ngày | 🔁 / ⏳ | Màn giới thiệu kể qua điện thoại, nhân vật Phương Anh (R0.5); tên NPC đổi R6; vốn/chi phí mô phỏng lại R2/R5 |
+> | §6 "chạy 40 ngày headless < 20 s" | 🔁 | Headless vẫn cần cho `tools/sim.ts`, không còn mốc 40 ngày |
+>
+> **Còn dùng được:** gỡ Colyseus, luật không import `phaser` trong `sim/`, cấm `Math.random()`, vòng đời frame, render/đóng gói/hiệu năng, `DayScene` thường trực — nền cho mọi phase R.
+
 **Thuộc phase:** P0 — Nền tảng
 **Phụ thuộc:** `CANON.md` §2 (định danh kỹ thuật), §3 (11 sự kiện), §5 (perception), §11 (rule DB), §15 (trợ năng), §16 (ba thứ đừng làm) · `P0-02` (clock / rng / save) · `P0-03` (telemetry & dev tools)
 **Trạng thái:** **Chốt** — trừ các dòng gắn nhãn *Cần đo* ở §5
@@ -654,7 +673,7 @@ export type NpcId =
 | R4 | Ngân sách frame vỡ ở giờ cao điểm — đúng lúc T1 quan trọng nhất | Cao | `MAX_NPC_AT_STALL = 6`, `ACTIVE_STIM_CAP = 8`, trần 1 query/frame. Đo p95 chứ không đo trung bình |
 | R5 | Bị cám dỗ **mô phỏng sâu đời sống NPC ngoài quầy** | Cao | CANON §16 Đừng-1. Kiến trúc đã bịt: `sim/schedule.ts` chỉ trả *giờ đến / ngày nghỉ / arc*, không có vị trí NPC ngoài scene. Cái xe thủng lốp của chú Tư = **một dòng thoại + một prop** (tay băng, áo ướt) |
 | R6 | Layered sprite trượt thành frame-by-frame animation khi artist về | Cao | CANON §16 Đừng-4. Hợp đồng artist ghi rõ: giao **18 file layer + 1 atlas**, không giao chuỗi frame. Ngân sách draw call §2.8 là cổng kỹ thuật cho điều đó |
-| R7 | Tauri "nhẹ hơn 95 MB" được đem ra bàn lại ở P5 | Trung bình | CANON §2 đã chốt. §2.7 ghi sẵn lý do đầy đủ để khỏi bàn lại |
+| R0.5 | Tauri "nhẹ hơn 95 MB" được đem ra bàn lại ở P5 | Trung bình | CANON §2 đã chốt. §2.7 ghi sẵn lý do đầy đủ để khỏi bàn lại |
 | R8 | Demo web nặng → tỉ lệ thử tụt → mất kênh phát hành #1 (§23) | Cao | `WEB_BUILD_GZIP_MB ≤ 12`, đo **thời gian tải thật trên 4G**, không đo dung lượng suông. Demo cắt bớt nội dung chứ không cắt chất lượng art |
 | R9 | Render đổi state (tiện tay sửa `npc.mood` trong `sync()`) → không ai debug nổi | Trung bình | `renderer.sync()` nhận `Readonly<WorldState>`. TypeScript chặn ở biên dịch |
 | R10 | Bus phát vòng lặp vô hạn (A → B → A) | Trung bình | Đếm độ sâu, >8 thì throw ở dev build |

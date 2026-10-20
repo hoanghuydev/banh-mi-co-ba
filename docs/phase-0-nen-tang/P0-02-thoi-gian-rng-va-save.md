@@ -1,5 +1,21 @@
 # P0-02 — Thời gian, RNG và Save
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §2.1 Tổng một mùa (40 ngày ≈ 6,8 giờ) · `SEASON_DAYS` · tiêu chí "40 ngày ≥ 4 giờ" | ☠️ | Bỏ trần ngày. Thay bằng thời gian chơi tới mốc thắng, chốt bằng mô phỏng (R5) |
+> | §2.1 Khung ngày: chợ → bán → tối (sổ tay) | 🔁 | Chợ → nhà cung cấp (R3); cảnh tối bỏ sổ tay. Số phút/ngày ⏳ đo lại |
+> | §2.3 Stream `gossip` + lập luận "đốt RNG reroll tin đồn" · `GOSSIP_UNLOCK_MINUTES` | 🔁 | Đồn thổi chết. Stream đổi vai thành `review` (R4); luật tách stream vẫn giữ |
+> | §2.3 Stream `market` | 🔁 | Thành giá nhà cung cấp biến động (R3) |
+> | §2.5 Save: `relationPoints`, `tier`, `trustCeiling`, `memory`, `arcState`, `usualOrder`, `gossip`, `notebook`, `debtsOwedToPlayer` (sổ nợ), lịch sử "40 dòng cuối mùa" | ☠️ | Quan hệ, trí nhớ, arc, "như mọi bữa", sổ tay, sổ nợ chết. Thêm sao + review + nhà cung cấp + mở khoá topping (R2–R4) |
+> | §2.6 Trigger autosave `gossip:seeded`, `relationship:tierChanged` · §2.7 ví dụ migration `trustCeiling` | ☠️ | Thay bằng trigger review mới / sao đổi (R4) |
+> | §2.8 Nút "Chơi lại ngày này" | 🔁 | Phải xét lại khi có thua ATTP vĩnh viễn (R4). Câu giải thích "đúng giọng cô Ba" ☠️ — Cô Ba bị bỏ (R0.5) |
+> | §5 Hằng số kích thước save, `TIME_SCALE_*`, `REAL_MIN_PER_DAY` | ⏳ | Đo lại sau khi schema mới chốt |
+>
+> **Còn dùng được:** đồng hồ một nguồn, pause đóng băng kiên nhẫn + certainty, RNG seed theo ngày + tách stream, shuffle-bag, autosave sau mỗi khách, double-buffer A/B, migration, chống save-scum — dùng nguyên cho R1–R5.
+
 **Thuộc phase:** P0 — Nền tảng
 **Phụ thuộc:** `P0-01` (kiến trúc, EventBus, `GameContext`) · `CANON.md` §2 (save/localStorage/autosave), §5 (certainty), §8e (save-scum), §11 (shuffle-bag), §12 (memory/gossip), §13 (kinh tế, cao điểm 6h30–8h), §15.2 (pause đóng băng kiên nhẫn)
 **Trạng thái:** **Chốt** về cơ chế · **Cần đo** các hằng số `TIME_SCALE_*` (xem `P0-03`)
@@ -662,7 +678,7 @@ export type DayStartSnapshot = {
 | R4 | Bộ đếm stream không vào save → reload giữa ngày reset về đầu ngày → **reroll được toàn bộ phần còn lại của ngày** | **Rất cao** | `rng.counters` là field bắt buộc; test "reload sau khách thứ 5" ở §6 |
 | R5 | Autosave 3 ms rơi đúng frame đông khách → giật đúng lúc T1 quan trọng nhất | Trung bình | Chụp trong frame / ghi lúc idle + gộp 500 ms + đo p99 |
 | R6 | Crash giữa lúc ghi → mất cả mùa → mất người chơi vĩnh viễn (quan hệ không respawn, §22) | Cao | Double-buffer A/B + meta + `rename` nguyên tử + backup trước migrate |
-| R7 | Save phình vì `notebook` / `shuffleBags` | Trung bình | GC bag 7 ngày; cảnh báo 512 KB; chuyển IndexedDB ở 1 MB |
+| R0.5 | Save phình vì `notebook` / `shuffleBags` | Trung bình | GC bag 7 ngày; cảnh báo 512 KB; chuyển IndexedDB ở 1 MB |
 | R8 | Migration viết ẩu làm hỏng save của người đang chơi giữa mùa | Cao | Backup bắt buộc + migration thuần + test snapshot cho từng bước |
 | R9 | **6,8 giờ là con số tính ra bị nhầm thành con số đo được** | Cao | Doc này ghi rõ. `P0-03` là cổng. *"Nếu bạn chưa đo, bạn chưa thiết kế"* (§23) |
 | R10 | Tua nhanh giờ vắng làm người chơi lỡ khách | Trung bình | Chỉ tua khi quầy **trống hoàn toàn**; khách tới → về `TIME_SCALE_BASE` **ngay frame đó**, kèm một nhịp âm thanh nhẹ |

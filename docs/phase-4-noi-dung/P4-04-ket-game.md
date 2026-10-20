@@ -1,5 +1,12 @@
 # P4-04 — Kết game: ngày 40, cú quay lại, và những thứ không được giải thích
 
+> ## ⚡ REVAMP 2026-10-20 — ☠️ CHẾT TOÀN BỘ
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp + [`revamp/00-YEU-CAU.md`](../revamp/00-YEU-CAU.md). Phần ☠️ không dùng làm căn cứ.
+>
+> Cả doc dựng trên T3 + T4: cảnh ngày 40, cô Ba nghỉ hẳn, bảng tổng kết mùa, rẽ nhánh theo "ai còn ở đó", phán quyết NG+ theo T4. Thay bằng (R5 + R0.5): **thắng** = đủ mốc tiền → mở chi nhánh 2, tường review, biển hiệu mới; **thua** = ATTP → quán niêm phong, Phương Anh nộp lại CV.
+>
+> **Còn dùng được:** §2.5 mục 3 thứ tự credits (người Việt viết văn hoá đứng đầu — LR §14.1); nguyên tắc màn kết tử tế, không chế giễu nghề (CANON §15).
+
 **Thuộc phase:** P4 — Nội dung
 **Phụ thuộc:** `CANON.md` §1 (**T3** không hiện chỉ số quan hệ · **T4** một mùa có điểm kết) · §7.4 (cô Ba) · §14 (tiếng rao, sổ nợ) · §14.1 (lằn ranh đỏ) · **§15 (nguyên tắc kết game)** · P4-01 (dàn nhân vật) · P4-02 (lịch 40 ngày) · P4-03 (sự kiện, tiếng rao)
 **Trạng thái:** **Chốt** nguyên tắc, cảnh ngày 40, sự kiện đóng lại, bảng tổng kết, phán quyết New Game+. **Cần đo** phản ứng playtest ở cảnh chị Lan. **Còn mở** 🟡 2 chỗ.

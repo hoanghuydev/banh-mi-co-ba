@@ -1,5 +1,23 @@
 # P3-06 — Nghĩa vụ định kỳ, hụi, và fail mềm nhưng vĩnh viễn
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN (phần lớn ☠️)
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §1, §2.1 Fail mềm thay fail cứng | ☠️ | Thay bằng thắng (mốc tiền) / thua ATTP (CANON §13) |
+> | §2.2 Dòng 1–2: Rút về nhà + Thuê chỗ theo ngày | ⏳ | Giữ làm chi phí cố định/ngày; "thuê chỗ" → tiền thuê mặt bằng theo hợp đồng (R0.5); số mô phỏng lại (R2/R5) |
+> | §2.2 Dòng 3–5: hụi, tiền học, tiền thuốc cô Ba; §2.2.1 lịch 40 ngày | ☠️ | Hụi + tiền học chết; cô Ba bỏ (R0.5) |
+> | §2.2.2 Cảnh báo "qua người, không qua UI" | 🔁 | T3 chết — game kinh doanh minh bạch, chi phí hiện được bằng số |
+> | §2.3 Hụi (toàn mục) | ☠️ | Hụi chết |
+> | §2.4 Bốn `PermanentLoss`, §2.5 Khách ruột mất không respawn | ☠️ | Fail mềm + quan hệ chết |
+> | §2.6 Lằn ranh đỏ "hạ thấp nghề" | 🔁 | Nguyên tắc giữ (CANON §14.1); bảy ràng buộc viết lại theo cốt truyện mới, không còn hụi/tiền học |
+> | §2.7 Bảng cân đối 40 ngày, 3 kịch bản | ☠️ | Thay bằng mô phỏng `tools/sim.ts` (R2/R5) |
+> | §2.8 Kết game "ai còn ở lại", tiền thuốc cô Ba | ☠️ | Ending mới (R0.5): thắng → mở chi nhánh 2, thua ATTP → quán niêm phong, nộp lại CV |
+> | §3–§7 Schema, UI, tham số, tiêu chí | ☠️ | Theo các mục trên; chỉ giữ phần chi phí cố định |
+>
+> **Còn dùng được:** chi phí cố định theo ngày (rút nhà + thuê chỗ) và nguyên tắc lằn ranh đỏ — cho R2/R5. Hết tiền mà chưa thua ATTP: ⏳ R5.
+
 **Thuộc phase:** P3 — Kinh tế
 **Phụ thuộc:** `CANON.md` §1 (T3, T4), §8 (d, f, k), §9, §10, §13, §14, §14.1 🔴, §15 (nguyên tắc kết game) · `P3-01` (vòng một ngày, lịch thời tiết) · `P3-03` (giá bán, giá vốn, giá chợ 40 ngày) · `P3-04` (**nguồn sự thật cho catalogue thiết bị**) · `P3-05` (**nguồn sự thật cho chỗ đứng L1–L5 và tiền thuê**) · `P4-*` (kết game)
 **Trạng thái:** **Chốt** cho cấu trúc nghĩa vụ, hụi, và nguyên tắc ending · **Cần đo** cho toàn bộ §2.7 (bảng cân đối) · ✅ **Đã hợp nhất:** bảng §9.5 được duyệt và nâng thành **CANON §13.1** — toàn bộ số tiền trong doc này đã viết lại theo đó

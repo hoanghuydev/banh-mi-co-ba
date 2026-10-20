@@ -1,5 +1,23 @@
 # P3-02 — Nguồn hàng và nhà cung cấp
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | Khối "Nền số học" đầu doc | ⏳ | 28k/ổ, 51,7 ổ/ngày, hụi, tiền học… — giá do người chơi chọn 3 mốc (R2), số mô phỏng lại |
+> | §1, §2.1–§2.2 Nhà cung cấp là NPC, tái dùng trí nhớ/bucket/đồn thổi | ☠️ | Hệ quan hệ, trí nhớ, đồn thổi chết. Thay bằng nhà cung cấp 2–3 mức chất lượng, 3 thanh *độ ngon · chất lượng · giá* (R3) |
+> | §2.3 `visibility[MARKET]` — nhà cung cấp nhìn bạn | ☠️ | Đầu ra cũ là quan hệ; nhà cung cấp không chấm sao |
+> | §2.4 Cast 11 nhà cung cấp có tên | 🔁 | Có thể giữ làm tên/mặt cho từng mức chất lượng, chốt ở R3; tên đổi ở R6 |
+> | §2.5 Ổ bánh nhiều nguồn (4 thuộc tính, 5 lò) | 🔁 | Thuộc tính `q0`/`kStale` gom vào 3 mức chất lượng + xác suất đau bụng (R3) |
+> | §2.6 Bốn đòn bẩy: cho nợ, streak, giữ hàng theo bucket | ☠️ | Sống nhờ quan hệ. Đặt trước (§2.6.3) 🔁 có thể giữ, không phụ thuộc bucket |
+> | §2.7 Nhà cung cấp đồn thổi | ☠️ | Đồn thổi chết |
+> | §2.8–§2.9 Mười trục quyết định, ba ngày mẫu | ⏳ | Trục D5 (ghi nợ) ☠️. Phần còn lại tính lại theo giá biến động (R3) |
+> | §2.10 Khan hiếm (KH-1…KH-4) | ⏳ | Giữ ý, số lò/giờ chợ chờ R3 |
+> | §4 UI "không có điểm chất lượng" | ☠️ | Đề bài yêu cầu hiện 3 thanh công khai (R3) |
+>
+> **Còn dùng được:** luật "không có nút nhặt bánh lên" + khan hiếm thật (§2.10), đặt trước cam kết cứng, delivery-diff đảo chiều khi mở thùng hàng — cho R3.
+
 **Thuộc phase:** P3 (Kinh tế) · **Phụ thuộc:** `phu-luc/A-quyet-dinh-co-che-moi.md` §2.4 · `P2-01` (perception) · `P2-02` (trí nhớ) · `P2-04` (đồn thổi) · `P3-01` (vòng một ngày, lịch thời tiết) · **`P3-03` (tồn kho, hạn dùng, bảng giá — NỀN SỐ HỌC)** · `P3-04` (thiết bị) · `P3-05` (chỗ đứng) · `P3-06` (nghĩa vụ & cân đối) · **Trạng thái:** **Chốt** (các con số: **Cần đo**)
 
 > ### ⚠️ Nền số học — doc này KHÔNG được tự đặt lại

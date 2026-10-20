@@ -1,5 +1,24 @@
 # P2-02 — Tính cách 4 chiều và 5 kênh phản ứng
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp. Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §1 "doc gánh T3" · T-14 · R1 | ☠️ | T3 chết; thay bằng T6 (sao công khai) |
+> | §2.1 ánh xạ `deTha` → decay, `thanThien` → tốc độ quan hệ + `pGossip`; cột `pGossip`, "ngày lên Friend" | 🔁 | 4 chiều thành **persona review** (CANON §4): `nongTinh` độ gắt chữ · `deTha` khoan dung khi chấm sao · `thanThien` xác suất viết chữ. Bảng chốt ở R4 |
+> | §2.3 "nút lan tin", "nhớ dai" · cài "im lặng biến mất" bằng memory | 🔁 | Chị Lan → khách chỉ chấm sao, không chữ (CANON §9) |
+> | §3.5 Kênh 5 — hệ quả trễ (vắng n ngày, kể cho người khác, đổi món, trần tin, biến mất) · kênh 5 trong luật phối kênh | ☠️ | Hệ quả đổ về **sao/review**; số khách chỉ đi qua sao (T6, R5) |
+> | §3.4 hành động: thêm tip theo `npcRelTier`, dắt người khác tới, ghi sổ nợ, ngồi lại để nghe lỏm | ☠️ | Quan hệ, sổ nợ, nghe lỏm đã chết |
+> | §4.1 `WRONG_NAME` · §4.7 `REMEMBERED_USUAL` · §4.8 `REMEMBERED_STORY` | ☠️ | Sự kiện chết theo trí nhớ NPC |
+> | §4 cột "Trễ" + "Lan tin" của mọi bảng | ☠️ | Thoại mẫu + kênh tức thì vẫn dùng; thoại đổi giọng gen Z ở R6 |
+> | §4.6 chị Lan: báo trước 3–4 ngày, vắng/biến mất · T-7, T-10 | ☠️ | Nguyên tắc "im lặng nguy hiểm hơn ồn ào" giữ, nhưng biểu hiện bằng **sao thấp không chữ** (R4) |
+> | §5.1 M2 chú Tư dời đi ~ngày 30 · M3′/T-12 "biến mất vĩnh viễn" | ☠️ | Arc theo ngày + vắng khách theo người đã chết |
+> | T-1 "sau 3 ngày chơi" · hằng số cường độ, delay, ngưỡng | ⏳ | Chốt lại khi mô phỏng R4–R5 |
+> | Tên 12 NPC, bảng 11×12 | ⏳ | Đổi tên riêng R6; còn 8 sự kiện (CANON §3) |
+>
+> **Còn dùng được:** 4 chiều + quy tắc suy hành vi §2.3 (làm persona R4) · kênh 1–4 (mặt 216 tổ hợp, dáng Rain World, bark, hành động tức thì) · mood độc lập §5.2 · chống twinning §5.3 · khách khó ưa chú Kiệt → review ác ý (R4).
+
 **Thuộc phase:** P2 — Hệ NPC đầy đủ
 **Phụ thuộc:** `P2-01-rule-database-thoai.md` (danh mục fact §2.3.1 — doc này đọc/ghi đúng tên đó) · `CANON.md` §3 (11 sự kiện) · §4 (4 chiều) · §5 (perception) · §6 (delivery-diff) · §9 (12 NPC) · §12 (trí nhớ, đồn thổi) · §14 (ngôn ngữ) · §15 (trợ năng) · §16 (Đừng-1, Đừng-3, Đừng-4)
 **Trạng thái:** **Chốt** về 4 chiều, 5 kênh và bảng 11×12 · **Cần đo** ở các hằng số cường độ, delay, ngưỡng biến mất
@@ -825,7 +844,7 @@ function dispatchEvent(ev: Event, now: number) {
 | R4 | **Mood trở thành cớ ăn gian** ("khách đang cáu sẵn, làm ẩu đi") | §5.2 | Mood **không** chạm `traitMul`, **không** chạm `memory.intensity`. Ghi rõ trong bảng "không được đổi" |
 | R5 | **Khai thác nhớ nhầm chiều ngược** | CANON §8h | Bias nhớ nhầm **theo tính cách**: `soi` cao lệch xấu, `thanThien` cao lệch tốt. Cài trong `sim/memory.ts`, không ở doc này nhưng phải dùng đúng 4 chiều ở đây |
 | R6 | **Micro-cheat lặp vô hạn** (bớt 1 thứ nhỏ với 100% khách × 40 ngày) | CANON §8g — **lỗ hổng lớn nhất hiện tại** | Phát hiện theo **pattern**: fact `ctxRepeatDefect` đếm theo loại lỗi × số khách. Sau N lần → rule score cao ▸ *"Ê, dạo này bánh nhạt hơn hay tại tao?"* (chú Kiệt và bà Bảy là hai người nói câu này) |
-| R7 | **Spam `CARED_FOR_THEM` / `FREE_EXTRA` để mua quan hệ** | CANON §8i | Diminishing returns §4.10 + **người `soi ≥ 0.6` nhận ra và phản tác dụng**. Chị Lan lần 3 → `relGain` **âm** |
+| R0.5 | **Spam `CARED_FOR_THEM` / `FREE_EXTRA` để mua quan hệ** | CANON §8i | Diminishing returns §4.10 + **người `soi ≥ 0.6` nhận ra và phản tác dụng**. Chị Lan lần 3 → `relGain` **âm** |
 | R8 | **Từ chối phục vụ người khó ưa** | CANON §8k | Chú Kiệt `pGossip` thấp (0,25) nên ổng không hại được bạn — **không có động cơ từ chối**. Còn nếu từ chối thật: người bị từ chối kể cho cả hẻm |
 | R9 | **Bốn chiều bị dùng như hệ số nhân bí ẩn** trộn cả tầng perception lẫn tầng thoại | P2-01 §2.11 | Ranh giới cứng: `soi → traitMul` quyết định họ **biết**; **mật độ rule** quyết định họ **nói**. Không trộn. Code review chặn |
 | R10 | **Chọc giọng chị Hạnh bị đọc là game cười người Bắc** | CANON §14.1 | Bà Bảy **rầy** bé Su ngay tại chỗ. Và lỗi `ORDER_DEFECT` do khác từ vùng miền được khung là **bạn phải học từ của chị**, không ngược lại |

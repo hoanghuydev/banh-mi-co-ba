@@ -1,5 +1,20 @@
 # P5-02 — Art và Animation
 
+> ## ⚡ REVAMP 2026-10-20 — ✅ CÒN SỐNG
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp + [`revamp/00-YEU-CAU.md`](../revamp/00-YEU-CAU.md). Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §2.2.2 danh sách asset: xe bánh mì, nhà cô Ba cảnh tối, chợ | 🔁 | Xe → quán thật (biển hiệu, mặt tiền) (R0.5). Cảnh nhà cô Ba ☠️. Chợ → nhà cung cấp (R3). Bỏ quầy thừa (R1). Thêm UI app điện thoại (R4) |
+> | §2.3.6 ánh xạ sự kiện → mặt: `WRONG_NAME`, `REMEMBERED_*` | ☠️ | Ba sự kiện đã chết (CANON §3) |
+> | §2.5.3 người chơi không có mặt · ngoại lệ cô Ba có rig | 🔁 | Cô Ba bị bỏ (R0.5). Phương Anh là nhân vật có tên, có mặt trong intro/kết — chưa chốt có hiện mặt trong quán không |
+> | §2.6 cảnh kết ngày 40 (3 tranh tĩnh) | 🔁 | → màn thắng (chi nhánh 2, tường review) / thua (niêm phong) (R5/R0.5) |
+> | §2.7 key art + capsule (xe ở 1/3 trái, tên game) | 🔁 | Quán thay xe; tên game → "Bye Sếp, Em Bán Bánh Mì" (R0.5) |
+> | §5.2 ngân sách art "mùa 40 ngày", 13 NPC (12 + cô Ba), UI sổ tay/bảng chợ | ⏳ | Tính lại sau R1/R4/R6/R0.5 |
+> | §7 R0.5 (kênh T3) | 🔁 | T3 chết |
+>
+> **Còn dùng được:** bảng màu theo khung giờ, layered sprite + Rain World + Celeste, luật không frame-by-frame (+ ngoại lệ model 3D), lằn ranh đỏ art, chính sách gen-AI.
+
 **Thuộc phase:** P5 — Hoàn thiện
 **Phụ thuộc:** `CANON.md` §14 (bảng màu, chi tiết môi trường) · §14.1 (lằn ranh đỏ) · §16 Đừng-4 (layered sprite, Rain World, Celeste) · §5 (perception — art phải làm `certainty` đọc được) · `P5-01` (icon, tương phản, giảm chuyển động) · `P5-03` (đồng bộ mặt ↔ VO)
 **Trạng thái:** **Chốt** về nguyên tắc và kỹ thuật · **Cần đo** ở ngân sách giờ (§5) và ở gate key art (§6)
@@ -1017,7 +1032,7 @@ font/BeVietnamPro-Regular.ttf,Be Group,SIL OFL 1.1,NO,PROD,2026-03-02
 | R4 | **Ai đó xin ngoại lệ frame-by-frame** cho "một cảnh thôi" | 10h công cho 1 giây; và tạo tiền lệ | B13 là tiêu chí nhị phân. Mọi nhu cầu animation có giải pháp thay ở §2.6 bảng cuối |
 | R5 | **Lệch anchor giữa các lớp mặt** | 216 tổ hợp đều hỏng, phát hiện muộn thì phải vẽ lại | Một canvas chung, anchor `(0,0)`, mốc canh ở `(128,128)`, test B8 chạy mỗi commit |
 | R6 | **Spring rig thành "cao su"** (quá nảy) | NPC trông như đồ chơi, giết tông | `zeta` khoá trong 0,75–1,05 (B10); độ trễ liên đốt ≤ 140ms |
-| R7 | **Giảm chuyển động làm mất ngôn ngữ cơ thể** → mất kênh T3 | Người bật a11y không đọc được quan hệ | §2.4.4: giảm biên độ, tăng thời gian giữ. Không bao giờ tắt rig. Đo ở P5-01 §6.2 A-4 |
+| R0.5 | **Giảm chuyển động làm mất ngôn ngữ cơ thể** → mất kênh T3 | Người bật a11y không đọc được quan hệ | §2.4.4: giảm biên độ, tăng thời gian giữ. Không bao giờ tắt rig. Đo ở P5-01 §6.2 A-4 |
 | R8 | **Biến thể `reduceMotion` bị để tới cuối rồi bị cắt** | Vi phạm CANON §15.3 | Đưa vào **bước 10** của thứ tự giao việc (tuần 7), không phải cuối |
 | R9 | **`ART-1` làm luôn capsule vì "tiện"** | Trễ vertical slice + capsule kém | Ghi vào hợp đồng phạm vi công việc; $800–1.200 đã có trong ngân sách |
 | R10 | **Bà Bảy bị vẽ thành hình ảnh thương hại** | Vi phạm idea §19.5, và là lỗi dễ mắc nhất vì nó "tự nhiên" | Luật vẽ: lưng thẳng, áo sạch, radio cải lương luôn trong khung của bà. RED-LINE REVIEW kiểm riêng nhân vật này |

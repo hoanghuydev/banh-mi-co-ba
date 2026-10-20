@@ -1,5 +1,8 @@
 # Nghiên cứu ngoài — NPC biết mình đang ở đâu, và nhớ được chuyện gì
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT GẦN HẾT
+> Phần trí nhớ có truy hồi (`recency + importance + relevance`) ☠️ — hệ trí nhớ NPC đã chết ([`CANON.md`](../../CANON.md) §12). Phần "NPC biết mình đang ở đâu" còn tham khảo được cho thoại tại quầy.
+
 **Ngày:** 2026-10-02 · **Cho:** `../../phase-2-he-npc/P2-09-kien-truc-giao-tiep.md`
 **Câu hỏi lõi:** GTA, game mô phỏng đời thật, và lớp agent có trí nhớ — họ dùng **thuật
 toán nào** để một NPC nói đúng câu, đúng lúc, với đúng người; và cái nào trong số đó bê

@@ -1,5 +1,22 @@
 # P4-05 — Cơ chế văn hoá Việt Nam và LẰN RANH ĐỎ (tài liệu thi hành)
 
+> ## ⚡ REVAMP 2026-10-20 — ⚠️ CHẾT MỘT PHẦN
+> Căn cứ: [`CANON.md`](../CANON.md) bản revamp + [`revamp/00-YEU-CAU.md`](../revamp/00-YEU-CAU.md). Phần ☠️ không dùng làm căn cứ.
+>
+> | Mục | Trạng thái | Lý do / thay bằng |
+> |---|---|---|
+> | §2.1 mở hàng / đốt vía | 🔁 | Giữ luật "không có hiệu ứng cơ học". Người tin/khấn là cô Ba → đổi người (R0.5 bỏ cô Ba). Mốc ngày 4/6/7 chết |
+> | §2.2A quest "Quen mặt đắt hàng" ngày 23 | ☠️ | Dựa quan hệ mối hàng + khách quen ≥15 ngày |
+> | §2.2B danh sách achievement | 🔁 | "Như mọi bữa", "Nhà tui gần xe cô Ba", "Bánh đó con để cô ăn", "Còn ổ nào không em?" (ngày 40) ☠️. Danh sách mới theo sao/review/mốc thắng (R4/R5) |
+> | §2.3 sổ nợ | ☠️ | Cần trí nhớ khách |
+> | §2.4 bảng QR · §2.5 khách tự bán hộ | 🔁 | Giữ. Bỏ mốc ngày (14, 32, 36, 39) và nhánh "ghi sổ nợ" |
+> | §2.6 thước đo tiến trình "nhà tui gần xe bánh mì cô Ba" | ☠️ | Dựa `REMEMBERED_USUAL` + gossip. Thay bằng sao công khai (T6) + mốc "được công nhận" qua điện thoại (R0.5) |
+> | §2.7 ngôn ngữ gọi món | 🔁 | Từ vựng giữ. Bỏ "như mọi bữa" + tham chiếu ML theo arc. Thêm gọi theo topping mở dần (R2) |
+> | §2.9 bảng màu, môi trường | 🔁 | Xe → quán (biển hiệu, mặt tiền) (R0.5). Map thu nhỏ (R1) |
+> | §3, §5: field/tham số theo mùa, cô Ba | ☠️ | Theo các mục trên |
+>
+> **Còn dùng được:** §2.8 checklist lằn ranh đỏ (nguyên vẹn), §2.9 bảng màu, §2.10 đề cương phỏng vấn chủ quán, tông tâm linh nhẹ/tự trào.
+
 **Thuộc phase:** P4 — Nội dung
 **Phụ thuộc:** `CANON.md` §2 (ngôn ngữ, đại từ, VO người thật) · §8 (lỗ hổng ăn gian) · **§14 (cơ chế Việt Nam)** · **§14.1 (lằn ranh đỏ)** · §15 (trợ năng) · P4-01 · P4-02 · P4-03 · P4-04
 **Trạng thái:** **Chốt** toàn bộ quy trình thi hành, checklist có người chịu trách nhiệm, bảng ngôn ngữ gọi món, đề cương phỏng vấn. **Cần làm ngay tuần 1:** §2.10 (phỏng vấn 3–5 chủ xe bánh mì thật).
