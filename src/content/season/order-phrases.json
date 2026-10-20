@@ -30,7 +30,7 @@
     { "text": "Chị lấy một cái bánh mì pa-tê. Cho chị xin ít rau mùi. Với một cốc trà đá.", "region": "bac", "maps": "pate, rau 1", "ambiguous": "rau mùi = ngò rí, KHÔNG phải hành lá; cái = ổ; cốc = ly", "source": "P4-01 chị Hạnh", "game": true },
     { "text": "Cho chị một ổ pa-tê... à, cho ít ngò. Ly trà đá nữa em.", "region": "bac", "maps": "pate, rau 1", "source": "P4-01 chị Hạnh M3", "game": true },
     { "text": "Cho chị ổ pate, ít ngò, ly trà đá. Cảm ơn em nghen.", "region": "bac", "maps": "pate, rau 1", "source": "P4-01 chị Hạnh M5", "game": true },
-    { "text": "Dạ... ổ đầy đủ. Dạ.", "region": "nam", "maps": "đầy đủ", "source": "P4-01 anh Bảo", "game": true },
+    { "text": "Dạ... ổ đầy đủ ạ.", "region": "nam", "maps": "đầy đủ", "source": "P4-01 anh Bảo", "game": true },
     { "text": "Cho em ổ bánh mì không thôi.", "region": "nam", "maps": "bánh mì không", "source": "P4-03 SK-31", "game": true },
     { "text": "Đổi hôn con? Chén tàu hũ lấy ổ bánh.", "region": "nam", "maps": "đổi hàng — bánh mì không (ML-13)", "source": "P4-01 bà Sáu", "game": "bản dựng thêm 'không' cho câu tự đủ (T2)" }
   ],

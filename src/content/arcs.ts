@@ -128,9 +128,9 @@ export function usualOf(npcId: string, c: ArcCtx, atMin = 0): OrderSpec | null {
     }
     case "ANH_BAO":
       // ML-11: người chơi TỰ bỏ thêm ớt 4 lần → anh tự nói "cho em nhiều ớt chút"
-      if (c.flags.baoAsksChili) return spec({ mon: "daydu", ot: 2 }, "Dạ... ổ đầy đủ, cho em nhiều ớt chút. Dạ.");
+      if (c.flags.baoAsksChili) return spec({ mon: "daydu", ot: 2 }, "Dạ... ổ đầy đủ, cho em nhiều ớt chút nha.");
       // ML-11: anh ăn cay được hơn anh gọi — anh không biết mình được phép xin
-      return withAlt(spec({ mon: "daydu" }, "Dạ... ổ đầy đủ. Dạ.", "Dạ... như mọi bữa. Dạ."), { ot: 2 });
+      return withAlt(spec({ mon: "daydu" }, "Dạ... ổ đầy đủ ạ.", "Dạ... như mọi lần ạ."), { ot: 2 });
     case "BA_SAU":
       return spec({ ...KHONG, usual: false }, "Đổi hôn con? Chén tàu hũ lấy ổ bánh không.");
     default:
@@ -258,14 +258,14 @@ export function arcToday(npcId: string, c: ArcCtx, atMin: number | null): ArcDay
     case "ANH_BAO": {
       if (d >= 19 && d <= 21) return {
         at: at(6, 20),
-        order: spec({ mon: "daydu" }, "Cho em hai ổ đầy đủ, em đi thi."),
-        more: [spec({ mon: "daydu" }, "Ổ nữa đầy đủ luôn. Dạ.")],
+        order: spec({ mon: "daydu" }, "Cho em hai ổ đầy đủ, em đi thi á."),
+        more: [spec({ mon: "daydu" }, "Thêm ổ nữa đầy đủ luôn ạ.")],
       };
       if (d === 29) return { order: spec(KHONG, "Cho em ổ bánh mì không thôi."), tag: "SK-31" };
       if (d === 30 && c.flags.baoSneak) return { absent: true };
-      if (d === 31 && c.flags.baoSneak) return { after: ["Hôm bữa cô bỏ pate cho em. Em gửi tiền nè cô."], tag: "BAO-TRA" };
+      if (d === 31 && c.flags.baoSneak) return { after: ["Hôm bữa chị bỏ pate cho em. Em gửi tiền nè chị."], tag: "BAO-TRA" };
       if (d === 40) return (c.flags.baoRespect || c.flags.baoAsksChili) && !c.flags.baoSneak
-        ? { served: { any: [{ text: "Cảm ơn cô.", delay: 1 }] }, tag: "BAO-KET" }
+        ? { served: { any: [{ text: "Cảm ơn chị.", delay: 1 }] }, tag: "BAO-KET" }
         : { absent: true };
       return null;
     }

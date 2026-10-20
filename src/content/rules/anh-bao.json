@@ -6,15 +6,15 @@
     {"id": "bao.burnt", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_BAO", "eventId": "BURNT_OR_COLD", "eventBurnt": true, "obsState": ">=NOTICED"}, "silent": true, "say": [], "_note": "tách hai nhánh KHÔNG phải để viết thêm thoại (Bảo im cả hai) mà để giữ ĐIỂM: rule generic nay có thêm criterion `eventBurnt`, một rule im lặng 3 điểm sẽ hoà điểm với nó và Bảo bỗng mở miệng một nửa số lần."},
     {"id": "bao.cold", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_BAO", "eventId": "BURNT_OR_COLD", "eventBurnt": false, "obsState": ">=NOTICED"}, "silent": true, "say": []},
     {"id": "bao.flourish", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_BAO", "eventId": "FLOURISH", "obsState": ">=NOTICED"}, "silent": true, "say": []},
-    {"id": "bao.wrong_name", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_BAO", "eventId": "WRONG_NAME", "obsState": ">=NOTICED"}, "say": ["Dạ? À… dạ con là Bảo."]},
+    {"id": "bao.wrong_name", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_BAO", "eventId": "WRONG_NAME", "obsState": ">=NOTICED"}, "say": ["Dạ? À… em là Bảo."]},
     {"id": "bao.wait.noticed", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_BAO", "eventId": "MADE_THEM_WAIT", "obsState": "NOTICED"}, "silent": true, "say": []},
     {"id": "bao.wait.confirmed", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_BAO", "eventId": "MADE_THEM_WAIT", "obsState": "CONFIRMED"}, "silent": true, "say": []},
     {"id": "bao.del.seen", "concept": "DELIVERY", "when": {"npcId": "ANH_BAO", "defectCount": ">=1", "defectWasSeen": true}, "silent": true, "say": []},
-    {"id": "bao.del.found", "concept": "DELIVERY", "when": {"npcId": "ANH_BAO", "defectCount": ">=1", "defectWasSeen": false}, "say": ["À… dạ không sao."]},
-    {"id": "bao.del.usual", "concept": "DELIVERY", "when": {"npcId": "ANH_BAO", "defectCount": 0, "orderIsUsual": true}, "say": ["Ủa… dạ. Cảm ơn cô."]},
+    {"id": "bao.del.found", "concept": "DELIVERY", "when": {"npcId": "ANH_BAO", "defectCount": ">=1", "defectWasSeen": false}, "say": ["À… không sao đâu chị."]},
+    {"id": "bao.del.usual", "concept": "DELIVERY", "when": {"npcId": "ANH_BAO", "defectCount": 0, "orderIsUsual": true}, "say": ["Ủa… dạ. Cảm ơn chị."]},
     {"id": "bao.del.toomuch", "concept": "DELIVERY", "when": {"npcId": "ANH_BAO", "defectCount": 0, "freeExtraTooMuch": true}, "say": ["Dạ."]},
     {"id": "bao.bye.served", "concept": "FAREWELL", "when": {"npcId": "ANH_BAO", "leaveReason": "SERVED", "serveOutcome": ["CLEAN", "DEFECT", "WAITED"]}, "silent": true, "say": [], "_note": "Kể cả bữa đó ra sao: cầm ổ, cắm mặt điện thoại, đi thẳng. Khai đủ giá trị serveOutcome để rule nào cũng 3 criterion — nếu chỉ hai thì nó hoà điểm với mấy dòng chào generic và anh Bảo thành ra lúc nói lúc không, mà cái im của anh là CỐ Ý (xem ghi chú đầu file). CỐ Ý BỎ GRIT ra khỏi danh sách: cắn phải sạn là đúng một thứ làm anh rời mắt khỏi điện thoại, nên lượt đó anh rớt xuống dòng generic và NÓI. Anh im vì không để ý, không phải vì không có miệng."},
-    {"id": "bao.tea", "concept": "INTERACT", "when": {"npcId": "ANH_BAO", "interaction": "TEA"}, "say": ["Dạ… con cảm ơn cô."]},
-    {"id": "bao.thi", "concept": "SMALLTALK", "when": {"npcId": "ANH_BAO", "queueLength": "<=2", "npcVisitCount": ">=4"}, "say": ["Dạ… tuần sau con thi rồi cô."], "norepeat": true, "odds": 40}
+    {"id": "bao.tea", "concept": "INTERACT", "when": {"npcId": "ANH_BAO", "interaction": "TEA"}, "say": ["Dạ… em cảm ơn chị."]},
+    {"id": "bao.thi", "concept": "SMALLTALK", "when": {"npcId": "ANH_BAO", "queueLength": "<=2", "npcVisitCount": ">=4"}, "say": ["Tuần sau em thi rồi chị…"], "norepeat": true, "odds": 40}
   ]
 }
