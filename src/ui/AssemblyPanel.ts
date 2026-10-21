@@ -6,12 +6,7 @@ import { CAPACITY, INGREDIENTS, labelOf, portionsOf, type Ingredient } from "../
 import { FONT, UI, button, buttonHeight, panel, textScale } from "./theme";
 import { Steam } from "./stall/Steam";
 
-/**
- * Bảng kẹp nhân — nơi trụ cột T2 sống hoặc chết: món ăn LÀ lựa chọn hội thoại, nên đây là chỗ
- * người chơi "nói". Mọi thứ ở đây phải đọc được bằng HÌNH, và phải mở/đóng được giữa chừng.
- */
-
-/** Bên TRÁI, dưới phiếu đơn của HUD — KHÔNG che hàng khách, vì khách đang nhìn tay mình là cả luật chơi. */
+/** Bên trái, dưới phiếu đơn của HUD, để không che hàng khách. */
 const PANEL_W = 470;
 const PANEL_LEFT = 8;
 const PANEL_TOP = 96;
@@ -23,7 +18,7 @@ const LOAF_H = FOOD.LOAF_H;
 const MAX_SCALE = 1.45;
 const MAX_SCALE_W = 1.15;
 const MAX_SCALE_BTN = 1.25;
-/** Gói bánh là MỘT cú bấm; FLOURISH đo bằng nhịp bấm đó. */
+/** Gói trong khoảng này sau miếng cuối thì tính là gói khéo. */
 const WRAP_SNAP_MS = 900;
 
 export class AssemblyPanel {
@@ -34,13 +29,13 @@ export class AssemblyPanel {
   private hint!: Phaser.GameObjects.Text;
   private dropZone!: Phaser.Geom.Rectangle;
   private ghost: Phaser.GameObjects.Image | null = null;
-  /** ⚠️ Phaser bắn `dragend` RỒI mới bắn `pointerup` trên chính ô vừa kéo — không chặn thì một cú kéo thành một cú kéo cộng một cú chạm. */
+  /** Phaser bắn `dragend` rồi mới bắn `pointerup` trên ô vừa kéo, nên phải chặn để khỏi thêm hai lần. */
   private dragging = false;
 
-  /** NHẬT KÝ kẹp, không phải tập hợp: một `id` xuất hiện mấy lần là bỏ mấy phần. */
+  /** Một `id` lặp mấy lần là mấy phần. */
   private stack: Ingredient[] = [];
   private presetBtns: Phaser.GameObjects.Text[][] = [];
-  /** Suất chia sẵn CHỈ bị trừ lúc gói xong, không phải lúc áp preset. */
+  /** Suất chia sẵn chỉ bị trừ lúc gói xong. */
   private presetUsed: number | null = null;
   private presetArm: number | null = null;
   private tiles = new Map<Ingredient, () => void>();
@@ -49,7 +44,6 @@ export class AssemblyPanel {
   private lastAddAt = -1e9;
   private open = false;
 
-  // ─── cỡ thật của bảng ở cỡ chữ hiện tại (CANON §15.1) — xem `layout()`
   private s = 1;
   private sw = 1;
   private pw = PANEL_W;
@@ -62,7 +56,6 @@ export class AssemblyPanel {
   private yHint = 0;
   private yTray = 0;
   private yAct = 0;
-  /** Tâm ngang của bảng — giữ lại để `trayBounds`/`wrapBounds` khỏi tính lại. */
   private cx = 0;
 
   constructor(
@@ -72,7 +65,7 @@ export class AssemblyPanel {
     private onAdd: (id: Ingredient) => void = () => {},
     /** Trả null nếu hết phần chia sẵn. */
     private onPreset: (i: number) => Ingredient[] | null = () => null,
-    /** Hết là hết: trả lý do nếu KHÔNG bỏ thêm được phần này. */
+    /** Trả lý do nếu không bỏ thêm được phần này. */
     private canAdd: (id: Ingredient, stack: readonly Ingredient[]) => string | null = () => null,
     private allowEmptyLoaf: () => boolean = () => false,
     private onPresetConsumed: (i: number) => void = () => {},
@@ -84,8 +77,6 @@ export class AssemblyPanel {
     const top = PANEL_TOP;
     this.root = scene.add.container(0, 0).setDepth(9_400_000).setScrollFactor(0).setVisible(false);
     this.root.add(panel(scene, cx, cy, this.pw, this.ph, UI.paper, 1).setScrollFactor(0));
-    // Ba preset chia sẵn buổi sáng (P1-01 §2.6) — một chạm thay cho mười chạm. Nhãn ghi số
-    // phần còn lại: hết thì quay về kẹp tay, không bị chặn.
     const pw = Math.round(100 * this.sw), pgap = Math.round(108 * this.sw);
     for (let i = 0; i < 3; i++) {
       const b = button(scene, cx - this.pw / 2 + Math.round(62 * this.sw) + i * pgap, top + this.yPreset,
@@ -94,24 +85,17 @@ export class AssemblyPanel {
       this.presetBtns.push(b.list.filter((o) => o instanceof Phaser.GameObjects.Text) as Phaser.GameObjects.Text[]);
       this.root.add(b);
     }
-    // Không bắt người chơi kẹt trong bảng: khách khác đang chờ ly trà, bánh trong lò sắp
-    // cháy… thì gác ổ lại trên thớt, đi làm việc khác, quay lại kẹp tiếp.
     this.root.add(button(scene, cx + this.pw / 2 - Math.round(60 * this.sw), top + this.yPreset, "Gác lại", () => this.park(), {
       width: Math.round(96 * this.sw), hint: "Esc", maxScale: MAX_SCALE_BTN,
     }).setScrollFactor(0));
 
     this.buildLoaf(cx, top + this.yLoaf);
-    // Phiếu đơn KHÔNG nằm trong bảng: bảng nằm ngay dưới phiếu của HUD nên câu khách
-    // nói (nguyên văn) luôn thấy được ngay phía trên.
     this.buildTray(cx, top + this.yTray);
-    // Hàng cuối của khay chỉ có một ô (10 món / 3 cột) — hai nút Hoàn tác / Gói lại nằm
-    // ngay trên hai cột trống của hàng đó, không chồng lên ô nào.
+    // Hàng cuối khay chỉ có một ô (10 món / 3 cột), hai nút nằm vào hai cột trống.
     this.buildActions(cx, top + this.yAct);
   }
 
-  // ───────────────────────────────────────────────────────────────── dựng bảng
-
-  /** CANON §15.1: hộp TỰ GIÃN theo chữ — bảng kẹp nhân là màn hình quan trọng nhất, cỡ chữ 200% không được cắt mất gì. */
+  /** Giãn theo cỡ chữ để ở 200% không bị cắt. */
   private layout() {
     this.s = Math.max(1, Math.min(textScale(), MAX_SCALE));
     this.sw = Math.min(this.s, MAX_SCALE_W);
@@ -136,15 +120,13 @@ export class AssemblyPanel {
     this.steam = new Steam(this.scene, true);
     this.root.add([this.loafImg, this.fillLayer, this.steam.graphics]);
 
-    // khe kẹp nhân, rộng hơn hình một chút cho dễ thả trúng
-    // Vùng thả KHÔNG được chạm hàng nút phía trên (preset, "Gác lại") — nhả tay trúng nút là bấm nút.
+    // Không được chạm hàng nút phía trên, nhả tay trúng nút là bấm nút.
     this.dropZone = new Phaser.Geom.Rectangle(
       x - FOOD.LOAF_W / 2 + 10, y - LOAF_H / 2 + 6, FOOD.LOAF_W - 20, LOAF_H - 12);
     this.hint = this.text(x, PANEL_TOP + this.yHint, "kéo miếng nhân thả vào đây", 11, UI.muted, "400");
     this.root.add(this.hint);
   }
 
-  /** Dời cả bảng xuống để mép trên nằm dưới đáy khung ngày/giờ của HUD. */
   placeBelow(y: number) {
     const dy = Math.max(0, Math.min(GAME_H - 4 - (PANEL_TOP + this.ph), y + 8 - PANEL_TOP));
     if (dy === this.root.y) return;
@@ -152,7 +134,6 @@ export class AssemblyPanel {
     this.root.y = dy;
   }
 
-  /** Phần nhân ĐANG nằm trên ổ. Chỉ đọc — người dẫn bữa đầu hỏi "còn thiếu gì" (`sim/tour.fillGap`). */
   get dish(): readonly Ingredient[] {
     return this.stack;
   }
@@ -161,13 +142,7 @@ export class AssemblyPanel {
     return { x: this.loafImg.x, y: this.loafImg.y + this.root.y };
   }
 
-  /**
-   * Khay nhân và nút "Gói lại", theo TOẠ ĐỘ KHUNG THIẾT KẾ (đã cộng `root.y` của `placeBelow`).
-   *
-   * Chỉ có một chỗ dùng: bong bóng dẫn bữa đầu khoanh tròn đúng hai chỗ này (`ui/tour/TourCoach`).
-   * Trả toạ độ chứ không trả object: lớp dẫn là DOM, nó không được phép cầm GameObject của Phaser
-   * rồi lỡ tay sửa gì trong đó.
-   */
+  /** Toạ độ khung thiết kế (đã cộng `root.y`) cho lớp dẫn DOM, không trả GameObject. */
   trayBounds() {
     const w = TRAY_COLS * this.tw + (TRAY_COLS - 1) * 8;
     return {
@@ -186,8 +161,6 @@ export class AssemblyPanel {
 
   setWarm(warm: boolean, time: number, reducedMotion: boolean) {
     if (!this.open) return;
-    // Khói bốc lên từ MÉP TRÊN của ảnh ổ, không phải từ một con số gõ tay —
-    // đổi cỡ ổ bánh mà quên chỗ này là ra khói chui ra từ giữa ruột bánh.
     this.steam.draw(this.loafImg.x, this.loafImg.y - LOAF_H / 2, 0, time, warm, reducedMotion, 1.6);
   }
 
@@ -217,7 +190,6 @@ export class AssemblyPanel {
     const si = Math.min(this.s, 1.2);
     const iconX = -TW / 2 + Math.round(16 + 14 * si);
     const icon = fitPhoto(this.scene.add.image(iconX, 0, FOOD.icon(id)), si).setScrollFactor(0);
-    // Tên phải TỰ XUỐNG DÒNG, không thì ở cỡ chữ lớn "trứng ốp la" chạy ra khỏi ô.
     const nameX = -TW / 2 + Math.round(30 + 24 * si);
     const name = this.scene.add.text(nameX, 0, label, {
       fontFamily: FONT, fontSize: `${Math.round(13 * this.s)}px`, fontStyle: "500", color: UI.ink,
@@ -227,9 +199,7 @@ export class AssemblyPanel {
       fontFamily: FONT, fontSize: `${Math.round(10 * this.s)}px`, color: "#9aa4ac",
     }).setOrigin(1, 0).setScrollFactor(0);
 
-    // Huy hiệu số phần đang kẹp — "×2", "×3". Không có thì ẩn hẳn. Nằm ở GÓC ẢNH nguyên
-    // liệu chứ không nằm bên phải ô: bên phải là chỗ của tên, huy hiệu đè lên thì ô hiện
-    // "trứng ốp l" và chữ cuối biến mất dưới cái chấm tròn.
+    // Huy hiệu "×n" ở góc ảnh, vì bên phải là chỗ của tên.
     const r = Math.round(10 * Math.min(this.s, 1.3));
     const bx = iconX - Math.round(FOOD.ICON * si / 2) + Math.round(r * 0.5);
     const by = -TH / 2 + r + 2;
@@ -280,7 +250,6 @@ export class AssemblyPanel {
     return c;
   }
 
-  /** Thang phần ăn chỉ có HAI nấc: một phần là mặc định, hai phần là "cho nhiều". */
   private maxOf(id: Ingredient) {
     return INGREDIENTS.find((i) => i.id === id)!.max;
   }
@@ -301,8 +270,6 @@ export class AssemblyPanel {
       fontFamily: FONT, fontSize: `${Math.round(size * this.s)}px`, fontStyle: weight, color,
     }).setOrigin(0.5).setScrollFactor(0);
   }
-
-  // ──────────────────────────────────────────────────────────────── thao tác
 
   private add(id: Ingredient) {
     if (!this.open) return;
@@ -348,10 +315,9 @@ export class AssemblyPanel {
     });
   }
 
-  /** KHÔNG trừ suất chia sẵn ở đây — hợp đồng của bảng là "kho chỉ bị trừ lúc gói xong". */
+  /** Không trừ suất chia sẵn ở đây, chỉ trừ lúc gói xong. */
   private applyPreset(i: number) {
-    // Ghi đè cả ổ đang kẹp là chuyện lớn: Hoàn tác chỉ `pop()` một miếng nên 20 phần đã
-    // kẹp tay không lấy lại được. Hỏi một lần trước khi xoá.
+    // Hoàn tác chỉ gỡ một miếng nên phải xác nhận trước khi ghi đè cả ổ.
     if (this.stack.length && this.presetArm !== i) {
       this.presetArm = i;
       this.flash(`P${i + 1} thay hết ${this.stack.length} phần đang kẹp — bấm lại để xác nhận`);
@@ -367,8 +333,7 @@ export class AssemblyPanel {
     }
     this.stack = [];
     for (const id of dish) { this.stack.push(id); this.onAdd(id); }
-    // Preset cũng là một lần "vừa đặt nhân xong" — không ghi mốc thì bấm P1 rồi gói
-    // ngay lập tức vẫn trượt FLOURISH, mà đó mới đúng là cú gói nhanh nhất có thể.
+    // Preset tính là vừa đặt nhân, để gói ngay vẫn được tính khéo.
     this.lastAddAt = this.scene.time.now;
     this.presetUsed = i;
     this.presetArm = null;
@@ -377,14 +342,10 @@ export class AssemblyPanel {
 
   private confirm() {
     if (!this.open) return;
-    // Ổ trống KHÔNG phải lúc nào cũng sai ("bánh mì không"); đơn nào cho phép thì scene nói qua `allowEmptyLoaf`.
     if (!this.stack.length && !this.allowEmptyLoaf()) {
       this.flash("ổ còn trống — kẹp nhân trước");
       return;
     }
-    // Gói liền tay sau miếng cuối = khéo. Ổ chưa đặt miếng nào trong phiên này
-    // (`lastAddAt` còn ở -1e9) thì không tính — gác ổ cả phút rồi quay lại bấm gói
-    // không phải là nhanh tay.
     const even = this.scene.time.now - this.lastAddAt <= this.wrapSnapMs;
     const dish = [...this.stack];
     const used = this.presetUsed;
@@ -395,7 +356,6 @@ export class AssemblyPanel {
     this.onDone(dish, even);
   }
 
-  /** XẾP CHỒNG THÀNH LỚP, không xếp thành hàng — đúng cách nhân nằm trong một ổ bánh thật. */
   private repaint() {
     this.fillLayer.removeAll(true);
     this.hint.setColor(UI.muted);
@@ -407,12 +367,7 @@ export class AssemblyPanel {
     }
     this.hint.setText(`bấm vào một lớp để gỡ bớt   ·   ${this.stack.length}/${CAPACITY} phần`);
 
-    // Dàn NGANG như lát nhân xếp dọc ruột bánh: miếng sau đè lên miếng trước, miếng
-    // nào cũng còn lộ một phần — đủ nhận ra hình dáng từng loại.
-    //
-    // MỘT HÀNG, LUÔN LUÔN. Kẹp nhiều thì các miếng đè khít hơn, chứ không nhảy xuống
-    // hàng thứ hai: ổ bánh mì chỉ có một cái máng, xếp thành hai tầng lơ lửng trên
-    // vỏ bánh là nhìn ra ngay không phải một ổ bánh nữa.
+    // Luôn một hàng dọc ruột bánh, nhiều miếng thì đè khít hơn chứ không xuống hàng.
     const SIZE = Math.ceil(FOOD.ICON * FOOD.BIG_SCALE);
     const SPAN = FOOD.CRUMB_W - SIZE;
     const counts = portionsOf(this.stack);
@@ -435,18 +390,15 @@ export class AssemblyPanel {
     this.tiles.forEach((f) => f());
   }
 
-  // ───────────────────────────────────────────────────────────────── vòng đời
-
   get isOpen() {
     return this.open;
   }
 
   show(initial: readonly Ingredient[] = []) {
     this.stack = [...initial];
-    // Ổ mới tinh: quên preset cũ. Ổ gác dở mở lại: GIỮ, không thì gác một cái là mất suất.
+    // Ổ gác dở mở lại thì giữ preset, không thì mất suất.
     if (!this.stack.length) this.presetUsed = null;
-    // Mở lại ổ gác dở KHÔNG phải vừa đặt nhân: để mốc cũ thì bấm gói luôn là ăn
-    // FLOURISH free. Lùi hẳn ra ngoài mọi cửa sổ nhanh tay.
+    // Mở lại ổ gác dở không tính là vừa đặt nhân.
     this.lastAddAt = -1e9;
     this.presetArm = null;
     this.open = true;

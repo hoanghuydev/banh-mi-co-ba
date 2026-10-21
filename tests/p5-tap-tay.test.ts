@@ -1,20 +1,3 @@
-/**
- * TẬP TAY — sáu bữa đầu nhẹ tay hơn (`sim/ease.ts`).
- *
- * Năm hợp đồng, và cái thứ hai là cái cả đợt chỉnh độ khó này đứng hoặc sụp trên đó:
- *
- *  1. NGÀY 7 KHÔNG ĐỔI MỘT LI. Mọi hệ số về 1, rổ món đủ bảy, và `randomOrder` ra ĐÚNG cái
- *     nó ra trước khi có `ease.ts`. Toàn bộ 666 lưới còn lại neo ở ngày 7/8 — nếu hàng
- *     "ngày thường" lệch một chữ thì chúng đo một game khác chứ không bắt được gì.
- *  2. KHÔNG ĐƯỜNG NÀO LÀM GAME NẶNG HƠN. File này chỉ được phép đỡ. Một dấu trừ đặt sai
- *     trong bảng `ROWS` là bữa đầu khó hơn bữa thứ mười mà không test nào kêu.
- *  3. RỔ MÓN CHỈ LỚN LÊN. Món mở rồi không được đóng lại — người chơi học xong một món thì
- *     hôm sau nó phải còn đó.
- *  4. NGÀY 1 LÀ MỘT MỆNH ĐỀ. Câu gọi của khách vãng lai gọn đúng "Cho một ổ ___." — không
- *     "cho nhiều", không "ít rau", không "khỏi ớt".
- *  5. BẢNG `MON` KHÔNG ĐƯỢC LỆCH `menu.json`. Thêm một món vào bảng vách mà quên dòng cuối
- *     của `MON` thì món đó im lặng không bao giờ được gọi trong sáu bữa đầu.
- */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { EASE_LAST_DAY, PEAK_CAP, easeOf, peakCap } from "../src/sim/ease";
@@ -35,7 +18,6 @@ test("HĐ1 ngày 7 trở đi mọi hệ số về 1, rổ đủ bảy món", () 
     assert.equal(e.mon.length, MENU_IDS.length, `ngày ${day} còn khoá món`);
     assert.ok(e.peak >= 4, `ngày ${day} còn trần khách — trần phải để days.json quyết`);
   }
-  // `undefined` = chỗ gọi không biết hôm nay ngày mấy (mấy lưới đo)
   assert.deepEqual(easeOf(undefined), easeOf(99));
 });
 

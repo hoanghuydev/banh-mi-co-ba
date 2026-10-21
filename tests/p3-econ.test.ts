@@ -1,4 +1,3 @@
-/** Kinh tế lõi: lịch (quay vòng), giá chợ, kho theo lô, chất lượng ổ, tiền thuê. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -22,10 +21,10 @@ test("lịch 40 ngày cố định: ngày 1 thứ Hai; 11 mưa rào + 2 mưa d�
 });
 
 test("giá chợ: thứ Hai đắt, thứ Năm rẻ; dịch heo ngày 19–23; bánh mì là mỏ neo 3,5 (trừ lò bà Tám nghỉ)", () => {
-  assert.ok(priceOf("THIT_NGUOI", 1) > priceOf("THIT_NGUOI", 4));          // T2 > T5
-  assert.ok(priceOf("PATE_THUONG", 22) > priceOf("PATE_THUONG", 15) * 1.3); // dịch heo (22 và 15 đều thứ Hai)
+  assert.ok(priceOf("THIT_NGUOI", 1) > priceOf("THIT_NGUOI", 4));
+  assert.ok(priceOf("PATE_THUONG", 22) > priceOf("PATE_THUONG", 15) * 1.3); // 22 và 15 đều thứ Hai
   for (let d = 1; d <= 40; d++) assert.equal(priceOf("BANH", d), d >= 28 && d <= 30 ? 4.2 : 3.5);
-  // tỉ lệ khớp bảng 40 ngày của P3-03 (pate thường 60k gốc: thứ Hai = 67; ngày 22 = thứ Hai × dịch heo 1,4 × rằm 0,95 ≈ 90)
+  // pate thường gốc 60k: thứ Hai ≈ 67; ngày 22 = thứ Hai × dịch heo 1,4 × rằm 0,95 ≈ 90
   assert.ok(Math.abs((priceOf("PATE_THUONG", 1) / 20) * 60 - 67) <= 1);
   assert.ok(Math.abs((priceOf("PATE_THUONG", 22) / 20) * 60 - 90) <= 2);
 });
@@ -34,7 +33,7 @@ test("kho: lô cũ nhất trước; pate trong thùng xốp chỉ sống 1 ngày
   const inv = newInventory();
   buy(inv, "PATE_THUONG", 1, 1);
   buy(inv, "PATE_NHA", 1, 2);
-  // "hạn 1 ngày" = dùng tới hết ngày SAU ngày mua; ngày thứ ba là hư (pate thường 2 ngày − 1 thùng xốp)
+  // hạn 1 ngày = dùng tới hết ngày sau ngày mua
   assert.equal(stockOf(inv, "PATE_THUONG", 2), 20);
   assert.equal(stockOf(inv, "PATE_THUONG", 3), 0);
   const inv2 = newInventory();
@@ -42,7 +41,7 @@ test("kho: lô cũ nhất trước; pate trong thùng xốp chỉ sống 1 ngày
   buy(inv2, "THIT_NGUOI", 1, 2);
   const q = take(inv2, "thit", 3, 2);
   assert.equal(q.length, 3);
-  assert.equal(inv2.lots.find((l) => l.day === 1)!.left, 12 - 3);          // lô ngày 1 trước
+  assert.equal(inv2.lots.find((l) => l.day === 1)!.left, 12 - 3);
   assert.equal(lotQuality({ good: "RAU", day: 1, left: 1, q0: 1 }, 3), null);
 });
 

@@ -2,14 +2,7 @@ import Phaser from "phaser";
 import { INGREDIENTS, type Ingredient } from "../sim/order";
 import { shade, type Pen } from "./canvas";
 
-/**
- * Hình ổ bánh mì và hình từng loại nhân, dùng cho bảng kẹp nhân.
- *
- * CANON §15: **dưa leo / ngò / hành lá đều xanh, nên icon phải khác nhau về HÌNH DÁNG,
- * không chỉ khác màu.** Tám hình dưới đây cố tình có tám bóng (silhouette) khác hẳn nhau:
- * lát vuông · khối mềm · lát tròn · viên bi · que thái sợi · lát có lỗ · nhánh lá · trái cong.
- * Nhìn đen trắng vẫn phân biệt được — đó là bài kiểm tra.
- */
+// Mỗi nhân một bóng (silhouette) riêng để nhìn đen trắng vẫn phân biệt được, không chỉ khác màu.
 export const FOOD = {
   icon: (id: Ingredient) => `ing_${id}`,
   big: (id: Ingredient) => `ing_${id}_big`,
@@ -17,23 +10,17 @@ export const FOOD = {
   ICON: 36,
   BIG_SCALE: 1.7,
 
-  // ── hình học ổ bánh mở, NGUỒN DUY NHẤT cho cả `loaf()` dưới đây, cho ảnh thật
-  //    trong `photo.ts`, lẫn cho chỗ xếp nhân trong `ui/AssemblyPanel.ts`.
-  //    Trước đây bề ngang ruột bánh bị chép tay sang AssemblyPanel kèm một dòng
-  //    chú thích "xem loaf() trong food.ts" — đúng kiểu hằng số sẽ lệch âm thầm
-  //    ngay lần đầu ai đó đổi cỡ ổ bánh.
+  // Hình học ổ bánh, nguồn duy nhất cho `loaf()`, `photo.ts` và `ui/AssemblyPanel.ts`.
   LOAF_W: 300,
   LOAF_H: 136,
   CRUMB_W: 214,
   CRUMB_DY: 16,
-  /** Nắp lật ra sau ló lên trên mép máng bao nhiêu px. Trần là ~38: cao hơn nữa
-   *  thì lưng nắp bị khung texture `LOAF_H` xén mất. */
+  /** Px nắp ló trên mép máng; trần ~38, cao hơn thì bị khung `LOAF_H` xén. */
   LID_PEEK: 38,
 } as const;
 
 type Draw = (g: Pen, cx: number, cy: number, s: number) => void;
 
-/** Lát thịt nguội — hình VUÔNG bo góc, có viền mỡ trắng. */
 const thit: Draw = (g, cx, cy, s) => {
   g.fillStyle(0xf2e6e0, 1);
   g.fillRoundedRect(cx - 12 * s, cy - 9 * s, 24 * s, 18 * s, 4 * s);
@@ -43,7 +30,6 @@ const thit: Draw = (g, cx, cy, s) => {
   g.fillRect(cx - 6 * s, cy - 2 * s, 12 * s, 1.6 * s);
 };
 
-/** Pate — KHỐI MỀM một đầu vát, như vệt quết bằng dao. */
 const pate: Draw = (g, cx, cy, s) => {
   g.fillStyle(0x6f533c, 1);
   g.fillPoints([
@@ -61,7 +47,6 @@ const pate: Draw = (g, cx, cy, s) => {
   g.fillEllipse(cx - 2 * s, cy - 2 * s, 8 * s, 3 * s);
 };
 
-/** Chả lụa — lát TRÒN, mặt cắt có lỗ khí. */
 const chalua: Draw = (g, cx, cy, s) => {
   g.fillStyle(0xd8c7ac, 1);
   g.fillCircle(cx, cy, 11 * s);
@@ -73,7 +58,6 @@ const chalua: Draw = (g, cx, cy, s) => {
   }
 };
 
-/** Xíu mại — VIÊN TRÒN nổi khối, nằm trên vũng sốt. */
 const xiumai: Draw = (g, cx, cy, s) => {
   g.fillStyle(0x9c3f28, 0.75);
   g.fillEllipse(cx, cy + 7 * s, 24 * s, 7 * s);
@@ -85,7 +69,6 @@ const xiumai: Draw = (g, cx, cy, s) => {
   g.fillEllipse(cx - 3 * s, cy - 5 * s, 6 * s, 3.5 * s);
 };
 
-/** Đồ chua — QUE THÁI SỢI bắt chéo nhau. */
 const dochua: Draw = (g, cx, cy, s) => {
   const stick = (dx: number, dy: number, rot: number, color: number) => {
     g.save();
@@ -102,7 +85,6 @@ const dochua: Draw = (g, cx, cy, s) => {
   stick(1, -5, -0.12, 0xe8a23c);
 };
 
-/** Dưa leo — LÁT TRÒN DẸT có vành xanh và hột ở giữa. */
 const dualeo: Draw = (g, cx, cy, s) => {
   g.fillStyle(0x4f7d33, 1);
   g.fillEllipse(cx, cy, 24 * s, 20 * s);
@@ -116,7 +98,6 @@ const dualeo: Draw = (g, cx, cy, s) => {
   }
 };
 
-/** Hành ngò — NHÁNH LÁ toả ra, thân mảnh. */
 const hanhngo: Draw = (g, cx, cy, s) => {
   g.lineStyle(2 * s, 0x3d6b33, 1);
   g.lineBetween(cx - 2 * s, cy + 10 * s, cx, cy - 2 * s);
@@ -137,7 +118,6 @@ const hanhngo: Draw = (g, cx, cy, s) => {
   leaf(0, -7, 8, 7, 0);
 };
 
-/** Ớt — TRÁI CONG thon, có cuống. */
 const ot: Draw = (g, cx, cy, s) => {
   g.fillStyle(0x9c2a1c, 1);
   g.fillPoints([
@@ -155,7 +135,6 @@ const ot: Draw = (g, cx, cy, s) => {
   g.lineBetween(cx - 5 * s, cy - 9 * s, cx - 8 * s, cy - 13 * s);
 };
 
-/** Trứng ốp la — LÒNG TRẮNG méo mó, lòng đỏ tròn lệch tâm. Bóng không lẫn vào đâu. */
 const opla: Draw = (g, cx, cy, s) => {
   g.fillStyle(0xe8e2cf, 1);
   g.fillPoints([
@@ -179,7 +158,6 @@ const opla: Draw = (g, cx, cy, s) => {
   g.fillEllipse(cx + 0.5 * s, cy - 3.5 * s, 3.5 * s, 2 * s);
 };
 
-/** Tương ớt — VỆT RƯỚI ngoằn ngoèo, không phải khối. */
 const tuongot: Draw = (g, cx, cy, s) => {
   const wave = (dy: number, color: number, w: number) => {
     g.lineStyle(w * s, color, 1);
@@ -200,11 +178,7 @@ const DRAWERS: Record<Ingredient, Draw> = {
   pate, thit, chalua, xiumai, opla, dochua, dualeo, hanhngo, ot, tuongot,
 };
 
-/**
- * Ổ bánh mì đã rạch, nắp lật ra sau — cái khay để thả nhân vào.
- * Tỉ lệ dài/cao phải đủ gắt (gần 5:1) thì mới đọc ra BAGUETTE; vẽ tròn quá là
- * ra cái pizza ngay.
- */
+/** Tỉ lệ dài/cao phải gần 5:1 mới đọc ra baguette. */
 function loaf(scene: Phaser.Scene) {
   const W = FOOD.LOAF_W, H = FOOD.LOAF_H;
   const g = scene.make.graphics({ x: 0, y: 0 }, false);

@@ -1,11 +1,3 @@
-/**
- * HAI CÁI XE TRANH CHỖ — `MOVE_CART`, arc của chú Kiệt. Mười một câu về cái xe từng là chữ suông,
- * kể cả câu "chú đứng chắn hết lối rồi" (nó mang `STEP_ASIDE`, tức bảo NGƯỜI dạt ra).
- *
- * ⚠️ Lưới `X-5` có mặt vì `BARTER` từng khai trong `TalkAct`, gắn vào hai nút, qua hết
- * `validate:talks` và 509 test — mà `switch` của `applyAct` không có nhánh nào cho nó. TypeScript
- * im vì `switch` thiếu nhánh không phải lỗi kiểu.
- */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
@@ -56,9 +48,7 @@ test("X-3 mọi câu dời xe đều khoá `w.cartLan` — không dời một c�
 test("X-4 xe lấn ăn bớt khách LẠ, không đụng người có tên", async () => {
   const src = await readFile(SRC, "utf8");
   assert.match(src, /KIET_STEAL/, "không có hằng số nào cho việc ăn bớt khách");
-  // `!npc` = chỉ khách lạ. Người có tên tới tìm mình, không tạt ngang vì một cái xe gần hơn.
   assert.match(src, /this\.cart === "LAN" && !npc/, "xe lấn ăn cả khách có tên — sai");
-  // Dòng số riêng: rút ké dòng `balk:` là rút CÓ ĐIỀU KIỆN từ dòng dùng chung (P0-02 §2.3).
   assert.match(src, /derive\(`kiet:\$\{v\.seq\}`\)/, "rút ké dòng số của `balk:` — sẽ lệch pha golden");
 });
 
@@ -74,18 +64,10 @@ test("X-5 MỌI act có trong nội dung đều có nhánh trong `applyAct` — 
   const thieu = [...dung].filter((k) => !src.includes(`case "${k}":`));
   assert.deepEqual(thieu, [],
     `act có trong nội dung mà applyAct không nối: ${thieu.join(", ")} — lời nói miễn phí, và nó IM LẶNG`);
-  // Và hàng rào kiểu: `default: assertActHandled(act)` biến chuyện này thành lỗi biên dịch.
   assert.match(src, /assertActHandled\(act\)/,
     "không còn `never` chặn ở `default` — thêm một `kind` mà quên nối sẽ lại im lặng");
 });
 
-/**
- * X-6 — CHẠY THẬT MỘT BUỔI BÁN, không đọc chữ nữa. Bốn lưới trên đọc nội dung và mã nguồn; lưới
- * này chạy cái hẻm.
- *
- * Có mặt vì bản đầu buộc cái xe vào `phase !== "leaving" && !c.pass` nên nó KHÔNG BAO GIỜ xuất
- * hiện (chú Kiệt đi ngang chứ không đứng quầy) — mà bốn lưới kia vẫn xanh hết.
- */
 async function buoiBan(dayXe: boolean) {
   const w = newGame("xe-test", "p209");
   const bus = new Bus(false); const platform = memoryPlatform();

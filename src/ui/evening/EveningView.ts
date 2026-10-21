@@ -6,11 +6,6 @@ import {
 } from "../../sim/equipment";
 import { evidenceFor, hasEvidence } from "../../sim/gearHint";
 
-/**
- * Cảnh tối — không đồng hồ, không khách. Cuốn sổ mở: TRÁI là đếm tiền (đã xảy ra, không bấm được),
- * PHẢI là trang Đồ nghề (việc tối nay). Không tổng, không màu đỏ (P3-06 §3).
- */
-
 const STYLE = `
 .ev-root{position:fixed;inset:0;z-index:8990;display:flex;align-items:center;justify-content:center;background:rgba(14,18,22,.45);font-family:"Be Vietnam Pro",system-ui,sans-serif;color:#2b2f31}
 /* hai hàng RÕ RÀNG: hàng sổ co được (minmax(0,1fr) — không có nó thì hàng tự phình theo nội
@@ -99,9 +94,7 @@ const signed = (v: number) => `${v < 0 ? "+" : "−"}${money(Math.abs(v))}`;
 export class EveningView {
   private root: HTMLDivElement;
   private msg = "";
-  /** Bước xác nhận của một món (CANON §15.5). Chỉ MỘT món hỏi một lúc. */
   private ask: { kind: "buy" | "sell"; id: EquipId } | null = null;
-  /** Mấy ô trên mặt xe đang được một thẻ "soi" — rê chuột lên nút mua / lên dòng món đã có. */
   private slotsEl: HTMLElement | null = null;
 
   constructor(private w: SaveFile,
@@ -140,8 +133,6 @@ export class EveningView {
     sheet.scrollTop = keep;
   }
 
-  // ─────────────────────────────────────────────── trái: đếm tiền (máy ghi, không phán xét)
-
   private ledger() {
     const w = this.w, day = w.progress.dayIndex, e = w.econ, t = w.progress.today, et = e.today;
     const L = this.el("div", "ev-col ev-left");
@@ -151,8 +142,7 @@ export class EveningView {
       r.append(this.el("span", "", a), this.el("span", "", b));
       L.append(r);
     };
-    // Sổ phải cộng lại ĐÚNG bằng cái két: mỗi đồng ra/vào hôm nay có một dòng, không gộp,
-    // không giấu. Thứ tự theo lúc tiền đi trong ngày (chợ sáng → tiền chỗ → tối đếm).
+    // Mỗi khoản ra/vào một dòng để sổ cộng lại đúng bằng két.
     row(`bán được ${t.served} ổ`, `+${money(t.revenue)}`, "in");
     if (et.market) row("chợ sáng", `−${money(et.market)}`);
     if (et.rent) row("tiền chỗ", `−${money(et.rent)}`);
@@ -163,7 +153,6 @@ export class EveningView {
     cash.append(this.el("span", "", "trong ống"), this.el("span", "", money(w.money.cash)));
     L.append(cash);
 
-    // Mọi câu NGƯỜI NÓI gom vô một khối có vạch lề, dưới cột số — không xen giữa mấy dòng tiền.
     const says = this.el("div", "ev-says");
     if (e.rentOwed) says.append(this.el("div", "ev-say", `Chủ nhà: "Tiền chỗ mấy bữa nay con tính sao?"`));
     for (const l of this.opts.lines ?? []) says.append(this.el("div", "ev-say", l));
@@ -173,8 +162,6 @@ export class EveningView {
     if (says.childElementCount) L.append(says);
     return L;
   }
-
-  // ─────────────────────────────────────────────── chân trang
 
   private foot() {
     const foot = this.el("div", "ev-foot");
@@ -187,15 +174,7 @@ export class EveningView {
     return foot;
   }
 
-  /**
-   * Đồ nghề — P3-04 §4 UI: giá, chỗ trên xe, tiền mỗi ngày, và MỘT câu về cảm giác. KHÔNG
-   * BAO GIỜ hiện con số hiệu ứng. Chỗ trống trên xe vẽ thành ô mờ, không phải "8/14".
-   */
-  /**
-   * Mặt xe vẽ theo TỪNG MÓN: mỗi món đã có là một khối ô dính liền, giữa hai món có khe hở.
-   * Vậy thì "cái lò ăn hai chỗ" nhìn ra được, chứ không phải một dãy mười hai ô giống hệt
-   * nhau mà muốn biết gì cũng phải đếm.
-   */
+  // Mỗi món một khối ô liền, chỗ trống gom một khối, để đọc bằng mắt khỏi đếm.
   private cart() {
     const e = this.w.equipment;
     const box = this.el("div", "ev-cart");
@@ -213,28 +192,15 @@ export class EveningView {
       for (let i = 0; i < n; i++) blk.append(this.el("span", "ev-cell"));
       slots.append(blk);
     }
-    // chỗ trống gom thành MỘT khối liền: nó là một khoảng trống trên mặt xe, không phải
-    // mấy cái ô rời. Rải chúng ra cùng khe hở với đồ đã có thì nhìn ra bảy món, không phải
-    // ba món và một khoảng trống.
     const free = this.el("div", "ev-blk");
     for (let i = used(e); i < capacity(e); i++) free.append(this.el("span", "ev-cell free"));
     if (free.childElementCount) slots.append(free);
     box.append(slots);
-    // KHÔNG có dòng "ô đậm là đồ đang để trên xe, ô mờ là chỗ trống". Mười hai ô vuông, mấy
-    // ô tô đậm, mấy ô để mờ — không ai cần đọc chú thích cho cái đó, và một dòng chú thích
-    // dưới một bức tranh tự hiểu được là giọng của máy chứ không phải của cuốn sổ.
     this.slotsEl = slots;
     return box;
   }
 
-  /**
-   * Soi cái món đang rê chuột sẽ làm gì với mặt xe. `id` = null để tắt.
-   *
-   * Phải tính PHẦN CHÊNH, không phải `slots` trần: lò điện ăn ba chỗ nhưng nó hất cái lò
-   * than hai chỗ xuống, nên thật ra xe chỉ chật thêm một. Soi đủ ba ô trống là nói dối
-   * ngay trên cái hình — và đây là chỗ duy nhất người chơi kiểm được câu "còn đủ chỗ không".
-   * Khối của món bị thay thì vẽ rỗng ra: nó sắp rời khỏi xe.
-   */
+  // Soi phần chênh chỗ (trừ món bị thay), không phải `slots` trần.
   private ghost(id: EquipId | null) {
     const el = this.slotsEl;
     if (!el) return;
@@ -246,7 +212,6 @@ export class EveningView {
     el.querySelectorAll<HTMLElement>(".ev-cell.free").forEach((c, i) => c.classList.toggle("ghost", i < n));
   }
 
-  /** Sáng khối ô của một món đã có (rê chuột lên dòng của nó). */
   private hiOwn(id: EquipId | null) {
     this.slotsEl?.querySelectorAll<HTMLElement>(".ev-blk").forEach((b) => b.classList.toggle("hi", !!id && b.dataset.own === id));
   }
@@ -259,9 +224,7 @@ export class EveningView {
       const ids = EQUIP_IDS.filter((id) => EQUIP[id].group === g && (has(e, id) || !EQUIP[id].starting));
       if (!ids.length) continue;
       const mine = ids.filter((id) => has(e, id)), buy = ids.filter((id) => !has(e, id));
-      // Món CÓ DẤU VẾT tối nay lên đầu khúc mua được. Tối nào cháy bánh thì cái lò điện phải
-      // nằm chỗ mắt rơi vào trước, không nằm dưới ba món không dính dáng gì. Ngoài ra giữ
-      // nguyên thứ tự trong JSON — không xếp theo giá, không xếp theo "nên mua trước".
+      // Món có dấu vết hôm nay lên đầu, còn lại giữ thứ tự JSON (sort ổn định).
       buy.sort((a, b) => Number(hasEvidence(b, w)) - Number(hasEvidence(a, w)));
       out.push(this.el("div", "ev-grp", EQUIP_GROUPS[g] ?? g));
       for (const id of mine) out.push(this.owned(id));
@@ -270,14 +233,12 @@ export class EveningView {
     return out;
   }
 
-  /** Món đã có: một dòng. Nó là hiện trạng, không phải lời mời — đừng cho nó cỡ của một thẻ. */
   private owned(id: EquipId) {
     const d = EQUIP[id], w = this.w;
     const row = this.el("div", "ev-own");
     row.onmouseenter = () => this.hiOwn(id);
     row.onmouseleave = () => this.hiOwn(null);
     const name = this.el("span", "ev-name", d.name);
-    // Món đã có thì cái người ta muốn nhớ lại là NÓ ĐANG LÀM GÌ, không phải câu kể lúc mua.
     name.title = d.gain.length ? d.gain.join(" · ") : d.feel;
     row.append(name);
     const sellable = d.resellable !== false && !d.starting;
@@ -287,7 +248,6 @@ export class EveningView {
       const btns = this.el("div", "btns");
       const ok = this.el("button", "ev-btn primary", "bán");
       ok.onclick = () => {
-        // `w.econ` là cuốn sổ hôm nay — bán đồ nghề là tiền VÔ, phải có một dòng (`today.tools`)
         sellEquip(id, w.equipment, w.money, 1, w.econ);
         this.ask = null;
         this.msg = "Đã bán.";
@@ -309,7 +269,6 @@ export class EveningView {
     return row;
   }
 
-  /** Món chưa có: một thẻ. */
   private offer(id: EquipId) {
     const w = this.w, e = w.equipment, d = EQUIP[id];
     const dau = evidenceFor(id, w);
@@ -321,7 +280,6 @@ export class EveningView {
     top.append(this.el("span", "ev-name", d.name), tag);
     box.append(top);
 
-    // chỗ + tiền mỗi ngày thành THẺ SỐ, không nối vô tên món bằng dấu "·"
     const chips = this.el("div", "ev-chips");
     if (d.slots > 0) chips.append(this.el("span", "ev-chip", d.slots === 1 ? "một chỗ trên xe" : `${d.slots} chỗ trên xe`));
     if (d.slots < 0) chips.append(this.el("span", "ev-chip", `nới thêm ${-d.slots} chỗ`));
@@ -330,12 +288,9 @@ export class EveningView {
     if (d.costsMorning) chips.append(this.el("span", "ev-chip", "mất một buổi sáng"));
     if (chips.childElementCount) box.append(chips);
     box.append(this.el("div", "ev-feel", d.feel));
-    // Lợi ích quy ra chỉ số, mỗi dòng một chỉ số, giữ thứ tự JSON (dòng đầu là lý do chính để mua).
     const gain = this.el("div", "ev-gain");
     for (const c of d.gain) gain.append(this.el("div", "", c));
     if (gain.childElementCount) box.append(gain);
-    // DẤU VẾT (sim/gearHint): chuyện hôm nay của chính người chơi, không phải lời quảng cáo
-    // của món đồ. Nó đứng DƯỚI cái giá và SÁT nút mua — chỗ mắt dừng lại lần cuối trước khi bấm.
     if (dau) box.append(this.el("div", "ev-mark", dau));
 
     if (this.ask?.kind === "buy" && this.ask.id === id) {
@@ -364,7 +319,6 @@ export class EveningView {
     const b = this.el("button", "ev-btn primary", "mua");
     b.disabled = why !== null;
     b.onclick = () => { this.ask = { kind: "buy", id }; this.msg = ""; this.render(); };
-    // rê chuột (hay Tab tới) nút mua → mặt xe sáng lên đúng số ô món này ăn
     const on = () => this.ghost(id);
     const off = () => this.ghost(null);
     b.onmouseenter = on; b.onfocus = on; b.onmouseleave = off; b.onblur = off;

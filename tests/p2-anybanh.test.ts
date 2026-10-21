@@ -1,17 +1,3 @@
-/**
- * `any.banh` — *"Ờ thì… cho một ổ coi sao."* rồi đi mất.
- *
- * Lần thứ ba cùng một lớp lỗi, chủ dự án bắt được khi chơi:
- *
- *   *"bữa nay con làm mẻ ngon lắm. ngon thiệt ăn rồi biết. ờ cho một ổ. mà npc đi mất
- *   chứ không mua. vẫn là free word"*
- *
- * `any.json` là kho DÙNG CHUNG, nghĩa là một người ĐANG ĐI NGANG cũng nghe được. Câu đáp
- * chốt vụ mua mà nút không mang act nào ⇒ không đơn nào sinh ra, họ gật rồi đi tiếp.
- *
- * Hai lưới: nút đó giờ tách đôi theo `t.passing`, và nhánh người đi ngang BIẾN họ THÀNH
- * KHÁCH thật khi roll thuận — đo bằng `acceptInvite`, không đo bằng lời thoại.
- */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { TalkStore } from "../src/content/talks";
@@ -35,7 +21,6 @@ test("AB-1 nhánh cho người đi ngang là `INVITE`, nhánh cho khách đang m
 });
 
 test("AB-2 cả hai kho dùng chung không còn câu chốt mua nào thiếu `INVITE`", () => {
-  // Cùng mẫu với T017, nhắc lại ở tầng test để lưới không chỉ sống trong validator.
   const CHOT = /(cho|lấy|mua|làm|gói)\s+(?:\S+\s+){0,2}?(?:một|hai|ba|[123])?\s*(ổ|phần)(?![\p{L}])/iu;
   const KHAC = /ở (cổng|trường|chợ|nhà|bên)|bên kia|chỗ khác|hồi nãy|lúc nãy/iu;
   const xau: string[] = [];
@@ -73,9 +58,7 @@ test("AB-3 chạy thật: lời mời ĂN được thì người đi ngang thàn
   const t = TALKS.find((x) => x.id === "any.banh")!;
   const moi = [...walkNodes(t)].map((x) => x.node).find((n) => n.act?.kind === "INVITE")!;
   svc.applyTalkOption(nguoi, { act: moi.act, tone: moi.tone });
-  // `invite()` roll; thuận thì `acceptInvite` bỏ `ambient`/`pass` và đẩy họ vô hàng.
-  // Thuận hay không là chuyện của roll — điều phải đúng là nó ĐI QUA đường đó, chứ không
-  // phải rơi vào `return` im lặng như mọi `INVITE` gắn nhầm người.
+  // `invite()` có roll nên chỉ đòi nó đi qua một trong hai nhánh.
   assert.ok(nguoi.ambient === false || nguoi.inviteRefused === true,
     "lời mời không đi tới đâu: vẫn đang đi ngang mà cũng không ghi là bị từ chối");
 });

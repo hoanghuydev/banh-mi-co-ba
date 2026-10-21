@@ -11,10 +11,10 @@ import blackboard from "../src/content/rules/_blackboard.json";
 const argN = (k: string, d: number) => { const i = process.argv.indexOf(`--${k}`); return i >= 0 ? Number(process.argv[i + 1]) : d; };
 const argS = (k: string, d: string) => { const i = process.argv.indexOf(`--${k}`); return i >= 0 ? String(process.argv[i + 1]) : d; };
 const POOL = argS("pool", "WALKIN"), DAYS = argN("days", 4);
-/** `social` = bot biết rót trà / mời ngồi / mời ghé; `greedy` chỉ biết gói bánh. */
+// `social` = bot biết rót trà / mời ngồi / mời ghé; `greedy` chỉ biết gói bánh.
 const BOT = argS("bot", "greedy");
 
-/** Khoá đòi tham số (`w.queue(2)`…) hỏi trần luôn sai, nên in riêng, không lẫn vào cột không-bao-giờ-đúng. */
+// Khoá đòi tham số (`w.queue(2)`…) hỏi trần luôn sai nên in riêng.
 const CAN_THAM_SO = new Set(
   Object.entries((blackboard as { aliases: Record<string, unknown> }).aliases)
     .filter(([, v]) => JSON.stringify(v).includes("$"))
@@ -34,7 +34,7 @@ const hit = new Map<string, number>(); let n = 0;
 for (let day = 0; day < DAYS; day++) {
   const h = new HeadlessStall(w, POLICIES[BOT] ?? POLICIES.greedy, { bus, platform });
   const svc = (h as unknown as { service: any }).service;
-  // Bot greedy không bao giờ nhen lò nên phải ép tay; % của fact dính lò/sự kiện là của cái ép, không phải ván thật.
+  // Bot greedy không nhen lò nên ép tay; % fact dính lò là của cái ép, không phải ván thật.
   svc.stock = 12; svc.ovenBusy = true; svc.playerHand = "loaf_filled";
   for (const k of [...TALK_NPC_IDS, "WALKIN", "QUA_DUONG", "ANY"]) await svc.talks.ensure(k);
   // Phải chạy hết ngày, nếu không khung TRUA (từ 9h30) không bao giờ tới.
@@ -62,7 +62,6 @@ console.log(`  (${CAN_THAM_SO.size} khoá đòi tham số nên không hỏi tr�
 const rows = [...PROBES, ...EXTRA].map((k) => [k, (hit.get(k) ?? 0) / n] as const).sort((a, b) => b[1] - a[1]);
 for (const [k, r] of rows) {
   const bar = "█".repeat(Math.round(r * 30));
-  // Chỉ đúng với fact bot này chạm tới — xem khối ép tay ở trên.
   const flag = r === 0 ? `  ← KHÔNG BAO GIỜ ĐÚNG (bot \`${BOT}\`)` : r < 0.03 ? "  ← gần như không" : "";
   console.log(`  ${k.padEnd(22)} ${(100 * r).toFixed(0).padStart(3)}%  ${bar}${flag}`);
 }

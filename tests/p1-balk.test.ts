@@ -1,4 +1,3 @@
-/** `balkChance`: hàng dài làm người ta ngại vào, ngược chiều cố ý với `queuePatienceMul` (vào rồi thì chờ lâu hơn). */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Bus } from "../src/core/eventbus";
@@ -13,8 +12,6 @@ const SLOTS = QUEUE_SLOTS.length;
 const P = (nongTinh: number): Personality => ({ soi: 0.5, nongTinh, deTha: 0.5, thanThien: 0.5 });
 const plain = (ahead: number, slots: number = SLOTS) =>
   balkChance({ ahead, slots, person: P(0.5), moodPatience: 1, rushing: false });
-
-// ────────────────────────────────────────────────────── hình dạng đường cong
 
 test("hàng ngắn thì KHÔNG AI quay đầu — kể cả người nóng nhất hẻm, đang vội, đang bực", () => {
   for (let ahead = 0; ahead < balkFrom(SLOTS); ahead++) {
@@ -44,7 +41,6 @@ test("đơn điệu không giảm: hàng dài thêm không bao giờ làm ngư�
 });
 
 test("mọi bậc đều là XÁC SUẤT THẬT (0 < p < 1) — cùng một hàng phải ra được hai câu trả lời", () => {
-  // Chặn ngưỡng cứng: p = 1 thì người chơi học con số ma thay vì đọc tình hình.
   for (let ahead = balkFrom(SLOTS); ahead <= SLOTS + 2; ahead++) {
     const p = plain(ahead);
     assert.ok(p > 0 && p < 1, `bậc ${ahead} người ra ${p} — không còn là xác suất nữa`);
@@ -69,9 +65,6 @@ test("hàng KÍN CHỖ: tính cách không đẻ ra được một chỗ đứng
   assert.equal(full(P(0.5)), plain(SLOTS + 3), "quá chỗ thì dài thêm cũng không hơn");
 });
 
-// ────────────────────────────────────────────────────────── chạy thật một ngày
-
-/** Người chơi chậm tay mới làm hàng dài ra được. */
 const CHAM: Policy = { ...POLICIES.greedy, name: "cham", workSec: [25, 40] };
 const dayOf = (day: number): SaveFile => {
   const w = newGame("t", "balk-save");
@@ -115,7 +108,6 @@ test("chạy thật: có người quay đầu, mà cái hàng đó vẫn có ng�
 });
 
 test("RANH GIỚI: không một ai đã xếp vào hàng mà bỏ đi vì 'đông'", () => {
-  // Đã vào hàng thì chỉ bỏ đi vì IMPATIENT (chờ quá 1,6 lần sức chờ), không bao giờ vì BALKED.
   for (const day of [11, 12, 13, 16]) {
     const r = play(day);
     for (const id of r.balked) {
@@ -161,7 +153,7 @@ test("quay đầu KHÔNG tính vào `lost` của ngày", () => {
 test("quay đầu không phải một lượt ghé: không nhích `visits`", () => {
   const r = play(13);
   const named = new Set(Object.keys(r.h.ctx.world.npcs));
-  // người đi ngang có `npc:arrived` mà không bao giờ có `npc:left` — trừ ra
+  // người đi ngang có `npc:arrived` mà không có `npc:left` nên lọc ra
   const real = r.arrived.filter((id) => r.left.has(id));
   let checked = 0;
   for (const key of named) {
@@ -183,7 +175,6 @@ test("tất định: cùng seed, cùng người quay đầu, cùng thứ tự", 
 });
 
 test("chế độ không giới hạn thời gian: trần MỘT khách nên không bao giờ chạm ngưỡng", () => {
-  // `spawn()` đã tắt luật quay đầu khi `noTimePressure`; ở đây kiểm lớp trong: `peakCap` ép một khách một lượt.
   for (const day of [1, 13, 40]) {
     assert.equal(peakCap(day, true), 1);
     assert.ok(peakCap(day, true) < balkFrom(SLOTS), "trần khách phải nằm dưới ngưỡng ngại");

@@ -7,7 +7,6 @@ import { TalkStore } from "../src/content/talks";
 import { walkNodes } from "../src/sim/talk";
 
 const TALKS = await TalkStore.loadAll();
-/** Mọi lời mời viết sẵn trong ANY và QUA_DUONG. */
 const MOI: { ten: string; node: any }[] = [];
 for (const t of TALKS) {
   if (t.npc !== "ANY" && t.npc !== "QUA_DUONG") continue;

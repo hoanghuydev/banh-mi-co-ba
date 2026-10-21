@@ -37,7 +37,7 @@ test("ghi rồi đọc lại ra đúng thế giới; ghi luân phiên A/B", () =
 test("kill giữa lúc ghi 50 lần → 50/50 lần load lại được save hợp lệ (double-buffer)", () => {
   const base = memoryPlatform();
   const w = newGame("x", "id-3");
-  service(w, base).flushNow();                           // một bản tốt ban đầu
+  service(w, base).flushNow();
   let committed = w.money.cash;
   for (let i = 0; i < 50; i++) {
     // Nền tảng "chết" đúng lúc đang ghi slot: slot nhận nửa file, meta không kịp cập nhật.
@@ -53,7 +53,7 @@ test("kill giữa lúc ghi 50 lần → 50/50 lần load lại được save h�
     const back = new SaveService(new Bus(), () => { throw new Error(); }, base).load();
     assert.ok(back, `lần ${i}: không load được`);
     assert.equal(back!.money.cash, committed, `lần ${i}: sai dữ liệu`);
-    if (i % 5 === 0) {                                   // thỉnh thoảng một lần ghi trót lọt
+    if (i % 5 === 0) {
       service(w, base).flushNow();
       committed = w.money.cash;
     }

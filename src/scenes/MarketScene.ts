@@ -9,7 +9,7 @@ import { music } from "../audio/music";
 import { sfx } from "../audio/sfx";
 import { MarketView } from "../ui/market/MarketView";
 
-/** Đi chợ sáng, chạy theo lượt: đồng hồ không trôi. Bước rạng sáng đã chạy ở DayScene; phần mua bán là `MarketView`. */
+/** Chạy theo lượt: đồng hồ không trôi. */
 export class MarketScene extends Phaser.Scene {
   private ctx!: GameContext;
   /** Chặn bấm nút và Enter cùng lúc phát event hai lần (= nhảy cóc một ngày). */
@@ -27,7 +27,7 @@ export class MarketScene extends Phaser.Scene {
     fitDesignFrame(this.cameras.main);
     this.cameras.main.setBackgroundColor(P.skyLow);
     music.play(this, "menu", 800);
-    // Nạp lười: fade vào 2 giây nên chờ tải không ai nghe ra, nhét vào preload thì màn chờ thêm 200 KB.
+    // Nạp lười: fade 2 giây che thời gian tải.
     sfx.loop(this, "amb_cho", true, {}, 2000);
     this.add.rectangle(GAME_W / 2, GAME_H / 2, GAME_W, GAME_H, 0x1b2126, 0.35);
     const st = loadSettings();
@@ -38,7 +38,7 @@ export class MarketScene extends Phaser.Scene {
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.view?.close();
-      sfx.stopLoops(700);                 // tiếng chợ không được theo vào quán
+      sfx.stopLoops(700);
     });
   }
 

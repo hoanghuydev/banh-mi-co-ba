@@ -1,13 +1,4 @@
-/**
- * SỰ THẬT VỀ THẾ GIỚI, lúc một câu được nói ra — P2-07 §3, gộp vào một bảng đen ở P2-09 §2.2.
- *
- * File này chỉ làm đúng một việc: dịch *trạng thái game* thành một `Query` của bảng đen, rồi
- * để `dialog/gates.ts` trả lời. Bảng khoá nằm ở `content/rules/_blackboard.json` mục `aliases`
- * — một chỗ, cho cả rule DB lẫn cây thoại.
- *
- * Thuần dữ liệu: không Phaser, không đọc file. `Service` dựng `WorldSnapshot` mỗi lần cần
- * hỏi, rồi `holds()` trả lời.
- */
+// Dịch trạng thái game thành `Query` của bảng đen; khoá nằm ở `content/rules/_blackboard.json` mục `aliases`.
 import { Query } from "../dialog/facts";
 import {
   ALIAS_FLAGS, ALIAS_FNS, allGates, checkGate, firstBrokenGate, gateHolds, isStoryFlag,
@@ -73,29 +64,14 @@ export type WorldSnapshot = {
   cartLan: boolean;
   cartChung: boolean;
   ovenHot: boolean;
-  /**
-   * MẺ VỪA RA LÒ — hẹp hơn `ovenHot` (đúng cả lúc lò ĐANG NHEN, tức gần như suốt buổi bán):
-   * cái mùi "thơm quá", "mẻ mới ra lò" là một KHOẢNH KHẮC, không phải một trạng thái.
-   */
+  /** Mẻ vừa ra lò — hẹp hơn `ovenHot` vốn đúng suốt lúc lò đang nhen. */
   meVuaRa: boolean;
   band: string;
-  /**
-   * Ngày thứ mấy của ván — cho `w.day(N)` (N ngày đầu).
-   *
-   * Tên là `dayIndex` chứ không phải `day` vì `day` đã là TẦNG `d.*` (trong ngày) ở trên:
-   * một cái là "hôm nay là ngày mấy của ván", một cái là "sáng nay đã xảy ra chuyện gì".
-   */
+  /** Ngày thứ mấy của ván; `day` ở trên là tầng `d.*` (chuyện trong ngày). */
   dayIndex: number;
 };
 
-/**
- * Trạng thái game → `Query`. Đây là CHỖ DUY NHẤT biết tên fact của bảng đen cho phía thoại.
- *
- * Fact *vắng mặt* khác fact *bằng false*: criterion trên fact vắng mặt làm rule BỊ LOẠI
- * (luật loại trừ của Ruskin). Nên mấy fact `conditional` dưới đây chỉ được `set` khi
- * chúng thật sự có mặt — `t.purpose(X)` phải sai với một người không có mục đích nào,
- * chứ không phải sai vì mục đích của họ khác X.
- */
+/** Fact vắng mặt làm rule bị loại (khác fact bằng false), nên fact điều kiện chỉ `set` khi có mặt. */
 export function queryOf(w: WorldSnapshot, q = new Query()): Query {
   q.reset();
   const t = w.them, c = w.convo, v = w.visit, d = w.day;
@@ -129,8 +105,7 @@ export function queryOf(w: WorldSnapshot, q = new Query()): Query {
 
   q.set("convoAngered", c.angered);
   q.set("convoOpenedBy", c.openedBy);
-  // Nhiều giọng cùng lúc: `convoTone` giữ giọng NẶNG NHẤT đã dùng, và mỗi giọng còn được
-  // ghi riêng để `c.saidTone(X)` hỏi được từng cái — xem `toneMark`.
+  // `convoTone` giữ giọng NẶNG NHẤT đã dùng.
   for (const tone of c.tones) q.set("convoTone", tone);
 
   q.set("visitGaveTea", v.gaveTea);
@@ -156,12 +131,7 @@ export function queryOf(w: WorldSnapshot, q = new Query()): Query {
   return q;
 }
 
-/**
- * Khoá đa trị (`c.saidTone(GAT)`, `v.promised(ROT_TRA)`, `d.toldMe(X)`) hỏi về MỘT phần
- * tử của một tập, mà `Query` chỉ giữ được một giá trị cho mỗi fact. Nên ba khoá đó không
- * đi qua `Query`: chúng tra thẳng tập trong snapshot. Ba trường hợp, khai hết ở đây để
- * không ai phải đi tìm.
- */
+/** Khoá đa trị tra thẳng tập trong snapshot vì `Query` chỉ giữ một giá trị mỗi fact. */
 const SET_KEYS: Record<string, (w: WorldSnapshot, arg: string) => boolean> = {
   "c.saidTone": (w, a) => w.convo.tones.includes(a),
   "v.promised": (w, a) => w.visit.promised.includes(a),
@@ -170,13 +140,7 @@ const SET_KEYS: Record<string, (w: WorldSnapshot, arg: string) => boolean> = {
 
 const SCRATCH = new Query();
 
-/**
- * Một khoá có đúng không.
- *
- * Khoá lạ **ném lỗi**. Chỗ chặn thật nằm ở
- * `tools/validate-talks.ts` + test `W-4`: cả hai quét toàn bộ nội dung lúc build, nên
- * một chữ gõ sai không bao giờ đi được tới tay người chơi.
- */
+/** Khoá lạ ném lỗi; `tools/validate-talks.ts` chặn trước lúc build. */
 export function holds(key: string, w: WorldSnapshot): boolean {
   const neg = key.startsWith("!");
   const body = neg ? key.slice(1) : key;

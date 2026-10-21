@@ -1,7 +1,3 @@
-/**
- * Test tất định — P0-02 §6. Đây là test PHẢI chạy mỗi commit (R1): một
- * `Math.random()` lọt vào là cơ chế chống save-scum hỏng âm thầm.
- */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Bus, type EventKey } from "../src/core/eventbus";
@@ -9,7 +5,6 @@ import { memoryPlatform } from "../src/core/platform";
 import { SaveService, newGame, type SaveFile } from "../src/core/save";
 import { HeadlessStall, POLICIES, type Policy } from "../src/sim/headless";
 
-/** certainty cao nhất của một loại sự kiện với một người (observations giờ theo KHOÁ từng lần). */
 function certOf(c: { observations: Map<string, { id: string; certainty: number }> }, id: string) {
   let best = 0;
   for (const o of c.observations.values()) if (o.id === id) best = Math.max(best, o.certainty);
@@ -22,7 +17,7 @@ function day7(): SaveFile {
   return w;
 }
 
-/** Ngày thường đông khách (P4-02: ngày 7 là Chủ nhật nắng — nhẹ hơn 20%, quá ít khách cho bài reload). */
+/** Ngày 7 quá ít khách cho bài reload. */
 function busyDay(): SaveFile {
   const w = newGame("t", "det-save");
   w.progress.dayIndex = 8;
@@ -64,7 +59,6 @@ test("cô lập stream: chèn 20 lần rút RNG thoại → lịch khách và đ
     const log = record(bus, keys);
     let burned = 0;
     new HeadlessStall(day7(), POLICIES.newbie, { bus }).run({
-      // "hỏi một câu" (công cụ hạ attention, CANON §5.4) tiêu số của stream thoại
       inject: (t, h) => { if (burned < 20 && t > 10 + burned * 7) { h.ctx.rng.next("dialog-shufflebag"); burned++; } },
     });
     assert.equal(burned, 20);
@@ -85,7 +79,6 @@ test("reload giữa ngày (sau khách thứ 5) → những người còn lại t
   const all = arrivals(busA);
   new HeadlessStall(busyDay(), POLICIES.greedy, { bus: busA }).run();
 
-  // Lần B: chơi tới lúc khách thứ 5 rời đi, ghi save xuống "đĩa", tắt tab.
   const platform = memoryPlatform();
   const busB = new Bus();
   const before = arrivals(busB);
@@ -95,7 +88,6 @@ test("reload giữa ngày (sau khách thứ 5) → những người còn lại t
   hB.run({ until: () => left >= 5 });
   new SaveService(busB, () => hB.ctx.snapshot(), platform).flushNow("QUIT");
 
-  // Mở lại: đọc từ "đĩa", vào đúng giữa buổi.
   const loaded = new SaveService(new Bus(), () => { throw new Error(); }, platform).load()!;
   assert.equal(loaded.progress.scene, "Stall");
   const busC = new Bus();
@@ -111,7 +103,7 @@ test("pause 10 giây: đồng hồ, kiên nhẫn và certainty KHÔNG đổi m�
   const h = new HeadlessStall(day7(), { ...POLICIES.greedy, workSec: [1e9, 1e9] });
   h.run({ until: (x) => x.service.front?.phase === "waiting" });
   h.bus.emit("stim:emitted", { stimId: "DROPPED_FOOD", zone: "HANDS", salience: 75, at: h.elapsed });
-  for (let i = 0; i < 10; i++) h.step();                 // cho certainty kịp tích một ít
+  for (let i = 0; i < 10; i++) h.step();
   const c = h.service.front!;
   const snap = () => JSON.stringify({
     m: h.ctx.clock.minutes, w: c.waitSec, o: [...c.observations].map(([k, v]) => [k, v.certainty]),

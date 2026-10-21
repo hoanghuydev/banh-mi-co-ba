@@ -1,16 +1,7 @@
 import DAY from "../content/days/day_index.json";
 import type { Bus } from "./eventbus";
 
-/**
- * Đồng hồ trong game — NGUỒN THỜI GIAN DUY NHẤT. Không hệ nào được đọc `delta` của Phaser, gọi
- * `Date.now()`, hay tự giữ bộ đếm giây; pause là MỘT chỗ duy nhất trả `dt = 0`.
- *
- * ⚠️ Hai loại thời gian, KHÔNG được nhầm: `dt` (giây THẬT) cho certainty / kiên nhẫn / bark / lò,
- * `minutes` (phút GAME) cho lịch khách / khung giờ / sổ cái. Certainty mà nhân `TIME_SCALE` thì
- * hiệu chỉnh 1,4 s của CANON §5 sụp.
- *
- * Có khách ở quầy thì luôn `TIME_SCALE_BASE`; chỉ quầy trống hoàn toàn mới tua nhanh.
- */
+// Nguồn thời gian duy nhất: `dt` (giây thật) cho certainty/kiên nhẫn/lò, `minutes` (phút game) cho lịch; đừng nhầm hai loại.
 
 export type TimeBand = "PRE_OPEN" | "PEAK" | "MID" | "LULL";
 
@@ -30,7 +21,7 @@ export const PEAK_START_MIN = BANDS.find((b) => b.id === "PEAK")!.from;
 export const PEAK_END_MIN = BANDS.find((b) => b.id === "PEAK")!.to;
 export const TIME_SCALE_BASE = DAY.timeScaleBase;
 
-/** Tab bị nền lại rồi hiện ra: không được nhảy 5 giây trong một frame. */
+// Chặn cú nhảy dài khi tab quay lại từ nền.
 export const CLOCK_DT_CLAMP_MS = 100;
 
 export const BAND_LABEL: Record<TimeBand, string> = {
@@ -53,18 +44,14 @@ export function fmtHhmm(minutes: number) {
 type Timer = { left: number; fn: () => void };
 
 export class Clock {
-  /** Phút trong ngày, tính từ 00:00. */
+  // Phút trong ngày tính từ 00:00.
   minutes = DAY_START_MIN;
   paused = false;
   band: TimeBand = bandOf(DAY_START_MIN);
-  /**
-   * Nhân thêm vào TIME_SCALE. CANON §15.2 chế độ không giới hạn thời gian: 0.5 —
-   * đồng hồ vẫn trôi, chỉ chậm một nửa. Không bao giờ đụng vào `dt`.
-   */
+  // Chỉ nhân phút game, không bao giờ đụng `dt`.
   scaleMul = 1;
-  /** Chỉ cho dev (`day.fastForward`). Nhân phút GAME, KHÔNG nhân `dt` của certainty. */
   devFastForward = 1;
-  /** Có khách ở quầy / hàng chờ không — do scene báo mỗi frame. */
+  // Scene báo mỗi frame; có khách thì không tua nhanh.
   busy = false;
   scale = TIME_SCALE_BASE;
 
@@ -84,10 +71,7 @@ export class Clock {
     return (this.busy ? TIME_SCALE_BASE : b.idle) * this.scaleMul * this.devFastForward;
   }
 
-  /**
-   * Gọi đúng 1 lần/frame, ở bước 0 của vòng đời frame (P0-01 §2.4).
-   * Trả về `dt` THẬT tính bằng giây, chưa nhân scale. Pause → 0.
-   */
+  // Gọi đúng 1 lần/frame, đầu frame; trả `dt` giây thật chưa nhân scale.
   advance(rawDeltaMs: number): number {
     if (this.paused) { this.scale = 0; return 0; }
     const ms = Math.min(Number.isFinite(rawDeltaMs) ? Math.max(0, rawDeltaMs) : 0, CLOCK_DT_CLAMP_MS);
@@ -102,10 +86,7 @@ export class Clock {
     return dt;
   }
 
-  /**
-   * Thay cho `setTimeout` trong mọi hệ luật chơi (P0-02 R2): hẹn giờ theo giây THẬT
-   * nhưng đi qua đồng hồ, nên pause là nó đứng im theo.
-   */
+  // Thay `setTimeout`: giây thật nhưng dừng theo pause.
   after(sec: number, fn: () => void) {
     this.timers.push({ left: sec, fn });
   }
@@ -127,7 +108,6 @@ export class Clock {
     return this.band === "PEAK";
   }
 
-  /** 0 → 1 xuyên suốt buổi bán, dùng để nội suy ánh sáng. */
   get progress() {
     return (this.minutes - DAY_START_MIN) / (DAY_END_MIN - DAY_START_MIN);
   }
@@ -138,16 +118,10 @@ export class Clock {
 }
 
 
-/**
- * "650" → *"gần bảy giờ"*, cho chỗ trống `{gio}` của `Service.fill`. Một con số viết cứng trong
- * lời thoại là một con số sẽ sai: cuộc mở suốt khung `PEAK` thì "gần bảy giờ" rơi vào lúc tám rưỡi.
- *
- * Giọng người bán hàng, không phải giọng đồng hồ. Ngày game chỉ 06:00–11:00.
- */
+// Phút trong ngày → giờ nói miệng (vd. "gần bảy giờ") cho chỗ trống `{gio}`.
 export function gioVi(minutes: number): string {
   const DON = ["", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"];
   const gio = (x: number) => (x === 10 ? "mười" : x === 11 ? "mười một" : x === 12 ? "mười hai" : DON[x] ?? String(x));
-  /** Phút đọc thành chữ: 15 → "mười lăm" · 20 → "hai mươi" · 25 → "hai mươi lăm". */
   const phut = (x: number): string => {
     if (x < 10) return DON[x];
     if (x === 10) return "mười";

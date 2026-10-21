@@ -15,16 +15,12 @@ import { sfx } from "../audio/sfx";
 
 type Page = "main" | "settings" | "audio" | "about" | "telemetry" | "confirmNew";
 
-/** Tên người chơi ở dòng phụ của nút "Chơi tiếp" — tên mặc định thì khỏi nhắc. */
 const playerLabel = (name: string) => {
   const n = cleanName(name ?? "");
   return n && n !== DEFAULT_PLAYER_NAME ? n : "";
 };
 
-/**
- * Sảnh menu. Mọi trang dựng lại từ đầu trong một container -> chuyển trang là
- * xoá container cũ, không phải quản lý ẩn/hiện chục object.
- */
+/** Mỗi trang dựng lại trong một container, chuyển trang là xoá container cũ. */
 export class MenuScene extends Phaser.Scene {
   private page!: Phaser.GameObjects.Container;
   private at: Page = "main";
@@ -35,13 +31,11 @@ export class MenuScene extends Phaser.Scene {
     fitDesignFrame(this.cameras.main);
     this.drawBackdrop();
     this.show("main");
-    // Mọi trang con phải thoát được bằng bàn phím (CANON §15).
     this.input.keyboard?.on("keydown-ESC", () => {
       if (this.at === "audio") this.show("settings");
       else if (this.at !== "main") this.show("main");
     });
-    // Trình duyệt chỉ cho phát tiếng sau cú chạm/gõ phím đầu tiên; Phaser xếp
-    // hàng sẵn rồi tự phát lại, nên gọi thẳng ở đây là đủ.
+    // Bị chặn autoplay thì Phaser tự phát sau cú chạm đầu tiên.
     music.play(this, "menu");
   }
 
@@ -71,10 +65,7 @@ export class MenuScene extends Phaser.Scene {
     return { save: new SaveService(bus, () => { throw new Error("peek"); }).load() };
   }
 
-  /**
-   * Khung giấy ôm ĐÚNG khối chữ vừa xếp, chèn xuống dưới cùng của container.
-   * Khung cao/rộng cố định chỉ đúng ở 100% — ở 200% chữ tràn ra ngoài khung (ui/theme §Stack).
-   */
+  /** Khung ôm theo khối chữ đã xếp, để cỡ chữ lớn không tràn. */
   private card(body: Phaser.GameObjects.Container, top: number, bottom: number, texts: Phaser.GameObjects.Text[]) {
     const w = Math.min(GAME_W - 40, Math.max(560, ...texts.map((t) => t.width + 64)));
     body.addAt(panel(this, GAME_W / 2, (top + bottom) / 2, w, bottom - top, 0xf7f4ec, 0.94), 0);
@@ -86,7 +77,6 @@ export class MenuScene extends Phaser.Scene {
     const body = this.add.container(0, 0);
     this.page.add(body);
 
-    // Xếp theo chiều cao ĐO ĐƯỢC (ui/theme §Stack), không toạ độ cứng, để chữ 150–200% không đè nhau; lề trên co lại khi chữ to.
     const top = Math.round(88 / textScale());
     const st = new Stack(top, 10);
     const title = st.place(label(this, x, 0, GAME_TITLE, 40, UI.ink, "700"), 10);
@@ -110,9 +100,7 @@ export class MenuScene extends Phaser.Scene {
     body.add(st.button(button(this, x, 0, "Cài đặt", () => this.show("settings"), { width: 300 }), 14));
     body.add(st.button(button(this, x, 0, "Giới thiệu", () => this.show("about"), { width: 300 }), 14));
 
-    // dòng chân trang nằm trên dải mặt đường tối -> phải dùng màu sáng mới đọc được.
-    // Ở cỡ chữ to trang dài hơn khung hình: lúc đó dòng này đi THEO nội dung, không ghim đáy,
-    // không thì nó nằm đè lên nút cuối.
+    // Trang dài hơn khung hình thì chân trang đi theo nội dung để khỏi đè nút cuối.
     const foot = label(this, x, GAME_H - 26,
       `bản dựng thử v0.2${PLAYTEST ? " · chơi thử" : ""}`, 11, "#cfdae0", "400");
     if (st.y > GAME_H - 48) {
@@ -129,7 +117,7 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private startNew() {
-    // Chỉ có MỘT chỗ lưu: chơi mới là xoá hẳn ván đang chơi — phải hỏi trước.
+    // Chỉ có một chỗ lưu nên phải hỏi trước khi xoá.
     if (this.hasSave()) { this.show("confirmNew"); return; }
     this.askTelemetryThenStart();
   }
@@ -209,9 +197,6 @@ export class MenuScene extends Phaser.Scene {
   }
 
 
-  /**
-   * CANON §15: trợ năng là bắt buộc; mọi công tắc đều có tác dụng thật.
-   */
   private pageSettings() {
     const s = loadSettings();
     const put = (patch: Partial<Settings>) => {
@@ -234,8 +219,7 @@ export class MenuScene extends Phaser.Scene {
 
     tg("Cỡ chữ", () => `${Math.round(s.textScale * 100)}%`,
       () => { put({ textScale: sizes[(sizes.indexOf(s.textScale) + 1) % sizes.length] }); this.show("settings"); });
-    // Năm kênh âm thanh (CANON §15.4) tách trang riêng cho trang này khỏi dài. Đặt hàng thứ hai vì
-    // mấy hàng cuối phải cuộn mới tới — mà cuộn ở trang này còn lệch vùng bấm (chưa sửa).
+    // Đặt hàng thứ hai vì cuộn ở trang này còn lệch vùng bấm.
     tg("Âm thanh", () => (s.musicVolume === 0 ? "nhạc đang tắt" : "5 kênh riêng"),
       () => this.show("audio"), "nhạc · hẻm · giọng người · thao tác · âm báo");
     tg("Giảm chuyển động", () => (s.reducedMotion ? "bật" : "tắt"), () => put({ reducedMotion: !s.reducedMotion }),
@@ -244,11 +228,8 @@ export class MenuScene extends Phaser.Scene {
       "tự mờ đi khi đang đi, sáng lại lúc đứng yên");
     tg("Bỏ giới hạn thời gian", () => (s.noTimePressure ? "bật" : "tắt"), () => put({ noTimePressure: !s.noTimePressure }),
       "khách bỏ đi vì mình làm sai, không vì mình chậm");
-    // P3-03 §4 luật UI #4: tắt thì đi chợ không có tổng chạy — người chơi nhẩm, tổng chỉ
-    // hiện ở bước xác nhận
     tg("Hiện tổng tiền ở chợ", () => (s.marketRunningTotal ? "bật" : "tắt"),
       () => put({ marketRunningTotal: !s.marketRunningTotal }), "tắt thì tổng chỉ hiện lúc trả tiền");
-    // P0-03 §2.1: cục bộ, có công tắc, KHÔNG gửi đi đâu.
     tg("Ghi số liệu chơi thử", () => (s.telemetry ? "bật" : "tắt"),
       () => { put({ telemetry: !s.telemetry }); telemetry.enabled = !!s.telemetry; },
       "nằm trong máy này, không tự gửi đi đâu");
@@ -256,20 +237,16 @@ export class MenuScene extends Phaser.Scene {
 
     bg.fillStyle(0xf7f4ec, 0.96).fillRoundedRect(x - 270, top, 540, st.y - top, 16);
 
-    // Thanh chân GHIM ĐÁY màn hình: danh sách công tắc cao hơn khung hình, hai nút không được trôi xuống dưới mép.
+    // Ghim đáy vì danh sách công tắc có thể cao hơn khung hình.
     const barTop = GAME_H - buttonHeight() - 28;
     this.page.add(this.add.graphics().fillStyle(0x121820, 0.92).fillRect(0, barTop, GAME_W, GAME_H - barTop));
     const row = (barTop + GAME_H) / 2;
     this.page.add(button(this, x - 118, row, "Xuất số liệu", () => telemetry.download(), { width: 210 }));
     this.page.add(button(this, x + 118, row, "Quay lại", () => this.show("main"), { width: 210 }));
 
-    // Chữ to (150–200%) thì trang dài hơn màn hình: cuộn bằng con lăn / kéo, không cắt chữ.
     this.enableScroll(body, st.y + 10, barTop);
   }
 
-  /**
-   * Trang ÂM THANH — năm kênh của CANON §15.4, mỗi kênh một công tắc riêng (không gộp một thanh chung).
-   */
   private pageAudio() {
     const s = loadSettings();
     const put = (patch: Partial<Settings>) => {
@@ -300,7 +277,7 @@ export class MenuScene extends Phaser.Scene {
       tg(name, () => show(s[key]), () => { put({ [key]: nextStep(s[key]) } as Partial<Settings>); after?.(); }, hint);
 
     chan("Nhạc", "musicVolume", "nhạc nền theo giờ trong ngày",
-      // Kéo từ 0 lên thì track đã bị thả ra rồi — phải mồi lại, không thì im tới lúc đổi cue.
+      // Từ 0 lên thì track đã bị thả, phải mồi lại.
       () => music.play(this, "menu", 400));
     chan("Tiếng đường phố", "streetVolume", "hẻm, xe máy, còi, mưa, chó, chim");
     chan("Giọng người", "voiceVolume", "tiếng khách — kênh duy nhất không bị gì đè lên");
@@ -351,7 +328,6 @@ export class MenuScene extends Phaser.Scene {
     const st = new Stack(top, 10);
     const title = st.place(label(this, x, 0, "Giới thiệu", 26, UI.ink, "700"), 22);
 
-    // Trang này KHÔNG phải changelog: chỉ tả CHỖ và CÁI GIÁ.
     const what = st.place(label(this, x, 0, [
       "Một xe bánh mì ở đầu hẻm, Sài Gòn.",
       "",
@@ -365,8 +341,7 @@ export class MenuScene extends Phaser.Scene {
       "WASD đi  ·  E làm việc  ·  Esc tạm dừng\n"
       + "còn lại game nhắc khi tới lúc.", 13, UI.muted, "400").setAlign("center"), 20);
 
-    // Ghi công âm thanh. ⚠️ NHẠC CC BY 4.0: bắt buộc nêu tên ở nơi người chơi thấy — gỡ là vi phạm giấy phép.
-    // Tiếng động CC0, không bắt buộc ghi công; danh sách đủ ở `PROVENANCE.csv`.
+    // Nhạc CC BY 4.0 bắt buộc ghi công ở nơi người chơi thấy.
     const tracks = [...new Set(Object.values(CUES).map((c) => c.title))].join(" · ");
     const credit = st.place(label(this, x, 0,
       `Nhạc tạm: ${tracks}\nKevin MacLeod (incompetech.com) · CC BY 4.0\n\n`

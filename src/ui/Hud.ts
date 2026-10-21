@@ -12,7 +12,6 @@ import { FONT, UI } from "./theme";
 const DEPTH = 9_000_000;
 const HELP_UNTIL_DAY = 3;
 
-/** Ba ngày, ba dòng, mỗi dòng thêm đúng những phím hôm đó mới có chỗ dùng; hết ngày 3 thì tắt hẳn. */
 const HELP_BY_DAY = [
   "WASD đi · E làm việc · Esc tạm dừng",
   "WASD đi · Shift chạy · E làm việc · Q đặt xuống",
@@ -22,13 +21,7 @@ const HELP_BY_DAY = [
 /** `GLANCE` = có người nhìn MẶT mình · `CLOSE` = có người nhìn thẳng vào TAY mình. */
 export type Watch = "NONE" | "GLANCE" | "CLOSE";
 
-/**
- * Ô thứ BA của hàng icon ở đỉnh màn hình. ⚠️ KHÔNG đặt giữa màn hình: chỗ đó là mặt tiền cái quán,
- * và vòng ĐỘ GIÒN trên cửa lò rơi đúng quãng y 60–90 — đổi một thứ ĐỌC GẤP lấy một thứ tham khảo.
- *
- * Phân biệt bằng HÌNH trước, rồi NHỊP (nháy khi bị soi tay); màu chỉ là tầng thứ ba. KHÔNG phóng
- * to thu nhỏ — ô trong một hàng cố định mà đổi cỡ thì đọc ra là lỗi layout.
- */
+/** Không đặt giữa màn hình: vòng độ giòn trên cửa lò nằm ở quãng y 60–90. */
 const EYE_X = GAME_W / 2 + 58;
 const EYE_Y = 26;
 const EYE_PLATE_W = 44, EYE_PLATE_H = 36;
@@ -36,24 +29,18 @@ const EYE_W = 33, EYE_H = 20;
 const EYE_RED = 0xc0392b;
 const EYE_BLINK_MS = 1150;
 
-/**
- * HAI kênh chữ, KHÔNG trộn: `say()` là LỜI NGƯỜI (góc dưới trái, phải nán lại vì người chơi cần
- * NGHE để làm đúng đơn) · `toast()` là VIỆC MÁY BÁO (đỉnh màn hình, hiện rồi tắt).
- *
- * ⚠️ Chung một hộp thì thao tác của chính người chơi đẩy câu gọi món ra khỏi hộp.
- */
-/** Giữa đỉnh màn hình là chỗ NHÃN TRẠM, nên thông báo ở đó đè lên đúng mấy cái tên người chơi đang đọc. */
+/** Toast nằm cột phải vì giữa đỉnh màn hình là chỗ nhãn trạm. */
 const TOAST_RIGHT = GAME_W - 26;
 const TOAST_TOP = 150;
 const TOAST_GAP = 6;
 const TOAST_MAX = 3;
-/** ⚠️ Không đếm TỪ: chữ Việt tách theo ÂM TIẾT nên đếm từ sai 1,6–2 lần so với tiếng Anh. 55 ms/ký tự ≈ 18 ký tự/giây — chậm hơn tốc độ đọc thật, vì người chơi đang bận hai tay. */
+/** Đếm ký tự chứ không đếm từ vì chữ Việt tách theo âm tiết. */
 const TOAST_BASE_MS = 1800;
 const TOAST_PER_CHAR_MS = 55;
 const TOAST_MIN_MS = 2600;
 const TOAST_MAX_MS = 6000;
 const TOAST_FADE_FROM = 0.78;
-/** 20 chứ không 6: dưới ~15–20 px thì mắt NGOẠI VI không bắt được chuyển động, mà ngoại vi mới là chỗ dòng này nằm. */
+/** Dưới ~15–20 px thì mắt ngoại vi không bắt được chuyển động. */
 const TOAST_SLIDE_PX = 20;
 const TOAST_SLIDE_MS = 190;
 const TOAST_TONE: Record<ToastTone, number> = {
@@ -73,7 +60,7 @@ type Toast = {
   life: number;
 };
 
-/** Được hiện: giờ, tiền, câu khách gọi NGUYÊN VĂN, thứ đã bỏ vào ổ. KHÔNG hiện: điểm, sao, thanh kiên nhẫn, "đúng/sai" của hệ thống. */
+/** Không hiện điểm, sao, thanh kiên nhẫn hay "đúng/sai" của hệ thống. */
 export class Hud {
   private left: Phaser.GameObjects.Text;
   private right: Phaser.GameObjects.Text;
@@ -115,8 +102,6 @@ export class Hud {
     this.right = stat(GAME_W - 26, 1);
 
     this.promptBg = fixed(scene.add.graphics());
-    // Hộp tự giãn theo chữ, và không bao giờ rộng hơn khung (CANON §15.1): dòng nhắc dài
-    // nhất ở cỡ chữ 200% đo được 783 px / 1024 — nhưng câu mới thì cứ xuống dòng, đừng tràn.
     this.prompt = fixed(scene.add.text(GAME_W / 2, GAME_H - 66, "", {
       fontFamily: FONT, fontSize: fs(15), fontStyle: "500", color: UI.ink, align: "center",
       wordWrap: { width: GAME_W - 80 },
@@ -124,9 +109,7 @@ export class Hud {
 
     this.bar = fixed(scene.add.graphics(), DEPTH + 50);
 
-    // Phiếu đơn: câu khách gọi NGUYÊN VĂN, ghim suốt lượt (P1-03 §2.4.3). Ở góc trên PHẢI,
-    // dưới ô tiền: góc đó là tường sau quán — không che mặt khách, không bị bảng kẹp nhân
-    // (bên trái) che, dù câu dài hay chữ to cỡ nào.
+    // Phiếu đơn ở góc trên phải để không che mặt khách và không bị bảng kẹp nhân che.
     this.ticketBg = fixed(scene.add.graphics());
     this.ticketText = fixed(scene.add.text(GAME_W - 26, 100, "", {
       fontFamily: FONT, fontSize: fs(13), fontStyle: "500", color: UI.ink, align: "right",
@@ -139,10 +122,7 @@ export class Hud {
       wordWrap: { width: 380 },
     }).setOrigin(0, 1), DEPTH + 100);
 
-    // CANON §15.1 / P1-04: ở cỡ chữ 200% dòng này dài 1131 px so với khung 1024 — tràn
-    // hẳn ra ngoài hai mép. Cho nó XUỐNG DÒNG theo bề ngang khung (ngắt đúng dấu "·" vì
-    // hai bên dấu đều có khoảng trắng) và neo ở ĐÁY màn hình, rồi `drawPrompt` đẩy dòng
-    // nhắc lên trên nó — không cắt chữ, không thu nhỏ chữ của người cần chữ to.
+    // Ở cỡ chữ 200% dòng này tràn khung nên phải xuống dòng, neo đáy để `drawPrompt` xếp lên trên.
     this.help = fixed(scene.add.text(GAME_W / 2, GAME_H - 8, HELP_BY_DAY[0], {
       fontFamily: FONT, fontSize: fs(11), color: "#f2efe9", stroke: "#1b2429", strokeThickness: 3,
       align: "center", wordWrap: { width: GAME_W - 32 },
@@ -159,25 +139,20 @@ export class Hud {
 
     this.handsGfx = fixed(scene.add.graphics());
 
-    // Con mắt "có người nhìn". Trên nút tạm dừng một nấc — nó không được nằm dưới gì cả.
-    // Icon chưa tải xong (hoặc thiếu file) thì bỏ qua: HUD vẫn chạy, chỉ là không có mắt.
+    // Thiếu icon thì HUD vẫn chạy, chỉ không có mắt.
     this.eyePlate = fixed(scene.add.graphics(), DEPTH + 150);
     if (scene.textures.exists(ICON.eyeInk) && scene.textures.exists(ICON.eyeRed)) {
       this.eye = fixed(scene.add.image(EYE_X, EYE_Y, ICON.eyeInk), DEPTH + 151)
         .setDisplaySize(EYE_W, EYE_H).setVisible(false);
     }
 
-    // Dải thông báo. POOL cố định, không `add.text` mỗi lần: giờ cao điểm là vài chục
-    // dòng mỗi phút, cấp phát từng cái là một cú GC rơi đúng lúc đông khách nhất
-    // (cùng lý do với `BubblePool` và `MoneyPops`).
+    // Pool cố định để tránh GC giật đúng giờ cao điểm.
     this.toastBg = fixed(scene.add.graphics(), DEPTH + 160);
     for (let i = 0; i < TOAST_MAX; i++) {
       this.toasts.push({
         text: fixed(scene.add.text(TOAST_RIGHT, 0, "", {
           fontFamily: FONT, fontSize: fs(13), fontStyle: "500", color: UI.ink,
-          // 236 px: một dòng thông báo dài ("Bà Bảy quý hẳn lên — cho thêm đồ chua") ở
-          // 330 px thì thò sang tận giữa màn hình và đè lên nhãn trạm. Ở 236 nó xuống
-          // dòng và nằm gọn trong cột phải, chung mép với ô tiền và phiếu đơn.
+          // Rộng hơn 236 px thì dòng dài thò ra giữa màn hình, đè nhãn trạm.
           align: "right", wordWrap: { width: 236 },
         }).setOrigin(1, 0).setVisible(false), DEPTH + 161),
         born: -1,
@@ -191,11 +166,9 @@ export class Hud {
     this.saveDot = fixed(scene.add.circle(GAME_W - 14, GAME_H - 14, 4, 0xf4f1e8), DEPTH + 100).setAlpha(0);
   }
 
-  /** KHÔNG dùng cho lời người nói — lời người đi `say()`. Hết chỗ thì cướp dòng GIÀ NHẤT. */
+  /** Việc máy báo, không dùng cho lời người (đi `say()`); hết chỗ thì cướp dòng già nhất. */
   toast(text: string, tone: ToastTone = "info", now = this.scene.time.now) {
-    // Cùng một chuyện xảy ra liên tiếp thì GỘP thành "×N", không xếp ba dòng y hệt:
-    // ba dòng giống nhau chiếm hết chỗ của ba chuyện KHÁC NHAU, mà thông tin thì vẫn
-    // chỉ là một. Bơm lại `born` để cái gộp cũng được đếm lại giờ từ đầu.
+    // Trùng dòng đang hiện thì gộp "×N" và đếm lại giờ từ đầu.
     const same = this.toasts.find((t) => t.born >= 0 && t.body === text);
     if (same) {
       same.count++;
@@ -220,7 +193,6 @@ export class Hud {
     t.life = Math.min(TOAST_MAX_MS, Math.max(TOAST_MIN_MS, TOAST_BASE_MS + chars * TOAST_PER_CHAR_MS));
   }
 
-  /** Một chấm nhỏ mờ dần 0,8 s ở góc. KHÔNG vòng xoay, KHÔNG chữ "đang lưu". */
   flashSaved() {
     this.scene.tweens.killTweensOf(this.saveDot);
     this.saveDot.setAlpha(0.85);
@@ -231,7 +203,7 @@ export class Hud {
     return this.left.getBounds().bottom + 11;
   }
 
-  /** Bảng kẹp nhân mở thì nhật ký LỜI NGƯỜI dời sang phải, sát đáy — hai khối chữ không được chồng nhau. */
+  /** Bảng kẹp nhân mở thì dời nhật ký lời người sang phải để không chồng nhau. */
   dockFeed(right: boolean) {
     const x = right ? 496 : 26;
     if (this.feedText.x === x) return;
@@ -246,7 +218,7 @@ export class Hud {
     this.feedBg.fillStyle(0x2b2f31, 1).fillRoundedRect(b.x - 10, b.y - 6, b.width + 20, b.height + 12, 8);
   }
 
-  /** Việc máy báo đi `toast()`. Cả hai kênh đều không có lời phán của hệ thống: chỉ sự việc. */
+  /** Lời người nói; việc máy báo đi `toast()`. */
   say(line: string) {
     this.log(line);
   }
@@ -297,7 +269,7 @@ export class Hud {
     this.drawToasts(s.now ?? this.scene.time.now, this.settings.reducedMotion);
   }
 
-  /** MỚI NHẤT Ở TRÊN, rơi sát ngay dưới phiếu đơn. ⚠️ Nhận `now` là ĐỒNG HỒ HIỆU ỨNG của scene, không `time.now` — menu đóng băng `clock` chứ không đóng băng Phaser. */
+  /** `now` là đồng hồ hiệu ứng của scene, vì menu đóng băng `clock` chứ không đóng băng Phaser. */
   private drawToasts(now: number, reducedMotion: boolean) {
     const g = this.toastBg;
     g.clear();
@@ -319,14 +291,12 @@ export class Hud {
     }
   }
 
-  /** Icon là SVG (sinh bởi `tools/make-icons.ts`) chứ không vẽ tay. Hai bậc phân biệt bằng NHÁY, không chỉ bằng màu; `reducedMotion` tắt nháy và giữ mức đậm nhất. */
+  /** Hai bậc phân biệt bằng nháy chứ không chỉ màu; `reducedMotion` tắt nháy. */
   private drawEye(w: Watch) {
     const eye = this.eye;
     const on = w !== "NONE";
     this.eyePlate.clear();
     eye?.setVisible(on);
-    // Icon thiếu thì KHÔNG vẽ đĩa giấy: một cái đĩa trống ở đỉnh màn hình khó hiểu hơn
-    // là không có gì.
     if (!on || !eye) return;
 
     const close = w === "CLOSE";
@@ -341,14 +311,12 @@ export class Hud {
       this.eyePlate.strokeRoundedRect(EYE_X - pw / 2, EYE_Y - ph / 2, pw, ph, 10);
     }
 
-    // Đổi TEXTURE chứ không `setTint` — xem lý do ở `tools/make-icons.ts`.
-    // `setTexture` làm mất displaySize (Phaser đặt lại theo frame mới), set lại ngay sau.
+    // `setTexture` làm mất displaySize nên phải set lại ngay sau.
     eye.setTexture(close ? ICON.eyeRed : ICON.eyeInk)
       .setDisplaySize(EYE_W, EYE_H)
       .setAlpha(close ? 0.55 + 0.45 * beat : 0.75);
   }
 
-  /** Khác nhau về HÌNH DẠNG, không chỉ màu: `CLEAN` bàn tay rỗng viền · `MONEY` bàn tay cầm tờ tiền. */
   private drawHands(state: "CLEAN" | "MONEY") {
     if (state === this.handsKey) return;
     this.handsKey = state;
@@ -412,7 +380,6 @@ export class Hud {
     });
   }
 
-  /** Dòng nhắc và thanh tiến trình xếp NGƯỢC LÊN từ mốc này. */
   private get stackTop() {
     return this.help.visible ? this.help.getBounds().top - 8 : GAME_H - 48;
   }
@@ -436,10 +403,7 @@ export class Hud {
     this.promptBg.fillRoundedRect(x, y, w, h, 10);
   }
 
-  /**
-   * MỘT thanh cho HAI loại việc: GIỮ PHÍM (`busy`) đầy thì xanh vì người chơi được quyền nhả tay ·
-   * TAY ĐANG BẬN (`work`) không bao giờ xanh — xanh là lời mời nhả phím, mà ở đây không có phím nào.
-   */
+  /** Chỉ `busy` (giữ phím) mới xanh khi đầy, vì xanh nghĩa là được nhả phím; `work` thì không. */
   private drawBar(busy: { st: Station; ms: number } | null, work: { frac: number } | null) {
     this.bar.clear();
     const frac = busy ? Math.min(1, busy.ms / busy.st.holdMs) : work ? work.frac : -1;

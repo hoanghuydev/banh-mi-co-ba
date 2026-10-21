@@ -1,11 +1,3 @@
-/**
- * `TAKE_CASH` và `OVERHEARD_BY`.
- *
- * `TAKE_CASH` — chiều VÀO của `PAY`: bé Su thối dư hai ngàn mình cầm lại, hay `phuc.quen · 1.1`
- * nói dối thầy Phúc là chưa trả. CANON §8 đòi ăn gian phải có LỢI THẬT thì mới là một lựa chọn.
- *
- * `OVERHEARD_BY` — nói xấu bà Sáu giữa hẻm chỉ có hậu quả khi bà đứng đủ gần để nghe.
- */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Bus } from "../src/core/eventbus";
@@ -56,12 +48,10 @@ test("HA-4 `OVERHEARD_BY` chỉ ăn khi người bị nói đứng gần", () =>
   const act = { kind: "OVERHEARD_BY" as const, ai: "BA_SAU" };
   const nghe = () => svc.drainLogs().filter((l: string) => l.includes("nghe hết")).length;
 
-  // (a) bà Sáu KHÔNG có mặt — không ai nghe. Đây là một nước đi hợp lệ.
   nghe();
   svc.applyTalkOption(noi, { act });
   assert.equal(nghe(), 0, "bà Sáu không có mặt mà vẫn nghe thấy");
 
-  // (b) bà Sáu đứng ngay đó — người chơi phải thấy là bà nghe hết.
   const sau = { ...noi, memKey: "BA_SAU", phase: "queueing", x: noi.x, y: noi.y, personality: noi.personality };
   svc.customers.push(sau);
   svc.applyTalkOption(noi, { act });

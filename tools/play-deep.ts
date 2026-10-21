@@ -1,17 +1,10 @@
-/**
- * npx tsx tools/play-deep.ts [--day N] [--n N] [--pool QUA_DUONG|WALKIN|ALL]
- *
- * Đóng vai người chơi cho tới hết cuộc, đo số nhịp mỗi cuộc.
- *
- * Đi đúng đường cú bấm F: `service.openTalk()` → `service.chooseTalk(i)` như `StallScene`, chọn ngẫu nhiên.
- */
+// npx tsx tools/play-deep.ts [--day N] [--n N] [--pool QUA_DUONG|WALKIN|ALL] — đo số nhịp mỗi cuộc qua `openTalk` → `chooseTalk`.
 import { Bus } from "../src/core/eventbus";
 import { newGame } from "../src/core/save";
 import { memoryPlatform } from "../src/core/platform";
 import { HeadlessStall, POLICIES, nextDay } from "../src/sim/headless";
 import { TALK_NPC_IDS } from "../src/content/talks";
 
-/** 12 người CÓ TÊN — `TALK_NPC_IDS` gồm cả `WALKIN`/`QUA_DUONG`/`ANY` nên không dùng thẳng được. */
 const NAMED_IDS = TALK_NPC_IDS.filter((k) => !["WALKIN", "QUA_DUONG", "ANY"].includes(k));
 
 const argN = (k: string, d: number) => {
@@ -24,7 +17,7 @@ const argS = (k: string, d: string) => {
 };
 const DAY = argN("day", 5), WANT = argN("n", 20), POOL = argS("pool", "ALL"), DAYS = argN("days", 1);
 const QUIET = process.argv.includes("--quiet");
-/** `--engaged`: bỏ qua câu đường ra (`LANH`/`IM`/`GAT`) khi còn dòng khác, để đo độ sâu thật của cây. */
+/** `--engaged`: bỏ qua câu đường ra khi còn dòng khác. */
 const ENGAGED = process.argv.includes("--engaged");
 const EXITS = new Set(["LANH", "IM", "GAT"]);
 
@@ -44,7 +37,7 @@ async function openStall() {
 }
 await openStall();
 
-// Một dòng số riêng cho việc CHỌN, để không đụng vào dòng chung của spawn.
+// RNG riêng để không đụng dòng số của spawn.
 let seed = 0x9e3779b9;
 const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 0x100000000);
 
@@ -62,7 +55,6 @@ for (let day = 0; day < DAYS && shown < WANT; day++) {
   await Promise.resolve();
   for (const c of svc.customers) {
     if (seen.has(c.id) || shown >= WANT) continue;
-    // Bắt chuyện ở lúc ngẫu nhiên trong lượt ghé (không phải frame đầu), như người chơi thật.
     if (rnd() > 0.05) continue;
     const pool = c.ambient ? "QUA_DUONG" : (svc.talkKey(c) as string);
     if (POOL !== "ALL" && POOL !== pool && !(POOL === "NAMED" && NAMED_IDS.includes(pool))) continue;

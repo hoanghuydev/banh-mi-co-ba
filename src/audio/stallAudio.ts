@@ -6,13 +6,7 @@ import type { Ingredient } from "../sim/order";
 import { music } from "./music";
 import { sfx, type SfxId } from "./sfx";
 
-/**
- * Chỗ duy nhất nối sự kiện game vào `audio/sfx.ts`. Hai nhóm hook khác vòng đời: NGHE BUS gắn một
- * lần ở `create` · NỀN CHẠY VÒNG hỏi lại MỖI FRAME "giờ này đáng lẽ nghe gì".
- *
- * Khai báo trạng thái mong muốn chứ không bật/tắt tại chỗ xảy ra chuyện: trời chuyển mưa giữa giờ
- * cao điểm thì có BỐN chỗ trong scene phải nhớ đổi ambience, và sẽ có một chỗ quên.
- */
+// Nền âm khai báo trạng thái mong muốn mỗi frame, không bật/tắt tại chỗ xảy ra chuyện.
 
 const PRELOAD: readonly SfxId[] = [
   "sfx_dao_rach", "sfx_vo_gion", "sfx_than_no", "sfx_quet_pate", "sfx_ruoi_sot",
@@ -22,8 +16,7 @@ const PRELOAD: readonly SfxId[] = [
   "sfx_buoc_chu_quan",
   "sfx_xe_may_qua", "sfx_coi_xe", "sfx_cho_sua", "sfx_chim_se", "sfx_ga_gay",
   "sfx_buoc_chan", "sfx_keo_ghe",
-  // giọng — CHỈ hai thứ đang thật sự dùng (xem luật "NPC chỉ lên tiếng ở hai chỗ").
-  // Các `vox_*` khác trong `tools/audio/sources.py` CHƯA nạp, để khỏi kéo về thứ không phát.
+  // Chỉ nạp hai `vox_*` đang thật sự phát.
   "vox_hum", "vox_blip",
   "ui_click", "ui_chon_nguyen_lieu", "ui_dat_thanh_cong", "ui_khong_hop_le",
   "ui_click_go", "ui_mo_menu", "ui_dong_menu", "ui_chot_don", "ui_autosave",
@@ -36,12 +29,7 @@ const BAND_BED: Record<TimeBand, SfxId> = {
 
 const RAINY: ReadonlySet<Weather> = new Set<Weather>(["MUA_RAO", "MUA_DAM"]);
 
-/**
- * ⚠️ NPC CHỈ LÊN TIẾNG Ở ĐÚNG HAI CHỖ: lúc GỌI MÓN và lúc BỎ ĐI VÌ GIẬN.
- *
- * Không "hm" theo `GLIMPSED`: giờ cao điểm nó bật tắt liên tục, mà giọng người phải để dành cho lúc
- * có người thật sự bỏ đi.
- */
+/** NPC chỉ lên tiếng ở hai chỗ: lúc gọi món và lúc bỏ đi vì giận. */
 const ANGRY_PITCH = 0.78;
 
 const ANGRY_EXITS: ReadonlySet<string> = new Set([
@@ -50,7 +38,7 @@ const ANGRY_EXITS: ReadonlySet<string> = new Set([
   "SOILED_FOOD",
 ]);
 
-/** ⚠️ PHẢI khớp `FLY_DIRT_MIN` ở `StallScene` — lệch thì có một quãng nghe thấy ruồi mà không thấy con nào. */
+/** Phải khớp `FLY_DIRT_MIN` ở `StallScene`. */
 const FLY_DIRT_MIN = 0.35;
 
 const AMBIENT_EVERY: Record<TimeBand, number> = {
@@ -86,8 +74,6 @@ export class StallAudio {
     sfx.stopLoops(500);
   }
 
-  // ────────────────────────────────────────────────────────────── nghe bus
-
   private listen<K extends EventKey>(k: K, fn: (p: EventMap[K]) => void) {
     this.off.push(bus.on(k, fn));
   }
@@ -97,14 +83,13 @@ export class StallAudio {
 
     this.listen("npc:arrived", (p) => this.steps(this.d.panOf(p.npcId)));
 
-    /** Bám `order:placed` chứ không `dialog:spoken`: một lượt ghé đẻ ra cả chục dòng thoại, bám vào đó thì giờ cao điểm thành cái chợ. */
+    // Bám `order:placed` chứ không `dialog:spoken`, không thì giờ cao điểm ồn như chợ.
     this.listen("order:placed", (p) => {
       if (this.spoke.has(p.npcId)) return;
       this.spoke.add(p.npcId);
       sfx.talk(scene, p.npcId, 26, this.d.panOf(p.npcId));
     });
 
-    /** Cùng một file "hửm", hạ cao độ xuống 0,78 nên trầm và DÀI hơn. `SILENT_EXIT` cố ý không có ở đây — khách bỏ đi không nói gì thì chỉ còn tiếng bước chân. */
     this.listen("npc:left", (p) => {
       this.spoke.delete(p.npcId);
       const pan = this.d.panOf(p.npcId);
@@ -116,7 +101,7 @@ export class StallAudio {
       }
     });
 
-    /** KHÔNG STING, KHÔNG GIỌNG. ⚠️ Một "ting!" phi diegetic thì người chơi sẽ học cách nghe tiếng ting thay vì nhìn mặt người. */
+    // Không sting, không giọng: người chơi phải nhìn mặt người chứ không nghe tiếng ting.
     this.listen("perception:stateChanged", (p) => {
       if (p.to === "GLIMPSED" || p.to === "NOTICED") sfx.perceptionPing(scene, this.d.panOf(p.npcId));
     });
@@ -128,14 +113,11 @@ export class StallAudio {
     });
   }
 
-  // ───────────────────────────────────────────────────────── nền chạy vòng
-
-  /** `dt` ĐÃ TRỪ pause, nên lúc tạm dừng hẻm không tự đẻ thêm tiếng — mà nền vẫn kêu. */
+  /** `dt` đã trừ pause, nên lúc tạm dừng không đẻ thêm tiếng rời mà nền vẫn kêu. */
   tick(dt: number, s: { band: TimeBand; weather: Weather; dirt: number; ovenHot: boolean; washing: boolean; burning: boolean; moving: boolean; running: boolean }) {
     this.now += dt;
     const { scene } = this.d;
 
-    // ── nền hẻm theo giờ ────────────────────────────────────────────────────
     const want = BAND_BED[s.band];
     if (want !== this.bed) {
       if (this.bed) sfx.loop(scene, this.bed, false, {}, 2200);
@@ -146,22 +128,19 @@ export class StallAudio {
     }
     sfx.loop(scene, "amb_crowd", true, {}, 3000);
 
-    // ── mưa ─────────────────────────────────────────────────────────────────
     const rain = RAINY.has(s.weather);
     sfx.loop(scene, "amb_mua_mai_ton", rain, {}, 3000);
     sfx.loop(scene, "amb_mua_nen", rain, {}, 3000);
 
-    // ── lò than ─────────────────────────────────────────────────────────────
     sfx.loop(scene, "sfx_lo_bed", s.ovenHot, {}, 1600);
     sfx.loop(scene, "sfx_khet", s.burning, {}, 400);
     sfx.loop(scene, "sfx_rua_tay", s.washing, {}, 180);
 
-    /** `STALL_CLEANLINESS` dạng NGHE ĐƯỢC, không con số nào hiện ra. Độ to bò theo đúng ba nấc số ruồi của `drawDirt`. */
+    // Độ to ruồi bò theo ba nấc số ruồi của `drawDirt`.
     const fly = s.dirt > FLY_DIRT_MIN;
     sfx.loop(scene, "sfx_ruoi", fly, {}, 1500);
     if (fly) sfx.loopVolume("sfx_ruoi", Math.min(1, (s.dirt - FLY_DIRT_MIN) / 0.35));
 
-    // ── bước chân người chơi ─────────────────────────────────────────────────────
     if (s.moving) {
       this.stepPhase += dt * (s.running ? 3.1 : 2.1);
       if (this.stepPhase >= 1) {
@@ -172,7 +151,6 @@ export class StallAudio {
       this.stepPhase = 0.92;
     }
 
-    // ── tiếng rời rạc ngoài hẻm ─────────────────────────────────────────────
     this.nextAmbient -= dt;
     if (this.nextAmbient <= 0) {
       this.nextAmbient = AMBIENT_EVERY[s.band] * (0.6 + this.d.rand() * 0.9);
@@ -180,13 +158,10 @@ export class StallAudio {
     }
   }
 
-  /** Trời mưa thì BỎ HẲN: không có tiếng rao trong mưa. */
   private oneOffStreetSound(band: TimeBand, rain: boolean) {
     if (rain) return;
     const { scene } = this.d;
     const r = this.d.rand();
-    // Pan chạy từ bên này sang bên kia cho xe máy — §2.4. Mẩu ngắn nên pan tĩnh,
-    // lấy một bên ngẫu nhiên; emitter chạy path là việc của bản thu thật sau này.
     const side = this.d.rand() < 0.5 ? -0.75 : 0.75;
 
     if (band === "PRE_OPEN" && r < 0.22) { sfx.play(scene, "sfx_ga_gay", { pan: side }); return; }
@@ -204,12 +179,7 @@ export class StallAudio {
     }
   }
 
-  // ───────────────────────────────────── tiếng gắn thẳng vào thao tác tay
-  //
-  // Scene gọi mấy hàm này ngay trong hàm xử lý phím. Chúng cố ý KHÔNG đi qua bus:
-  // phải nổ đúng frame bấm phím thì não mới nối tiếng với hành động (xem
-  // `audioproc.trim_silence` — cùng một lý do, ở khâu khác).
-
+  // Tiếng thao tác tay cố ý không đi qua bus: phải nổ đúng frame bấm phím.
   private one(id: SfxId, o: Parameters<typeof sfx.play>[2] = {}) {
     sfx.play(this.d.scene, id, o);
   }
@@ -222,7 +192,7 @@ export class StallAudio {
   wrap() { this.one("sfx_goi_giay"); }
   tea() { this.one("sfx_rot_tra_da"); }
   cup() { this.one("sfx_dat_ly"); }
-  /** NHIỀU nhát trải đúng bằng lượt lau — một nhát 1,4 giây cho lượt lau 2,5–5 giây thì nửa sau im hẳn trong khi thanh vẫn chạy. */
+  /** Nhiều nhát trải đúng bằng lượt lau, để nửa sau không im trong khi thanh vẫn chạy. */
   wipeFor(seconds: number) {
     const nhat = Math.max(1, Math.round(seconds / 1.3));
     for (let i = 0; i < nhat; i++) {
@@ -237,7 +207,6 @@ export class StallAudio {
     this.one(this.d.rand() < 0.45 ? "sfx_xu" : "sfx_ngan_keo", { delay: 220 });
   }
 
-  /** Tiếng theo LOẠI nguyên liệu, không phải một tiếng "đặt đồ" dùng chung. */
   place(ing: Ingredient) {
     if (ing === "pate") this.one("sfx_quet_pate");
     else if (ing === "tuongot") this.one("sfx_ruoi_sot");

@@ -1,16 +1,4 @@
-/**
- * Save — P0-02 §2.5–§2.8. CANON §2: localStorage, autosave sau MỖI KHÁCH.
- *
- * Bốn quyết định:
- *  1. CHỤP trong frame (rẻ, phải đúng khoảnh khắc), GHI lúc rảnh (`requestIdleCallback`).
- *  2. Double-buffer A/B + meta: crash giữa lúc ghi slot B thì slot A vẫn nguyên.
- *     Mất save là mất người chơi.
- *  3. `timeout: 3000` — giờ cao điểm idle có thể không bao giờ tới.
- *  4. Checksum sai thì CẢNH BÁO, không chặn (§8f: sửa save là chuyện của người chơi).
- *
- * Chống save-scum (§2.8) = autosave NGAY khi sự kiện xảy ra × seed cố định theo ngày
- * × stream RNG tách. Cái KHÔNG khoá: chơi lại cả ngày bằng nút chính thức.
- */
+// Chụp trong frame, ghi lúc rảnh; slot A/B để crash giữa lúc ghi không mất save; checksum sai chỉ cảnh báo.
 import { ECON, newInventory, scaledVnd, weatherOf, type InventoryState } from "../sim/econ";
 import { newEconState, type EconState } from "../sim/obligations";
 import { newEquipState } from "../sim/equipment";
@@ -26,16 +14,11 @@ export { loadSettings, saveSettings, DEFAULT_SETTINGS, type Settings } from "./f
 /** Save khác phiên bản này bị bỏ qua — vào game như chưa có ván nào. */
 export const SCHEMA_VERSION = 6;
 
-/** State của một NPC: đếm lượt ghé, ngày gặp gần nhất, và mấy cờ của từng người. */
 export type NpcState = {
-  /** Số lượt ghé quầy (quay đầu ở đầu hẻm không tính). */
+  /** Quay đầu ở đầu hẻm không tính. */
   visits: number;
   lastSeenDay: number;
   seen?: Record<string, number>;
-  /**
-   * Id cuộc ĐÃ chơi với người này (không nghe lại nguyên một cuộc) và chủ đề đã đụng
-   * HÔM NAY (không hỏi lại một chuyện trong cùng buổi).
-   */
   talksDone?: string[];
   talkTopics?: { day: number; topics: string[] };
 };
@@ -48,7 +31,7 @@ export type SaveFile = {
   createdAt: string;
   savedAt: string;
   buildId: string;
-  /** FNV-1a của payload. Phát hiện HỎNG, không chống SỬA (§8f). */
+  /** FNV-1a của payload, chỉ phát hiện hỏng, không chống sửa. */
   checksum: string;
   playerName: string;
 
@@ -60,15 +43,9 @@ export type SaveFile = {
     weather: Weather;
     dayStartSnapshotRef: string | null;
     today: { served: number; lost: number; revenue: number;
-      /**
-       * Đã nói bao nhiêu cuộc SÂU và nhận bao nhiêu lời bắt chuyện HÔM NAY (P2-06 §2.6).
-       *
-       * Phải nằm trong save chứ không chỉ trong instance `Service`: "Lưu và về sảnh"
-       * rồi vào lại giữa buổi tạo một `Service` mới, và nếu hai con số này về 0 thì
-       * cái van 2 cuộc/ngày lách được bằng đúng một lần thoát ra vào.
-       */
+      /** Lưu trong save để thoát ra vào lại không lách được trần cuộc/ngày. */
       talksDeep?: number; talkOffers?: number;
-      /** Dấu vết trong ngày cho thẻ đồ nghề (`sim/gearHint`): ổ cháy · tay cầm tiền bốc nhân · khách lạ ghé. */
+      /** Cho `sim/gearHint`: ổ cháy · tay cầm tiền bốc nhân · khách lạ ghé. */
       burnt?: number; bareHands?: number; strangers?: number };
   };
 
@@ -95,25 +72,13 @@ export type SaveFile = {
     barkCooldowns: Record<string, number>;
   };
 
-  /**
-   * `cleanliness` 1 = sạch bóng, 0 = bẩn hết mức (độ bẩn = 1 − cleanliness, P1-02 §2.10).
-   * `presets` = 3 công thức chia sẵn mỗi sáng (P1-01 §2.6).
-   */
+  /** `cleanliness` 1 = sạch bóng, 0 = bẩn hết mức. */
   stall: {
     cleanliness: number; layoutSide: "LEFT" | "RIGHT"
     presets: { id: string; name: string; dish: Record<string, number>; prepped: number }[];
-    /**
-     * Ổ đang gác trên thớt và ổ đang cầm trên tay lúc rời quầy giữa buổi (P0-02 §2.8:
-     * "thoát bất cứ lúc nào, vào lại đúng chỗ"). Không lưu thì một ổ bánh bốc hơi mỗi
-     * lần thoát — bánh đã trừ khỏi kho ở kệ rồi. `dish` là id nguyên liệu (`sim/order`),
-     * để nguyên `string[]` cho `core/` khỏi phải biết kiểu của `sim/`. Thiếu trường = không có ổ nào.
-     */
+    /** Ổ dở dang lúc thoát giữa buổi (bánh đã trừ kho); `dish` để `string[]` cho `core/` khỏi biết kiểu `sim/`. */
     board?: { dish: string[]; warmth: number; crust: number; q: number } | null;
     hand?: { item: string; warmth: number; crust: number; q: number } | null;
-    /**
-     * Ổ đang để ở CHỖ ĐỂ BÁNH trên quầy — trơn hay đã gói đều được (gói sẵn lúc vắng
-     * rồi bán nhanh lúc đông). Cùng luật với `board`: thiếu trường = chỗ đó trống.
-     */
     basket?: {
       hand?: string; warmth: number; crust: number; q: number; soiled?: boolean;
       dish?: string[]; dishQ?: number;
@@ -150,7 +115,7 @@ export function newGame(name: string, saveId = uuid()): SaveFile {
     savedAt: now,
     buildId: BUILD_ID,
     checksum: "",
-    // Khớp `DEFAULT_PLAYER_NAME` ở `content/shop.ts`; `core/` không import `content/` (P0-01 §6).
+    // Khớp `DEFAULT_PLAYER_NAME` ở `content/shop.ts`; `core/` không import `content/`.
     playerName: name || "Phương Anh",
     progress: {
       dayIndex: 1, band: "PRE_OPEN", gameMinutes: 6 * 60, scene: "Market",
@@ -200,8 +165,6 @@ function verifyChecksum(s: SaveFile): boolean {
   return ok;
 }
 
-// ──────────────────────────────────────────────────────────────── SaveService
-
 const PREFIX = "byesep.";
 const K = {
   slotA: `${PREFIX}slotA`,
@@ -238,8 +201,6 @@ export class SaveService {
     return this.readMeta()?.schemaVersion === SCHEMA_VERSION;
   }
 
-  // ── ghi ──────────────────────────────────────────────────────────────────
-
   request(reason: AutosaveReason) {
     this.pending = this.snapshot();
     this.bus.emit("save:autosaveRequested", { reason });
@@ -258,13 +219,7 @@ export class SaveService {
     }
   }
 
-  /**
-   * Ghi đồng bộ, ép ngay — dùng lúc thoát, mất focus, chuyển cảnh lớn.
-   *
-   * LUÔN chụp lại: một `request()` trước đó có thể còn nằm chờ (idle timeout tới 3 s) với
-   * bản chụp CŨ hơn hiện tại. Giữ bản cũ đó = mất mọi thứ xảy ra sau nó, đúng lúc người chơi
-   * đóng tab — trái hẳn ý của §2.6 ("ghi đúng khoảnh khắc này").
-   */
+  /** Luôn chụp lại vì `request()` đang chờ có thể giữ bản chụp cũ. */
   flushNow(reason: AutosaveReason = "QUIT") {
     this.pending = this.snapshot();
     this.bus.emit("save:autosaveRequested", { reason });
@@ -302,15 +257,13 @@ export class SaveService {
     }
   }
 
-  // ── đọc ──────────────────────────────────────────────────────────────────
-
   private readMeta(): Meta | null {
     const raw = this.platform.read(K.meta);
     if (!raw) return null;
     try { return JSON.parse(raw) as Meta; } catch { return null; }
   }
 
-  /** Đọc slot đang hoạt động; hỏng thì lùi về slot kia. Save khác `SCHEMA_VERSION` = không có. */
+  /** Slot đang hoạt động hỏng thì lùi về slot kia. */
   load(): SaveFile | null {
     const meta = this.readMeta();
     if (meta?.schemaVersion !== SCHEMA_VERSION) return null;
@@ -343,8 +296,6 @@ export class SaveService {
     for (const k of [K.slotA, K.slotB, K.meta]) this.platform.remove(k);
     for (const k of this.platform.keys(`${PREFIX}day.`)) this.platform.remove(k);
   }
-
-  // ── bản chụp đầu ngày + "Chơi lại ngày này" (§2.8) ───────────────────────
 
   writeDayStart(s: SaveFile): string {
     const key = `${s.saveId}:${s.progress.dayIndex}`;

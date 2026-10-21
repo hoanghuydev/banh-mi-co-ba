@@ -1,9 +1,4 @@
-/**
- * Mốc trong ngày dùng chung cho game thật (DayScene / MarketScene / EveningScene) và sim headless.
- *
- *   dawn()      rạng sáng: trời hôm nay · dọn hàng hư · thu tiền thuê
- *   basketFor() giỏ đủ cho N ổ — chỉ bot dùng; nút "mua như hôm qua" chép y giỏ hôm qua.
- */
+// Mốc trong ngày dùng chung cho game thật và sim headless.
 import type { SaveFile } from "../core/save";
 import {
   GOODS, GOOD_IDS, buy, expire, newInventory, priceOf, stockOf, vnd, weatherOf, type GoodId, type InventoryState,
@@ -91,10 +86,7 @@ export function eveningCounting(w: SaveFile) {
   if (i >= 0) w.ledger[i] = row; else w.ledger.push(row);
 }
 
-/**
- * P3-04 E2 — loa rao làm hàng xóm khó chịu dần (ẩn, không bao giờ hiện số). Ngưỡng 7: cô Mai
- * nhắc khéo · 12: khách than ồn · 18: bị bắt tắt 5 ngày. Chạy mỗi tối.
- */
+/** Loa rao làm hàng xóm khó chịu dần (ẩn số): 7 cô Mai nhắc · 12 khách than · 18 tắt loa 5 ngày. */
 export function neighborTick(w: SaveFile) {
   const e = w.econ, day = w.progress.dayIndex;
   if (w.flags.neighborDay === day) return [];

@@ -1,4 +1,3 @@
-/** BÉ SU QUAY PHIM THẬT — act `FILM` / `STOP_FILM`: kết quả đoạn quay phụ thuộc cái quầy lúc quay. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Bus } from "../src/core/eventbus";

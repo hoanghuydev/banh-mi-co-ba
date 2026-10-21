@@ -1,13 +1,4 @@
-/**
- * Chạy một buổi bán KHÔNG render — P0-03 §2.2 "công cụ đáng giá nhất trong danh sách".
- *
- * Chạy được vì `sim/` không import Phaser (cổng CI của P0-01). Dùng để: đo nhịp một
- * ngày, tune cân bằng, tìm chiến lược áp đảo (§8), và kiểm TẤT ĐỊNH (chạy hai lần
- * cùng seed + cùng input → trace bus giống hệt từng byte).
- *
- * Vòng frame y hệt `StallScene`: cùng `runFrame`, cùng thứ tự 7 bước. Chỗ khác
- * duy nhất là "tay người chơi" được thay bằng một con bot có policy.
- */
+// Buổi bán không render, cùng `runFrame` với `StallScene`, tay người chơi thay bằng bot.
 import { basketFor, buyBasket, dawn, dayDeps, eveningCounting, neighborTick } from "./day";
 import { EQUIP, buyEquip, has, priceVnd, whyNot, type EquipId } from "./equipment";
 import { dishQuality, portionsFor, take } from "./econ";
@@ -34,28 +25,17 @@ export type Policy = {
   dropRate: number;
   defectRate: number;
   teaRate: number;
-  /**
-   * CON BOT BIẾT LÀM VIỆC XÃ GIAO — rót trà, mời ngồi, mời ghé, bưng gánh…
-   *
-   * Bot `greedy` chỉ biết GÓI BÁNH, nên thiếu bot này thì bảng đo không phân biệt được "nhánh đó
-   * chết" với "bot không biết làm".
-   *
-   * `socialRate` = xác suất mỗi lần có cơ hội thì thử mở lời.
-   *
-   * `socialActs` rỗng = nhận MỌI act. ⚠️ Nhận mọi act KHÔNG phủ hết: bot bấm cái đầu tiên
-   * nó gặp, nên mấy act nằm sâu hoặc hiếm không bao giờ tới lượt.
-   * Khai một DANH SÁCH thì bot **xoay vòng**, mỗi cuộc săn một act, nên cả danh sách đều có cửa.
-   */
+  /** Xác suất thử mở lời mỗi lần có cơ hội. */
   socialRate?: number;
+  /** Rỗng = nhận act đầu tiên gặp (act hiếm không tới lượt); có danh sách thì mỗi cuộc săn một act xoay vòng. */
   socialActs?: readonly string[];
 };
 
-/** Đồ nghề của bot xã giao — ghế và bình nước trà mua SỚM, vì không có chúng thì act không chạy. */
+/** Ghế và bình trà mua sớm vì thiếu chúng thì act xã giao không chạy. */
 export const BUILD_XA_GIAO: [number, EquipId][] = [
   [1, "GHE_BAN"], [1, "BINH_TRA"], [2, "DU_CHE"], [3, "KEP_GAP"], [5, "QUAT_DIEN"], [8, "LONG_BAN"],
 ];
 
-/** Bot "lo cái quầy": kẹp gắp → giữ đồ → nới chỗ. */
 export const BUILD_VE_SINH: [number, EquipId][] = [
   [2, "KEP_GAP"], [6, "LONG_BAN"], [8, "NOI_U"], [14, "BANG_QR"],
   [19, "GIA_TREO"], [22, "TU_MAT"], [29, "GHE_BAN"], [33, "BINH_TRA"],
@@ -65,11 +45,6 @@ export const POLICIES: Record<string, Policy> = {
   greedy: { name: "greedy", workSec: [7, 10], dropRate: 0, defectRate: 0, teaRate: 0, build: BUILD_VE_SINH, buyLoaves: 20 },
   newbie: { name: "newbie", workSec: [12, 20], dropRate: 0.08, defectRate: 0.15, teaRate: 0.1 },
   tea: { name: "tea", workSec: [9, 13], dropRate: 0.04, defectRate: 0.05, teaRate: 0.6 },
-  /**
-   * BOT XÃ GIAO — bán chậm hơn `greedy` một chút và dành thì giờ cho người, đúng kiểu
-   * người chơi mà cả hệ thoại này viết cho. Mua sẵn ghế + bình trà + dù từ sớm, nếu không
-   * thì mấy act cần đồ nghề (`THEY_SIT`, `OFFER_TEA`) không có cửa chạy.
-   */
   social: {
     name: "social", workSec: [9, 13], dropRate: 0, defectRate: 0, teaRate: 0.25,
     build: BUILD_XA_GIAO, buyLoaves: 20,
@@ -79,13 +54,13 @@ export const POLICIES: Record<string, Policy> = {
 
 const WRAP_BEFORE_SERVE = 3;
 
-/** Trần nhịp một cuộc của bot xã giao — cây sâu nhất là `MAX_DEPTH`, thêm một nhịp cho chắc. */
+/** `MAX_DEPTH` + 1. */
 const SOCIAL_MAX_BEATS = 7;
 
-/** Bao nhiêu phần số lần mở lời là BƯỚC RA ĐƯỜNG mời người đi ngang, phần còn lại nói với khách ở quầy. */
+/** Phần số lần mở lời là ra đường mời người đi ngang. */
 const SOCIAL_STREET = 0.45;
 
-/** Còn bao nhiêu phần chặng làm thì coi như ổ ĐÃ CÓ NHÂN trên tay — xem khối ở `act()`. */
+/** Còn chừng này phần chặng làm thì coi như ổ đã có nhân. */
 const HAND_FILLED_FROM = 0.4;
 
 export type Inject = (t: number, h: HeadlessStall) => void;
@@ -122,9 +97,7 @@ export class HeadlessStall {
       bus.emit("day:started", { dayIndex: w.progress.dayIndex, daySeed: this.ctx.rng.daySeed, weather: w.progress.weather });
     }
     this.ctx.setScene("Stall");
-    // Cùng một nước đi với `StallScene.create`: đạo cụ chưa mua thì không chặn chân ai. Quên dòng
-    // này là bản chạy không-render đi một bản đồ KHÁC bản đồ người chơi đi, mà cả công cụ này
-    // dựng lên để đo cái người chơi gặp.
+    // Như `StallScene.create`, để bản đồ giống bản người chơi đi.
     setOpenTiles(openTilesFor((id) => has(w.equipment, id as EquipId)));
     this.pressure = opts.pressure ?? true;
     this.ctx.clock.scaleMul = this.pressure ? 1 : 0.5;
@@ -154,18 +127,7 @@ export class HeadlessStall {
     this.bus.emit("stim:emitted", { stimId: id, zone, salience: SALIENCE[id], at: this.elapsed });
   }
 
-  /**
-   * NÓI CHUYỆN NHƯ MỘT NGƯỜI CHƠI — mở lời, rồi đi theo nhánh NÀO CÓ ACT.
-   *
-   * Đi qua đúng hai hàm `StallScene` gọi (`openTalk` → `chooseTalk`), không có đường tắt
-   * nào: một con bot gọi thẳng `service.serveTea()` thì nó đo cái hàm, không đo cái game.
-   *
-   * Cách chọn, theo thứ tự:
-   *   1. nút CÓ act mình đang cần          — việc chính
-   *   2. nút có act đó ở trong NHÁNH con   — đi xuống để tới được nó
-   *   3. nút có act bất kỳ                 — còn hơn một câu nói suông
-   *   4. nút đầu                           — cho cuộc trôi tới nhịp sau
-   */
+  /** Đi qua `openTalk` → `chooseTalk` như người chơi, không gọi tắt hàm act. */
   private socialise() {
     const p = this.policy;
     const s = this.service;
@@ -173,17 +135,7 @@ export class HeadlessStall {
 
     if (!s.talkOpen) {
       if (this.bot.next() >= p.socialRate) return;
-      /*
-       * BƯỚC RA ĐƯỜNG. `talkTarget()` không có `playerAt` thì chỉ nhắm được người ĐẦU QUẦY; đặt
-       * `playerAt` đúng như `StallScene` làm khi người chơi đi ra lề: cùng một đường, không có cửa sau.
-       */
-      /** ⚠️ KHÔNG lọc `phase !== "leaving"`: người đi ngang MANG phase đó suốt — họ đang đi qua mà. */
-      /*
-       * CÓ NGƯỜI VỪA MỞ LỜI THÌ TRẢ LỜI HỌ TRƯỚC: phần lớn cuộc khai `NPC_ONLY`, chỉ tới qua lời
-       * mời của chính NPC — mở bằng `"PLAYER"` thì `okSource` gạt sạch.
-       *
-       * `playerAt = null` ⇒ `talkTarget()` nhắm người đang chờ mình trả lời.
-       */
+      // Trả lời NPC vừa mời trước: phần lớn cuộc là `NPC_ONLY`; `playerAt = null` để nhắm người đó.
       if (s.hasOffer) {
         s.playerAt = null;
         s.playerOnStreet = false;
@@ -192,6 +144,7 @@ export class HeadlessStall {
         this.hunt++;
         return;
       }
+      // Không lọc `phase !== "leaving"`: người đi ngang mang phase đó suốt.
       const duong = s.customers.filter((c) => c.ambient && c.pass);
       if (duong.length && this.bot.next() < SOCIAL_STREET) {
         const ai = duong[this.bot.int(0, duong.length)];
@@ -203,21 +156,20 @@ export class HeadlessStall {
       }
       if (!s.openTalk()) return;
       this.talkBeats = 0;
-      this.hunt++;                                  // cuộc mới ⇒ săn act kế tiếp trong danh sách
+      this.hunt++;
       return;
     }
 
-    /** Trần nhịp: cuộc nào cũng có đường ra, nhưng bot bấm hoài thì một cuộc ăn cả buổi. */
     if (this.talkBeats >= SOCIAL_MAX_BEATS) { s.closeTalk(); return; }
     this.talkBeats++;
 
     const acts = s.optionActs();
     if (!acts.length) { s.closeTalk(); return; }
-    /** Xoay vòng: mỗi cuộc săn MỘT act, nên act hiếm cũng tới lượt. Rỗng = nhận mọi act. */
     const pool = p.socialActs ?? [];
     const muon = pool.length > 1 ? [pool[this.hunt % pool.length]] : pool;
     const hop = (xs: readonly string[]) => (muon.length ? xs.some((a) => muon.includes(a)) : xs.length > 0);
 
+    // Ưu tiên: nút có act cần → nhánh con có act đó → act bất kỳ → nút đầu.
     let i = acts.findIndex((o) => o.kind && hop([o.kind]));
     if (i < 0) i = acts.findIndex((o) => hop(o.sau));
     if (i < 0) i = acts.findIndex((o) => o.kind !== null);
@@ -232,12 +184,7 @@ export class HeadlessStall {
     this.socialise();
     const c = s.front;
     if (!c || c.phase !== "waiting" || !c.order) { this.work = null; this.service.playerHand = "empty"; return; }
-    // Lượt mà khách đã LẮC ĐẦU một lần thì bỏ luôn, đừng lấy ổ bánh khác ra làm lại.
-    // Chỗ này xảy ra khi kho hết nhân: ổ nào gói ra cũng là ổ chưa có nhân, mà 7 trong
-    // 12 người không nhận (`service.takesHollowLoaf`). Con bot không có nước đi nào khác
-    // — nó không "xin lỗi chú, hết pate rồi" được — nên nếu cứ làm lại thì nó đốt sạch
-    // kệ bánh vào một người không bao giờ nhận, và `npm run sim` đọc ra một ngày sai hẳn.
-    // Người đó đứng hết kiên nhẫn rồi về: ĐÚNG hình dạng của chuyện hết hàng giữa buổi.
+    // Khách đã từ chối thì thôi, làm lại là đốt sạch kệ bánh khi kho hết nhân.
     if (this.refused.has(c.id)) { this.work = null; return; }
     const p = this.policy;
     const inv = this.ctx.world.inventory, day = this.ctx.world.progress.dayIndex;
@@ -251,13 +198,7 @@ export class HeadlessStall {
       this.work = { left: this.bot.range(p.workSec[0], p.workSec[1]), forVisit: c.id, dropped: false, dish, wrapped: false };
     }
     const w = this.work;
-    /*
-     * TRÊN TAY ĐANG CÓ CÁI GÌ. `StallScene` gán `service.playerHand = player.hand` mỗi frame; bot
-     * khai đúng ổ nó đang làm, nếu không `p.holdsBread` / `p.holdsFilled` không bao giờ đúng.
-     *
-     * ⚠️ Mốc "đã có nhân" KHÔNG phải `w.wrapped` (chỉ bật ở 3 giây chót): người chơi thật bỏ nhân
-     * xong là cầm ổ ĐẦY đi ra quầy một quãng dài — lấy 40% chặng cuối làm quãng đó.
-     */
+    // Mốc "đã có nhân" không phải `w.wrapped` (chỉ 3 s chót) vì người thật cầm ổ đầy đi một quãng dài.
     const tongCong = p.workSec[1];
     this.service.playerHand = w.left <= tongCong * HAND_FILLED_FROM ? "loaf_filled" : "loaf_hot";
     w.left -= dt;
@@ -266,8 +207,7 @@ export class HeadlessStall {
       this.emit("DROPPED_FOOD", "HANDS");
       w.left += 4;
     }
-    // "Gói lại" ~3 s trước khi đưa, như người thật đi từ thớt ra quầy — lỗi trong ổ phát
-    // lúc gói (giống StallScene.finishDish), mỗi lỗi một khoá riêng của ổ này + người này.
+    // Lỗi trong ổ phát lúc gói, như `StallScene.finishDish`.
     if (!w.wrapped && w.left <= WRAP_BEFORE_SERVE) {
       w.wrapped = true;
       for (const d of diffDish(c.order, w.dish)) {
@@ -300,8 +240,6 @@ export class HeadlessStall {
         if (ev.item === "talk") w.econ.today.talk += ev.amount; else w.econ.today.fixed += ev.amount;
         continue;
       }
-      // bot không trò chuyện — nó không có mắt để đọc bốn lựa chọn, và không có tay
-      // để đưa ai miếng bánh (`takeHand` chỉ có nghĩa với một người chơi thật).
       if (ev.kind === "talkOffer" || ev.kind === "takeHand") continue;
       w.money.cash += ev.amount;
       w.progress.today.revenue += ev.amount;

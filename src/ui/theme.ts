@@ -2,16 +2,11 @@ import Phaser from "phaser";
 import { loadSettings } from "../core/save";
 import { sfx } from "../audio/sfx";
 
-/**
- * Bộ UI tối thiểu dùng chung cho menu + HUD.
- * CANON §15: font sans, line-height rộng (tiếng Việt chồng dấu: ề ộ ỡ ữ),
- * KHÔNG viết hoa toàn bộ, hộp thoại nền ĐỤC (không trong suốt).
- */
 export const FONT = '"Be Vietnam Pro", ui-sans-serif, "Segoe UI", system-ui, sans-serif';
 
 export const UI = {
   ink: "#222a31",
-  inkNum: 0x222a31,      // cùng màu với `ink`, dùng cho Graphics (cần số, không nhận chuỗi)
+  inkNum: 0x222a31,
   paper: 0xf3f0e7,
   paperCss: "#f3f0e7",
   muted: "#6a7680",
@@ -22,22 +17,17 @@ export const UI = {
   goodCss: "#3f7d5a",
 } as const;
 
-/**
- * Xếp từ trên xuống theo CHIỀU CAO ĐO ĐƯỢC của từng thứ — không đặt toạ độ cố định.
- * Toạ độ cố định chỉ đúng ở cỡ chữ 100%; ở 150–200% chữ tự chồng lên nhau (CANON §15.1:
- * hộp phải TỰ GIÃN theo chữ).
- */
+/** Xếp theo chiều cao đo được, không toạ độ cố định, để chữ 150–200% không chồng nhau. */
 export class Stack {
   y: number;
   constructor(top: number, private gap = 12) { this.y = top; }
-  /** Đặt một object có origin (0.5, 0.5) ngay dưới thứ trước đó. */
+  /** Object có origin (0.5, 0.5). */
   place<T extends Phaser.GameObjects.Components.Transform & { height: number; displayHeight?: number }>(o: T, gap = this.gap): T {
     const h = (o as any).displayHeight ?? o.height;
     o.setY(this.y + h / 2);
     this.y += h + gap;
     return o;
   }
-  /** Chừa một khoảng cho nút (nút là Container, chiều cao = `buttonHeight()`). */
   button<T extends Phaser.GameObjects.Components.Transform>(o: T, gap = this.gap): T {
     const h = buttonHeight();
     o.setY(this.y + h / 2);
@@ -47,12 +37,10 @@ export class Stack {
   skip(dy: number) { this.y += dy; }
 }
 
-/** Chiều cao nút theo cỡ chữ — mọi layout xếp nút theo đúng con số này, không đoán. */
 export function buttonHeight(maxScale = 1.5) {
   return Math.round(46 * Math.min(textScale(), maxScale));
 }
 
-/** Cỡ chữ người chơi chọn ở Cài đặt (CANON §15.1: 4 mức). */
 export function textScale() {
   return loadSettings().textScale;
 }
@@ -70,7 +58,6 @@ export function label(
   }).setOrigin(0.5);
 }
 
-/** Hộp nền đục bo góc. Dùng Graphics chứ không dùng ảnh 9-slice để còn đổi size thoải mái. */
 export function panel(
   scene: Phaser.Scene, x: number, y: number, w: number, h: number,
   fill: number = UI.paper, alpha = 1,
@@ -90,18 +77,10 @@ export type ButtonOpts = {
   primary?: boolean;
   disabled?: boolean;
   hint?: string;
-  /**
-   * Trần phóng chữ của nút (mặc định 1,5 — bằng trần chiều cao nút). Chữ và hộp phải cùng
-   * một trần, không thì ở 200% chữ tràn khỏi nút và đè lên dòng gợi ý. Nút nằm trong một
-   * khung cố định (bảng kẹp nhân) được chặn thấp hơn.
-   */
+  /** Trần phóng chữ, dùng chung cho chữ và hộp để chữ không tràn khỏi nút. */
   maxScale?: number;
 };
 
-/**
- * Nút: container gồm nền + chữ. Có trạng thái hover/disabled rõ ràng —
- * phản hồi điều khiển quan trọng hơn trang trí.
- */
 export function button(
   scene: Phaser.Scene, x: number, y: number, text: string,
   onClick: () => void, opts: ButtonOpts = {},
@@ -137,12 +116,9 @@ export function button(
   c.setAlpha(opts.disabled ? 0.55 : 1);
 
   if (!opts.disabled) {
-    // Container: Phaser cộng displayOrigin (w/2, h/2) vào toạ độ local trước khi
-    // gọi Contains, nên hit area phải tính từ (0,0) — để (-w/2,-h/2) thì vùng bấm
-    // lệch đúng nửa nút sang trái/lên trên.
+    // Phaser cộng displayOrigin vào toạ độ local của Container nên hit area tính từ (0,0).
     c.setInteractive(new Phaser.Geom.Rectangle(0, 0, w, h), Phaser.Geom.Rectangle.Contains);
-    // Chỉ bấm khi nhấn XUỐNG và nhả RA trên cùng nút này. Không thì một cú kéo–thả nhả tay
-    // trúng nút (vd. thả miếng nhân lên nút preset) sẽ bấm luôn nút đó.
+    // Đòi nhấn xuống trên chính nút, để kéo–thả nhả tay trúng nút không bấm nhầm.
     let pressed = false;
     c.on("pointerover", () => { paint(true); scene.input.setDefaultCursor("pointer"); });
     c.on("pointerout", () => { pressed = false; paint(false); scene.input.setDefaultCursor("default"); });
@@ -151,9 +127,6 @@ export function button(
       scene.input.setDefaultCursor("default");
       if (!pressed) return;
       pressed = false;
-      // Click gắn ở ĐÂY chứ không ở từng chỗ gọi: mọi nút trong game đều đi qua hàm
-      // này, nên gắn một lần là không bao giờ có cái nút nào bấm mà im. Âm báo nằm ở
-      // bus `amBao`, có công tắc riêng — ai không muốn nghe thì kéo kênh đó về 0.
       sfx.play(scene, "ui_click");
       onClick();
     });
@@ -161,13 +134,7 @@ export function button(
   return c;
 }
 
-/**
- * Nút gạt cho Cài đặt: bấm -> đổi state -> tự cập nhật nhãn.
- *
- * `onClick` được phép dựng lại cả trang (đổi cỡ chữ thì bắt buộc phải thế), và khi đó
- * chính cái nút này đã bị huỷ — nên phải kiểm tra trước khi đụng vào nhãn,
- * không thì Phaser ném lỗi "drawImage of null" trên Text đã destroy.
- */
+/** `onClick` có thể dựng lại cả trang và huỷ nút này, nên kiểm `txt.scene` trước khi đổi nhãn. */
 export function toggle(
   scene: Phaser.Scene, x: number, y: number, text: string,
   get: () => string, onClick: () => void, width = 300, hint?: string,

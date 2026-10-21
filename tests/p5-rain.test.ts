@@ -1,19 +1,3 @@
-/**
- * TRỜI MƯA — phần ĐÚNG của cơn mưa (`world/rain.ts`). Phần ĐẸP (`ui/stall/Rain.ts`)
- * không test được bằng Node, nên mọi con số mà sai thì nhìn ra ngay đều phải bị kẹp
- * ở đây.
- *
- * Ba hợp đồng, và cái thứ ba là cái dễ mất nhất:
- *
- *  1. MÁI HIÊN — mưa chỉ rơi từ hàng `SKY_FROM_Y` trở ra. Trong quán có mái: nắng
- *     không rọi tới (`isSunlit`) thì mưa cũng không tạt tới. MỘT con số cho cả hai.
- *  2. CHẠM ĐẤT — giọt rơi đúng quãng của hàng nó nhắm, không hơn không kém. Sai là
- *     vòng nước bắn nở ra giữa không trung hoặc chìm dưới mặt đường.
- *  3. GIÓ — thả lệch sang bên đúng bằng quãng gió sẽ thổi nó đi, nên gió to cỡ nào
- *     thì giọt vẫn rơi trúng chỗ đã định. Vế này là vế duy nhất có nghiệm đóng, và
- *     cũng là vế duy nhất không ai phát hiện được bằng mắt nếu nó lệch vài pixel —
- *     mưa trông vẫn như mưa, chỉ là vòng nước nở lệch khỏi chỗ giọt chạm.
- */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { TH, TW, toScreen } from "../src/world/iso";
@@ -28,8 +12,6 @@ import { PAL } from "../src/art/palette";
 const ALL: Weather[] = ["NANG_GAT", "MAT", "AM_U", "MUA_RAO", "MUA_DAM", "OI"];
 const RAINY: Weather[] = ["MUA_RAO", "MUA_DAM"];
 
-// ───────────────────────────────────────────────────────────── 1 · mái hiên
-
 test("mưa và nắng dùng CHUNG một mép mái — chỗ nào nắng không rọi tới thì mưa không tạt tới", () => {
   for (let ty = 0; ty < WORLD_H; ty++) {
     for (let tx = 0; tx < WORLD_W; tx++) {
@@ -43,8 +25,6 @@ test("mưa và nắng dùng CHUNG một mép mái — chỗ nào nắng không r
 });
 
 test("đường mép mái chạy ĐÚNG theo hàng ngoài cùng của mái, suy từ phép chiếu", () => {
-  // Lấy mấy điểm thật trên hàng `SKY_FROM_Y` rồi hỏi ngược: đường mép mái ở cột đó
-  // nằm ở đâu? Phải trùng khít — nếu không thì mưa bắt đầu rơi lệch khỏi mái.
   for (const wx of [3, 7.5, 12, 20, 25]) {
     const { sx, sy } = toScreen(wx, SKY_FROM_Y);
     assert.ok(Math.abs(eaveCenterY(sx) - sy) < 1e-9, `cột x=${wx} lệch khỏi hàng mép mái`);
@@ -52,13 +32,8 @@ test("đường mép mái chạy ĐÚNG theo hàng ngoài cùng của mái, suy 
 });
 
 test("mép mái dốc đúng dốc của lưới iso — không phải một đường ngang", () => {
-  // Dốc phải là TH/TW (= 0,5): sang phải 2 px thì xuống 1 px. Một đường NGANG ở đây
-  // nghĩa là mưa bắt đầu ở cùng một độ cao khắp màn hình, tức là cái mái nằm ngang
-  // trong một thế giới vẽ nghiêng.
   assert.equal(eaveCenterY(2 * TW) - eaveCenterY(0), 2 * TH);
 });
-
-// ──────────────────────────────────────────────────────────── 2 · chạm đất
 
 test("giọt rơi trúng ngay mép hiên thì rơi đúng chiều cao mái, không hơn", () => {
   assert.equal(fallPx(SKY_FROM_Y), ROOF_PX);
@@ -77,8 +52,6 @@ test("`rowAtFall` là nghịch đảo thật của `fallPx` — đi và về kh�
 });
 
 test("hàng khách đứng chờ CÓ mưa rơi tới, và vệt đủ dài để đọc ra là mưa", () => {
-  // y7,6 là chỗ người đứng đầu hàng (QUEUE_SLOTS). Nếu quãng rơi ở đó quá ngắn thì
-  // đúng chỗ người chơi nhìn nhiều nhất lại là chỗ mưa trông như mấy cái gạch nhấp nháy.
   const d = fallPx(7.6);
   assert.ok(d >= 90, `giọt rơi xuống hàng khách chỉ đi được ${d} px`);
 });
@@ -88,9 +61,6 @@ test("mặt tiền quán — chỗ mái nhỏ nước — suy từ dãy ô quầ
   assert.ok(SHOPFRONT_X.lo >= 1 && SHOPFRONT_X.hi <= WORLD_W, "mặt tiền tràn ra ngoài bản đồ");
 });
 
-// ───────────────────────────────────────────────────────────────── 3 · gió
-
-/** Mô phỏng lại đúng việc hạt làm: thả ở `spawnSx` trên mép mái rồi để gió kéo đi. */
 function landing(tx: number, ty: number, lean: number, eaveC: number) {
   const sx = spawnSx(tx, ty, lean, eaveC);
   const sy = sx * (TH / TW) + eaveC;
@@ -98,7 +68,7 @@ function landing(tx: number, ty: number, lean: number, eaveC: number) {
 }
 
 test("gió nghiêng cỡ nào thì giọt vẫn rơi TRÚNG chỗ đã định", () => {
-  const eaveC = SKY_FROM_Y * TH + TH / 2 + 6 - ROOF_PX;   // hằng số thật của cảnh quán
+  const eaveC = SKY_FROM_Y * TH + TH / 2 + 6 - ROOF_PX;
   for (const deg of [-12, -7, 0, 3, 7, 12]) {
     const lean = Math.tan((deg * Math.PI) / 180);
     for (const [tx, ty] of [[0, 300], [-240, 180], [600, 640], [120, 250]]) {
@@ -124,8 +94,6 @@ test("gió thổi sang phải thì thả lệch sang TRÁI — không bao giờ 
   assert.ok(gio < thang, "gió tạt mà chỗ thả lại chạy theo chiều gió — vệt mưa sẽ đi ngược chiều");
 });
 
-// ───────────────────────────────────────────────────── mật độ & lớp phủ
-
 test("chỉ hai kiểu trời có mưa; bốn kiểu còn lại KHÔNG dựng lớp mưa nào", () => {
   for (const w of ALL) {
     const on = RAINY.includes(w);
@@ -148,8 +116,6 @@ test("P5-01 §2.3 mục 10 — giảm chuyển động: 25% mật độ, BỎ LA
     assert.ok(Math.abs(less.drips - full.drips * REDUCED_MUL) < 1e-9, `${w}: giọt mái không giảm theo`);
     assert.equal(less.gustDeg, 0, `${w}: còn lay gió`);
     assert.equal(less.windDeg, full.windDeg, `${w}: bỏ luôn cả độ nghiêng, không chỉ bỏ lay`);
-    // Mục 10 nói GIẢM, không nói XOÁ (khác hẳn mục 3 "lá bay / bụi" là xoá hẳn):
-    // mưa là một sự kiện của thế giới, xoá sạch là người bật trợ năng mất một tin.
     assert.ok(less.drops > 0, `${w}: giảm chuyển động mà tắt hẳn mưa`);
   }
 });
@@ -175,23 +141,11 @@ test("giảm chuyển động thì gió ĐỨNG YÊN hẳn — không còn một
 test("lớp phủ chỉ HẠ TÔNG, không bôi đen: thấy là trời mưa, không phải trời tối", () => {
   for (const w of RAINY) {
     const a = rainGrade(w)!;
-    /*
-     * `alpha` = phần sáng bị tấm phủ ăn mất. Bản cũ theo spec hai lớp của P5-02 §2.1.5 ăn gần một
-     * nửa và trên khung hình thật đọc ra là "tối thui" — xem ghi chú ở `world/rain.rainGrade`.
-     * Mưa nói bằng HẠT và NỀN ƯỚT; tấm phủ chỉ hạ tông chừng 10%.
-     *
-     * Dưới 0,05 là không còn đổi gì (bỏ hẳn tấm phủ cho rồi); trên 0,15 là bò trở lại chỗ cũ —
-     * mà từ khi bỏ đèn trong quán thì không còn gì kéo khu làm việc sáng lại nữa.
-     */
     assert.ok(a >= 0.05 && a <= 0.15, `${w}: lớp phủ alpha ${a} ngoài khoảng cho phép`);
   }
 });
 
 test("hạ tông 10% thì mặt người VẪN đọc được — mức xám còn lại không tụt quá một bậc", () => {
-  /*
-   * Kiểm cái mà alpha chỉ nói gián tiếp: một mảng sáng (mặt người, ổ bánh, áo trắng) sau khi
-   * qua tấm phủ còn lại bao nhiêu. `d ↦ d·(1−a) + grade·a`.
-   */
   const rgb = (hex: number) => [(hex >> 16) / 255, ((hex >> 8) & 255) / 255, (hex & 255) / 255];
   for (const w of RAINY) {
     const a = rainGrade(w)!;

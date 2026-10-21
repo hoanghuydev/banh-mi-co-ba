@@ -1,4 +1,3 @@
-/** Act `RAO` kéo người đi ngang ngoái lại (`t.glanced` ⇒ `inviteChance` +0,24), nhưng không tự biến ai thành khách. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Bus } from "../src/core/eventbus";
@@ -53,7 +52,6 @@ test("R-3 câu rao mang act RAO và ĐẶT CỜ bà đã dạy", () => {
       const n = node as TalkNode;
       if ((n.act as { kind?: string } | undefined)?.kind !== "RAO") continue;
       co++;
-      // Ghim đúng tên cờ có sẵn mà `chu-kiet.json` đọc, không chỉ kiểm "có cờ nào đó".
       assert.equal(n.flag, "sauRaoThu",
         `${t.id}: "${n.say}" — rao mà không đặt cờ, nhánh chú Kiệt không bao giờ mở ra`);
     }

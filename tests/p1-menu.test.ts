@@ -1,10 +1,3 @@
-/**
- * BẢNG MENU TREO VÁCH — P1-03 (đơn hàng) + P3-01 (giá).
- *
- * Cái bảng này tồn tại để làm MỘT việc: trả lời "ổ xíu mại có gì" ở đúng một chỗ. Nên
- * mọi test dưới đây đều là một dạng của cùng câu hỏi — tấm bảng người chơi đọc, tấm bảng
- * `diffDish` chấm điểm, và bảng giá `econ.json` có còn là một hay không.
- */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Rng } from "../src/core/rng";
@@ -41,9 +34,6 @@ test("làm đúng công thức trên bảng là 0 lỗi — với MỌI món, m�
   }
 });
 
-/**
- * Ổ xíu mại cũng có pate: người chơi quết pate theo phản xạ đời thật thì không được bị `UNWANTED`.
- */
 test("ổ nào cũng quết pate trước — trừ bánh mì không", () => {
   for (const mon of MENU_IDS) {
     const lv = levelsOf({ mon, rau: "day-du", ot: 1, tuong: 1 });
@@ -112,10 +102,6 @@ test("đơn nặng nhất gọi được vẫn kẹp lọt một ổ (CAPACITY) 
   assert.ok(CAPACITY - nang >= 2, "phải còn chỗ cho ít nhất hai phần cho thêm (CANON §3.2 FREE_EXTRA)");
 });
 
-/**
- * Tấm bảng DẠY một mớ từ vựng ("cho ít rau", "không hành", "nhiều ớt"…). Dạy xong mà game
- * không nói được câu đó là dạy sai — đúng thứ người chơi sẽ trách game chứ không trách mình.
- */
 test("từ vựng bảng dạy là từ vựng game nói: mỗi câu dặn đều ra được từ `sayOrder`", () => {
   const noi = (mon: "thit", over: Partial<Parameters<typeof specOf>[0]>) =>
     sayOrder(specOf({ mon, rau: "day-du", ot: 1, tuong: 1, ...over }));
@@ -127,7 +113,6 @@ test("từ vựng bảng dạy là từ vựng game nói: mỗi câu dặn đề
   assert.ok(noi("thit", { tuong: 0 }).includes("không tương"));
   assert.ok(noi("thit", { tuong: 2 }).includes("nhiều tương"));
   assert.ok(noi("thit", { nhieu: "thit" }).includes("cho nhiều thịt nguội"));
-  // và không câu nào trên bảng bị bỏ trống
   for (const t of MENU_TIPS) assert.ok(t.say.trim() && t.means.trim(), t.say);
 });
 
@@ -135,10 +120,6 @@ test("chỗ đứng đọc bảng nằm ngoài tầm với của mọi trạm �
   assert.doesNotThrow(() => assertMenuSpotFree());
 });
 
-/**
- * `onBoard: false` là cờ HIỂN THỊ, không phải cờ tồn tại: gỡ một món khỏi `menu.json` thì
- * `itemOf()` trả `undefined` và đơn viết tay gọi món đó (bé Su, bà Sáu) vỡ. Giấu thì được, xoá thì không.
- */
 test("món ẩn khỏi bảng vẫn gọi được, vẫn có giá, vẫn chấm điểm đúng", () => {
   const an = MENU_ITEMS.filter((i) => i.onBoard === false);
   assert.ok(an.length >= 1, "ít nhất 'bánh mì không' phải là món ẩn");

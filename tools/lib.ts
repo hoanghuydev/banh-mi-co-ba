@@ -1,4 +1,3 @@
-/** Tiện ích chung cho các công cụ Node trong `tools/` — không dùng ở runtime game. */
 import { readdirSync, readFileSync, statSync, existsSync } from "node:fs";
 import { join, relative } from "node:path";
 

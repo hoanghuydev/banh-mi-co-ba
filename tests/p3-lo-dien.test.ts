@@ -1,20 +1,3 @@
-/**
- * LÒ ĐIỆN — ĐI HẾT ĐƯỜNG CỦA NGƯỜI CHƠI, TỪ CÚ BẤM "MUA" TỚI MIẾNG BÁNH TRÊN TAY KHÁCH.
- *
- * Vì sao lưới này sinh ra: chủ dự án hỏi *"mua cái lò ga khả năng cháy tăng lên hả? tôi tưởng
- * phải thấp khả năng cháy và tăng khả năng chín tốt hơn chứ nhỉ"* — và đo ra thì đúng là game
- * làm ngược: dải GIÒN co lại 26%, dải SÉM nở ra. Món đắt nhất trong game (1.800 nghìn) bán một
- * lời hứa ngược với cái nó làm.
- *
- * Nó lọt được vì KHÔNG CÓ AI CANH. Ba con số của lò điện nằm thẳng trong `StallScene.create()`,
- * mà test không dựng nổi Phaser; còn `HeadlessStall` thì không mô phỏng cái lò một dòng nào. Cây
- * nâng cấp đắt nhất chạy mù suốt. Nên trước khi sửa số, phải kéo số ra chỗ với tới được
- * (`sim/oven.ts` → `ovenFor`), rồi mới dựng lưới này.
- *
- * Lưới đi đúng thứ tự người chơi đi, và CHỖ CUỐI mới là chỗ quan trọng: không dừng ở "cái lò
- * chạy đúng hệ số", mà đi tới "khách cắn vào ổ đó thì nói gì". Ổ crust 1,0 ra từ lò điện phải là
- * một ổ NGON — trước khi sửa nó bị chấm là "cháy cạnh", và đó mới là thứ người chơi thấy.
- */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { newGame } from "../src/core/save";
@@ -24,7 +7,6 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ROOT } from "../tools/lib";
 
-/** Nướng một ổ từ đầu, trả về mấy mốc TÍNH BẰNG GIÂY — đơn vị người chơi thật sự cảm. */
 function nuong(o: Oven) {
   o.put(1);
   let t = 0, gion = -1, sem = -1;
@@ -41,8 +23,6 @@ function nuong(o: Oven) {
 const than = () => nuong(ovenFor(false));
 const gas = () => nuong(ovenFor(true));
 
-// ─────────────────────────────────────────────────────────── 1. mua
-
 test("LG-1 người chơi mua được lò điện, và cái lò sáng mai dựng lên LÀ lò điện", () => {
   const w = newGame("gas", "gas");
   assert.ok(!has(w.equipment, "LO_DIEN") && has(w.equipment, "LO_THAN"), "ván mới đã có sẵn lò điện");
@@ -52,7 +32,6 @@ test("LG-1 người chơi mua được lò điện, và cái lò sáng mai dựn
   assert.ok(buyEquip("LO_DIEN", w.equipment, w.money), "bấm mua mà không mua được");
   assert.ok(has(w.equipment, "LO_DIEN") && !has(w.equipment, "LO_THAN"), "lò than chưa được thay");
 
-  // Đây là đúng dòng `StallScene.create()` chạy mỗi sáng.
   const o = ovenFor(has(w.equipment, "LO_DIEN"));
   assert.equal(o.rateMul, OVEN_DIEN.rateMul);
   assert.equal(o.singeAt, OVEN_DIEN.singeAt);
@@ -67,12 +46,9 @@ test("LG-2 `StallScene` KHÔNG tự chế lại ba con số đó — nó phải 
   assert.ok(!/oven\.burnAt\s*=/.test(src), "scene còn gán `burnAt` thẳng");
 });
 
-// ─────────────────────────────────────────── 2. ba lời hứa trên thẻ, đo bằng GIÂY
-
 test("LG-3 nướng nhanh hơn — và 'nhanh hơn' đo bằng giây, không bằng hệ số", () => {
   const a = than().toiGion, b = gas().toiGion;
-  // ⚠️ `rateMul` 1,35 KHÔNG phải "nhanh hơn 35%": tốc độ ×1,35 là thời gian ÷1,35 = −26%.
-  // Thẻ từng ghi 35% đúng vì đọc nhầm chiều. Lưới này khoá cái chiều đó lại.
+  // Tốc độ ×1,35 là thời gian ÷1,35 = −26%, không phải nhanh hơn 35%.
   assert.ok(b < a, `lò điện nướng CHẬM hơn (${a.toFixed(1)}s → ${b.toFixed(1)}s)`);
   const nhanh = ((a - b) / a) * 100;
   assert.ok(nhanh > 20 && nhanh < 30, `nhanh hơn ${nhanh.toFixed(0)}% — thẻ ghi 25%`);
@@ -92,19 +68,12 @@ test("LG-5 khó cháy hơn: quãng từ giòn tới cháy dài ra", () => {
   assert.ok(rong > 20 && rong < 35, `rộng thêm ${rong.toFixed(0)}% — thẻ ghi 11,6 → 14,7 giây`);
 });
 
-// ───────────────────────────────── 3. chỗ người chơi THẤY: khách cắn vào ổ đó nói gì
-
 test("LG-6 ổ crust 1,0 ra từ lò điện là ổ GIÒN; đúng ổ đó ra từ lò than là ổ SÉM", () => {
-  // 1,0 nằm giữa `CRUST.SINGED` (0,88) và `OVEN_DIEN.singeAt` (1,30) — đúng khúc mà cái lò
-  // quyết định. Trước khi sửa, cả hai lò cùng đọc 0,88 nên ổ này bị chấm "cháy cạnh" dù nướng
-  // bằng cái lò 1.800 nghìn.
   assert.equal(bandOfCrust(1.0, CRUST.BURNT, CRUST.SINGED), "SINGED", "lò than: 1,0 phải là sém");
   assert.equal(bandOfCrust(1.0, OVEN_DIEN.burnAt, OVEN_DIEN.singeAt), "CRISP", "lò điện: 1,0 phải là GIÒN");
 });
 
 test("LG-7 `serveDish` nhận `singeAt` của CHÍNH cái lò — không thì lời khen thành lời chê", async () => {
-  // Đọc thẳng hợp đồng giữa scene và `Service`: ổ đưa cho khách phải mang theo ngưỡng sém của
-  // cái lò đã nướng nó. Thiếu một chữ ở đây là khách chê một ổ bánh ngon, và không gì khác đỏ.
   const scene = readFileSync(join(ROOT, "src/scenes/StallScene.ts"), "utf8");
   assert.match(scene, /burnAt: this\.oven\.burnAt, singeAt: this\.oven\.singeAt/,
     "`serveDish` không nhận `singeAt` — ổ giòn của lò điện sẽ bị chấm là cháy cạnh");
@@ -114,11 +83,7 @@ test("LG-7 `serveDish` nhận `singeAt` của CHÍNH cái lò — không thì l�
 });
 
 test("LG-9 mua lò điện thì ô lò ĐỔI ẢNH — không dán thêm một vật vẽ bằng code cạnh lò than", () => {
-  // Chủ dự án: *"thay lò prop_oven bằng cái lò này… không render cái lò bằng code dạng kia nữa."*
-  // Hai vế, hai lưới.
-  //
-  // ⚠️ Đọc THẲNG MÃ chứ không gọi hàm: `art/` import Phaser (cổng CI cho phép), mà test node
-  // không dựng được `window`. Cùng lối với `tests/p2-vatdungchong.test.ts`.
+  // Đọc mã vì `art/` import Phaser, test node không có `window`.
   const art = readFileSync(join(ROOT, "src/art/index.ts"), "utf8");
   assert.match(art, /case "O": return opts\.eOven \? PROP\.ovenE : PROP\.oven;/,
     "ô `O` không đổi ảnh theo đồ nghề — mua lò xong vẫn thấy đúng cái lò than");
@@ -152,20 +117,6 @@ test("LG-8 lò than KHÔNG đổi một li — lưới này không được âm 
   assert.ok(Math.abs(t.daiGion - 5.9) < 0.3, `dải giòn lò than ${t.daiGion.toFixed(1)}s, trước giờ là 5,9s`);
 });
 
-/**
- * LG-11 — VÒNG ĐỘ GIÒN PHẢI NÓI CÙNG MỘT CHUYỆN VỚI MÀU CỦA NÓ.
- *
- * Chủ dự án, nhìn màn hình sau khi mua lò: *"tôi đang không rõ 3 nấc của cái nướng bánh… thời
- * gian nướng chín bị ít còn thời gian cháy tăng"*. Đọc đúng — cái vòng đang nói dối.
- *
- * `drawOven` khắc hai vạch trắng ở `[CRUST.READY, CRUST.SINGED]` rồi chia cho `burnAt` của lò.
- * Với lò điện (`burnAt` 1,9 · `singeAt` 1,30) vạch thứ hai rơi ở 0,88/1,9 = 46,3% vòng, trong
- * khi MÀU đổi sang nâu ở 1,30/1,9 = 68,4% — lệch 22,1% cả vòng. Nên hơn một phần năm vòng đọc
- * ra là "sắp cháy" trong khi ổ bánh vẫn đang vàng giòn, và cú nâng cấp 1.800 nghìn trông như
- * làm bánh DỄ cháy hơn. Đúng cái chủ dự án thấy.
- *
- * Lưới đọc mã vì `drawOven` cần Phaser; phép tính thì đo thẳng, không qua mã vẽ.
- */
 test("LG-11 vạch chia trên vòng độ giòn đọc `oven.singeAt`, không đọc hằng số dùng chung", () => {
   const src = readFileSync(join(ROOT, "src/scenes/StallScene.ts"), "utf8");
   const ve = src.slice(src.indexOf("private drawOven()"), src.indexOf("private drawChores()"));
@@ -175,18 +126,15 @@ test("LG-11 vạch chia trên vòng độ giòn đọc `oven.singeAt`, không đ
   assert.match(ve, /for \(const n of \[CRUST\.READY, singeAt\]\)/, "vạch thứ hai không bám `oven.singeAt`");
   assert.match(ve, /const burnAt = this\.oven\.burnAt, singeAt = this\.oven\.singeAt;/,
     "`drawOven` không lấy ngưỡng từ chính cái lò đang dùng");
-  // ba cung nền mờ: người chơi phải THẤY khúc vàng nằm ở đâu TRƯỚC khi chạy tới nó
   assert.match(ve, /g\.lineStyle\(4, RAW_COL, 0\.22\)/, "thiếu cung nền nấc NON");
   assert.match(ve, /g\.lineStyle\(4, CRISP_COL, 0\.3\)/, "thiếu cung nền nấc GIÒN");
   assert.match(ve, /g\.lineStyle\(4, SINGE_COL, 0\.3\)/, "thiếu cung nền nấc SÉM");
 
-  // Phép tính: chỗ vạch và chỗ màu đổi phải TRÙNG nhau, với CẢ HAI lò.
   for (const hasDien of [false, true]) {
     const o = ovenFor(hasDien);
-    const vach = o.singeAt / o.burnAt;                   // vạch trắng thứ hai, sau khi sửa
-    const mau = o.singeAt / o.burnAt;                    // chỗ `bandOfCrust` đổi sang SINGED
+    const vach = o.singeAt / o.burnAt;
+    const mau = o.singeAt / o.burnAt;
     assert.equal(vach, mau);
-    // và với lò điện, hằng số cũ RƠI SAI chỗ — giữ con số này để ai đổi `singeAt` thì thấy vì sao
     if (hasDien) {
       const cu = CRUST.SINGED / o.burnAt;
       assert.ok(Math.abs(mau - cu) > 0.15, `hằng số cũ chỉ lệch ${((mau - cu) * 100).toFixed(1)}% — lưới này mất chỗ bám`);

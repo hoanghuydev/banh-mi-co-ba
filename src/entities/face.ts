@@ -2,7 +2,6 @@ import type Phaser from "phaser";
 import type { Face } from "../sim/reaction";
 
 /**
- * Huy hiệu mặt vẽ cạnh đầu khách vì khách đứng quầy quay lưng về camera.
  *   Mày  B0 thường · B1 nhíu nhẹ · B2 nhíu sâu · B3 nhướn · B4 lệch · B5 xuôi (buồn)
  *   Mắt  E0 thường · E1 nheo (soi) · E2 mở to · E3 liếc ngang · E4 nhắm (chịu) · E5 cười
  *   Miệng M0 thường · M1 mím (chữ ký chị Lan) · M2 cười nhẹ · M3 cười tươi · M4 méo · M5 há
@@ -15,7 +14,7 @@ type G = Phaser.GameObjects.Graphics;
 function brow(g: G, x: number, y: number, b: number, color: number) {
   g.lineStyle(2.2, color, 1);
   const L = (x1: number, y1: number, x2: number, y2: number) => g.lineBetween(x + x1, y + y1, x + x2, y + y2);
-  // (trái, phải) — toạ độ trong khung mặt, y âm là lên trên
+  // y âm là lên trên.
   switch (b) {
     case 0: L(-7, -5, -2.5, -5); L(2.5, -5, 7, -5); break;
     case 1: L(-7, -5.6, -2.5, -4.4); L(2.5, -4.4, 7, -5.6); break;
@@ -76,9 +75,8 @@ function mouth(g: G, x: number, y: number, m: number) {
   }
 }
 
-/** `skin`, `hair` là màu riêng của từng người. */
 export function drawFace(g: G, x: number, y: number, f: Face, skin: number, hair: number, alpha = 1) {
-  g.fillStyle(0x1b2429, 0.55 * alpha).fillCircle(x, y + 1.2, FACE_R + 1.6);   // bóng đổ nhẹ
+  g.fillStyle(0x1b2429, 0.55 * alpha).fillCircle(x, y + 1.2, FACE_R + 1.6);
   g.fillStyle(skin, alpha).fillCircle(x, y, FACE_R);
   g.lineStyle(1.6, 0x1b2429, 0.9 * alpha).strokeCircle(x, y, FACE_R);
   brow(g, x, y, f[0], hair);

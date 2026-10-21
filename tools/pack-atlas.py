@@ -1,30 +1,5 @@
 #!/usr/bin/env python3
-"""
-art-raw/render/<nhân vật>/<tư thế>/<hướng>_<frame>.png  ->  public/art/<nhân vật>.png + .json
-
-Xưởng GỘP ẢNH, chạy sau `render-character.py`:
-
-    python3 tools/pack-atlas.py player
-    python3 tools/pack-atlas.py player --height 384     # cỡ cạnh dài mỗi ô
-
-Ra MỘT tấm atlas + MỘT file JSON kiểu Phaser (`load.atlas`). Tên mỗi ô là
-`<tư thế>_<hướng>_<số frame>`, ví dụ `walk_se_03`.
-
-── Vì sao gộp, trong khi ảnh tĩnh để rời vẫn chạy tốt ───────────────────────
-Tám hướng tĩnh thì để rời cũng được — 8 file, không ai chết. Nhưng thêm
-animation vào là 8 hướng × 8 frame = 64 ảnh MỖI tư thế: để rời thì vừa 64 lượt
-tải, vừa không ai mở thư mục ra mà dò nổi. Gộp lại còn một lượt tải.
-
-Lưu ý thứ GỘP KHÔNG giúp: tốc độ VẼ trong game. `photo.ts` không vẽ thẳng từ
-ảnh nguồn — nó sơn lại vào canvas tự sinh rồi mới vẽ từ đó. Nên cái lợi ở đây
-thuần tuý là LÚC TẢI, không phải lúc chạy.
-
-── Khung chung: chỗ duy nhất dễ làm hỏng ────────────────────────────────────
-Mọi ô phải cắt theo ĐÚNG MỘT khung, lấy hợp của mọi frame mọi hướng. Cắt sát
-mép từng ảnh riêng là nhân vật giật tưng tưng mỗi lần đổi hướng hay sang frame:
-tay vung lên ở frame này thì mép alpha cao hơn frame kia, mà game căn theo mép.
-Lấy hợp một lần rồi cắt tất cả bằng nó thì chân luôn nằm đúng một chỗ.
-"""
+"""Gộp art-raw/render/<nhân vật>/<tư thế>/<hướng>_<frame>.png thành atlas Phaser, ô tên `<tư thế>_<hướng>_<frame>`."""
 import argparse
 import json
 import math
@@ -39,7 +14,6 @@ FRAME_RX = re.compile(r"^(?P<dir>[a-z]{1,2})_(?P<idx>\d+)\.png$")
 
 
 def collect(root: Path):
-    """root/<tư thế>/<hướng>_<frame>.png -> [(tên ô, đường dẫn)] theo thứ tự ổn định."""
     out = []
     for pose_dir in sorted(p for p in root.iterdir() if p.is_dir()):
         for f in sorted(pose_dir.iterdir()):
@@ -51,7 +25,7 @@ def collect(root: Path):
 
 
 def union_box(paths):
-    """Hợp của mọi hộp alpha — KHUNG CHUNG cho cả bộ."""
+    """Khung chung cho mọi ô, để chân không giật khi đổi hướng hay frame."""
     box = None
     for p in paths:
         with Image.open(p) as im:
@@ -90,7 +64,6 @@ def main():
     cw, ch = max(1, round(bw * scale)), a.height
     print(f"[atlas] {len(frames)} o | khung chung {bw}x{bh} -> moi o {cw}x{ch}")
 
-    # lưới gần vuông nhất: atlas vuông thì GPU nào cũng nuốt, mà cũng đỡ phí chỗ
     cols = max(1, round(math.sqrt(len(frames) * ch / cw)))
     rows = math.ceil(len(frames) / cols)
     pad = a.pad
@@ -123,17 +96,7 @@ def main():
                   "app": "tools/pack-atlas.py"}},
         indent=1))
 
-    # Bảng neo tay: `render-character.py` xuất một file cho mỗi tư thế bưng. Gộp lại thành
-    # MỘT file nhỏ cạnh atlas — game nạp riêng bằng `load.json`, không nhét vào atlas JSON
-    # vì Phaser nuốt file đó vào texture manager, lấy lại phần phụ chú rất lắt léo.
-    #
-    # `render-character.py` ghi toạ độ bằng PIXEL trên tấm ảnh render. Ở đây quy đổi sang
-    # TỈ LỆ CỦA Ô bằng đúng phép cắt + co đã áp cho ảnh, nên không có chỗ nào đoán lại:
-    #   x : lệch so với TÂM ô, chia cho CHIỀU CAO ô
-    #   y : cao hơn ĐÁY ô bao nhiêu, chia cho chiều cao ô
-    # Chia cả hai cho chiều cao vì bên game nhân lại với `PLAYER_H` — mà `PLAYER_H` chính
-    # là chiều cao ô quy ra px thiết kế. Đáy ô cũng đúng là điểm chạm đất (`standing()` đặt
-    # mép dưới ảnh vào đó).
+    # Neo tay: x lệch tâm ô, y cao hơn đáy ô, cả hai chia chiều cao ô vì game nhân lại với `PLAYER_H`.
     holds: dict[str, dict[str, list[float]]] = {}
     for f in sorted(root.glob("*.anchor.json")):
         raw = json.loads(f.read_text())

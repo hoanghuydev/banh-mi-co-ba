@@ -1,11 +1,4 @@
-/**
- * npm run content:stats — bảng đếm để đối chiếu mốc CANON §11 (P0-03 §2.3c).
- *
- * Mốc (CANON §11, nới ngày 2026-10-02): v1/demo ~5.000 từ · beta ~12.000 · full ~38.000.
- * ĐƠN VỊ CHỐT LÀ TỪ, không phải dòng — số dòng chỉ nói lên người viết ngắt câu thế nào.
- * Firewatch: 8,3 từ/dòng. Nếu ta ra 20 từ/dòng thì ta đang viết VĂN chứ không viết
- * bark, và 4.200 dòng sẽ thành 84.000 từ.
- */
+// Đếm khối lượng thoại; đơn vị chốt là từ, không phải dòng.
 import { join } from "node:path";
 import { ROOT, readJson, walk } from "./lib";
 
@@ -27,9 +20,8 @@ for (const f of walk(join(content, "rules"), [".json"])) {
   if (f.endsWith("_blackboard.json")) continue;
   const data = readJson<any>(f);
   for (const rule of Array.isArray(data) ? data : data.rules ?? [data]) {
-    if (rule.silent || !rule.say?.length) continue;            // im lặng có chủ ý: không phải dòng thoại
+    if (rule.silent || !rule.say?.length) continue;
     const npc: string | null = typeof rule.when?.npcId === "string" ? rule.when.npcId : null;
-    // tier = tên của dải score (P2-01 §2.9): ≥5 → 1 · 3–4 → 2 · ≤2 → 3
     const score = Object.keys(rule.when ?? {}).length;
     rows.push({ where: `rule ${rule.id}`, n: rule.say.length, words: rule.say.reduce((a: number, s: string) => a + words(s), 0),
       tier: score >= 5 ? 1 : score >= 3 ? 2 : 3, npc, generic: !npc });

@@ -1,4 +1,3 @@
-/** Tiền lẻ ở két. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { makeChange } from "../src/sim/till";

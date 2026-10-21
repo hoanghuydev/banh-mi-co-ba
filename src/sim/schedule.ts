@@ -1,12 +1,4 @@
-/**
- * Lịch sinh hoạt NPC — P2-03 §2.9 (phần `base`).
- *
- * Ranh giới CANON §16 Đừng-1: KHÔNG mô phỏng ai đi làm. Mỗi người chỉ là một hàm xác
- * suất xuất hiện tại quầy: thứ nào · mấy giờ · lệch bao nhiêu · khả năng bao nhiêu.
- * Không ai ghé 100% số ngày (trần 0,98) — người chơi phải xây mô hình XÁC SUẤT.
- *
- * Game KHÔNG BAO GIỜ hiện lịch này ra (P2-03 §2.9 bảng ranh giới).
- */
+// Lịch NPC chỉ là xác suất xuất hiện tại quầy, không mô phỏng ai đi làm; game không bao giờ hiện lịch này ra.
 import type { Rng } from "../core/rng";
 
 export type Weekday = "MON" | "TUE" | "WED" | "THU" | "FRI" | "SAT" | "SUN";
@@ -17,10 +9,7 @@ export const WEEKDAY_VI: Record<Weekday, string> = {
 export const WEEKDAYS_WORK: readonly Weekday[] = ["MON", "TUE", "WED", "THU", "FRI"];
 export const EVERY_DAY = WEEKDAYS;
 
-/**
- * Ngày 1 của ván là THỨ HAI — lịch giá chợ, lịch thời tiết và bảng nghĩa vụ của P3 đều
- * đếm theo mốc này (P3-01 §2.4.4).
- */
+/** Ngày 1 của ván là THỨ HAI; giá chợ, thời tiết, nghĩa vụ đều đếm theo mốc này. */
 const DAY1_INDEX = 0;
 export function weekdayOf(day: number): Weekday {
   return WEEKDAYS[(((day - 1 + DAY1_INDEX) % 7) + 7) % 7];
@@ -32,18 +21,16 @@ export type ScheduleRule = {
   arriveMin: number;
   /** ±, phân phối TAM GIÁC quanh `arriveMin`. */
   jitterMin: number;
-  /** 0..0,98. */
   probability: number;
 };
 
 export const PROBABILITY_CAP = 0.98;
 
-/** Một lượt ghé hôm nay theo lịch, hoặc null nếu hôm nay không ghé. Rút từ stream `npc-schedule`. */
 export function rollVisit(rules: readonly ScheduleRule[], day: number, rng: Rng, probMul = 1): number | null {
   const wd = weekdayOf(day);
   let hit: number | null = null;
   for (const r of rules) {
-    // rút đủ 3 số cho MỌI rule dù không dùng — số lần rút không phụ thuộc kết quả (P0-02 §2.3)
+    // Rút đủ 3 số cho MỌI rule để số lần rút không phụ thuộc kết quả.
     const pass = rng.next(), a = rng.next(), b = rng.next();
     if (hit !== null || !r.days.includes(wd)) continue;
     if (pass >= Math.min(PROBABILITY_CAP, r.probability * probMul)) continue;

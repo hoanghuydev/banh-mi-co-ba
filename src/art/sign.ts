@@ -6,27 +6,16 @@ import { WALL_H } from "./building";
 import { FONT } from "../ui/theme";
 import { shopName } from "../content/shop";
 
-/**
- * Bảng hiệu đỏ chữ vàng (CANON §14), gắn trên MẶT VÁCH của tường sau quán.
- *
- * Không phải texture mà là object trong scene, vì nó trải ngang qua nhiều ô tường.
- * Điểm mấu chốt: bảng phải NẰM TRONG mặt phẳng tường, nên
- *  · tấm bảng là hình bình hành nghiêng theo đúng độ dốc của vách (TH/TW),
- *  · chữ xoay đúng góc đó (atan(TH/TW) ≈ 26,6°),
- *  · và nó treo dưới mép trên của vách chứ không lơ lửng ngoài không khí.
- * Vẽ tấm chữ nhật thẳng đứng lên đây là ra ngay cảm giác sticker dán đè.
- */
+// Object trong scene (trải qua nhiều ô tường), nghiêng theo mặt vách: hình bình hành dốc TH/TW, chữ xoay atan(TH/TW).
 const HALF_W = 78;
 const HALF_H = 18;
-/** Cách mép trên của tường bao nhiêu px, đo dọc theo mặt vách. */
+/** Cách mép trên của tường, đo dọc theo mặt vách. */
 const DROP = 26;
-/** Cỡ chữ tên quán lúc chưa phải thu, và sàn không thu xuống dưới nữa. */
 const BASE_PX = 18;
 const MIN_PX = 9;
 
-/** Tấm bảng mang tên quán của nhân vật chính (`content/shop`). */
 export function createSign(scene: Phaser.Scene, sx: number, sy: number, depth: number, playerName = "") {
-  // Mép trên mặt vách "left" tại hoành độ sx (xem `facePoint` ở art/canvas.ts).
+  // Mép trên mặt vách "left" tại hoành độ sx (như `facePoint`).
   const cy = sy - WALL_H + TH / 2 + DROP;
   const at = (u: number, v: number) => ({ x: sx + u, y: cy + u * FACE_SLOPE + v });
   const quad = (u0: number, u1: number, v0: number, v1: number) =>
@@ -48,10 +37,10 @@ export function createSign(scene: Phaser.Scene, sx: number, sy: number, depth: n
     color: Phaser.Display.Color.IntegerToColor(PAL.signYellow).rgba,
   })
     .setOrigin(0.5)
-    .setRotation(Math.atan2(TH, TW))                   // nằm đúng trong mặt phẳng tường
+    .setRotation(Math.atan2(TH, TW))
     .setDepth(depth + 1);
 
-  // Tên quán do người chơi gõ nên đo rồi thu chữ cho vừa tấm tôn; sàn `MIN_PX` để còn đọc được.
+  // Tên quán do người chơi gõ nên thu chữ cho vừa bảng.
   const room = (HALF_W - 7) * 2;
   if (t.width > room) t.setFontSize(Math.max(MIN_PX, Math.floor(BASE_PX * room / t.width)));
 

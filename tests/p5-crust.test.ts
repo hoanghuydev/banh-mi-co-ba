@@ -8,7 +8,6 @@ import { CRUST } from "../src/sim/oven";
 
 type Ev = { e: string; p: any };
 
-/** Độ giòn đại diện cho từng dải — xem `bandOfCrust`. */
 const RAW = 0.2, CRISP = 0.66, SINGED = 1.05;
 
 function atCounter(seed = "crust-1") {
@@ -28,20 +27,18 @@ function atCounter(seed = "crust-1") {
 const pick = (ev: Ev[], e: string) => ev.filter((x) => x.e === e).map((x) => x.p);
 const diffed = (ev: Ev[]) => pick(ev, "delivery:diffed")[0];
 const without = (dish: Ingredient[], ...ids: Ingredient[]) => dish.filter((x) => !ids.includes(x));
-/** Món khách có gọi mà bỏ ra được — tránh nhân mặn vì rút hết nhân thành `HOLLOW_LOAF`. */
+// Tránh nhân mặn vì rút hết nhân thành `HOLLOW_LOAF`.
 function dropMe(spec: OrderSpec): Ingredient {
   const i = INGREDIENTS.find((x) => x.kind !== "nhan" && (spec.levels[x.id] ?? 0) > 0);
   assert.ok(i, "đơn này không có rau nào để bỏ bớt — đổi seed");
   return i.id;
 }
 
-/** Lọc theo `memKey` vì câu đầu tiên thường là lời chào của người đứng kế bên. */
+// Lọc theo `memKey` vì câu đầu thường là lời chào của người đứng kế bên.
 function linesOf(h: HeadlessStall, ev: Ev[], memKey: string) {
   h.run({ maxFrames: 1200 });
   return pick(ev, "dialog:spoken").filter((p) => p.npcId === memKey).map((p) => p.text as string);
 }
-
-// ───────────────────────────────────────────────── 1 · hai đầu của vòng độ giòn
 
 test("rút sớm quá: ổ chưa giòn là một LỖI, và khách nói ra", () => {
   const { h, ev, c } = atCounter();
@@ -77,8 +74,6 @@ test("lò điện có `burnAt` riêng: dải tốt của nó KHÔNG bị đọc 
   assert.ok(0.8 < CRUST.SINGED);
 });
 
-// ──────────────────────────────────── 2 · vỏ bánh là vế BỔ SUNG, không cướp chỗ
-
 test("vừa thiếu món vừa chưa giòn: câu chính nói chuyện THIẾU MÓN", () => {
   const { h, ev, c } = atCounter();
   const miss = dropMe(c.order!);
@@ -98,8 +93,6 @@ test("câu nói ra gồm CẢ HAI vế: chuyện thiếu món rồi tới chuy�
   assert.ok(line, `phải có một câu nhắc tới cái vỏ bánh — đang có: ${JSON.stringify(lines)}`);
 });
 
-// ─────────────────────────────────────────── 3 · ổ có lỗi thì không bao giờ im
-
 test("ổ có lỗi KHÔNG qua túi im lặng — hai chục lượt liền đều có câu", () => {
   for (let i = 0; i < 20; i++) {
     const { h, ev, c } = atCounter(`im-${i}`);
@@ -107,8 +100,6 @@ test("ổ có lỗi KHÔNG qua túi im lặng — hai chục lượt liền đ�
     assert.ok(diffed(ev).spoken, `lượt ${i}: ổ chưa giòn mà khách im`);
   }
 });
-
-// ──────────────────────────────────────────────────────── 4 · chuyện cho thêm
 
 test("cho thêm: chủ quán nói ra mình cho thêm gì, có kể tên món", () => {
   const { h, c } = atCounter();

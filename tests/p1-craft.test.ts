@@ -9,10 +9,6 @@ import { CAPACITY, INGREDIENTS, dishFor, mkDefect, type Ingredient } from "../sr
 import { CRUST } from "../src/sim/oven";
 import { STATIONS, blockedReason, stationNear } from "../src/world/stations";
 
-/**
- * Nguội sau 60 s (xem khối ⚖️ CÂN BẰNG trong `sim/loaf.ts`): một lô ba ổ nướng sẵn gác
- * lại phải SỐNG được qua ba vòng phục vụ.
- */
 test("ổ ra lò nguội sau 60 s, đủ cho một lô ba ổ gác sẵn; mưa nguội nhanh hơn 1,4 lần", () => {
   const tCold = (1 - WARM_OK) / COOL_RATE;
   assert.ok(tCold > 55 && tCold < 65, `t_nguội ${tCold.toFixed(1)} s`);
@@ -21,7 +17,7 @@ test("ổ ra lò nguội sau 60 s, đủ cho một lô ba ổ gác sẵn; mưa n
   assert.ok(isWarm(w), "55 s vẫn còn ấm");
   for (let i = 0; i < 10 * 30; i++) w = cool(w, 1 / 30);
   assert.ok(!isWarm(w), "65 s đã nguội");
-  // Ổ cuối của lô ba: ba vòng phục vụ ở nhịp CHẬM nhất (8,5 s) + quãng đi và ba nhịp gói.
+  // Ba vòng phục vụ nhịp chậm nhất (8,5 s) + quãng đi và gói.
   const LAST_OF_BATCH = 3 * 8.5 + 6;
   assert.ok(isWarm(cool(1, LAST_OF_BATCH)), "ổ thứ ba trong lô gác sẵn vẫn phải còn ấm");
   assert.ok(cool(1, 10, "MUA_RAO") < cool(1, 10, "NANG_GAT"));
@@ -39,7 +35,6 @@ test("đưa ổ nguội: lỗi 'bánh nguội ngắt' được nói ra, không t
   bus.on("stim:emitted", (p) => stims.push(p.stimId));
   h.service.serveDish(dish, { cold: true });
   assert.ok(diff.defects.some((d: any) => d.kind === "WRONG_TEMP"));
-  // túi im lặng (7/20) có thể khiến khách không nói — nhưng nếu nói thì là nói chuyện nguội
   if (diff.spoken) assert.equal(diff.spoken.kind, "WRONG_TEMP");
   assert.equal(diff.mode, "DISCOVERED");
   assert.ok(!stims.includes("ORDER_DEFECT"), "ổ đúng đơn mà nguội không phải sai đơn");
@@ -59,9 +54,6 @@ test("khẩu vị ẩn: ổ đúng gu → ~1; ổ lệch gu (không ớt cho ng�
 test("preset: 3 cái, đúng số phần; sáng nào cũng chia lại", () => {
   const ps = defaultPresets();
   assert.equal(ps.length, 3);
-  // "đầy đủ nhà mình" phải LÀ ổ đầy đủ của câu gọi món: thang hai nấc nên nhân một phần,
-  // rau đầy đủ hai phần. Preset mà bỏ hai phần nhân thì mỗi lần một chạm là một lỗi
-  // "nhiều pate quá" — đường tắt mà làm sai thì không còn là đường tắt.
   const p1 = presetDish(ps[0]);
   assert.equal(p1.filter((x) => x === "pate").length, 1);
   assert.equal(p1.filter((x) => x === "dochua").length, 2);
@@ -82,32 +74,24 @@ test("preset không được vượt trần mỗi món, cũng không được nh
 test("trạm bám dính: đứng giữa thùng trà và bồn rửa thì không nhảy qua lại", () => {
   const tea = STATIONS.find((s) => s.id === "tea")!;
   const sink = STATIONS.find((s) => s.id === "sink")!;
-  // Hai trạm cách nhau đúng 2 ô mà bán kính với tới là 1,6 ô — có một vạt ở giữa với
-  // tới được CẢ HAI, và đó là chỗ cú E rơi nhầm trạm.
   assert.equal(Math.abs(sink.tx - tea.tx), 2);
 
-  // Không truyền trạm cũ: vẫn là "gần nhất thắng", nên qua mốc giữa là đổi ngay —
-  // đúng cái làm trạm được chọn rung bần bật khi người chơi đứng nhún quanh đó.
   const mid = (tea.tx + sink.tx) / 2 + 0.5;
   assert.equal(stationNear(mid - 0.1, 1.5)?.id, "tea");
   assert.equal(stationNear(mid + 0.1, 1.5)?.id, "sink");
 
-  // Truyền trạm cũ: quanh mốc giữa có một VẠT CHẾT, trong đó trạm đang chọn được giữ.
   assert.equal(stationNear(mid + 0.1, 1.5, tea)?.id, "tea", "nhích qua mốc chưa đủ để đổi");
   assert.equal(stationNear(mid - 0.1, 1.5, sink)?.id, "sink");
 
-  // Vạt chết phải đối xứng hai phía, nếu không thì nó chỉ dời chỗ rung chứ không hết rung.
   assert.equal(stationNear(mid + 0.1, 1.5, sink)?.id, "sink");
   assert.equal(stationNear(mid - 0.1, 1.5, tea)?.id, "tea");
 
-  // Nhưng đi hẳn về một bên thì vẫn phải đổi — bám dính không được thành dính chết.
   assert.equal(stationNear(mid + 0.3, 1.5, tea)?.id, "sink");
   assert.equal(stationNear(mid - 0.3, 1.5, sink)?.id, "tea");
   assert.equal(stationNear(sink.tx + 0.5, sink.ty + 0.5, tea)?.id, "sink");
   assert.equal(stationNear(tea.tx + 0.5, tea.ty + 0.5, sink)?.id, "tea");
 
-  // Ra khỏi tầm với của cả hai thì không còn trạm nào, dù trạm cũ là gì.
-  // Điểm thử tự DÒ chỗ trống nhất trong khu làm việc thay vì ghi cứng toạ độ: thêm trạm là toạ độ cứng sai.
+  // Dò chỗ trống nhất thay vì ghi cứng toạ độ, vì thêm trạm là toạ độ cứng sai.
   const distTo = (p: { x: number; y: number }) =>
     Math.min(...STATIONS.map((s) => Math.hypot(s.tx + 0.5 - p.x, s.ty + 0.5 - p.y)));
   let far = { x: 10.5, y: 3.5 }, nearest = -1;
@@ -127,34 +111,23 @@ test("rổ bánh nóng đứng đủ xa thớt và chỗ đưa hàng để khôn
   for (const id of ["board", "handoff"]) {
     const other = STATIONS.find((s) => s.id === id)!;
     const d = Math.hypot(basket.tx - other.tx, basket.ty - other.ty);
-    // Xa hơn hai lần bán kính với tới (1,6) thì không có điểm nào với tới được cả hai.
+    // Hai lần bán kính với tới (1,6).
     assert.ok(d > 3.2, `${id} cách rổ ${d} ô — phải hơn 3,2`);
   }
-  // Gác được ổ đã nướng lẫn ổ nguội, và lấy lại được bằng tay không.
   assert.ok(basket.needs.includes("loaf_hot"));
   assert.ok(basket.needs.includes("loaf_cold"));
   assert.ok(basket.needs.includes("empty"));
 });
 
-/**
- * Kẹp nhầm rồi gói thì thớt phải nhận lại ổ ĐÃ GÓI để mở ra kẹp thêm / gỡ bớt
- * (`unwrapToBoard`), không phải bỏ cả ổ vào thùng rác.
- */
 test("ổ đã gói đem lại thớt được: kẹp nhầm thì mở ra sửa, không phải bỏ cả ổ", () => {
   const board = STATIONS.find((s) => s.id === "board")!;
   assert.ok(board.needs.includes("loaf_hot"), "ổ nóng trơn vẫn đặt xuống thớt được");
   assert.ok(board.needs.includes("loaf_filled"), "ổ đã gói phải mở lại được ở thớt");
   assert.equal(blockedReason(board, "loaf_filled"), null, "không được nói 'đang cầm ổ bánh đã kẹp'");
-  // Ổ nguội vẫn phải đi nướng lại trước, và ổ cháy vẫn chỉ có một đường là thùng rác.
   assert.ok(blockedReason(board, "loaf_cold"));
   assert.ok(blockedReason(board, "loaf_burnt"));
 });
 
-/**
- * Hợp đồng của bảng kẹp nhân là "kho chỉ bị trừ lúc gói xong" — nên mở ổ ra là kho phải
- * NHẬN LẠI đúng số phần đó. Không đối xứng thì mở ra gói lại một ổ hai lần là trừ hai lần
- * nguyên liệu, và người chơi bị phạt vì đi sửa lỗi của mình.
- */
 test("mở ổ ra thì kho nhận lại đúng số phần đã trừ lúc gói", () => {
   const w = newGame("t", "unwrap");
   const day = w.progress.dayIndex;
@@ -165,17 +138,16 @@ test("mở ổ ra thì kho nhận lại đúng số phần đã trừ lúc gói"
   assert.ok(before.cha > 0 && before.ot > 0, "có hàng để thử");
 
   const dish: Ingredient[] = ["chalua", "chalua", "ot"];
-  for (const ing of dish) take(inv, ing, 1, day);        // gói xong: trừ kho (xem `finishDish`)
+  for (const ing of dish) take(inv, ing, 1, day);
   assert.equal(portionsFor(inv, "chalua", day), before.cha - 2);
   assert.equal(portionsFor(inv, "ot", day), before.ot - 1);
 
-  for (const ing of dish) putBack(inv, ing, 1, day);     // mở ra: trả lại (xem `unwrapToBoard`)
+  for (const ing of dish) putBack(inv, ing, 1, day);
   assert.equal(portionsFor(inv, "chalua", day), before.cha);
   assert.equal(portionsFor(inv, "ot", day), before.ot);
 });
 
 test("bánh nướng CHƯA TỚI là một lỗi thật, nặng dần, nhưng không bao giờ bằng bánh cháy", () => {
-  // Ổ chưa giòn đi cùng đường với ổ nguội: thành defect, có người nói ra.
   const run = (crust: number) => {
     const w = newGame("t", "raw");
     w.progress.dayIndex = 6;
@@ -185,7 +157,7 @@ test("bánh nướng CHƯA TỚI là một lỗi thật, nặng dần, nhưng kh
     const h = new HeadlessStall(w, POLICIES.greedy, { bus });
     const svc = h.service as any;
     const orig = svc.serveDish.bind(svc);
-    // Ép ổ ĐÚNG ĐƠN, chỉ sai mỗi độ giòn — để cái đo được là độ giòn chứ không phải đơn sai.
+    // Ép ổ đúng đơn để chỉ đo độ giòn.
     svc.serveDish = (dish: Ingredient[], opts: Record<string, unknown>) => {
       const c = svc.front;
       return orig(c?.order ? dishFor(c.order) : dish, { ...opts, crust, cold: false, quality: 1 });
@@ -200,7 +172,6 @@ test("bánh nướng CHƯA TỚI là một lỗi thật, nặng dần, nhưng kh
   const dough = run(0);
   assert.ok(barely > 0, "thiếu một chút vẫn phải có người càu nhàu, không được chìm nghỉm");
   assert.ok(barely < half && half < dough, "càng sống càng nặng");
-  // Trần có chủ ý: bột sống vẫn nhẹ hơn ổ nguội ngắt.
   const cold = mkDefect("WRONG_TEMP", null).weight;
   assert.ok(dough < cold, `ổ bột sống ${dough} phải nhẹ hơn ổ nguội ${cold}`);
 });

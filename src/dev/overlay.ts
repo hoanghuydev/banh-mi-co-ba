@@ -1,13 +1,4 @@
-/**
- * Debug overlay + console dev — P0-03 §2.2. CHỈ ở dev build.
- *
- * `main.ts` chỉ import file này sau `if (DEV_TOOLS)` → bản phát hành không có dòng nào.
- * ⚠️ Không bao giờ có chế độ "hiện certainty" trong bản bán ra: T5 đòi attention nhìn
- * thấy được QUA MẶT NGƯỜI, không phải qua một thanh số.
- *
- *   F1 bật/tắt · F2 Perception · F3 Thoại
- *   F6 Đồng hồ & RNG · F7 Perf · F8 Kinh tế · ~ console lệnh · ?debug=1 bật sẵn
- */
+// Chỉ ở dev build: `main.ts` import file này sau `if (DEV_TOOLS)`.
 import { MOOD_CAUSES, moodBaseFace, moodOf, type MoodCause } from "../sim/mood";
 import { NEUTRAL } from "../sim/reaction";
 import type Phaser from "phaser";
@@ -95,8 +86,6 @@ export function installDevTools(game: Phaser.Game) {
   render();
 }
 
-// ───────────────────────────────────────────────────────────────────── panels
-
 const f2 = (n: number) => n.toFixed(2);
 
 const PANELS: Record<PanelId, (game: Phaser.Game, dialogLog: string[]) => string> = {
@@ -180,8 +169,6 @@ const PANELS: Record<PanelId, (game: Phaser.Game, dialogLog: string[]) => string
   },
 };
 
-// ─────────────────────────────────────────────────────────────────── console
-
 function makeApi(game: Phaser.Game, print: (s: string) => void) {
   const daySc = () => game.scene.getScene("day") as DayScene | null;
   const need = <T>(x: T | null | undefined, what: string): T => {
@@ -196,21 +183,12 @@ function makeApi(game: Phaser.Game, print: (s: string) => void) {
         need(dev.ctx, "ván chơi").clock.minutes = h * 60 + m;
         return `→ ${hhmm}`;
       },
-      /** Nhân TIME_SCALE (phút game). KHÔNG đụng `dt` của certainty — xem P0-03 §2.2. */
+      /** Nhân TIME_SCALE (phút game), không đụng `dt` của certainty. */
       fastForward(n: number) {
         need(dev.ctx, "ván chơi").clock.devFastForward = n;
         return `TIME_SCALE ×${n}`;
       },
-      /**
-       * Ép trời — để xem được NGÀY MƯA mà không phải chơi tới ngày 6.
-       *
-       * Chỉ đổi CÁI NHÌN và TIẾNG: nền nướng lại (mặt đường ướt, không còn vạt nắng),
-       * lớp mưa dựng lên, `stallAudio` bắt `amb_mua_*`. KHÔNG đổi lượng khách hay độ
-       * soi — mấy cái đó `Service` suy thẳng từ `weatherOf(day)` theo lịch, cố ý,
-       * để không ai chỉnh thời tiết mà lệch luôn cân bằng của ngày hôm đó.
-       *
-       * Phải dựng lại cảnh quán vì nền là `RenderTexture` nướng một lần ở `create()`.
-       */
+      /** Chỉ đổi hình + tiếng (`Service` vẫn đọc `weatherOf(day)`); dựng lại quán vì nền nướng một lần. */
       weather(w: string) {
         const world = need(dev.ctx, "ván chơi").world;
         const all = Object.keys(CAL.weatherInfo);
@@ -244,7 +222,6 @@ function makeApi(game: Phaser.Game, print: (s: string) => void) {
       fire(id: string, zone: StallZone = "HANDS") { need(dev.stall, "quầy").fire(id, zone); return `${id}@${zone}`; },
     },
     rule: {
-      /** "Tại sao nó nói câu đó?" — xếp hạng mọi rule của lần hỏi gần nhất, rule trượt ở fact nào. */
       why() {
         const sp = need(dev.stall, "quầy").service.speaker;
         const l = need(sp.last, "lần hỏi rule nào");

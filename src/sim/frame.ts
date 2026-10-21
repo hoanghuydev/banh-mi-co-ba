@@ -11,11 +11,9 @@ export type FrameHandlers = {
   npc(dt: number): void;
   dialog(dt: number): void;
   render(dt: number): void;
-  /** Chỉ vẽ lại, không đổi state. */
   renderPaused(): void;
 };
 
-/** Số đo frame gần nhất + cửa sổ trượt cho p95. */
 export const frameStats = {
   last: Object.fromEntries(FRAME_STEPS.map((s) => [s, 0])) as Record<FrameStep, number>,
   totals: [] as number[],

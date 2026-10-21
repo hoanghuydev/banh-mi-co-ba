@@ -1,8 +1,4 @@
-/**
- * Đo số trên thẻ đồ nghề bằng sim thật: bật/tắt từng món, đo cái người chơi thấy.
- *
- *   npx tsx tools/audit-gain.ts
- */
+// Đo số trên thẻ đồ nghề bằng sim thật: `npx tsx tools/audit-gain.ts`.
 import { newGame } from "../src/core/save";
 import { HeadlessStall, POLICIES, nextDay } from "../src/sim/headless";
 import { dawn, dayDeps } from "../src/sim/day";
@@ -19,12 +15,8 @@ hub.beginDay("audit", 1);
 const pct = (a: number, b: number) => `${(((b - a) / a) * 100 >= 0 ? "+" : "")}${(((b - a) / a) * 100).toFixed(1)}%`;
 const line = (ten: string, the: string, do_: string, ok: boolean | null) =>
   console.log(`  ${ok === null ? "?" : ok ? "✔" : "✘"} ${ten.padEnd(11)} thẻ: ${the.padEnd(46)} đo: ${do_}`);
-/** Cột "thẻ" đọc thẳng từ `equipment.json`, không chép tay. */
 const the = (id: EquipId, i = 0) => EQUIP[id].gain[i] ?? "(không có dòng nào)";
 
-// ───────────────────────────────────────────────── 1. khách ghé: đếm người THẬT SỰ tới quầy
-
-/** Chạy `days` ngày với đúng bộ đồ nghề này, đếm tổng số lượt khách đã tới trước quầy. */
 function demKhach(owned: EquipId[], days: number, seeds: number) {
   let n = 0, la = 0;
   for (let s = 0; s < seeds; s++) {
@@ -53,11 +45,8 @@ for (const id of ["BANG_HIEU", "LOA_RAO", "DU_CHE"] as const) {
     Math.abs(((co.la - nen.la) / nen.la) * 100 - hua) < hua * 0.35);
 }
 
-// ───────────────────────────────────────────────── 2. mấy chỉ số đo thẳng được, không cần sim
-
 console.log("\nCHỈ SỐ ĐO THẲNG\n");
 
-// quạt: hệ số có tới được `Service.deps.patienceMul` không
 {
   const w0 = newGame("q0", "q0"), w1 = newGame("q1", "q1");
   dawn(w0); dawn(w1);
@@ -66,7 +55,6 @@ console.log("\nCHỈ SỐ ĐO THẲNG\n");
   line("QUAT_DIEN", the("QUAT_DIEN"), `patienceMul ${a} → ${b} (${pct(a, b)})`, Math.abs(b / a - equipPatienceMul(w1.equipment)) < 1e-9);
 }
 
-// bình nước trà: rót một ly thì sức chờ tăng bao nhiêu giây
 {
   const c = new Customer("x", "x", "x", { soi: 0.3, noi: 0.5, kien_nhan: 0.5, deu: 0.5 } as never,
     0 as never, null, 1, { x: 0, y: 0 }, DEFAULT_PATIENCE_SEC, hub.derive("audit"));
@@ -75,7 +63,6 @@ console.log("\nCHỈ SỐ ĐO THẲNG\n");
   line("BINH_TRA", the("BINH_TRA"), `waitT ${truoc}s → ${c.waitT}s (+${c.waitT - truoc}s)`, c.waitT - truoc === TEA_PATIENCE_SEC);
 }
 
-// ghế: hai chỗ, và kiên nhẫn trôi chậm bao nhiêu
 {
   const c = new Customer("x", "x", "x", { soi: 0.3, noi: 0.5, kien_nhan: 0.5, deu: 0.5 } as never,
     0 as never, null, 1, { x: 0, y: 0 }, 100, hub.derive("audit"));
@@ -89,12 +76,10 @@ console.log("\nCHỈ SỐ ĐO THẲNG\n");
     Math.abs(c.waitSec / dung - SIT_PATIENCE_MUL) < 1e-9);
 }
 
-// lồng bàn: quầy bẩn chậm hơn bao nhiêu
 line("LONG_BAN", the("LONG_BAN"),
   `dirtMul 1 → ${dirtMul({ owned: ["LONG_BAN"], installed: [], wear: {} })}`,
   dirtMul({ owned: ["LONG_BAN"], installed: [], wear: {} }) === 0.8);
 
-// tủ mát + nồi ủ
 {
   const pate = [shelfDays("PATE_NHA", "thung_xop"), shelfDays("PATE_NHA", "tu_mat")];
   const o = [coldSlotCap(newInventory()), coldSlotCap({ ...newInventory(), storage: "tu_mat" })];
@@ -104,7 +89,6 @@ line("LONG_BAN", the("LONG_BAN"),
   line("NOI_U", the("NOI_U"), `${xm[0]} → ${xm[1]} ngày`, xm[0] === 1 && xm[1] === 2);
 }
 
-// giá treo
 {
   const e = newEquipState();
   const a = capacity(e);
@@ -112,9 +96,8 @@ line("LONG_BAN", the("LONG_BAN"),
   line("GIA_TREO", the("GIA_TREO"), `capacity ${a} → ${capacity(e)}, đang dùng ${used(e)}`, capacity(e) - a === 2);
 }
 
-// lò điện: đo bằng chính `Oven`, theo GIÂY chứ không theo đơn vị `crust`
 {
-  // ⚠️ Dựng lò bằng `ovenFor` như `StallScene`, không chép tay hệ số.
+  // Dựng lò bằng `ovenFor` như `StallScene`, không chép tay hệ số.
   const chay = (hasDien: boolean) => {
     const o = ovenFor(hasDien);
     const { burnAt, singeAt } = o;

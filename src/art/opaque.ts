@@ -1,22 +1,11 @@
 import Phaser from "phaser";
 
-/**
- * HỘP BAO PIXEL ĐỤC của một texture — mép thật của vật, bỏ hết khoảng trong suốt.
- *
- * Mẫu số chung của ba lỗi đã gặp (ổ bánh treo lơ lửng trên thớt · dấu việc cần làm trỏ vào khoảng
- * không trên khúc quầy · bồn rửa nướng lệch 2 px): code hỏi KHUNG TEXTURE trong khi nó cần hỏi CÁI
- * VẬT.
- *
- * Đo một lần rồi nhớ (quét alpha không rẻ, texture thì cả ván không đổi), và tự đúng theo khi
- * artist gửi ảnh mới — không có bảng số nào phải nhớ chỉnh.
- */
-
-/** Mép của phần ĐỤC, tính bằng px TEXTURE, gốc ở góc trên trái. `null` = texture rỗng. */
+/** Hộp bao pixel đục, px texture; `right`/`bottom` hở; `null` = rỗng hoặc không đọc được. */
 export type OpaqueBox = { left: number; right: number; top: number; bottom: number } | null;
 
 const cache = new Map<string, OpaqueBox>();
 
-/** Ngưỡng alpha coi là "có vật". 8/255 bỏ được viền khử răng cưa mờ tịt. */
+// 8/255 bỏ được viền khử răng cưa mờ.
 const ALPHA_MIN = 8;
 
 export function opaqueBox(scene: Phaser.Scene, key: string): OpaqueBox {
@@ -43,35 +32,21 @@ export function opaqueBox(scene: Phaser.Scene, key: string): OpaqueBox {
     }
     if (r >= 0) box = { left: l, right: r + 1, top: t, bottom: b + 1 };
   } catch {
-    box = null;                                        // không đọc được pixel thì thôi
+    box = null;
   }
   cache.set(key, box);
   return box;
 }
 
-/** Khung sprite trên màn hình — vừa đủ cho `opaqueEdges`, không buộc phải là Phaser. */
 export type SpriteBox = { left: number; top: number; width: number; height: number };
 
 export type Edges = {
   left: number; right: number; top: number; bottom: number;
-  /** Tâm NGANG của cái VẬT — khác tâm sprite ở mấy ảnh nướng lệch (`STANDING[].dx`). */
+  /** Tâm ngang của vật, khác tâm sprite ở ảnh nướng lệch (`STANDING[].dx`). */
   cx: number;
 };
 
-/**
- * Quy hộp bao pixel đục về toạ độ màn hình — TOÁN THUẦN, không Phaser, không DOM.
- *
- * Tách riêng vì ĐÂY mới là chỗ cả ba lỗi lịch sử thật sự nằm. Phần quét alpha chỉ là đọc
- * pixel, không sai được; cái sai luôn là bước co giãn và dời gốc sau đó:
- *   · ổ bánh trong khung 40×40 — nhân tỉ lệ đúng nhưng lấy nhầm mép
- *   · khúc quầy cao 92 px — lấy mép khung thay vì mép vật
- *   · bồn rửa nướng lệch 2 px — quên hẳn chuyện tâm vật ≠ tâm khung
- * Ở dạng thuần thì quét được cả ngàn trường hợp trong một cái test, thay vì phải chơi
- * thật mới thấy.
- *
- * `box` rỗng (texture trong suốt hoàn toàn, hoặc không đọc được pixel) thì trả về đúng
- * khung sprite — thà rộng hơn vật còn hơn trả ra một con số bịa.
- */
+/** Quy hộp đục về toạ độ màn hình; `box` rỗng thì trả nguyên khung sprite. */
 export function opaqueEdges(b: SpriteBox, texW: number, texH: number, box: OpaqueBox): Edges {
   const right0 = b.left + b.width, bottom0 = b.top + b.height;
   if (!box || texW <= 0 || texH <= 0) {
@@ -89,12 +64,7 @@ export function opaqueEdges(b: SpriteBox, texW: number, texH: number, box: Opaqu
   };
 }
 
-/**
- * Mép THẬT của một sprite trong thế giới. Phần dính Phaser mỏng nhất có thể: đọc khung
- * và cỡ texture rồi giao hết cho `opaqueEdges`.
- *
- * Nhận cả sprite có origin bất kỳ — `getBounds()` đã tính sẵn origin, xoay và co.
- */
+/** Mép thật của sprite; `getBounds()` đã tính sẵn origin, xoay và co. */
 export function spriteEdges(scene: Phaser.Scene, img: Phaser.GameObjects.Image): Edges {
   const b = img.getBounds();
   const src = img.texture.getSourceImage() as { width: number; height: number };

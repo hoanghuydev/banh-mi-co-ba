@@ -1,4 +1,3 @@
-/** Đo số lần NPC tự bắt chuyện mỗi buổi: phải có thật nhưng hiếm. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Bus } from "../src/core/eventbus";

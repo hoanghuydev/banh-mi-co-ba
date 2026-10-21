@@ -1,22 +1,3 @@
-/**
- * MỤC ĐÍCH × TÂM TRẠNG (`sim/purpose.ts` + `content/npcs/purposes.json`) — P2-07 §5.
- *
- * File này giữ ba hợp đồng, và cái thứ hai là cái duy nhất không máy nào tự tìm ra được:
- *
- *  1. DỮ LIỆU TRỎ ĐÚNG CHỖ: mọi `states[]` trỏ tới một tâm trạng có thật, mọi `face` là
- *     một khoá của `MOOD_FACE`, mọi `pose` là một `PoseId`. Một tên gõ sai ở đây không
- *     làm hỏng gì lúc chạy — nó chỉ vẽ ra một Ô VUÔNG TRẮNG trên mặt một người, và không
- *     ai biết cho tới khi nhìn thấy ảnh chụp màn hình.
- *
- *  2. CẶP VÔ LÝ KHÔNG TỒN TẠI. Yêu cầu nguyên văn: *"trúng số thì có thể vui, có thể đi
- *     với lo lắng do số tiền lớn, nhưng không thể là dạng tức giận hoặc buồn"*. `states`
- *     là danh sách TRẮNG nên về nguyên tắc không cặp nào lọt được — nhưng "về nguyên tắc"
- *     là thứ hỏng vào lúc có người thêm một tâm trạng vào một mục đích cũ lúc 11 giờ đêm.
- *     Bảng `CAM` dưới đây viết thẳng ra những cặp mà THẾ GIỚI không cho phép, kèm lý do.
- *
- *  3. RÚT LÀ TẤT ĐỊNH: cùng seed ra cùng người, và một lần rút tiêu ĐÚNG HAI số — thêm
- *     một lần rút là dịch cả dòng số của người đi ngang (xem `planPasser`).
- */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Rng } from "../src/core/rng";
@@ -31,8 +12,6 @@ import {
 const BANDS: TimeBand[] = ["PRE_OPEN", "PEAK", "MID", "LULL"];
 const POSES = new Set(Object.keys(POSE_DEFS));
 
-// ── 1. đủ số lượng ──────────────────────────────────────────────────────────
-
 test("đủ 60 × 30 — dưới ngần này thì cái hẻm bắt đầu lặp lại chính nó", () => {
   assert.ok(PURPOSES.length >= 55, `mới có ${PURPOSES.length} mục đích`);
   assert.ok(STATES.length >= 28, `mới có ${STATES.length} tâm trạng`);
@@ -45,8 +24,6 @@ test("không id nào trùng, không id nào rỗng", () => {
   assert.equal(sid.size, STATES.length);
   for (const id of [...pid, ...sid]) assert.match(id, /^[A-Z][A-Z0-9_]*$/);
 });
-
-// ── 2. dữ liệu trỏ đúng chỗ ─────────────────────────────────────────────────
 
 test("mọi face/pose của tâm trạng đều CÓ THẬT — tên sai là một ô vuông trắng", () => {
   for (const s of STATES) {
@@ -105,13 +82,7 @@ test("label là tiếng Việt VIẾT THƯỜNG — nó hiện thẳng ra màn h
   }
 });
 
-// ── 3. BẢNG CẤM — chỗ luật "trúng số không thể buồn" sống ───────────────────
-
-/**
- * Những cặp mà thế giới KHÔNG cho phép, kèm lý do. Đây không phải cơ chế chạy lúc game
- * chạy (danh sách trắng làm việc đó rồi) — nó là một cái lưới chắn cho NGƯỜI SOẠN DỮ
- * LIỆU: ngày nào có người thêm "buồn" vào `TRUNG_SO` cho đủ màu, test này đỏ ngay.
- */
+// Lưới chắn cho người soạn dữ liệu; lúc chạy đã có danh sách trắng `states`.
 const CAM: [string, string, string][] = [
   ["TRUNG_SO", "BUON", "vừa trúng số mà buồn — yêu cầu của chủ dự án cấm thẳng cặp này"],
   ["TRUNG_SO", "NAO_LONG", "nặng lòng vì trúng số thì không phải trúng số nữa"],
@@ -173,8 +144,6 @@ test("rút cả vạn lần cũng không rơi ra một cặp trong bảng CẤM"
   }
 });
 
-// ── 4. rút là tất định ──────────────────────────────────────────────────────
-
 test("cùng seed ra cùng một dãy người — khác seed thì khác", () => {
   const run = (seed: number) => {
     const rng = new Rng(seed);
@@ -204,11 +173,9 @@ test("rút nhiều thì trải ra, không dính một chỗ", () => {
   }
   const list = purposesIn("MID");
   assert.ok(seen.size >= list.length * 0.9, `chỉ rút ra ${seen.size}/${list.length} mục đích`);
-  // nặng cân hơn thì phải ra nhiều hơn: DI_CHO_VE (10) vs TRUNG_SO (2)
+  // Weight DI_CHO_VE 10 so với TRUNG_SO 2.
   assert.ok((seen.get("DI_CHO_VE") ?? 0) > (seen.get("TRUNG_SO") ?? 0));
 });
-
-// ── 5. hàm thuần cho passersby / service ────────────────────────────────────
 
 test("buyable là cái HÃM, không phải cái đẩy — và vội thì mời không nổi", () => {
   const tre = purposeById("DI_LAM_TRE")!, cho = purposeById("DI_CHO_VE")!;

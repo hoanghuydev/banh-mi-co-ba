@@ -1,15 +1,5 @@
-/**
- * Bảng màu — nguồn duy nhất của tone game.
- * CANON §14: Sài Gòn buổi sáng là XANH XÁM + NẮNG GẮT TRẮNG, không phải vàng nghệ kiểu phim Mỹ.
- * Đổi file này là đổi tone cả game mà không phải đụng tới một hàm vẽ nào.
- */
 export const PAL = {
-  // ── ba loại mặt sàn: trong quán / vỉa hè / lòng đường
-  //
-  // Sàn quán là GẠCH MEN TRẮNG, không hoa văn. Đây là chỗ duy nhất trong game cố ý
-  // để trống hẳn: nó là phông cho khoảnh khắc lõi — khách đứng nhìn tay mình làm
-  // (T1). Sàn có hoa văn thì cái nền rối hơn chính thứ đứng trên nó. Vẫn giữ 4 sắc
-  // độ chênh nhau một chút để mặt sàn không phẳng lì như tờ giấy.
+  // Sàn quán cố ý trơn không hoa văn để làm phông cho tay người làm bánh.
   shopFloor: [0xf1efe9, 0xeceae3, 0xf4f2ed, 0xe8e6df] as const,
   shopJoint: 0xd0cdc4,
   walkFloor: [0x9fa9ab, 0x99a4a7, 0xa5aeb0, 0x95a0a3] as const,
@@ -19,7 +9,6 @@ export const PAL = {
   roadPaint: 0xd8d5c6,
   floorStain: 0x7d8c90,
 
-  // ── tường quét vôi bạc màu + vệt rêu chân tường
   wall: 0xcfc7b4,
   wallTop: 0xded7c6,
   wallShade: 0xa79f8d,
@@ -30,36 +19,32 @@ export const PAL = {
   window: 0x7e929c,
   windowFrame: 0xe4dfd0,
 
-  // ── cửa ra vào phía sau quán
   doorWood: 0x8a5a3c,
   doorWoodDark: 0x6b4430,
   doorFrame: 0xcfc7b4,
 
-  // ── quầy bánh mì (cố định, xây tại chỗ — không phải xe đẩy)
-  counterTile: 0xe3ded1,        // mặt ốp gạch men của bệ quầy
-  counterBase: 0x7f8a90,        // chân bệ xi măng
-  counterBoard: 0xb98b5e,       // mặt thớt gỗ
+  counterTile: 0xe3ded1,
+  counterBase: 0x7f8a90,
+  counterBoard: 0xb98b5e,
   counterBoardDark: 0x9a7048,
   glass: 0xd6e7ec,
   glassFrame: 0x9aa3a6,
 
-  // ── bảng hiệu đỏ chữ vàng (CANON §14)
   signRed: 0xc0392b,
   signRedDark: 0x8e2a20,
   signYellow: 0xf5c542,
 
-  wallTile: 0x9fb2b8,           // gạch men ốp chân tường, kiểu nhà phố Sài Gòn
+  wallTile: 0x9fb2b8,
   wallTileJoint: 0x7d9198,
-  meterBox: 0xd8d2c0,           // hộp đồng hồ điện
+  meterBox: 0xd8d2c0,
   meterGlass: 0x6f8891,
-  wire: 0x2f363b,               // dây điện chằng chịt — không có nó thì không phải hẻm
-  posterRed: 0xb8433a,          // tờ rao vặt / lịch treo tường
+  wire: 0x2f363b,
+  posterRed: 0xb8433a,
   posterPaper: 0xeee8d8,
-  beadCurtain: 0xb9524a,        // rèm hạt cửa sau
-  awning: 0x8fa3ab,             // mái tôn che nắng nhà hàng xóm
+  beadCurtain: 0xb9524a,
+  awning: 0x8fa3ab,
   awningStripe: 0xbf4b3f,
 
-  // ── đồ nghề
   charcoal: 0x4a4038,
   charcoalDark: 0x332c26,
   ember: 0xff7a3c,
@@ -88,7 +73,6 @@ export const PAL = {
   breadSlash: 0xf7e3c2,
   newsprint: 0xe4dfd0,
 
-  // ── rác và két nước ngọt trên vỉa hè
   binBody: 0x4b6b58,
   binLid: 0x36503f,
   crateRed: 0xb8443a,
@@ -102,49 +86,32 @@ export const PAL = {
   tyre: 0x2a2a2a,
   chrome: 0xb9bfc4,
 
-  // ── cây cối
   leaf: 0x5d9b5a,
   leafDark: 0x3d7440,
   pot: 0xb5705a,
   potDark: 0x8e5544,
 
-  // ── ánh sáng
   sun: 0xfffdf2,
   skyTop: 0x7e939e,
   skyLow: 0xb9c6c9,
 
-  /*
-   * ── TRỜI MƯA ───────────────────────────────────────────────────────────────
-   * P5-02 §2.1.5, chép nguyên mã màu. Mưa KHÔNG phải một lớp xanh dán lên trên:
-   * nó NÉN DẢI GIÁ TRỊ và RÚT CHROMA — không còn gì trắng hẳn, không còn gì đen
-   * hẳn, mọi thứ ngả về một tông xám xanh.
-   *
-   * Thứ duy nhất KHÔNG bị rút màu là tấm bạt xanh (`#2F6F8F`) — spec gọi nó là
-   * "điểm nhìn của khung". Chưa có cái bạt nào trong cảnh nên `tarp` hiện chưa
-   * ai đọc; để sẵn ở đây vì nó là một nửa của cái luật trên, bỏ đi là lần sau
-   * có người rút màu luôn cả tấm bạt.
-   */
+  // Mưa nén dải giá trị và rút chroma; chỉ `tarp` giữ độ bão hoà.
   rain: {
-    ambient: 0x5a646a,          // tông nền của cả khung mưa
-    highlight: 0xa8b2b5,        // sáng nhất còn được phép — vệt mưa lấy màu này
+    ambient: 0x5a646a,
+    // Sáng nhất còn được phép.
+    highlight: 0xa8b2b5,
     shadow: 0x343c40,
-    sky: 0x6f787c,              // nền trời (màu nền camera)
-    wetRoad: 0x2f3a3e,          // nhựa đường ướt
-    reflect: 0x8fa0a6,          // phản chiếu trên nhựa — vệt DỌC, alpha 0,35
-    tarp: 0x2f6f8f,             // bạt che xanh — thứ bão hoà duy nhất trong mưa
-    /*
-     * Màu của TẤM PHỦ toàn khung lúc mưa. Không phải một màu ai chọn cho đẹp: nó là
-     * kết quả gộp đại số của hai lớp `ambient` + `sky` mà spec khai — xem `rainGrade`
-     * trong `world/rain.ts`. Đổi nó mà không đổi cái phép tính bên kia là lệch tông.
-     */
+    sky: 0x6f787c,
+    wetRoad: 0x2f3a3e,
+    reflect: 0x8fa0a6,
+    tarp: 0x2f6f8f,
+    // Gộp đại số từ `ambient` + `sky` (xem `rainGrade` trong `world/rain.ts`), đổi thì đổi cả bên đó.
     grade: 0x3c4246,
   },
 
-  // ── phụ kiện nhân vật
-  capBlue: 0x2f4a6b,            // nón kết bảo vệ
-  helmet: 0xd8d3c6,             // nón bảo hiểm nửa đầu
+  capBlue: 0x2f4a6b,
+  helmet: 0xd8d3c6,
 
-  // ── nhân vật
   skin: 0xecbb8c,
   skinShade: 0xcf9a6d,
   hair: 0x241d1a,
@@ -160,13 +127,5 @@ export const PAL = {
   paper: 0xf3f0e7,
 } as const;
 
-/**
- * Bóng đổ — dùng CHUNG cho người chơi, khách và mọi đạo cụ, nên đây là CẦN GẠT DUY NHẤT
- * chỉnh độ đậm của tất cả. `art/fx.ts` là chỗ duy nhất đọc nó (các mốc gradient đều nhân
- * với số này), không file nào khác đụng tới.
- *
- * 0,26 → 0,38: ở 0,26 tâm bóng chỉ ra alpha ~0,35 và trên nền gạch men trắng của quán thì
- * gần như không đọc ra — đúng cái vùng nhoè làm bóng trông thật lại là thứ làm nó biến mất.
- * 0,38 đưa tâm lên ~0,52, nhìn thấy rõ mà vẫn còn là bóng mềm chứ chưa thành vệt đặc.
- */
+// Bóng chung mọi vật (`art/fx.ts` nhân gradient với alpha này); 0,38 cho tâm ~0,52, đủ rõ trên sàn trắng.
 export const SHADOW = { color: 0x19222a, alpha: 0.38 } as const;

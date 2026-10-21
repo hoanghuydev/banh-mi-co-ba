@@ -8,8 +8,6 @@ import { ReactionState } from "./reaction";
 import { CALM_MOOD, type Mood } from "./mood";
 import { newDrives, type DriveLevels } from "./drives";
 
-/** ⚠️ CANON T3: không thanh tình cảm, không `+3 trust` — chỉ có mặt, lời, dáng, và hệ quả trễ. */
-
 export type CustomerPhase =
   | "arriving"
   | "queueing"
@@ -17,20 +15,17 @@ export type CustomerPhase =
   | "waiting"
   | "leaving";
 
-/** `insulted` = bị nói nặng tới mức bỏ về, KHÔNG phải "chờ lâu quá" · `balked` = ngó thấy hàng dài nên không vào · `soiled` = thấy ổ rớt rồi vẫn được đưa. */
+/** `insulted` = bị nói nặng; `balked` = ngó hàng dài nên không vào; `soiled` = thấy ổ rớt rồi vẫn được đưa. */
 export type LeaveReason =
   | "served" | "impatient" | "closed" | "soldout" | "refused" | "insulted" | "balked" | "soiled";
 
 export const DEFAULT_PATIENCE_SEC = 50;
 export const LEAVE_AT = 1.6;
 
-/** Cộng THẲNG chứ không nhân: 6 s là 6 s với tất cả, nên người ít kiên nhẫn được đỡ nhiều hơn theo tỉ lệ. */
+/** Cộng thẳng chứ không nhân, nên người ít kiên nhẫn được đỡ nhiều hơn theo tỉ lệ. */
 export const PATIENCE_BONUS_SEC = 6;
 
-/**
- * RÓT MỘT LY LÀ MUA THÊM 20 GIÂY. Cộng vào `waitT` (sức chờ) chứ không trừ `waitSec` (quãng đã
- * chờ) như `soothe`; cộng THẲNG nên người ít kiên nhẫn được đỡ nhiều hơn theo tỉ lệ.
- */
+/** Một ly trà cộng vào sức chờ `waitT`, không trừ quãng đã chờ như `soothe`. */
 export const TEA_PATIENCE_SEC = 20;
 
 export const TEA = {
@@ -42,15 +37,11 @@ export const TEA = {
   suspectSpan: 4,
 };
 
-/** Trần áp cho MỌI khách, không riêng người soi: soi ≥ 0,7 bắt bài ở ly 3, xuề xoà nhất cũng tới ly 6. Đếm theo NGÀY. */
+/** Đếm theo ngày: soi ≥ 0,7 bắt bài ở ly 3, xuề xoà nhất tới ly 6. */
 export const teaSuspectAtCup = (soi: number) =>
   TEA.suspectAtCup + Math.round(Math.max(0, TEA.suspectSoi - soi) * TEA.suspectSpan);
 
-/**
- * 0,55 chứ không 0 — ngồi lâu vẫn sốt ruột; cái ghế không được thành một nút tắt kiên nhẫn.
- * Xuất ra vì thẻ `GHE_BAN` hứa "kiên nhẫn trôi chậm 45%" và `tests/p3-equipment.test.ts` (TB-5)
- * đối chiếu chữ với số.
- */
+/** Khác 0 để cái ghế không thành nút tắt kiên nhẫn; thẻ `GHE_BAN` hứa "chậm 45%". */
 export const SIT_PATIENCE_MUL = 0.55;
 
 export class Customer implements Observer {
@@ -73,147 +64,91 @@ export class Customer implements Observer {
   order: OrderSpec | null = null;
   orderLine = "";
 
-  // ── chờ (kênh THỜI GIAN, P1-02 §2.7) ─────────────────────────────────────────
   waitSec = 0;
-  /** Không `readonly`: ly nước trà nới sức chờ ra (`waitMore`). Mốc bỏ đi vẫn là `waitT · LEAVE_AT`. */
+  /** Ly trà nới ra (`waitMore`); mốc bỏ đi là `waitT · LEAVE_AT`. */
   waitT: number;
   waitStage = 0;
 
-  // ── trà đá ─────────────────────────────────────────────────────────────────
   teaCount = 0;
   private holdingTeaFor = 0;
   private sipIn = -1;
   private lastTeaAt = -Infinity;
-  // "Bắt bài chuyện mua chuộc" KHÔNG sống ở đây: nó là chuyện người đó NHỚ, nên nằm
-  // trong `NpcState` (Service.teaSuspect) và đi qua save — không phải thuộc tính của
-  // một lượt ghé, nếu không thì ghé lại là quên sạch.
 
-  // ── hỏi chuyện (ASK_QUESTION) ─────────────────────────────────────────────
   private questionPending = false;
   lastAskedAt = -Infinity;
   loudCue = false;
 
   leaveReason: LeaveReason | null = null;
-  /** Renderer đọc, sim ghi. */
   readonly react = new ReactionState();
-  /** Mood ngoài tầm kiểm soát của hôm nay (P2-02 §5.2) — KHÔNG phải `mood` chờ bên dưới. */
+  /** Mood ngoài tầm kiểm soát của hôm nay, khác `mood` chờ bên dưới. */
   dayMood: Mood = CALM_MOOD;
-  /** Chữ ký của chị Lan: trên đường về đi vòng qua thùng rác đầu hẻm rồi mới ra cổng. */
+  /** Trên đường về đi vòng qua thùng rác đầu hẻm rồi mới ra cổng. */
   binDetour = false;
   binAt = -1;
   carrying = false;
-  /** Thấy người bán rửa tay ở vòi (P3-04 C1) — tới lúc này soi bớt đi một chút. */
   washRelief = 0;
-  /** Hệ số trời (`weatherInfo.gazeMul`) — nhân vào gaze nền. */
   gazeMul = 1;
   orderedAt = 0;
-  /** Đứng lại `stay` giây ở chỗ dừng rồi đi. `spot`/`exit` vắng thì về mặc định; người qua đường khai cả hai vì họ đi XUYÊN cái hẻm. */
+  /** `spot`/`exit` vắng thì về mặc định. */
   pass: {
     stay: number; until: number; nod?: boolean;
     spot?: { x: number; y: number }; exit?: { x: number; y: number }; speed?: number;
   } | null = null;
-  /** ⚠️ Cờ DUY NHẤT phân biệt họ với người đi ngang CÓ KỊCH BẢN — hai thứ dùng chung đường đi `pass`. */
+  /** Cờ duy nhất phân biệt với người đi ngang có kịch bản — hai thứ dùng chung `pass`. */
   ambient = false;
-  /**
-   * Quyết LÚC VỪA TỚI đầu hẻm, trước khi chờ một giây nào. ⚠️ Chỉ bật ở `phase === "arriving"` và
-   * không bao giờ bật lại: `queuePatienceMul` ngược chiều với nó, và hợp đồng đó có test riêng.
-   */
+  /** Chỉ bật ở `phase === "arriving"` và không bao giờ bật lại. */
   balking = false;
-  /** Roll của `inviteChance` vốn đã tất định nên mời lại cũng ra chữ "thôi" đó — nhưng nó chặn KẾT QUẢ, không chặn CƠ HỘI. */
   inviteRefused = false;
-  /** Kể cả lúc trượt roll — không có cờ này thì hai người đi ngược chiều bị xét lại mỗi frame. */
+  /** Bật cả lúc trượt roll, không thì bị xét lại mỗi frame. */
   greeted = false;
-  /** Đang chậm chân vì chào người đi ngược chiều — `step()` trả tốc độ về sau mốc này. */
   greetUntil = 0;
-  /** `Service.tickWorldFacts` gán. Không có cờ này thì thoại buộc tội người ta chen hàng trong khi họ xếp đàng hoàng. */
   cutLine = false;
-  /** ⚠️ Không dùng được thứ tự mảng `customers`: `stepAside` splice người ta đi chỗ khác trong chính mảng đó. */
+  /** Không dùng được thứ tự mảng `customers` vì `stepAside` splice trong chính mảng đó. */
   arrivedSeq = 0;
-  /**
-   * ⚠️ Chuyện VỊ TRÍ, không phải thứ tự: người nép không được cấp chỗ nào (`assignSlots` bỏ qua),
-   * nên cả hàng sau lưng dồn lên một bậc THẬT. Chỉ đảo thứ tự mảng thì không ai dạt ra cả.
-   */
+  /** Người nép không được cấp chỗ (`assignSlots` bỏ qua) nên cả hàng sau dồn lên thật. */
   aside = false;
   asideFor: string | null = null;
   asideAt = 0;
   inShade = false;
   shadeUntil = 0;
-  /** Khác `inShade` ở hệ quả: ngồi làm kiên nhẫn trôi CHẬM (`SIT_PATIENCE_MUL`) — đó là lý do mua cái ghế. */
   sitting = false;
   sitUntil = 0;
-  /** Clip ra sao phụ thuộc quầy sạch hay dơ trong lúc máy chạy — `filmSpoiled` chấm liên tục. */
   filming = false;
   filmUntil = 0;
   filmSpoiled = false;
-  /**
-   * ĐỨNG CHẮN ngay chỗ đưa hàng. Khác `cutLine` (sai thứ tự) và khác `aside` (đã dạt rồi): đây
-   * là chuyện CHỖ ĐỨNG trong lúc chưa tới lượt. Không có cờ này thì câu "xích qua chút giùm"
-   * nói bừa.
-   */
+  /** Đứng chắn chỗ đưa hàng lúc chưa tới lượt — khác `cutLine` và `aside`. */
   blocking = false;
-  /** Đang ăn — chặn mời ăn lần nữa, và đổi câu chào. Hết `eatUntil` thì thôi. */
   eating = false;
   eatUntil = 0;
-  /** Đang quay nhìn vào quầy vì MỘT CÂU NÓI (`LOOK_INSIDE`), tới thời điểm này. */
   lookInsideUntil = 0;
-  /**
-   * TRONG LƯỢT GHÉ NÀY — tầng `v.*`, nằm giữa "trong cuộc" (`TalkSession`) và `NpcState` (save).
-   *
-   * Cần một tầng riêng vì kho dùng chung rút lại được trong CÙNG một lượt ghé (`eligible()` chỉ
-   * chặn theo chủ đề trong ngày), nên mời ăn hai lần với cùng một người là chuyện xảy ra được.
-   * Sống đúng bằng vòng đời `Customer`.
-   */
-  /**
-   * LÚC NÀY NGƯỜI NÀY MUỐN MỘT CUỘC TRAO ĐỔI KIỂU GÌ.
-   *
-   * ⚠️ KHÔNG phải "nhu cầu sống" kiểu The Sims — CANON §16 Đừng-1 cấm mô phỏng đời sống NPC
-   * ngoài quầy: sáu con số này chỉ được dùng để chọn CHUYỆN ĐỂ NÓI, không bao giờ để chọn CHỖ ĐỂ
-   * ĐI. Lịch sinh hoạt vẫn là của P2-03 §2.9.
-   */
+  /** Chỉ dùng để chọn chuyện để nói, không bao giờ để chọn chỗ để đi. */
   drives: DriveLevels = newDrives();
   driveBase: DriveLevels = newDrives();
+  /** Nhớ trong lượt ghé này, vì kho thoại rút lại được trong cùng một lượt. */
   visit = {
     gaveTea: false,
     gaveFood: false,
     apologised: false,
-    /** `DeedId` đang hứa dở trong lượt này. */
     promised: [] as string[],
   };
-  /**
-   * HÔM NAY NGƯỜI NÀY ĐI ĐÂU, VÀ ĐANG THẤY THẾ NÀO. Có mục đích thì mới trả lời được câu "mời họ
-   * có vô lý không", và mục đích quyết cả việc họ dễ cười hay dễ cáu.
-   */
   purpose: { id: string; hurry: number; inviteMul: number } | null = null;
   purposeState: { id: string; patienceMul: number; angerMul: number; inviteMul: number } | null = null;
-  /** Một dòng tiếng Việt mô tả họ hôm nay — nhật ký dev và overlay đọc. */
   purposeLabel = "";
-  /** Lúc dừng lại ngó cái hàng (giây của khách), trước khi quay lưng. −1 = chưa tới chỗ ngó. */
+  /** −1 = chưa tới chỗ ngó. */
   balkAt = -1;
-  /** Lời thoại đang hiện trên bong bóng, và còn hiện bao lâu. */
   say: string | null = null;
   sayFor = 0;
-  /**
-   * Giây đã trôi kể từ lúc bong bóng câu trước TẮT; `Infinity` = chưa nói câu nào.
-   * `Service.tickDialog` đọc nó để chừa một hơi thở giữa hai câu của CÙNG một người — dán sát
-   * nhau thì mắt đọc ra là một bong bóng ĐỔI CHỮ.
-   */
+  /** `Infinity` = chưa nói câu nào; dùng để chừa một hơi thở giữa hai câu của cùng một người. */
   sayQuietFor = Infinity;
-  /**
-   * Ưu tiên và tổng tuổi thọ của câu ĐANG hiện — `Service.speechBlocked` đọc để quyết câu nào
-   * được cắt ngang câu nào.
-   *
-   * Mặc định 100 (không ai cắt được) là CỐ Ý: ai gọi thẳng `speak()` thay vì đi qua hàng đợi thì
-   * đang nói một câu của kịch bản, và kịch bản không bị một lời cằn nhằn nào chen ngang.
-   */
+  /** Mặc định 100 cố ý: gọi thẳng `speak()` là câu kịch bản, không bị cắt ngang. */
   sayPri = 100;
   sayLife = 0;
-  /** Câu đang hiện đã nằm trên màn hình bao nhiêu giây. */
   get saidFor() { return this.sayLife - this.sayFor; }
   private clock = 0;
 
   constructor(
     readonly id: string,
-    /** Khoá tra `NpcState` trong save — khách vãng lai dùng chung khoá theo kiểu người. */
+    /** Khách vãng lai dùng chung khoá theo kiểu người. */
     readonly memKey: string,
     readonly name: string,
     readonly personality: Personality,
@@ -221,7 +156,6 @@ export class Customer implements Observer {
     readonly npc: NpcDef | null,
     readonly visitCount: number,
     spawn: { x: number; y: number },
-    /** `patienceBaseSec` đã tính cả khung giờ vội. */
     patienceSec: number,
     private rng: Rng,
   ) {
@@ -232,7 +166,6 @@ export class Customer implements Observer {
     this.gazeM = new GazeMachine(npc?.gaze ?? WALKIN_GAZE, id, rng);
   }
 
-  /** `day` chỉ để `order.ts` biết hôm nay sáu bữa đầu mở mấy món (`sim/ease.ts`). */
   rollOrder(day?: number) {
     this.order = randomOrder(this.rng, day);
   }
@@ -247,10 +180,7 @@ export class Customer implements Observer {
 
   get speaking() { return this.say !== null; }
 
-  /**
-   * `pressure` = false khi bật chế độ không giới hạn thời gian (CANON §15.2):
-   * khách vẫn bỏ đi vì bạn làm SAI, nhưng không bao giờ vì bạn CHẬM.
-   */
+  /** `pressure` = false: khách vẫn bỏ đi vì làm sai, nhưng không bao giờ vì chậm. */
   tick(dt: number, pressure: boolean) {
     this.clock += dt;
     this.react.tick(this.clock);
@@ -264,11 +194,6 @@ export class Customer implements Observer {
       if (this.sipIn < 0) this.gazeM.force("DRINKING");
     }
 
-    /*
-     * NGỒI THÌ CHỜ ĐƯỢC LÂU HƠN — `SIT_PATIENCE_MUL`. Không đóng băng hẳn (cái ghế không được
-     * thành một nút tắt kiên nhẫn), nhưng phải ĐO ĐƯỢC, nếu không thì 320 nghìn tiền ghế mua về
-     * một hình vẽ.
-     */
     if (pressure && (this.phase === "queueing" || this.phase === "waiting")) {
       this.waitSec += dt * (this.sitting ? SIT_PATIENCE_MUL : 1);
     }
@@ -289,48 +214,28 @@ export class Customer implements Observer {
 
   get waitRatio() { return this.waitSec / this.waitT; }
 
-  /**
-   * Còn lại bao nhiêu phần kiên nhẫn, 1 → 0. Hết là bỏ về (`LEAVE_AT`).
-   *
-   * ⚠️ Khác `waitRatio` ở MẪU SỐ: `waitRatio` đo theo mốc MADE_THEM_WAIT (r = 1), còn cái này đo
-   * theo mốc BỎ ĐI (r = 1,6). Vẽ thanh theo `waitRatio` thì thanh cạn sạch trong khi người ta
-   * còn đứng đó thêm 60% nữa.
-   */
+  /** Đo theo mốc bỏ đi (`LEAVE_AT`), khác `waitRatio` đo theo mốc r = 1. */
   get patienceLeft() {
     return Math.max(0, Math.min(1, 1 - this.waitRatio / LEAVE_AT));
   }
 
-  /**
-   * Nói được một câu làm người ta dịu lại — P5-05. `amount` 0..100 = lấy lại ngần ấy %
-   * quãng ĐÃ chờ, chứ không phải % tổng sức chờ: dỗ một người vừa mới tới thì gần như
-   * không có tác dụng gì, dỗ người đã đứng lâu mới đáng kể. Không bao giờ về dưới 0.
-   */
+  /** `amount` 0..100 = lấy lại ngần ấy % quãng đã chờ, không phải % tổng sức chờ. */
   soothe(amount: number) {
     this.waitSec = Math.max(0, this.waitSec - this.waitSec * (Math.min(100, amount) / 100));
   }
 
-  /** Nới SỨC CHỜ thêm `sec` giây — ly nước trà. Khác `soothe` (xoá quãng đã chờ), xem `TEA_PATIENCE_SEC`. */
   waitMore(sec: number) {
     this.waitT += sec;
   }
 
-  /** Còn trong 45 s kể từ ly trước? */
   get teaOnCooldown() { return this.clock - this.lastTeaAt < TEA.cooldown; }
 
-  /**
-   * Nhận ly trà. `cupNo` = ly thứ mấy TRONG NGÀY của người này (Service đếm — mức nhỏ
-   * dần là chuyện của cả ngày, không phải của một lượt ghé: §8i).
-   * Trả hệ số CARED_FOR_THEM (0 = chỉ gật đầu). Cửa sổ hạ gaze chỉ có khi ngoài
-   * cooldown — cửa sổ attention phải ngắn và KHÔNG farm được (§8a).
-   */
+  /** `cupNo` = ly thứ mấy trong ngày; trả hệ số CARED_FOR_THEM (0 khi còn cooldown). */
   takeTea(cupNo: number): number {
     const onCd = this.teaOnCooldown;
     this.teaCount++;
     this.holdingTeaFor = 7;
-    /*
-     * 20 GIÂY TRẢ Ở ĐÂY, TRƯỚC CỔNG COOLDOWN: `CARED_FOR_THEM` nhỏ dần và có cooldown, thời gian chờ
-     * thì không. Trần chống lạm dụng: còn cầm ly thì không nhận ly nữa, và `teaSuspectAtCup`.
-     */
+    // Sức chờ cộng trước cổng cooldown: chỉ CARED_FOR_THEM mới có cooldown.
     this.waitMore(TEA_PATIENCE_SEC);
     if (onCd) return 0;
     this.lastTeaAt = this.clock;
@@ -338,7 +243,6 @@ export class Customer implements Observer {
     return TEA.diminish[Math.min(Math.max(1, cupNo) - 1, TEA.diminish.length - 1)];
   }
 
-  /** Người chơi hỏi chuyện → nhìn mặt người chơi thay vì nhìn tay (P1-02 §2.8). */
   ask() {
     this.lastAskedAt = this.clock;
     this.questionPending = true;
@@ -346,7 +250,6 @@ export class Customer implements Observer {
 
   get now() { return this.clock; }
 
-  /** Ba nấc biểu cảm — CANON T3: đọc qua dáng và mặt, không qua thanh số. */
   get mood(): "calm" | "checking" | "annoyed" {
     const r = this.waitRatio;
     if (r < 0.6) return "calm";

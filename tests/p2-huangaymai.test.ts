@@ -1,12 +1,3 @@
-/**
- * "MAI CON ĐEM RA CHO CÔ COI" — lời hứa của HỌ, và cái hẹn phải qua đêm thật.
- *
- * Cờ trơn (`need: "cờ"`) ĐÚNG NGAY trong cùng buổi, nên người ta vừa hứa xong là cuộc trả
- * bài mở ra liền. Tiền tố `~` bắt cờ phải đặt từ một NGÀY TRƯỚC.
- *
- * Lưới này canh đúng chỗ đó, vì nó không nổ ra thành lỗi: nó chỉ làm một lời hứa mất
- * trọng lượng, và không ai thấy.
- */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { TalkStore } from "../src/content/talks";
@@ -14,7 +5,6 @@ import { bareFlag, eligible, walkNodes, type Talk, type TalkCtx } from "../src/s
 
 const TALKS: Talk[] = await TalkStore.loadAll();
 
-/** Mọi cuộc mở ra nhờ MỘT lời hứa hôm trước. */
 const TRA_BAI = TALKS.filter((t) => t.when?.needFlag?.startsWith("~"));
 
 test("HM-1 có cuộc trả bài, và cuộc nào cũng khớp một nút ĐẶT cờ", () => {
@@ -67,8 +57,6 @@ test("HM-4 chạy thật: hứa hôm nay thì cờ ghi ĐÚNG NGÀY, và hôm sa
   const svc = (h as unknown as { service: any }).service;
   const homNay = w.progress.dayIndex;
 
-  // Ghi cờ qua ĐÚNG đường chạy thật (`applyOutcome`), không nhét tay vào save — chỗ dễ
-  // sai nhất là nó ghi `true` thay vì số ngày, và lúc đó `~` không có gì để so.
   for (let i = 0; i < 20000 && !svc.customers.length; i++) h.step(1000 / 30);
   assert.ok(svc.customers.length, "cả buổi không ai tới");
   svc.applyTalkOption(svc.customers[0], { flag: "suHuaQuayChim" });

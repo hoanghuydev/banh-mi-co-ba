@@ -4,15 +4,7 @@ import { Rng, fnv1a, ShuffleBag } from "../core/rng";
 import { loadSettings, type Settings } from "../core/save";
 import { music } from "./music";
 
-/**
- * TIẾNG ĐỘNG — bốn bus còn lại của CANON §15.4; bus "Nhạc" sống riêng ở `music.ts`. Scene nói "vừa
- * có chuyện này", KHÔNG scene nào tự `this.sound.play`.
- *
- * Bốn luật cài thẳng vào đây: mỗi bus một công tắc + trần gain riêng · giọng người nói thì mọi bus
- * khác hạ xuống · pan theo chỗ người ta đứng · âm mô tả THẾ GIỚI thì giữ, âm chấm điểm thì bỏ.
- */
-
-// ─────────────────────────────────────────────────────────────────── danh mục
+// Mọi tiếng động phát qua đây, không scene nào tự `this.sound.play`; nhạc ở `music.ts`.
 
 export type BusId = "duongPho" | "giongNPC" | "thaoTac" | "amBao";
 export type SfxId = keyof typeof catalog;
@@ -30,9 +22,7 @@ export function sfxBus(id: SfxId): BusId {
   return CATALOG[id].bus;
 }
 
-// ───────────────────────────────────────────────────────────────── trần gain
-
-/** Mức TỐI ĐA khi người chơi kéo công tắc lên 100. */
+/** Mức tối đa khi công tắc ở 100. */
 const CEILING: Record<BusId, number> = {
   duongPho: 0.708,   // −3 dB
   giongNPC: 1.0,     //  0 dB
@@ -42,19 +32,18 @@ const CEILING: Record<BusId, number> = {
 
 const VOICE_DUCK: Record<BusId, number> = {
   duongPho: 0.447,   // −7 dB
-  giongNPC: 1.0,     //  không tự hạ mình
+  giongNPC: 1.0,
   thaoTac: 0.708,    // −3 dB
-  amBao: 1.0,        //  0 dB — âm báo phải nghe thấy kể cả khi có người nói
+  amBao: 1.0,        //  âm báo phải nghe thấy cả khi có người nói
 };
 const CROWD_DUCK = 0.282;
 
-/** ⚠️ DANH SÁCH ĐÓNG. Thêm vào đây một âm mô tả THẾ GIỚI (bánh rớt, bánh khét, ruồi) là lấy mất của người nhìn không rõ cách duy nhất biết chuyện vừa xảy ra. */
+/** Chỉ âm chấm điểm; âm mô tả thế giới (bánh rớt, khét) không được thêm vào vì người nhìn kém cần nó. */
 const NEGATIVE_CUES: Partial<Record<SfxId, SfxId | null>> = {
-  ui_khong_hop_le: "ui_click_go",     // thay bằng click gỗ, CÙNG ĐỘ TO
-  ui_ngay_am_tien: null,                        // im hẳn
+  ui_khong_hop_le: "ui_click_go",
+  ui_ngay_am_tien: null,
 };
 
-/** Còi là âm gây khó chịu nhất trong bộ — tối đa 1 lần / 25 s. */
 const COOLDOWN_SEC: Partial<Record<SfxId, number>> = {
   sfx_coi_xe: 25,
   sfx_ga_gay: 20,
@@ -62,37 +51,33 @@ const COOLDOWN_SEC: Partial<Record<SfxId, number>> = {
   sfx_chim_se: 6,
 } as Partial<Record<SfxId, number>>;
 
-/** Rung cao độ / độ to mỗi lần phát, theo bus. UI = 0: âm báo phải GIỐNG HỆT nhau. */
+/** Rung cao độ / độ to mỗi lần phát; âm báo = 0 để luôn giống hệt nhau. */
 const JITTER: Record<BusId, { rate: number; db: number }> = {
   duongPho: { rate: 0.06, db: 1.5 },
   giongNPC: { rate: 0.04, db: 1.0 },
   thaoTac: { rate: 0.05, db: 1.5 },
-  amBao: { rate: 0, db: 0 },           // §5.4: timbre giống hệt = thông tin, không phán xét
+  amBao: { rate: 0, db: 0 },
 };
 
-/** Không phải lời thoại (nội dung thật ở chữ trên bong bóng), nên để ngang mức VO thì nó thành thứ to nhất trong cả bản phối. */
+/** Tiếng lầm bầm thấp hơn VO, không thì thành thứ to nhất bản phối. */
 const TALK_GAIN = 0.62;
 
 const MAX_CONCURRENT = 14;
 
-// ─────────────────────────────────────────────────────────────────── giọng NPC
-
-/** Bộ asset tạm chỉ có MỘT bộ tiếng phi lời dùng chung, nên cao độ là chỗ phân biệt 12 NPC. Số lấy tay — hash cho ra vài cặp sát nhau nghe như một người. */
+/** Cao độ chọn tay để phân biệt NPC; hash cho ra vài cặp sát nhau nghe như một người. */
 const VOICE_PITCH: Record<string, number> = {
-  BA_BAY: 1.12, BA_SAU: 1.08,                     // hai bà lớn tuổi, giọng cao mà khô
-  CHU_TU: 0.82, ONG_HAI: 0.78, CHU_KIET: 0.86,    // ba ông, trầm
+  BA_BAY: 1.12, BA_SAU: 1.08,
+  CHU_TU: 0.82, ONG_HAI: 0.78, CHU_KIET: 0.86,
   THAY_PHUC: 0.92,
   ANH_DUNG: 0.95, ANH_BAO: 1.0,
   CHI_LAN: 1.18, CHI_HANH: 1.14, CO_MAI: 1.22,
-  BE_SU: 1.45,                                     // bé Sứ — cao hẳn, nghe ra ngay là trẻ con
+  BE_SU: 1.45,
 };
 const DEFAULT_PITCH = 1.0;
 
 export function voicePitch(npcId: string): number {
   return VOICE_PITCH[npcId] ?? DEFAULT_PITCH;
 }
-
-// ────────────────────────────────────────────────────────────────── bên trong
 
 type Loop = {
   sound: Phaser.Sound.BaseSound & { setVolume(v: number): unknown };
@@ -118,8 +103,7 @@ class SfxDirector {
   private game: Phaser.Game | null = null;
   private loops = new Map<string, Loop>();
   private bags = new Map<string, ShuffleBag>();
-  /** Dòng ngẫu nhiên RIÊNG cho phần trình bày — không đụng các stream của P0-02 §2.3.
-   *  Chọn biến thể nào không được phép làm lệch chuỗi số của lịch khách. */
+  /** Dòng riêng để việc chọn biến thể không làm lệch các stream gameplay. */
   private rng = new Rng(fnv1a("sfx|presentation"));
 
   private vol: Record<BusId, number> = { ...SILENT_BUS };
@@ -129,16 +113,10 @@ class SfxDirector {
   private pingOn = false;
   private voiceLeft = 0;
   private lastPlayed = new Map<string, number>();
-  /**
-   * GIỮ CẢ OBJECT chứ không đếm bằng một con số. ⚠️ Đếm bằng `live++`/`live--` thì rò: con số bò lên
-   * tới trần và từ đó MỌI tiếng một phát đều im, không báo lỗi gì. Không sửa bằng cách tìm chỗ rò —
-   * chỗ rò sau sẽ mọc ở một đường thoát khác; bỏ hẳn con số, tự dọn trước khi đếm.
-   */
+  /** Giữ object chứ không đếm `live++/--`: đếm thì rò tới trần và mọi tiếng im luôn. */
   private live = new Set<Phaser.Sound.BaseSound>();
   private now = 0;
   private warned = new Set<string>();
-
-  // ───────────────────────────────────────────────────────────────── vòng đời
 
   attach(game: Phaser.Game) {
     if (this.game) return;
@@ -163,9 +141,7 @@ class SfxDirector {
     this.loops.forEach((l, key) => { if (this.busGain(l.bus) === 0) this.loop(null, key as SfxId, false, {}, 0); });
   }
 
-  // ─────────────────────────────────────────────────────────────────── nạp
-
-  /** Mẩu một phát PHẢI nạp trước: cú bấm đầu tiên là cú duy nhất người chơi còn đang HỌC rằng bấm E thì có tiếng. Ambience thì nạp lười được. */
+  /** Âm một phát phải nạp trước để cú bấm đầu tiên có tiếng; ambience thì nạp lười. */
   preload(scene: Phaser.Scene, ids: readonly SfxId[]) {
     for (const id of ids) {
       const e = CATALOG[id];
@@ -181,9 +157,6 @@ class SfxDirector {
     return SFX_IDS.filter((id) => buses.includes(CATALOG[id].bus));
   }
 
-  // ─────────────────────────────────────────────────────────────── phát một phát
-
-  /** Trả `true` nếu thật sự có tiếng — chỗ gọi hầu như không cần, nhưng test thì cần. */
   play(scene: Phaser.Scene, id: SfxId, o: Opts = {}): boolean {
     const resolved = this.resolve(id);
     if (!resolved) return false;
@@ -216,12 +189,10 @@ class SfxDirector {
     this.setPan(snd, o.pan ?? 0);
     snd.once(Phaser.Sound.Events.COMPLETE, () => snd.destroy());
 
-    // Ghi vào `live` ĐÚNG LÚC PHÁT, không phải lúc tạo: mẩu hẹn giờ chưa kêu thì
-    // chưa chiếm một suất, mà `countLive` lại dọn đúng những cái chưa kêu.
+    // Ghi vào `live` lúc phát chứ không lúc tạo, vì `countLive` dọn những cái chưa kêu.
     const start = () => { this.live.add(snd); snd.play(); };
     if (o.delay && o.delay > 0) {
-      // Scene tắt trước khi tới hẹn thì `delayedCall` không bao giờ chạy — dọn luôn,
-      // không thì cái sound object nằm lại mãi trên bàn mixer toàn cục.
+      // Scene tắt trước hẹn thì `delayedCall` không chạy, phải tự dọn kẻo sound nằm lại trên mixer.
       const t = scene.time.delayedCall(o.delay, start);
       scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
         if (!snd.isPlaying) { t.remove(); snd.destroy(); }
@@ -234,24 +205,21 @@ class SfxDirector {
     return true;
   }
 
-  /** Khác `play` ở đúng một chỗ: nó BẬT DUCKING — nhạc và tiếng động lùi lại nhường giọng. */
+  /** Như `play` nhưng bật ducking cho các bus khác. */
   voice(scene: Phaser.Scene, id: SfxId, npcId: string, pan = 0, mul = 1): boolean {
-    // `mul` nhân vào cao độ CỦA NGƯỜI ĐÓ, không thay thế nó: bà Bảy bực vẫn phải
-    // ra giọng bà Bảy, chỉ trầm hơn. Hạ rate cũng kéo dài file — "hm?" thành "hmmm".
     const ok = this.play(scene, id, { pan, rate: voicePitch(npcId) * mul });
     if (ok) this.duckForVoice(1.0);
     return ok;
   }
 
-  /** ⚠️ Lớp VÁ, không phải thiết kế: `BubblePool` hiện nguyên câu chứ không gõ từng chữ nên chưa có chỗ bám cho VO thật. Nối VO thật vào thì GỠ HÀM NÀY, đừng giữ cả hai. */
+  /** Tiếng lầm bầm thay VO; có VO thật thì gỡ hàm này. */
   talk(scene: Phaser.Scene, npcId: string, textLength: number, pan = 0) {
     if (!hasSfx("vox_blip")) return;
     const pitch = voicePitch(npcId);
 
-    /** CÓ XÊ DỊCH: hai câu dài bằng nhau mà lúc nào cũng ra đúng ngần ấy tiếng thì tai nhận ra ngay. */
     const n = Math.max(2, Math.min(5, Math.round(textLength / 15 + this.rng.next() * 1.2)));
 
-    /** `drift` là hướng đi của cả câu, `wobble` là xê dịch từng tiếng — thứ tai bắt được là CHẤT GIỌNG, không phải file nào. */
+    // `drift` là hướng cao độ cả câu, `wobble` xê dịch từng tiếng.
     const drift = (this.rng.next() * 2 - 1) * 0.14;
     let at = 0;
     for (let i = 0; i < n; i++) {
@@ -264,15 +232,13 @@ class SfxDirector {
         volume: TALK_GAIN * (i === 0 ? 1 : 0.78 + this.rng.next() * 0.16),
         delay: at,
       });
-      // Khoảng cách KHÔNG ĐỀU: lưới đều tăm tắp nghe ra máy gõ chứ không ra người nói.
+      // Khoảng cách không đều, đều thì nghe như máy gõ.
       at += 85 + this.rng.next() * 85;
     }
     this.duckForVoice(at / 1000 + 0.2);
   }
 
-  // ──────────────────────────────────────────────────────────────── chạy vòng
-
-  /** Gọi lại với trạng thái cũ là không làm gì, nên scene cứ gọi mỗi frame được. */
+  /** Idempotent, gọi mỗi frame được. */
   loop(scene: Phaser.Scene | null, id: SfxId, on: boolean, o: Omit<Opts, "delay"> = {}, fadeMs = 1200) {
     const e = CATALOG[id];
     if (!e) return;
@@ -295,8 +261,7 @@ class SfxDirector {
     const idx = this.drawVariant(id, e.files.length);
     const key = this.key(id, idx);
     if (!scene.cache.audio.exists(key)) {
-      // Ambience nạp LƯỜI: nó fade vào trong hơn một giây nên chậm vài trăm ms
-      // không ai nghe ra, mà nạp sẵn hết thì vào quán phải kéo về thêm ~4 MB.
+      // Nạp lười: fade-in che được độ trễ, đỡ ~4 MB lúc vào quán.
       this.lazyLoad(scene, id, key, () => this.loop(scene, id, true, o, fadeMs));
       return;
     }
@@ -328,15 +293,11 @@ class SfxDirector {
     this.loops.forEach((l) => this.fadeLoop(l, 0, fadeMs, true));
   }
 
-  // ────────────────────────────────────────────────────────────── trợ năng
-
-  /** ⚠️ CÙNG MỘT ÂM cho chuyện tốt và chuyện xấu: nó nói "có người vừa để ý tới bạn", không nói "bạn vừa làm sai". Pan theo chỗ đứng nên còn cho biết LÀ AI. */
+  /** Cùng một âm cho chuyện tốt lẫn xấu: chỉ báo "có người để ý", không phán xét. */
   perceptionPing(scene: Phaser.Scene, pan: number) {
     if (!this.pingOn) return;
     this.play(scene, "a11y_ping_glimpsed", { pan });
   }
-
-  // ─────────────────────────────────────────────────────────────── bên trong
 
   private countLive() {
     for (const s of this.live) {
@@ -407,7 +368,7 @@ class SfxDirector {
   }
 
   private duckForVoice(seconds: number) {
-    this.voiceLeft = Math.max(this.voiceLeft, seconds + 0.45);   // + release 450 ms của §2.3
+    this.voiceLeft = Math.max(this.voiceLeft, seconds + 0.45);   // + release 450 ms
     music.voiceDuck(true);
     this.loops.forEach((l) => this.applyLoopGain(l));
   }

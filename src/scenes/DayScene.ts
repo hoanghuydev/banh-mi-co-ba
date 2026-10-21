@@ -14,21 +14,7 @@ import { tourDone } from "../sim/tour";
 import { DEFAULT_PLAYER_NAME } from "../content/shop";
 import { sfx } from "../audio/sfx";
 
-/**
- * KHUNG NGÀY — P0-01 §2.3. Scene thường trực: chạy suốt từ lúc vào ván tới lúc về
- * sảnh, KHÔNG BAO GIỜ restart, không vẽ gameplay. Nó sở hữu `GameContext` và điều
- * phối ba scene con:
- *
- *        ┌──────────── DayScene (sở hữu ctx) ────────────┐
- *        │  MORNING        SELLING          EVENING      │
- *        ▼                                               │
- *    MarketScene ──market:done──► StallScene ──stall:closed──► EveningScene
- *        ▲                                                     │
- *        └──────────────────── evening:done (ngày +1) ─────────┘
- *
- * Scene con nhận ctx bằng INJECTION lúc launch và chỉ phát event — không dùng giá
- * trị trả về của scene. Dữ liệu truyền đi hẹp, một chiều.
- */
+/** Scene thường trực sở hữu `GameContext`, không bao giờ restart; scene con nhận ctx lúc launch và chỉ phát event. */
 export type DayStart = { mode: "new" } | { mode: "continue" };
 
 const CHILDREN = ["market", "stall", "evening", "broke"] as const;
@@ -64,12 +50,7 @@ export class DayScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.teardown());
   }
 
-  // ───────────────────────────────────────────────────────────── luồng ngày
-
-  /**
-   * Đầu ngày: reset MỌI stream RNG về đầu ngày, chụp bản đầu ngày (để "Chơi lại
-   * ngày này" khôi phục ĐÚNG vị trí RNG — chơi lại chứ không phải reroll), rồi đi chợ.
-   */
+  /** Chụp bản đầu ngày để "Chơi lại ngày này" khôi phục đúng vị trí RNG, không reroll. */
   private beginDay() {
     const { ctx } = this;
     const w = ctx.world;
@@ -80,13 +61,12 @@ export class DayScene extends Phaser.Scene {
     w.stall.presets = refillPresets(w.stall.presets as never);
     w.stall.cleanliness = 1 - (1 - w.stall.cleanliness) * 0.4;
     gcBags(w.shuffleBags, w.progress.dayIndex);
-    // P3: rạng sáng — trời hôm nay, dọn hàng hư, thu tiền chỗ. TRƯỚC bản chụp đầu ngày, để
-    // "chơi lại ngày này" không thu tiền chỗ hai lần và ra đúng trời đó, giá đó.
+    // Trước bản chụp đầu ngày, để chơi lại không thu tiền chỗ hai lần.
     dawn(w);
     ctx.sync();
     w.progress.dayStartSnapshotRef = ctx.save.writeDayStart(ctx.snapshot());
     bus.emit("day:started", { dayIndex: w.progress.dayIndex, daySeed: ctx.rng.daySeed, weather: w.progress.weather });
-    // Ngày mới: chuông khẽ + cửa cuốn (§4.2 B). Ở đây chứ không ở `StallScene` vì cảnh quán còn bị mở lại khi "chơi lại ngày này".
+    // Ở đây chứ không ở `StallScene` vì cảnh quán còn bị mở lại giữa ngày.
     sfx.play(this, "ui_chuyen_ngay");
     sfx.play(this, "sfx_cua_cuon", { delay: 450, volume: 0.8 });
     this.open("market");
@@ -98,7 +78,6 @@ export class DayScene extends Phaser.Scene {
     const p = ctx.world.progress;
     ctx.rng.fromJSON(ctx.world.saveId, p.dayIndex, ctx.world.rng.counters);
     ctx.clock.reset(p.gameMinutes);
-    // Ván đã phá sản thì về đúng màn phá sản, không rơi về buổi sáng.
     if (ctx.world.flags.broke) {
       this.open("broke");
       return;
@@ -117,11 +96,7 @@ export class DayScene extends Phaser.Scene {
     return true;
   }
 
-  /**
-   * Chỉ cho dev (`day.weather`): dựng lại cảnh quán TẠI CHỖ, giữ nguyên giờ và state.
-   *
-   * Phải đi qua `open()`, không `scene.restart()`: `StallScene.init` cần `ctx` và `day` trong `data`.
-   */
+  /** Phải đi qua `open()`, không `scene.restart()`: `StallScene.init` cần `ctx` và `day` trong `data`. */
   devReopenStall() {
     this.open("stall", { resume: true });
   }
@@ -144,15 +119,11 @@ export class DayScene extends Phaser.Scene {
     for (const k of CHILDREN) if (this.scene.isActive(k) || this.scene.isPaused(k)) this.scene.stop(k);
   }
 
-  // ───────────────────────────────────────────────────────── nghe sự kiện
-
   private wire() {
     const { ctx } = this;
     const on = <K extends EventKey>(k: K, fn: (p: EventMap[K]) => void) => { this.off.push(bus.on(k, fn)); };
 
     on("market:done", () => {
-      // Rời chợ = xong việc đi chợ của bữa đầu (`sim/tour`). Đặt ở đây chứ không trong
-      // `MarketScene`: chỗ này là chỗ duy nhất biết chắc buổi chợ đã khép lại.
       tourDone(ctx.world, "CHO");
       this.open("stall");
     });
@@ -165,11 +136,10 @@ export class DayScene extends Phaser.Scene {
       this.open("evening");
       ctx.save.request("SCENE_CHANGE");
     });
-    // Doanh thu ngày âm — P5-03 §4.2 C: `disableNegativeAudioCues` tắt được tiếng này (`sfx.ts` lo).
     on("day:ended", (p) => { if (p.summary.revenue < 0) sfx.play(this, "ui_ngay_am_tien"); });
     on("evening:done", () => {
       const w = ctx.world;
-      // Chốt phá sản sau khi cảnh tối đóng: mọi khoản tiêu trong đêm (sắm đồ nghề) đã đủ mặt.
+      // Chốt phá sản sau cảnh tối, khi mọi khoản tiêu trong đêm đã đủ mặt.
       if (markBroke(w)) {
         ctx.save.flushNow("SCENE_CHANGE");
         this.open("broke");

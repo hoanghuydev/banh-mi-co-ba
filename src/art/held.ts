@@ -4,35 +4,17 @@ import { shade, type Pen } from "./canvas";
 import { CRUST } from "../sim/oven";
 import type { Hand } from "../world/stations";
 
-/**
- * MÓN ĐANG CẦM TRÊN TAY — mỗi trạng thái một HÌNH khác hẳn, phân biệt được cả khi in đen trắng.
- * Chip CHỮ trên đầu là thứ CANON §16 Đừng-1 gọi đúng tên, và nó phá T1: nếu chính người chơi cũng
- * chỉ đọc chữ chứ không nhìn tay thì cái nhìn của khách chẳng còn nghĩa gì.
- *
- * ⚠️ Hai ổ "nguội" là cố ý: `Hand` chỉ đếm tay đang bận gì, nhưng độ giòn và hơi ấm là HAI trục
- * rời nhau — vẽ ổ 0,5 vỏ bằng hình bột sống là art nói dối sim. Hình chọn theo CẢ HAI (`heldTexture`).
- *
- * Tâm texture (W/2, H/2) là ĐIỂM CẦM, không phải tâm hình học của món — `Player` đặt sprite gốc
- * (0.5, 0.5) thẳng vào `holdAnchor()` của `character.ts`.
- */
+/** Tâm texture là điểm cầm, không phải tâm hình học của món. */
 export const HELD = { key: (h: HeldLook) => `held_${h}`, W: 40, H: 40 } as const;
 
-/**
- * Tên HÌNH của món trên tay — nhiều hơn `Hand` đúng một cái: ổ đã nướng mà đã nguội.
- * Cố tình không nhét `loaf_baked` vào `Hand`: thêm một giá trị ở đó là mọi bảng tra
- * trong `world/stations` (`needs`, `gives`, nhãn, màu) phải mọc thêm một nhánh cho
- * thứ mà luật chơi vốn không phân biệt. Đây thuần tuý là chuyện vẽ.
- */
+/** `loaf_baked` chỉ là chuyện vẽ nên không thêm vào `Hand`. */
 export type HeldLook = Hand | "loaf_baked";
 
 const CARRIED = [
   "loaf_cold", "loaf_baked", "loaf_hot", "loaf_burnt", "loaf_filled", "tea",
 ] as const;
 
-/**
- * Chỉ `loaf_cold` mới phải hỏi `crust`: `loaf_hot` / `loaf_burnt` đã tự nói ra độ giòn, còn ổ đã
- * kẹp thì nhân che gần kín vỏ. Ngưỡng mượn `CRUST.READY` thay vì gõ lại 0,45.
- */
+/** Ổ nguội đã nướng giòn thì vẽ khác ổ bột sống. */
 export function heldTexture(hand: Hand, crust = 0): string {
   if (hand === "loaf_cold" && crust >= CRUST.READY) return HELD.key("loaf_baked");
   return HELD.key(hand);
@@ -40,11 +22,7 @@ export function heldTexture(hand: Hand, crust = 0): string {
 
 const footPad = new Map<string, number>();
 
-/**
- * Từ MÉP DƯỚI texture lên ĐÁY THẬT của món, px texture — "mép dưới sprite" KHÔNG phải đáy ổ bánh.
- * Texture vẽ code chừa ~15 px trống dưới ổ còn ảnh artist cắt sát, mà cùng một dòng code đặt chúng
- * xuống mặt quầy. Quét alpha thay vì gõ tay, để ảnh mới về là tự đúng.
- */
+/** Px texture từ mép dưới lên đáy thật của món, quét alpha vì ảnh vẽ code và ảnh artist chừa lề khác nhau. */
 export function heldFootPad(scene: Phaser.Scene, key: string): number {
   const hit = footPad.get(key);
   if (hit !== undefined) return hit;
@@ -61,14 +39,13 @@ export function heldFootPad(scene: Phaser.Scene, key: string): number {
       for (let x = 0; x < w; x++) if (data[(y * w + x) * 4 + 3] > 8) break rows;
       pad++;
     }
-  } catch { pad = 0; }                                  // không đọc được pixel thì thôi, đặt sát đáy
+  } catch { pad = 0; }
   footPad.set(key, pad);
   return pad;
 }
 
 function loafBody(g: Pen, cx: number, cy: number, top: number, dark: number, warp = 0) {
-  // Bề ngang 24 px, tức đúng bằng bề ngang thân người. To hơn nữa là nhìn ra
-  // đang bưng một khúc gỗ chứ không phải một ổ bánh mì.
+  // 24 px = bề ngang thân người.
   g.fillStyle(dark, 1);
   g.fillEllipse(cx, cy - 1, 24, 11);
   g.fillStyle(top, 1);
@@ -88,15 +65,7 @@ function loafCold(g: Pen, cx: number, cy: number) {
   g.fillEllipse(cx + 5, cy - 0.5, 7, 2.6);
 }
 
-/**
- * Ổ đã nướng nhưng đã nguội: vỏ nâu, có đường rạch, KHÔNG có hơi.
- *
- * Bỏ hơi đi thì bóng hình của nó trùng khít ổ chưa nướng, nên gánh nặng phân biệt
- * dồn hết sang SẮC ĐỘ: in đen trắng, bốn ổ phải xếp thành bốn nấc sáng dần xuống
- * tối — nhợt 211 · vàng 178 · nguội 137 · cháy 62. Đừng kéo mảng này sáng lên cho
- * "đẹp": sáng tới gần 178 là ổ nguội và ổ nóng dính làm một, mà hai cái đó chính là
- * cặp người chơi phải phân biệt nhanh nhất (nguội thì đem nướng lại, nóng thì kẹp).
- */
+/** Độ sáng xám bốn ổ phải tách nấc (nhợt 211 · vàng 178 · nguội 137 · cháy 62), đừng làm ổ này sáng lên. */
 function loafBakedCold(g: Pen, cx: number, cy: number) {
   const top = 0xa8825f, dark = 0x7d5f44;
   loafBody(g, cx, cy, top, dark);
@@ -115,8 +84,7 @@ function loafHot(g: Pen, cx: number, cy: number) {
   g.fillStyle(shade(PAL.breadDark, -12), 0.5);
   g.fillEllipse(cx, cy - 3, 14, 1.2);
 
-  // Hơi nóng: hai sợi mảnh, độ lệch nhỏ. Lệch to là ra hai dấu "<" nhọn hoắt,
-  // trông như mũi tên chỉ dẫn chứ không ra hơi.
+  // Hơi nóng; lệch to là trông như mũi tên.
   g.lineStyle(1.5, 0xffffff, 0.5);
   for (const dx of [-6, 7]) {
     g.beginPath();
@@ -155,8 +123,7 @@ function loafFilled(g: Pen, cx: number, cy: number) {
   g.fillStyle(PAL.pickle, 1);
   g.fillEllipse(cx + 9, cy - 1, 6, 3);
 
-  // Giấy báo CUỐN QUANH nửa ổ. Vẽ bằng ê-líp chứ không bằng hình chữ nhật:
-  // hình chữ nhật phẳng lì đọc ra như một quyển sổ mở, không ra tờ giấy cuốn tròn.
+  // Giấy báo cuốn nửa ổ, vẽ ê-líp để không ra quyển sổ.
   g.fillStyle(shade(PAL.newsprint, -30), 1);
   g.fillEllipse(cx - 5.5, cy - 1.5, 19, 13);
   g.fillStyle(PAL.newsprint, 1);

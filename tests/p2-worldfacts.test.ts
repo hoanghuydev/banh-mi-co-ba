@@ -1,11 +1,3 @@
-/**
- * NEO THOẠI VÀO THẾ GIỚI — đo trước khi làm: 1.534 nút thoại, 46 nút có `act`, tức 97% lời nói
- * không làm gì cả.
- *
- * Canh bốn chuyện: khoá còn đúng ba dạng · mọi khoá trong nội dung đều CÓ THẬT trong bảng đen ·
- * câu HỨA phải có cổng/act làm chuyện đó · ⚠️ khoá lạ NÉM LỖI chứ không im lặng trả `false` — "tối
- * ưu" nó về `return false` là 374 nút lại im lặng biến mất như trước.
- */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { needKeys, walkNodes, type Talk, type TalkNode } from "../src/sim/talk";
@@ -37,30 +29,20 @@ const W = (over: Partial<WorldSnapshot> = {}): WorldSnapshot => ({
 const convo = (over: Partial<WorldSnapshot["convo"]>): Partial<WorldSnapshot> =>
   ({ convo: { tones: [], angered: false, openedBy: "PLAYER", ...over } });
 
-// ────────────────────────────────────────────── máy đọc khoá
-
 test("W-1 ba dạng khoá, và chỉ ba dạng", () => {
   assert.equal(holds("p.handsEmpty", W()), true);
   assert.equal(holds("p.holdsBread", W()), false);
   assert.equal(holds("p.holdsBread", W({ hand: "loaf_hot" })), true);
-  // phủ định
   assert.equal(holds("!c.angered", W()), true);
   assert.equal(holds("!c.angered", W(convo({ angered: true }))), false);
-  // hàm một tham số
   assert.equal(holds("w.queue(2)", W({ queue: 3 })), true);
   assert.equal(holds("w.queue(2)", W({ queue: 1 })), false);
   assert.equal(holds("c.saidTone(GAT)", W(convo({ tones: ["AM", "GAT"] }))), true);
 });
 
 test("W-2 khoá LẠ NÉM LỖI — không im lặng trả false", () => {
-  /**
-   * Đây là cả điểm của P2-09 §2.2. Bản cũ có HAI bảng: rule DB ném lỗi lúc nạp, bảng
-   * thoại `switch` rơi vào `default: return false`. Cùng một lỗi gõ sai, hai chế độ hỏng
-   * ngược nhau — và cái im lặng là cái đã giấu 374 nút suốt một bản dựng.
-   */
   assert.throws(() => holds("p.holdsPho", W()), /không có trong `aliases`/);
   assert.throws(() => holds("t.khongCoThat", W()), /không có trong `aliases`/);
-  // và lỗi phải CHỈ ĐƯỜNG, không chỉ nói "sai"
   assert.match(checkGate("t.khongCoThat") ?? "", /t\.(passing|queueing|ordering)/);
 });
 
@@ -91,43 +73,29 @@ test("W-3e `w.day(N)` — câu \"mới ra đây bán\" không nói được ở 
 });
 
 test("W-3c `p.stock` là NGƯỠNG, khác `p.soldOut` là 0", () => {
-  // qua-duong §2 đòi đúng chỗ phân biệt này: "còn mấy ổ cuối" không phải "hết sạch".
   assert.equal(holds("p.stock(3)", W({ stock: 2 })), true);
   assert.equal(holds("p.stock(3)", W({ stock: 9 })), false);
-  assert.equal(holds("p.soldOut", W({ stock: 0 })), false);      // soldOut là cờ riêng
+  assert.equal(holds("p.soldOut", W({ stock: 0 })), false);
   assert.equal(holds("p.soldOut", W({ soldOut: true })), true);
 });
 
 test("W-3d fact VẮNG MẶT khác fact bằng false — luật loại trừ của Ruskin", () => {
-  /**
-   * `t.purpose(DI_CHO)` phải SAI với một người không có mục đích nào, chứ không phải
-   * sai vì mục đích của họ khác `DI_CHO`. Nếu `queryOf` đặt bừa một giá trị mặc định thì
-   * mọi câu theo mục đích sẽ đúng với mọi người — đúng loại lỗi không ai nhìn ra.
-   */
   const q = queryOf(W());
   assert.equal(q.dump().some(([k]) => k === "npcPurpose"), false);
   assert.equal(holds("t.purpose(DI_CHO)", W()), false);
   assert.equal(holds("t.purpose(DI_CHO)", W({ them: { ...W().them, purpose: "DI_CHO" } })), true);
 });
 
-// ────────────────────────────────────────────── nội dung
-
-/** Mọi khoá cổng của một nút — `need` lẫn `while`, đã bỏ dấu phủ định. */
 function gateKeysOf(node: TalkNode): string[] {
   return [...needKeys(node), ...(node.while ?? [])];
 }
 
 test("W-4 mọi khoá cổng trong nội dung đều CÓ THẬT trong bảng đen", () => {
-  /**
-   * Gõ sai một chữ thì câu đó không bao giờ hiện. Đây là loại bug chỉ lộ ra khi có người
-   * ngồi chơi đủ lâu để thấy một lựa chọn lẽ ra phải có mà không bao giờ thấy.
-   * Lưới phủ cả `need` lẫn `while`.
-   */
   const bad: string[] = [];
   for (const t of TALKS) {
     for (const { node } of walkNodes(t)) {
       for (const raw of gateKeysOf(node)) {
-        if (isStoryFlag(raw.startsWith("!") ? raw.slice(1) : raw)) continue;   // cờ chuyện
+        if (isStoryFlag(raw.startsWith("!") ? raw.slice(1) : raw)) continue;
         const err = checkGate(raw);
         if (err) bad.push(`${t.id}: ${err}`);
       }
@@ -143,10 +111,6 @@ test("W-4b bảng khoá của người viết KHỚP bảng đen — không còn
 });
 
 test("W-5 câu MỜI ĂN phải đang cầm bánh; câu MỜI UỐNG phải có trà", () => {
-  /**
-   * Mời ăn thì phải đang cầm bánh, mời uống thì phải có trà. Đó là sự thật TĨNH ⇒ phải nằm ở `need` (ẩn hẳn), không phải
-   * `while` (ra "?"). Lưới nhận cả hai chỗ, nhưng `W-7` mới là chỗ bắt đặt sai phía.
-   */
   const GIVE_FOOD = /(ăn thử|nếm thử|bẻ miếng|cầm ổ này|lấy ổ này|cho \S+ ổ này)/iu;
   const GIVE_TEA = /(rót \S+ ly trà|uống ly trà|ly trà đá nè|làm ly trà)/iu;
   const bad: string[] = [];
@@ -165,9 +129,6 @@ test("W-5 câu MỜI ĂN phải đang cầm bánh; câu MỜI UỐNG phải có 
 });
 
 test("W-6 câu BUỘC TỘI phải kiểm chuyện đó đã xảy ra thật", () => {
-  /**
-   * *"Rồi bảo có người tới trước chị, chị chen hàng. Trong khi bà ấy có chen hàng thật đâu?"*
-   */
   const ACCUSE = [[/chen (hàng|ngang)|tới trước (chị|anh|cô|chú|bà)/iu, "t.cutLine"]] as const;
   const bad: string[] = [];
   for (const t of TALKS) {
@@ -180,9 +141,3 @@ test("W-6 câu BUỘC TỘI phải kiểm chuyện đó đã xảy ra thật", (
   }
   assert.deepEqual(bad, [], `\n  ${bad.join("\n  ")}`);
 });
-
-/*
- * W-7 ĐÃ DỜI SANG `tools/validate-talks.ts` (lưới `T002`) — chép tay bảng TĨNH/ĐỘNG vào đây là có
- * HAI bản của cùng một luật, và chúng đã lệch nhau thật. `tests/content-tools.test.ts` bắt
- * `validateTalks` phải 0 ERROR trên nội dung thật, nên luật vẫn được canh.
- */

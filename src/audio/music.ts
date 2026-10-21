@@ -1,42 +1,18 @@
 import Phaser from "phaser";
 import { loadSettings, type Settings } from "../core/save";
 
-/**
- * NHẠC NỀN — kênh "Nhạc" của CANON §15.4, luật ở P5-03 §6.
- *
- * Đây là ĐIỂM NỐI DUY NHẤT giữa game và phần nhạc. Scene chỉ nói "giờ này nên
- * nghe cue nào", không scene nào tự gọi `this.sound.play` — nhờ vậy khi thay
- * nhạc thật (P5-03 §6.3: 10 cue sáng tác gốc) chỉ phải sửa bảng `CUES` bên dưới.
- *
- * Ba luật của P5-03 §6 được cài thẳng vào đây, không phải "ghi nhớ rồi tự giữ":
- *  · §6.4  Nhạc phản ứng với BỐI CẢNH (giờ trong ngày), KHÔNG với điểm số.
- *          Không có API nào ở đây nhận vào "người chơi đang làm tốt hay dở".
- *  · §6.5  Nhạc phải IM ĐI ở khoảnh khắc quan trọng -> `hush()`.
- *  · §6.5#8 Mở menu tạm dừng thì HẠ chứ không TẮT -> `duck()`.
- *
- * Nhạc sống ngoài scene (dùng `game.sound` toàn cục) nên đi từ sảnh vào quán
- * không bị đứt tiếng. Vì thế fade cũng KHÔNG chạy bằng tween của scene —
- * scene tắt giữa chừng là tween chết và tiếng kẹt lại ở nửa âm lượng.
- * Fade chạy bằng `game.events` (PRE_STEP), sống đúng bằng tuổi của game.
- */
+// Fade chạy bằng `game.events` PRE_STEP chứ không tween của scene, vì scene tắt giữa chừng sẽ kẹt tiếng ở nửa âm lượng.
 
 export type CueId = "menu" | "to_mo" | "cao_diem" | "lang" | "toi";
 
 export type Cue = {
   key: string;
   file: string;
-  /** Ghi công — luật bản quyền của bản nhạc này, xem `public/audio/PROVENANCE.csv`. */
   title: string;
   author: string;
   license: string;
 };
 
-/**
- * Nhạc TẠM: CC BY 4.0 của Kevin MacLeod, chọn theo đúng tiêu chí P5-03 §6.2
- * (mộc, ≤3 bè, 57–82 BPM, không lo-fi beat, không pad synth vô danh tính).
- * P5-03 §6.5.1 đòi nhạc SÁNG TÁC GỐC mua đứt — nên bảng này là chỗ tạm giữ chỗ,
- * còn nguyên cấu trúc cue để thay file là xong.
- */
 export const CUES: Record<CueId, Cue> = {
   menu: {
     key: "mus_menu", file: "audio/music/menu-cattails.mp3",
@@ -83,14 +59,11 @@ class MusicDirector {
 
   private volume = 0.55;
   private duckGain = 1;
-  /** Hệ số ducking khi có giọng người (P5-03 §2.3). Tách khỏi `duckGain` vì hai
-   *  cái chồng được lên nhau: mở pause ĐÚNG LÚC khách đang nói thì hạ cả hai. */
+  /** Tách khỏi `duckGain` vì pause và giọng NPC chồng được lên nhau. */
   private voiceDuckGain = 1;
   private hushLeft = 0;
 
   private loading = new Set<CueId>();
-
-  // ────────────────────────────────────────────────────────────────── vòng đời
 
   attach(game: Phaser.Game) {
     if (this.game) return;
@@ -102,16 +75,10 @@ class MusicDirector {
   applySettings(s: Settings) {
     this.volume = Math.max(0, Math.min(100, s.musicVolume)) / 100;
     this.refreshGains();
-    // Kéo về 0 thì thả file luôn, không giữ một track câm chạy nền tốn CPU.
     if (this.volume === 0) this.stop(0);
   }
 
-  // ───────────────────────────────────────────────────────────────── điều khiển
-
-  /**
-   * Chuyển sang cue `id`, crossfade `fadeMs`.
-   * Gọi lại với cue đang phát là không làm gì — scene cứ gọi mỗi frame cũng được.
-   */
+  /** Gọi lại với cue đang phát thì không làm gì, nên gọi mỗi frame cũng được. */
   play(scene: Phaser.Scene, id: CueId, fadeMs = 1400) {
     if (this.currentId === id) return;
     if (this.volume === 0) { this.currentId = id; return; }
@@ -134,19 +101,13 @@ class MusicDirector {
     this.tracks.forEach((t) => this.fadeTo(t, 0, fadeMs, true));
   }
 
-  /**
-   * Menu tạm dừng: hạ −12 dB chứ KHÔNG tắt.
-   * P5-03 §6.5 #8: "pause phải thấy an toàn, không thấy trống rỗng".
-   */
+  /** Menu tạm dừng: hạ −12 dB chứ không tắt. */
   duck(on: boolean) {
     this.duckGain = on ? DUCK_GAIN : 1;
     this.refreshGains();
   }
 
-  /**
-   * Hạ nhạc xuống −14 dB trong lúc có giọng NPC — P5-03 §2.3.
-   * Gọi từ `audio/sfx.ts`, KHÔNG gọi từ scene: scene không biết khi nào giọng tắt.
-   */
+  /** Gọi từ `audio/sfx.ts` chứ không từ scene, vì scene không biết khi nào giọng tắt. */
   voiceDuck(on: boolean) {
     const g = on ? VOICE_DUCK_GAIN : 1;
     if (g === this.voiceDuckGain) return;
@@ -154,11 +115,7 @@ class MusicDirector {
     this.refreshGains();
   }
 
-  /**
-   * Im hẳn trong `seconds` rồi tự quay lại.
-   * Dùng cho các khoảnh khắc ở P5-03 §6.5: khách mở hàng, sự kiện tiêu cực
-   * chạm CONFIRMED, khách bỏ đi không nói gì.
-   */
+  /** Im hẳn trong `seconds` rồi tự quay lại. */
   hush(seconds: number) {
     this.hushLeft = Math.max(this.hushLeft, seconds);
     this.refreshGains();
@@ -171,8 +128,6 @@ class MusicDirector {
   get nowPlaying(): Cue | null {
     return this.currentId ? CUES[this.currentId] : null;
   }
-
-  // ─────────────────────────────────────────────────────────────────── bên trong
 
   private load(scene: Phaser.Scene, id: CueId, done: () => void) {
     if (this.loading.has(id)) return;
@@ -196,8 +151,7 @@ class MusicDirector {
       t = { sound, level: 0, target: 0, rate: 0, stopAtZero: false };
       this.tracks.set(id, t);
     }
-    // Phaser xếp hàng `play()` khi trình duyệt chưa cho phát tiếng
-    // (chính sách autoplay) rồi tự phát lại sau cú chạm/gõ phím đầu tiên.
+    // Bị chặn autoplay thì Phaser tự xếp hàng và phát sau cú chạm đầu tiên.
     if (!t.sound.isPlaying) t.sound.play();
     t.stopAtZero = false;
     this.fadeTo(t, 1, fadeMs, false);

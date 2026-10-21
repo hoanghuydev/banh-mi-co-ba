@@ -9,10 +9,9 @@ import { eveningCounting, neighborTick } from "../sim/day";
 import { music } from "../audio/music";
 import { sfx } from "../audio/sfx";
 
-/** Buổi tối — đếm tiền, ghi sổ, một cảnh yên tĩnh. Chạy theo LƯỢT. */
 export class EveningScene extends Phaser.Scene {
   private ctx!: GameContext;
-  /** Bấm nút và gõ Enter cùng lúc không được phát event hai lần (= nhảy cóc một ngày). */
+  /** Chặn bấm nút và Enter cùng lúc phát event hai lần (= nhảy cóc một ngày). */
   private finished = false;
   private view: EveningView | null = null;
 
@@ -24,14 +23,12 @@ export class EveningScene extends Phaser.Scene {
   }
 
   create() {
-    fitDesignFrame(this.cameras.main);          // canvas phóng to, toạ độ giữ nguyên — `core/render`
+    fitDesignFrame(this.cameras.main);
     const w = this.ctx.world;
     // Mỗi bước chỉ chạy một lần mỗi ngày.
     eveningCounting(w);
     const neighbor = neighborTick(w);
-    music.play(this, "toi", 2200);                     // cảnh tối, đếm tiền — P5-03 §6.3 `mus_toi`
-    // Đêm Việt Nam thu thật + quạt — P5-03 §4.2 B `amb_toi_nha`. Rất khẽ: cảnh này
-    // là chỗ duy nhất trong ngày KHÔNG có gì giục, nền to lên là mất đúng cái đó.
+    music.play(this, "toi", 2200);
     sfx.loop(this, "amb_toi_nha", true, {}, 2500);
     sfx.loop(this, "sfx_quat_may", true, {}, 2500);
     this.cameras.main.setBackgroundColor(0x1d232b);
@@ -47,7 +44,7 @@ export class EveningScene extends Phaser.Scene {
   private settle() {
     if (this.finished) return;
     this.finished = true;
-    // Dòng sổ cái chốt lúc RỜI cảnh tối: đồ nghề mua trong đêm chỉ đủ mặt ở đây. Gọi lại an toàn nhờ `today.counted`.
+    // Chốt lại lúc rời cảnh để tính cả đồ nghề mua trong đêm; gọi lại an toàn nhờ `today.counted`.
     eveningCounting(this.ctx.world);
     this.view?.close();
     bus.emit("evening:done", { dayIndex: this.ctx.world.progress.dayIndex });

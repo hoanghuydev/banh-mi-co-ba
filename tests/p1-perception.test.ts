@@ -1,6 +1,3 @@
-/**
- * P1-02 §6.A + P1-03 §6.A — các mốc hiệu chỉnh của doc là HỢP ĐỒNG, không phải gợi ý.
- */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { HOLD_TIME, observe, stateOf, traitMulFrom, type ActiveStim, type Observer } from "../src/sim/perception";
@@ -17,13 +14,7 @@ import { Grip } from "../src/sim/grip";
 import type { Customer } from "../src/sim/customer";
 import type { Personality } from "../src/content/npcs";
 
-/**
- * Người này CHỊU CẦM một ổ chưa có nhân (`sim/service.ts: takesHollowLoaf`) — vừa điềm
- * đạm vừa dễ tha. Mấy bài dưới đây nói về GIÁ và về tầng nhận thấy, không phải về chuyện
- * ai lắc đầu với ổ trống, nên chúng phải dựng đúng người cầm cho xong. Gán một object
- * MỚI chứ không sửa `c.personality` tại chỗ: object đó là của `content/npcs.ts`, sửa nó
- * là sửa luôn tính cách của người đó cho cả mấy bài sau trong file.
- */
+// Gán object mới vì `c.personality` dùng chung với `content/npcs.ts`.
 function takesAnything(c: Customer) {
   (c as { personality: Personality }).personality = { ...c.personality, nongTinh: 0.2, deTha: 0.9 };
 }
@@ -32,7 +23,6 @@ function observer(zone: Observer["zone"], gaze: number, trait = 1): Observer {
   return { zone, gaze, occluder: 1, traitMul: trait, observations: new Map(), id: "v1" };
 }
 
-/** Giây tới CONFIRMED với một kích thích sống mãi. */
 function timeToConfirm(o: Observer, stim: Omit<ActiveStim, "until" | "key">) {
   const s: ActiveStim = { ...stim, key: "k", until: 1e9 };
   const dt = 1 / 600;
@@ -71,10 +61,10 @@ test("CONFIRMED chốt: kích thích tắt rồi cũng không rò; dưới CONFI
 
   const q = observer("FRONT_CENTER", 0.45);
   const s: ActiveStim = { key: "b", id: "DROPPED_FOOD", slot: "HANDS", salience: 75, until: 1 };
-  observe(q, [s], 0, 1.0);                       // tích một ít, chưa tới CONFIRMED
+  observe(q, [s], 0, 1.0);
   const c0 = q.observations.get("b")!.certainty;
-  observe(q, [s], 1.0, 0.01);                     // tắt ở t = 1
-  observe(q, [s], 1.0 + HOLD_TIME - 0.1, 0.5);   // vẫn trong thời gian giữ
+  observe(q, [s], 1.0, 0.01);
+  observe(q, [s], 1.0 + HOLD_TIME - 0.1, 0.5);
   assert.equal(q.observations.get("b")!.certainty, c0);
   observe(q, [s], 1.0 + HOLD_TIME + 0.5, 1);
   assert.ok(q.observations.get("b")!.certainty < c0);
@@ -84,7 +74,7 @@ test("khoá riêng: lỗi trong ổ của khách A không thành 'đã thấy' l
   const a = orderDefectKey("BA_BAY#0", "MISSING", "pate");
   const b = orderDefectKey("CHU_TU#1", "MISSING", "pate");
   assert.notEqual(a, b);
-  assert.equal(a, "ORDER_DEFECT:BA_BAY#0:MISSING:pate");   // định dạng khoá là hợp đồng — đổi là vỡ test này
+  assert.equal(a, "ORDER_DEFECT:BA_BAY#0:MISSING:pate");
 });
 
 test("Bà Bảy không bao giờ bấm điện thoại (phoneBudget 0) — qua 500 lần chuyển ánh nhìn", () => {
@@ -140,12 +130,9 @@ test("thang hai nấc: kể tên là một phần, 'nhiều' là hai phần — 
   assert.deepEqual(diffDish(spec, dishFor(spec)), []);
 });
 
-/**
- * Thang hai nấc thì lệch một nấc là lệch NỬA ổ thứ đó — không được tụt xuống "trong dung sai".
- */
 test("lệch một nấc vẫn là WRONG_RATIO, cả thiếu lẫn thừa", () => {
   const spec = specOf({ mon: "pate", nhieu: "pate", rau: "day-du", ot: 1, tuong: 1 });
-  const thieu = dishFor(spec).filter((x, i) => !(x === "pate" && i === 0));   // pate 2 → 1
+  const thieu = dishFor(spec).filter((x, i) => !(x === "pate" && i === 0));
   const d1 = diffDish(spec, thieu);
   assert.equal(d1.length, 1);
   assert.equal(d1[0].kind, "WRONG_RATIO");
@@ -154,40 +141,29 @@ test("lệch một nấc vẫn là WRONG_RATIO, cả thiếu lẫn thừa", () =
   assert.ok(d1[0].magnitude > 0.25, "nặng hơn mức lệch một nấc của thang bốn nấc");
 
   const nheo = specOf({ mon: "pate", rau: "day-du", ot: 1, tuong: 1 });
-  const thua = [...dishFor(nheo), "pate" as Ingredient];                      // pate 1 → 2
+  const thua = [...dishFor(nheo), "pate" as Ingredient];
   const d2 = diffDish(nheo, thua);
   assert.equal(d2.length, 1);
   assert.equal(d2[0].kind, "WRONG_RATIO");
   assert.equal(d2[0].dir, "over");
-  // nhưng vẫn nhẹ hơn hẳn chuyện quên hẳn miếng pate
   assert.ok(d2[0].sCounter * d2[0].magnitude < mkDefect("MISSING", "pate").sCounter);
 });
 
-/**
- * CANON §3.2: cho thêm đồ chua / ớt / tương / ngò là sự kiện TÍCH CỰC. Trần còn hai phần
- * nên "khách xin một, mình bỏ hai" là lần cho thêm DUY NHẤT còn làm được — nó phải vừa
- * không thành lỗi, vừa còn đếm được, không thì `Service.freeExtra()` không bao giờ bắn.
- */
 test("cho thêm một phần đồ chua / ớt: không phải lỗi, và vẫn đếm là hào phóng", () => {
   const spec = specOf({ mon: "pate", rau: "it", ot: 1, tuong: 1 });
   const hao = [...dishFor(spec), "dochua" as Ingredient, "ot" as Ingredient];
   assert.deepEqual(diffDish(spec, hao), []);
   assert.ok(generosityOf(spec, hao) > 0, "Service.freeExtra() sống bằng dấu > 0 này");
-  // dưa leo không nằm trong nhóm "dễ thương": bỏ dư là ẩu, không phải hào phóng
   const au = [...dishFor(spec), "dualeo" as Ingredient];
   assert.equal(diffDish(spec, au)[0]?.kind, "WRONG_RATIO");
   assert.equal(generosityOf(spec, au), 0);
 });
 
-/**
- * §8(i) — hào phóng phải TỐN: tính bằng giá chợ, không bằng số phần (ớt với tương rẻ quá).
- */
 test("hào phóng tính theo giá chợ: ớt rẻ hơn đồ chua, và cho hết cỡ vẫn chưa bằng một lát thịt", () => {
   const spec = specOf({ mon: "pate", rau: "it", ot: 1, tuong: 1 });
   const them = (id: Ingredient) => generosityOf(spec, [...dishFor(spec), id]);
   assert.ok(them("ot") < them("dochua"), "một nhúm ớt 0,35k không bằng một gắp đồ chua 0,44k");
   assert.ok(them("hanhngo") < them("tuongot"));
-  // cho dư TẤT CẢ những gì cho dư được trong một ổ
   const hetco = [...dishFor(spec), "dochua", "hanhngo", "ot", "tuongot"] as Ingredient[];
   assert.deepEqual(diffDish(spec, hetco), [], "cho thêm hết cỡ vẫn không phải lỗi");
   assert.ok(generosityOf(spec, hetco) < 1, "cả ổ cho thêm còn rẻ hơn một lát thịt nguội");
@@ -205,12 +181,11 @@ test("không bao giờ trừ tiền bánh vì làm thiếu", () => {
   const h = new HeadlessStall(newGame("t", "tip-1"), { ...POLICIES.greedy, workSec: [1e9, 1e9] }, { bus });
   h.run({ until: (x) => x.service.front?.phase === "waiting" });
   const dish = dishFor(h.service.front!.order!);
-  h.service.serveDish(dish.slice(0, -1));         // thiếu MỘT thứ — vẫn là món khách gọi
+  h.service.serveDish(dish.slice(0, -1));
   const paid = h.service.drain().find((e) => e.kind === "paid");
   assert.ok(paid && paid.kind === "paid" && paid.amount >= 25_000);
 });
 
-/** Ranh giới của luật trên: ổ không có miếng nhân mặn nào THẬT SỰ là bánh mì không (P3-03 §2.5). */
 test("ổ không có miếng nhân mặn nào = bánh mì không, 10.000₫ (P3-03 §2.5)", () => {
   const bus = new Bus();
   const h = new HeadlessStall(newGame("t", "tip-1"), { ...POLICIES.greedy, workSec: [1e9, 1e9] }, { bus });
@@ -228,14 +203,14 @@ test("ANTICIPATED khi đứng nhìn thẳng lúc gói, DISCOVERED khi không ai 
     h.run({ until: (x) => x.service.front?.phase === "waiting" });
     const c = h.service.front!;
     c.gazeOverride = gaze;
-    takesAnything(c);                              // quên hẳn nhân chính = ổ trống, xem HOLLOW_REFUSED
+    takesAnything(c);
     const dish = dishFor(c.order!);
     const drop = dish.indexOf(nhanOf(c.order!.intent.mon)[0]);
-    dish.splice(drop, 2);                          // quên hẳn nhân chính
+    dish.splice(drop, 2);
     for (const d of diffDish(c.order!, dish)) {
       bus.emit("stim:emitted", { stimId: "ORDER_DEFECT", zone: "BOARD", salience: d.sCounter * d.magnitude, at: h.elapsed, key: orderDefectKey(c.id, d.kind, d.item) });
     }
-    for (let i = 0; i < 30 * 6; i++) h.step();    // 6 giây đi từ thớt ra quầy
+    for (let i = 0; i < 30 * 6; i++) h.step();
     let mode = "";
     bus.on("delivery:diffed", (p) => { mode = p.defects[0]?.witness ?? ""; });
     h.service.serveDish(dish);
@@ -267,7 +242,7 @@ test("grip: đi thường không bao giờ rớt; chạy liên tục thì rớt 
   assert.ok(t > 2 && t < 4, `rớt sau ${t}s`);
   g.reset();
   let t2 = 0;
-  while (!g.tick(1 / 30, 0.9, true)) t2 += 1 / 30;   // chạy + dí vào đồ đạc
+  while (!g.tick(1 / 30, 0.9, true)) t2 += 1 / 30;
   assert.ok(t2 < t, `va thì phải rớt sớm hơn (${t2}s < ${t}s)`);
 });
 
@@ -278,11 +253,6 @@ test("stateOf đúng ngưỡng CANON §5", () => {
   assert.equal(stateOf(1), "CONFIRMED");
 });
 
-/**
- * `BURNT_OR_COLD` đi chung một `StimId` cho ổ cháy và ổ nguội, nên cờ `smell` phải SỐNG
- * SÓT từ kích thích sang Observation: tới lúc chọn câu thoại thì kích thích đã tắt từ
- * lâu, chỉ còn Observation — mất cờ ở đây là khách đứng trước ổ nguội mà kêu "khét".
- */
 test("Observation chép lại `smell` của kích thích — cháy và nguội không lẫn vào nhau", () => {
   const o = observer("FRONT_CENTER", 1);
   const dt = 1 / 60;

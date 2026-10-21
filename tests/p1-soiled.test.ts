@@ -1,9 +1,3 @@
-/**
- * Ổ BÁNH ĐÃ NẰM DƯỚI ĐẤT — `serveDish(..., { soiled: true })`.
- *
- * Một câu hỏi: người đứng trước mặt CÓ THẤY ổ bánh rớt không. Thấy thì không nhận và bỏ
- * về; không thấy thì vẫn bán được.
- */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Bus } from "../src/core/eventbus";
@@ -14,11 +8,7 @@ import type { Customer } from "../src/sim/customer";
 
 type Ev = { e: string; p: any };
 
-/**
- * Dựng tới đúng khoảnh khắc một NGƯỜI CÓ TÊN đứng ở quầy chờ bánh, rồi trả quyền điều
- * khiển lại cho test. `workSec` khổng lồ để con bot không bao giờ tự đưa bánh — tay đưa
- * bánh trong mấy bài này là tay của test.
- */
+/** `workSec` khổng lồ để bot không tự đưa bánh. */
 function atCounter(day = 7) {
   const bus = new Bus();
   const ev: Ev[] = [];
@@ -29,11 +19,10 @@ function atCounter(day = 7) {
   h.run({ until: (x) => !!x.service.front && x.service.front.phase === "waiting" && !!x.service.front.npc });
   const c = h.service.front!;
   assert.ok(c?.npc, "bài này cần một người CÓ TÊN");
-  ev.length = 0;                                       // chỉ quan tâm những gì xảy ra TỪ LÚC ĐƯA BÁNH
+  ev.length = 0;
   return { h, bus, ev, c };
 }
 
-/** Người này đã tận mắt thấy một ổ bánh rớt xuống đất trong lượt ghé này. */
 function sawTheDrop(c: Customer, peak: "NOTICED" | "CONFIRMED" = "CONFIRMED") {
   c.observations.set(`DROPPED_FOOD:${c.id}`, {
     id: "DROPPED_FOOD", slot: "HANDS", certainty: peak === "CONFIRMED" ? 1 : 0.8, peak, diedAt: null,
@@ -41,8 +30,6 @@ function sawTheDrop(c: Customer, peak: "NOTICED" | "CONFIRMED" = "CONFIRMED") {
 }
 
 const pick = (ev: Ev[], e: string) => ev.filter((x) => x.e === e).map((x) => x.p);
-
-// ───────────────────────────────────────────────── nhánh 1: bị bắt tận mắt
 
 test("THẤY ổ rớt mà vẫn đưa: không bán được, khách bỏ về", () => {
   const { h, ev, c } = atCounter();
@@ -56,7 +43,6 @@ test("THẤY ổ rớt mà vẫn đưa: không bán được, khách bỏ về",
   assert.equal(c.phase, "leaving");
   assert.equal(c.leaveReason, "soiled");
   assert.deepEqual(pick(ev, "npc:left").map((p) => p.reason), ["SOILED_FOOD"]);
-  // không `order:delivered`, không tiền: lượt bán đó không hề xảy ra
   assert.equal(pick(ev, "order:delivered").length, 0);
   assert.equal(h.ctx.world.money.cash, cashBefore);
   assert.equal(h.service.servedCount, 0);
@@ -78,29 +64,24 @@ test("chỉ LIẾC THẤY (NOTICED) cũng đủ để không ăn — không cầ
   assert.equal(res.ok, false);
 });
 
-// ────────────────────────────────────────────── nhánh 2: không ai thấy gì
-
 test("KHÔNG thấy: vẫn bán được, vẫn nhận tiền", () => {
   const { h, ev, c } = atCounter();
   const cashBefore = h.ctx.world.money.cash;
   const res = h.service.serveDish(dishFor(c.order!), { soiled: true });
-  for (let i = 0; i < 30; i++) h.step();               // sổ tiền chảy qua `service.out`, cần vài frame
+  for (let i = 0; i < 30; i++) h.step();               // tiền chảy qua `service.out`, cần vài frame
 
   assert.equal(res.ok, true);
   assert.deepEqual(pick(ev, "npc:left").map((p) => p.reason), ["SERVED"]);
   assert.equal(pick(ev, "order:delivered").length, 1);
-  // Chấm bằng LƯỢT BÁN CÓ XẢY RA, không bằng `cash`.
   assert.equal(h.ctx.world.progress.today.served, 1, "họ có biết gì đâu mà không nhận bánh");
   assert.ok(h.ctx.world.money.cash >= cashBefore);
   assert.equal(h.service.lostCount, 0);
 });
 
-// ─────────────────────────────────────────────────── cờ đi theo TỪNG Ổ
-
 test("thấy ổ rớt, rồi được đưa ổ KHÁC còn sạch: không có gì xảy ra hết", () => {
   const { h, ev, c } = atCounter();
   sawTheDrop(c);
-  const res = h.service.serveDish(dishFor(c.order!), {});       // soiled vắng mặt = ổ sạch
+  const res = h.service.serveDish(dishFor(c.order!), {});
 
   assert.equal(res.ok, true, "làm rớt một ổ rồi nướng ổ khác thì không bị phạt");
   assert.deepEqual(pick(ev, "npc:left").map((p) => p.reason), ["SERVED"]);
@@ -112,14 +93,12 @@ test("ổ sạch cho người KHÔNG thấy gì: bán như thường", () => {
   assert.equal(res.ok, true);
 });
 
-// ───────────────────────────────────────────────────────────── tất định
-
 test("tất định: cùng seed, cùng thao tác → mọi sự kiện giống hệt từng byte", () => {
   const once = (soiled: boolean, saw: boolean) => {
     const { h, ev, c } = atCounter();
     if (saw) sawTheDrop(c);
     h.service.serveDish(dishFor(c.order!), { soiled });
-    for (let i = 0; i < 60; i++) h.step();              // cho câu thoại kịp ra khỏi hàng đợi
+    for (let i = 0; i < 60; i++) h.step();
     return JSON.stringify(ev);
   };
   for (const [soiled, saw] of [[true, true], [true, false], [false, true]] as const) {

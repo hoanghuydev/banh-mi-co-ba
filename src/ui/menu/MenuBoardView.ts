@@ -4,21 +4,7 @@ import { ECON, loafPriceVnd, vnd } from "../../sim/econ";
 import { INGREDIENTS, levelsOf } from "../../sim/order";
 import { shopName } from "../../content/shop";
 
-/**
- * BẢNG MENU — cái người chơi ĐỌC, không phải cái người chơi bấm.
- *
- * Game này không có màn hình nào dạy công thức: khách nói "cho ổ xíu mại" và người chơi
- * phải biết ổ đó có gì. Tấm bảng này là chỗ học trước khi làm sai.
- *
- * Lớp DOM phủ lên canvas: chữ Việt nhiều dấu, nhiều cỡ chữ, và phải
- * cuộn được ở 200% — mấy thứ đó trình duyệt làm sẵn, vẽ trong Phaser thì phải làm tay.
- *
- * Bảng sơn tay, chữ không đều, treo lệch — đối lại bảng IN DECAL của xe chú Kiệt.
- *
- * MỘT NGUỒN: mọi dòng dưới đây đọc từ `sim/menu` + `sim/econ`. Không một tên món hay con
- * số nào được gõ tay vào file này — bảng treo trên vách, bảng người chơi đọc, và bảng
- * `diffDish` chấm điểm phải là CÙNG MỘT bảng, nếu không nó dạy sai.
- */
+// Mọi tên món và con số đọc từ `sim/menu` + `sim/econ`, để bảng dạy đúng cái `diffDish` chấm.
 
 const STYLE = `
 .mb-root{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;background:rgba(18,22,26,.66);font-family:"Be Vietnam Pro",system-ui,sans-serif;color:#2b2f31}
@@ -66,12 +52,11 @@ const STYLE = `
 .mb-btn:focus-visible{outline:2px solid #8e2a20;outline-offset:2px}
 `;
 
-/** Tiền ghi bằng SỐ trên bảng ("25.000₫"); ⚠️ không dùng `dongVi()` — hàm đó đọc số thành lời cho thoại. */
+/** Không dùng `dongVi()` vì hàm đó đọc số thành lời cho thoại. */
 const tien = (d: number) => `${d.toLocaleString("vi-VN")}₫`;
 
 export type MenuBoardOpts = {
   textScale: number;
-  /** Tên nhân vật chính — ra tên quán, y như tấm bảng ngoài vách. */
   playerName?: string;
   onClose: () => void;
 };
@@ -79,12 +64,7 @@ export type MenuBoardOpts = {
 export class MenuBoardView {
   private root: HTMLDivElement;
   private keyGuard = (ev: KeyboardEvent) => {
-    /**
-     * Esc và E đều đóng bảng — E vì đó là phím vừa MỞ nó, và bấm lại phím vừa bấm để
-     * thoát là phản xạ của mọi người chơi.
-     *
-     * CANON §15.2 mục 7: không một lớp UI nào được nuốt phím tạm dừng — `P` đi thẳng xuống scene.
-     */
+    // Không nuốt phím tạm dừng `P`.
     if (ev.code === "Escape" || ev.code === "KeyE") { ev.preventDefault(); this.close(); return; }
     if (ev.code === "KeyP") return;
     ev.stopPropagation();
@@ -106,10 +86,7 @@ export class MenuBoardView {
     document.body.appendChild(this.root);
     if (this.game.input.keyboard) this.game.input.keyboard.enabled = false;
     this.render();
-    /**
-     * `preventScroll` — không có nó thì cú focus kéo tờ giấy xuống đáy, và người chơi mở
-     * bảng ra là thấy ngay mục "khách dặn thêm" thay vì dòng đầu tiên.
-     */
+    // Không `preventScroll` thì focus kéo tờ giấy xuống đáy.
     this.root.querySelector<HTMLButtonElement>(".mb-btn")?.focus({ preventScroll: true });
   }
 
@@ -120,16 +97,7 @@ export class MenuBoardView {
     return e;
   }
 
-  /**
-   * ĐỦ BỘ một ổ, theo đúng thứ tự xếp lớp — và kèm PHÍM SỐ của từng thứ.
-   *
-   * Chỗ này từng chỉ ghi phần nhân, với một ô "ổ nào cũng có" ở đầu trang: đọc xong vẫn
-   * không trả lời được câu "ổ thịt nguội thì bỏ cái gì vô". Người chơi không ghép hai chỗ
-   * trong đầu giữa lúc có người đứng chờ. Nên mỗi món ghi ĐỦ, kể cả phần lặp lại.
-   *
-   * Mức lấy thẳng từ `levelsOf` — đúng cái hàm `diffDish` đem ra chấm điểm. Không có
-   * đường nào để bảng dạy một đằng, ổ bánh chấm một nẻo.
-   */
+  /** Ghi đủ bộ mỗi món kể cả phần lặp lại; mức lấy từ `levelsOf`, cùng hàm `diffDish` chấm. */
   private ingChips(it: MenuItem): HTMLElement {
     const box = this.el("div", "mb-ing");
     const lv = levelsOf({ mon: it.id, rau: "day-du", ot: 1, tuong: 1 });
@@ -137,7 +105,7 @@ export class MenuBoardView {
       const n = lv[i.id] ?? 0;
       if (n <= 0) continue;
       const chip = this.el("span", i.kind === "nhan" ? "nhan" : "");
-      chip.appendChild(this.el("b", "", String(i.key)));       // phím bấm ở bảng kẹp nhân
+      chip.appendChild(this.el("b", "", String(i.key)));
       chip.appendChild(this.el("span", "", i.label));
       if (n >= 2) chip.appendChild(this.el("i", "", "×2"));
       box.appendChild(chip);
@@ -145,21 +113,16 @@ export class MenuBoardView {
     return box;
   }
 
-  /** TẤM BẢNG SƠN TAY — tên món và giá. Giá tra thẳng `econ.json`, không gõ tay. */
   private board(): HTMLElement {
     const b = this.el("div", "mb-board");
     b.appendChild(this.el("div", "mb-nail"));
-    /*
-     * Tên quán ở đây phải là ĐÚNG cái đang sơn trên tấm tôn ngoài vách (`art/sign.ts`): người
-     * chơi thấy tên mình ở trên tường, bấm E ra mà thấy tên khác thì đó là hai cái quán.
-     */
+    // Phải trùng tên trên biển ngoài vách (`art/sign.ts`).
     const ten = this.el("div", "mb-ten", shopName(this.opts.playerName ?? ""));
     ten.appendChild(this.el("small", "", "bán từ 6 giờ sáng"));
     b.appendChild(ten);
     b.appendChild(this.el("div", "mb-ke"));
 
-    // `MENU_BOARD`, KHÔNG phải `MENU_ITEMS`: món đặt `onBoard: false` vẫn gọi được, chỉ là
-    // không ai viết nó lên bảng (bánh mì không). Dùng nhầm danh sách là nó hiện lại.
+    // `MENU_BOARD`, không phải `MENU_ITEMS`: món `onBoard: false` gọi được nhưng không ghi lên bảng.
     for (const it of MENU_BOARD) {
       const row = this.el("div", "mb-row");
       row.appendChild(this.el("span", "n", it.name));
@@ -169,7 +132,6 @@ export class MenuBoardView {
     }
 
     const chan = this.el("div", "mb-chan");
-    // Bậc "đặc biệt" không phải một MÓN — nó là chuyện của lời dặn, nên nó nằm ở chân bảng.
     const db = this.el("div");
     db.innerHTML = "";
     db.append("ổ đầy đủ xin thêm một thứ nhân — ");
@@ -181,7 +143,6 @@ export class MenuBoardView {
     return b;
   }
 
-  /** TỜ GIẤY DÁN BÊN CẠNH — ổ nào có gì, và khách dặn được gì. */
   private paper(): HTMLElement {
     const p = this.el("div", "mb-giay");
     p.appendChild(this.el("div", "mb-bang"));

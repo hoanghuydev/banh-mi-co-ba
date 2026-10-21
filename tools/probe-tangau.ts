@@ -9,9 +9,9 @@ import { pickWeighted } from "../src/sim/drives";
 
 import { DRIVE_TUNE } from "../src/sim/drives";
 
-/** Quét `CHO_PHIEN` — khoản ÂM một cuộc tán gẫu đặt lên `DUOC_PHUC_VU`. */
+// Giá trị `CHO_PHIEN` — khoản ÂM một cuộc tán gẫu đặt lên `DUOC_PHUC_VU`.
 const QUET = [0, 3, 6, 10, 16, 24];
-/** Ba khung cảnh phải nhìn cùng lúc: cấm lúc đợi bánh KHÔNG được kéo theo cấm lúc xếp hàng. */
+// Cấm lúc đợi bánh KHÔNG được kéo theo cấm lúc xếp hàng.
 const KHUNG = ["DOI_BANH", "GOI_MON", "XEP_HANG"] as const;
 type O = { tanGau: number; tong: number };
 const dem: Record<string, O>[] = QUET.map(() => Object.fromEntries(KHUNG.map((k) => [k, { tanGau: 0, tong: 0 }])));
@@ -38,7 +38,7 @@ for (let d = 1; d <= 6; d++) {
         DRIVE_TUNE.CHO_PHIEN = v;
         const cham = ok.map((t: any) => ({ item: t, score: svc.scoreTalk(ai, t) }))
           .filter((x) => x.score >= TALK_SCORE_FLOOR);
-        if (!cham.length) return;                   // câm — đúng điều cái sàn sinh ra để làm
+        if (!cham.length) return;
         const t: any = pickWeighted(cham, (i % 997) / 997);
         dem[j][kc].tong++;
         if (kindOf(t) === "CHUYEN") dem[j][kc].tanGau++;

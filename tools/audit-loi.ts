@@ -1,12 +1,4 @@
-/**
- * Rà toàn bộ lời thoại tìm bốn lớp lỗi:
- *   M1 HỨA SUÔNG     — câu đáp nhận lời (mua / đổi / lấy / cho mượn) mà nút không có `act`.
- *   M2 MỜI SUÔNG     — mình mời người ta ngồi / đứng / dời chỗ mà không có act nào dời họ.
- *   M3 SAI THÂN PHẬN — người ĐI NGANG nói như khách quen ("mai ghé", "bữa trước", "như mọi khi").
- *   M4 HẸN NGÀY MAI  — câu đáp hẹn hôm sau mà nút không ghi lại gì (`flag` / `act`).
- *
- * Máy DÒ, không phải máy gác: in ra rồi sửa tay.
- */
+// Dò bốn lớp lỗi lời thoại (xem `ten` bên dưới), in ra để sửa tay.
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -19,19 +11,10 @@ type Talk = { id: string; npc: string; opener?: string; tree: Node[] };
 const DIR = "src/content/talks";
 const files = readdirSync(DIR).filter((f) => f.endsWith(".json"));
 
-/**
- * Câu đáp NHẬN LỜI — chốt một việc có hệ quả vật chất ngay lúc đó (ổ bánh đổi chủ, giá đổi, món đổi).
- * Cố ý bắt rộng (không cần đại từ), thừa thì loại bằng mắt.
- *
- * ⚠️ Không dùng `\b` sau chữ có dấu: `\b` của JS tính theo ASCII nên `ổ\b` không bao giờ khớp; dùng `(?![\p{L}])` với cờ `u`.
- */
+/** `\b` của JS tính theo ASCII nên không dùng sau chữ có dấu; dùng `(?![\p{L}])` với cờ `u`. */
 const NHAN_LOI = /(cho|lấy|mua|bán|gói|làm|đổi|thêm)\s+(?:\S+\s+){0,2}?(?:một|hai|ba|[123])?\s*(ổ|cái|phần)(?![\p{L}])|lấy luôn|đổi (qua|sang|thành|lại)|(làm|lấy) (ổ )?đầy đủ|khỏi hỏi/iu;
-/**
- * Câu MỜI dời chỗ — phải là lời MỜI (có "đi/nghen/được mà" cuối câu), không phải câu
- * nói đá "Chú đứng đây hai phút là con mất một khách đó chú."
- */
+/** Đòi đuôi mời ("đi/nghen…") để không bắt nhầm câu nói đá. */
 const MOI_CHO = /((ngồi|đứng) (đây|đó|xuống|vô|lại)|vô đây|ghé vô|lại đây|đứng cho mát)[^.?!]*\b(đi|nghen|nha|được mà|chút)\b/i;
-/** Lời của khách quen (nhắc hôm khác) — người đi ngang không được nói. */
 const MUA_VU = /\bmai\b|\bhôm qua\b|bữa trước|bữa nay như|như mọi khi|như thường|dạo này|lần trước|tuần rồi|hổm rày/i;
 const HEN_MAI = /\bmai\b.*(ghé|qua|lấy|đem|trả|đưa)|(ghé|qua|lấy|đem|trả|đưa).*\bmai\b/i;
 
@@ -56,7 +39,6 @@ for (const f of files) {
         hit.M2.push(`${o}\n     mình: ${n.say}`);
       if (laKhach && diNgang && [n.say, n.reply].some((x) => x && MUA_VU.test(x)))
         hit.M3.push(`${o}\n     ${n.say ?? ""} / ${n.reply ?? ""}`);
-      /** Ghi lại = cờ chuyện hoặc act có hệ quả; thiếu thì cái hẹn bốc hơi. */
       const ghi = !!n.flag || !!n.act || !!n.onKept;
       if (n.reply && HEN_MAI.test(n.reply) && !ghi && !(n.act && ACT_HUA.has((n.act as { kind: string }).kind)))
         hit.M4.push(`${o}\n     họ: ${n.reply}`);

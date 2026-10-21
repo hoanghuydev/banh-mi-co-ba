@@ -1,4 +1,3 @@
-/** Gánh của bà Sáu là vật thể — `CARRY_GANH` / `MOVE_GANH`, với cái giá đo được. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { GANH_IN, GANH_OUT } from "../src/world/map";
@@ -19,7 +18,6 @@ test("N-1 gánh để ngoài thì khách quay đầu NHIỀU HƠN — đó là c
   const coGanh = balkChance({ ahead: 4, ...o });
   assert.ok(coGanh > khong,
     `gánh nằm đó mà khách không ngại hơn (${khong.toFixed(3)} → ${coGanh.toFixed(3)}) — vậy bưng vô làm gì`);
-  // Không cắn lúc vắng: gánh là chuyện lối đi, không phải hình phạt nền.
   assert.equal(balkChance({ ahead: 1, ...o }), balkChance({ ahead: 0, ...o }));
 });
 

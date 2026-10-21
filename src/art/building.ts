@@ -3,21 +3,7 @@ import { TW } from "../world/iso";
 import { PAL } from "./palette";
 import { BASE, faceRect, facePoint, heightFor, isoBox, prop, shade, type Face, type Pen } from "./canvas";
 
-/**
- * Phần vỏ kiến trúc: tường quán, cửa ra vào, mặt tiền nhà hàng xóm.
- *
- * Tường cố ý ăn XUỐNG dưới mặt đất thêm `BASE` px (dùng `isoBox` trần chứ không
- * dùng `standing`), để chân tường liền với lớp mặt đường chứ không hở một khe.
- *
- * Mọi chi tiết dán lên tường đều đi qua `facePoint`/`faceRect` để nằm ĐÚNG trong
- * mặt phẳng vách — vẽ hình chữ nhật thẳng lên mặt nghiêng là nhìn ra ngay.
- *
- * ── Vì sao tường có 4 BIẾN THỂ ───────────────────────────────────────────────
- * Hàng tường sau trải 16 ô liền nhau. Một texture duy nhất lặp 16 lần đọc ra là
- * một tấm phông, không phải một bức tường nhà ai. Bốn biến thể — trơn, hộp đồng
- * hồ điện, ô cửa sổ song sắt, tờ lịch dán tường — là đủ để mắt thôi đếm nhịp lặp,
- * mà vẫn chỉ nướng 4 texture. Cùng một mẹo đã dùng cho ô sàn ở `tiles.ts`.
- */
+// Tường có 4 biến thể để 16 ô liền nhau không lộ nhịp lặp texture.
 export const BUILD = {
   wall: (i: number) => `b_wall${i}`,
   WALL_COUNT: 4,
@@ -30,11 +16,8 @@ export const WALL_H = 80;
 
 const TILE_BAND = WALL_H + BASE - 26;
 
-/**
- * Thân tường trần: khối + mạch vữa + gờ mái + gạch men chân tường + rêu.
- * Mép trên của mặt vách nào cũng bắt đầu từ tâm hình thoi mặt nóc.
- */
 function wallBody(g: Pen, cx: number, cy: number, top: number) {
+  // `isoBox` trần ăn xuống thêm `BASE` px để chân tường liền mặt đường, không hở khe.
   isoBox(g, cx, cy - WALL_H, WALL_H + BASE, top);
 
   const cyTop = cy - WALL_H;
@@ -48,8 +31,7 @@ function wallBody(g: Pen, cx: number, cy: number, top: number) {
       faceRect(g, at, 0, TW / 2, v, v + 1.6, shade(top, -10), 0.4);
     }
 
-    // dải gạch men ốp chân tường — nhà phố Sài Gòn nào cũng có, và nó là thứ
-    // làm bức tường đọc ra "có người ở" chứ không phải một khối bê tông
+    // dải gạch men ốp chân tường
     faceRect(g, at, 0, TW / 2, TILE_BAND, WALL_H + BASE, PAL.wallTile, 0.9);
     faceRect(g, at, 0, TW / 2, TILE_BAND, TILE_BAND + 1.6, shade(PAL.wallTile, 20), 0.9);
     for (let u = 0; u < TW / 2; u += 9) {                            // mạch gạch dọc
@@ -114,10 +96,7 @@ function wall(scene: Phaser.Scene, i: number) {
   });
 }
 
-/**
- * Cửa ra vào phía sau quán, vẽ trên mặt "left" — mặt duy nhất của hàng tường sau camera thấy.
- * Rèm hạt nói ngay rằng sau cửa là NHÀ chứ không phải kho.
- */
+/** Vẽ trên mặt "left" — mặt duy nhất của hàng tường sau camera thấy. */
 function door(scene: Phaser.Scene) {
   prop(scene, BUILD.door, heightFor(WALL_H), (g, cx, cy) => {
     wallBody(g, cx, cy, PAL.wallTop);
@@ -156,15 +135,7 @@ function door(scene: Phaser.Scene) {
   });
 }
 
-/**
- * Mặt tiền nhà hàng xóm. Chi tiết vẽ trên mặt "right" (hướng +x) vì mấy khối nhà
- * hàng xóm đứng thành cụm — mặt hướng +y của chúng bị chính khối phía trước che hết,
- * chỉ còn mặt hông ngoài cùng là nhìn thấy.
- *
- * Bốn biến thể để dãy nhà không đọc ra là một dãy hộp giống hệt nhau:
- *  0 cửa cuốn kéo nửa chừng · 1 cửa sổ có dây phơi · 2 cửa cuốn đóng có hộp thư
- *  3 cửa sổ có cục nóng máy lạnh
- */
+/** Vẽ trên mặt "right" vì mặt +y bị khối nhà phía trước che hết. */
 function neighbour(scene: Phaser.Scene, i: number) {
   prop(scene, BUILD.neighbour(i), heightFor(WALL_H), (g, cx, cy) => {
     wallBody(g, cx, cy, PAL.neighbour[i % PAL.neighbour.length]);

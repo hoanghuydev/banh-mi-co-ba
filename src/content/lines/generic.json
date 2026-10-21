@@ -91,12 +91,12 @@
       ],
       "_note": "Câu chủ quán nói lúc chìa ổ có đồ cho thêm (sim/service.ts: serveDish → playerSay). {mon} đã là một chuỗi kể sẵn (\"đồ chua với ớt\"), đừng thêm \"miếng\" hay \"chút\" vào trước nó. Danh xưng để trống, `Service.fill` điền theo người đang đứng trước mặt.",
       "variants": [
-        "{me} cho thêm {mon} cho {call} nè.",
-        "{call} ơi, {me} bỏ thêm {mon} nghen.",
-        "Thêm {mon} cho {call} đó nghen.",
-        "{me} cho {call} thêm {mon} nha.",
-        "Nay có {mon}, {me} bỏ thêm cho {call}.",
-        "Dạ, {me} cho thêm {mon} nghen {call}."
+        "{me} thêm {mon} cho {call} nè.",
+        "Có thêm {mon} nha {call}.",
+        "Thêm {mon} cho {call}, {me} mời.",
+        "{me} bỏ thêm {mon} cho {call} rồi nha.",
+        "Hôm nay {mon} ngon, {me} thêm cho {call} á.",
+        "Tặng {call} thêm {mon} nè."
       ],
       "en": [
         "Added some extra {mon} for you.",

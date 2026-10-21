@@ -1,22 +1,6 @@
 import type { CustomerSlot, ObsState, Slot, StimId } from "../core/types";
 
-/**
- * Tầng NHẬN THẤY — CANON §5 + P1-02.
- *
- *   rate = salience * visibility[zone][slot] * occluderMul * gazeEff * traitMul / 100
- *   obs.certainty += rate * dt          // TÍCH LUỸ, không roll xúc xắc mỗi frame
- *
- * Khi kích thích tắt: GIỮ NGUYÊN 1,5 s (HOLD_TIME) rồi mới rò, rò CHẬM DẦN theo dải
- * (tụ điện). CONFIRMED thì CHỐT — đã chắc rồi thì không "quên" giữa buổi (P1-02 §2.4).
- *
- * Hai điều bắt buộc, vi phạm là hỏng trụ cột:
- *  · T5 — không có xác suất giấu sau lưng. Người chơi phải ĐỌC ĐƯỢC rủi ro trước khi làm.
- *  · §16 Đừng-2 — visibility là BẢNG TRA TĨNH O(1), không phải raycast.
- *
- * Mỗi sự kiện có KHOÁ RIÊNG (`key`), không gộp theo loại: hai lần rớt bánh là hai
- * sự kiện, và lỗi trong ổ của khách A không được thành "đã thấy" của khách B
- * (CANON §8.1 luật L4 — stimId một nguồn, xem `core/stimid.ts`).
- */
+// certainty += salience·visibility·occluder·gaze·trait/100 · dt — tích luỹ, không roll ngẫu nhiên; mỗi sự kiện một `key` riêng.
 
 export type Zone = CustomerSlot;
 
@@ -40,12 +24,7 @@ export const SALIENCE: Record<StimId, number> = {
   FLOURISH: 15,
 };
 
-/**
- * Kênh + thời gian sống của từng loại — P1-02 §3.1.
- *  · AUDIO_DIRECTED: nói thẳng vào MỘT người → bỏ qua gaze, chỉ người đó nghe
- *  · SMELL: gaze có sàn (đang bấm điện thoại vẫn ngửi thấy khét)
- *  · MADE_THEM_WAIT đi kênh THỜI GIAN riêng của từng khách, không phải kích thích chung
- */
+// AUDIO_DIRECTED bỏ qua gaze và chỉ `target` nghe; SMELL có sàn gaze; MADE_THEM_WAIT không nằm ở đây vì đi theo đồng hồ từng khách.
 type StimSpec = { lifetime: number; channel: "VISUAL" | "AUDIO_DIRECTED" | "AUDIO_AMBIENT" | "SMELL"; gazeFloor?: number };
 export const STIM_SPEC: Partial<Record<StimId, StimSpec>> = {
   BURNT_OR_COLD:    { lifetime: 12.0, channel: "SMELL", gazeFloor: 0.40 },
@@ -61,14 +40,14 @@ export const STIM_SECONDS: Partial<Record<StimId, number>> = Object.fromEntries(
   Object.entries(STIM_SPEC).map(([k, v]) => [k, v!.lifetime]),
 );
 
+/** Giây giữ nguyên certainty sau khi kích thích tắt, rồi mới rò. */
 export const HOLD_TIME = 1.5;
-/** Rò theo DẢI đang đứng — càng chắc thì càng lâu quên. CONFIRMED = 0 (chốt). */
+/** Rò mỗi giây theo dải đang đứng; CONFIRMED thì chốt, không rò. */
 const DECAY: Record<Exclude<ObsState, "CONFIRMED">, number> = { NOTICED: 0.06, GLIMPSED: 0.12, UNAWARE: 0.25 };
-/** P1-02 §2.3: quá trần thì kích thích mới thay cái salience thấp nhất. */
+/** Quá trần thì kích thích mới thay cái salience thấp nhất. */
 export const MAX_LIVE_STIMULI = 8;
-/** Sàn của occluder — che kỹ tới đâu cũng không mù hẳn. */
 const OCCLUDER_FLOOR = 0.15;
-/** P1-01 §2.4 / CANON Đ1: bánh CHÁY có mùi → visibility ở mọi chỗ đứng tối thiểu 0,55. */
+/** Bánh cháy có mùi nên visibility mọi chỗ đứng tối thiểu ngần này. */
 const SMELL_VIS_FLOOR = 0.55;
 
 export type { ObsState };
@@ -96,12 +75,7 @@ export type Observation = {
   certainty: number;
   peak: ObsState;
   diedAt: number | null;
-  /**
-   * Chép lại từ kích thích: ổ CHÁY (có mùi) hay chỉ ổ NGUỘI. `BURNT_OR_COLD` là một
-   * `StimId` gánh hai chuyện khác hẳn nhau, mà câu thoại thì không được gánh chung —
-   * người ta không kêu "khét" trước một ổ bánh nguội. Giữ ở đây vì tới lúc chọn câu
-   * (`Service.noticeBark`) thì kích thích đã có thể tắt rồi, chỉ còn Observation.
-   */
+  /** Tách cháy/nguội của `BURNT_OR_COLD` cho câu thoại, vì lúc chọn câu kích thích có thể đã tắt. */
   smell?: boolean;
 };
 
@@ -116,10 +90,7 @@ export type Observer = {
   observations: Map<string, Observation>;
 };
 
-/**
- * CANON §4 (chốt ở P1-02): `soi = 0.5` cho đúng 1.000, nên "khách chuẩn" trong mọi
- * bảng hiệu chỉnh là một NPC có thật (Ông Hải / Chị Hạnh).
- */
+/** `soi = 0.5` cho đúng 1.0 — khách chuẩn của mọi bảng hiệu chỉnh. */
 export function traitMulFrom(soi: number) {
   return Math.min(2.2, Math.max(0.5, 0.65 + 0.70 * soi));
 }
@@ -130,10 +101,7 @@ function occluderFor(o: Observer, slot: Slot, occluders: readonly Occluder[]) {
   return Math.max(OCCLUDER_FLOOR, m);
 }
 
-/**
- * Từng thừa số của công thức §5 — overlay dev (F2) hiện ĐÚNG thừa số nào đang
- * giết công thức. Runtime cũng tính qua đây, nên hai bên không bao giờ lệch nhau.
- */
+/** Overlay dev và runtime cùng tính qua đây để không lệch nhau. */
 export function factorsOf(o: Observer, stim: Pick<ActiveStim, "id" | "slot"> & Partial<ActiveStim>, occluders: readonly Occluder[] = []) {
   const spec = STIM_SPEC[stim.id];
   const salience = stim.salience ?? SALIENCE[stim.id];
@@ -146,11 +114,6 @@ export function factorsOf(o: Observer, stim: Pick<ActiveStim, "id" | "slot"> & P
   return { salience, visibility, occluder, gaze, trait: o.traitMul, rate };
 }
 
-/**
- * Cập nhật nhận thấy của MỘT người quan sát. Duyệt từ phía SỰ KIỆN, không từ phía
- * NPC — bài học Mark of the Ninja (CANON §5). Không cấp phát gì mỗi frame ngoài
- * lúc thật sự có Observation mới.
- */
 export function observe(o: Observer, active: readonly ActiveStim[], now: number, dt: number, occluders: readonly Occluder[] = []) {
   for (const stim of active) {
     if (stim.target && stim.target !== o.id) continue;

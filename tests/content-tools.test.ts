@@ -1,8 +1,3 @@
-/**
- * P0-03 §6 — test âm tính: cố tình tạo 1 rule chết, 1 fact mồ côi, 1 response 4 biến
- * thể, 1 dòng NFD, 1 dòng mất dấu, 1 từ Bắc trong pool Nam, 1 dòng dịch đại từ xưng
- * hô → cả 7 đều phải bị bắt. Và test dương tính giả: chị Hạnh dùng từ Bắc → KHÔNG báo.
- */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, copyFileSync, writeFileSync, readFileSync } from "node:fs";
@@ -90,8 +85,6 @@ test("--fix sửa NFD, kiểu dấu, viết hoa — rồi lint lại sạch ba m
 test("nội dung thật của repo: 0 ERROR ở cả BA công cụ", () => {
   assert.equal(validateRules(real, join(ROOT, "src")).errors.length, 0);
   assert.equal(lintLines(real).errors.length, 0);
-  // `validateTalks` là chỗ DUY NHẤT giữ luật TĨNH/ĐỘNG của P2-07 §4.1 (`T002`) và luật
-  // "một nhịp không được teo" (`T011`), nên phải chạy ở đây.
   const r = validateTalks(real);
   assert.deepEqual(r.errors.map((e) => `${e.code} ${e.where} ${e.detail}`), []);
 });

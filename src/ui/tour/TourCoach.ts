@@ -1,24 +1,11 @@
-/**
- * BONG BÓNG DẪN — kiểu tour của web: khoét một lỗ sáng quanh thứ cần bấm, phần còn lại tối đi,
- * kèm một câu hướng dẫn. Có nút "Bỏ qua".
- *
- * Vì sao là một lớp DOM chứ không vẽ trong Phaser: bữa đầu đi qua CẢ HAI thế giới — trang chợ và
- * bảng menu là DOM, còn cái quán với bảng kẹp nhân là canvas. Vẽ trong Phaser thì phải làm hai bản
- * và chúng sẽ lệch nhau. Một lớp DOM nằm trên tất cả thì chỉ có một bản, và nó nhận cả hai kiểu
- * mốc: một phần tử DOM (`pointEl`) hay một ô trong khung thiết kế 1024 × 576 (`pointDesign`).
- *
- * Luật: lớp này KHÔNG nuốt chuột. `pointer-events: none` ở mọi chỗ trừ đúng cái bong bóng — người
- * chơi vẫn bấm được thẳng vào thứ đang được khoanh, đó là cả ý nghĩa của việc khoanh nó.
- */
-
+// Lớp DOM để chỉ được cả phần tử DOM lẫn ô trên canvas; không nuốt chuột trừ bong bóng.
 export type CoachShape = "circle" | "rect";
 
 export type CoachAim = {
-  /** Ô cần khoanh, toạ độ CSS (px, gốc là góc trái trên khung nhìn). */
+  /** Toạ độ CSS px theo khung nhìn. */
   x: number; y: number; w: number; h: number;
   shape?: CoachShape;
   text: string;
-  /** "3/7" ở góc bong bóng. */
   step?: number;
   total?: number;
 };
@@ -45,9 +32,7 @@ const STYLE = `
 .tg-skip:focus-visible{outline:2px solid #8e2a20;outline-offset:2px}
 `;
 
-/** Khoảng hở giữa lỗ khoét và bong bóng. */
 const GAP = 14;
-/** Lề tối thiểu với mép màn hình. */
 const EDGE = 10;
 
 export class TourCoach {
@@ -106,7 +91,6 @@ export class TourCoach {
     this.last = "";
   }
 
-  /** Khoanh một phần tử DOM — dùng ở trang chợ. */
   pointEl(el: Element | null, text: string, step?: number, total?: number, shape: CoachShape = "rect") {
     if (!el) { this.hide(); return; }
     const r = el.getBoundingClientRect();
@@ -114,13 +98,7 @@ export class TourCoach {
     this.aim({ x: r.left, y: r.top, w: r.width, h: r.height, shape, text, step, total });
   }
 
-  /**
-   * Khoanh một ô trong KHUNG THIẾT KẾ của game (1024 × 576) — dùng cho cảnh quán.
-   *
-   * Phép quy đổi chỉ cần cỡ thật của canvas trên trang: canvas rộng đúng `designW` ô thiết kế,
-   * nên một ô thiết kế = `rect.width / designW` px CSS. Không chỗ nào ở đây phải biết
-   * `RENDER_SCALE` hay `ZOOM` — scene nào gọi thì scene đó đã quy về toạ độ thiết kế rồi.
-   */
+  /** Khoanh một ô theo toạ độ thiết kế; người gọi đã quy về toạ độ thiết kế. */
   pointDesign(canvas: HTMLCanvasElement | null, designW: number, designH: number,
     o: { x: number; y: number; w: number; h: number; shape?: CoachShape; text: string; step?: number; total?: number }) {
     if (!canvas) { this.hide(); return; }
@@ -135,8 +113,7 @@ export class TourCoach {
 
   private aim(a: CoachAim) {
     const shape = a.shape ?? "circle";
-    // Dựng lại DOM mỗi frame là bong bóng nhấp nháy và nút "Bỏ qua" mất focus giữa chừng.
-    // Chữ chỉ ghi lại khi thật sự đổi; riêng vị trí thì cập nhật mỗi lần vì camera còn trượt.
+    // Chỉ ghi chữ khi đổi, không thì nút "Bỏ qua" mất focus.
     const key = `${a.text}|${a.step}|${shape}`;
     if (key !== this.last) {
       this.last = key;
@@ -157,16 +134,7 @@ export class TourCoach {
     this.place(x, y, w, h);
   }
 
-  /**
-   * Đặt bong bóng: DƯỚI lỗ → BÊN PHẢI → TRÊN → BÊN TRÁI, chỗ nào lọt trước thì lấy.
-   *
-   * Bên phải đứng TRƯỚC bên trên vì mấy cái lỗ cao (khay nhân của bảng kẹp chiếm gần nửa màn
-   * hình) thì "bên trên" tuy lọt nhưng nó đè lên đúng cái ổ bánh người chơi đang cần nhìn.
-   * Chừa chỗ sang bên là bong bóng không bao giờ che thứ mà chính nó đang chỉ vào.
-   *
-   * Đo bằng kích thước THẬT của bong bóng (`offsetWidth`) chứ không đoán — chữ Việt xuống dòng
-   * khác nhau ở từng câu, mà đoán sai thì bong bóng thò ra ngoài mép đúng lúc cần đọc nhất.
-   */
+  /** Dưới → phải → trên → trái; phải trước trên để không đè ổ bánh khi lỗ khoét cao. */
   private place(x: number, y: number, w: number, h: number) {
     const bw = this.bub.offsetWidth, bh = this.bub.offsetHeight;
     const vw = window.innerWidth, vh = window.innerHeight;

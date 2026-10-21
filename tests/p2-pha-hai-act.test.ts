@@ -1,14 +1,3 @@
-/**
- * PHÁ `GIVE_BREAD` VÀ `STAND_IN_SHADE` — viết theo lối ĐI TÌM LỖI, không đi tìm cái gật.
- *
- * Mỗi lưới dưới đây hỏi **"bấm kiểu gì thì nó vỡ"**, không hỏi "trường hợp thường có chạy không":
- *
- *   · bấm hai lần · bấm khi tay không · bấm khi hết bánh · bấm khi chỗ mát đã có người
- *   · bấm cho người đã ăn rồi · bấm cho người ĐANG xếp hàng · bấm rồi bỏ đi
- *
- * Mỗi câu hỏi đó, nếu hệ trả lời sai, đều cho người chơi một thứ MIỄN PHÍ hoặc một lời
- * nói dối — hai thứ CANON cấm.
- */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Bus } from "../src/core/eventbus";
@@ -32,8 +21,6 @@ async function quan(ngay = 9) {
   for (let i = 0; i < 60_000 && !ai; i++) { h.step(1000 / 30); ai = svc.customers[0] ?? null; }
   return { w, h, svc, ai };
 }
-
-// ─────────────────────────────── GIVE_BREAD
 
 test("PHA-1 tay KHÔNG CÓ GÌ mà bấm cho ăn ⇒ không được đẻ ra ổ bánh", async () => {
   const { svc, ai } = await quan();
@@ -67,10 +54,6 @@ test("PHA-3 mọi nút `GIVE_BREAD` phải khoá TAY CÓ BÁNH — không thì n
 });
 
 test("PHA-4 câu ĐƯA Ổ ĐÃ BÁN không được mang `GIVE_BREAD` — nếu không là bán mà cho không", () => {
-  /*
-   * Câu kiểu *"Dạ ổ của chị đây chị."* đưa ổ đã qua `serveDish` — gắn thêm act là ổ RỜI
-   * TAY MỘT LẦN NỮA, miễn phí.
-   */
   const DUA_HANG = /^(dạ |)ổ (của|pate|xíu|bánh)|ổ của (chị|anh|cô|chú|bà|em|con).{0,6}(đây|nè)/i;
   const xau: string[] = [];
   for (const t of TALKS) {
@@ -82,13 +65,11 @@ test("PHA-4 câu ĐƯA Ổ ĐÃ BÁN không được mang `GIVE_BREAD` — nếu
   assert.deepEqual(xau, [], "câu đưa ổ đã bán lại mang `GIVE_BREAD` — bán mà hoá ra cho không");
 });
 
-// ─────────────────────────────── STAND_IN_SHADE
-
 test("PHA-5 chỗ mát CHỈ MỘT NGƯỜI — người thứ hai không được chen vào", async () => {
   const { svc, h } = await quan();
   for (let i = 0; i < 40_000 && svc.customers.length < 2; i++) h.step(1000 / 30);
   const [a, b] = svc.customers;
-  if (!b) return;                                   // buổi vắng — không kết luận bừa
+  if (!b) return;
   svc.shadeFree = true;
   svc.applyTalkOption(a, { act: { kind: "STAND_IN_SHADE", forSec: 60 } });
   svc.tickNpcs(0.05, { minutes: svc.nowMin, pressure: true, dayOver: false });
@@ -99,14 +80,14 @@ test("PHA-5 chỗ mát CHỈ MỘT NGƯỜI — người thứ hai không đư�
 
 test("PHA-6 chỗ mát ĐÃ ĐẦY thì lời mời không được im lặng gật", async () => {
   const { svc, ai } = await quan();
-  svc.shadeFree = false;                            // ai đó đang đứng rồi
+  svc.shadeFree = false;
   svc.applyTalkOption(ai, { act: { kind: "STAND_IN_SHADE", forSec: 30 } });
   assert.equal(ai.inShade, false, "chỗ mát đầy mà vẫn nhét thêm được một người");
 });
 
 test("PHA-7 vô bóng mát thì phải ĐI TỚI ĐÓ, không đứng nguyên chỗ cũ", async () => {
   const { svc, h, ai } = await quan();
-  if (!ai?.pass) return;                            // chỉ người đi ngang mới có đường đi
+  if (!ai?.pass) return;
   svc.shadeFree = true;
   svc.applyTalkOption(ai, { act: { kind: "STAND_IN_SHADE", forSec: 60 } });
   const truoc = Math.hypot(ai.x - SHADE_SPOT.x, ai.y - SHADE_SPOT.y);
@@ -117,7 +98,6 @@ test("PHA-7 vô bóng mát thì phải ĐI TỚI ĐÓ, không đứng nguyên ch
 });
 
 test("PHA-8 mọi nút `STAND_IN_SHADE` khoá `w.shadeFree` bằng `while`, không phải `need`", () => {
-  /** Sự thật ĐỘNG: người khác chiếm mất giữa lúc mình đang đọc thẻ ⇒ phải HIỆN rồi ra "?", không biến mất (P2-07 §4.1). */
   const xau: string[] = [];
   for (const t of TALKS) {
     for (const { node } of walkNodes(t)) {

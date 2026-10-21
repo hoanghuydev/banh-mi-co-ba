@@ -1,14 +1,3 @@
-/**
- * NGƯỜI QUA ĐƯỜNG (`sim/passersby.ts`) + bấm F theo KHOẢNG CÁCH (`Service.talkTarget`).
- *
- * File này giữ hai hợp đồng, và cái thứ hai mới là cái dễ mất nhất:
- *
- *  1. Con hẻm có người đi ngang, họ đi hết đường rồi khuất, và họ KHÔNG MUA GÌ.
- *  2. RANH GIỚI: thêm họ vào KHÔNG được đụng một con số nào của buổi bán. Cùng một seed,
- *     một ngày có người qua đường và một ngày không có phải bán được y hệt nhau, ghi vào
- *     sổ y hệt nhau, và mọi dòng số ngẫu nhiên của hệ khác phải đứng nguyên chỗ cũ. Đây
- *     là cái nền của con hẻm — cái nền mà làm xê dịch được kết quả thì nó là một hệ.
- */
 import { test } from "node:test";
 import { readFile } from "node:fs/promises";
 import assert from "node:assert/strict";
@@ -23,7 +12,6 @@ import { TALK_REACH } from "../src/sim/service";
 import { WALKIN_ADDRESS, WALKIN_CALLS, hasInvite, type Talk } from "../src/sim/talk";
 import { NPCS, WALKIN_STYLES } from "../src/content/npcs";
 
-/** Tên riêng của 12 người có tên — câu chào ngoài đường không được nhắc tới ai. */
 const NAMES = NPCS.map((n) => n.name.split(" ").slice(-1)[0]);
 import { TalkStore } from "../src/content/talks";
 import { STREET_LANES, STREET_X, QUEUE_SLOTS, assertWalkable, hitsWall } from "../src/world/map";
@@ -45,18 +33,12 @@ function play(day: number, watch?: Watch) {
 
 const ambientOf = (h: HeadlessStall) => h.service.customers.filter((c) => c.ambient);
 
-/**
- * Từ `w` có được dùng làm ĐẠI TỪ trong câu này không. Bỏ qua lúc ngay sau nó là một tên
- * riêng ("Chú Sáu dọn đi rồi") — đó là gọi tên người khác, không phải xưng hô với người
- * đang đứng đây. Cùng một cửa với lưới L-6 của `p5-talk`.
- */
+// Bỏ qua khi theo sau là tên riêng ("Chú Sáu dọn đi rồi") vì đó là gọi tên, không phải xưng hô.
 const PRONOUN = (line: string, w: string) =>
   new RegExp(`(^|[^\\p{L}])${w}(?!\\s+\\p{Lu})([^\\p{L}]|$)`, "iu").test(line);
 
-// ───────────────────────────────────────────────────── đường đi có thật không
-
 test("hai dải đường đều ĐI ĐƯỢC suốt chiều ngang — `walk()` đi thẳng, không né được gì", () => {
-  assertWalkable();                                      // chính nó soi hai dải này
+  assertWalkable();
   for (const lane of STREET_LANES) {
     for (let x = STREET_X[0]; x <= STREET_X[1]; x += 0.25) {
       assert.ok(!hitsWall(x, lane.y), `dải "${lane.id}" bị chặn ở x=${x.toFixed(2)}`);
@@ -68,7 +50,6 @@ test("hai đầu đường mờ hẳn, giữa đường thì rõ hẳn — khôn
   assert.equal(passerAlpha(STREET_X[0]), 0);
   assert.equal(passerAlpha(STREET_X[1]), 0);
   assert.equal(passerAlpha((STREET_X[0] + STREET_X[1]) / 2), 1);
-  // đơn điệu trên nửa đầu: mờ dần đều, không nhấp nháy
   for (let x = STREET_X[0]; x < STREET_X[0] + 1.5; x += 0.1) {
     assert.ok(passerAlpha(x + 0.1) >= passerAlpha(x));
   }
@@ -110,8 +91,6 @@ test("giờ cao điểm đường đông hơn giờ vắng, và mưa thì vắng
   assert.ok(Math.abs(avg("MID", true) / avg("MID", false) - RAIN_GAP_MUL) < 1e-9);
 });
 
-// ────────────────────────────────────────────────────────── chạy thật một ngày
-
 test("chạy thật: hẻm có người đi ngang, và họ đi KHUẤT chứ không đứng lại giữa đường", () => {
   let ever = 0, peak = 0;
   const seen = new Set<string>();
@@ -123,7 +102,6 @@ test("chạy thật: hẻm có người đi ngang, và họ đi KHUẤT chứ kh
   assert.ok(ever >= 20, `cả buổi mới có ${ever} người đi ngang — hẻm vẫn vắng như cũ`);
   assert.ok(peak > 0 && peak <= PASSERS_MAX, `có lúc ${peak} người cùng lúc, trần là ${PASSERS_MAX}`);
   assert.equal(ambientOf(h).length <= PASSERS_MAX, true);
-  // ai cũng phải được dọn đi: còn đọng lại nghĩa là có người ghim chân ở đâu đó
   assert.ok(seen.size > ambientOf(h).length * 3, "gần như không ai đi khuất — chắc đang kẹt tường");
 });
 
@@ -140,12 +118,6 @@ test("người đi ngang KHÔNG mua, không gọi món, không chiếm một ch�
 });
 
 test("RANH GIỚI: thêm người qua đường KHÔNG đụng một con số nào của buổi bán", () => {
-  /**
-   * Cách kiểm: chạy cùng một ngày, cùng seed, HAI lần — một lần để nguyên, một lần ép
-   * trần người qua đường về 0 bằng cách nuốt sạch họ ngay khi vừa sinh ra. Hai buổi phải
-   * ra y hệt nhau. Khác một ổ bánh thôi cũng có nghĩa là mấy người này đã lọt vào một
-   * dòng số hoặc một bộ đếm nào đó mà lẽ ra họ không được chạm tới.
-   */
   const measure = (strip: boolean) => {
     const h = play(13, (x) => {
       if (!strip) return;
@@ -173,9 +145,6 @@ test("tất định: cùng seed thì đúng những người đó, đúng chỗ 
   assert.deepEqual(trace(), a);
 });
 
-// ───────────────────────────────────────────────── bấm F theo khoảng cách
-
-/** Người chơi đứng ở đâu để với tới `c`. */
 const standBy = (c: Customer) => ({ x: c.x, y: c.y - 1 });
 
 test("đứng ngay cạnh ai thì F nói chuyện với NGƯỜI ĐÓ, không phải người đứng đầu quầy", async () => {
@@ -185,34 +154,15 @@ test("đứng ngay cạnh ai thì F nói chuyện với NGƯỜI ĐÓ, không ph
   h2.run({
     inject: (_t, x) => {
       const front = x.service.front;
-      // Phải là người đã ĐỨNG VÀO CHỖ: người còn đang bước tới thì không gọi được
-      // (lỗi ẩn H-10 — nói chuyện với một cái lưng quay nửa chừng).
       const back = x.service.customers.find((c) =>
         c.slot > 0 && c.phase !== "leaving" && c.phase !== "arriving");
       if (!front || !back || checked) return;
-      /*
-       * BỎ QUA LÚC CÓ NGƯỜI ĐANG CHỜ MÌNH TRẢ LỜI.
-       *
-       * `talkCost` cho người vừa mở lời `TALK_B_ADDRESSED` = −99 — thắng tuyệt đối, và
-       * ĐÚNG như vậy: làm lơ một người vừa hỏi mình là chuyện khác hẳn. Lưới này đo luật
-       * KHOẢNG CÁCH, nên phải đo lúc luật kia không bật.
-       */
+      // Người đang chờ trả lời thắng tuyệt đối (TALK_B_ADDRESSED), nên bỏ qua để đo riêng luật khoảng cách.
       if (x.service.pendingTalkers.length) return;
       x.service.playerAt = standBy(back);
-      /*
-       * HỎI HAI LẦN — vì `talkTarget()` có ĐỘ DÍNH (`TALK_STICKY` −0,62, giữ mục tiêu cũ
-       * cho khỏi nhấp nháy), mà lưới này DỜI NGƯỜI CHƠI TỨC THÌ.
-       *
-       * Chơi thật thì mình đi bộ sang: suốt mấy chục frame đó `talkTarget()` chạy liên
-       * tục với người chơi ĐÃ đứng cạnh `back`, nên độ dính chuyển sang `back` từ lâu
-       * trước khi bấm F. Hỏi đúng một lần sau một cú dịch chuyển là đo mục tiêu dính của
-       * CHỖ ĐỨNG CŨ — một hiện vật của cách đo, không phải hành vi của game.
-       *
-       * (Nhịp đầu bị bỏ qua chứ không bị kiểm: nó là frame bước chân cuối cùng.)
-       */
+      // Hỏi hai lần vì talkTarget() có độ dính (TALK_STICKY) mà ở đây người chơi bị dời tức thì.
       x.service.nearbyToTalk();
       assert.equal(x.service.nearbyToTalk()?.id, back.id, "đứng cạnh người xếp sau mà F vẫn bắt người đầu quầy");
-      // lùi về quầy: không còn ai trong tầm → rơi về người đứng đầu
       x.service.playerAt = { x: front.x, y: front.y - TALK_REACH - 1 };
       assert.equal(x.service.nearbyToTalk(), null);
       checked = 1;
@@ -220,8 +170,6 @@ test("đứng ngay cạnh ai thì F nói chuyện với NGƯỜI ĐÓ, không ph
   });
   assert.equal(checked, 1, "cả ngày không có lúc nào hai người cùng đứng — đổi ngày đi");
 });
-
-// ──────────────────────────────────────────────────────────────── danh xưng
 
 test("mỗi DÁNG người một vai — bà cụ không được gọi bằng 'anh'", () => {
   assert.equal(WALKIN_ADDRESS.length, WALKIN_STYLES.length, "bảng vai lệch bảng dáng người");
@@ -231,21 +179,13 @@ test("mỗi DÁNG người một vai — bà cụ không được gọi bằng '
     }
     assert.ok(WALKIN_CALLS.includes(a.call), `dáng ${i}: gọi bằng "${a.call}" — không có trong WALKIN_CALLS`);
   }
-  // dáng 3 là bà cụ (tóc búi bạc, lưng còng) — đây là chính cái ca làm lộ ra lỗi
+  // Dáng 3 là bà cụ.
   assert.equal(WALKIN_ADDRESS[3].call, "bà");
   assert.equal(WALKIN_ADDRESS[3].me, "con");
   assert.notEqual(WALKIN_ADDRESS[3].call, WALKIN_ADDRESS[0].call, "bà cụ và anh thanh niên cùng một vai");
 });
 
 test("kho thoại đường phố KHÔNG viết cứng một vai nào — tám dáng dùng chung mà", async () => {
-  /**
-   * Lưới này là thứ giữ cho cái lỗi "gọi bà cụ bằng anh" không mọc lại. Một bộ thoại
-   * dùng chung cho tám dáng người thì mọi chỗ xưng hô phải là CHỖ TRỐNG; viết thẳng
-   * "anh" vào là lại sai với bảy dáng còn lại.
-   *
-   * Bỏ qua lúc ngay sau từ đó là một TÊN RIÊNG ("Chú Sáu dọn đi rồi") — đó là gọi tên
-   * người khác, không phải xưng hô với người đang đứng đây. Cùng một cửa với L-6.
-   */
   const talks = (await TalkStore.loadAll()).filter((t) => t.npc === "QUA_DUONG");
   assert.ok(talks.length >= 6, `mới có ${talks.length} cuộc cho người đi đường`);
   const asPronoun = PRONOUN;
@@ -285,24 +225,16 @@ test("người đi ngang cũng nói chuyện được, và họ ĐỨNG LẠI kh
       const view = x.service.openTalk();
       if (!view) return;                                 // kho chưa nạp kịp — thử frame sau
       opened = 1;
-      /*
-       * NGƯỜI CHƠI CHỦ ĐỘNG THÌ NGƯỜI CHƠI NÓI TRƯỚC (P2-06 §2.14) — nên `line` RỖNG ở
-       * nhịp mở. Bản cũ phát `talk.opener` của NPC kể cả khi chính người chơi vừa bấm
-       * phím, và nó đẻ ra câu vô lý: một người đang đứng mua bánh đáp "Ủa. Tưởng ai."
-       */
       assert.equal(view.line, "", "người chơi chủ động mà NPC lại nói trước");
       assert.ok(view.options.length >= 2, "không có đường ra ở nhịp đầu");
-      // Chỗ trống danh xưng phải được ĐIỀN, và điền đúng vai của dáng người này.
       const shown = view.options.map((o) => o.say);
       for (const l of shown) assert.ok(!l.includes("{"), `chỗ trống danh xưng lọt ra màn hình: "${l}"`);
       const a = WALKIN_ADDRESS[Number(p.memKey.slice("walkin".length))];
       const all = shown.join(" ");
       for (const w of WALKIN_CALLS) {
         if (w === a.call || w === a.you || w === a.me || w === a.self) continue;
-        // cùng cửa "tên riêng" với L-6: "Chú Sáu dọn đi rồi" là gọi TÊN, không phải xưng hô
         assert.ok(!PRONOUN(all, w), `${p.memKey} (vai "${a.call}") bị gọi bằng "${w}": ${all}`);
       }
-      // gọi rồi thì người ta dừng, ngay tại chỗ đang đứng
       assert.ok(p.pass!.until > p.now, "gọi người ta lại mà họ vẫn thủng thẳng đi tiếp");
       assert.equal(p.pass!.spot!.x, p.x);
       assert.equal(p.pass!.spot!.y, p.y);
@@ -324,21 +256,13 @@ test("người vừa mua xong đang quay lưng về thì KHÔNG gọi giật l�
   assert.equal(checked, 1, "cả ngày không ai đi về — đổi ngày đi");
 });
 
-// ────────────────────────────────────────────── mời khách vô (quán vắng)
-
-/**
- * Mời tới khi có người chịu ghé. Trả lượt ghé đó, hoặc null nếu cả buổi không ai chịu.
- *
- * Ép roll bằng cách gọi thẳng `openTalk`/`chooseTalk` — đây là đúng đường người chơi đi
- * (bấm F, bấm một dòng), chỉ là không có bàn phím.
- */
 type Snapshot = { phase: string; hasOrder: boolean; slotted: boolean };
 
 async function inviteUntilYes(day: number) {
   const h = new HeadlessStall(dayOf(day), POLICIES.greedy, { bus: new Bus() });
   await h.service.talks.ensure("QUA_DUONG");
   let took: Customer | null = null, tried = 0;
-  /** Chụp lại ngay lúc họ nhận lời — tới cuối ngày thì họ đã mua xong và về mất rồi. */
+  // Chụp lúc nhận lời vì tới cuối ngày họ đã mua xong và về.
   let atYes: Snapshot | null = null;
   h.run({
     inject: (_t, x) => {
@@ -348,7 +272,6 @@ async function inviteUntilYes(day: number) {
       x.service.playerAt = standBy(p);
       const view = x.service.openTalk();
       if (!view) return;
-      // đi sâu tới khi gặp một nhánh có lời mời, hoặc hết cuộc
       for (let depth = 0; depth < 6; depth++) {
         const next = x.service.chooseTalk(0);
         tried++;
@@ -374,7 +297,6 @@ test("mời khéo thì có người ghé vô thiệt — và họ đi hết đư
   assert.ok(atYes!.hasOrder, "ghé vô mà không có món nào để gọi");
   assert.equal(atYes!.phase, "arriving", `nhận lời xong mà phase là ${atYes!.phase}`);
   assert.ok(atYes!.slotted, "nhận lời rồi mà không nằm trong danh sách khách");
-  // và cái lượt ghé đó phải đi tới nơi: cuối ngày họ đã mua xong, không kẹt giữa hẻm
   assert.ok(h.service.servedCount > 0);
   assert.ok(!h.service.customers.includes(took!), "tới cuối ngày vẫn còn đứng đó");
 });
@@ -409,14 +331,7 @@ test("hàng dài thì mời cũng vô ích — cơ chế này chỉ đáng dùng
   assert.equal(inviteChance({ ...warm, ahead: QUEUE_SLOTS.length }), 0);
 });
 
-// ───────────────────────────── NPC chào nhau giữa đường (P2-06 §2.11, lỗi #4)
-
 test("hai người đi NGƯỢC chiều gặp nhau thì chào nhau — và chỉ một thiểu số làm vậy", async () => {
-  /**
-   * Nguyên tắc Orkin: người chơi cần NGHE THẤY hai người quen nhau, không cần hai người
-   * đó thật sự có quan hệ trong mô phỏng. Nên lưới này chỉ đòi đúng ba chuyện: có xảy
-   * ra · là thiểu số · và KHÔNG mang thông tin gì (không claim).
-   */
   let greeted = 0, seen = 0, bothSpoke = 0;
   for (const day of [3, 9, 13, 21, 27]) {
     const h = new HeadlessStall(dayOf(day), POLICIES.greedy, { bus: new Bus() });
@@ -439,9 +354,6 @@ test("hai người đi NGƯỢC chiều gặp nhau thì chào nhau — và chỉ
 });
 
 test("cái chào KHÔNG được mang thông tin — nền thì miễn phí, bỏ qua không mất gì", async () => {
-  /**
-   * Cái chào là nền, không chứa thông tin gì để người chơi phải nghe.
-   */
   const g = JSON.parse(
     await readFile(new URL("../src/content/lines/generic.json", import.meta.url), "utf8"),
   ) as { pools: { id: string; variants: string[] }[] };
@@ -451,7 +363,6 @@ test("cái chào KHÔNG được mang thông tin — nền thì miễn phí, b�
     assert.ok(p.variants.length >= 8, `${p.id}: mới ${p.variants.length} biến thể — nghe ra là máy phát lại`);
     for (const v of p.variants) {
       assert.ok(!/\{/.test(v), `${p.id}: "${v}" còn chỗ trống chưa điền`);
-      // không tên người, không chuyện của ai: chào là chào, không phải kể
       for (const n of NAMES) {
         assert.ok(!v.includes(n), `${p.id}: "${v}" nhắc tên ${n} — cái chào thành một mẩu tin`);
       }
@@ -461,15 +372,6 @@ test("cái chào KHÔNG được mang thông tin — nền thì miễn phí, b�
 });
 
 test("bước ra đường với người đi ngang thì LUÔN mời được — không rơi vào chuyện thời tiết", async () => {
-  /**
-   * Cửa DUY NHẤT để một người đi ngang thành khách là người chơi tự đi mời. Nên lúc họ
-   * bỏ quầy bước ra, cuộc mở ra phải CÓ đường mời.
-   *
-   * Lỗi đã đo và đã sửa: kho `ANY` (chào hỏi) được ghép vào mọi người, kể cả người đi
-   * ngang — nên chỉ 41,7% số lần bấm ra được một cuộc có đường mời, trong khi dòng nhắc
-   * ghi sẵn "mời … ghé mua". Một lời hứa bị bẻ gần sáu phần mười số lần, và T5 nói hệ
-   * quả phải đọc được TRƯỚC khi bấm.
-   */
   let drew = 0, withInvite = 0, promised = 0;
   for (const day of [5, 13, 21]) {
     const h = new HeadlessStall(dayOf(day), POLICIES.greedy, { bus: new Bus() });
@@ -486,7 +388,6 @@ test("bước ra đường với người đi ngang thì LUÔN mời được �
           if (!v) continue;
           drew++;
           if (saidMoi) promised++;
-          // Mời được = trong cả cây có ít nhất một đường `INVITE`.
           if (JSON.stringify(v.options) !== "" && x.service.talkOpen) {
             const t = (x.service as unknown as { talkSession: { talk: Talk } }).talkSession.talk;
             if (hasInvite(t)) withInvite++;

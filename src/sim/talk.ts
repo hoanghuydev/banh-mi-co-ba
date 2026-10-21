@@ -305,26 +305,26 @@ export const ADDRESS: Record<string, Address> = {
   CHU_TU:    { self: "chú",  you: "con", call: "chú",  me: "con" },
   ANH_DUNG:  { self: "anh",  you: "em",  call: "anh",  me: "em" },
   CHI_LAN:   { self: "em",   you: "em",  call: "chị",  me: "em" },
-  BE_SU:     { self: "con",  you: "cô",  call: "con",  me: "cô" },
+  BE_SU:     { self: "em",   you: "chị", call: "em",   me: "chị" },
   ONG_HAI:   { self: "chú",  you: "con", call: "chú",  me: "con" },
   CO_MAI:    { self: "cô",   you: "con", call: "cô",   me: "con" },
   THAY_PHUC: { self: "thầy", you: "con", call: "thầy", me: "con" },
   CHI_HANH:  { self: "chị",  you: "em",  call: "chị",  me: "em" },
-  ANH_BAO:   { self: "em",   you: "cô",  call: "em",   me: "cô" },
+  ANH_BAO:   { self: "em",   you: "chị", call: "em",   me: "chị" },
   BA_SAU:    { self: "tui",  you: "con", call: "bà",   me: "con" },
-  CHU_KIET:  { self: "tao",  you: "mày", call: "chú",  me: "tui" },
+  CHU_KIET:  { self: "tao",  you: "mày", call: "chú",  me: "con" },
   WALKIN:    { self: "tui",  you: "em",  call: "anh",  me: "em" },
-  QUA_DUONG: { self: "tui",  you: "cô",  call: "anh",  me: "em" },
+  QUA_DUONG: { self: "tui",  you: "em",  call: "anh",  me: "em" },
 };
 
 /** Khớp 1–1 theo CHỈ SỐ với `WALKIN_STYLES`; nội dung viết `{call}`/`{me}`/`{self}`/`{you}` và `Service.fill()` thay vào. */
 export const WALKIN_ADDRESS: readonly Address[] = [
-  { self: "tui", you: "cô",  call: "anh", me: "em" },   // 0 tóc ngắn — anh
+  { self: "tui", you: "em",  call: "anh", me: "em" },   // 0 tóc ngắn — anh
   { self: "tui", you: "em",  call: "chị", me: "em" },   // 1 đuôi gà, khẩu trang — chị
-  { self: "tui", you: "cô",  call: "cô",  me: "em" },   // 2 tóc bob, xách giỏ — cô
+  { self: "tui", you: "con", call: "cô",  me: "con" },  // 2 tóc bob, xách giỏ — cô
   { self: "tui", you: "con", call: "bà",  me: "con" },  // 3 tóc búi bạc, lưng còng — bà cụ
   { self: "tui", you: "con", call: "cô",  me: "con" },  // 4 nón lá — cô
-  { self: "tui", you: "cô",  call: "anh", me: "em" },   // 5 nón bảo hiểm — anh chạy xe
+  { self: "tui", you: "em",  call: "anh", me: "em" },   // 5 nón bảo hiểm — anh chạy xe
   { self: "tui", you: "em",  call: "chị", me: "em" },   // 6 đuôi gà, áo hồng — chị
   { self: "tui", you: "con", call: "chú", me: "con" },  // 7 đeo kính, tóc ngắn — chú
 ];
@@ -334,7 +334,7 @@ export const WALKIN_CALLS = ["anh", "chị", "cô", "chú", "bà", "ông", "em"]
 
 /** Không suy ra được từ `ADDRESS`: chiều ngược lại mới là chỗ sai hay gặp (bé Su gọi người chơi là "em"). */
 export const FORBIDDEN_SELF: Record<string, string[]> = {
-  BE_SU: ["chị", "cô ấy", "tui", "tao"],
+  BE_SU: ["chị", "con", "tui", "tao"],
   ANH_BAO: ["anh", "tui", "tao", "chú"],
   CHI_LAN: ["tui", "tao"],
   THAY_PHUC: ["tao", "tui", "chú", "anh"],

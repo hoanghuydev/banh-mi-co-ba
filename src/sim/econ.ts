@@ -1,17 +1,4 @@
-/**
- * Kinh tế lõi — P3-01 / P3-03 / P3-06. Thuần dữ liệu, không Phaser, không RNG lúc chạy
- * (lịch là bảng cố định — chơi lại ngày nào cũng ra đúng trời đó, giá đó: CANON §8e).
- *
- * Đơn vị: nội dung tính bằng NGHÌN đồng (k); `world.money.cash` tính bằng ĐỒNG.
- * `SCALE`: khoản theo ngày co theo nhịp ~18 ổ/ngày của bản dựng;
- * giá từng ổ, giá từng món ở chợ giữ nguyên như đời thật.
- *
- * Bốn luật của kho (P3-03 §2.1–2.3):
- *  · hàng HƯ là KHOÁ — không có "dùng đại" (CANON §7)
- *  · lấy lô cũ nhất trước (FIFO) — người chơi tự quyết mua loại nào, không chọn lô
- *  · chất lượng KHÔNG BAO GIỜ hiện thành số — chỉ hiện ngày mua / màu nước hũ đồ chua
- *  · hết là hết: không có nút nhập thêm giữa buổi (KH-3)
- */
+// Nội dung tính bằng nghìn đồng (k), `world.money.cash` tính bằng đồng; không RNG lúc chạy.
 import ECON_JSON from "../content/econ/econ.json";
 import GOODS_JSON from "../content/econ/goods.json";
 import CAL_JSON from "../content/econ/calendar.json";
@@ -54,16 +41,7 @@ export const CAL = CAL_JSON as unknown as Cal;
 export const scaledVnd = (k: number) => Math.round(k * ECON.scale) * 1000;
 export const vnd = (k: number) => Math.round(k * 1000);
 
-/**
- * SỐ TIỀN ĐỌC THÀNH LỜI — "64000" → *"sáu mươi tư ngàn"*.
- *
- * Cần vì giá phải đi vào CÂU NÓI (`{gia}` của `Service.fill`), mà không ai đứng bán bánh
- * mì lại đọc "64.000 đồng". Chỉ lo tới khoảng tiền có thật trong trò chơi: vài ngàn tới
- * vài trăm ngàn, luôn tròn ngàn. Ngoài khoảng đó thì trả về chữ số — một câu thoại không
- * bao giờ nói tới số đó, và đoán bừa thì tệ hơn.
- *
- * Giọng Nam Bộ: "hai chục" chứ không "hai mươi", "bốn chục" chứ không "bốn mươi".
- */
+/** 64000 → "sáu mươi tư ngàn"; ngoài 1–999 ngàn tròn thì trả chữ số. */
 export function dongVi(d: number): string {
   const k = Math.round(d / 1000);
   if (k <= 0 || k > 999 || d % 1000 !== 0) return d.toLocaleString("vi-VN") + " đồng";
@@ -72,15 +50,10 @@ export function dongVi(d: number): string {
   const parts: string[] = [];
   if (tram) parts.push(`${DON[tram]} trăm`);
   if (chuc === 0 && donvi && tram) parts.push("lẻ");
-  /*
-   * "Chục" chỉ dùng cho hàng chục TRÒN — "hai chục", "bốn chục". Có hàng đơn vị thì đọc
-   * "mươi": "ba mươi hai", "sáu mươi tư". Đọc "hai chục tư" là một câu không ai nói.
-   */
+  // "Chục" chỉ cho hàng chục tròn; có hàng đơn vị thì đọc "mươi".
   if (chuc === 1) parts.push("mười");
   else if (chuc > 1) parts.push(donvi ? `${DON[chuc]} mươi` : `${DON[chuc]} chục`);
   if (donvi) {
-    // "mười lăm" / "hai chục lăm" — số 5 sau hàng chục đọc là "lăm"; số 1 sau hàng chục
-    // từ 2 trở lên đọc là "mốt". Hai chỗ này mà đọc thẳng là lộ ngay ra máy nói.
     if (donvi === 5 && chuc >= 1) parts.push("lăm");
     else if (donvi === 1 && chuc >= 2) parts.push("mốt");
     else if (donvi === 4 && chuc >= 2) parts.push("tư");
@@ -89,9 +62,7 @@ export function dongVi(d: number): string {
   return `${parts.join(" ")} ngàn`;
 }
 
-// ─────────────────────────────────────────────────────────────── lịch
-
-/** Lịch `calendar.json` quay vòng: ngày quá độ dài mảng lặp lại từ đầu. */
+/** Lịch quay vòng khi ngày vượt độ dài mảng. */
 export const calDay = (day: number) => ((Math.max(1, day) - 1) % CAL.weather.length) + 1;
 
 export const weatherOf = (day: number): Weather => CAL.weather[calDay(day) - 1];
@@ -117,18 +88,12 @@ export function q0Of(g: GoodId, day: number): number {
 
 export const fixedCostVnd = (day: number) => scaledVnd(day >= ECON.fixedCost_k.fromDay ? ECON.fixedCost_k.raised : ECON.fixedCost_k.base);
 
-// ─────────────────────────────────────────────────────────────── kho
-
 export type Lot = { good: GoodId; day: number; left: number; q0: number };
 export type Storage = "thung_xop" | "tu_mat";
 export type InventoryState = { lots: Lot[]; lastBasket: Partial<Record<GoodId, number>>; storage?: Storage; noiU?: boolean };
 export const newInventory = (): InventoryState => ({ lots: [], lastBasket: {}, storage: "thung_xop" });
 
-/**
- * Hạn dùng theo cách bảo quản: thùng xốp làm pate chỉ còn 1 ngày; tủ mát (P3-04 B1) cho đồ
- * lạnh để được GẤP ĐÔI (đường cong chất lượng giãn ra theo). Nồi ủ giữ xíu mại qua đêm.
- * Đồ chua không đổi hạn theo tủ.
- */
+/** Tủ mát nhân đôi hạn đồ lạnh; nồi ủ giữ xíu mại qua đêm. */
 export function shelfDays(g: GoodId, storage: Storage = "thung_xop", noiU = false): number {
   const d = GOODS[g];
   if (g === "XIU_MAI" && noiU) return 2;
@@ -200,18 +165,9 @@ export function coldSlotsUsed(inv: InventoryState, day: number) {
 }
 export const coldSlotCap = (inv?: InventoryState) => (inv?.storage === "tu_mat" ? 20 : ECON.storage.thung_xop.coldSlots);
 
-// ─────────────────────────────────────────────────────────────── giá ổ + chất lượng ổ
-
 export type Tier = "khong" | "thuong" | "dayDu" | "dacBiet";
 
-/**
- * BẬC GIÁ CỦA MỘT ĐƠN — đọc từ MÓN trên bảng (`menu.json: items[].tier`), không đếm số nhân,
- * để công thức và giá tách nhau.
- *
- * `dacBiet` vẫn là chuyện của LỜI DẶN, không của món: xin thêm một thứ nhân trên ổ đầy
- * đủ thì lên bậc đặc biệt (P3-01 `menu_k`). Trên ổ một nhân thì không — xin nhiều xíu mại
- * không làm ổ xíu mại thành ổ đặc biệt.
- */
+/** Bậc giá lấy từ món; chỉ ổ đầy đủ xin thêm nhân mới lên `dacBiet`. */
 export function tierOf(intent: { mon: MenuItemId; nhieu?: string }): Tier {
   const t = itemOf(intent.mon).tier;
   return t === "dayDu" && intent.nhieu ? "dacBiet" : t;
@@ -221,10 +177,7 @@ export const loafPriceVnd = (t: Tier) => vnd(ECON.menu_k[t]);
 const MEAT: ReadonlySet<string> = new Set(["thit", "chalua", "xiumai", "opla"]);
 const RAU_ING: ReadonlySet<string> = new Set(["dualeo", "hanhngo", "ot"]);
 
-/**
- * `dishQuality` (P3-03 §2.3): 1 − Σ w·(1 − Q) theo nhóm. Chỉ tính nhóm CÓ trong ổ.
- * Nhận vào chất lượng từng phần đã lấy khỏi kho.
- */
+/** 1 − Σ w·(1 − Q) theo nhóm; nhóm vắng mặt tính Q = 1. */
 export function dishQuality(bread: number, parts: { ing: Ingredient; q: number }[]): number {
   const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 1);
   const grp = (f: (i: string) => boolean) => avg(parts.filter((p) => f(p.ing)).map((p) => p.q));

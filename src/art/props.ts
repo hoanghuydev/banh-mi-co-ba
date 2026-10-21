@@ -3,34 +3,18 @@ import { TW, TH } from "../world/iso";
 import { PAL } from "./palette";
 import { blob, diamond, heightFor, prop, shade, slab, standing, type Pen } from "./canvas";
 
-/**
- * Đạo cụ trong quán và trên vỉa hè — mỗi hàm vẽ đúng một vật, không hàm nào biết tới lưới ô.
- * Vật nào CHỈ CÓ ẢNH THẬT thì không có hàm ở đây: thiếu ảnh là bỏ qua hẳn, chứ không vẽ thay.
- */
+/** Vật chỉ có ảnh thật thì không có hàm vẽ ở đây: thiếu ảnh là bỏ qua hẳn. */
 export const PROP = {
   oven: "oven", tea: "tea", shelf: "shelf",
   stool: "stool", table: "table", bike: "bike", pothos: "pothos",
   crate: "crate", bin: "bin", sink: "sink",
-  // Bốn vật CHỈ CÓ ẢNH THẬT, không có bản vẽ code (xem `art/photo.ts`): chiếc Vespa
-  // đậu cạnh xe số cho hai chiếc xe không giống hệt nhau, tấm bảng gỗ dựng ngoài vỉa
-  // hè, bình chữa cháy treo cạnh lò than — lò than là rủi ro có thật của game này — và
-  // CÁI LÒ ĐIỆN, thứ thay chỗ lò than trên bản đồ khi người chơi mua `LO_DIEN`.
-  //
-  // ⚠️ `ovenE` KHÔNG có bản vẽ code, nên `StallScene.placeProps` phải lùi về `oven` nếu
-  // ảnh chưa về — thiếu nhánh đó thì mua cái lò xong là chỗ lò trống trơn.
+  // Chỉ có ảnh thật; `ovenE` thiếu ảnh thì `StallScene.placeProps` phải lùi về `oven`.
   scooter: "scooter", sign: "sign", fire: "fire", ovenE: "oven_e",
-  // CÁI DÙ CHE và CÁI TỦ LẠNH cũng chỉ có ảnh thật, nhưng khác bốn cái trên ở chỗ chúng
-  // KHÔNG nằm trên lưới ô: `StallScene.drawEquipment` dựng chúng lúc người chơi đã mua
-  // `DU_CHE` / `TU_MAT`. Trước đợt này cả hai là hình vẽ Graphics ngay trong scene — một
-  // cây cột 2 px cộng tam giác đỏ, và một hình chữ nhật bo góc 24×40.
+  // Chỉ có ảnh thật, không nằm trên lưới ô — `StallScene.drawEquipment` dựng khi đã mua.
   umbrella: "umbrella", fridge: "fridge",
-  // Ba vật ĐỘNG — chúng không nằm trong lưới ô như mọi đạo cụ khác, vì chỗ của chúng
-  // là một nước đi của người chơi: cái gánh bà Sáu (`CARRY_GANH`), xe bánh mì chú Kiệt
-  // (`MOVE_CART`), và bộ ghế nhựa chỉ hiện khi đã mua `GHE_BAN` (`THEY_SIT`).
+  // Vật động: chỗ của chúng là một nước đi của người chơi.
   ganh: "ganh", cart: "cart",
 } as const;
-
-// ───────────────────────────────────────────────────────────── mẩu dùng nhiều nơi
 
 function loaf(g: Pen, x: number, y: number, s = 1) {
   g.fillStyle(PAL.breadDark, 1);
@@ -71,14 +55,11 @@ function leaf(g: Pen, x: number, y: number, color: number, s = 1) {
   g.fillRect(x - 4 * s, y - 1, 8 * s, 1);
 }
 
-// ──────────────────────────────────────────────────────────────────── đạo cụ quán
-
-/** Lửa phải NHÌN THẤY được thì người chơi mới đọc được rủi ro cháy bánh. */
 function oven(scene: Phaser.Scene) {
   const H = 26;
   const W = TW - 10, D = TH - 5;
   prop(scene, PROP.oven, heightFor(H + 24), (g, cx, cy) => {
-    /** Thân lò bằng tôn xám chứ không màu than: để màu than đậm cho LÒNG lò thì cái miệng mới đọc ra là miệng. */
+    // Thân tôn xám, để màu than đậm cho lòng lò thì miệng lò mới đọc ra.
     standing(g, cx, cy, H, PAL.grill, W, D);
     const top = cy - H;
 
@@ -119,7 +100,6 @@ function oven(scene: Phaser.Scene) {
   });
 }
 
-/** CANON §5.4 — công cụ CHỦ ĐỘNG hạ attention của khách, nên nó phải nhìn ra ngay từ xa. */
 function tea(scene: Phaser.Scene) {
   const H = 38;
   const W = TW - 18, D = TH - 9;
@@ -173,7 +153,6 @@ function tea(scene: Phaser.Scene) {
   });
 }
 
-/** Hạn dùng là ràng buộc kinh tế #1, nên hàng trên kệ phải ĐẾM ĐƯỢC bằng mắt. */
 function shelf(scene: Phaser.Scene) {
   const TIER = 18;
   const N = 3;
@@ -264,7 +243,6 @@ function table(scene: Phaser.Scene) {
   }, TW + 12);
 }
 
-/** Dựng sát vách nhường lối đi. Vẽ đúng dáng xe số: yên dài, giỏ trước. */
 function bike(scene: Phaser.Scene) {
   prop(scene, PROP.bike, heightFor(52), (g, cx, cy) => {
     const axle = cy - 11;
@@ -275,8 +253,7 @@ function bike(scene: Phaser.Scene) {
       g.fillCircle(cx + dx, axle, 7.5);
       g.fillStyle(PAL.chrome, 1);
       g.fillCircle(cx + dx, axle, 3.5);
-      // KHÔNG vẽ nan hoa: ở đường kính 22 px mỗi nan chỉ còn dưới 1 px,
-      // ra đúng một mảng nhiễu xám làm bánh xe trông bẩn chứ không trông kỹ.
+      // Không vẽ nan hoa: ở 22 px mỗi nan dưới 1 px, ra một mảng nhiễu xám.
     }
 
     g.fillStyle(PAL.bikeDark, 1);                      // chắn bùn sau
@@ -326,11 +303,9 @@ function bike(scene: Phaser.Scene) {
   }, TW + 24);
 }
 
-/** Để DƯỚI ĐẤT chứ không treo — bản treo cao đọc ra như cột đèn. */
+/** Để dưới đất chứ không treo — treo cao đọc ra như cột đèn. */
 function pothos(scene: Phaser.Scene) {
-  // Cả bụi thu về `S` lần: ở cỡ cũ nó cao gần bằng cái bồn rửa đứng ngay cạnh, đọc
-  // ra như cây cảnh sảnh khách sạn chứ không phải chậu trầu bà để nền. Giữ nguyên
-  // một con số ở đây để bản vẽ này và ảnh thật (`photo.ts`) cùng một tầm cao.
+  // Phải khớp tầm cao với ảnh thật (`photo.ts`).
   const S = 0.68;
   const POT = 20 * S;
   prop(scene, PROP.pothos, heightFor(POT + 34 * S), (g, cx, cy) => {
@@ -361,9 +336,6 @@ function pothos(scene: Phaser.Scene) {
   });
 }
 
-// ─────────────────────────────────────────────────────────────── đạo cụ vỉa hè
-
-/** Chồng két nước ngọt dựng sát vách — rác đường phố có chủ ý, đọc ra "quán đang sống". */
 function crate(scene: Phaser.Scene) {
   const BOX = 15;
   prop(scene, PROP.crate, heightFor(BOX * 3 + 10), (g, cx, cy) => {
@@ -383,7 +355,6 @@ function crate(scene: Phaser.Scene) {
   });
 }
 
-/** Thùng rác nhỏ đầu hẻm. Có nó thì vỉa hè mới đọc ra là vỉa hè thật. */
 function bin(scene: Phaser.Scene) {
   const H = 28;
   prop(scene, PROP.bin, heightFor(H + 12), (g, cx, cy) => {
@@ -404,7 +375,6 @@ function bin(scene: Phaser.Scene) {
   });
 }
 
-/** Chậu inox trên chân sắt, vòi nước, chai xà bông đỏ — bóng hình phải tách hẳn khỏi cái lò bên cạnh. */
 function sink(scene: Phaser.Scene) {
   const H = 30;
   const W = TW - 22, D = TH - 10;
@@ -428,20 +398,10 @@ function sink(scene: Phaser.Scene) {
   });
 }
 
-/**
- * CÁI GÁNH TÀU HŨ của bà Sáu — một đòn tre, hai cái nồi, một cái khăn vắt.
- *
- * Vẽ bằng code để thấy CHỖ và thấy KÍCH THƯỚC: nó chiếm bao nhiêu mặt tiền, đặt ngoài
- * thì chắn tới đâu. Bản chuẩn để hoạ sĩ vẽ sau; cái này là để chơi thử và đo.
- */
+/** Gánh tàu hũ bà Sáu, đã hạ xuống đất: đòn tre gác ngang trên hai vành nồi. */
 function ganh(scene: Phaser.Scene) {
   const POT = 14;
   prop(scene, PROP.ganh, heightFor(POT + 16), (g, cx, cy) => {
-    /*
-     * GÁNH ĐÃ HẠ XUỐNG ĐẤT, không phải gánh đang trên vai: hai nồi đặt đất, đòn tre GÁC
-     * NGANG trên hai vành nồi. Bản đầu tôi vẽ đòn cao hơn hẳn hai nồi — nhìn trên màn
-     * hình chỉ thấy hai cái nồi rời, cái đòn mảnh quá và lại bị nồi che.
-     */
     for (const dx of [-16, 16]) {
       const s = dx < 0 ? 1 : 0.95;
       g.fillStyle(0x2b2b2b, 0.22);                     // bóng đổ dưới nồi
@@ -472,13 +432,7 @@ function ganh(scene: Phaser.Scene) {
   }, TW + 38);
 }
 
-/**
- * XE BÁNH MÌ CỦA CHÚ KIỆT — thùng kính trên bốn bánh, một cái ô cắm lệch.
- *
- * Phải NHÌN RA LÀ MỘT CÁI XE BÁN HÀNG KHÁC, không phải cái xe của mình: thùng thấp hơn,
- * ô màu khác, và không có bảng hiệu. Cả arc "hai cái xe tranh chỗ" đọc được hay không là
- * ở chỗ người chơi liếc một cái biết ngay đó là xe ai.
- */
+/** Xe chú Kiệt: thùng thấp, ô xanh, không bảng hiệu — liếc là phân biệt với xe của mình. */
 function cart(scene: Phaser.Scene) {
   const BODY = 20, CASE = 13, POLE = 30;
   prop(scene, PROP.cart, heightFor(BODY + CASE + POLE), (g, cx, cy) => {

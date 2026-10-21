@@ -3,15 +3,7 @@ import { PAL } from "./palette";
 import { blob, heightFor, prop, shade, slab, type Pen } from "./canvas";
 import type { Facing8 } from "../world/iso";
 
-/**
- * Thân người — dùng chung cho người chơi lẫn khách. Mỗi nhân vật nướng 3 hướng ("w" là bản lật
- * của "e"); ai có đủ ẢNH tám hướng thì dùng tám file rời (xem `markEightWay`).
- *
- * ⚠️ Bàn chân đứng ĐÚNG ở `cy` — neo sai chỗ này là nhân vật bị nhấc lên và bóng đổ rơi lệch.
- *
- * Đầu chiếm ~38% chiều cao là quyết định CHỨC NĂNG: nhân vật chỉ cao 64 px mà CANON §5 bắt phải
- * ĐỌC ĐƯỢC mức nhận thấy qua NÉT MẶT — đầu đúng tỉ lệ thật thì mắt chỉ còn 2 px.
- */
+/** Đầu to ~38% chiều cao để nét mặt còn đọc được ở 64 px. */
 export const BODY_H = 64;
 
 export type HairStyle = "short" | "bob" | "bun" | "ponytail";
@@ -20,7 +12,6 @@ export type Hat = "cap" | "helmet" | "nonla";
 
 export type Build = "slim" | "round";
 
-/** Chỉ ai thật sự bưng đồ mới cần nướng thêm `carry`. */
 export type Pose = "idle" | "carry";
 
 export type BodyStyle = {
@@ -50,14 +41,14 @@ function keyOf(who: string, dir: string, pose: Pose) {
   return pose === "carry" ? `${who}_${dir}_c` : `${who}_${dir}`;
 }
 
-/** ⚠️ Chỉ ghi khi sơn ĐỦ cả tám hướng, nên thiếu một file là cả bộ lặng lẽ rơi về bản vẽ code. Phải là sổ ĐĂNG KÝ chứ không phải cờ cứng: bản vẽ code chỉ nướng ba hướng. */
+/** Chỉ ghi khi sơn đủ cả tám hướng; thiếu một file là cả bộ rơi về bản vẽ code ba hướng. */
 const EIGHT = new Set<string>();
 
 export function markEightWay(who: string) {
   EIGHT.add(who);
 }
 
-/** Hướng chéo lấy hình NGHIÊNG: đi chéo mà vẽ chính diện thì nhìn ra là đi giật lùi. */
+/** Hướng chéo lấy hình nghiêng, vẽ chính diện thì nhìn ra đi giật lùi. */
 const FOLD: Record<Facing8, { dir: Dir; flip: boolean }> = {
   s: { dir: "s", flip: false },
   n: { dir: "n", flip: false },
@@ -69,57 +60,27 @@ const FOLD: Record<Facing8, { dir: Dir; flip: boolean }> = {
   nw: { dir: "e", flip: true },
 };
 
-/** Có ảnh thật tám hướng thì mỗi hướng một file; không thì gộp về ba bản vẽ code và lật ngang. */
 export function textureFor(facing: Facing8, who = "p", pose: Pose = "idle") {
   if (EIGHT.has(who)) return { key: keyOf(who, facing, pose), flip: false };
   const f = FOLD[facing];
   return { key: keyOf(who, f.dir, pose), flip: f.flip };
 }
 
-// ───────────────────────────────────────────────────────────── chu kỳ đi bộ
-
-/**
- * Số frame một chu kỳ. Đổi số này là phải render lại (`--frames`) rồi gộp lại atlas —
- * `photo.ts` đọc đúng chừng này tên ô, thiếu một ô là cả bộ rơi về ảnh đứng yên.
- */
+/** Đổi số này phải render lại (`--frames`) và gộp lại atlas. */
 export const WALK_FRAMES = 8;
 
-/**
- * Hai chu kỳ đi: tay không, và vừa đi vừa bưng.
- *
- * ⚠️ `walk` vung tay hết biên nên không neo món vào được; `carry` giữ hai tay yên trước bụng
- * để dán món vào. Một bộ `carry` dùng chung cho cả sáu món cầm được (món là sprite riêng).
- */
+/** `carry` giữ hai tay yên trước bụng để dán món vào; `walk` vung tay nên không neo được. */
 export type Gait = "walk" | "carry";
 
-/** Hậu tố tên texture. `w` = walk; `h` = hold, tránh đụng `_c` của tư thế `carry`. */
+/** `h` = hold, tránh đụng `_c` của tư thế `carry`. */
 const GAIT_TAG: Record<Gait, string> = { walk: "w", carry: "h" };
 
-/**
- * Tên texture của MỘT ô trong chu kỳ đi.
- *
- * Một chỗ đặt tên duy nhất cho cả nơi SƠN (`photo.paintWalk`) lẫn nơi VẼ (`walkTextureFor`).
- * Hai chỗ tự ghép chuỗi riêng thì lệch nhau một ký tự là `walkTextureFor` trả về cái tên
- * không có texture, mà Phaser gặp tên lạ là vẽ ra ô xanh lá chói loà giữa người.
- */
+/** Nơi đặt tên duy nhất cho cả `photo.paintWalk` lẫn `walkTextureFor`. */
 export function walkKey(who: string, facing: Facing8, gait: Gait, frame: number) {
   return `${who}_${facing}_${GAIT_TAG[gait]}${frame}`;
 }
 
-/**
- * Đi được bao nhiêu Ô thì hết MỘT chu kỳ chân (hai bước).
- *
- * ⚠️ Nhịp chân tính theo QUÃNG ĐƯỜNG, không theo thời gian: bàn chân khớp mặt đất và mọi
- * tốc độ tự đúng nhịp:
- *
- * | | ô/giây | chu kỳ/giây |
- * |---|---|---|
- * | người chơi đi (`Player.SPEED`) | 2,6 | 1,00 |
- * | người chơi giữ Shift (`RUN_MUL`) | 3,77 | 1,45 |
- * | khách (`service.WALK_SPEED`) | 1,7 | 0,65 |
- *
- * Nhờ vậy không cần bộ ảnh riêng cho lúc chạy. Muốn chân mau hơn thì GIẢM số này.
- */
+/** Số ô đi hết một chu kỳ chân; nhịp tính theo quãng đường nên mọi tốc độ tự khớp. */
 export const STRIDE = 2.6;
 
 const GAITS = new Map<string, Set<Gait>>();
@@ -134,38 +95,27 @@ export function hasGait(who: string, gait: Gait) {
   return GAITS.get(who)?.has(gait) ?? false;
 }
 
-/**
- * Texture một frame của chu kỳ đi.
- *
- * ⚠️ CANON §16 Đừng-4 cấm frame-by-frame, ngoại lệ hẹp cho ĐÚNG động tác ĐI. Đừng nối thêm
- * TƯ THẾ chỉ vì `art-raw/tripo-anim/` có sẵn file: phải có TRẠNG THÁI THẬT trong game kích hoạt nó.
- *
- * Chưa sơn đủ bộ thì trả `null` để nơi gọi rơi về ảnh đứng yên — tên texture không tồn tại
- * thì Phaser vẽ ra ô xanh lá chói loà.
- */
+/** `null` khi chưa sơn đủ bộ, vì tên texture không tồn tại thì Phaser vẽ ô xanh lá. */
 export function walkTextureFor(facing: Facing8, frame: number, gait: Gait = "walk", who = "p") {
-  // Thiếu bộ bưng thì lùi về bộ đi tay không, vẫn hơn khựng về ảnh đứng yên.
   const use: Gait = hasGait(who, gait) ? gait : "walk";
   if (!hasGait(who, use)) return null;
   const i = ((frame % WALK_FRAMES) + WALK_FRAMES) % WALK_FRAMES;
   return { key: walkKey(who, facing, use, i), flip: false, gait: use, frame: i };
 }
 
-// ─────────────────────────────────────────────────────────────── kích thước thân
-
-/** ⚠️ Bốn con số này cộng lại ra đúng `BODY_H` — đụng vào một cái là phải cộng lại. */
+/** HIP + TORSO + NECK_GAP + 2·HEAD_R phải bằng `BODY_H`. */
 const HIP = 17;          // từ gót lên hông
 const TORSO = 19;        // từ hông lên vai
-const NECK_GAP = 4;      // khoảng hở cổ giữa vai và cằm
-const HEAD_R = 12;       // bán kính đầu
-const ARM_W = 5.6;       // mảnh — 7 px làm hai cánh tay to ngang nửa thân, đọc ra như tấm ván
+const NECK_GAP = 4;
+const HEAD_R = 12;
+const ARM_W = 5.6;
 
 function bodyWidth(dir: Dir, st: BodyStyle) {
   const round = st.build === "round" ? 3 : 0;
   return (dir === "e" ? 17 : 24) + round;
 }
 
-/** Điểm hai bàn tay gặp nhau, đo từ ĐIỂM CHẠM ĐẤT lên (y dương = lên trên). `art/held.ts` đặt tâm texture món vào đúng đây. */
+/** Điểm hai bàn tay gặp nhau, đo từ điểm chạm đất lên (y dương = lên trên). */
 const HOLD_ANCHOR: Record<Facing8, { x: number; y: number }> = {
   s: { x: 0, y: 23 },
   se: { x: 5, y: 22 },
@@ -184,9 +134,7 @@ export function holdAnchor(facing: Facing8) {
   return { x: a.x, y: a.y, behind: BEHIND.has(facing) };
 }
 
-// ──────────────────────────────────────────────────────────────────────── cái đầu
-
-/** Vẽ TRƯỚC khối mặt để mặt đè lên. */
+/** Vẽ trước khối mặt để mặt đè lên. */
 function hairBack(g: Pen, cx: number, y: number, dir: Dir, st: BodyStyle) {
   const style = st.hairStyle ?? "short";
   g.fillStyle(shade(st.hair, -14), 1);
@@ -208,8 +156,7 @@ function hairFront(g: Pen, cx: number, y: number, dir: Dir, st: BodyStyle) {
   const style = st.hairStyle ?? "short";
   g.fillStyle(st.hair, 1);
 
-  // chỏm tóc: nửa trên của khối đầu, luôn có ở mọi kiểu.
-  // Mép dưới dừng cao hơn tâm đầu — chừa chỗ cho chân mày.
+  // Chỏm tóc, mép dưới cao hơn tâm đầu để chừa chỗ chân mày.
   g.beginPath();
   g.arc(cx, y, HEAD_R + 0.5, Math.PI, Math.PI * 2);
   g.closePath();
@@ -220,7 +167,7 @@ function hairFront(g: Pen, cx: number, y: number, dir: Dir, st: BodyStyle) {
     g.fillStyle(shade(st.hair, 12), 0.55);                          // tóc bạc chải ngược
     for (const dy of [-9, -6.5, -4]) g.fillRect(cx - 8, y + dy, 16, 1.1);
   } else if (style === "bob") {
-    // hai lọn ôm má — thứ làm kiểu bob đọc ra là bob chứ không phải mũ trùm
+    // hai lọn ôm má
     if (dir === "s") {
       g.fillEllipse(cx - HEAD_R + 0.5, y + 4, 5.5, 14);
       g.fillEllipse(cx + HEAD_R - 0.5, y + 4, 5.5, 14);
@@ -316,8 +263,6 @@ function hat(g: Pen, cx: number, y: number, dir: Dir, st: BodyStyle) {
       if (dir === "s") g.lineBetween(cx + 9, y + 4, cx + 4, y + 11);
     }
   } else if (st.hat === "nonla") {
-    // Nón lá: một hình nón bẹt rộng hơn hẳn vai. Đó chính là điểm nhận dạng —
-    // bóng của nó khác mọi thứ khác trong khung hình, nhận ra từ xa không cần nhìn mặt.
     g.fillStyle(shade(PAL.basket, -30), 1);
     g.fillEllipse(cx, y - 6, 44, 17);
     g.fillStyle(PAL.basket, 1);
@@ -328,8 +273,7 @@ function hat(g: Pen, cx: number, y: number, dir: Dir, st: BodyStyle) {
     g.fillEllipse(cx, y - 7, 26, 9);
     g.fillEllipse(cx, y - 7, 13, 4.5);
     if (dir !== "n") {
-      // Quai nón chạy sát MÉP MẶT rồi vòng xuống cằm. Kéo vào trong nữa là nó
-      // vắt ngang hai con mắt, thành ra như có ai gạch chéo lên mặt nhân vật.
+      // Quai sát mép mặt, kéo vào trong là vắt ngang mắt.
       g.lineStyle(1.3, PAL.beadCurtain, 0.8);
       g.lineBetween(cx - 14, y - 1, cx - 5, y + 11);
       if (dir === "s") g.lineBetween(cx + 14, y - 1, cx + 5, y + 11);
@@ -348,8 +292,7 @@ function head(g: Pen, cx: number, y: number, dir: Dir, st: BodyStyle) {
 
   blob(g, cx, y, HEAD_R * 2, HEAD_R * 2 - 1, st.skin, 2.5);         // khối mặt
 
-  // Sống mũi: chỉ có ở góc nghiêng, và nó là thứ DUY NHẤT nói cho mắt biết đây là
-  // mặt nhìn NGHIÊNG, chứ không phải mặt nhìn thẳng bị vẽ lệch mất một con mắt.
+  // Sống mũi là thứ duy nhất cho biết đây là mặt nghiêng chứ không phải mặt thẳng thiếu một mắt.
   if (dir === "e") {
     g.fillStyle(shade(st.skin, -32), 1);
     g.fillEllipse(cx + HEAD_R - 0.5, y + 2.5, 7, 6.5);
@@ -375,8 +318,6 @@ function head(g: Pen, cx: number, y: number, dir: Dir, st: BodyStyle) {
 
   hat(g, cx, y, dir, st);
 }
-
-// ──────────────────────────────────────────────────────────────────────── cái thân
 
 function legs(g: Pen, cx: number, feet: number, hip: number, dir: Dir, st: BodyStyle) {
   const w = 8.5;
@@ -405,7 +346,7 @@ function torso(g: Pen, cx: number, shoulder: number, dir: Dir, st: BodyStyle) {
   const bw = bodyWidth(dir, st);
   const h = TORSO + 2;
 
-  slab(g, cx - bw / 2, shoulder, bw, h, 7, st.shirt, 2.5);          // áo
+  slab(g, cx - bw / 2, shoulder, bw, h, 7, st.shirt, 2.5);
   g.fillStyle(shade(st.shirt, 18), 0.3);                            // nắng rọi vai phải
   g.fillRoundedRect(cx + bw / 2 - 5.5, shoulder + 2.5, 4, h - 7, 2);
   g.fillStyle(shade(st.shirt, -20), 0.45);                          // gấu áo
@@ -420,7 +361,7 @@ function torso(g: Pen, cx: number, shoulder: number, dir: Dir, st: BodyStyle) {
   }
 }
 
-/** Cánh tay và bàn tay là MỘT khối bo tròn — một thanh rồi một quả bóng gắn vào đọc ra là khớp giả. */
+/** Cánh tay và bàn tay là một khối bo tròn, tách ra thì đọc như khớp giả. */
 function arms(
   g: Pen, cx: number, shoulder: number, dir: Dir, st: BodyStyle,
   layer: "behind" | "front", pose: Pose,
@@ -435,10 +376,7 @@ function arms(
     slab(g, cx + dx - 0.7, shoulder + 1.5, ARM_W + 1.4, 7.5, 3.2, st.shirt, 2);  // tay áo
   };
 
-  /**
-   * Cánh tay gập bưng đồ: bắp tay đi xuống, cẳng tay nằm ngang vào giữa.
-   * `inward` = +1 cẳng tay chạy sang phải, −1 sang trái.
-   */
+  /** `inward` = +1 cẳng tay chạy sang phải, −1 sang trái. */
   const carry = (dx: number, inward: number, reach: number, skin: number) => {
     slab(g, cx + dx, shoulder + 4, ARM_W, 11, 2.8, skin, 2);        // bắp tay
     const fy = shoulder + 13;                                       // cẳng tay ngang BỤNG, không ngang ngực
@@ -450,9 +388,7 @@ function arms(
   };
 
   if (dir === "e") {
-    // Nhìn nghiêng thì chỉ THẤY MỘT tay. Tay bên kia thò ra sau lưng một mẩu,
-    // vẽ trước thân. Vẽ cả hai ra phía trước là ra hai cái cẳng song song,
-    // trông như nhân vật có bốn chân.
+    // Nhìn nghiêng: tay xa vẽ sau thân, cả hai ra trước trông như bốn chân.
     if (layer === "behind") {
       if (pose === "carry") carry(-6, 1, 11, shade(st.skin, -20));
       else hang(-6, shade(st.skin, -20));
@@ -463,8 +399,7 @@ function arms(
 
   if (layer !== "front") return;
 
-  // Nhìn thẳng / nhìn sau: hai tay đối xứng, ĐÈ LÊN mép thân áo 3 px.
-  // Để rời hẳn ra ngoài là hai cánh tay treo lủng lẳng, không đọc ra là mọc từ vai.
+  // Tay đè lên mép thân áo 3 px, để rời ra thì không đọc là mọc từ vai.
   const left = -bw / 2 - 2.2, right = bw / 2 - 3.4;
   if (pose === "carry") {
     carry(left, 1, bw / 2 + 4, st.skin);
@@ -484,9 +419,7 @@ function apron(g: Pen, cx: number, shoulder: number, dir: Dir, color: number) {
     return;
   }
 
-  // Nhìn nghiêng, tạp dề là một DẢI HẸP chạy dọc mép trước người — nó không có bề
-  // ngang nào để mà thấy. Để nó rộng như lúc nhìn thẳng là ra một tấm ván trắng úp
-  // trước bụng, che luôn ống quần; đó chính là chỗ làm góc nghiêng trông kì.
+  // Nhìn nghiêng, tạp dề chỉ là dải hẹp dọc mép trước người.
   const aw = dir === "e" ? 7 : 17;
   const ax = cx - aw / 2 + (dir === "e" ? 6 : 0);
 
@@ -526,13 +459,12 @@ function bag(g: Pen, cx: number, shoulder: number, dir: Dir, st: BodyStyle) {
 }
 
 function draw(g: Pen, cx: number, cy: number, dir: Dir, st: BodyStyle, pose: Pose) {
-  const feet = cy;                                     // mặt đất, xem chú thích đầu file
+  const feet = cy;                                     // bàn chân đúng ở cy, lệch là bóng đổ rơi sai
   const hip = feet - HIP;
   const shoulder = hip - TORSO + (st.stoop ? 3 : 0);
   const headY = shoulder - NECK_GAP - HEAD_R + (st.stoop ? 1 : 0);
 
-  // Thứ tự vẽ = thứ tự lớp từ SAU ra TRƯỚC. Tay xa phải nằm trước thân
-  // trong danh sách này để bị thân che bớt (xem chú thích ở `arms`).
+  // Thứ tự vẽ = thứ tự lớp từ sau ra trước.
   legs(g, cx, feet, hip, dir, st);
   arms(g, cx, shoulder, dir, st, "behind", pose);
 
@@ -546,7 +478,7 @@ function draw(g: Pen, cx: number, cy: number, dir: Dir, st: BodyStyle, pose: Pos
   head(g, cx, headY, dir, st);
 }
 
-/** `who` là tiền tố tên texture; chỉ nướng thêm tư thế `carry` khi được yêu cầu. */
+/** `who` là tiền tố tên texture. */
 export function buildBody(
   scene: Phaser.Scene, who: string, style: BodyStyle, poses: readonly Pose[] = ["idle"],
 ) {

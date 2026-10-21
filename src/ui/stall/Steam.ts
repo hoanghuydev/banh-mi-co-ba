@@ -1,10 +1,6 @@
 import Phaser from "phaser";
 
-/**
- * Hơi khói trên ổ bánh còn ấm — tín hiệu DUY NHẤT của `warmth` (P1-01 §4).
- * Còn khói = còn ấm; khói tắt hẳn = đưa ra là khách chê nguội. Không có thanh số.
- * Một Graphics dùng lại mỗi frame, không cấp phát.
- */
+/** Tín hiệu DUY NHẤT của `warmth`: tắt khói = đưa ra là khách chê nguội. */
 export class Steam {
   private g: Phaser.GameObjects.Graphics;
 
@@ -20,7 +16,6 @@ export class Steam {
     if (!on) return;
     this.g.setDepth(depth);
     for (let i = 0; i < 3; i++) {
-      // mỗi sợi khói bốc lên theo chu kỳ riêng; giảm chuyển động thì đứng yên
       const phase = reducedMotion ? 0.45 : ((time / 1400 + i / 3) % 1);
       const baseX = x + (i - 1) * 7 * scale;
       const rise = phase * 16 * scale;

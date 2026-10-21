@@ -1,11 +1,3 @@
-/**
- * DRIVE · KHUNG CẢNH · HÀNH ĐỘNG CÓ THỜI LƯỢNG — P2-09 §2.5, §2.6, §2.7.
- *
- * Ba lưới, ba chuyện khác nhau:
- *  · chấm điểm theo ĐỘ CHÊNH (Zubek) thật sự phân biệt được "đang cần" với "đã đủ";
- *  · khung cảnh bảo đảm ngữ cảnh, nên một câu chỉ còn phải đúng trong MỘT cái;
- *  · mọi act có thời lượng đều khai `forSec`, và hết giờ thì người ta về việc cũ.
- */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -20,14 +12,7 @@ const TALKS: Talk[] = await TalkStore.loadAll();
 const P = (o: Partial<Record<"soi" | "nongTinh" | "deTha" | "thanThien", number>> = {}) =>
   ({ soi: 0.5, nongTinh: 0.5, deTha: 0.5, thanThien: 0.5, ...o });
 
-// ─────────────────────────────────────────── chấm điểm (Zubek dạng độ chênh)
-
 test("D-1 dạng ĐỘ CHÊNH: cùng một món, đang cần thì đáng hơn đã gần đủ", () => {
-  /**
-   * Đây là cả lý do dùng dạng (c) chứ không phải (a)/(b) của Zubek. Với dạng (a) hai
-   * trường hợp dưới đây ra ĐÚNG MỘT điểm, và `pickTalk` không phân biệt được "người này
-   * đang muốn kể" với "người này kể xong rồi".
-   */
   const d = newDrives();
   d.KE_CHUYEN = 80;
   const dangCan = scoreSatisfies({ KE_CHUYEN: 40 }, d);
@@ -53,7 +38,6 @@ test("D-4 `tune` của hồ sơ ĐỔI được thứ hạng — Zubek: tune the
   d.KE_CHUYEN = 60; d.PHAN_NAN = 60;
   const ke = { KE_CHUYEN: 30 }, than = { PHAN_NAN: 30 };
   assert.ok(Math.abs(scoreSatisfies(ke, d) - scoreSatisfies(than, d)) < 1e-9, "không tune thì ngang nhau");
-  // chú Kiệt: PHAN_NAN ×1,4 — ông tới đây để càm ràm, không để tâm sự
   const kiet = { PHAN_NAN: 1.4, DUOC_HOI: 0.7 };
   assert.ok(scoreSatisfies(than, d, kiet) > scoreSatisfies(ke, d, kiet));
 });
@@ -75,10 +59,6 @@ test("D-6 suy giảm VỀ MỨC NỀN, không về 0 — mức nền LÀ con ng�
 });
 
 test("D-7 `DOI_BANH` áp đảo mọi chuyện tán gẫu — luật thành HÌNH DẠNG, không phải `if`", () => {
-  /**
-   * *"Đang đợi bánh thì thứ duy nhất bạn nói được là ổ bánh."* Đây là hệ quả số học chứ
-   * không phải nhánh viết tay, nên đúng cho cả nội dung chưa ai viết.
-   */
   const base = baseDrives(P());
   const now = drivesNow(base, { ...base }, "DOI_BANH");
   const banh = scoreSatisfies({ DUOC_PHUC_VU: 40 }, now);
@@ -101,8 +81,6 @@ test("D-9 rút trong TOP-3, không winner-takes-all", () => {
   assert.ok(!seen.has("d"), "cuộc ngoài top-3 không được lọt");
 });
 
-// ─────────────────────────────────────────── nội dung
-
 test("D-10 mọi cuộc đều chấm ra một con số HỮU HẠN, và tán gẫu KHÔNG BAO GIỜ miễn phí", () => {
   const base = baseDrives(P());
   for (const t of TALKS) {
@@ -117,9 +95,6 @@ test("D-10 mọi cuộc đều chấm ra một con số HỮU HẠN, và tán g�
 });
 
 test("D-11 mọi act có THỜI LƯỢNG đều khai `forSec` — P2-07 §3.5", () => {
-  /**
-   * Không có `forSec` thì vào chỗ mát là đứng luôn cả ngày.
-   */
   const TIMED = new Set(["STEP_ASIDE", "STAND_IN_SHADE", "LOOK_INSIDE", "GIVE_BREAD", "OFFER_TEA"]);
   const bad: string[] = [];
   for (const t of TALKS) {
@@ -132,7 +107,6 @@ test("D-11 mọi act có THỜI LƯỢNG đều khai `forSec` — P2-07 §3.5", 
 });
 
 test("D-12 KHÔNG act nào trả thưởng NGAY LÚC NÓI — Zubek: thưởng trao tay trong hành động", () => {
-  /** Trả thưởng lúc HỨA thì cách chơi tối ưu là hứa rồi quên. */
   const bad: string[] = [];
   for (const t of TALKS) {
     for (const { node } of walkNodes(t)) {
@@ -150,7 +124,7 @@ test("D-13 mỗi khung cảnh đều có cuộc sống được — không khung
     for (const p of list) n.set(p, (n.get(p) ?? 0) + 1);
   }
   for (const p of PRACTICE_IDS) {
-    if (p === "NGHE_LOM") continue;                  // cảnh NPC↔NPC: người chơi không xen vào
+    if (p === "NGHE_LOM") continue;
     assert.ok((n.get(p) ?? 0) >= 3, `${p}: chỉ ${n.get(p) ?? 0} cuộc — bấm phím ra một dải gần rỗng`);
   }
 });
@@ -160,19 +134,9 @@ test("D-14 sáu drive, và không có cái thứ bảy lẻn vào", () => {
   assert.deepEqual(Object.keys(newDrives()).sort(), [...DRIVE_IDS].sort());
 });
 
-// ─────────────────────────────────────────── cổng cấp CUỘC (P2-09 §2.5 · `TalkWhen.world`)
-
 test("D-15 `when.world` rút cả CUỘC ra, không phải ẩn một lựa chọn", () => {
-  /**
-   * `duong.mui` (MÙI BÁNH) khoá cả chủ đề, không khoá từng nút: khoá ở nút thì `T002` đòi
-   * nằm ở `while` (ra "?"), còn `T011` thấy nhánh người-chơi-mở-lời teo xuống một dòng.
-   */
   const mui = TALKS.find((t) => t.id === "duong.mui")!;
-  /*
-   * ⚠️ `w.meVuaRa` chứ KHÔNG phải `w.ovenHot`: cái sau có `ovenBusy ||` ở trước nên lúc
-   * đang bán nó đúng gần như 100%, tức cuộc này coi như không khoá gì. Mùi bánh là một
-   * KHOẢNH KHẮC (mẻ vừa ra trong `OVEN_SMELL_SEC`), không phải trạng thái "lò đang nhen".
-   */
+  // Không dùng `w.ovenHot` vì lúc đang bán nó gần như luôn đúng.
   assert.deepEqual(mui.when?.world, ["w.meVuaRa"], "cuộc về mùi bánh phải khoá ở TẦNG CUỘC");
 
   const ctx = (ovenHot: boolean): TalkCtx => ({
@@ -187,7 +151,6 @@ test("D-15 `when.world` rút cả CUỘC ra, không phải ẩn một lựa ch�
 });
 
 test("D-16 KHÔNG nút nào khoá `w.ovenHot` ở tầng nút", () => {
-  // Khoá ở tầng cuộc (`when.world`) mới đúng tầng — xem D-15.
   const bad: string[] = [];
   for (const t of TALKS) {
     for (const { node } of walkNodes(t)) {

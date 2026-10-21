@@ -15,20 +15,11 @@ import { drawFace } from "./face";
 import { STREET_BIN } from "../world/map";
 import { passerAlpha } from "../sim/passersby";
 
-/**
- * Phần NHÌN THẤY của một người khách. T5 — attention đọc bằng HÌNH, không bằng số: dấu trên đầu
- * ba HÌNH DẠNG khác nhau · "có người nhìn" gom về MỘT con mắt ở đỉnh màn hình · mỗi trạng thái
- * ánh nhìn có đạo cụ riêng (người chơi phải thấy VÌ SAO khách không thấy mình làm rớt bánh).
- *
- * ⚠️ VÒNG KIÊN NHẪN là NGOẠI LỆ CÓ CHỦ Ý — CANON L2 cấm đúng hình dạng này. Ba cái hãm: chỉ hiện
- * khi đang xếp hàng · không số, không vạch chia · `certainty`/khẩu vị không có thanh nào.
- */
-
-/** Nội suy liên tục chứ không nhảy bậc — nhảy bậc là một cái thước đo trá hình. */
+// Vòng kiên nhẫn là ngoại lệ có chủ ý của CANON L2: chỉ hiện khi xếp hàng, không số, không vạch chia.
 const PATIENCE_COLORS = [0x3f7fb0, 0xd8b13c, 0xc0392b] as const;
 const PATIENCE_R = 11;
 const PATIENCE_W = 3.5;
-/** Neo theo ĐỈNH ĐẦU chứ không theo `markY` (đã nằm 45 px trên đầu): cộng vào đó nữa là vòng bay lơ lửng như của ai khác. */
+// Tính từ đỉnh đầu, không từ `markY`.
 const PATIENCE_LIFT = 14;
 const PATIENCE_RED_SEC = 0.9;
 
@@ -48,21 +39,17 @@ function patienceColor(frac: number) {
 }
 const MARK_INK = "#f2efe9";
 const MARK_STROKE = "#2b2f31";
-/** Trên NHÃN TRẠM vì nhãn "quầy gọi món" nằm đúng chỗ đầu người đứng trước quầy; lớp hiệu ứng trên cả bảng kẹp nhân. */
+// Trên nhãn trạm, vì nhãn quầy nằm đúng chỗ đầu người đứng trước quầy.
 export const OVERLAY_DEPTH = 8_100_000;
 const FX_DEPTH = 9_450_000;
 
-/** ⚠️ Đo TỪ `sy` (điểm chạm đất), KHÔNG từ `footY(sy)` — `footY` thấp hơn mặt đất 21 px, đo từ đó là chip rơi sang ô phía trước. */
+// Đo từ `sy` (điểm chạm đất), không từ `footY(sy)` vốn thấp hơn 21 px.
 const TAG_BELOW_FEET = 14;
 const EDGE = 6;
-/** 0,09 s ⇒ đi ~96% quãng trong một phần tư giây: mắt đọc ra là nó DI CHUYỂN, mà chữ không bị kéo lê đủ lâu để khó đọc. */
+// Giây; đi ~96% quãng trong 0,25 s.
 const BUBBLE_GLIDE_TAU = 0.09;
-/**
- * ⚠️ KHÔNG mờ dần theo MÉP KHUNG NHÌN: tính trên toạ độ MÀN HÌNH thì người đi ngang tan ra giữa
- * đường. Hai đầu dải do `passersby.passerAlpha` lo (theo toạ độ THẾ GIỚI).
- */
 
-/** ⚠️ `Container.getBounds()` chỉ gộp con nào CÓ `getBounds`, mà Graphics thì không — nó trả về đúng ô CHỮ, nhỏ hơn hẳn nền giấy. */
+// `Container.getBounds()` bỏ qua Graphics nên chỉ ra ô chữ, phải nới thêm phần nền giấy.
 function bubbleBox(root: Phaser.GameObjects.Container, scale: number): Box {
   const t = root.getBounds();
   const w = Math.max(t.width / scale + 22, 60) * scale;
@@ -73,19 +60,11 @@ function bubbleBox(root: Phaser.GameObjects.Container, scale: number): Box {
   };
 }
 
-/**
- * Hai chỗ đứng cách nhau ~34,5 px mà bong bóng hai dòng đã cao ~54 px, nên hai người sát nhau cùng
- * nói là CHẮC CHẮN chồng — hình học, không phải xui. Ai đứng TRƯỚC thì trồi LÊN, giữ nguyên thứ tự
- * hàng chờ. `stamp` là `time` của scene nên frame mới sổ tự trắng.
- */
+// Sổ bong bóng đã đặt trong frame (reset khi `time` đổi) để người sau né.
 let bubbleStamp = -1;
 const bubbleBoxes: { sy: number; box: Box }[] = [];
 
-/**
- * ⚠️ CỐ Ý ngắn và ĐỘNG. Không thay được bằng "đẩy một hướng cố định": chiếu ra màn hình thì hàng
- * khách và hàng trạm CHỒNG nhau, đẩy đâu cũng đụng một trạm khác. Mà che cái lò lúc lò trống chỉ
- * là che một bức hình, còn che vòng độ giòn lúc ổ sắp sém là lấy mất thứ duy nhất báo nó sắp cháy.
- */
+// Vùng cấm động, chỉ những thứ đang cần nhìn (vd. vòng độ giòn lúc ổ sắp sém).
 const bubbleKeepOut: Box[] = [];
 
 export function setBubbleKeepOut(boxes: readonly Box[]) {
@@ -99,30 +78,13 @@ export { pickBubbleSpot };
 
 const K = 120, DAMP = 14;
 
-/**
- * NGỒI — act `THEY_SIT`. Hạ thân chừng này px và nén chiều cao chừng này phần.
- *
- * Đo bằng mắt trên lưới isometric 1 ô ≈ 34 px: 9 px là đủ thấy người ngồi THẤP HƠN người
- * đứng cạnh mà chân không chui xuống dưới nền. Nén 12% là phần chân gập lại.
- */
+// Ngồi: hạ thân 9 px (lưới 1 ô ≈ 34 px) và nén cao 12%.
 const SIT_DROP = 9;
 const SIT_SQUASH = 0.12;
 
-/**
- * Hướng mặt của người ĐỨNG TRONG HÀNG — quay vào quầy, không giữ hướng bước cuối.
- *
- * ⚠️ `facing` chỉ đổi lúc ĐANG ĐI, nên không có dòng này thì người vừa tới nơi đứng
- * nguyên hướng mình vừa bước: đi từ cổng vào là dừng lại quay LƯNG ra quầy, đứng gọi
- * món mà mặt hướng ra đường.
- *
- * Quay vuông góc với mặt quầy — `(0, −1)` trong hệ ô, tức lên-phải 26,57° trên màn hình —
- * chứ KHÔNG quay về chỗ người chơi đang đứng: quay theo người chơi thì cả hàng xoay
- * qua xoay lại mỗi lần người chơi nhích một bước, nhìn thành một đám rối. Vuông góc với quầy
- * cũng đúng với cả hàng, từ người đầu tới người cuối, nên không phải tính theo từng chỗ.
- */
+// Người đứng hàng quay vuông góc mặt quầy, không theo người chơi cho cả hàng khỏi xoay qua lại.
 const COUNTER_FACING = facingOf8(0, COUNTER_Y - QUEUE_SLOTS[0].y);
 
-/** Đang đứng ở hàng chờ trước quầy — không tính người ngồi bàn và người qua đường. */
 function atCounter(c: Customer) {
   return !c.ambient && !c.sitting
     && (c.phase === "queueing" || c.phase === "ordering" || c.phase === "waiting");
@@ -148,7 +110,6 @@ export class CustomerActor {
   private propFx: Phaser.GameObjects.Graphics;
   private sp = {
     fwd: { v: 0, x: 0 }, up: { v: 0, x: 0 }, rot: { v: 0, x: 0 }, sy: { v: 0, x: 1 },
-    /** NGỒI XUỐNG — act `THEY_SIT`. Lò xo chứ không nhảy nấc: ngồi phịch một frame là sai. */
     sit: { v: 0, x: 0 },
   };
   private lastT = -1;
@@ -157,20 +118,10 @@ export class CustomerActor {
   private lastX: number;
   private lastY: number;
   private bob = 0;
-  /**
-   * Quãng đường ĐÃ ĐI, tính bằng ô — mốc quay chu kỳ chân của ai có atlas đi bộ.
-   *
-   * Cộng dồn quãng đường chứ không đọc đồng hồ, cùng lý do với `Player`: bàn chân
-   * trong ảnh phải khớp mặt đất. Khách đi chậm hơn người chơi (1,7 so với 2,6 ô/giây) nên
-   * bước THƯA hơn đúng tỉ lệ, không phải chỉnh thêm gì — xem `character.STRIDE`.
-   */
+  // Quãng đã đi (ô), cộng dồn để bàn chân khớp mặt đất.
   private gait = 0;
 
-  /**
-   * ⚠️ Phải nhớ chứ không hỏi `pickBubbleSpot` mỗi frame: hàm đó RỜI RẠC (bảy nấc), và nấc thắng đổi
-   * ngay khi `keepOut` đổi — đặt thẳng kết quả là bong bóng dịch chuyển tức thời giữa hai frame.
-   * `settled` = chưa từng đặt ⇒ câu MỚI hiện ngay tại chỗ của nó, không trượt vào từ chỗ câu trước.
-   */
+  // `pickBubbleSpot` rời rạc nên phải trượt `live` về `want`, không đặt thẳng.
   private bubbleOff = { live: { dx: 0, dy: 0 }, want: { dx: 0, dy: 0 }, settled: false };
   private bubbleSaid = "";
 
@@ -201,11 +152,6 @@ export class CustomerActor {
     const c = this.c;
     const moved = Math.hypot(c.x - this.lastX, c.y - this.lastY);
     const walking = moved > 0.002;
-    /*
-     * TÁM hướng, không phải bốn: `facingOf` bốn hướng vẽ người đi CHÉO bằng tấm `s`, lệch 63,4° —
-     * bước ngang mà mặt quay thẳng ra trước. Ai chưa có ảnh tám hướng thì `textureFor` gộp
-     * `se`/`ne` về hình nghiêng `e`.
-     */
     if (walking) this.facing = facingOf8(c.x - this.lastX, c.y - this.lastY);
     else if (atCounter(c)) this.facing = COUNTER_FACING;
     this.lastX = c.x;
@@ -218,38 +164,24 @@ export class CustomerActor {
     this.bob = walking ? this.bob + moved * 9 : 0;
     this.gait = walking ? this.gait + moved : 0;
 
-    /**
-     * Chu kỳ đi — chỉ ai đã có atlas (`art/photo.NPC_PHOTOS[...].walk`) mới có, còn lại
-     * `walkTextureFor` trả `null` và người đó đứng yên nhún.
-     *
-     * Khác người chơi ở chỗ KHÔNG dùng lúc đứng yên: khách không bưng gì nên không có bộ
-     * `carry`, mà đứng yên thì ảnh của artist đẹp hơn frame 0 của chu kỳ.
-     *
-     * `reducedMotion` vẫn được tôn trọng gián tiếp: người ngừng đi là `walking` tắt.
-     */
+    // `null` khi chưa có atlas đi bộ hoặc đứng yên.
     const walkTex = walking
       ? walkTextureFor(this.facing, Math.floor((this.gait / STRIDE) * WALK_FRAMES), "walk", c.memKey)
       : null;
 
-    // CANON §16 Đừng-4: nhún bằng squash/stretch, 0 sprite mới. Nhưng khi chu kỳ đi đang
-    // chạy thì TẮT nhún code — frame render đã có sẵn nhún trong người, chồng thêm sine
-    // nữa là nảy hai tầng, nhìn ra ngay là lò xo chứ không phải bước chân.
-    // Một công tắc cho CẢ nhún lẫn squash: tắt mỗi nhún mà để squash chạy tiếp thì người
-    // vẫn phập phồng tại chỗ trong lúc chân đã bước đúng nhịp.
+    // Frame đi đã có nhún sẵn nên tắt cả nhún lẫn squash code, tránh nảy hai tầng.
     const bodyAmp = walkTex ? 0 : amp;
     const hop = Math.abs(Math.sin(this.bob)) * 2.2 * bodyAmp;
 
     const fidget = c.mood === "annoyed" ? Math.sin(time / 130) * 1.6 * amp
       : c.mood === "checking" ? Math.sin(time / 320) * 0.9 * amp : 0;
 
-    // ── kênh 2: dáng — một bộ TARGET cho lò xo, 0 sprite mới (P2-02 §3.2) ─────────
     const dt = this.lastT < 0 ? 0 : Math.min(0.05, (time - this.lastT) / 1000);
     this.lastT = time;
     const pose = POSES[c.react.pose];
     const s = intensityMul(c.personality);
     let tFwd = pose.fwd * s, tUp = pose.up * s, tRot = pose.rot * s;
     const tSy = pose.sy ?? 1;
-    // NGỒI THẤY ĐƯỢC: hạ thân `SIT_DROP` và nén nhẹ chiều cao (chân gập), 0 sprite mới (P2-02 §3.2).
     const tSit = c.sitting ? SIT_DROP : 0;
     const since = c.now - c.react.poseSince;
     if (pose.osc && !reducedMotion && (!pose.osc.beats || since < pose.osc.beats * pose.osc.period)) {
@@ -269,25 +201,18 @@ export class CustomerActor {
     const len = Math.hypot(b.sx - a.sx, b.sy - a.sy) || 1;
     const fx = ((b.sx - a.sx) / len) * this.sp.fwd.x, fy = ((b.sy - a.sy) / len) * this.sp.fwd.x * 0.5;
 
-    /** Hai đầu dải nằm ngoài khung nhìn ở phần lớn vị trí camera nhưng không phải MỌI vị trí — nên quãng mờ đo bằng ô BẢN ĐỒ. */
+    // Mờ theo toạ độ thế giới, không theo mép màn hình kẻo người đi ngang tan giữa đường.
     const fade = c.ambient ? passerAlpha(c.x) : 1;
 
     const tex = walkTex ?? textureFor(this.facing, c.memKey);
     this.body.setTexture(tex.key).setFlipX(tex.flip).setAlpha(fade);
     this.body.setPosition(sx + fidget + fx, footY(sy) - hop + fy - this.sp.up.x + this.sp.sit.x).setDepth(depth);
     this.body.setAngle(this.sp.rot.x * (tex.flip ? -1 : 1));
-    // Chia lại hệ số siêu lấy mẫu sau mỗi `setTexture`, y như `Player.ts`: người nào
-    // đã có bảng xoay ẢNH THẬT (`art/photo.NPC_PHOTOS`) thì texture nướng dư pixel, còn
-    // người chưa có ảnh vẫn là bản vẽ code tỉ lệ 1:1 (`artScale` trả 1). Không chia là
-    // mấy người có ảnh đứng cao gấp `ART_SS` lần người chơi — to hơn cả cái quầy.
+    // Texture ảnh thật nướng dư pixel (`ART_SS`), phải chia lại sau mỗi `setTexture`.
     const k = 1 / artScale(tex.key);
-    /** Ngồi thì thân NGẮN lại chứ không chỉ tụt xuống — tụt không thôi trông như lún xuống đất. */
     const sitSquash = 1 - (this.sp.sit.x / SIT_DROP) * SIT_SQUASH;
     this.body.setScale(k, k * (this.sp.sy.x + Math.sin(this.bob * 2) * 0.02 * bodyAmp) * sitSquash);
-    // Bóng phải ăn theo BÀN CHÂN, không theo một đồng hồ riêng. Lúc chạy chu kỳ đi thì
-    // `hop` đã tắt, nên nhìn mỗi `hop` là bóng đóng đinh một chỗ trong khi người nhún —
-    // đúng thứ tố cáo cái bóng là miếng dán. `walkLift` đo độ nhấc từ CHÍNH frame đang vẽ.
-    // Hai hệ số giống hệt `Player`: ở đỉnh bước bóng co ~7% và nhạt ~11%.
+    // Lúc đi `hop` đã tắt nên bóng lấy độ nhấc từ chính frame đang vẽ.
     const lift = walkTex ? walkLift(walkTex.key) : hop;
     this.shadow.setPosition(sx, sy).setDepth(depth - 1)
       .setScale(1 - lift * 0.03)
@@ -296,7 +221,7 @@ export class CustomerActor {
     const headX = sx + fidget, headY = footY(sy) - BODY_H + 12 - hop;
     const name = this.label(c);
     if (this.tag.text !== name) this.tag.setText(name);
-    /** Trên đầu thì chip của người sau rơi vào thân người trước (hai chỗ cách 34,5 px, chip rộng ~90 px) và chip người ở quầy đè nhãn trạm. Người QUA ĐƯỜNG không có chip. */
+    // Chip đặt dưới chân vì trên đầu thì đè thân người trước và nhãn trạm.
     this.tag.setVisible(!c.ambient);
     this.tag.setPosition(sx, sy + TAG_BELOW_FEET).setDepth(OVERLAY_DEPTH)
       .setAlpha(c.phase === "leaving" ? 0.45 : 0.9);
@@ -306,10 +231,6 @@ export class CustomerActor {
     g.clear();
     const watching = c.phase !== "leaving" && c.phase !== "arriving";
 
-    // ── dấu trên đầu ───────────────────────────────────────────────────────
-    // KHÔNG kẻ tia nhìn từ mắt khách tới vùng quầy: lúc đông khách màn hình thành một nắm
-    // dây nhợ che đúng cái người chơi cần nhìn. Dấu `?`/`!`/cặp mày nói AI đã thấy; con mắt ở
-    // đỉnh màn hình (`Hud.drawEye`) nói CÓ NGƯỜI ĐANG NHÌN.
     const st = watching ? nowState(c, nowSec) : null;
     const markY = sy - BODY_H - 24;
     if (st?.state === "NOTICED") {
@@ -323,17 +244,14 @@ export class CustomerActor {
     const glyph = st?.state === "GLIMPSED" ? "?" : st?.state === "CONFIRMED" ? "!" : "";
     this.mark.setText(glyph).setPosition(sx, markY).setDepth(OVERLAY_DEPTH + 1);
 
-    // Không trừ `hop`: vòng đứng yên, chỉ có người nhún. Vòng nhún theo là nhiễu — mắt
-    // phải đọc được nó vơi tới đâu, không phải đọc nó đang nhảy.
+    // Không trừ `hop` để vòng đứng yên, dễ đọc.
     this.drawPatience(g, sx, footY(sy) - BODY_H - PATIENCE_LIFT);
 
-    // ── đạo cụ của trạng thái ánh nhìn ──────────────────────────────────────
     if (watching) this.drawGazeProp(g, headX, headY, time, reducedMotion);
 
-    // ── kênh 1: nét mặt — huy hiệu cạnh đầu, chỉ hiện khi mặt KHÁC nền trung tính ──
     const face = c.react.face;
     if (face !== NEUTRAL && (face[0] || face[1] || face[2])) {
-      // Celeste: đổi mặt thì giật đầu 1 px trong 90 ms — "cái giật" của cảm xúc
+      // Đổi mặt thì giật 1 px trong 90 ms.
       const jolt = !reducedMotion && c.now - c.react.faceChangedAt < 0.09 ? -1 : 0;
       drawFace(g, sx + 22, markY + 6 + jolt, face, c.body.skin, browColor(c.body.hair), c.phase === "leaving" ? 0.7 : 1);
     }
@@ -342,8 +260,6 @@ export class CustomerActor {
     g.setAlpha(fade);
     this.propFx.setAlpha(fade);
 
-    // Bong bóng lấy từ pool (P0-01 §2.6c) — không tạo, không huỷ object nào ở đây.
-    // Người xếp hàng phía sau: bong bóng nhỏ hơn 15%, mờ hơn (P1-04 §2.9).
     if (c.say) {
       const b = this.bubbles.acquire(c.id);
       b.setText(c.say);
@@ -352,7 +268,6 @@ export class CustomerActor {
       const homeX = sx, homeY = sy - BODY_H - 46;
       b.place(homeX, homeY, depthB, scale, reducedMotion);
 
-      // Câu mới (hoặc bong bóng vừa được cấp lại) ⇒ quên chỗ cũ: nó thuộc về câu trước.
       if (c.say !== this.bubbleSaid) { this.bubbleSaid = c.say; this.bubbleOff.settled = false; }
 
       if (time !== bubbleStamp) { bubbleStamp = time; bubbleBoxes.length = 0; }
@@ -368,7 +283,7 @@ export class CustomerActor {
       if (!off.settled) { off.live = { ...off.want }; off.settled = true; }
       else if (reducedMotion) off.live = { ...off.want };
       else {
-        /** ⚠️ Dùng CHUNG `dt` đã kẹp 50 ms ở trên — `this.lastT` lúc này đã bị gán `= time`, tự tính lại là ra 0 và bong bóng đứng im vĩnh viễn. */
+        // Dùng `dt` ở trên vì `this.lastT` đã bị gán `= time`.
         const k = 1 - Math.exp(-dt / BUBBLE_GLIDE_TAU);
         off.live = {
           dx: off.live.dx + (off.want.dx - off.live.dx) * k,
@@ -377,8 +292,7 @@ export class CustomerActor {
       }
       const bx = homeX + off.live.dx, by = homeY + off.live.dy;
       if (bx !== homeX || by !== homeY) b.place(bx, by, depthB, scale, reducedMotion);
-      // Ghi ô THẬT (chỗ đang vẽ), không ghi ô đích: người sau phải né cái họ NHÌN THẤY,
-      // nếu không thì suốt quãng trượt hai bong bóng vẫn chồng nhau.
+      // Ghi ô đang vẽ chứ không ghi ô đích, để người sau né cái đang thấy.
       const cx2 = centre0.x + off.live.dx, cy2 = centre0.y + off.live.dy;
       bubbleBoxes.push({ sy, box: { x0: cx2 - w / 2, x1: cx2 + w / 2, y0: cy2 - h / 2, y1: cy2 + h / 2 } });
     } else {
@@ -397,7 +311,6 @@ export class CustomerActor {
     );
   }
 
-  /** THẤY → HIỂU → NGHE: nhìn thấy từ xa, trước câu nói đầu tiên. */
   private drawBodyProps(x: number, foot: number, depth: number, time: number, rm: boolean) {
     const c = this.c, g = this.propFx;
     g.clear().setDepth(depth + 0.5);
@@ -424,11 +337,7 @@ export class CustomerActor {
       default:
         break;
     }
-    /*
-     * CÁI GHẾ DƯỚI NGƯỜI ĐANG NGỒI. Bản đồ có sẵn bộ bàn ghế ở hàng y11, nhưng người ta
-     * ngồi ở `SEAT_SPOT` ngay trước bộ đó — không có cái ghế nào ở ĐÚNG chỗ họ ngồi. Vẽ
-     * một cái ghế nhựa thấp bám theo người, nên dời `SEAT_SPOT` thì ghế đi theo.
-     */
+    // Ghế nhựa vẽ bám theo người vì `SEAT_SPOT` không trùng ghế trên bản đồ.
     if (this.sp.sit.x > 0.4) {
       const k = this.sp.sit.x / SIT_DROP;
       g.fillStyle(0x24588f, 0.95 * k).fillRect(x - 9, foot + 1, 3.5, 8).fillRect(x + 5.5, foot + 1, 3.5, 8);
@@ -436,17 +345,13 @@ export class CustomerActor {
       g.fillStyle(0x4b8fd6, 0.8 * k).fillEllipse(x, foot - 0.5, 20, 6);
     }
 
-    /*
-     * BÉ SU GIƠ ĐIỆN THOẠI LÊN QUAY — act `FILM`. Chấm đỏ nhấp nháy cho thấy máy đang chạy, để
-     * "quầy dơ thì clip hỏng" là rủi ro đọc được chứ không phải cái bẫy (T5).
-     */
     if (c.filming) {
       const px = x + 10, py = shoulder - 2;
-      g.fillStyle(0x24282b, 1).fillRoundedRect(px - 4, py - 7, 9, 15, 2);          // thân máy
-      g.fillStyle(0x7fb8d8, 0.85).fillRect(px - 2.5, py - 5.5, 6, 12);             // màn hình
+      g.fillStyle(0x24282b, 1).fillRoundedRect(px - 4, py - 7, 9, 15, 2);
+      g.fillStyle(0x7fb8d8, 0.85).fillRect(px - 2.5, py - 5.5, 6, 12);
       const nhay = rm ? 1 : (Math.sin(time / 260) + 1) / 2;
-      g.fillStyle(0xd94f3d, 0.45 + 0.55 * nhay).fillCircle(px + 7, py - 6, 2.1);   // chấm đang quay
-      g.lineStyle(1.5, 0xe8d9b5, 0.9).lineBetween(x + 4, shoulder + 7, px - 2, py + 6);  // cánh tay giơ lên
+      g.fillStyle(0xd94f3d, 0.45 + 0.55 * nhay).fillCircle(px + 7, py - 6, 2.1);
+      g.lineStyle(1.5, 0xe8d9b5, 0.9).lineBetween(x + 4, shoulder + 7, px - 2, py + 6);
     }
 
     const binT = c.binAt >= 0 ? c.now - c.binAt : -1;
@@ -462,14 +367,12 @@ export class CustomerActor {
     }
   }
 
-  /** Ngoại lệ của CANON L2 — xem khối đầu file. Không số, không vạch chia. */
   private drawPatience(g: Phaser.GameObjects.Graphics, x: number, y: number) {
     const c = this.c;
     const leaving = c.phase === "leaving";
 
     if (leaving) {
-      // Bỏ về vì mình: một vòng đỏ ĐẦY, mờ dần. Được phục vụ xong thì không có gì cả —
-      // người ta đi vì xong việc, không phải vì hết chịu nổi.
+      // Chỉ bỏ về vì bực mới hiện vòng đỏ đầy mờ dần.
       const bad = c.leaveReason === "impatient" || c.leaveReason === "insulted" || c.leaveReason === "refused";
       if (!bad) { this.leftAt = -1; return; }
       if (this.leftAt < 0) this.leftAt = c.now;
@@ -483,8 +386,7 @@ export class CustomerActor {
     if (c.phase === "arriving" || c.pass) return;
 
     const frac = c.patienceLeft;
-    // Rãnh mờ phía sau: không có nó thì lúc gần cạn, cái cung đỏ ngắn ngủn trông như
-    // một vệt bẩn chứ không ra "sắp hết giờ".
+    // Rãnh mờ để cung đỏ ngắn lúc gần cạn không trông như vệt bẩn.
     g.lineStyle(PATIENCE_W, 0x0d1216, 0.22);
     g.strokeCircle(x, y, PATIENCE_R);
     if (frac <= 0) return;

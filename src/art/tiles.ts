@@ -4,10 +4,7 @@ import type { Floor } from "../world/map";
 import { PAL } from "./palette";
 import { BASE, diamond, heightFor, isoBox, prop, type Pen } from "./canvas";
 
-/**
- * Ba loại mặt sàn + vạt nắng.
- * Tách riêng vì đây là thứ được "nướng" một lần vào RenderTexture, không phải sprite.
- */
+// Nướng một lần vào RenderTexture, không phải sprite.
 
 export const TILE = {
   floor: (kind: Floor, i: number) => `f_${kind}${i}`,
@@ -19,7 +16,6 @@ export const TILE = {
 type FloorSpec = {
   colors: readonly number[];
   joint: number;
-  /** Vạch sơn trắng giữa đường — chỉ mặt đường mới có. */
   paint?: boolean;
 };
 
@@ -29,16 +25,13 @@ const FLOORS: Record<Floor, FloorSpec> = {
   road: { colors: PAL.roadFloor, joint: PAL.roadJoint, paint: true },
 };
 
-/** Một ô sàn: khối hộp rất mỏng + mạch nối + vết loang, để không phẳng lì. */
 function floorTile(scene: Phaser.Scene, key: string, spec: FloorSpec, top: number, variant: number) {
   prop(scene, key, heightFor(0), (g, cx, cy) => {
     isoBox(g, cx, cy, BASE, top);
     joints(g, cx, cy, spec.joint);
 
-    // Vết loang cho mặt sàn khỏi phẳng lì. RẤT nhạt: từ khi vỉa hè và lòng đường
-    // dùng ảnh thật, hàm này chỉ còn vẽ SÀN QUÁN — mà sàn quán là gạch men trắng,
-    // vết loang 0,22 trên nền trắng đọc ra là mấy vũng xám bẩn chứ không ra chất men.
-    g.fillStyle(PAL.floorStain, 0.075);                // cố định theo variant
+    // Vết loang rất nhạt: đậm hơn thì trên gạch men trắng đọc ra vũng bẩn.
+    g.fillStyle(PAL.floorStain, 0.075);
     for (let i = 0; i < 3; i++) {
       const u = (((i * 7 + variant * 3) % 9) / 9 - 0.5) * 0.66;
       const v = (((i * 5 + variant * 2) % 7) / 7 - 0.5) * 0.66;
@@ -54,7 +47,7 @@ function floorTile(scene: Phaser.Scene, key: string, spec: FloorSpec, top: numbe
   });
 }
 
-/** Mạch nối giữa hai tấm — chạy dọc hai cạnh sau của ô, đủ để mắt thấy "từng tấm". */
+/** Mạch nối chạy dọc hai cạnh sau của ô. */
 function joints(g: Pen, cx: number, cy: number, color: number) {
   g.fillStyle(color, 0.32);
   g.fillPoints([
@@ -75,18 +68,7 @@ function sun(scene: Phaser.Scene) {
   });
 }
 
-/**
- * MẶT ĐƯỜNG ƯỚT — dán chồng lên sàn NGOÀI TRỜI những ngày mưa, đúng chỗ mà ngày nắng
- * dán vạt nắng (`bakeGround`). Hai cái loại trừ nhau: trời không thể vừa đổ nắng gắt
- * vừa đổ mưa.
- *
- * Nướng sẵn vào nền chứ không vẽ mỗi frame, vì nó KHÔNG BAO GIỜ ĐỔI trong một buổi
- * bán — thời tiết chốt từ lúc `dawn()`. Đây cũng là chỗ rẻ nhất để nói "trời đang mưa":
- * người chơi thấy mặt đường sậm lại ngay từ frame đầu, trước cả giọt mưa đầu tiên.
- *
- * `wetRoad` sậm hơn cả nhựa đường khô (`roadFloor`), nên phủ lên vỉa hè sáng màu là ra
- * đúng cái sắc sậm loang của xi măng thấm nước.
- */
+/** Mặt đường ướt ngày mưa, thay chỗ vạt nắng; nướng sẵn vì thời tiết chốt từ `dawn()`. */
 function wet(scene: Phaser.Scene) {
   prop(scene, TILE.wet, heightFor(0), (g, cx, cy) => {
     g.fillStyle(PAL.rain.wetRoad, 0.3);

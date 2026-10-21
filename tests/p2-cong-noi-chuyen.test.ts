@@ -1,4 +1,3 @@
-/** Hai cổng chặn cuộc sâu (trần ngày, khung PEAK): chặn thì phải có câu, có câu thì phải thật sự chặn. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { deepGateReason } from "../src/sim/service";
@@ -27,7 +26,6 @@ test("trong khung đông → nói ra là đông, không phải gật suông", ()
 test("hết trần ngày → 'để mai', và nó THẮNG cả khung đông", () => {
   assert.equal(deepGateReason(2, h(9)), CAP);
   assert.equal(deepGateReason(5, h(9)), CAP);
-  // Hết trần mà hứa "để nói chuyện sau" là hứa suông.
   assert.equal(deepGateReason(2, PEAK_START_MIN + 10), CAP, "khung đông không được giành chỗ của trần ngày");
 });
 

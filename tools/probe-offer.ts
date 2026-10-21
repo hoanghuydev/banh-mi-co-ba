@@ -1,9 +1,4 @@
-/**
- * npm run probe:offer
- *
- * Một ngày khách tự mở lời bao nhiêu lần, và rớt ở cổng nào của `offerTalk`.
- * Quan trọng vì đa số kho thoại là `NPC_ONLY` (lưới `V-3`): `offerTalk` hiếm thì chúng không tới tai người chơi.
- */
+// Một ngày khách tự mở lời bao nhiêu lần, và rớt ở cổng nào của `offerTalk`.
 import { Bus } from "../src/core/eventbus";
 import { newGame } from "../src/core/save";
 import { memoryPlatform } from "../src/core/platform";

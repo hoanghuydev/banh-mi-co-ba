@@ -10,18 +10,7 @@ import { rentVnd } from "../../sim/obligations";
 import { TOUR_TOTAL, tourAt, tourIndex, tourSkip } from "../../sim/tour";
 import { TourCoach } from "../tour/TourCoach";
 
-/**
- * Đi chợ sáng — P3-01 §2.1 pha MORNING, P3-03 §2.5 (giá), §2.1 (hạn dùng). Chạy theo LƯỢT:
- * không đồng hồ, không ai nhìn — lúc suy nghĩ.
- *
- *   · giá hôm qua hiện MỜ bên cạnh — học pattern thứ Hai đắt, thứ Năm rẻ bằng mắt
- *   · tồn kho hiện bằng số lẻ ("còn 0,4 lạng"), đồ chua hiện NGÀY NGÂM, KHÔNG BAO GIỜ hiện
- *     chất lượng % (P3-03 §6 #13) — và không có dự báo, không có "tính giùm"
- *   · tổng tiền mặc định chỉ hiện ở bước xác nhận — "không có tổng chạy", người chơi phải
- *     nhẩm. Công tắc trợ năng "hiện tổng khi đang chọn" (P3-03 §4 luật UI #4) cho tổng
- *     chạy ở chân trang; nó vẫn là dữ liệu thô, không gợi ý mua gì
- *   · "mua như hôm qua" chép Y giỏ hôm qua, kể cả Chủ nhật — không bao giờ tối ưu
- */
+/** Đi chợ sáng: không bao giờ hiện chất lượng %, tổng tiền chỉ hiện ở bước xác nhận (trừ khi bật trợ năng). */
 const STYLE = `
 .mk-root{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;background:rgba(18,22,26,.55);font-family:"Be Vietnam Pro",system-ui,sans-serif;color:#2b2f31}
 .mk-book{width:min(1060px,96vw);height:min(600px,94vh);display:flex;flex-direction:column;background:#f3ecdc;border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.45);overflow:hidden}
@@ -118,12 +107,11 @@ export class MarketView {
   private root: HTMLDivElement;
   private basket: Partial<Record<GoodId, number>> = {};
   private confirming = false;
-  /** P3-03 §2.8 — tiền lẻ đổi ở cô Mai (nghìn): 100k ≈ 19 lượt thối, 200k ≈ 38, 300k ≈ 58. */
+  /** Tiền lẻ đổi để thối, đơn vị nghìn. */
   private float = 100;
   private msg = "";
   private keyGuard = (ev: KeyboardEvent) => { ev.stopPropagation(); if (ev.code === "Escape" && this.confirming) { this.confirming = false; this.render(); } };
 
-  /** Bong bóng dẫn bữa đầu — chỉ dựng ở ngày 1 lúc còn ở bước đi chợ. */
   private coach: TourCoach | null = null;
   private onResize = () => this.aimCoach();
 
@@ -206,13 +194,7 @@ export class MarketView {
     this.aimCoach();
   }
 
-  /**
-   * Khoanh đúng cái nút phải bấm TIẾP THEO, không khoanh cả cái chợ.
-   *
-   * Ba chặng, đọc từ chính trạng thái của trang chứ không từ một bộ đếm riêng: giỏ trống thì chỉ
-   * vô dấu +, có đồ rồi thì chỉ vô nút đi bán, đang ở bước xác nhận thì chỉ vô nút trả tiền.
-   * Không có bộ đếm nghĩa là người chơi bấm lung tung cỡ nào cái vòng cũng không lạc.
-   */
+  /** Chặng suy từ trạng thái trang, không dùng bộ đếm riêng, nên bấm lung tung cũng không lạc. */
   private aimCoach() {
     const c = this.coach;
     if (!c) return;
@@ -230,13 +212,6 @@ export class MarketView {
     c.pointEl(q('[data-k="done"]'), "Lấy đủ rồi thì bấm đây.", step, total);
   }
 
-  /**
-   * Đầu trang. Ba TẦNG, không phải chín dòng giống hệt nhau:
-   *   1. ngày nào, trời gì            — chữ lớn, đọc lướt
-   *   2. mấy con số của hôm nay       — ô vuông, mắt bắt được ngay con nào đổi
-   *   3. người ta nói gì ở chợ        — chữ nghiêng sau một vạch, biết là LỜI chứ không phải số
-   * Thùng xốp nằm ở tầng 2.
-   */
   private head(cold: number, cap: number, overCold: boolean) {
     const w = this.w, day = this.day, e = w.econ;
     const head = this.el("div", "mk-head");
@@ -282,9 +257,7 @@ export class MarketView {
       const closed = sup && isClosed(sid as SupplierId, day);
       card.append(this.el("div", "mk-seller", closed ? `${SELLERS[sid]?.name} — nghỉ giỗ` : SELLERS[sid]?.name ?? sid));
       if (sup && !closed) card.append(this.el("div", "mk-blurb", `"${sup.greet}"`));
-      // Nghỉ giỗ KHÔNG phải là hết hàng: calendar.json `lo_ba_tam_nghi` (ngày 28–30) định
-      // giá sẵn cho lò khác — bánh 4,2 ngàn thay vì 3,5 và ruột xấu hơn (breadQ0 0,90). Cái
-      // sai là tấm blurb cũ ("giá không bao giờ đổi") nói ngược với con số ngay dưới nó.
+      // Nghỉ giỗ vẫn có hàng: calendar.json `lo_ba_tam_nghi` cho lò khác bán đắt hơn, ruột kém hơn.
       else if (closed) card.append(this.el("div", "mk-blurb", "lò khác bán đỡ mấy hôm, bánh đắt hơn mà ruột cũng không bằng"));
       else card.append(this.el("div", "mk-blurb", SELLERS[sid]?.blurb ?? ""));
       for (const g of goods) card.append(this.row(g));
@@ -293,15 +266,7 @@ export class MarketView {
     return body;
   }
 
-  /**
-   * Cột GIỎ. Thiếu đúng cái này là lỗi nặng nhất của bảng cũ: muốn biết nãy giờ mình
-   * lấy những gì thì phải cuộn ngược hết cả danh sách và tự nhớ, vì con số duy nhất
-   * nhìn thấy nằm ngay dưới cái nút vừa bấm — rồi cuộn đi là mất.
-   *
-   * Nó liệt kê MÓN và SỐ LƯỢNG, không liệt kê tiền. P3-03 §4 luật UI #4 nói tổng chỉ
-   * hiện ở bước trả tiền, mà "mình đang cầm cái gì trong giỏ" thì không phải tổng —
-   * đó là thứ ngoài đời liếc vô giỏ là thấy. Có bật công tắc trợ năng thì mới có tiền.
-   */
+  /** Giỏ chỉ liệt kê món và số lượng; tiền chỉ hiện khi bật trợ năng `showTotal`. */
   private side() {
     const w = this.w, day = this.day;
     const side = this.el("div", "mk-side");
@@ -327,8 +292,7 @@ export class MarketView {
     }
     side.append(list);
 
-    // P3-03 §2.8 — "đổi bạc lớn lấy bạc nhỏ": đổi tiền MÌNH ĐANG CÓ, không phải in thêm.
-    // Vào chợ với 30 ngàn mà bấm 300k thì hộp lẻ tự đẻ ra gấp mười lần tiền thật có.
+    // Chỉ đổi được tiền đang có trong ống, không phải in thêm.
     const fl = this.el("div", "mk-float");
     fl.append(this.el("div", "mk-float-h", "Đổi tiền lẻ để thối"));
     const row = this.el("div", "mk-float-b");
@@ -346,11 +310,6 @@ export class MarketView {
     return side;
   }
 
-  /**
-   * Hoá đơn. Bước xác nhận CŨ chỉ đổi mỗi cái chân trang: ruột vẫn là nguyên cái chợ với
-   * đủ nút cộng trừ bấm được, nên "xác nhận" không cho người chơi xem lại thứ gì cả —
-   * họ bấm trả tiền mà chưa một lần thấy danh sách mình sắp mua.
-   */
   private bill() {
     const w = this.w, day = this.day;
     const bill = this.el("div", "mk-bill");
@@ -416,8 +375,7 @@ export class MarketView {
     const acts = this.el("div", "mk-acts");
     const same = this.el("button", "mk-btn", "Mua như hôm qua");
     same.dataset.k = "same";
-    // Ngày 1 `lastBasket` là rổ đã mua từ hôm qua — hàng đã nằm trong thùng rồi. Chép lại là
-    // mua đúp: thùng xốp lập tức 8,8/8 ô, bấm gì cũng không checkout được.
+    // Ngày 1 hàng của `lastBasket` đã nằm trong thùng, chép lại là mua đúp và tràn thùng xốp.
     same.disabled = day === 1;
     if (day === 1) same.title = "Đồ hôm nay đã có trong thùng.";
     same.onclick = () => { this.basket = { ...w.inventory.lastBasket }; this.msg = ""; this.render(); };
@@ -438,12 +396,7 @@ export class MarketView {
     return foot;
   }
 
-  /**
-   * `render()` dựng lại NGUYÊN cây DOM mỗi lần bấm, nên chỗ cuộn và focus bay sạch: cuộn
-   * xuống sạp rau bấm thêm một mớ là màn hình nhảy ngược lên đầu danh sách, bấm tiếp phải
-   * cuộn xuống lại. `data-k` là tên cố định của từng nút, sống qua `replaceChildren` — chụp
-   * trước, gắn lại sau.
-   */
+  /** `render()` dựng lại cả cây DOM nên phải trả lại chỗ cuộn và focus, nhận nút qua `data-k`. */
   private restore(scroll: number, focusKey: string) {
     const body = this.root.querySelector<HTMLElement>(".mk-body");
     if (body) body.scrollTop = scroll;
@@ -465,13 +418,10 @@ export class MarketView {
   private row(g: GoodId) {
     const d = GOODS[g], day = this.day;
     const n = this.basket[g] ?? 0;
-    // Dòng có hàng trong giỏ thì NỀN KHÁC: lướt mắt qua cả cái chợ là thấy ngay mình
-    // đã lấy ở đâu, không phải đọc từng con số một.
     const row = this.el("div", `mk-row${n > 0 ? " has" : ""}`);
     const left = this.el("div");
     left.append(this.el("div", "mk-name", d.label));
     const pr = this.el("div", "mk-price", `${money(unitPriceVnd(g, day))}/${d.unit}`);
-    // dòng mờ để học pattern "thứ Hai đắt, thứ Năm rẻ" bằng mắt
     if (day > 1) pr.append(this.el("span", "mk-y", `hôm qua ${money(unitPriceVnd(g, day - 1))}`));
     left.append(pr, this.el("div", "mk-have", `trong thùng: ${this.haveText(g)}`));
     const step = this.el("div", "mk-step");
@@ -481,8 +431,6 @@ export class MarketView {
     minus.disabled = n <= 0;
     minus.onclick = () => { this.basket[g] = Math.max(0, n - d.step); this.msg = ""; this.render(); };
     plus.onclick = () => { this.basket[g] = n + d.step; this.msg = ""; this.render(); };
-    // Con số trần ("0", "5") không nói nó là cái gì. Kèm đơn vị thì nó tự đọc được:
-    // "5 ổ", "1 lạng" — và trùng với cách cái giỏ bên phải ghi, không phải quy đổi trong đầu.
     step.append(minus, this.el("span", "mk-qty", n > 0 ? `${fmtUnits(n)} ${d.unit}` : "—"), plus);
     row.append(left, step);
     return row;
@@ -494,8 +442,7 @@ export class MarketView {
     if (total > w.money.cash) return;
     w.money.cash -= total;
     w.econ.today.market += total;
-    // tiền lẻ: đổi bạc lớn lấy bạc nhỏ — không mất tiền, chỉ là có sẵn để thối. Đổi được
-    // nhiều nhất là đúng số đang có trong ống sau khi trả tiền hàng.
+    // Đổi lẻ không mất tiền, tối đa bằng số còn trong ống sau khi trả hàng.
     w.econ.float = w.econ.floatLeft = Math.max(0, Math.min(this.float * 1000, w.money.cash));
     const bought: MarketResult["bought"] = [];
     for (const [g, n] of Object.entries(this.basket)) {
