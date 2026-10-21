@@ -60,7 +60,7 @@ for (let d = 1; d <= days; d++) {
     (m.confirmRate.DROPPED_FOOD ?? 0).toFixed(2).padStart(6),
     m.silentNoticeRate.toFixed(2).padStart(6),
     String(m.lineRepeatWithin2h).padStart(5),
-    k(world.progress.today.revenue), k(et.market), k(et.fixed + et.rent + et.sendHome), k(world.money.cash),
+    k(world.progress.today.revenue), k(et.market), k(et.fixed + et.rent), k(world.money.cash),
     world.econ.today.soldOut ? `hết×${world.econ.today.soldOut}` : "",
   ].join(" │ "));
 }

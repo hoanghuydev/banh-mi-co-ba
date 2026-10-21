@@ -32,7 +32,6 @@ export const ECON = ECON_JSON as unknown as {
   scale: number; startCash_k: number;
   fixedCost_k: { base: number; fromDay: number; raised: number };
   menu_k: { khong: number; thuong: number; dayDu: number; dacBiet: number };
-  sendHome_k: number;
   rent_k: number;
   storage: { thung_xop: { coldSlots: number; coldShelfLifeDelta: Partial<Record<GoodId, number>> } };
 };

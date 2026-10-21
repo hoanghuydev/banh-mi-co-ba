@@ -1,4 +1,4 @@
-/** Kinh tế lõi: lịch (quay vòng), giá chợ, kho theo lô, chất lượng ổ, tiền thuê + rút về nhà. */
+/** Kinh tế lõi: lịch (quay vòng), giá chợ, kho theo lô, chất lượng ổ, tiền thuê. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -89,12 +89,11 @@ test("tiền thuê một mức mỗi ngày; thiếu thì dồn sang mai, trả n
   assert.equal(m.cash, 8 * rentVnd());
 });
 
-test("két không bao giờ âm: thiếu tiền than thì trả phần có, gửi về nhà gửi thiếu", () => {
+test("két không bao giờ âm: thiếu tiền than thì trả phần có", () => {
   const e = newEconState(); const m = { cash: 10_000 };
   eveningCount(e, m, 33_000);
   assert.equal(m.cash, 0);
   assert.equal(e.today.fixed, 10_000);
-  assert.ok(e.today.sendHomeShort > 0);
 });
 
 test("chơi quá ngày 40: bot mua đủ cho 16 ổ, ngày nào cũng bán được, két không âm", () => {

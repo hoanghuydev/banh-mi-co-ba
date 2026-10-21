@@ -85,7 +85,7 @@ export function eveningCounting(w: SaveFile) {
   const day = w.progress.dayIndex;
   eveningCount(w.econ, w.money, fixedCostVnd(day) + extraDailyVnd(w.equipment ?? newEquipState()));
   const e = w.econ.today, t = w.progress.today;
-  const cost = e.market + e.rent + e.fixed + e.sendHome + e.tools + e.talk;
+  const cost = e.market + e.rent + e.fixed + e.tools + e.talk;
   const row = { day, revenue: t.revenue, cost, served: t.served, lost: t.lost };
   const i = w.ledger.findIndex((r) => r.day === day);
   if (i >= 0) w.ledger[i] = row; else w.ledger.push(row);

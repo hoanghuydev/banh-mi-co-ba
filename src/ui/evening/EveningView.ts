@@ -159,9 +159,6 @@ export class EveningView {
     if (et.tools) row(et.tools < 0 ? "bán đồ nghề" : "sắm đồ nghề", signed(et.tools), et.tools < 0 ? "in" : "out");
     if (et.talk) row("chi khi trò chuyện", `−${money(et.talk)}`);
     row("than, đá, túi, xăng", `−${money(et.fixed)}`);
-    // "gửi thiếu −0₫" đọc như lỗi hiển thị, mà số thiếu THẬT thì không hiện ở đâu
-    row("gửi về nhà", et.sendHome ? `−${money(et.sendHome)}` : "chưa gửi được");
-    if (et.sendHomeShort) row("còn thiếu", `(${money(et.sendHomeShort)})`);
     const cash = this.el("div", "ev-cash");
     cash.append(this.el("span", "", "trong ống"), this.el("span", "", money(w.money.cash)));
     L.append(cash);

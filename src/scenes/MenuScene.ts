@@ -90,7 +90,7 @@ export class MenuScene extends Phaser.Scene {
     const top = Math.round(88 / textScale());
     const st = new Stack(top, 10);
     const title = st.place(label(this, x, 0, GAME_TITLE, 40, UI.ink, "700"), 10);
-    const sub = st.place(label(this, x, 0, "Đầu hẻm, Sài Gòn.", 15, UI.muted, "400"), 0);
+    const sub = st.place(label(this, x, 0, "Tiệm bánh mì nhỏ", 15, UI.muted, "400"), 0);
     body.add([title, sub]);
     this.card(body, top - 24, st.y + 24, [title, sub]);
     st.skip(Math.round(72 / textScale()));
@@ -102,10 +102,10 @@ export class MenuScene extends Phaser.Scene {
     body.add(st.button(button(this, x, 0,
       save ? "Chơi tiếp" : "Chưa có ván nào",
       () => this.continueRun(), {
-        width: 300, disabled: !save,
-        hint: save ? [playerLabel(save.playerName), `ngày ${save.progress.dayIndex}`,
-            `${save.money.cash.toLocaleString("vi-VN")}₫`].filter(Boolean).join(" · ") : undefined,
-      }), 14));
+      width: 300, disabled: !save,
+      hint: save ? [playerLabel(save.playerName), `ngày ${save.progress.dayIndex}`,
+      `${save.money.cash.toLocaleString("vi-VN")}₫`].filter(Boolean).join(" · ") : undefined,
+    }), 14));
 
     body.add(st.button(button(this, x, 0, "Cài đặt", () => this.show("settings"), { width: 300 }), 14));
     body.add(st.button(button(this, x, 0, "Giới thiệu", () => this.show("about"), { width: 300 }), 14));

@@ -8,7 +8,7 @@ import { buyEquip, newEquipState, sellEquip } from "../src/sim/equipment";
 import { eveningCount, morningRent, newEconState, type EconToday } from "../src/sim/obligations";
 
 /** Tổng các dòng tiền RA của một ngày (âm = tiền vô). */
-const outflow = (t: EconToday) => t.market + t.rent + t.fixed + t.sendHome + t.tools + t.talk;
+const outflow = (t: EconToday) => t.market + t.rent + t.fixed + t.tools + t.talk;
 
 test("sổ hôm nay cộng lại đúng bằng chênh lệch cái két — một chuỗi giao dịch đủ loại", () => {
   const e = newEconState();
@@ -21,7 +21,7 @@ test("sổ hôm nay cộng lại đúng bằng chênh lệch cái két — một
   assert.ok(buyEquip("BINH_TRA", equip, m, e));                       // mua đồ nghề
   assert.ok(sellEquip("BINH_TRA", equip, m, 1, e) > 0);               // bán lại
   e.today.talk += 30_000; m.cash -= 30_000;                           // chi khi trò chuyện
-  eveningCount(e, m, 40_000);                                         // than đá túi xăng + gửi về nhà
+  eveningCount(e, m, 40_000);                                         // than đá túi xăng
 
   assert.equal(outflow(e.today), before - m.cash, "sổ lệch với két");
 });

@@ -1,5 +1,5 @@
 /**
- * Tiền ra hằng ngày: thuê chỗ (buổi sáng) và rút về nhà (lúc đếm tiền tối).
+ * Tiền ra hằng ngày: thuê chỗ (buổi sáng) và chi phí cố định (lúc đếm tiền tối).
  * Mọi số tiền đã co theo `ECON.scale` (xem econ.json). Không có tổng, không màu đỏ trên UI.
  */
 import { ECON, scaledVnd } from "./econ";
@@ -14,8 +14,6 @@ export type EconToday = {
   /** Than, đá, túi, xăng — phần két trả nổi. */
   fixed: number;
   rent: number;
-  sendHome: number;
-  sendHomeShort: number;
   /** Mua/bán đồ nghề, RÒNG (âm = bán được tiền). */
   tools: number;
   /** Tiền chi trong lúc trò chuyện (act tốn tiền). */
@@ -42,12 +40,11 @@ export const newEconState = (): EconState => ({
   rentOwed: 0, today: newToday(1), float: 0, floatLeft: 0, neighborAnnoyance: 0, loaOffUntil: 0,
 });
 export const newToday = (day: number): EconToday =>
-  ({ day, market: 0, fixed: 0, rent: 0, sendHome: 0, sendHomeShort: 0, tools: 0, talk: 0,
+  ({ day, market: 0, fixed: 0, rent: 0, tools: 0, talk: 0,
     wasted: [], soldOut: 0, counted: false, closedAtMin: null });
 
 /** Tiền thuê mặt bằng mỗi ngày (đồng, đã co). */
 export const rentVnd = () => scaledVnd(ECON.rent_k);
-export const sendHomeVnd = () => scaledVnd(ECON.sendHome_k);
 
 export type Money = { cash: number };
 
@@ -64,16 +61,11 @@ export function morningRent(e: EconState, m: Money): { paid: number } {
   return { paid: 0 };
 }
 
-/** Đếm tiền tối, MỘT lần mỗi tối: trừ chi phí cố định + rút về nhà, không để két âm. */
+/** Đếm tiền tối, MỘT lần mỗi tối: trừ chi phí cố định, không để két âm. */
 export function eveningCount(e: EconState, m: Money, fixed: number) {
   if (e.today.counted) return;
   e.today.counted = true;
   const f = Math.max(0, Math.min(m.cash, fixed));
   m.cash -= f;
   e.today.fixed += f;
-  const home = sendHomeVnd();
-  const h = Math.min(m.cash, home);
-  m.cash -= h;
-  e.today.sendHome += h;
-  e.today.sendHomeShort = home - h;
 }
