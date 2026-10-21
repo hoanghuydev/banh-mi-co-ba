@@ -39,8 +39,13 @@ Code chạy đúng ≠ nhìn đúng. Kết luận "xong" chỉ sau khi **đã xe
 - **Code chết phải xoá hẳn** — không comment out, không cờ tắt, không `old/`, không `@deprecated`. Git giữ lịch sử.
 - **Không ghi quá trình vào code.** Cấm comment kiểu "đã bỏ X", "revamp", "trước đây…", mã phase. Comment chỉ mô tả code hiện tại.
 - Mục tiêu revamp là **đơn giản lại**: phân vân giữ hay bỏ một cơ chế → bỏ.
+- **Comment: chỉ khi cần và có ích.** Áp cả khi viết mới lẫn khi đọc/sửa code cũ.
+  - Code đơn giản, không logic phức tạp → không comment. Comment dài dòng ở code đơn giản → xoá.
+  - Nói được trong 1 câu → **tuyệt đối không quá 1 câu**. Được bỏ chủ ngữ.
+  - Đụng file cũ thì cắt comment thừa trong vùng đang sửa.
 
 ## 5. Văn phong
 
 - UI: tiếng phổ thông (`docs/VAN-PHONG-UI.md`).
 - Thoại, review, comment trong game: **phải research giọng thật trước** → dùng skill `research-giong-viet`.
+- Lời của Hệ thống (app Hệ thống, hướng dẫn, thưởng): dùng skill `giong-he-thong`.

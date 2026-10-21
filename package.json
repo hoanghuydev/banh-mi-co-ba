@@ -1,9 +1,9 @@
 {
-  "name": "banh-mi-co-ba",
+  "name": "bye-sep-em-ban-banh-mi",
   "private": true,
   "version": "0.2.0",
   "type": "module",
-  "description": "Bánh Mì Cô Ba — a game about being watched while you work",
+  "description": "Bye Sếp, Em Bán Bánh Mì — a game about being watched while you work",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && npm run gates && npm run validate:talks && vite build && npm run gates -- --dist",

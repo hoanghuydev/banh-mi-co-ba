@@ -1,15 +1,9 @@
 /**
  * BẢNG MENU TREO VÁCH — "ổ nào có gì", và chỉ có MỘT bảng.
  *
- * Trước file này món ăn không có TÊN: một đơn hàng là một tổ hợp nguyên liệu, nên
- * `nhan: ["xiumai"]` làm ra ổ bánh mì xíu mại KHÔNG CÓ PATE, và `tierOf` tính tiền bằng
- * cách ĐẾM số nhân — hễ quết thêm miếng pate cho đúng đời thật là giá tự nhảy một bậc.
- * Hai chuyện đó cùng một gốc: không có chỗ nào khai "bánh mì xíu mại LÀ gì".
- *
- * Đây là chỗ đó. Khách gọi TÊN MÓN, món khai nhân của nó, lời dặn thêm ("cho ít rau",
- * "không hành", "cho nhiều xíu mại") chỉ còn là phần SỬA trên nền ấy. Nhờ vậy tấm bảng
- * người chơi đọc ở vách (`ui/menu/MenuBoardView`) và tấm bảng `diffDish` chấm điểm là
- * CÙNG MỘT dữ liệu: không còn chỗ nào để lệch.
+ * Khách gọi TÊN MÓN, món khai nhân của nó, lời dặn thêm ("cho ít rau", "không hành", "cho
+ * nhiều xíu mại") là phần SỬA trên nền ấy. Tấm bảng người chơi đọc ở vách
+ * (`ui/menu/MenuBoardView`) và tấm bảng `diffDish` chấm điểm là CÙNG MỘT dữ liệu.
  *
  * ⚠️ Tầng dưới cùng của chuỗi món ăn: chỉ nhập KIỂU từ `order.ts` và `econ.ts` (bị xoá lúc
  * biên dịch), không nhập giá trị — `order.ts` nhập ngược lại file này. Thêm một `import`
@@ -77,18 +71,16 @@ const BY_ID = new Map(MENU_ITEMS.map((i) => [i.id, i]));
  * MỖI id TRONG `MenuItemId` PHẢI CÓ MỘT DÒNG TRONG `menu.json`.
  *
  * Gỡ một món khỏi dữ liệu là `itemOf()` trả `undefined`, và chỗ vỡ không nằm ở đây mà là
- * `Cannot read properties of undefined (reading 'nhan')` ở giữa `levelsOf` — đã xảy ra
- * thật, 65 test đỏ cùng lúc mà không test nào chỉ được ra món nào biến mất.
+ * `Cannot read properties of undefined (reading 'nhan')` ở giữa `levelsOf`.
  *
- * Muốn một món KHÔNG hiện trên bảng thì đặt `onBoard: false`, đừng xoá dòng: `content/arcs.ts`
- * gọi thẳng tên món trong đơn hàng viết tay của cả 40 ngày.
+ * Muốn một món KHÔNG hiện trên bảng thì đặt `onBoard: false`, đừng xoá dòng: code gọi thẳng tên món (`sim/ease.ts`).
  */
 const BAT_BUOC: readonly MenuItemId[] = ["thit", "chalua", "xiumai", "opla", "pate", "daydu", "khong"];
 const THIEU = BAT_BUOC.filter((id) => !BY_ID.has(id));
 if (THIEU.length) {
   throw new Error(
-    `content/recipes/menu.json thiếu món: ${THIEU.join(", ")}. Mấy món này có đơn hàng viết ` +
-    'tay trong content/arcs.ts nên không gỡ khỏi dữ liệu được — muốn giấu thì đặt "onBoard": false.',
+    `content/recipes/menu.json thiếu món: ${THIEU.join(", ")}. Code gọi thẳng tên mấy món này ` +
+    'nên không gỡ khỏi dữ liệu được — muốn giấu thì đặt "onBoard": false.',
   );
 }
 
@@ -96,7 +88,7 @@ export const itemOf = (id: MenuItemId): MenuItem => BY_ID.get(id)!;
 
 /**
  * Mấy món GHI TRÊN BẢNG — cái người chơi đọc. Khác `MENU_ITEMS` (mọi món gọi được) đúng
- * một chuyện: tấm bảng là thứ cô Ba viết ra, không phải bản kê khai đầy đủ.
+ * một chuyện: tấm bảng là thứ chủ quán viết ra, không phải bản kê khai đầy đủ.
  */
 export const MENU_BOARD: readonly MenuItem[] = MENU_ITEMS.filter((i) => i.onBoard !== false);
 /** Tên món để ghép vào câu log / câu thoại. */

@@ -5,7 +5,7 @@
  * ⚠️ Không bao giờ có chế độ "hiện certainty" trong bản bán ra: T5 đòi attention nhìn
  * thấy được QUA MẶT NGƯỜI, không phải qua một thanh số.
  *
- *   F1 bật/tắt · F2 Perception · F3 Thoại · F4 Đồn thổi · F5 Trí nhớ
+ *   F1 bật/tắt · F2 Perception · F3 Thoại
  *   F6 Đồng hồ & RNG · F7 Perf · F8 Kinh tế · ~ console lệnh · ?debug=1 bật sẵn
  */
 import { MOOD_CAUSES, moodBaseFace, moodOf, type MoodCause } from "../sim/mood";
@@ -21,18 +21,18 @@ import { CAL } from "../sim/econ";
 import { dev } from "./registry";
 import type { DayScene } from "../scenes/DayScene";
 
-type PanelId = "perception" | "dialog" | "gossip" | "memory" | "clock" | "perf" | "econ";
+type PanelId = "perception" | "dialog" | "clock" | "perf" | "econ";
 const KEYS: Record<string, PanelId> = {
-  F2: "perception", F3: "dialog", F4: "gossip", F5: "memory", F6: "clock", F7: "perf", F8: "econ",
+  F2: "perception", F3: "dialog", F6: "clock", F7: "perf", F8: "econ",
 };
 const TITLE: Record<PanelId, string> = {
-  perception: "P1 · Perception", dialog: "P2 · Thoại / rule query", gossip: "P3 · Đồn thổi",
-  memory: "P4 · Trí nhớ", clock: "P5 · Đồng hồ & RNG", perf: "P6 · Perf", econ: "P7 · Kinh tế",
+  perception: "P1 · Perception", dialog: "P2 · Thoại / rule query",
+  clock: "P5 · Đồng hồ & RNG", perf: "P6 · Perf", econ: "P7 · Kinh tế",
 };
 
-const SS_KEY = "banhmicoba.dev.overlay";
+const SS_KEY = "byesep.dev.overlay";
 
-const DIALOG_EVENTS: readonly EventKey[] = ["bark:queued", "dialog:spoken", "dialog:silent", "dialog:selected", "dialog:requested"];
+const DIALOG_EVENTS: readonly EventKey[] = ["bark:queued", "dialog:spoken", "dialog:silent"];
 
 export function installDevTools(game: Phaser.Game) {
   const state = loadState();
@@ -136,40 +136,6 @@ const PANELS: Record<PanelId, (game: Phaser.Game, dialogLog: string[]) => string
     return [...head, "", ...log].join("\n");
   },
 
-  gossip() {
-    const w = dev.ctx?.world;
-    if (!w) return "(chưa vào ván)";
-    const g = w.gossip;
-    const out = [
-      `P2-04 — mở từ ngày 4, nhớ nhầm từ ngày 8 · ngân sách nhớ nhầm còn ${g.budget.mutationsLeft}/4 (lần gần nhất ngày ${g.budget.lastMutationDay})`,
-      `nghe lỏm sáng nay: ${g.overhear ? `${g.overhear.a} → ${g.overhear.b} · ${g.overhear.claim} (nguồn ${g.overhear.source ?? "tự thấy"})` : "—"}`,
-      "", "nhật ký lan tin (mới nhất trước):",
-      ...g.log.slice(-8).reverse().map((e) => `  ngày ${e.day}: ${e.from} → ${e.to} · ${e.claim}${e.mutated ? " (MÉO)" : ""} · hop ${e.hops}`),
-      "", "tin trong đầu từng người:",
-    ];
-    for (const [id, list] of Object.entries(g.beliefs)) {
-      const live = list.filter((b) => !b.dormant);
-      if (!live.length) continue;
-      out.push(`  ${id.padEnd(10)} ` + live.map((b) => `${b.claim}${b.hops ? `←${b.from}` : "(thấy)"} c${b.confidence.toFixed(2)} d${b.declarations}`).join(" · "));
-    }
-    return out.join("\n");
-  },
-
-  memory() {
-    const w = dev.ctx?.world;
-    if (!w) return "(chưa vào ván)";
-    const day = w.progress.dayIndex;
-    const rows: string[] = [];
-    for (const [id, n] of Object.entries(w.npcs)) {
-      if (id.startsWith("walkin")) continue;
-      rows.push(`${id.padEnd(10)} ${n.tier.padEnd(12)} điểm ${n.relationPoints.toFixed(0).padStart(4)} trần ${n.trustCeiling}`
-        + ` · ghé ${n.visits} · nghe đơn ${n.heard}${n.absentUntil >= day ? ` · VẮNG tới ngày ${n.absentUntil}` : ""}`);
-      const mem = [...n.memory.short, ...n.memory.long, ...(n.memory.core ? [n.memory.core] : [])];
-      if (mem.length) rows.push("    " + mem.map((m) => `${m.tier[0]}:${m.kind}×${m.occurrences} ${m.intensity.toFixed(0)}`).join(" · "));
-    }
-    return ["P2-03 — SỐ CHỈ Ở ĐÂY (dev). T3: không con số nào lên màn hình chơi.", "", ...rows].join("\n");
-  },
-
   clock() {
     const ctx = dev.ctx;
     if (!ctx) return "(chưa vào ván)";
@@ -203,13 +169,12 @@ const PANELS: Record<PanelId, (game: Phaser.Game, dialogLog: string[]) => string
   econ() {
     const w = dev.ctx?.world;
     if (!w) return "(chưa vào ván)";
-    const est = telemetry.seasonEstimate();
+    const est = telemetry.pace();
     return [
       `tiền       ${w.money.cash.toLocaleString("vi-VN")}₫`,
       `hôm nay    ${w.progress.today.served} phần · ${w.progress.today.revenue.toLocaleString("vi-VN")}₫ · mất ${w.progress.today.lost}`,
       "sổ cái:", ...w.ledger.slice(-5).map((r) => `   ngày ${r.day}: ${r.served} phần, ${r.revenue.toLocaleString("vi-VN")}₫, mất ${r.lost}`),
-      "", `ước tính mùa: ${est.minPerDay} phút/ngày → ${est.seasonHours} giờ (gồm pause: ${est.seasonHoursTotal})`,
-      `   ${est.verdict}`,
+      "", `nhịp: ${est.minPerDay} phút/ngày (gồm pause: ${est.minPerDayTotal}) · ${est.days} ngày đo`,
       "", "Kho + hạn dùng + nhà cung cấp — P3.",
     ].join("\n");
   },
@@ -223,7 +188,6 @@ function makeApi(game: Phaser.Game, print: (s: string) => void) {
     if (!x) throw new Error(`chưa có ${what}`);
     return x;
   };
-  const later = (phase: string) => () => `chưa có — việc của ${phase}`;
 
   return {
     day: {
@@ -242,7 +206,7 @@ function makeApi(game: Phaser.Game, print: (s: string) => void) {
        *
        * Chỉ đổi CÁI NHÌN và TIẾNG: nền nướng lại (mặt đường ướt, không còn vạt nắng),
        * lớp mưa dựng lên, `stallAudio` bắt `amb_mua_*`. KHÔNG đổi lượng khách hay độ
-       * soi — mấy cái đó `Service` suy thẳng từ `weatherOf(day)` theo lịch mùa, cố ý,
+       * soi — mấy cái đó `Service` suy thẳng từ `weatherOf(day)` theo lịch, cố ý,
        * để không ai chỉnh thời tiết mà lệch luôn cân bằng của ngày hôm đó.
        *
        * Phải dựng lại cảnh quán vì nền là `RenderTexture` nướng một lần ở `create()`.
@@ -279,7 +243,6 @@ function makeApi(game: Phaser.Game, print: (s: string) => void) {
     stim: {
       fire(id: string, zone: StallZone = "HANDS") { need(dev.stall, "quầy").fire(id, zone); return `${id}@${zone}`; },
     },
-    gossip: { seed: later("P2-04"), tick: later("P2-04"), graph: later("P2-04") },
     rule: {
       /** "Tại sao nó nói câu đó?" — xếp hạng mọi rule của lần hỏi gần nhất, rule trượt ở fact nào. */
       why() {
@@ -309,7 +272,7 @@ function makeApi(game: Phaser.Game, print: (s: string) => void) {
       },
     },
     telemetry: {
-      estimate: () => JSON.stringify(telemetry.seasonEstimate()),
+      pace: () => JSON.stringify(telemetry.pace()),
       export: () => { telemetry.download(); return "đã xuất"; },
     },
     print,

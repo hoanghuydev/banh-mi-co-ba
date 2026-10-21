@@ -1,7 +1,7 @@
 /**
  * npm run lint:lines [-- --fix] [-- --content <dir>]
  *
- * Linter cho file thoại — P0-03 §2.3(b), 13 kiểm tra L001–L013 + L014 (P2-04: tin đồn phải có nguồn).
+ * Linter cho file thoại — kiểm tra L001–L013.
  * `--fix` sửa được L004 (NFC), L005 (kiểu đặt dấu), L007 (viết hoa toàn bộ).
  *
  * Đọc `content/lines/**.json` (pool generic) và `content/rules/**.json` (response của rule).
@@ -13,26 +13,12 @@ import { ROOT, Report, readJson, similarity, walk } from "./lib";
 
 export const LINE_MAX_CHARS = 90;
 const ADDRESS_VARS = ["call", "me", "self", "you"];
-/**
- * Chỗ trống KHÁC mà `Service.fill` điền được — P2-09 §2.4, §2.6.
- *
- *   `m.what` chuyện cũ VỪA TRUY HỒI. Người viết không gõ tên chuyện vào lời thoại; họ
- *            để một chỗ trống và `retrieve()` điền. Không nhớ ra gì thì câu đó không
- *            tồn tại (cổng `m.remembers`), nên chỗ trống này không bao giờ rỗng.
- *   `gia`    giá MỘT ổ theo đúng đơn của người đang đứng đó, đọc thành lời ("sáu mươi
- *   `giaN`   tư ngàn"). `giaN` = N ổ. Một con số gõ cứng vào câu nói là một con số sẽ
- *            sai vào ngày ai đó chỉnh `econ.json`, và không test nào bắt được.
- */
-const FILL_VARS = ["m.what", "gia", "gia2", "gia3", "gio"];
+/** Chỗ trống khác mà `Service.fill` điền: `gia`/`giaN` giá N ổ của đơn đang đứng đó, `gio` giờ đọc thành lời. */
+const FILL_VARS = ["gia", "gia2", "gia3", "gio"];
 export const LINE_SIMILARITY_MAX = 0.85;
 /** Bong bóng thoại ở fontScale 2: rộng 285 px, chữ 24 px (xem ui/stall/BubblePool). */
 const BUBBLE_PX = 285, FONT_PX_AT_2X = 24, MAX_LINES_AT_2X = 3;
-/**
- * Khung CHỮ của một dòng. Mặc định là bong bóng — nhưng thân cây hội thoại KHÔNG đi
- * qua bong bóng: nó hiện trong `ui/stall/TalkPanel` rộng 620 px, chữ 16 px, và bảng
- * cao tới 56% màn hình. Lint cả hai bằng một cái thước là bắt sai: 95 dòng bị kêu
- * "bong bóng quá cao" trong khi chúng chưa bao giờ nằm trong bong bóng nào.
- */
+/** Khung chữ của một dòng: mặc định bong bóng; thân cây hội thoại hiện trong `ui/stall/TalkPanel`. */
 type Box = { px: number; font: number; maxLines: number };
 const BUBBLE: Box = { px: BUBBLE_PX, font: FONT_PX_AT_2X, maxLines: MAX_LINES_AT_2X };
 /** 620 px bảng − 32 px lề − ~34 px cột huy hiệu mặt, chữ 16 px ở cỡ 1,15. */
@@ -45,13 +31,7 @@ type Red = {
 };
 
 type Bag = { file: string; where: string; vi: string[]; en?: string[]; vars: string[]; npc?: string; set: (vi: string[]) => void
-  /** L014 — biến BẮT BUỘC có mặt ở mọi dòng (tin đồn: tên nguồn). */
-  mustHave?: string;
-  /**
-   * L012 tắt. Túi của một CUỘC TRÒ CHUYỆN không phải một pool biến thể thay nhau được:
-   * nó là cả cuộc nói chuyện, và "Dạ." với "Dạ, con biết rồi." giống nhau 85% là đúng
-   * như đời, không phải biến thể giả.
-   */
+  /** L012 tắt: túi của một cuộc trò chuyện là cả cuộc nói chuyện, không phải pool biến thể. */
   noVariants?: boolean;
   box?: Box };
 
@@ -99,17 +79,6 @@ function collect(contentDir: string): { bags: Bag[]; save: () => void } {
 
   for (const f of walk(join(contentDir, "lines"), [".json"])) {
     const data = readJson<{ pools: { id: string; vars?: string[]; variants: string[]; en?: string[]; npc?: string }[] }>(f);
-    const claims = (data as any).claims as Record<string, Record<string, unknown>> | undefined;
-    for (const [id, c] of Object.entries(claims ?? {})) {
-      for (const pool of ["hearsay", "belief", "conviction", "seen", "tell"] as const) {
-        const vi = c[pool] as string[] | undefined;
-        if (!vi) continue;
-        bags.push({
-          file: f, where: `claim ${id}.${pool}`, vi, vars: ["source"], mustHave: pool === "hearsay" || pool === "tell" ? "source" : undefined,
-          set: (v) => { c[pool] = v; dirty.set(f, () => writeFileSync(f, JSON.stringify(data, null, 2) + "\n")); },
-        });
-      }
-    }
     for (const [id, vi] of Object.entries(((data as any).reactions ?? {}) as Record<string, string[]>)) {
       bags.push({ file: f, where: `reactions.${id}`, vi, vars: [], set: () => {} });
     }
@@ -120,16 +89,12 @@ function collect(contentDir: string): { bags: Bag[]; save: () => void } {
       });
     }
   }
-  // P5-01 — hội thoại có nhánh. Hai túi mỗi cuộc, vì hai giọng khác nhau: lời KHÁCH
+  // Hội thoại có nhánh. Hai túi mỗi cuộc, vì hai giọng khác nhau: lời KHÁCH
   // (dính luật giọng Bắc/Nam theo `npc`) và lời NGƯỜI CHƠI (luôn giọng Nam).
   for (const f of walk(join(contentDir, "talks"), [".json"])) {
     const data = readJson<{ talks: any[] }>(f);
     for (const t of data.talks ?? []) {
-      /*
-       * ⚠️ Cũ đọc `t.beats` — trường đó chết từ hồi P5-01 đổi sang CÂY (`tree` + `shared`),
-       * nên linter chạy xanh suốt mà chưa từng soi một dòng nào trong cây. Đi đúng cây ở
-       * đây, cắt ở MAX_DEPTH để `ref` quay vòng không treo lệnh build.
-       */
+      // Đi cây (`tree` + `shared`), cắt ở độ sâu 6 để `ref` quay vòng không treo lệnh build.
       // Hai khung khác nhau: câu MỞ LỜI (khách tự bắt chuyện) và câu làm thinh bay ra
       // bong bóng trên đầu họ; mọi dòng trong cây nằm trong bảng F.
       const bubbleLines: string[] = [t.opener, ...(t.ignore?.reply ? [t.ignore.reply] : [])];
@@ -143,9 +108,7 @@ function collect(contentDir: string): { bags: Bag[]; save: () => void } {
           seen.add(o);
           sayLines.push(o.say);
           if (o.reply) npcLines.push(o.reply);
-          // P6 act INVITE: hai câu đáp do CÁI ROLL chọn, không do lựa chọn. Chúng hiện
-          // ra đúng chỗ `reply` hiện, nên phải chịu đúng cái thước đó — bỏ sót thì có
-          // hai câu thoại NPC cả game không ai soi.
+          // Act INVITE: hai câu đáp do roll chọn, hiện đúng chỗ `reply` nên chịu cùng thước.
           for (const k of ["yes", "no"] as const) if (o.act?.[k]) npcLines.push(o.act[k]);
           const kids = o.then?.length ? o.then : o.ref ? t.shared?.[o.ref] : null;
           if (kids) go(kids, depth + 1);
@@ -234,11 +197,6 @@ export function lintLines(contentDir: string, opts: { fix?: boolean } = {}): Rep
       }
 
       // L013 — ký tự font không vẽ được
-      //
-      // `[\w.]+` chứ không phải `\w+`: biến có dấu chấm (`{m.what}`) thì `\w` không
-      // khớp, cặp ngoặc sót lại và báo đúng hai lỗi "{ ngoài bảng glyph" cho mỗi câu.
-      // Ba chỗ còn lại trong file này đã dùng `[\w.]+` từ đầu; chỉ chỗ này lệch, và nó
-      // nằm im cho tới khi có người đầu tiên viết `{m.what}` vào nội dung.
       for (const ch of s.replace(/\{[\w.]+\}/g, "")) {
         const low = ch.toLowerCase();
         if (!VN_LETTERS.has(low) && !PUNCT.has(ch) && !/[a-z]/.test(low)) {
@@ -252,11 +210,6 @@ export function lintLines(contentDir: string, opts: { fix?: boolean } = {}): Rep
     for (const [i, en] of (b.en ?? []).entries()) {
       for (const leak of red.enPronounLeaks) {
         if (hasWord(en, leak)) r.add("L009", "ERROR", b.file, `${b.where}.en[${i}]`, `đại từ xưng hô bị DỊCH thành "${leak}" — CANON §2: không dịch`);
-      }
-    }
-    if (b.mustHave) {
-      for (const [i, s] of b.vi.entries()) {
-        if (!s.includes(`{${b.mustHave}}`)) r.add("L014", "ERROR", b.file, `${b.where}[${i}]`, `thiếu {${b.mustHave}} — tin đồn không truy được nguồn = bị report là bug, và họ đúng`);
       }
     }
     const enCount = (b.en ?? []).filter((x) => x && x !== "…").length;

@@ -86,9 +86,7 @@ export class StallCamera {
     this.world.setZoom(ZOOM * RENDER_SCALE);
     this.world.setDeadzone(DEADZONE_W, DEADZONE_H);
 
-    // Camera bám một cái mốc vô hình thay vì bám thẳng sprite người chơi: `Player`
-    // giữ sprite private, và mốc riêng còn cho phép dời điểm nhìn đi chỗ khác sau này
-    // (cảnh nghe lỏm, khoảng lặng ngày 40) mà không phải đụng vào `Player`.
+    // Camera bám một mốc vô hình thay vì sprite người chơi: `Player` giữ sprite private.
     this.target = scene.add.zone(bounds.centerX, bounds.centerY, 1, 1);
     this.world.startFollow(this.target, true, LERP, LERP);
 

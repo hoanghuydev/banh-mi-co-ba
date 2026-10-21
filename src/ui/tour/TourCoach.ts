@@ -1,6 +1,6 @@
 /**
  * BONG BÓNG DẪN — kiểu tour của web: khoét một lỗ sáng quanh thứ cần bấm, phần còn lại tối đi,
- * và cô Ba hiện lên cạnh đó nói một câu. Có nút "Bỏ qua".
+ * kèm một câu hướng dẫn. Có nút "Bỏ qua".
  *
  * Vì sao là một lớp DOM chứ không vẽ trong Phaser: bữa đầu đi qua CẢ HAI thế giới — trang chợ và
  * bảng menu là DOM, còn cái quán với bảng kẹp nhân là canvas. Vẽ trong Phaser thì phải làm hai bản
@@ -34,8 +34,6 @@ const STYLE = `
 .tg-bub{position:absolute;max-width:min(380px,76vw);display:flex;gap:11px;align-items:flex-start;
   background:#f6f2e6;color:#2b2f31;border-radius:12px;padding:12px 14px;pointer-events:auto;
   box-shadow:0 14px 34px rgba(0,0,0,.5);border-top:3px solid #8e2a20}
-.tg-face{width:52px;height:52px;flex:0 0 auto;border-radius:9px;object-fit:cover;background:#cdd6da;
-  border:2px solid #f3efe3}
 .tg-col{min-width:0;flex:1}
 .tg-who{font-size:.72em;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8e2a20}
 .tg-text{margin:2px 0 0;font-size:.98em;line-height:1.5}
@@ -60,11 +58,7 @@ export class TourCoach {
   private stepEl: HTMLSpanElement;
   private last = "";
 
-  /**
-   * `face` là ảnh chân dung cô Ba (data URL) — cùng tấm với màn mở đầu, để người dẫn ở đây và
-   * người giao xe ở đó là MỘT người. Thiếu ảnh thì khung trống, bong bóng vẫn chạy.
-   */
-  constructor(opts: { face?: string; textScale?: number; onSkip: () => void }) {
+  constructor(opts: { textScale?: number; onSkip: () => void }) {
     if (!document.getElementById("tg-style")) {
       const st = document.createElement("style");
       st.id = "tg-style";
@@ -80,15 +74,11 @@ export class TourCoach {
 
     this.bub = document.createElement("div");
     this.bub.className = "tg-bub";
-    const img = document.createElement("img");
-    img.className = "tg-face";
-    img.alt = "";
-    if (opts.face) img.src = opts.face;
     const col = document.createElement("div");
     col.className = "tg-col";
     const who = document.createElement("div");
     who.className = "tg-who";
-    who.textContent = "Cô Ba";
+    who.textContent = "Hướng dẫn";
     this.txt = document.createElement("p");
     this.txt.className = "tg-text";
     const bar = document.createElement("div");
@@ -101,7 +91,7 @@ export class TourCoach {
     skip.onclick = () => { this.hide(); opts.onSkip(); };
     bar.append(this.stepEl, skip);
     col.append(who, this.txt, bar);
-    this.bub.append(img, col);
+    this.bub.append(col);
 
     this.root.append(this.hole, this.bub);
     document.body.appendChild(this.root);

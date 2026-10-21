@@ -1,13 +1,4 @@
-/**
- * CÁI GÁNH CỦA BÀ SÁU LÀ MỘT VẬT THỂ, KHÔNG PHẢI MỘT CHỦ ĐỀ — `CARRY_GANH` / `MOVE_GANH`.
- *
- * `P2-08` §2 nhóm C đòi 11 lần, và nội dung đã viết sẵn cả ba vai của nó từ lâu: nặng vai
- * bà, chắn lối khách, gửi lại một nồi. Chỉ là không có vật thể nào để bám, nên mọi câu
- * đều là chữ suông — câu *"bà để gánh chỗ khác giùm con"* thậm chí mang `STEP_ASIDE`,
- * tức bảo NGƯỜI dạt ra chứ không dời CÁI GÁNH.
- *
- * Cái giá phải ĐO ĐƯỢC, nếu không thì bưng giùm chỉ là một câu tử tế không tốn gì.
- */
+/** Gánh của bà Sáu là vật thể — `CARRY_GANH` / `MOVE_GANH`, với cái giá đo được. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { GANH_IN, GANH_OUT } from "../src/world/map";
@@ -17,24 +8,18 @@ import { balkChance } from "../src/sim/service";
 import { QUEUE_SLOTS } from "../src/world/map";
 import { NPCS } from "../src/content/npcs";
 
-/*
- * Cái gánh CẮN KHI QUẦY ĐÃ ĐÔNG, không cắn lúc vắng — và đó đúng là điều lời thoại nói:
- * *"bà để gánh chỗ khác giùm con, KHÁCH CON HỔNG ĐI QUA ĐƯỢC bà"*. Quầy trống thì cái
- * gánh nằm đó chẳng cản ai; đông rồi thì nó là chỗ thứ bảy trong một mặt tiền sáu chỗ.
- *
- * `balkChance` chỉ bắt đầu khác 0 từ `ahead = 4` (trên 6 chỗ), nên phải đo ở đúng dải đó.
- */
+// `balkChance` chỉ khác 0 từ `ahead = 4` (trên 6 chỗ), nên phải đo ở đúng dải đó.
 test("N-1 gánh để ngoài thì khách quay đầu NHIỀU HƠN — đó là cái giá", () => {
   const o = {
     slots: QUEUE_SLOTS.length, person: NPCS[0].personality,
     relVisitMul: 1, moodPatience: 1, rushing: false,
   };
-  // Gánh để ngoài = thêm MỘT chỗ mặt tiền bị chiếm, đi qua đúng `balkChance` đã có sẵn.
+  // Gánh để ngoài = thêm một chỗ mặt tiền bị chiếm.
   const khong = balkChance({ ahead: 3, ...o });
   const coGanh = balkChance({ ahead: 4, ...o });
   assert.ok(coGanh > khong,
     `gánh nằm đó mà khách không ngại hơn (${khong.toFixed(3)} → ${coGanh.toFixed(3)}) — vậy bưng vô làm gì`);
-  // Và nó KHÔNG cắn lúc vắng: cái gánh là chuyện lối đi, không phải một hình phạt nền.
+  // Không cắn lúc vắng: gánh là chuyện lối đi, không phải hình phạt nền.
   assert.equal(balkChance({ ahead: 1, ...o }), balkChance({ ahead: 0, ...o }));
 });
 

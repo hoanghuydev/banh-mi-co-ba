@@ -1,13 +1,4 @@
-/**
- * BÉ SU QUAY PHIM THẬT — act `FILM` / `STOP_FILM`.
- *
- * `P2-08` §2 nhóm C: *"quay phim là lý do tồn tại của nhân vật"*. Mà trước đợt này mười
- * ba câu "ừ con quay đi" không làm ai giơ điện thoại lên, còn cái clip thì đã có sẵn chỗ
- * trong kinh tế từ lâu (`story.clipDay` → ×1,4 lượng khách ba ngày) — do KỊCH BẢN đặt,
- * không do bé Su quay được cái gì.
- *
- * Bốn chuyện phải đúng, và cả bốn đều là "cái clip phải phụ thuộc vào mình làm gì".
- */
+/** BÉ SU QUAY PHIM THẬT — act `FILM` / `STOP_FILM`: kết quả đoạn quay phụ thuộc cái quầy lúc quay. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Bus } from "../src/core/eventbus";
@@ -16,7 +7,6 @@ import { memoryPlatform } from "../src/core/platform";
 import { HeadlessStall, POLICIES } from "../src/sim/headless";
 import { TalkStore } from "../src/content/talks";
 import { walkNodes, type TalkNode } from "../src/sim/talk";
-import { storyCrowdMul } from "../src/sim/story";
 
 async function quay(dirt: number) {
   const w = newGame("quay", "p209");
@@ -27,34 +17,29 @@ async function quay(dirt: number) {
   if (!c) return null;
   svc.dirt = dirt;
   svc.handsDirty = false;
+  const logs: string[] = [];
+  const push = svc.out.push.bind(svc.out);
+  svc.out.push = (...ev: any[]) => { for (const e of ev) if (e.kind === "log") logs.push(e.text); return push(...ev); };
   (svc as any).startFilm(c, 1);
   for (let i = 0; i < 200; i++) h.step(1000 / 30);
-  return { st: svc.deps.story, filming: c.filming };
+  return { logs, filming: c.filming };
 }
 
-test("Q-1 quay xong lúc quầy SẠCH thì cái clip tới sớm", async () => {
+test("Q-1 quay xong lúc quầy SẠCH thì đoạn quay ưng ý", async () => {
   const r = await quay(0);
   assert.ok(r, "không có khách nào để thử");
   assert.equal(r.filming, false, "quay hoài không cất máy");
-  assert.ok(Number(r.st.flags.clipDay) < 99, "quay xong mà `clipDay` không nhích — cái clip vẫn là số kịch bản");
-  assert.equal(r.st.flags.clipBad, undefined);
+  assert.ok(r.logs.some((l) => l.includes("quay xong một đoạn ưng ý")), "quầy sạch mà đoạn quay không ưng");
 });
 
-test("Q-2 quầy DƠ thì không có clip tốt, và nó để lại dấu", async () => {
+test("Q-2 quầy DƠ thì đoạn quay hỏng, và nó để lại dấu", async () => {
   const r = await quay(0.9);
   assert.ok(r);
   assert.equal(r.filming, false);
-  assert.ok(r.st.flags.clipBad !== undefined, "quay trúng quầy dơ mà không ghi lại gì");
+  assert.ok(r.logs.some((l) => l.includes("quầy chưa dọn")), "quay trúng quầy dơ mà không ghi lại gì");
 });
 
-test("Q-3 clip tới sớm thì LƯỢNG KHÁCH nhảy thật — không phải một con số nằm im", () => {
-  const st = (d?: number) => ({ flags: d === undefined ? {} : { clipDay: d } }) as never;
-  const thuong = storyCrowdMul(14, st(10), { hasQr: false });
-  const coClip = storyCrowdMul(14, st(13), { hasQr: false });
-  assert.ok(coClip > thuong * 1.3, `clip lên mà lượng khách chỉ ${(coClip / thuong).toFixed(2)}×`);
-});
-
-test("Q-4 câu CHO PHÉP quay phải mang `FILM`, câu CẤM phải mang `STOP_FILM`", async () => {
+test("Q-3 câu CHO PHÉP quay phải mang `FILM`, câu CẤM phải mang `STOP_FILM`", async () => {
   const talks = await TalkStore.loadAll();
   const act = (n: TalkNode) => (n.act as { kind?: string } | undefined)?.kind;
   let cho = 0, cam = 0;

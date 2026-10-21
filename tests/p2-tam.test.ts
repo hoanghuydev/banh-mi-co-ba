@@ -1,12 +1,8 @@
 /**
- * HAI NGƯỜI ĐI NGANG ĐỨNG TÁM CHUYỆN — *"Bổ sung thêm npc lâu lâu đứng tám chuyện drama
- * với nhau. NPC này user không cần tương tác."*
+ * HAI NGƯỜI ĐI NGANG ĐỨNG TÁM CHUYỆN — lâu lâu mới có, người chơi không cần tương tác.
  *
- * Cái hẻm trước đợt này chỉ có hai mức: ném nhau một câu chào rồi đi tiếp, hoặc đứng lại
- * đúng một câu tin đồn. Không ai từng ĐỨNG mà nói qua nói lại. Mức thứ ba vá chỗ đó.
- *
- * Ba thứ phải đúng, vì đã hụt đúng mấy chỗ này một lần rồi:
- *   1. họ ĐỨNG THẬT (đi ngang mà nói thì sai logic — chính lời chủ dự án),
+ * Ba thứ phải đúng:
+ *   1. họ ĐỨNG THẬT (đi ngang mà nói thì sai logic),
  *   2. cảnh luân phiên A → B → A → B chứ không phải một người độc thoại,
  *   3. không cảnh nào lôi cái xe bánh mì vô: người ta không đứng giữa đường nói chuyện
  *      của mình, và người chơi KHÔNG cần xen vào.
@@ -31,7 +27,7 @@ test("TAM-1 cảnh nào cũng ít nhất 3 câu và luân phiên hai người", 
 });
 
 test("TAM-2 không cảnh nào nói về cái xe của mình", () => {
-  const cam = /bánh mì|xe mình|quán|ổ bánh|cô Ba/i;
+  const cam = /bánh mì|xe mình|quán|ổ bánh/i;
   for (const [i, c] of CANH.entries())
     for (const d of c)
       assert.ok(!cam.test(d), `cảnh ${i} lôi cái xe vô: ${JSON.stringify(d)} — người chơi không cần xen vào cảnh này`);
@@ -76,7 +72,7 @@ test("TAM-4 đứng tám thì ĐỨNG THẬT, và nói đủ cảnh", () => {
 });
 
 test("TAM-4b hai người ở hai đầu hẻm thì KHÔNG tám — bong bóng hét qua đường", () => {
-  // Bắt được lúc chơi thử trên trình duyệt: ép một cặp cách nhau mười bốn ô vẫn ra cảnh.
+  // Ép một cặp cách nhau mười bốn ô: không được ra cảnh.
   const w = newGame("tamxa", "p210");
   const bus = new Bus(false);
   const h = new HeadlessStall(w, POLICIES.greedy, { bus, platform: memoryPlatform() });
@@ -100,7 +96,7 @@ test("TAM-5 cảnh nổ ra LÂU LÂU: vài buổi có, mà không buổi nào đ
   for (let d = 0; d < 6; d++) {
     const w = newGame(`tam${d}`, "p210");
     const bus = new Bus(false);
-    for (let k = 0; k < d; k++) nextDay(w, bus);
+    for (let k = 0; k < d; k++) nextDay(w);
     const h = new HeadlessStall(w, POLICIES.greedy, { bus, platform: memoryPlatform() });
     const svc = (h as unknown as { service: any }).service;
     const goc = svc.chatScene.bind(svc);

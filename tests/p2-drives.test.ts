@@ -76,9 +76,8 @@ test("D-6 suy giảm VỀ MỨC NỀN, không về 0 — mức nền LÀ con ng�
 
 test("D-7 `DOI_BANH` áp đảo mọi chuyện tán gẫu — luật thành HÌNH DẠNG, không phải `if`", () => {
   /**
-   * *"Đang đợi bánh thì thứ duy nhất bạn nói được là ổ bánh."* Trước P2-09 đó là một
-   * nhánh viết tay trong `talkUnavailable`; ở đây nó là hệ quả số học, nên nó đúng cho
-   * cả nội dung chưa ai viết.
+   * *"Đang đợi bánh thì thứ duy nhất bạn nói được là ổ bánh."* Đây là hệ quả số học chứ
+   * không phải nhánh viết tay, nên đúng cho cả nội dung chưa ai viết.
    */
   const base = baseDrives(P());
   const now = drivesNow(base, { ...base }, "DOI_BANH");
@@ -119,7 +118,7 @@ test("D-10 mọi cuộc đều chấm ra một con số HỮU HẠN, và tán g�
 
 test("D-11 mọi act có THỜI LƯỢNG đều khai `forSec` — P2-07 §3.5", () => {
   /**
-   * Chủ dự án: *"không phải bảo họ vào đứng mát là họ vào đó đứng luôn cả ngày, cả game"*.
+   * Không có `forSec` thì vào chỗ mát là đứng luôn cả ngày.
    */
   const TIMED = new Set(["STEP_ASIDE", "STAND_IN_SHADE", "LOOK_INSIDE", "GIVE_BREAD", "OFFER_TEA"]);
   const bad: string[] = [];
@@ -133,15 +132,12 @@ test("D-11 mọi act có THỜI LƯỢNG đều khai `forSec` — P2-07 §3.5", 
 });
 
 test("D-12 KHÔNG act nào trả thưởng NGAY LÚC NÓI — Zubek: thưởng trao tay trong hành động", () => {
-  /**
-   * `any.hoitham` cũ trả `rel +3` và `calm 12` ngay lúc HỨA đưa miếng bánh, rồi miếng
-   * bánh không bao giờ tới — nên cách chơi tối ưu của bản đó là **hứa rồi quên**.
-   */
+  /** Trả thưởng lúc HỨA thì cách chơi tối ưu là hứa rồi quên. */
   const bad: string[] = [];
   for (const t of TALKS) {
     for (const { node } of walkNodes(t)) {
       if (node.act?.kind !== "PROMISE_DEED") continue;
-      if (node.rel || node.calm || node.mem) bad.push(`${t.id}: "${node.say}" — thưởng phải nằm ở \`onKept\``);
+      if (node.calm) bad.push(`${t.id}: "${node.say}" — thưởng phải nằm ở \`onKept\``);
     }
   }
   assert.deepEqual(bad, [], `\n  ${bad.join("\n  ")}`);
@@ -168,13 +164,8 @@ test("D-14 sáu drive, và không có cái thứ bảy lẻn vào", () => {
 
 test("D-15 `when.world` rút cả CUỘC ra, không phải ẩn một lựa chọn", () => {
   /**
-   * Thêm sau một lỗi thật: `duong.mui` nói về MÙI BÁNH, và bản trước khoá `w.ovenHot` cho
-   * từng nút. Hai lưới cãi nhau ngay — `T002` bảo đó là sự thật ĐỘNG nên phải nằm ở
-   * `while` (ra "?"), `T011` bảo khoá kiểu đó làm nhánh người-chơi-mở-lời teo xuống một
-   * dòng. Cả hai đều đúng: cái cần khoá không phải một lựa chọn, mà là cả chủ đề.
-   *
-   * Người chơi gặp nó đúng như vậy — bước ra đường mời khách lúc sáng sớm rồi bấm
-   * *"{call} ngửi thấy mùi than hông?"* và ăn một dấu `?`.
+   * `duong.mui` (MÙI BÁNH) khoá cả chủ đề, không khoá từng nút: khoá ở nút thì `T002` đòi
+   * nằm ở `while` (ra "?"), còn `T011` thấy nhánh người-chơi-mở-lời teo xuống một dòng.
    */
   const mui = TALKS.find((t) => t.id === "duong.mui")!;
   /*
@@ -185,8 +176,8 @@ test("D-15 `when.world` rút cả CUỘC ra, không phải ẩn một lựa ch�
   assert.deepEqual(mui.when?.world, ["w.meVuaRa"], "cuộc về mùi bánh phải khoá ở TẦNG CUỘC");
 
   const ctx = (ovenHot: boolean): TalkCtx => ({
-    npcId: "QUA_DUONG", day: 5, slot: "MID", rain: false, tier: "ACQUAINTANCE",
-    visits: 0, flags: {}, usedToday: [], usedSeason: [], practice: "DI_NGANG",
+    npcId: "QUA_DUONG", day: 5, slot: "MID", rain: false,
+    flags: {}, usedToday: [], usedBefore: [], practice: "DI_NGANG",
     holds: (k) => (k === "w.meVuaRa" ? ovenHot : true),
   });
   const ids = (on: boolean) => eligible(TALKS.filter((t) => t.npc === "QUA_DUONG"), ctx(on), "PLAYER").map((t) => t.id);
@@ -195,8 +186,8 @@ test("D-15 `when.world` rút cả CUỘC ra, không phải ẩn một lựa ch�
   assert.ok(ids(false).length >= 3, "tắt một cuộc không được làm cạn cả kho");
 });
 
-test("D-16 KHÔNG nút nào khoá `w.ovenHot` ở tầng nút nữa", () => {
-  // Đó là chỗ hai lưới cãi nhau. Khoá ở tầng cuộc (`when.world`) mới đúng tầng.
+test("D-16 KHÔNG nút nào khoá `w.ovenHot` ở tầng nút", () => {
+  // Khoá ở tầng cuộc (`when.world`) mới đúng tầng — xem D-15.
   const bad: string[] = [];
   for (const t of TALKS) {
     for (const { node } of walkNodes(t)) {

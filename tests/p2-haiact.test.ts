@@ -1,15 +1,10 @@
 /**
- * HAI ACT CUỐI CỦA BẢNG NỢ — `TAKE_CASH` và `OVERHEARD_BY`.
+ * `TAKE_CASH` và `OVERHEARD_BY`.
  *
- * `TAKE_CASH` — chiều VÀO của `PAY`. *"Ừ. Cô cầm lại."*: bé Su thối dư hai ngàn, mình cầm
- * lại, và két không nhích một đồng. Và nặng hơn: `phuc.quen · 1.1` *"Dạ hai chục thầy."*
- * là một câu NÓI DỐI — thầy Phúc trả rồi mà mình bảo chưa. CANON §8 đòi ăn gian phải có
- * LỢI THẬT thì nó mới là một lựa chọn; trước đợt này nó chỉ mất `rel −3` và không được gì,
- * tức là một nút không ai bấm.
+ * `TAKE_CASH` — chiều VÀO của `PAY`: bé Su thối dư hai ngàn mình cầm lại, hay `phuc.quen · 1.1`
+ * nói dối thầy Phúc là chưa trả. CANON §8 đòi ăn gian phải có LỢI THẬT thì mới là một lựa chọn.
  *
- * `OVERHEARD_BY` — *"Bà rảnh ghê, lo chuyện người ta."* nói ngay giữa hẻm bà Sáu đang gánh
- * đi qua. Trước đợt này chỉ mất `rel −3` với anh Dũng; **bà Sáu không biết gì**. Giá phải
- * nằm trong sổ của CHÍNH BÀ, và bà phải có một niềm tin hạng nhất để kể lại.
+ * `OVERHEARD_BY` — nói xấu bà Sáu giữa hẻm chỉ có hậu quả khi bà đứng đủ gần để nghe.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -25,7 +20,7 @@ const TALKS: Talk[] = await TalkStore.loadAll();
 const dung = () => {
   const w = newGame("haiact", "p210");
   const bus = new Bus(false);
-  for (let d = 1; d < 9; d++) nextDay(w, bus);
+  for (let d = 1; d < 9; d++) nextDay(w);
   const h = new HeadlessStall(w, POLICIES.greedy, { bus, platform: memoryPlatform() });
   return { w, bus, h, svc: (h as unknown as { service: any }).service };
 };
@@ -54,23 +49,21 @@ test("HA-3 `TAKE_CASH` KHÔNG tính là doanh thu — nó là tiền quay lại 
   assert.equal(svc.sold ?? 0, ban, "cầm lại tiền lẻ mà sổ ghi là bán được hàng");
 });
 
-test("HA-4 `OVERHEARD_BY` ghi vết vào sổ của NGƯỜI BỊ NÓI, và chỉ khi họ đứng gần", () => {
+test("HA-4 `OVERHEARD_BY` chỉ ăn khi người bị nói đứng gần", () => {
   const { h, svc } = dung();
   for (let i = 0; i < 20000 && svc.customers.length < 1; i++) h.step(1000 / 30);
   const noi = svc.customers[0];
-  const act = { kind: "OVERHEARD_BY" as const, ai: "BA_SAU", vet: "RUDE_TO_THEM" as const, intensity: 60 };
+  const act = { kind: "OVERHEARD_BY" as const, ai: "BA_SAU" };
+  const nghe = () => svc.drainLogs().filter((l: string) => l.includes("nghe hết")).length;
 
-  // (a) bà Sáu KHÔNG có mặt — không ai nghe, không ghi gì. Đây là một nước đi hợp lệ.
-  const dem = () => { const m = svc.mem("BA_SAU").memory; return m.short.length + m.long.length + (m.core ? 1 : 0); };
-  const truoc = dem();
+  // (a) bà Sáu KHÔNG có mặt — không ai nghe. Đây là một nước đi hợp lệ.
+  nghe();
   svc.applyTalkOption(noi, { act });
-  assert.equal(dem(), truoc, "bà Sáu không có mặt mà vẫn bị ghi vết");
+  assert.equal(nghe(), 0, "bà Sáu không có mặt mà vẫn nghe thấy");
 
-  // (b) bà Sáu đứng ngay đó — phải ghi, và phải ghi vào sổ CỦA BÀ.
+  // (b) bà Sáu đứng ngay đó — người chơi phải thấy là bà nghe hết.
   const sau = { ...noi, memKey: "BA_SAU", phase: "queueing", x: noi.x, y: noi.y, personality: noi.personality };
   svc.customers.push(sau);
   svc.applyTalkOption(noi, { act });
-  assert.ok(dem() > truoc, "bà Sáu đứng ngay đó nghe hết mà sổ của bà trống trơn");
-  assert.ok(svc.mem("BA_SAU").memory.short.some((m: any) => m.kind === "RUDE_TO_THEM"),
-    "ghi vết mà không phải vết bị nói xấu");
+  assert.equal(nghe(), 1, "bà Sáu đứng ngay đó mà không có gì xảy ra");
 });

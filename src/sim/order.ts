@@ -6,7 +6,7 @@ import { MENU_IDS, RAU_CO_GIAN, RAU_NEN, isBare, itemOf, nhanOf, type MenuItemId
  * Đơn hàng, nguyên liệu và ĐỊNH LƯỢNG. CANON T2: món ăn LÀ lựa chọn hội thoại — người chơi không
  * chọn câu nói, họ chọn nguyên liệu, nên tất cả "ý" của một lượt tiếp khách nằm gọn ở file này.
  *
- * Có định lượng vì §8(g) coi "bớt một thứ nhỏ với 100% khách suốt 40 ngày" là lỗ hổng LỚN NHẤT —
+ * Có định lượng vì §8(g) coi "bớt một thứ nhỏ với 100% khách suốt cả ván" là lỗ hổng LỚN NHẤT —
  * lỗ hổng đó chỉ tồn tại nếu bớt được. Nhưng không cho bỏ vô hạn: §8(i) cấm spam mua chuộc, và
  * một ổ bánh mì thì kẹp không lại nếu nhồi quá (`CAPACITY`).
  */
@@ -55,11 +55,7 @@ export const NICETY: ReadonlySet<Ingredient> = new Set<Ingredient>(["dochua", "o
 const NHAN = INGREDIENTS.filter((i) => i.kind === "nhan").map((i) => i.id);
 
 /**
- * KHÁCH VÃNG LAI GỌI GÌ — bốc một MÓN trên bảng, không còn tự ghép tổ hợp nguyên liệu.
- *
- * Hồi còn ghép tổ hợp, `randomIntent` sinh ra được "ổ pate với ốp la" — một món không có
- * trên bảng nào, không ai ngoài đời gọi, mà người chơi vẫn bị chấm điểm theo nó. Bảng
- * trọng số này nằm ở đây (chứ không ở `menu.json`) vì nó là chuyện HÔM NAY AI MUA GÌ, không
+ * KHÁCH VÃNG LAI GỌI GÌ — bốc một MÓN trên bảng. Bảng trọng số này nằm ở đây (chứ không ở `menu.json`) vì nó là chuyện HÔM NAY AI MUA GÌ, không
  * phải chuyện cái xe bán gì; dàn ra thành mảng phẳng để chỉ tốn ĐÚNG MỘT lần rút số.
  */
 const WALK_IN_WEIGHT: Readonly<Record<MenuItemId, number>> = {
@@ -92,28 +88,22 @@ function walkInBag(day?: number): readonly MenuItemId[] {
  */
 export type OrderIntent = {
   /**
-   * MÓN TRÊN BẢNG — cái khách gọi tên, và cái duy nhất quyết định ổ bánh có nhân gì.
-   *
-   * Trước đây chỗ này là một danh sách nguyên liệu (`nhan: Ingredient[]`) cộng một cờ
-   * `dayDu`, tức mỗi đơn hàng tự khai lại công thức của nó. Hai hệ quả: bánh mì xíu mại
-   * không có pate (không ai khai là có), và giá tính bằng cách ĐẾM số nhân nên quết thêm
-   * miếng pate là nhảy bậc giá. Giờ công thức nằm ở `content/recipes/menu.json`, đúng
-   * một chỗ, và chính là tấm bảng người chơi đọc trên vách.
+   * MÓN TRÊN BẢNG — cái khách gọi tên, và cái duy nhất quyết định ổ bánh có nhân gì. Công thức
+   * nằm ở `content/recipes/menu.json`, chính là tấm bảng người chơi đọc trên vách.
    */
   mon: MenuItemId;
   /** Một thứ nhân của món được xin thêm — lên mức 2, nấc cuối. */
   nhieu?: Ingredient;
   /**
    * "it" = "cho ít rau": rau MỘT NỬA — không phải cấm thứ nào (P1-03 §2.3 luật vàng).
-   * "khong" = "không rau" — P4-05 §2.7 A. Bẫy lớn nhất của người chơi mới (tưởng khách
-   * quên) — ML-04 bé Su, ML-12 anh Bảo ngày 29. Ổ "bánh mì không" tự nó đã trơn.
+   * "khong" = "không rau" — bẫy lớn nhất của người chơi mới (tưởng khách quên).
+   * Ổ "bánh mì không" tự nó đã trơn.
    */
   rau: "day-du" | "it" | "khong";
   /** Thứ khách NÓI bỏ ra ("không hành", "đừng bỏ ngò") — mức 0, bỏ vô là UNWANTED. */
   bo?: Ingredient[];
   ot: 0 | 1 | 2;
   tuong: 0 | 1 | 2;
-  usual: boolean;
 };
 
 export type OrderSpec = {
@@ -121,14 +111,12 @@ export type OrderSpec = {
   /** Mức khách muốn cho từng thứ. Không có trong bảng = khách không nói tới. */
   levels: Partial<Record<Ingredient, number>>;
   /**
-   * Câu gọi NGUYÊN VĂN của một người có tên (P4-01 "Đơn hàng quen"). Luật T2 vẫn giữ: câu
+   * Câu gọi NGUYÊN VĂN của một người có tên. Luật T2 vẫn giữ: câu
    * phải tự nó quyết định được ổ bánh — có test đọc lại câu ra bảng định lượng.
    */
   phrase?: string;
-  /** Câu nói tắt khi đã quen ("Như mọi bữa nghen con.") — mỗi người một kiểu nói. */
-  short?: string;
   /**
-   * KHẨU VỊ ẨN (P4-01, P4-03 §2.2 ML) — mức mà người này THẬT SỰ muốn nhưng không bao giờ
+   * KHẨU VỊ ẨN — mức mà người này THẬT SỰ muốn nhưng không bao giờ
    * nói. Ổ làm theo mức này cũng ĐÚNG. Bỏ qua thì không bị gì (ignorePenalty = none).
    */
   alt?: Partial<Record<Ingredient, number>>;
@@ -165,13 +153,12 @@ export const specOf = (intent: OrderIntent): OrderSpec => ({ intent, levels: lev
  * mệnh đề — *"Cho một ổ chả lụa."* — không "cho nhiều", không "ít rau", không "khỏi ớt".
  *
  * ⚠️ Cấu trúc rút số GIỮ NGUYÊN từng dòng: `fuss` chỉ nhân vào NGƯỠNG so sánh, không thêm
- * cũng không bớt một lần `rng.next()` nào. Nhờ vậy ngày 7 trở đi (`fuss = 1`) dãy số ra y
- * hệt trước khi có file `ease.ts` — mọi lưới đo neo ở ngày 7/8 vẫn gặp đúng người cũ, đơn cũ.
+ * cũng không bớt một lần `rng.next()` nào, nên ngày 7 trở đi (`fuss = 1`) dãy số y như không có `ease.ts`.
  */
-function randomIntent(rng: Rng, usual: boolean, day?: number): OrderIntent {
+function randomIntent(rng: Rng, day?: number): OrderIntent {
   const f = easeOf(day).fuss;
   const mon = rng.pick(walkInBag(day));
-  if (mon === "khong") return { mon, rau: "khong", ot: 0, tuong: 0, usual };
+  if (mon === "khong") return { mon, rau: "khong", ot: 0, tuong: 0 };
   const nhan = nhanOf(mon);
   return {
     mon,
@@ -180,19 +167,11 @@ function randomIntent(rng: Rng, usual: boolean, day?: number): OrderIntent {
     rau: rng.next() < 1 - 0.3 * f ? "day-du" : "it",
     ot: rng.next() < 0.25 * f ? 2 : rng.next() < 0.3 * f ? 0 : 1,
     tuong: rng.next() < 0.2 * f ? 2 : rng.next() < 0.25 * f ? 0 : 1,
-    usual,
   };
 }
 
-/** Đơn "ruột" của một NPC: cố định cả mùa, là thứ người chơi phải NHỚ. */
-export const makeUsual = (rng: Rng, day?: number) => specOf(randomIntent(rng, false, day));
-
-/** Đơn của một lượt: đa số là đơn ruột, thỉnh thoảng đổi ý. */
-export function makeOrder(rng: Rng, usual: OrderSpec, canAskUsual: boolean, day?: number): OrderSpec {
-  if (canAskUsual && rng.next() < 0.5) return specOf({ ...usual.intent, usual: true });
-  if (rng.next() < 0.65) return usual;
-  return specOf(randomIntent(rng, false, day));
-}
+/** Đơn của một lượt: rút mới mỗi lần ghé. */
+export const randomOrder = (rng: Rng, day?: number) => specOf(randomIntent(rng, day));
 
 /**
  * Câu gọi món, dùng đúng cách nói miền Nam của CANON §14.
@@ -203,7 +182,6 @@ export function makeOrder(rng: Rng, usual: OrderSpec, canAskUsual: boolean, day?
  */
 export function sayOrder(spec: OrderSpec): string {
   const it = spec.intent;
-  if (it.usual) return spec.short ?? "Như mọi bữa nghen con.";
   if (spec.phrase) return spec.phrase;
   const item = itemOf(it.mon);
   if (isBare(it.mon)) return `Cho một ổ ${item.call}.`;
@@ -232,11 +210,6 @@ export function sayOrder(spec: OrderSpec): string {
   return parts.join(", ") + ".";
 }
 
-/** Hai đơn có cùng nội dung không (bỏ qua chuyện có nói "như mọi bữa" hay không). */
-export function sameOrder(a: OrderSpec, b: OrderSpec) {
-  return INGREDIENTS.every((i) => (a.levels[i.id] ?? -1) === (b.levels[i.id] ?? -1));
-}
-
 // ─────────────────────────────────────────────────────────── delivery-time diff
 
 /**
@@ -260,9 +233,9 @@ export type Defect = {
   sEat: number;
   /** Nhãn món để điền vào câu thoại ("pate", "đồ chua"…). */
   label: string;
-  /** Tên cũ — điểm để xếp hạng `take(1)` (= sCounter × magnitude). */
+  /** Điểm để xếp hạng `take(1)` (= sCounter × magnitude). */
   weight: number;
-  /** Tên cũ — mô tả ngắn cho log/telemetry. */
+  /** Mô tả ngắn cho log/telemetry. */
   text: string;
 };
 
@@ -273,9 +246,9 @@ const ITEM_WEIGHT: Record<Ingredient, number> = {
   dochua: 1.0, dualeo: 0.8, hanhngo: 0.7, ot: 0.8, tuongot: 1.0,
 };
 /**
- * Thang chỉ còn hai nấc nên lệch một nấc là lệch GẤP ĐÔI hoặc còn MỘT NỬA phần. Dung sai 0,5 là
+ * Thang hai nấc nên lệch một nấc là lệch GẤP ĐÔI hoặc còn MỘT NỬA phần. Dung sai 0,5 là
  * nửa nấc: không nấc nào lọt qua được, nhưng nó kéo `magnitude` của lệch một nấc lên 0,5 thay vì
- * 0,25 — đúng với chuyện "ít rau quá" bây giờ là hụt nửa ổ rau. Vẫn nhẹ hơn hẳn `MISSING`.
+ * 0,25 — đúng với chuyện "ít rau quá" là hụt nửa ổ rau. Vẫn nhẹ hơn hẳn `MISSING`.
  */
 const DEFAULT_TOLERANCE = 0.5;
 const LEVEL_TO_RATIO = 1;
@@ -357,7 +330,7 @@ const PORTION_VALUE: Record<Ingredient, number> = {
  *
  * Mức trần tự nó đã chặn chuyện spam: thang hai nấc nên mỗi món chỉ cho dư được MỘT phần,
  * mà nhóm "dễ thương" có bốn món, nên tối đa một ổ là 0,78 — chưa bằng một lát thịt nguội.
- * Muốn khách quý mình thì phải làm đúng đơn và nhớ người, không có đường tắt bằng ớt.
+ * Muốn khách quý mình thì phải làm đúng đơn, không có đường tắt bằng ớt.
  */
 export function generosityOf(spec: OrderSpec, dish: readonly Ingredient[]) {
   const got = portionsOf(dish);

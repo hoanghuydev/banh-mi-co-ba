@@ -1,24 +1,16 @@
-/**
- * P3 Đợt A — kinh tế lõi: lịch mùa, giá chợ, kho theo lô, chất lượng ổ, nghĩa vụ + fail mềm.
- */
+/** Kinh tế lõi: lịch (quay vòng), giá chợ, kho theo lô, chất lượng ổ, tiền thuê + rút về nhà. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import {
   CAL, dishQuality, isRain, loafPriceVnd, lotQuality, newInventory, priceOf, stockOf, take, tasteThreshold, tierOf, weatherOf, buy,
 } from "../src/sim/econ";
-import {
-  canTakeHui, duesOpen, eveningCount, morningRent, newEconState, pay, processDefaults, takeHui,
-} from "../src/sim/obligations";
+import { eveningCount, morningRent, newEconState, rentVnd } from "../src/sim/obligations";
 import { newGame } from "../src/core/save";
 import { MENU_ITEMS } from "../src/sim/menu";
-import { standClosed } from "../src/sim/stands";
 import { HeadlessStall, POLICIES, nextDay } from "../src/sim/headless";
 import { weekdayOf } from "../src/sim/schedule";
-import { ROOT, walk, read } from "../tools/lib";
 
-test("lịch mùa cố định: ngày 1 thứ Hai; 11 mưa rào + 2 mưa dầm + 2 oi (lịch mùa P4-02 §2.4 thay P3-01 §2.4.4)", () => {
+test("lịch 40 ngày cố định: ngày 1 thứ Hai; 11 mưa rào + 2 mưa dầm + 2 oi", () => {
   assert.equal(weekdayOf(1), "MON");
   const w = CAL.weather;
   assert.equal(w.length, 40);
@@ -29,7 +21,7 @@ test("lịch mùa cố định: ngày 1 thứ Hai; 11 mưa rào + 2 mưa dầm +
   assert.ok(isRain(weatherOf(19)));
 });
 
-test("giá chợ: thứ Hai đắt, thứ Năm rẻ; dịch heo ngày 19–23 (P4-02); bánh mì là mỏ neo 3,5 (trừ lò bà Tám nghỉ)", () => {
+test("giá chợ: thứ Hai đắt, thứ Năm rẻ; dịch heo ngày 19–23; bánh mì là mỏ neo 3,5 (trừ lò bà Tám nghỉ)", () => {
   assert.ok(priceOf("THIT_NGUOI", 1) > priceOf("THIT_NGUOI", 4));          // T2 > T5
   assert.ok(priceOf("PATE_THUONG", 22) > priceOf("PATE_THUONG", 15) * 1.3); // dịch heo (22 và 15 đều thứ Hai)
   for (let d = 1; d <= 40; d++) assert.equal(priceOf("BANH", d), d >= 28 && d <= 30 ? 4.2 : 3.5);
@@ -79,81 +71,39 @@ test("giá đọc từ BẢNG MENU, không đếm nhân: món một nhân thư�
   for (const it of MENU_ITEMS) assert.ok(loafPriceVnd(it.tier) > 0, it.id);
 });
 
-test("hụi: trễ lần 1 cô Mai ứng; lần 2 bị cho ra khỏi dây (trả lại 55%) — không có game over", () => {
-  const e = newEconState(); const m = { cash: 10_000_000 };
-  pay(e, m, duesOpen(e, 5).find((d) => d.kind === "HUI")!, 5);
-  assert.equal(processDefaults(e, m, 10).defaulted.length, 0);   // kỳ 2 hôm nay mới tới — còn ân hạn
-  assert.equal(processDefaults(e, m, 11).defaulted[0].loss, "HUI_UNG");
-  assert.equal(processDefaults(e, m, 16).defaulted[0].loss, "HUI_EXPELLED");
-  assert.ok(e.huiExpelled && e.losses.includes("HUI_EXPELLED"));
-  assert.equal(duesOpen(e, 20).filter((d) => d.kind === "HUI").length, 0);
+test("lịch quay vòng: ngày quá độ dài lịch vẫn có thời tiết và giá", () => {
+  const n = CAL.weather.length;
+  assert.equal(weatherOf(n + 1), weatherOf(1));
+  assert.equal(weatherOf(n + 24), weatherOf(24));
+  assert.equal(priceOf("BANH", n + 28), priceOf("BANH", 28));
+  assert.ok(priceOf("PATE_THUONG", n + 22) > priceOf("PATE_THUONG", n + 15) * 1.3, "dịch heo không quay lại ở vòng lịch sau");
 });
 
-test("hốt hụi: chỉ sau khi góp kỳ đó, chỉ một lần cả mùa, hốt càng muộn càng nhiều", () => {
-  const e = newEconState(); const m = { cash: 10_000_000 };
-  assert.equal(canTakeHui(e, 5), null);                           // kỳ 1 là của cô Mai
-  for (const d of [5, 10]) pay(e, m, duesOpen(e, d).find((x) => x.kind === "HUI")!, d);
-  assert.equal(canTakeHui(e, 10), 2);
-  const got = takeHui(e, m, 10);
-  assert.ok(got > 0);
-  assert.equal(canTakeHui(e, 15), null);
-});
-
-test("tiền học quá 5 ngày ân hạn → bán bớt xe (còn 2 chỗ kẹp sẵn); tiền chỗ nợ quá 3 ngày → xuống góc khuất", () => {
+test("tiền thuê một mức mỗi ngày; thiếu thì dồn sang mai, trả nợ cũ trước", () => {
   const e = newEconState(); const m = { cash: 0 };
-  assert.equal(processDefaults(e, m, 23).defaulted.find((d) => d.due.kind === "TIEN_HOC")?.loss, "CART_DOWNGRADED");
-  assert.equal(e.presetSlots, 2);
-  for (let i = 0; i < 4; i++) morningRent(e, m);
-  assert.equal(e.stand, "L5");
-  assert.ok(e.losses.includes("LOST_PRIME_STAND"));
+  assert.equal(morningRent(e, m).paid, 0);
+  assert.equal(e.rentOwed, rentVnd());
+  m.cash = 10 * rentVnd();
+  assert.equal(morningRent(e, m).paid, 2 * rentVnd());
+  assert.equal(e.rentOwed, 0);
+  assert.equal(m.cash, 8 * rentVnd());
 });
 
-test("két không bao giờ âm: thiếu tiền than thì cô Ba bù, gửi về nhà gửi thiếu", () => {
+test("két không bao giờ âm: thiếu tiền than thì trả phần có, gửi về nhà gửi thiếu", () => {
   const e = newEconState(); const m = { cash: 10_000 };
-  eveningCount(e, m, 3, 33_000);
+  eveningCount(e, m, 33_000);
   assert.equal(m.cash, 0);
-  assert.ok(e.coBaCovered.includes(3));
+  assert.equal(e.today.fixed, 10_000);
   assert.ok(e.today.sendHomeShort > 0);
 });
 
-test("một mùa: bot không trả gì vẫn tới ngày 40 — mất là mất thật nhưng ngày sau vẫn bán", () => {
-  const w = newGame("no-pay", "p3-nopay");
-  for (let d = 1; d <= 40; d++) {
-    if (d > 1) nextDay(w, undefined, { payDues: false });
-    const h = new HeadlessStall(w, { ...POLICIES.greedy, build: [] });
-    h.run();
-    // ngày đám cưới chắn đầu hẻm (P3-05 §2.5) thì đứng đó không bán được — đã báo trước
-    if (!standClosed(w.econ.stand, d)) assert.ok(w.progress.today.served > 0, `ngày ${d} không bán được ổ nào`);
-    assert.ok(w.money.cash >= 0);
-  }
-  assert.ok(w.econ.losses.includes("HUI_EXPELLED"));
-  assert.ok(w.econ.losses.includes("CART_DOWNGRADED"));
-});
-
-test("một mùa: bot trả đủ nghĩa vụ, mua đủ cho 16 ổ — không vỡ khoản nào", () => {
+test("chơi quá ngày 40: bot mua đủ cho 16 ổ, ngày nào cũng bán được, két không âm", () => {
   const w = newGame("pay", "p3-pay");
-  for (let d = 1; d <= 40; d++) {
+  for (let d = 1; d <= 50; d++) {
     if (d > 1) nextDay(w);
     new HeadlessStall(w, POLICIES.greedy).run();
+    assert.ok(w.progress.today.served > 0, `ngày ${d} không bán được ổ nào`);
+    assert.ok(w.money.cash >= 0);
   }
-  nextDay(w);
-  assert.deepEqual(w.econ.losses, []);
   assert.ok(w.money.cash > 0);
-});
-
-test("vỡ tiền học khi xe có đồ nghề → phải bán một món (SOLD_EQUIPMENT), không bán bớt xe", () => {
-  const w = newGame("sell", "p3-sell");
-  for (let d = 1; d <= 24; d++) {
-    if (d > 1) nextDay(w, undefined, { payDues: false });
-    new HeadlessStall(w, { ...POLICIES.greedy, build: [[2, "KEP_GAP"], [4, "LONG_BAN"]] }).run();
-  }
-  assert.ok(w.econ.losses.includes("SOLD_EQUIPMENT"));
-  assert.ok(!w.econ.losses.includes("CART_DOWNGRADED"));
-});
-
-test("KHÔNG CÓ game over ở bất kỳ đâu (P3-06 §2.1)", () => {
-  for (const f of walk(join(ROOT, "src"), [".ts"])) {
-    assert.ok(!/gameOver|GAME_OVER/.test(read(f)), f);
-  }
-  void readFileSync;
 });

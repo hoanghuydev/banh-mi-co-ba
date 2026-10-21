@@ -1,13 +1,4 @@
-/**
- * Kênh 1 (nét mặt) và kênh 2 (dáng) — P2-02 §3.1–§3.2. Chỉ là DỮ LIỆU + một hàng đợi
- * nhỏ theo thời gian; phần vẽ ở `entities/CustomerActor` (Phaser), phần này chạy headless.
- *
- * Mặt = 3 lớp × 6 biến thể (mày B0–B5 · mắt E0–E5 · miệng M0–M5) = 216 tổ hợp.
- * Dáng = một bộ TARGET cho lò xo — 0 sprite mới (kỹ thuật Rain World, CANON §16 Đừng-4).
- *
- * Luật phối kênh (P2-02 §3): GLIMPSED = mặt nhẹ + quay đầu · NOTICED = mặt + dáng ·
- * CONFIRMED = mặt + dáng + ghi nhớ. Luật 35% im lặng KHÔNG đụng tới kênh 1, 2.
- */
+/** Dữ liệu nét mặt (mày B0–B5 · mắt E0–E5 · miệng M0–M5) và dáng (target lò xo) của khách, chạy headless. */
 import type { StimId } from "../core/types";
 import type { Personality } from "../content/npcs";
 import { dominant, faceHoldSec, type Dim } from "./personality";
@@ -20,20 +11,19 @@ export type PoseId =
   | "SHRUG" | "ARMS_CROSS" | "TURN_AWAY_QUARTER" | "SHIFT_WEIGHT" | "CHECK_TIME" | "PHONE_DOWN" | "PHONE_UP"
   | "SETTLE_IN" | "FREEZE" | "HAND_OUT" | "WAVE_SMALL";
 
-/** Nhóm sự kiện của bảng §3.1. */
-export type Group = "HYGIENE" | "WAIT" | "DEFECT" | "NAME" | "POS_LIGHT" | "POS_HEAVY" | "CARED";
+export type Group = "HYGIENE" | "WAIT" | "DEFECT" | "NAME" | "POS_LIGHT" | "CARED";
 export const GROUP_OF: Record<StimId, Group> = {
   DROPPED_FOOD: "HYGIENE", DIRTY_HANDS: "HYGIENE", MADE_THEM_WAIT: "WAIT",
-  ORDER_DEFECT: "DEFECT", BURNT_OR_COLD: "DEFECT", WRONG_NAME: "NAME", REFUSED_SERVICE: "DEFECT",
+  ORDER_DEFECT: "DEFECT", BURNT_OR_COLD: "DEFECT", REFUSED_SERVICE: "DEFECT",
   FLOURISH: "POS_LIGHT", FREE_EXTRA: "POS_LIGHT",
-  REMEMBERED_USUAL: "POS_HEAVY", REMEMBERED_STORY: "POS_HEAVY", CARED_FOR_THEM: "CARED",
+  CARED_FOR_THEM: "CARED",
 };
 
 const f = (s: string): Face => [Number(s[1]), Number(s[4]), Number(s[7])] as const;
 type Row = [i1: string | null, i2: string, i3: string];
 const ANY = (r: Row): Record<Dim, Row> => ({ soi: r, nongTinh: r, deTha: r, thanThien: r });
 
-/** P2-02 §3.1 — (nhóm × chiều trội) → [I1 GLIMPSED, I2 NOTICED, I3 CONFIRMED]. Chép nguyên bảng. */
+/** (nhóm × chiều trội) → [I1 GLIMPSED, I2 NOTICED, I3 CONFIRMED]. */
 const FACE_TABLE: Record<Group, Record<Dim, Row>> = {
   HYGIENE: {
     soi: ["B1 E1 M0", "B2 E1 M1", "B2 E2 M4"], nongTinh: ["B3 E2 M0", "B2 E2 M5", "B2 E2 M5"],
@@ -52,10 +42,6 @@ const FACE_TABLE: Record<Group, Record<Dim, Row>> = {
     deTha: [null, "B3 E2 M2", "B1 E0 M2"], thanThien: [null, "B5 E2 M5", "B5 E4 M1"],
   },
   POS_LIGHT: ANY(["B0 E0 M2", "B3 E5 M2", "B3 E5 M3"]),
-  POS_HEAVY: {
-    soi: ["B3 E2 M2", "B3 E5 M3", "B5 E5 M3"], nongTinh: ["B3 E2 M3", "B3 E2 M3", "B3 E2 M3"],
-    deTha: ["B0 E5 M2", "B3 E5 M3", "B3 E5 M3"], thanThien: ["B3 E5 M2", "B3 E5 M3", "B5 E5 M3"],
-  },
   CARED: ANY(["B3 E2 M2", "B5 E5 M2", "B5 E5 M3"]),
 };
 
@@ -78,7 +64,6 @@ const POSE_TABLE: Record<Group, Record<Dim, [PoseId, PoseId, PoseId]>> = {
     deTha: ["SHRUG", "SHRUG", "SHRUG"], thanThien: ["TILT_HEAD", "TURN_AWAY_QUARTER", "TURN_AWAY_QUARTER"],
   },
   POS_LIGHT: { soi: ["IDLE", "PEEK_OVER", "NOD"], nongTinh: ["IDLE", "NOD", "NOD"], deTha: ["IDLE", "NOD", "NOD"], thanThien: ["IDLE", "NOD", "LEAN_IN"] },
-  POS_HEAVY: { soi: ["LEAN_IN", "NOD", "NOD"], nongTinh: ["LEAN_IN", "LEAN_IN", "LEAN_IN"], deTha: ["NOD", "NOD", "NOD"], thanThien: ["LEAN_IN", "NOD", "LEAN_IN"] },
   CARED: { soi: ["NOD", "NOD", "SETTLE_IN"], nongTinh: ["NOD", "SETTLE_IN", "SETTLE_IN"], deTha: ["NOD", "NOD", "SETTLE_IN"], thanThien: ["NOD", "SETTLE_IN", "SETTLE_IN"] },
 };
 
@@ -94,10 +79,7 @@ export function poseFor(g: Group, p: Personality, i: Intensity): PoseId {
   return POSE_TABLE[g][dominant(p)][i - 1];
 }
 
-/**
- * Bộ target của một dáng — đơn vị PIXEL màn hình, `fwd` = về phía quầy, `up` = lên trên,
- * `rot` độ. `osc` = dao động quanh target (nhịp/biên độ). `k`,`d` = lò xo riêng (FREEZE d=40).
- */
+/** Target dáng theo pixel màn hình: `fwd` về phía quầy, `up` lên trên, `rot` độ; `osc` dao động quanh target, `d` giảm chấn lò xo riêng. */
 export type PoseDef = { fwd: number; up: number; rot: number; sy?: number; osc?: { axis: "x" | "y" | "rot"; amp: number; period: number; beats?: number }; d?: number };
 export const POSES: Record<PoseId, PoseDef> = {
   IDLE:              { fwd: 0, up: 0, rot: 0 },
@@ -123,20 +105,17 @@ export const POSES: Record<PoseId, PoseDef> = {
 
 type Pending = { at: number; face: Face | null; pose: PoseId | null; hold: number };
 
-/**
- * Trạng thái hiển thị của một người khách. Không đụng RNG của sim: jitter do người gọi
- * đưa vào (Service lấy từ stream `dialog-shufflebag`, cùng chỗ với độ trễ lời nói).
- */
+/** Trạng thái hiển thị của một khách; không đụng RNG của sim, jitter do người gọi đưa vào. */
 export class ReactionState {
   face: Face = NEUTRAL;
-  /** Mặt NỀN (mood xấu từ xa → lầm lì sẵn). Mặt phản ứng hết hạn thì trả về đây. */
+  /** Mặt phản ứng hết hạn thì trả về mặt nền này. */
   baseFace: Face = NEUTRAL;
   faceUntil = 0;
   pose: PoseId = "IDLE";
   basePose: PoseId = "IDLE";
   poseSince = 0;
   poseUntil = 0;
-  /** Lần đổi mặt gần nhất — renderer dùng để giật đầu 1 px trong 90 ms (Celeste). */
+  /** Renderer dùng để giật đầu 1 px trong 90 ms khi đổi mặt. */
   faceChangedAt = -1;
   private q: Pending[] = [];
 

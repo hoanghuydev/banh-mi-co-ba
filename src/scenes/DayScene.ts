@@ -1,19 +1,17 @@
 import Phaser from "phaser";
 import { fitDesignFrame } from "../core/render";
-import { bedtime, dawn, eveningCounting, neighborTick } from "../sim/day";
-import { settleNight } from "../sim/night";
+import { dawn } from "../sim/day";
 import { markBroke } from "../sim/broke";
-import { duesOpen, pay } from "../sim/obligations";
 import { bus, type EventKey, type EventMap } from "../core/eventbus";
 import { GameContext } from "../core/context";
 import { DAY_START_MIN } from "../core/clock";
-import { SEASON_DAYS, SaveService, SaveTooNewError, newGame, type SaveFile } from "../core/save";
+import { SaveService, newGame, type SaveFile } from "../core/save";
 import { gcBags } from "../core/rng";
 import { DEV_TOOLS } from "../core/flags";
 import { dev } from "../dev/registry";
 import { refillPresets } from "../sim/presets";
 import { tourDone } from "../sim/tour";
-import { DEFAULT_PLAYER_NAME } from "../content/intro";
+import { DEFAULT_PLAYER_NAME } from "../content/shop";
 import { sfx } from "../audio/sfx";
 
 /**
@@ -31,10 +29,9 @@ import { sfx } from "../audio/sfx";
  * Scene con nhận ctx bằng INJECTION lúc launch và chỉ phát event — không dùng giá
  * trị trả về của scene. Dữ liệu truyền đi hẹp, một chiều.
  */
-/** `name` do `IntroScene` đưa qua; thiếu (dev gọi thẳng `scene.start("day")`) thì lấy tên mặc định. */
-export type DayStart = { mode: "new"; name?: string } | { mode: "continue" };
+export type DayStart = { mode: "new" } | { mode: "continue" };
 
-const CHILDREN = ["market", "stall", "evening", "ending", "broke"] as const;
+const CHILDREN = ["market", "stall", "evening", "broke"] as const;
 type Child = typeof CHILDREN[number];
 
 const MONEY_SAVE_THRESHOLD = 20_000;
@@ -50,15 +47,12 @@ export class DayScene extends Phaser.Scene {
     const probe = new SaveService(bus, () => { throw new Error("probe"); });
     let world: SaveFile | null = null;
     if (data.mode === "continue") {
-      try { world = probe.load(); } catch (e) {
-        if (e instanceof SaveTooNewError) { this.scene.start("menu"); return; }
-      }
+      world = probe.load();
     } else {
       probe.clear();
     }
     const fresh = !world;
-    const named = data.mode === "new" ? data.name?.trim() : "";
-    this.ctx = new GameContext(world ?? newGame(named || DEFAULT_PLAYER_NAME), bus);
+    this.ctx = new GameContext(world ?? newGame(DEFAULT_PLAYER_NAME), bus);
     this.ctx.world.telemetry.sessionCount++;
     if (DEV_TOOLS) dev.ctx = this.ctx;
 
@@ -68,15 +62,6 @@ export class DayScene extends Phaser.Scene {
     else this.resume();
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.teardown());
-  }
-
-  /**
-   * Giờ chơi THẬT (kể cả pause — Steam cũng tính vậy). P4-02 §2.3: cú lộ đồn thổi bắn ở
-   * ngày 9 HOẶC phút thứ 90, cái nào tới trước. Frame dài (tab ẩn) bị cắt ở 250 ms.
-   */
-  update(_t: number, delta: number) {
-    const t = this.ctx?.world.telemetry;
-    if (t) t.totalPlayMs = (t.totalPlayMs ?? 0) + Math.min(250, Math.max(0, delta));
   }
 
   // ───────────────────────────────────────────────────────────── luồng ngày
@@ -93,7 +78,6 @@ export class DayScene extends Phaser.Scene {
     w.progress.today = { served: 0, lost: 0, revenue: 0, talksDeep: 0, talkOffers: 0 };
     w.progress.scene = "Market";
     w.stall.presets = refillPresets(w.stall.presets as never);
-    if (w.econ && w.stall.presets.length > w.econ.presetSlots) w.stall.presets = w.stall.presets.slice(0, w.econ.presetSlots);
     w.stall.cleanliness = 1 - (1 - w.stall.cleanliness) * 0.4;
     gcBags(w.shuffleBags, w.progress.dayIndex);
     // P3: rạng sáng — trời hôm nay, dọn hàng hư, thu tiền chỗ. TRƯỚC bản chụp đầu ngày, để
@@ -102,9 +86,7 @@ export class DayScene extends Phaser.Scene {
     ctx.sync();
     w.progress.dayStartSnapshotRef = ctx.save.writeDayStart(ctx.snapshot());
     bus.emit("day:started", { dayIndex: w.progress.dayIndex, daySeed: ctx.rng.daySeed, weather: w.progress.weather });
-    // Ngày mới: một tiếng chuông khẽ + cửa cuốn kéo lên. §4.2 B gọi cửa cuốn là
-    // "âm mở đầu ngày" — nó nằm ở ĐÂY chứ không ở `StallScene`, vì ngày bắt đầu
-    // từ lúc đi chợ, và cảnh quán còn bị mở lại khi "chơi lại ngày này".
+    // Ngày mới: chuông khẽ + cửa cuốn (§4.2 B). Ở đây chứ không ở `StallScene` vì cảnh quán còn bị mở lại khi "chơi lại ngày này".
     sfx.play(this, "ui_chuyen_ngay");
     sfx.play(this, "sfx_cua_cuon", { delay: 450, volume: 0.8 });
     this.open("market");
@@ -116,24 +98,12 @@ export class DayScene extends Phaser.Scene {
     const p = ctx.world.progress;
     ctx.rng.fromJSON(ctx.world.saveId, p.dayIndex, ctx.world.rng.counters);
     ctx.clock.reset(p.gameMinutes);
-    // Save từ bản dựng cũ ghi màn kết dưới key "Evening" (lúc đó `SceneKey` chưa có "Ending").
-    // Nhánh dưới cứu đúng những save đó; save mới đi thẳng qua bảng `at`.
-    // Thiếu nhánh này thì reload giữa màn kết rơi vào CẢNH TỐI của ngày 40 — đúng cái cảnh
-    // P4-04 cấm — và người chơi mất màn kết vĩnh viễn.
-    // Vế thứ hai là để cứu save cũ: ngày 40 không bao giờ có cảnh tối hợp lệ, nên save nào
-    // ghi "Evening" ở ngày 40 là save của bản dựng lỗi trước đó — cũng trả về màn kết.
-    if (ctx.world.flags.endingReached || (p.dayIndex >= SEASON_DAYS && p.scene === "Evening")) {
-      this.open("ending", { resume: true });
-      return;
-    }
-    // Vào lại một ván đã hết vốn: KHÔNG được rơi về buổi sáng. Bản chụp đầu ngày vẫn còn,
-    // nhưng người chơi phải tự chọn dùng nó ở màn dừng — tự động lùi giùm là lặng lẽ xoá
-    // mất cú vỡ mà họ vừa gây ra.
+    // Ván đã phá sản thì về đúng màn phá sản, không rơi về buổi sáng.
     if (ctx.world.flags.broke) {
-      this.open("broke", { canReplay: !!ctx.save.readDayStart(ctx.world.saveId, p.dayIndex) });
+      this.open("broke");
       return;
     }
-    const at: Record<string, Child> = { Market: "market", Stall: "stall", Evening: "evening", Ending: "ending", Broke: "broke" };
+    const at: Record<string, Child> = { Market: "market", Stall: "stall", Evening: "evening", Broke: "broke" };
     this.open(at[p.scene] ?? "market", { resume: true });
   }
 
@@ -148,36 +118,9 @@ export class DayScene extends Phaser.Scene {
   }
 
   /**
-   * Khép sổ ngày 40 — P4-04 cấm CẢNH tối của ngày 40, không cấm việc QUYẾT TOÁN ngày 40.
-   * Bỏ hẳn bước này thì sổ cái thiếu hẳn dòng ngày 40, và hụi kỳ 8 (đáo hạn đúng ngày 40,
-   * `lastGraceDays: 0`) rơi vào khoảng trống: không góp được mà cũng không vỡ được.
-   *
-   * Thứ tự y hệt cảnh tối (EveningScene) và y hệt `nextDay()` của sim headless, để 40 ngày
-   * chạy trong Node ra đúng cái người chơi thấy (P0-02 §2.5).
-   */
-  private settleFinalDay() {
-    const w = this.ctx.world;
-    const day = w.progress.dayIndex;
-    eveningCounting(w);
-    neighborTick(w);
-    // Không có cảnh tối = không có cái nút nào để góp. Khoản BẮT BUỘC hết hạn ĐÚNG HÔM NAY
-    // được trả giùm nếu két đủ — fail mềm (P3-06) phải là hệ quả của một lựa chọn, không phải
-    // của việc game không đưa ra lựa chọn nào.
-    for (const d of duesOpen(w.econ, day)) if (d.mandatory && d.lastDay <= day) pay(w.econ, w.money, d, day);
-    bedtime(w);
-    settleNight(w, bus);
-    eveningCounting(w);
-  }
-
-  /**
    * Chỉ cho dev (`day.weather`): dựng lại cảnh quán TẠI CHỖ, giữ nguyên giờ và state.
    *
-   * Phải đi qua `open()` chứ không gọi `scene.restart()` từ ngoài: `StallScene.init`
-   * cần `ctx` và `day` trong `data`, mà `restart()` thì chỉ mang theo đúng cái người
-   * gọi đưa — thiếu hai thứ đó là cảnh quán chết ngay ở dòng đầu `init`.
-   *
-   * Dùng để xem thử nền nướng lại (ngày mưa: mặt đường ướt, tắt vạt nắng) mà không
-   * phải chơi tới ngày 6.
+   * Phải đi qua `open()`, không `scene.restart()`: `StallScene.init` cần `ctx` và `day` trong `data`.
    */
   devReopenStall() {
     this.open("stall", { resume: true });
@@ -192,9 +135,7 @@ export class DayScene extends Phaser.Scene {
 
   private open(child: Child, extra: Record<string, unknown> = {}) {
     this.closeChildren();
-    // Màn kết có `SceneKey` riêng ("Ending"), nên reload giữa màn kết quay lại đúng chỗ.
-    // Cờ `endingReached` giữ lại làm lưới đỡ cho save ghi bởi bản dựng cũ.
-    const key = ({ market: "Market", stall: "Stall", evening: "Evening", ending: "Ending", broke: "Broke" } as const)[child];
+    const key = ({ market: "Market", stall: "Stall", evening: "Evening", broke: "Broke" } as const)[child];
     this.ctx.setScene(key);
     this.scene.launch(child, { ctx: this.ctx, day: this, ...extra });
   }
@@ -221,38 +162,17 @@ export class DayScene extends Phaser.Scene {
         dayIndex: w.progress.dayIndex,
         summary: { served: p.served, lost: p.lost, revenue: p.revenue },
       });
-      // P4-04: ngày 40 không có cảnh tối — sau khoảng lặng là màn kết.
-      // `endingReached` ≠ `seasonOver`: mùa chỉ "đã kết" khi người chơi xem HẾT màn kết và tự bấm
-      // về sảnh (EndingScene). Đặt `seasonOver` ở đây thì reload giữa màn kết sẽ khoá luôn
-      // "Chơi tiếp" (MenuScene) trong khi màn kết còn chưa được xem.
-      if (w.progress.dayIndex >= SEASON_DAYS) {
-        this.settleFinalDay();
-        w.flags.endingReached = true;
-        this.open("ending");
-        ctx.save.flushNow("SCENE_CHANGE");
-        return;
-      }
       this.open("evening");
       ctx.save.request("SCENE_CHANGE");
     });
-    on("ending:done", () => this.quitToMenu());
-    // Doanh thu ngày ÂM — P5-03 §4.2 C: công tắc `disableNegativeAudioCues` tắt hẳn
-    // tiếng này (`sfx.ts` lo, không phải chỗ này). Nó là lời phán xét của giao diện,
-    // nên nó nằm trong danh sách tắt được; tiếng bánh rớt thì không.
+    // Doanh thu ngày âm — P5-03 §4.2 C: `disableNegativeAudioCues` tắt được tiếng này (`sfx.ts` lo).
     on("day:ended", (p) => { if (p.summary.revenue < 0) sfx.play(this, "ui_ngay_am_tien"); });
     on("evening:done", () => {
       const w = ctx.world;
-      if (w.progress.dayIndex >= SEASON_DAYS) {
-        w.flags.seasonOver = true;
-        this.quitToMenu();
-        return;
-      }
-      // HẾT VỐN: chốt ở đây chứ không ở `bedtime()`, vì mọi khoản tiêu trong đêm (góp hụi,
-      // tiền học, SẮM ĐỒ NGHỀ) chỉ đủ mặt sau khi cảnh tối đóng lại. Chốt sớm hơn thì một
-      // cú mua ba triệu lúc 10 giờ đêm không được tính vào chính cái đáy nó vừa tạo ra.
+      // Chốt phá sản sau khi cảnh tối đóng: mọi khoản tiêu trong đêm (sắm đồ nghề) đã đủ mặt.
       if (markBroke(w)) {
-        ctx.save.request("SCENE_CHANGE");
-        this.open("broke", { canReplay: !!ctx.save.readDayStart(w.saveId, w.progress.dayIndex) });
+        ctx.save.flushNow("SCENE_CHANGE");
+        this.open("broke");
         return;
       }
       w.progress.dayIndex++;
@@ -260,19 +180,17 @@ export class DayScene extends Phaser.Scene {
       this.beginDay();
     });
 
-    // Chơi lại sáng nay: `replayDay()` thay `ctx.world` bằng bản chụp đầu ngày, mà bản chụp
-    // đó được ghi TRƯỚC khi có cờ `broke` — nên cờ tự biến mất, khỏi phải gỡ bằng tay.
-    on("broke:replay", () => { if (!this.replayDay()) this.quitToMenu(); });
-    on("broke:done", () => this.quitToMenu());
+    on("broke:done", () => {
+      ctx.save.clear();
+      this.closeChildren();
+      this.scene.start("menu");
+    });
 
     on("npc:left", () => ctx.save.request("CUSTOMER_DONE"));
     on("perception:confirmed", (p) => {
       if (p.stimId === "DIRTY_HANDS") ctx.world.flags.dirtyHandsConfirmed = true;
       ctx.save.request("EVENT");
     });
-    on("gossip:seeded", () => ctx.save.request("EVENT"));
-    on("relationship:tierChanged", () => ctx.save.request("EVENT"));
-    on("obligation:due", () => ctx.save.request("EVENT"));
     on("money:changed", (p) => { if (Math.abs(p.delta) >= MONEY_SAVE_THRESHOLD) ctx.save.request("EVENT"); });
 
     const hidden = () => { if (document.visibilityState === "hidden") ctx.save.flushNow("QUIT"); };

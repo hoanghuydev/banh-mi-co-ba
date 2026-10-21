@@ -23,7 +23,7 @@ const LOAF_H = FOOD.LOAF_H;
 const MAX_SCALE = 1.45;
 const MAX_SCALE_W = 1.15;
 const MAX_SCALE_BTN = 1.25;
-/** Gói bánh là MỘT cú bấm. Ba nhịp gập · cuộn · xoắn đã bỏ: FLOURISH đo bằng nhịp cuối, và ba nhịp thì người chơi học thuộc rồi bấm máy móc. */
+/** Gói bánh là MỘT cú bấm; FLOURISH đo bằng nhịp bấm đó. */
 const WRAP_SNAP_MS = 900;
 
 export class AssemblyPanel {
@@ -217,8 +217,7 @@ export class AssemblyPanel {
     const si = Math.min(this.s, 1.2);
     const iconX = -TW / 2 + Math.round(16 + 14 * si);
     const icon = fitPhoto(this.scene.add.image(iconX, 0, FOOD.icon(id)), si).setScrollFactor(0);
-    // Tên phải TỰ XUỐNG DÒNG: không có bề ngang cố định thì ở cỡ chữ lớn "trứng ốp la"
-    // chạy thẳng ra khỏi ô (và trước đây còn chui xuống dưới huy hiệu ×N).
+    // Tên phải TỰ XUỐNG DÒNG, không thì ở cỡ chữ lớn "trứng ốp la" chạy ra khỏi ô.
     const nameX = -TW / 2 + Math.round(30 + 24 * si);
     const name = this.scene.add.text(nameX, 0, label, {
       fontFamily: FONT, fontSize: `${Math.round(13 * this.s)}px`, fontStyle: "500", color: UI.ink,
@@ -378,9 +377,7 @@ export class AssemblyPanel {
 
   private confirm() {
     if (!this.open) return;
-    // Ổ trống KHÔNG phải lúc nào cũng sai: bé Sử gọi "ổ bánh mì không" cả 40 ngày, bà Sáu
-    // đổi chén tàu hũ lấy ổ không, và SK-31 ngày 29 (bắt buộc) có hẳn nhánh "làm đúng ổ
-    // bánh mì không". Đơn nào cho phép thì scene nói qua `allowEmptyLoaf`.
+    // Ổ trống KHÔNG phải lúc nào cũng sai ("bánh mì không"); đơn nào cho phép thì scene nói qua `allowEmptyLoaf`.
     if (!this.stack.length && !this.allowEmptyLoaf()) {
       this.flash("ổ còn trống — kẹp nhân trước");
       return;

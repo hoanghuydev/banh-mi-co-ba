@@ -26,12 +26,12 @@ test("RngHub: cùng (saveId, ngày) → cùng dãy; khác ngày → khác dãy",
   assert.notDeepEqual(a, c);
 });
 
-test("tách stream: đốt 20 số ở dialog KHÔNG dịch chuỗi số của gossip (§8e)", () => {
+test("tách stream: đốt 20 số ở dialog KHÔNG dịch chuỗi số của npc-schedule (§8e)", () => {
   const h1 = new RngHub(); h1.beginDay("s", 12);
   const h2 = new RngHub(); h2.beginDay("s", 12);
   for (let i = 0; i < 20; i++) h2.next("dialog-shufflebag");   // "hỏi thêm một câu" x20
-  const g1 = Array.from({ length: 8 }, () => h1.next("gossip"));
-  const g2 = Array.from({ length: 8 }, () => h2.next("gossip"));
+  const g1 = Array.from({ length: 8 }, () => h1.next("npc-schedule"));
+  const g2 = Array.from({ length: 8 }, () => h2.next("npc-schedule"));
   assert.deepEqual(g1, g2);
 });
 

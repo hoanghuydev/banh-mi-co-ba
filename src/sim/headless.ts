@@ -8,10 +8,8 @@
  * Vòng frame y hệt `StallScene`: cùng `runFrame`, cùng thứ tự 7 bước. Chỗ khác
  * duy nhất là "tay người chơi" được thay bằng một con bot có policy.
  */
-import { standDeps } from "./day";
-import { settleNight } from "./night";
-import { basketFor, bedtime, botPayDues, buyBasket, dawn, eveningCounting, forcedSell, neighborTick } from "./day";
-import { EQUIP, buyEquip, has, priceVnd, resellable, whyNot, type EquipId } from "./equipment";
+import { basketFor, buyBasket, dawn, dayDeps, eveningCounting, neighborTick } from "./day";
+import { EQUIP, buyEquip, has, priceVnd, whyNot, type EquipId } from "./equipment";
 import { dishQuality, portionsFor, take } from "./econ";
 import { Bus } from "../core/eventbus";
 import { GameContext } from "../core/context";
@@ -31,27 +29,22 @@ export type Policy = {
   name: string;
   buyLoaves?: number;
   pate?: "PATE_NHA" | "PATE_THUONG";
-  writeDebts?: number;
   build?: [number, EquipId][];
   workSec: [number, number];
   dropRate: number;
   defectRate: number;
   teaRate: number;
-  anticipate?: number;
   /**
-   * CON BOT BIẾT LÀM VIỆC XÃ GIAO — rót trà, mời ngồi, cho mượn áo mưa, mời ghé, bưng gánh…
+   * CON BOT BIẾT LÀM VIỆC XÃ GIAO — rót trà, mời ngồi, mời ghé, bưng gánh…
    *
-   * Vì sao phải có: bot `greedy` chỉ biết GÓI BÁNH, nên `tools/probe-facts.ts` đo ra
-   * `v.gaveTea` 0% · `t.sitting` 0% · `t.filming` 0% · `m.borrowing` 0% · `w.cartChung` 0%
-   * — và không ai phân biệt được "nhánh đó chết" với "bot không biết làm". Một bảng đo
-   * không nói được nó KHÔNG đo được cái gì thì nó là một tờ giấy chứng nhận sạch.
+   * Bot `greedy` chỉ biết GÓI BÁNH, nên thiếu bot này thì bảng đo không phân biệt được "nhánh đó
+   * chết" với "bot không biết làm".
    *
    * `socialRate` = xác suất mỗi lần có cơ hội thì thử mở lời.
    *
    * `socialActs` rỗng = nhận MỌI act. ⚠️ Nhận mọi act KHÔNG phủ hết: bot bấm cái đầu tiên
-   * nó gặp, nên mấy act nằm sâu hoặc hiếm không bao giờ tới lượt — đo thật ra 10/27 act.
-   * Khai một DANH SÁCH thì bot **xoay vòng**, mỗi cuộc săn một act, nên cả danh sách đều
-   * có cửa. Đó mới là cách trả lời "nhánh này có với tới được không".
+   * nó gặp, nên mấy act nằm sâu hoặc hiếm không bao giờ tới lượt.
+   * Khai một DANH SÁCH thì bot **xoay vòng**, mỗi cuộc săn một act, nên cả danh sách đều có cửa.
    */
   socialRate?: number;
   socialActs?: readonly string[];
@@ -62,14 +55,14 @@ export const BUILD_XA_GIAO: [number, EquipId][] = [
   [1, "GHE_BAN"], [1, "BINH_TRA"], [2, "DU_CHE"], [3, "KEP_GAP"], [5, "QUAT_DIEN"], [8, "LONG_BAN"],
 ];
 
-/** Bot "lo cái quầy": kẹp gắp → giữ đồ → nới chỗ. Sáu món của lượt rút gọn đã biến khỏi hai danh sách này. */
+/** Bot "lo cái quầy": kẹp gắp → giữ đồ → nới chỗ. */
 export const BUILD_VE_SINH: [number, EquipId][] = [
   [2, "KEP_GAP"], [6, "LONG_BAN"], [8, "NOI_U"], [14, "BANG_QR"],
   [19, "GIA_TREO"], [22, "TU_MAT"], [29, "GHE_BAN"], [33, "BINH_TRA"],
 ];
 
 export const POLICIES: Record<string, Policy> = {
-  greedy: { name: "greedy", workSec: [7, 10], dropRate: 0, defectRate: 0, teaRate: 0, build: BUILD_VE_SINH, anticipate: 0.5, buyLoaves: 20 },
+  greedy: { name: "greedy", workSec: [7, 10], dropRate: 0, defectRate: 0, teaRate: 0, build: BUILD_VE_SINH, buyLoaves: 20 },
   newbie: { name: "newbie", workSec: [12, 20], dropRate: 0.08, defectRate: 0.15, teaRate: 0.1 },
   tea: { name: "tea", workSec: [9, 13], dropRate: 0.04, defectRate: 0.05, teaRate: 0.6 },
   /**
@@ -79,7 +72,7 @@ export const POLICIES: Record<string, Policy> = {
    */
   social: {
     name: "social", workSec: [9, 13], dropRate: 0, defectRate: 0, teaRate: 0.25,
-    build: BUILD_XA_GIAO, anticipate: 0.5, buyLoaves: 20,
+    build: BUILD_XA_GIAO, buyLoaves: 20,
     socialRate: 0.85, socialActs: [],
   },
 };
@@ -138,17 +131,16 @@ export class HeadlessStall {
     this.bot = this.ctx.rng.derive(`bot:${policy.name}`);
     if (!opts.resume) {
       dawn(w);
-      if (w.progress.dayIndex > 1 || policy.buyLoaves) buyBasket(w, basketFor(w.inventory, policy.buyLoaves ?? 16, w.progress.dayIndex, policy.pate ?? "PATE_NHA"));
+      buyBasket(w, basketFor(w.inventory, policy.buyLoaves ?? 16, w.progress.dayIndex, policy.pate ?? "PATE_NHA"));
     }
     const lateOpen = !opts.resume && w.flags.lateOpenDay === w.progress.dayIndex;
     if (lateOpen) this.ctx.clock.reset(8 * 60);
     this.service = new Service({
       bus, hub: this.ctx.rng, saveId: w.saveId, day: w.progress.dayIndex,
-      npcs: w.npcs, bags: w.shuffleBags, dialog: w.dialogState, gossip: w.gossip, notebook: w.notebook,
-      ...standDeps(w),
-      debts: w.money.debtsOwedToPlayer, till: w.econ, allowFalseMemory: w.a11y.allowFalseMemory ?? true,
+      npcs: w.npcs, bags: w.shuffleBags, dialog: w.dialogState,
+      ...dayDeps(w),
+      till: w.econ, flags: w.flags,
       equip: w.equipment, loaOn: (w.econ?.loaOffUntil ?? 0) < w.progress.dayIndex,
-      story: w.story,
       todayCounters: w.progress.today,
       resumeAt: opts.resume || lateOpen ? this.ctx.clock.minutes : undefined,
     });
@@ -182,19 +174,13 @@ export class HeadlessStall {
     if (!s.talkOpen) {
       if (this.bot.next() >= p.socialRate) return;
       /*
-       * BƯỚC RA ĐƯỜNG. `talkTarget()` không có `playerAt` thì chỉ nhắm được người ĐẦU QUẦY,
-       * nên bot cũ không bao giờ nói chuyện với người đi ngang — và `INVITE` (25 nhắc) với
-       * `WALK_ON` (37 nhắc) đo ra 0 lần, trông như nội dung chết. Đặt `playerAt` đúng như
-       * `StallScene` làm khi người chơi đi ra lề: cùng một đường, không có cửa sau.
+       * BƯỚC RA ĐƯỜNG. `talkTarget()` không có `playerAt` thì chỉ nhắm được người ĐẦU QUẦY; đặt
+       * `playerAt` đúng như `StallScene` làm khi người chơi đi ra lề: cùng một đường, không có cửa sau.
        */
       /** ⚠️ KHÔNG lọc `phase !== "leaving"`: người đi ngang MANG phase đó suốt — họ đang đi qua mà. */
       /*
-       * CÓ NGƯỜI VỪA MỞ LỜI THÌ TRẢ LỜI HỌ TRƯỚC — và đây là chỗ bot cũ mù hẳn một nửa kho.
-       *
-       * 81/86 cuộc khai `NPC_ONLY`: người chơi KHÔNG bấm ra được, chúng chỉ tới qua lời mời
-       * của chính họ. Bot chỉ mở bằng `"PLAYER"` nên `okSource` gạt sạch — đo ra `su.toan`
-       * rụng **53/53 mẫu** ở đúng cổng đó, và cả `PAY`·`TAKE_CASH`·`RAO`·`BARTER` báo
-       * "nhánh chết" trong khi chúng sống nguyên.
+       * CÓ NGƯỜI VỪA MỞ LỜI THÌ TRẢ LỜI HỌ TRƯỚC: phần lớn cuộc khai `NPC_ONLY`, chỉ tới qua lời
+       * mời của chính NPC — mở bằng `"PLAYER"` thì `okSource` gạt sạch.
        *
        * `playerAt = null` ⇒ `talkTarget()` nhắm người đang chờ mình trả lời.
        */
@@ -266,16 +252,11 @@ export class HeadlessStall {
     }
     const w = this.work;
     /*
-     * TRÊN TAY ĐANG CÓ CÁI GÌ. `StallScene` gán `service.playerHand = player.hand` mỗi
-     * frame; bot thì để nguyên `"empty"` cả buổi, nên `p.holdsBread` / `p.holdsFilled`
-     * không bao giờ đúng — và `GIVE_BREAD` (5 nhắc, "bẻ miếng ăn thử") với `BARTER` (2
-     * nhắc, đổi ổ lấy chén tàu hũ) đo ra 0 lần, trông như nhánh chết. Bot ĐANG làm ổ bánh
-     * thật, nên khai đúng cái nó đang cầm.
+     * TRÊN TAY ĐANG CÓ CÁI GÌ. `StallScene` gán `service.playerHand = player.hand` mỗi frame; bot
+     * khai đúng ổ nó đang làm, nếu không `p.holdsBread` / `p.holdsFilled` không bao giờ đúng.
      *
-     * ⚠️ Mốc "đã có nhân" KHÔNG phải `w.wrapped`: cờ đó chỉ bật ở 3 giây chót, nên đo ra
-     * `loaf_filled` đúng **1 lần / 74 lần mở cuộc** và `p.holdsFilled` coi như không bao
-     * giờ đúng. Người chơi thật bỏ nhân xong là cầm ổ ĐẦY đi ra quầy — một quãng dài.
-     * Lấy 40% chặng cuối làm quãng đó.
+     * ⚠️ Mốc "đã có nhân" KHÔNG phải `w.wrapped` (chỉ bật ở 3 giây chót): người chơi thật bỏ nhân
+     * xong là cầm ổ ĐẦY đi ra quầy một quãng dài — lấy 40% chặng cuối làm quãng đó.
      */
     const tongCong = p.workSec[1];
     this.service.playerHand = w.left <= tongCong * HAND_FILLED_FROM ? "loaf_filled" : "loaf_hot";
@@ -304,8 +285,7 @@ export class HeadlessStall {
       const q = take(inv, ing, 1, day);
       if (q.length) { parts.push({ ing, q: q[0] }); served.push(ing); }
     }
-    const known = c.npc && (this.ctx.world.npcs[c.memKey]?.heard ?? 0) >= 3 && this.bot.next() < (p.anticipate ?? 0);
-    const res = s.serveDish(served, { quality: dishQuality(this.breadQ, parts), readyAt: known ? c.orderedAt - 1 : undefined });
+    const res = s.serveDish(served, { quality: dishQuality(this.breadQ, parts) });
     this.work = null;
     s.playerHand = "empty";
     if (!res.ok) this.refused.add(c.id);
@@ -317,11 +297,9 @@ export class HeadlessStall {
       if (ev.kind === "log") continue;
       if (ev.kind === "cost") {
         w.money.cash -= ev.amount;
-        if (ev.item === "talk") w.econ.today.story += ev.amount; else w.econ.today.fixed += ev.amount;
+        if (ev.item === "talk") w.econ.today.talk += ev.amount; else w.econ.today.fixed += ev.amount;
         continue;
       }
-      if (ev.kind === "credit") { w.progress.today.served++; if (this.bot.next() < (this.policy.writeDebts ?? 1)) ev.record.playerWrote = ev.record.trueAmount; continue; }
-      if (ev.kind === "repay") { w.money.cash += ev.amount; w.progress.today.revenue += ev.amount; continue; }
       // bot không trò chuyện — nó không có mắt để đọc bốn lựa chọn, và không có tay
       // để đưa ai miếng bánh (`takeHand` chỉ có nghĩa với một người chơi thật).
       if (ev.kind === "talkOffer" || ev.kind === "takeHand") continue;
@@ -363,7 +341,7 @@ export class HeadlessStall {
     for (const [d, id] of this.policy.build ?? []) {
       if (d > w.progress.dayIndex || has(w.equipment, id)) continue;
       if (w.money.cash - priceVnd(id) < 250_000) break;
-      if (whyNot(id, w.equipment, w.money.cash, w.progress.dayIndex, w.flags)) continue;
+      if (whyNot(id, w.equipment, w.money.cash)) continue;
       buyEquip(id, w.equipment, w.money, w.econ);
       if (EQUIP[id].costsMorning) w.flags.lateOpenDay = w.progress.dayIndex + 1;
     }
@@ -386,16 +364,9 @@ export class HeadlessStall {
   }
 }
 
-export function nextDay(world: SaveFile, bus?: Bus, opts: { payDues?: boolean; medicine?: boolean } = {}) {
+export function nextDay(world: SaveFile) {
   eveningCounting(world);
   neighborTick(world);
-  if (opts.payDues !== false) botPayDues(world, opts.medicine);
-  bedtime(world);
-  if (world.econ.mustSell) {
-    const list = resellable(world.equipment).sort((a, b) => priceVnd(a) - priceVnd(b));
-    if (list[0]) forcedSell(world, list[0]);
-  }
-  settleNight(world, bus);
   world.progress.dayIndex++;
   world.progress.gameMinutes = DAY_START_MIN;
   world.progress.today = { served: 0, lost: 0, revenue: 0, talksDeep: 0, talkOffers: 0 };

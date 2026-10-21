@@ -2,11 +2,7 @@ import type Phaser from "phaser";
 import type { Face } from "../sim/reaction";
 
 /**
- * Kênh 1 — nét mặt (P2-02 §3.1): 3 lớp × 6 biến thể = 18 "file", ghép tự do ra 216 tổ hợp.
- * Bản dựng VẼ BẰNG CODE (không sprite) lên một huy hiệu mặt nhỏ cạnh đầu khách: camera
- * nhìn từ phía đường nên khách đứng quầy QUAY LƯNG về người chơi — mặt vẽ trên thân sẽ
- * không ai thấy. Huy hiệu đọc được cả khi khách đứng xa (mood lầm lì "từ xa").
- *
+ * Huy hiệu mặt vẽ cạnh đầu khách vì khách đứng quầy quay lưng về camera.
  *   Mày  B0 thường · B1 nhíu nhẹ · B2 nhíu sâu · B3 nhướn · B4 lệch · B5 xuôi (buồn)
  *   Mắt  E0 thường · E1 nheo (soi) · E2 mở to · E3 liếc ngang · E4 nhắm (chịu) · E5 cười
  *   Miệng M0 thường · M1 mím (chữ ký chị Lan) · M2 cười nhẹ · M3 cười tươi · M4 méo · M5 há
@@ -80,7 +76,7 @@ function mouth(g: G, x: number, y: number, m: number) {
   }
 }
 
-/** Vẽ huy hiệu mặt tại (x, y). `skin`, `hair` là màu của chính người đó — ai ra người nấy. */
+/** `skin`, `hair` là màu riêng của từng người. */
 export function drawFace(g: G, x: number, y: number, f: Face, skin: number, hair: number, alpha = 1) {
   g.fillStyle(0x1b2429, 0.55 * alpha).fillCircle(x, y + 1.2, FACE_R + 1.6);   // bóng đổ nhẹ
   g.fillStyle(skin, alpha).fillCircle(x, y, FACE_R);

@@ -4,7 +4,7 @@ import { PAL } from "./palette";
 import { FACE_SLOPE, shade } from "./canvas";
 import { WALL_H } from "./building";
 import { FONT } from "../ui/theme";
-import { shopName } from "../content/intro";
+import { shopName } from "../content/shop";
 
 /**
  * Bảng hiệu đỏ chữ vàng (CANON §14), gắn trên MẶT VÁCH của tường sau quán.
@@ -24,12 +24,7 @@ const DROP = 26;
 const BASE_PX = 18;
 const MIN_PX = 9;
 
-/**
- * `playerName` — tên con đặt ở màn mở đầu. Quán là CỦA CÔ ẤY, nên tấm bảng mang tên cô ấy:
- * "BÁNH MÌ HOÀNG HUY". Cô Ba đã cạo tên mình ra khỏi tấm tôn trước khi bán lại cái xe
- * (`content/intro`), nên bỏ trống tên thì bảng còn trơ hai chữ "BÁNH MÌ" — cố ý, không phải
- * thiếu dữ liệu.
- */
+/** Tấm bảng mang tên quán của nhân vật chính (`content/shop`). */
 export function createSign(scene: Phaser.Scene, sx: number, sy: number, depth: number, playerName = "") {
   // Mép trên mặt vách "left" tại hoành độ sx (xem `facePoint` ở art/canvas.ts).
   const cy = sy - WALL_H + TH / 2 + DROP;
@@ -56,14 +51,7 @@ export function createSign(scene: Phaser.Scene, sx: number, sy: number, depth: n
     .setRotation(Math.atan2(TH, TW))                   // nằm đúng trong mặt phẳng tường
     .setDepth(depth + 1);
 
-  /*
-   * THU CHỮ CHO VỪA TẤM TÔN.
-   *
-   * Tên quán giờ do người chơi gõ: "BÁNH MÌ TƯ" ngắn hơn một nửa "BÁNH MÌ NGUYỄN THỊ HOA".
-   * Cỡ chữ cố định thì tên dài tràn ra khỏi hai mép bảng và đọc ra như chữ dán đè lên tường.
-   * Đo rồi thu — người sơn bảng ngoài đời cũng làm đúng vậy: chữ nhiều thì viết nhỏ lại.
-   * Sàn 9 px: dưới nữa thì ở cỡ thật trên màn hình nó chỉ còn là một vệt vàng.
-   */
+  // Tên quán do người chơi gõ nên đo rồi thu chữ cho vừa tấm tôn; sàn `MIN_PX` để còn đọc được.
   const room = (HALF_W - 7) * 2;
   if (t.width > room) t.setFontSize(Math.max(MIN_PX, Math.floor(BASE_PX * room / t.width)));
 

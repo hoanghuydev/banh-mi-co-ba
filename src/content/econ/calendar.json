@@ -1,5 +1,5 @@
 {
-  "_note": "Lịch mùa CỐ ĐỊNH theo SEASON_SEED (P3-01 §2.4.4, P3-03 §2.5) — chống save-scum (CANON §8e): chơi lại ngày nào cũng ra đúng trời đó, giá đó. Ngày 1 là THỨ HAI. Giá = base × chỉ số thứ × sự kiện, làm tròn tới nghìn; bánh mì luôn 3,5 (trừ khi lò bà Tám nghỉ). · P4: mảng `weather` chép ĐÚNG từ content/season/days.json (P4-02 §2.4 — lịch mùa là nguồn duy nhất, có test khớp); dịch heo dời về 19–23 theo P4-02; bỏ hội chợ 36–37 vì Hồi IV là 'gỡ dần' (P4-02 §2.7). Mưa rào −25%, mưa dầm −40% (P4-02 §5: mưa −40%).",
+  "_note": "Lịch CỐ ĐỊNH, quay vòng theo độ dài mảng `weather` (`econ.calDay`) — chơi lại ngày nào cũng ra đúng trời đó, giá đó (CANON §8e). Ngày 1 là THỨ HAI. Giá = base × chỉ số thứ × sự kiện, làm tròn tới nghìn; bánh mì luôn 3,5 (trừ khi lò bà Tám nghỉ). Mưa rào −25%, mưa dầm −40%.",
   "weather": ["MAT","NANG_GAT","MAT","MUA_RAO","NANG_GAT","MAT","NANG_GAT","MAT","OI","MAT",
               "MUA_RAO","NANG_GAT","AM_U","NANG_GAT","MAT","MUA_RAO","NANG_GAT","MAT","MUA_RAO","NANG_GAT",
               "MAT","MUA_RAO","OI","MUA_DAM","MUA_RAO","MAT","MUA_RAO","NANG_GAT","MUA_RAO","MAT",

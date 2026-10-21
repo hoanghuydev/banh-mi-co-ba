@@ -201,20 +201,10 @@ SFX: dict[str, dict] = {
         "proc": {**ONESHOT, "max_dur": 1.2},
         "sources": [{"fs": 427390}, {"fs": 208769}],
     },
-    "sfx_lat_so": {
-        "bus": "thaoTac", "desc": "lat trang so no / so tay",
-        "proc": {**ONESHOT, "max_dur": 1.2, "rms": -21.0},
-        "sources": [{"fs": 397550}, {"fs": 397552}, {"fs": 726518}, {"fs": 705384}],
-    },
-    "sfx_viet_but": {
-        "bus": "thaoTac", "desc": "viet but bi len giay — canh toi, so tay",
-        "proc": {**ONESHOT, "max_dur": 1.3, "rms": -21.0},
-        "sources": [{"fs": 562153}, {"fs": 632478}, {"fs": 611719}],
-    },
-    "sfx_buoc_co_ba": {
+    "sfx_buoc_chu_quan": {
         # Bước chân CỦA NGƯỜI CHƠI. §2.1 xếp "tiếng thao tác của chính người chơi"
         # vào `thaoTac`, KHÔNG vào `duongPho` — và §2.4 bắt pan 0,0: đó là chân bạn.
-        "bus": "thaoTac", "desc": "buoc chan co Ba tren nen xi mang trong quay",
+        "bus": "thaoTac", "desc": "buoc chan chu quan tren nen xi mang trong quay",
         "proc": {**ONESHOT, "max_dur": 0.5, "rms": -25.0},
         "sources": [{"fs": 166507}, {"fs": 690006}, {"fs": 475860}, {"fs": 562192, "start": 0.0, "dur": 0.4},
                     {"fs": 562192, "start": 0.45, "dur": 0.4}, {"fs": 778502}],

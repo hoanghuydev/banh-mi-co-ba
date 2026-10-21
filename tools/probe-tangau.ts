@@ -1,14 +1,4 @@
-/**
- * LÚC NGƯỜI TA ĐANG ĐỢI BÁNH, BẤM BẮT CHUYỆN THÌ RA CÁI GÌ?
- *
- * `sim/talk.ts` khai `TALK_SCORE_FLOOR` để *"người ta đang bận thì KHÔNG AI BẮT CHUYỆN
- * ĐƯỢC"*. `tools/probe-diem.ts` đo ra điểm KHÔNG BAO GIỜ ÂM (thấp nhất 0,0), nên cái sàn
- * −5 chưa từng cắt một cuộc nào — lời khai đó không do nó giữ.
- *
- * Cái giữ thật là thứ hạng: lúc `DOI_BANH`, cuộc về phục vụ ăn 46 điểm còn tán gẫu 2,3.
- * Nhưng `pickWeighted` rút trong TOP-3 có trọng số, nên 2,3 vẫn có cửa. Đo xem cửa đó
- * rộng bao nhiêu, và một ngưỡng cắt THEO TỈ LỆ (so với cuộc cao nhất) đóng được tới đâu.
- */
+/** Khách đang bận (đợi bánh, gọi món, xếp hàng) mà bấm bắt chuyện thì ra tán gẫu bao nhiêu, quét theo `CHO_PHIEN`. */
 import { Bus } from "../src/core/eventbus";
 import { newGame } from "../src/core/save";
 import { memoryPlatform } from "../src/core/platform";
@@ -29,7 +19,7 @@ const dem: Record<string, O>[] = QUET.map(() => Object.fromEntries(KHUNG.map((k)
 for (let d = 1; d <= 6; d++) {
   const w = newGame(`tg${d}`, "p210");
   const bus = new Bus(false);
-  for (let k = 1; k < d * 3; k++) nextDay(w, bus);
+  for (let k = 1; k < d * 3; k++) nextDay(w);
   const h = new HeadlessStall(w, POLICIES.greedy, { bus, platform: memoryPlatform() });
   const svc = (h as any).service;
   for (const k of [...TALK_NPC_IDS, "WALKIN", "QUA_DUONG", "ANY"]) await svc.talks.ensure(k);

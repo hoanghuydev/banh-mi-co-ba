@@ -123,8 +123,7 @@ export function passerAlpha(x: number): number {
 
 /**
  * Việc DUY NHẤT làm được khi quầy trống, nên nó phải THẬT: có tay nghề, có rủi ro, không bao giờ
- * chắc ăn. Ba cái hãm: trần 0,8 · hàng chờ ăn mạnh nhất (nên cơ chế tự biết điều — chỉ đáng dùng
- * lúc vắng) · `warmth` là điểm kiếm được TRONG CHÍNH cuộc này, trần +0,15.
+ * chắc ăn. Hai cái hãm: trần 0,8 · hàng chờ ăn mạnh nhất (chỉ đáng dùng lúc vắng).
  */
 export const INVITE_MAX = 0.8;
 export const INVITE_BASE = 0.2;
@@ -139,8 +138,6 @@ export type InviteCtx = {
   /** Người này vốn đã ngoái nhìn cái xe — nửa bước chân đã quay vô rồi. */
   glanced: boolean;
   tone: string;
-  /** Điểm quan hệ kiếm được trong chính cuộc này (xem `warmth` ở trên). */
-  warmth: number;
   /** Đang có mấy người đứng ở quầy, và cả thảy có mấy chỗ. */
   ahead: number;
   slots: number;
@@ -155,7 +152,6 @@ export function inviteChance(o: InviteCtx): number {
   const p = INVITE_BASE
     + tone
     + (o.glanced ? 0.24 : 0)
-    + Math.min(0.15, Math.max(0, o.warmth) * 0.03)
     + 0.15 * o.person.thanThien + 0.1 * o.person.deTha - 0.1 * o.person.soi
     - 0.13 * o.ahead;
   return Math.max(0, Math.min(INVITE_MAX, p));

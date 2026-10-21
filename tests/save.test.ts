@@ -2,16 +2,16 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Bus } from "../src/core/eventbus";
 import { memoryPlatform, type Platform } from "../src/core/platform";
-import { SCHEMA_VERSION, SaveService, SaveTooNewError, newGame, type SaveFile } from "../src/core/save";
+import { SCHEMA_VERSION, SaveService, newGame, type SaveFile } from "../src/core/save";
 
 function service(world: SaveFile, platform: Platform, bus = new Bus()) {
   return new SaveService(bus, () => structuredClone(world), platform);
 }
 
-test("save chứa đủ 11 nhóm của P0-02 §2.5 (+ sổ cái, trợ năng, cờ)", () => {
+test("save chứa đủ các nhóm (+ sổ cái, trợ năng, cờ)", () => {
   const s = newGame("x", "id-1");
-  for (const k of ["progress", "rng", "money", "inventory", "equipment", "suppliers", "npcs",
-    "gossip", "shuffleBags", "dialogState", "notebook", "stall", "ledger", "a11y", "telemetry", "flags"]) {
+  for (const k of ["progress", "rng", "money", "inventory", "equipment", "npcs",
+    "shuffleBags", "dialogState", "stall", "ledger", "a11y", "telemetry", "flags"]) {
     assert.ok(k in s, `thiếu nhóm ${k}`);
   }
   assert.equal(s.schemaVersion, SCHEMA_VERSION);
@@ -65,40 +65,31 @@ test("slot đang hoạt động hỏng → lùi về slot kia", () => {
   const w = newGame("x", "id-4");
   w.money.cash = 1; service(w, p).flushNow();            // → A
   w.money.cash = 2; const sv = service(w, p); sv.flushNow();   // → B (meta trỏ B)
-  p.write("banhmicoba.slotB", "{hỏng");
+  p.write("byesep.slotB", "{hỏng");
   const back = new SaveService(new Bus(), () => { throw new Error(); }, p).load()!;
   assert.equal(back.money.cash, 1);
 });
 
-test("migration v1 → v2: chạy được, có backup, đổi id NPC sang CANON", () => {
-  const p = memoryPlatform();
-  p.write("banhmicoba.save.v1", JSON.stringify({
-    version: 1, seed: 42, day: 5, playerName: "A", money: 99_000,
-    npcMemory: { bay: { visits: 7, freebies: 1, heard: 3 }, walkin2: { visits: 2, freebies: 0 } },
-    settings: { textScale: 1.5 }, savedAt: 0,
-  }));
-  const s = new SaveService(new Bus(), () => { throw new Error(); }, p).load()!;
-  assert.equal(s.schemaVersion, SCHEMA_VERSION);
-  assert.equal(s.progress.dayIndex, 5);
-  assert.equal(s.money.cash, 99_000);
-  assert.equal(s.npcs.BA_BAY.visits, 7);
-  assert.equal(s.npcs.BA_BAY.heard, 0, "đơn ruột đổi theo seed mới → phải dạy lại");
-  assert.equal(s.a11y.textScale, 1.5);
-  assert.equal(p.keys("banhmicoba.backup.pre-migrate-v1").length, 1);
-});
-
-test("save của phiên bản MỚI hơn bị từ chối, không đoán mò", () => {
-  const p = memoryPlatform();
-  const sv = new SaveService(new Bus(), () => { throw new Error(); }, p);
-  assert.throws(() => sv.parse(JSON.stringify({ schemaVersion: SCHEMA_VERSION + 1 })), SaveTooNewError);
+test("save khác SCHEMA_VERSION = không có save, không crash", () => {
+  for (const v of [SCHEMA_VERSION - 1, SCHEMA_VERSION + 1]) {
+    const p = memoryPlatform();
+    const w = newGame("x", "id-old");
+    service(w, p).flushNow();
+    const meta = JSON.parse(p.read("byesep.meta")!);
+    p.write("byesep.meta", JSON.stringify({ ...meta, schemaVersion: v }));
+    const sv = new SaveService(new Bus(), () => { throw new Error(); }, p);
+    assert.equal(sv.hasSave(), false, `v${v}`);
+    assert.equal(sv.load(), null, `v${v}`);
+    assert.equal(sv.parse(JSON.stringify({ ...w, schemaVersion: v })), null, `v${v}`);
+  }
 });
 
 test("checksum sai thì CẢNH BÁO, không chặn (§8f)", () => {
   const p = memoryPlatform();
   const w = newGame("x", "id-5");
   service(w, p).flushNow();
-  const raw = p.read("banhmicoba.slotA")!;
-  p.write("banhmicoba.slotA", raw.replace(`"cash":${w.money.cash}`, '"cash":999999999'));
+  const raw = p.read("byesep.slotA")!;
+  p.write("byesep.slotA", raw.replace(`"cash":${w.money.cash}`, '"cash":999999999'));
   const bus = new Bus();
   const marks: string[] = [];
   bus.on("telemetry:mark", (m) => marks.push(m.key));
@@ -112,7 +103,7 @@ test("bản chụp đầu ngày: giữ tối đa 2 bản", () => {
   const w = newGame("x", "id-6");
   const sv = service(w, p);
   for (let d = 1; d <= 4; d++) { w.progress.dayIndex = d; sv.writeDayStart(structuredClone(w)); }
-  assert.equal(p.keys("banhmicoba.day.id-6:").length, 2);
+  assert.equal(p.keys("byesep.day.id-6:").length, 2);
   assert.equal(sv.readDayStart("id-6", 4)!.progress.dayIndex, 4);
   assert.equal(sv.readDayStart("id-6", 2), null);
 });

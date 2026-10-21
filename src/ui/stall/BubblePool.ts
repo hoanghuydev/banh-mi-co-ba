@@ -1,17 +1,7 @@
 import Phaser from "phaser";
 import { FONT, UI } from "../theme";
 
-/**
- * Pool bong bóng thoại — P0-01 §2.6(c) + P1-04 §2.9.
- *
- * Tạo `Graphics + Text + Container` rồi `destroy()` cho MỖI câu nói thì giờ cao điểm
- * là vài trăm lần cấp phát/giải phóng mỗi phút → GC spike rơi đúng lúc đông khách nhất.
- * Pool dựng sẵn 8 cái và KHÔNG BAO GIỜ cấp phát mới sau khi vào scene.
- *
- * Luật hiển thị (P1-04 §2.9): nền ĐỤC (alpha 1), giãn dòng 1,7, hiện dần 120 ms, tắt dần
- * 260 ms (giảm chuyển động thì cắt thẳng). Số bong bóng cùng lúc do lịch nói của `Service`
- * giữ ở tối đa 2 — cướp pool mà xảy ra là TÍN HIỆU LỖI CÂN BẰNG, được đếm vào telemetry.
- */
+/** Pool bong bóng thoại dựng sẵn, không cấp phát mới trong scene để tránh GC spike giờ cao điểm. */
 export const BUBBLE_POOL_SIZE = 8;
 const FADE_IN = 120, FADE_OUT = 260;
 
@@ -22,7 +12,7 @@ export class Bubble {
   owner: string | null = null;
   text = "";
   since = 0;
-  /** Thời điểm (ms, đồng hồ scene) bắt đầu hiện / bắt đầu tắt. */
+  /** ms theo đồng hồ scene. */
   private shownAt = 0;
   private hidingAt = -1;
   private targetAlpha = 1;
@@ -40,7 +30,6 @@ export class Bubble {
 
   get hiding() { return this.hidingAt >= 0; }
 
-  /** Dùng lại Text, chỉ đổi nội dung; vẽ lại Graphics tại chỗ — không tạo object mới. */
   setText(text: string) {
     if (text === this.text && !this.hiding) return;
     const fresh = this.text === "" || this.hiding;
@@ -59,7 +48,7 @@ export class Bubble {
     this.bg.fillTriangle(-14, h / 2 - 1, -4, h / 2 - 1, -12, h / 2 + 9);
   }
 
-  /** `y` là mép dưới mong muốn — bong bóng cao bao nhiêu cũng mọc LÊN, không đè xuống mặt. */
+  /** `y` là mép dưới; bong bóng mọc lên trên. */
   place(x: number, y: number, depth: number, scale = 1, reducedMotion = false) {
     const h = this.label.height + 14;
     const now = this.scene.time.now;
@@ -71,7 +60,7 @@ export class Bubble {
     this.root.setPosition(x, y - (h / 2) * scale).setScale(scale).setDepth(depth).setAlpha(a).setVisible(a > 0);
   }
 
-  /** Bắt đầu tắt dần. Trả true khi đã tắt hẳn. */
+  /** Trả true khi đã tắt hẳn. */
   fadeOut(reducedMotion: boolean): boolean {
     const now = this.scene.time.now;
     if (!this.hiding) this.hidingAt = now;
@@ -92,14 +81,13 @@ export class BubblePool {
   private free: Bubble[] = [];
   private live: Bubble[] = [];
   private tick = 0;
-  /** Tổng số lần phải cướp — telemetry đọc (A12, đèn đỏ khi > 0). */
+  /** Số lần phải cướp bong bóng; > 0 là lỗi cân bằng lịch nói. */
   steals = 0;
 
   constructor(scene: Phaser.Scene, textScale: number, size = BUBBLE_POOL_SIZE, private onSteal?: () => void) {
     for (let i = 0; i < size; i++) this.free.push(new Bubble(scene, textScale));
   }
 
-  /** Bong bóng của `owner`, hoặc lấy một cái mới. Gọi mỗi frame cũng được — không cấp phát. */
   acquire(owner: string): Bubble {
     const mine = this.live.find((b) => b.owner === owner);
     if (mine) return mine;
@@ -116,7 +104,6 @@ export class BubblePool {
     return b;
   }
 
-  /** Nhả bong bóng của `owner` — tắt dần 260 ms rồi mới về pool. */
   release(owner: string, reducedMotion = false) {
     const i = this.live.findIndex((b) => b.owner === owner);
     if (i < 0) return;

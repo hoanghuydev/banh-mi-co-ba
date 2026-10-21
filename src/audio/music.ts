@@ -157,7 +157,7 @@ class MusicDirector {
   /**
    * Im hẳn trong `seconds` rồi tự quay lại.
    * Dùng cho các khoảnh khắc ở P5-03 §6.5: khách mở hàng, sự kiện tiêu cực
-   * chạm CONFIRMED, `REMEMBERED_USUAL`, khách bỏ đi không nói gì.
+   * chạm CONFIRMED, khách bỏ đi không nói gì.
    */
   hush(seconds: number) {
     this.hushLeft = Math.max(this.hushLeft, seconds);

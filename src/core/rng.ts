@@ -38,15 +38,6 @@ export class Rng {
 
   constructor(readonly seed: number) {}
 
-  /**
-   * Seed ổn định theo MÙA cho một thứ có tên — không phụ thuộc ngày.
-   * Dùng cho những thứ phải giống nhau suốt 40 ngày, ví dụ đơn "ruột" của mỗi khách:
-   * sinh lại mỗi sáng thì "cho cô như mọi bữa" thành vô nghĩa.
-   */
-  static forSeason(saveId: string, name: string) {
-    return new Rng(splitmix32(fnv1a(`${saveId}|season`) ^ fnv1a(name)));
-  }
-
   /** [0, 1) */
   next(): number {
     const x = splitmix32((this.seed + Math.imul(this.counter++, 0x9e3779b9)) >>> 0);
@@ -72,11 +63,11 @@ export class Rng {
 }
 
 /**
- * Sáu stream độc lập — P0-02 §2.3. Tách stream là ĐIỀU KIỆN của chống save-scum:
+ * Các stream độc lập — P0-02 §2.3. Tách stream là ĐIỀU KIỆN của chống save-scum:
  * một hành động vô hại ở hệ này (hỏi thêm một câu → rút thêm vài số thoại) không
- * được phép dịch chuỗi số của hệ khác (tin đồn tối nay, ai tới quán ngày mai).
+ * được phép dịch chuỗi số của hệ khác (ai tới quán ngày mai).
  */
-export const STREAMS = ["market", "npc-schedule", "dialog-shufflebag", "gossip", "ambient", "event"] as const;
+export const STREAMS = ["market", "npc-schedule", "dialog-shufflebag", "ambient", "event"] as const;
 export type StreamName = typeof STREAMS[number];
 
 export class RngHub {
@@ -106,7 +97,7 @@ export class RngHub {
   /**
    * Một dòng số RIÊNG cho một thứ có tên trong ngày (một lượt khách, một con bot test).
    * Không có bộ đếm trong save: nó sinh ra từ (daySeed, key) nên dựng lại lúc nào
-   * cũng ra đúng dãy đó — và việc nó tiêu bao nhiêu số không đụng tới 6 stream chính.
+   * cũng ra đúng dãy đó — và việc nó tiêu bao nhiêu số không đụng tới các stream chính.
    */
   derive(key: string): Rng {
     return new Rng(splitmix32(this.daySeed ^ fnv1a(`derive|${key}`)));

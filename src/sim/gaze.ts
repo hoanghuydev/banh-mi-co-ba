@@ -1,14 +1,4 @@
-/**
- * Máy trạng thái ÁNH NHÌN — P1-02 §2.5.
- *
- * gazeFactor không phải một con số cố định theo chỗ đứng: khách lúc nhìn tay mình,
- * lúc nhìn mặt mình, lúc liếc quanh, lúc bấm điện thoại. Khoảng cách đã nằm trong
- * bảng visibility — nhân thêm một hệ số "đứng xa thì nhìn lơ" là phạt khoảng cách hai lần.
- *
- * Luật T5 đi kèm: KHÔNG CÓ HOẠT ẢNH THÌ KHÔNG CÓ TRẠNG THÁI. Mỗi trạng thái phải vẽ ra
- * được (điện thoại sáng xanh, ly trà che mặt, liếc đồng hồ…) — người chơi phải thấy
- * VÌ SAO khách không thấy mình làm rớt bánh, không được để "không sao" thành "hên".
- */
+/** Máy trạng thái ánh nhìn của khách; mỗi trạng thái phải có hoạt ảnh để người chơi thấy vì sao khách không thấy. */
 import { ShuffleBag, fnv1a, splitmix32, type Rng } from "../core/rng";
 
 export type GazeState =
@@ -25,14 +15,10 @@ export const GAZE_TABLE: Record<GazeState, { g: number; dur: [number, number]; h
   DRINKING:   { g: 0.08, dur: [2.0, 3.0], hard: true },
 };
 
-/** Thứ tự cột của túi vé: LOOK_HANDS / LOOK_FACE / IDLE_SCAN / PHONE / COMPANION / WATCH. */
 export const BAG_ORDER: readonly GazeState[] = ["LOOK_HANDS", "LOOK_FACE", "IDLE_SCAN", "PHONE", "COMPANION", "WATCH"];
 export type GazeProfile = { tickets: readonly number[]; phoneBudget: number };
 
-/**
- * Khách vãng lai không có trong bảng của P1-02 — lấy một hồ sơ "người thường":
- * nhìn tay vừa phải, có điện thoại nhưng không nghiện. (Quyết định của bản dựng.)
- */
+/** Khách vãng lai: nhìn tay vừa phải, có điện thoại nhưng không nghiện. */
 export const WALKIN_GAZE: GazeProfile = { tickets: [5, 4, 6, 3, 0, 2], phoneBudget: 1 };
 
 export type GazeCtx = {
@@ -40,7 +26,7 @@ export type GazeCtx = {
   loudCue: boolean;
   /** Người chơi vừa hỏi chuyện người này. */
   question: boolean;
-  /** Tỉ lệ đã chờ / sức chờ (MADE_THEM_WAIT). */
+  /** Đã chờ / sức chờ. */
   waitRatio: number;
   hasCompanion: boolean;
   raining: boolean;
@@ -86,13 +72,9 @@ export class GazeMachine {
 
   tick(dt: number, ctx: GazeCtx) {
     this.timer -= dt;
-    // (1) tiếng động lớn kéo mắt về tay người bán — trừ lúc đang dán mắt vào điện thoại / cúi uống
     if (ctx.loudCue && !this.hard) { this.enter("LOOK_HANDS"); return; }
-    // (2) được hỏi chuyện → nhìn mặt
     if (ctx.question && !this.hard) { this.enter("LOOK_FACE"); return; }
-    // (3)(4) còn giờ thì đứng yên trạng thái cũ
     if (this.timer > 0) return;
-    // (5) rút vé kế tiếp, qua bộ lọc
     let next = this.tickets[this.bag.draw(this.rng)];
     if (next === "PHONE" && this.phoneBudget <= 0) next = "IDLE_SCAN";
     if (next === "COMPANION" && !ctx.hasCompanion) next = "IDLE_SCAN";

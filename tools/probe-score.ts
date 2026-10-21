@@ -9,7 +9,7 @@ import { eligible } from "../src/sim/talk";
 const w = newGame("sc", "p209");
 const bus = new Bus(false);
 const platform = memoryPlatform();
-for (let d = 1; d < 5; d++) nextDay(w, bus);
+for (let d = 1; d < 5; d++) nextDay(w);
 const h = new HeadlessStall(w, POLICIES.greedy, { bus, platform });
 const svc = (h as unknown as { service: any }).service;
 for (const k of [...TALK_NPC_IDS, "WALKIN", "QUA_DUONG", "ANY"]) await svc.talks.ensure(k);

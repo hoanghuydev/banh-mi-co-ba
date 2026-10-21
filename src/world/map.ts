@@ -78,9 +78,7 @@ export function setOpenTiles(codes: Iterable<string>) {
 /**
  * Ô nào chặn chân người chơi. Ghế nhựa cũng chặn — đi vòng qua ghế là chuyện đời thường.
  *
- * Trừ cái ghế CHƯA MUA: chủ dự án chỉ ra *"chỗ ô của ghế vẫn bị chiếm chỗ"* — ghế ẩn rồi mà chân
- * vẫn đâm vào nó. Một vật vô hình chặn đường là lỗi tệ hơn hẳn một vật thừa, vì người chơi không
- * có cách nào đọc ra chuyện gì đang xảy ra.
+ * Trừ cái ghế CHƯA MUA: vật vô hình không được chặn đường.
  */
 export function isBlocked(tx: number, ty: number) {
   const code = tileAt(tx, ty);
@@ -136,12 +134,6 @@ export const CUSTOMER_GATE = { x: 1.5, y: 9.5 };
 export const STREET_BIN = { x: 4.5, y: 9.45 };
 
 /**
- * GÓC HẺM — sân khấu nghe lỏm: cách xe bánh mì ~4–5 m, cạnh hai cái ghế nhựa. Ở phía PHẢI vì bên
- * trái là lối khách vào, mà hai người đứng tám giữa lối đi thì cả hàng khách phải lách qua họ.
- */
-export const GOSSIP_CORNER = [{ x: 16.4, y: 10.4 }, { x: 17.5, y: 10.45 }] as const;
-
-/**
  * Một HÀNG NGANG song song với quầy, lùi dần sang TRÁI.
  *
  * ⚠️ Không chéo ra đường: `depthOf` vẽ theo (x+y), nên hàng chéo cho người thứ tư vẽ ĐÈ lên người
@@ -188,10 +180,6 @@ export const GANH_IN = { x: 11.9, y: 9.6 };
 
 /**
  * XE BÁNH MÌ CỦA CHÚ KIỆT — act `MOVE_CART`. Ba chỗ, ba chuyện khác nhau.
- *
- * `P2-08` §2 nhóm C: *"hai cái xe tranh chỗ là arc của ông"*. Mà tới đợt này mười một câu
- * nói về cái xe đó đều là chữ suông — kể cả câu *"chú đứng chắn hết lối rồi"*, vốn mang
- * `STEP_ASIDE`, tức bảo NGƯỜI dạt ra chứ không dời CÁI XE.
  *
  * `CART_LAN`  — chú đẩy sát qua mặt tiền mình. Chắn lối, VÀ ăn bớt khách.
  * `CART_XA`   — chú về chỗ chú, bên kia hẻm.
@@ -275,7 +263,6 @@ export function assertWalkable() {
   if (Math.hypot(SHADE_SPOT.x - ASIDE_SPOT.x, SHADE_SPOT.y - ASIDE_SPOT.y) < 1) {
     bad.push("SHADE_SPOT nằm chồng lên ASIDE_SPOT — người chơi không phân biệt được hai việc");
   }
-  GOSSIP_CORNER.forEach((p, i) => check(`GOSSIP_CORNER[${i}]`, p));
   QUEUE_SLOTS.forEach((s, i) => check(`QUEUE_SLOTS[${i}]`, s));
 
   // Hàng nào ngắn hơn là `tileAt` trả "#" ở mép phải mà không ai ngờ: cả một mảng

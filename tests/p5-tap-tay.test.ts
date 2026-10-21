@@ -3,7 +3,7 @@
  *
  * Năm hợp đồng, và cái thứ hai là cái cả đợt chỉnh độ khó này đứng hoặc sụp trên đó:
  *
- *  1. NGÀY 7 KHÔNG ĐỔI MỘT LI. Mọi hệ số về 1, rổ món đủ bảy, và `makeUsual` ra ĐÚNG cái
+ *  1. NGÀY 7 KHÔNG ĐỔI MỘT LI. Mọi hệ số về 1, rổ món đủ bảy, và `randomOrder` ra ĐÚNG cái
  *     nó ra trước khi có `ease.ts`. Toàn bộ 666 lưới còn lại neo ở ngày 7/8 — nếu hàng
  *     "ngày thường" lệch một chữ thì chúng đo một game khác chứ không bắt được gì.
  *  2. KHÔNG ĐƯỜNG NÀO LÀM GAME NẶNG HƠN. File này chỉ được phép đỡ. Một dấu trừ đặt sai
@@ -17,14 +17,12 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { EASE_LAST_DAY, easeOf } from "../src/sim/ease";
+import { EASE_LAST_DAY, PEAK_CAP, easeOf, peakCap } from "../src/sim/ease";
 import { MENU_IDS, itemOf } from "../src/sim/menu";
-import { makeUsual, sayOrder } from "../src/sim/order";
-import { peakCap } from "../src/sim/season";
-import { daySpec } from "../src/sim/season";
+import { randomOrder, sayOrder } from "../src/sim/order";
 import { Rng } from "../src/core/rng";
 import { newGame } from "../src/core/save";
-import { standDeps } from "../src/sim/day";
+import { dayDeps } from "../src/sim/day";
 
 const DAYS = [1, 2, 3, 4, 5, 6] as const;
 
@@ -37,14 +35,14 @@ test("HĐ1 ngày 7 trở đi mọi hệ số về 1, rổ đủ bảy món", () 
     assert.equal(e.mon.length, MENU_IDS.length, `ngày ${day} còn khoá món`);
     assert.ok(e.peak >= 4, `ngày ${day} còn trần khách — trần phải để days.json quyết`);
   }
-  // `undefined` = chỗ gọi không biết hôm nay ngày mấy (sim/night.ts, mấy lưới đo)
+  // `undefined` = chỗ gọi không biết hôm nay ngày mấy (mấy lưới đo)
   assert.deepEqual(easeOf(undefined), easeOf(99));
 });
 
-test("HĐ1 `makeUsual` ngày 7 ra y hệt bản không có ease — dãy số không dịch một bước", () => {
+test("HĐ1 `randomOrder` ngày 7 ra y hệt bản không có ease — dãy số không dịch một bước", () => {
   for (let seed = 1; seed <= 200; seed++) {
-    const a = makeUsual(new Rng(seed), EASE_LAST_DAY + 1);
-    const b = makeUsual(new Rng(seed));
+    const a = randomOrder(new Rng(seed), EASE_LAST_DAY + 1);
+    const b = randomOrder(new Rng(seed));
     assert.deepEqual(a, b, `seed ${seed} lệch giữa "ngày 7" và "không truyền ngày"`);
   }
 });
@@ -80,7 +78,7 @@ test("HĐ3 rổ món chỉ lớn lên, ngày 1 đúng hai món, ngày 6 đủ b�
 test("HĐ4 ngày 1 khách vãng lai gọi một mệnh đề, và chỉ gọi món đã mở", () => {
   const open = new Set(easeOf(1).mon);
   for (let seed = 1; seed <= 300; seed++) {
-    const spec = makeUsual(new Rng(seed), 1);
+    const spec = randomOrder(new Rng(seed), 1);
     assert.ok(open.has(spec.intent.mon), `seed ${seed}: gọi món chưa mở (${spec.intent.mon})`);
     assert.equal(spec.intent.nhieu, undefined, `seed ${seed}: còn "cho nhiều"`);
     assert.equal(spec.intent.rau, "day-du", `seed ${seed}: còn dặn rau`);
@@ -102,22 +100,21 @@ test("HĐ5 mọi món trong bảng MON có thật trên bảng vách, và hàng 
   }
 });
 
-test("trần quầy: ngày 1–2 một khách vãng lai một lượt, và không bao giờ vượt days.json", () => {
+test("trần quầy: ngày 1–2 một khách vãng lai một lượt, và không bao giờ vượt `PEAK_CAP`", () => {
   assert.equal(peakCap(1, false), 1);
   assert.equal(peakCap(2, false), 1);
-  for (let day = 1; day <= 40; day++) {
-    assert.ok(peakCap(day, false) <= daySpec(day).target.peak,
-      `ngày ${day}: ease.ts nới trần quầy RỘNG hơn kịch bản mùa — file đó chỉ được làm game nhẹ hơn`);
+  for (let day = 1; day <= 60; day++) {
+    assert.ok(peakCap(day, false) <= PEAK_CAP, `ngày ${day}: vượt trần quầy`);
     assert.equal(peakCap(day, true), 1, `ngày ${day}: chế độ không giới hạn thời gian phải luôn ép về 1`);
   }
 });
 
-test("sức chờ: `standDeps` ngày 1 nới hơn ngày 7, và ngày 7 bằng đúng hệ số chỗ đứng", () => {
+test("sức chờ: `dayDeps` ngày 1 nới hơn ngày 7 đúng bằng easePatience", () => {
   const w = newGame("t", "ease-test");
   w.progress.dayIndex = 1;
-  const d1 = standDeps(w).patienceMul;
+  const d1 = dayDeps(w).patienceMul;
   w.progress.dayIndex = EASE_LAST_DAY + 1;
-  const d7 = standDeps(w).patienceMul;
+  const d7 = dayDeps(w).patienceMul;
   assert.ok(d1 > d7, "ngày 1 không nới sức chờ");
-  assert.ok(Math.abs(d1 / d7 - easeOf(1).patience) < 1e-9, "`standDeps` không nhân đúng easePatience");
+  assert.ok(Math.abs(d1 / d7 - easeOf(1).patience) < 1e-9, "`dayDeps` không nhân đúng easePatience");
 });

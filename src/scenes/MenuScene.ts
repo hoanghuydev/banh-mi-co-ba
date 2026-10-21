@@ -2,9 +2,9 @@ import Phaser from "phaser";
 import { fitDesignFrame } from "../core/render";
 import { Stack, button, buttonHeight, label, panel, textScale, toggle, UI } from "../ui/theme";
 import { drawAlleyBackdrop } from "../ui/backdrop";
-import { DEFAULT_PLAYER_NAME, cleanName } from "../content/intro";
+import { DEFAULT_PLAYER_NAME, GAME_TITLE, cleanName } from "../content/shop";
 import {
-  SaveService, SaveTooNewError, loadSettings, saveSettings, type SaveFile, type Settings,
+  SaveService, loadSettings, saveSettings, type SaveFile, type Settings,
 } from "../core/save";
 import { bus } from "../core/eventbus";
 import { PLAYTEST } from "../core/flags";
@@ -35,8 +35,7 @@ export class MenuScene extends Phaser.Scene {
     fitDesignFrame(this.cameras.main);
     this.drawBackdrop();
     this.show("main");
-    // Mọi trang con phải thoát được bằng bàn phím (CANON §15): trước đây trang Cài đặt
-    // không có phím nào ra, mà nút "Quay lại" thì nằm dưới mép màn hình.
+    // Mọi trang con phải thoát được bằng bàn phím (CANON §15).
     this.input.keyboard?.on("keydown-ESC", () => {
       if (this.at === "audio") this.show("settings");
       else if (this.at !== "main") this.show("main");
@@ -68,12 +67,8 @@ export class MenuScene extends Phaser.Scene {
   }
 
 
-  private peekSave(): { save: SaveFile | null; tooNew: boolean } {
-    try {
-      return { save: new SaveService(bus, () => { throw new Error("peek"); }).load(), tooNew: false };
-    } catch (e) {
-      return { save: null, tooNew: e instanceof SaveTooNewError };
-    }
+  private peekSave(): { save: SaveFile | null } {
+    return { save: new SaveService(bus, () => { throw new Error("peek"); }).load() };
   }
 
   /**
@@ -86,36 +81,29 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private pageMain() {
-    const { save, tooNew } = this.peekSave();
-    const over = save?.flags.seasonOver === true;
+    const { save } = this.peekSave();
     const x = GAME_W / 2;
     const body = this.add.container(0, 0);
     this.page.add(body);
 
-    // Xếp theo chiều cao ĐO ĐƯỢC (ui/theme §Stack) chứ không đặt toạ độ cứng: ở 150–200%
-    // tựa đè lên dòng phụ và ba cái nút đè lên nhau. Lề trên co lại khi chữ to — ở 200%
-    // riêng khối tựa đã cao gấp đôi.
+    // Xếp theo chiều cao ĐO ĐƯỢC (ui/theme §Stack), không toạ độ cứng, để chữ 150–200% không đè nhau; lề trên co lại khi chữ to.
     const top = Math.round(88 / textScale());
     const st = new Stack(top, 10);
-    const title = st.place(label(this, x, 0, "Bánh Mì Cô Ba", 40, UI.ink, "700"), 10);
+    const title = st.place(label(this, x, 0, GAME_TITLE, 40, UI.ink, "700"), 10);
     const sub = st.place(label(this, x, 0, "Đầu hẻm, Sài Gòn.", 15, UI.muted, "400"), 0);
     body.add([title, sub]);
     this.card(body, top - 24, st.y + 24, [title, sub]);
     st.skip(Math.round(72 / textScale()));
 
-    body.add(st.button(button(this, x, 0, "Mùa mới", () => this.startNew(), {
-      primary: true, width: 300, hint: "40 ngày",
+    body.add(st.button(button(this, x, 0, "Chơi mới", () => this.startNew(), {
+      primary: true, width: 300,
     }), 14));
 
-    // P0-02 §2.7 luật 1: save của phiên bản MỚI hơn thì từ chối, nói rõ, không đoán mò.
     body.add(st.button(button(this, x, 0,
-      tooNew ? "Bản lưu của bản mới hơn" : over ? "Hết mùa" : save ? "Chơi tiếp" : "Chưa có ván nào",
+      save ? "Chơi tiếp" : "Chưa có ván nào",
       () => this.continueRun(), {
-        width: 300, disabled: !save || over,
-        hint: tooNew ? "cập nhật game rồi chơi tiếp"
-          // Tên người chơi đứng TRƯỚC ngày và tiền: nó là thứ nhận ra ván của mình, hai con số kia
-          // chỉ là tiến độ. Tên trống (bỏ qua bước đặt tên) thì dòng này y như cũ.
-          : save ? [playerLabel(save.playerName), `ngày ${save.progress.dayIndex}`,
+        width: 300, disabled: !save,
+        hint: save ? [playerLabel(save.playerName), `ngày ${save.progress.dayIndex}`,
             `${save.money.cash.toLocaleString("vi-VN")}₫`].filter(Boolean).join(" · ") : undefined,
       }), 14));
 
@@ -141,18 +129,14 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private startNew() {
-    // Chỉ có MỘT chỗ lưu: "Bắt đầu mùa mới" là xoá hẳn ván đang chơi. Một mùa 40 ngày về
-    // quan hệ không respawn được (P0-02 §2.5) — phải hỏi trước, và nút này nằm ngay trên
-    // "Chơi tiếp" nên bấm nhầm là chuyện thường.
+    // Chỉ có MỘT chỗ lưu: chơi mới là xoá hẳn ván đang chơi — phải hỏi trước.
     if (this.hasSave()) { this.show("confirmNew"); return; }
     this.askTelemetryThenStart();
   }
 
   private askTelemetryThenStart() {
     if (loadSettings().telemetry === null) { this.show("telemetry"); return; }
-    // Mùa mới đi qua MÀN MỞ ĐẦU, không vô thẳng ngày 1: ở đó cô Ba giao xe và hỏi tên con —
-    // mà cái tên thì `DayScene` cần ngay lúc dựng `newGame()`, sau đó không sửa được nữa.
-    this.scene.start("intro");
+    this.scene.start("day", { mode: "new" });
   }
 
   private pageConfirmNew() {
@@ -168,7 +152,7 @@ export class MenuScene extends Phaser.Scene {
       ? `Đang chơi dở: ngày ${save.progress.dayIndex} · ${save.money.cash.toLocaleString("vi-VN")}₫`
       : "Đang có một bản lưu.", 15, UI.ink, "500"), 10);
     const why = st.place(label(this, x, 0,
-      "Game chỉ lưu được một ván. Mùa mới là ván này mất luôn,\nkhông lấy lại được.",
+      "Game chỉ lưu được một ván. Chơi mới là ván này mất luôn,\nkhông lấy lại được.",
       13, UI.muted, "400").setAlign("center"), 0);
     body.add([title, what, why]);
     this.card(body, top - 28, st.y + 28, [title, what, why]);
@@ -177,7 +161,7 @@ export class MenuScene extends Phaser.Scene {
     body.add(st.button(button(this, x, 0, "Giữ ván cũ", () => this.show("main"), {
       primary: true, width: 320, hint: "hoặc bấm Esc",
     }), 14));
-    body.add(st.button(button(this, x, 0, "Xoá, chơi mùa mới", () => this.askTelemetryThenStart(), {
+    body.add(st.button(button(this, x, 0, "Xoá, chơi mới", () => this.askTelemetryThenStart(), {
       width: 320, hint: "ván đang chơi sẽ mất",
     }), 14));
     this.enableScroll(body, st.y, GAME_H - 20);
@@ -226,8 +210,7 @@ export class MenuScene extends Phaser.Scene {
 
 
   /**
-   * CANON §15: trợ năng là bắt buộc, không phải "nice to have".
-   * Ở bản dựng thử này ba công tắc đều CÓ TÁC DỤNG THẬT, không phải nút giả.
+   * CANON §15: trợ năng là bắt buộc; mọi công tắc đều có tác dụng thật.
    */
   private pageSettings() {
     const s = loadSettings();
@@ -251,17 +234,8 @@ export class MenuScene extends Phaser.Scene {
 
     tg("Cỡ chữ", () => `${Math.round(s.textScale * 100)}%`,
       () => { put({ textScale: sizes[(sizes.indexOf(s.textScale) + 1) % sizes.length] }); this.show("settings"); });
-    /*
-     * CANON §15.4 có NĂM kênh, mỗi kênh một công tắc — mười một hàng cả thảy. Nhét hết
-     * vào đây thì trang Cài đặt phải cuộn ba màn hình và mấy công tắc chơi (cỡ chữ, bỏ
-     * giới hạn thời gian) chìm nghỉm giữa đám thanh âm lượng. Tách ra trang riêng, và
-     * vẫn hiện sẵn mức của kênh Nhạc để biết có đang tắt tiếng hay không.
-     *
-     * Đặt ở HÀNG THỨ HAI, không phải cuối danh sách: danh sách này đã dài hơn khung
-     * hình ở cỡ chữ 100%, nên mấy hàng cuối chỉ tới được bằng cách cuộn — mà cuộn ở
-     * trang này còn lệch vùng bấm (lỗi có sẵn, chưa sửa). Một cửa dẫn sang cả một
-     * trang con mà lại nằm đúng chỗ khó bấm nhất thì coi như không có.
-     */
+    // Năm kênh âm thanh (CANON §15.4) tách trang riêng cho trang này khỏi dài. Đặt hàng thứ hai vì
+    // mấy hàng cuối phải cuộn mới tới — mà cuộn ở trang này còn lệch vùng bấm (chưa sửa).
     tg("Âm thanh", () => (s.musicVolume === 0 ? "nhạc đang tắt" : "5 kênh riêng"),
       () => this.show("audio"), "nhạc · hẻm · giọng người · thao tác · âm báo");
     tg("Giảm chuyển động", () => (s.reducedMotion ? "bật" : "tắt"), () => put({ reducedMotion: !s.reducedMotion }),
@@ -270,13 +244,6 @@ export class MenuScene extends Phaser.Scene {
       "tự mờ đi khi đang đi, sáng lại lúc đứng yên");
     tg("Bỏ giới hạn thời gian", () => (s.noTimePressure ? "bật" : "tắt"), () => put({ noTimePressure: !s.noTimePressure }),
       "khách bỏ đi vì mình làm sai, không vì mình chậm");
-    // CANON §15 công tắc số 1 (P2-04 RB6): tắt thì tin vẫn lan, chỉ là luôn đúng
-    tg("Khách nhớ nhầm, đồn sai", () => (s.allowFalseMemory ? "bật" : "tắt"), () => put({ allowFalseMemory: !s.allowFalseMemory }),
-      "tắt thì tin vẫn lan, chỉ là lan đúng");
-    // CANON §15 công tắc #4 (P2-05 §4.4): tắt thì nhật ký vẫn ghi, vẫn mở bằng Tab
-    tg("Mở sổ tay cuối ngày", () => (s.notebookAuto ? "bật" : "tắt"), () => put({ notebookAuto: !s.notebookAuto }),
-      "tắt thì sổ vẫn ghi, mở bằng Tab");
-    tg("Nghi thức đốt vía", () => (s.skipRitual ? "bỏ qua" : "có"), () => put({ skipRitual: !s.skipRitual }));
     // P3-03 §4 luật UI #4: tắt thì đi chợ không có tổng chạy — người chơi nhẩm, tổng chỉ
     // hiện ở bước xác nhận
     tg("Hiện tổng tiền ở chợ", () => (s.marketRunningTotal ? "bật" : "tắt"),
@@ -289,9 +256,7 @@ export class MenuScene extends Phaser.Scene {
 
     bg.fillStyle(0xf7f4ec, 0.96).fillRoundedRect(x - 270, top, 540, st.y - top, 16);
 
-    // Thanh chân GHIM ĐÁY màn hình. Trước đây hai nút này nằm trong dòng chảy của Stack: tám
-    // công tắc đã cao hơn khung hình nên ngay ở cỡ chữ 100% chúng rơi hẳn xuống dưới mép
-    // (~87px), chỉ tới được bằng cách cuộn — mà không có phím nào thoát được trang.
+    // Thanh chân GHIM ĐÁY màn hình: danh sách công tắc cao hơn khung hình, hai nút không được trôi xuống dưới mép.
     const barTop = GAME_H - buttonHeight() - 28;
     this.page.add(this.add.graphics().fillStyle(0x121820, 0.92).fillRect(0, barTop, GAME_W, GAME_H - barTop));
     const row = (barTop + GAME_H) / 2;
@@ -303,12 +268,7 @@ export class MenuScene extends Phaser.Scene {
   }
 
   /**
-   * Trang ÂM THANH — năm kênh của CANON §15.4, mỗi kênh một công tắc riêng.
-   *
-   * Vì sao không gộp thành một thanh "âm lượng": năm kênh này làm năm việc khác hẳn
-   * nhau với người chơi. Có người tắt sạch nhạc mà vẫn cần tiếng thao tác để biết tay
-   * mình vừa làm gì; có người tắt giọng lao xao vì nó làm quá tải, nhưng vẫn muốn nghe
-   * tiếng xe để thấy mình đang ở trong một cái hẻm. Một thanh chung thì cả hai cùng thua.
+   * Trang ÂM THANH — năm kênh của CANON §15.4, mỗi kênh một công tắc riêng (không gộp một thanh chung).
    */
   private pageAudio() {
     const s = loadSettings();
@@ -391,36 +351,22 @@ export class MenuScene extends Phaser.Scene {
     const st = new Stack(top, 10);
     const title = st.place(label(this, x, 0, "Giới thiệu", 26, UI.ink, "700"), 22);
 
-    // Trang này KHÔNG phải changelog. Bản cũ liệt kê "bản dựng này có gì / cái gì ở
-    // giai đoạn sau" — đó là ghi chú của người làm game, người chơi không mua cái đó.
-    // Nó tả CHỖ và CÁI GIÁ, đúng hai thứ cần biết trước khi bấm chơi.
+    // Trang này KHÔNG phải changelog: chỉ tả CHỖ và CÁI GIÁ.
     const what = st.place(label(this, x, 0, [
-      "Cô Ba bán bánh mì ở đầu hẻm ba chục năm. Cô nghỉ.",
-      "Mình mua lại cái xe của cô, sơn lại, viết tên mình lên bảng.",
+      "Một xe bánh mì ở đầu hẻm, Sài Gòn.",
       "",
-      "Khách đứng cách mình nửa mét. Họ thấy hết:",
-      "tay mình có rửa không, ổ bánh có cháy không,",
-      "mình có còn nhớ hôm qua họ gọi gì không.",
+      "Khách đứng cách bạn nửa mét. Họ thấy hết:",
+      "tay có rửa không, ổ bánh có cháy không.",
       "",
-      "Bốn mươi ngày. Hết mùa là hết, không chơi lại.",
+      "Hết vốn nhập hàng là thua.",
     ].join("\n"), 14, UI.ink, "400").setAlign("center"), 26);
 
     const keys = st.place(label(this, x, 0,
-      "WASD đi  ·  E làm việc  ·  Tab sổ tay  ·  Esc tạm dừng\n"
+      "WASD đi  ·  E làm việc  ·  Esc tạm dừng\n"
       + "còn lại game nhắc khi tới lúc.", 13, UI.muted, "400").setAlign("center"), 20);
 
-    /*
-     * Ghi công âm thanh.
-     *
-     * NHẠC là bắt buộc phải có ở đây: giấy phép CC BY 4.0 đòi nêu tên tác giả ở nơi
-     * người chơi THẤY ĐƯỢC, không phải trong một file README trên kho mã. Gỡ hai dòng
-     * đó ra là vi phạm giấy phép.
-     *
-     * TIẾNG ĐỘNG thì KHÔNG bắt buộc — toàn bộ là CC0, không nghĩa vụ ghi công nào.
-     * Vẫn ghi, vì hai lý do không phải pháp lý: đó là công của người khác, và vì bản
-     * thu ambience ở đây là field recording THẬT ở Sài Gòn, mà nói ra điều đó thì
-     * người chơi nghe cái hẻm khác đi. Danh sách đủ 169 file ở `PROVENANCE.csv`.
-     */
+    // Ghi công âm thanh. ⚠️ NHẠC CC BY 4.0: bắt buộc nêu tên ở nơi người chơi thấy — gỡ là vi phạm giấy phép.
+    // Tiếng động CC0, không bắt buộc ghi công; danh sách đủ ở `PROVENANCE.csv`.
     const tracks = [...new Set(Object.values(CUES).map((c) => c.title))].join(" · ");
     const credit = st.place(label(this, x, 0,
       `Nhạc tạm: ${tracks}\nKevin MacLeod (incompetech.com) · CC BY 4.0\n\n`

@@ -3,37 +3,17 @@ import { EQUIP, capacity, has, used, type EquipId } from "./equipment";
 
 
 /**
- * DẤU VẾT — một dòng dưới món đồ chưa mua, kể lại chuyện HÔM NAY của chính người chơi.
- *
- * ⚠️ TỪ ĐỢT RÚT GỌN, DẤU VẾT KHÔNG CÒN LÀ THỨ DUY NHẤT NÓI VỀ MÓN ĐỒ. Thẻ nào cũng có `gain`
- * (lợi ích quy ra chỉ số: "+15% khách ghé"), nên dòng dấu vết thôi phải gánh việc giải thích.
- * Nó quay về đúng việc của nó: nhắc một chuyện vừa xảy ra với chính người chơi, để con số bên
- * trên có chỗ bám. Món nào không có dấu vết trung thực thì vẫn KHÔNG CÓ DÒNG NÀO.
- *
- * Chủ dự án, đọc trang Đồ nghề: *"Tôi đọc không biết mua để làm gì."* Lỗi không nằm ở chỗ
- * thiếu chữ. Luật cũ cấm hiện con số hiệu ứng ("+18% khách vãng lai"), và nó bị thi hành thành
- * KHÔNG NÓI GÌ. Lần đó cách chữa là dòng dấu vết dưới đây; lần này chủ dự án gỡ luôn cái cấm
- * (*"quy ra chỉ số để user dễ nắm"*), nên con số về lại thẻ và dấu vết đứng CẠNH nó.
- *
- * Việc của dấu vết: không nói món đồ làm được gì, nói CÁI VỪA XẢY RA VỚI MÌNH. Người chơi không
- * cần ai giải thích cái kẹp gắp — họ cần nhớ ra rằng chiều nay họ cầm tiền xong rồi bốc
- * nhân sáu lần. Con số đó là của họ, không phải của món đồ; nó đã xảy ra rồi, không phải
- * một lời hứa; và nó không so sánh hai món với nhau.
+ * DẤU VẾT — một dòng dưới món đồ chưa mua, kể lại chuyện HÔM NAY của chính người chơi để con
+ * số `gain` bên trên có chỗ bám. Không nói món đồ làm được gì, nói CÁI VỪA XẢY RA VỚI MÌNH.
  *
  * BA LUẬT CỦA MỘT DÒNG DẤU VẾT
  *
- *  1. Chỉ kể thứ NGƯỜI ĐỨNG BÁN TỰ THẤY. Tay mình, ổ bánh của mình, câu người ta nói với
- *     mình. Không có "mười hai người đi ngang không ghé" — đứng ở quầy thì không ai đếm
- *     được con số đó, và một con số không thấy được là một con số của trò chơi, không phải
- *     của cái hẻm.
- *  2. Im khi chưa có chuyện gì. Ngưỡng dưới đây không phải để lọc nhiễu — nó là để một dòng
- *     dấu vết lúc nào hiện ra cũng có sức nặng. Hiện mỗi tối thì ba bữa là hết ai đọc.
- *  3. Không khuyên. Kể xong là thôi. "Bữa nay cháy ba ổ." chứ không phải "Bữa nay cháy ba ổ,
- *     cân nhắc mua lò điện." Người chơi tự nối hai thứ đó — và chính lúc tự nối, món đồ mới
- *     có nghĩa.
+ *  1. Chỉ kể thứ NGƯỜI ĐỨNG BÁN TỰ THẤY: tay mình, ổ bánh của mình, câu người ta nói với
+ *     mình. Không có "mười hai người đi ngang không ghé" — đứng ở quầy thì không ai đếm được.
+ *  2. Im khi chưa có chuyện gì — ngưỡng dưới đây để dòng nào hiện ra cũng có sức nặng.
+ *  3. Không khuyên. "Bữa nay cháy ba ổ." chứ không phải "…, cân nhắc mua lò điện."
  *
- * Món nào không có dấu vết trung thực thì KHÔNG CÓ DÒNG NÀO. Thà trống còn hơn bịa ra một
- * con số để lấp chỗ.
+ * Món nào không có dấu vết trung thực thì KHÔNG CÓ DÒNG NÀO.
  */
 
 /** Dưới ngần này ổ thì buổi bán đó vắng thật — bản dựng nhắm ~18 ổ/ngày (econ.json `scale`). */
@@ -44,24 +24,19 @@ const DIRTY_END = 0.5;
 const dem = (n: number, mot: string, nhieu = mot) => (n === 1 ? `một ${mot}` : `${n} ${nhieu}`);
 
 export function gearEvidence(id: EquipId, w: SaveFile): string | null {
-  const t = w.notebook.today, d = w.progress.today, e = w.econ.today;
-  const day = w.progress.dayIndex;
-  if (t.day !== day) return null;                    // sổ của ngày khác — đừng kể chuyện cũ như chuyện nay
+  const d = w.progress.today, e = w.econ.today;
+  const bareHands = d.bareHands ?? 0, burnt = d.burnt ?? 0;
   /*
-   * CHƯA ĐẾM TIỀN XONG THÌ CHƯA CÓ CHUYỆN GÌ ĐỂ KỂ.
-   *
-   * `econ.today.counted` bật đúng một lần, ở `eveningCount` — tức là lúc buổi bán đã đóng
-   * sổ. Thiếu cái cổng này thì một ván chưa bán buổi nào vẫn có `served === 0`, và `0 ≤ 12`
-   * là đúng, nên cái loa với cái bảng hiệu cùng mở miệng than "bữa nay bán được 0 ổ, cả buổi
-   * im re" trước khi người chơi kịp dọn hàng ra. Lưới DV-1 bắt được đúng chuyện đó.
+   * CHƯA ĐẾM TIỀN XONG THÌ CHƯA CÓ CHUYỆN GÌ ĐỂ KỂ: `econ.today.counted` chỉ bật ở `eveningCount`.
+   * Thiếu cổng này thì ván chưa bán buổi nào có `served === 0`, và loa với bảng hiệu than "bán được 0 ổ".
    */
   if (!w.econ.today.counted) return null;
 
   switch (id) {
     case "KEP_GAP":
-      return t.bareHands >= 3 ? `Hôm nay cầm tiền xong bốc thẳng vào nhân. ${dem(t.bareHands, "lần")}.` : null;
+      return bareHands >= 3 ? `Hôm nay cầm tiền xong bốc thẳng vào nhân. ${dem(bareHands, "lần")}.` : null;
     case "LO_DIEN":
-      return t.burnt >= 1 ? `Hôm nay cháy ${dem(t.burnt, "ổ")} trong lò.` : null;
+      return burnt >= 1 ? `Hôm nay cháy ${dem(burnt, "ổ")} trong lò.` : null;
     case "LONG_BAN":
       return w.stall.cleanliness <= DIRTY_END ? "Chiều ruồi bám quanh khay nhân." : null;
     case "GHE_BAN":
@@ -91,7 +66,7 @@ export function gearEvidence(id: EquipId, w: SaveFile): string | null {
     case "BANG_HIEU":
       // cái bảng kéo NGƯỜI LẠ, nên nó đọc đúng chỗ đó thay vì chia chung con số ế với cái
       // loa. `strangers` là khách lạ ĐÃ GHÉ — người chơi tự đếm được, không phải người đi ngang.
-      return d.served <= QUIET_DAY && t.strangers === 0 ? "Hôm nay không có người lạ nào ghé." : null;
+      return d.served <= QUIET_DAY && (d.strangers ?? 0) === 0 ? "Hôm nay không có người lạ nào ghé." : null;
     case "GIA_TREO":
       return used(w.equipment) >= capacity(w.equipment) ? "Xe không còn chỗ nào trống." : null;
     default:

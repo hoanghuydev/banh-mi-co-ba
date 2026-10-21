@@ -1,12 +1,10 @@
-# Bánh Mì Cô Ba — bản dựng thử v0.1
+# Bye Sếp, Em Bán Bánh Mì — bản dựng thử v0.1
 
 > Bạn bán bánh mì ở góc phố Sài Gòn. Khách đứng cách bạn nửa mét và **nhìn thấy mọi thứ bạn làm**.
 
 Bản này có **sảnh menu**, **quán bánh mì ở góc phố**, **di chuyển**, **chuỗi thao tác làm một ổ bánh**,
 và **vòng lặp bán hàng với khách thật**: khách tới → gọi món → bạn kẹp nhân → đưa → họ phản ứng → trả tiền.
-Từ P2: **12 khách có tên** với lịch ghé theo thứ trong tuần, **nhớ** chuyện bạn làm (và quên dần),
-**kể cho nhau nghe** (bạn nghe lỏm được ở góc hẻm), và **cuốn sổ của chính bạn** để tự ghi tên, ghi đoán.
-Kinh tế nằm ở phase sau (xem `../docs/CANON.md` §17).
+**12 khách có tên** ghé theo lịch thứ trong tuần, cùng khách vãng lai và người đi ngang.
 
 ## Chạy
 
@@ -24,7 +22,7 @@ npm run lint:lines       # L001–L013 cho thoại tiếng Việt, `-- --fix` s�
 npm run content:stats    # đếm dòng/từ, đối chiếu mốc CANON §11
 python3 tools/prep-art.py       # rửa lại ảnh artist: art-raw/ -> public/art/ (cần Pillow)
 python3 tools/cut-character.py  # cắt bảng xoay nhân vật ra 8 hướng (thêm tên người để cắt một mình)
-npm run sim -- --days 40 --policy newbie   # chạy 40 ngày không render (< 3 s)
+npm run sim -- --days 30 --policy newbie   # chạy N ngày không render (mặc định 30)
 ```
 
 Client-only, offline-first: **không server, không netcode** (CANON §2). Save nằm ở localStorage.
@@ -68,33 +66,10 @@ trả trễ Chủ nhật là mối nhớ). Đồ để trong thùng xốp có h�
 tiền học, thuốc; hoãn được nhưng mất là mất thật: mất chỗ đầu hẻm, bị đuổi hụi, phải bán đồ nghề),
 **Đồ nghề** (xe 12 ô — mua/bán lại 60%, món hiện ngay trên xe, không có con số hiệu ứng),
 **Chỗ đứng** (hỏi dì Năm để coi chỗ; dán giấy báo dời trước 1/2/4 bữa — báo trước càng lâu người quen
-càng đi theo; dời ra xa thì người không theo sẽ không ghé nữa). Không có game over: hết tiền thì cô Ba bù,
-gửi về nhà thiếu.
+càng đi theo; dời ra xa thì người không theo sẽ không ghé nữa). Hết vốn là thua.
 
 Tiền trong game = giá thật × một hệ số (`ECON.scale` = 0,40 trong `content/econ/econ.json`)
 cho các khoản theo ngày/mùa; giá từng ổ, từng lạng ngoài chợ giữ đúng giá thật.
-
-## Một mùa 40 ngày (Phase 4)
-
-Mùa có nhịp 4 hồi (học luật · mở rộng · áp lực và mất mát · khép lại) — người chơi **không bao
-giờ** thấy mình ở hồi mấy, và HUD không có "/40". Lịch mùa ở `src/content/season/days.json` là
-nguồn duy nhất: trời, sự kiện, mốc arc, tín hiệu báo trước (có test cân bằng + phanh XĐ3).
-
-- **Mở dần bằng người, không popup:** đồn thổi + nhớ nhầm từ ngày 9 hoặc phút thứ 90 (cú lộ:
-  bà Sáu kể cô Mai nghe trước tiệm) · sổ nợ ngày 9 (cô Mai — trước đó bán chịu chỉ nhớ trong
-  đầu) · **tự ghi sổ tay ngày 11** (thầy Phúc đưa cây bút) · bảng QR, đèn ca tối ngày 14 · đổi
-  chỗ đứng ngày 16.
-- **12 người gọi đúng câu của mình** (P4-01), có khẩu vị ẩn không bao giờ nói ra — làm theo khẩu
-  vị ẩn cũng đúng, bỏ qua thì không bị gì. **Gói sẵn ổ quen trước khi khách mở miệng** là cách
-  "nhớ" mạnh nhất (REMEMBERED_USUAL tầng T-B).
-- Người đi ngang không mua: chú Kiệt 6h10 liếc vô lò (nóng thì gật đầu), bà Sáu rao, cô Mai chạy
-  bộ sáng thứ Hai. Có người sẽ đi, có báo trước — không có gì đánh dấu.
-- **Tối — "Chuyện trong hẻm":** thỉnh thoảng có một việc để làm bằng tay (đem hũ đồ chua qua cho
-  ai đó, đẩy xe ra sân đình, thuê làm bảng hay chờ người vẽ). Không bấm = không làm gì — cũng là
-  một lựa chọn.
-- **Ngày 40** không có cảnh tối: sau khi khách cuối đi là khoảng lặng 40 giây (Enter/Space để qua),
-  rồi màn kết — ai còn ghé, sổ tay của chính người chơi, cô Mai chốt sổ, dòng cuối của cô Ba,
-  credits, **một nút duy nhất**. Không điểm, không %, không New Game+.
 
 ## Vòng lặp bán hàng
 
@@ -201,7 +176,7 @@ src/
                photo        art v2 — ảnh artist đè lên bản vẽ code (xem "Art v2" bên dưới)
   entities/    Player · CustomerActor                     vị trí, va chạm, sprite, bong bóng thoại
   ui/          theme · backdrop · Hud · AssemblyPanel · menu/MenuBoardView · intro/IntroView
-               tour/TourCoach  bong bóng dẫn bữa đầu (khoanh tròn + cô Ba + nút Bỏ qua)
+               tour/TourCoach  bong bóng dẫn bữa đầu (khoanh tròn + nút Bỏ qua)
                lớp thông tin + bảng kẹp nhân + bảng menu treo vách (E ở vách) + màn mở đầu
   scenes/      Boot · Menu · Intro (màn mở đầu + đặt tên) · Day (thường trực, sở hữu GameContext)
                → Market → Stall → Evening
@@ -253,7 +228,7 @@ mỗi người một **thư mục riêng**, file đặt tên bằng đúng tên 
 
 | ai | bảng gốc | ra |
 |---|---|---|
-| cô Ba (người chơi) | `art-raw/character_model_list.png` | `public/art/player/p_<hướng>.png` |
+| Phương Anh (người chơi) | `art-raw/character_model_list.png` | `public/art/player/p_<hướng>.png` |
 | anh Dũng | `art-raw/anh-dung-list.png` | `public/art/npc/anh-dung/<hướng>.png` |
 | bà Bảy | `art-raw/ba-bay-list.png` | `public/art/npc/ba-bay/<hướng>.png` |
 | anh Bảo | `art-raw/anh-bao-list.png` | `public/art/npc/anh-bao/<hướng>.png` |
@@ -355,7 +330,7 @@ Thêm một công đoạn mới = thêm **một dòng** vào `STATIONS` (`world/
   `!` khi đã chắc.
 - **§11** — shuffle-bag thay random thuần; **~35% số lần nhận thấy không nói gì cả** —
   im lặng làm phần còn lại đáng tin.
-- **§7.2 / §7.4** — đồ hỏng bắt buộc bỏ; cô Ba buồn chứ không la.
+- **§7.2 / §7.4** — đồ hỏng bắt buộc bỏ.
 - **§14** — bảng màu xanh xám + nắng gắt trắng (KHÔNG vàng nghệ); ghế nhựa, hũ đũa,
   bảng hiệu đỏ chữ vàng, xe máy dựng sát vách, chậu trầu bà.
 - **§15** — pause mọi lúc, đóng băng đồng hồ + kiên nhẫn + certainty (một điểm `dt = 0` duy nhất);
@@ -387,23 +362,4 @@ Kinh tế (hạn dùng, giá chợ, nghĩa vụ — MarketScene mới là khung)
 đúng 3 điều (P4), overrides lịch có báo trước 3–4 ngày (chú Tư dời chỗ, anh Dũng đổi ca — P4),
 kênh cải chính qua nguồn (#2) của tin đồn, phụ đề tiếng Anh, đóng gói Electron.
 
-**Về tên quán:** mùa mới mở bằng **màn mở đầu** (`scenes/IntroScene`): cô Ba — bà bán bánh mì
-cũ của hẻm — nói chuyện với người chơi rồi hỏi tên. Tên đó thành **tên quán** trên bảng hiệu
-ngoài vách và trên bảng menu bấm E ("BÁNH MÌ HOÀNG HUY"), và nằm trong `SaveFile.playerName`.
-Bỏ trống được: bảng còn trơ hai chữ "BÁNH MÌ". Script + bốn luật viết thoại: `docs/phase-4-noi-dung/P4-06-man-mo-dau.md`.
-
-**Về cuốn sổ:** sổ là của **chính người bán**, ngôi thứ nhất, không ai ghi giùm — cô Ba chỉ ở
-màn mở đầu để dựng bối cảnh rồi thôi. Một giọng, hai cây bút: trái *"ghi vội lúc bán"* (máy ghi,
-không sửa được), phải *"ngồi nghĩ lại"* (chữ tay, sửa tự do).
-
-**Về đọc quan hệ:** sổ có **hai trục rời nhau**. *Độ hiểu* — mình đã chắc mấy điều về một người —
-đếm được, và **nói ra bằng chữ** chứ không bằng tỉ số trần trụi: *"chắc 3 điều · còn 3 điều chưa
-rõ"*, cộng mấy vạch dưới mỗi khuôn mặt. Đó là thước đo **người chơi**, nên nó được phép đếm.
-*Tình cảm* thì **không bao giờ có số, không thanh, không trái tim** (CANON T3): nó ra bằng **một
-dòng bút đỏ** trên đầu trang mỗi người — *"chú Tư nói chuyện nhiều hơn hồi trước"*. Và khi lòng
-tin đã bị hạ trần vĩnh viễn (P2-03 §2.8), sổ **ghi thẳng ra** chứ không để người chơi đập vào một
-cái tường vô hình. Thiết kế + 13 game tham khảo: `docs/phase-2-he-npc/P2-05b-doc-quan-he.md`.
-
-**Về tên khách:** tên trên đầu khách và trên phiếu là tên **mình tự ghi** trong sổ (chưa ghi thì `—`).
-Tên nghe được qua lời khách, lời đồn, và lời cô Ba. Ghi sai tên rồi đưa bánh là **gọi sai tên** (WRONG_NAME).
 Xem lộ trình phase ở `../docs/CANON.md` §17.

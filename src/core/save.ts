@@ -4,56 +4,37 @@
  * Bốn quyết định:
  *  1. CHỤP trong frame (rẻ, phải đúng khoảnh khắc), GHI lúc rảnh (`requestIdleCallback`).
  *  2. Double-buffer A/B + meta: crash giữa lúc ghi slot B thì slot A vẫn nguyên.
- *     Với một game 40 ngày về quan hệ không respawn được, mất save là mất người chơi.
+ *     Mất save là mất người chơi.
  *  3. `timeout: 3000` — giờ cao điểm idle có thể không bao giờ tới.
  *  4. Checksum sai thì CẢNH BÁO, không chặn (§8f: sửa save là chuyện của người chơi).
  *
  * Chống save-scum (§2.8) = autosave NGAY khi sự kiện xảy ra × seed cố định theo ngày
  * × stream RNG tách. Cái KHÔNG khoá: chơi lại cả ngày bằng nút chính thức.
  */
-import { newRelState, type Memory, type RelState } from "../sim/memory";
-import { newStoryState, type StoryState } from "../sim/story";
-import { newGossipState, type GossipState } from "../sim/gossip";
-import { newNotebook, type Notebook } from "../sim/notebook";
 import { ECON, newInventory, scaledVnd, weatherOf, type InventoryState } from "../sim/econ";
 import { newEconState, type EconState } from "../sim/obligations";
-import type { SupplierState } from "../sim/suppliers";
-import type { DebtRecord } from "../sim/till";
 import { newEquipState } from "../sim/equipment";
 import { fnv1a, type BagState, type StreamName } from "./rng";
 import { platform as defaultPlatform, type Platform } from "./platform";
 import { BUILD_ID, DEFAULT_SETTINGS, loadSettings, type Settings } from "./flags";
 import type { Bus } from "./eventbus";
-import type { AutosaveReason, NpcId, SceneKey, StandPointId, Weather } from "./types";
+import type { AutosaveReason, NpcId, SceneKey, Weather } from "./types";
 import type { TimeBand } from "./clock";
 
 export { loadSettings, saveSettings, DEFAULT_SETTINGS, type Settings } from "./flags";
 
-export const SCHEMA_VERSION = 5;
+/** Save khác phiên bản này bị bỏ qua — vào game như chưa có ván nào. */
+export const SCHEMA_VERSION = 6;
 
-export type MemorySlot = Memory;
-
-/**
- * State của một NPC — phần nặng nhất và quan trọng nhất của save.
- * Trí nhớ + quan hệ (P2-03) nằm trong `RelState`; phần dưới là của P1 và của P2-04/05.
- */
-export type NpcState = RelState & {
-  freebies: number;
-  /**
-   * Số lần người chơi THẬT SỰ nghe khách đọc nguyên đơn ruột. Không phải số lần ghé:
-   * ghé ba lần mà hai lần chỉ nói "như mọi bữa" thì người chơi mới nghe đúng một lần.
-   */
-  heard: number;
+/** State của một NPC: đếm lượt ghé, ngày gặp gần nhất, và mấy cờ của từng người. */
+export type NpcState = {
+  /** Số lượt ghé quầy (quay đầu ở đầu hẻm không tính). */
+  visits: number;
   lastSeenDay: number;
-  knownFacts: { factId: string; confidence: number; source: NpcId | "WITNESSED"; hop: number; learnedOnDay: number }[];
-  microCheatCounter: Record<string, number>;
-  gone: boolean;
-  goneReason?: "ARC" | "SILENT_EXIT" | "MOVED";
   seen?: Record<string, number>;
   /**
-   * P5-01 trò chuyện — id cuộc ĐÃ chơi với người này (cả mùa; không bao giờ nghe lại
-   * nguyên một cuộc) và chủ đề đã đụng HÔM NAY (không hỏi đi hỏi lại một chuyện trong
-   * cùng buổi). Không bắt buộc có: save cũ thiếu hai trường này vẫn chạy.
+   * Id cuộc ĐÃ chơi với người này (không nghe lại nguyên một cuộc) và chủ đề đã đụng
+   * HÔM NAY (không hỏi lại một chuyện trong cùng buổi).
    */
   talksDone?: string[];
   talkTopics?: { day: number; topics: string[] };
@@ -77,7 +58,6 @@ export type SaveFile = {
     gameMinutes: number;
     scene: SceneKey;
     weather: Weather;
-    standPoint: StandPointId;
     dayStartSnapshotRef: string | null;
     today: { served: number; lost: number; revenue: number;
       /**
@@ -87,15 +67,15 @@ export type SaveFile = {
        * rồi vào lại giữa buổi tạo một `Service` mới, và nếu hai con số này về 0 thì
        * cái van 2 cuộc/ngày lách được bằng đúng một lần thoát ra vào.
        */
-      talksDeep?: number; talkOffers?: number };
+      talksDeep?: number; talkOffers?: number;
+      /** Dấu vết trong ngày cho thẻ đồ nghề (`sim/gearHint`): ổ cháy · tay cầm tiền bốc nhân · khách lạ ghé. */
+      burnt?: number; bareHands?: number; strangers?: number };
   };
 
   rng: { counters: [StreamName, number][] };
 
   money: {
     cash: number;
-    debtsOwedToPlayer: DebtRecord[];
-    debtsPlayerOwes: { kind: string; amount: number; dueDay: number }[];
     qrEnabled: boolean;
   };
 
@@ -104,11 +84,7 @@ export type SaveFile = {
 
   equipment: { owned: string[]; installed: string[]; wear: Record<string, number> };
 
-  suppliers: Record<string, SupplierState>;
-
   npcs: Record<NpcId, NpcState>;
-
-  gossip: GossipState;
 
   shuffleBags: Record<string, BagState>;
 
@@ -118,8 +94,6 @@ export type SaveFile = {
     appliedContext: { key: string; value: unknown; expiresAtMinutes: number }[];
     barkCooldowns: Record<string, number>;
   };
-
-  notebook: Notebook;
 
   /**
    * `cleanliness` 1 = sạch bóng, 0 = bẩn hết mức (độ bẩn = 1 − cleanliness, P1-02 §2.10).
@@ -132,8 +106,7 @@ export type SaveFile = {
      * Ổ đang gác trên thớt và ổ đang cầm trên tay lúc rời quầy giữa buổi (P0-02 §2.8:
      * "thoát bất cứ lúc nào, vào lại đúng chỗ"). Không lưu thì một ổ bánh bốc hơi mỗi
      * lần thoát — bánh đã trừ khỏi kho ở kệ rồi. `dish` là id nguyên liệu (`sim/order`),
-     * để nguyên `string[]` cho `core/` khỏi phải biết kiểu của `sim/`.
-     * Thiếu trường (save cũ) = không có ổ nào, nên không cần bước migrate riêng.
+     * để nguyên `string[]` cho `core/` khỏi phải biết kiểu của `sim/`. Thiếu trường = không có ổ nào.
      */
     board?: { dish: string[]; warmth: number; crust: number; q: number } | null;
     hand?: { item: string; warmth: number; crust: number; q: number } | null;
@@ -143,7 +116,7 @@ export type SaveFile = {
      */
     basket?: {
       hand?: string; warmth: number; crust: number; q: number; soiled?: boolean;
-      dish?: string[]; dishQ?: number; readyAt?: number;
+      dish?: string[]; dishQ?: number;
     }[] | null;
     floor?: { x: number; y: number; hand: string; warmth: number; crust: number; q: number; soiled?: boolean; dish: string[] }[] | null;
     handSoiled?: boolean;
@@ -154,12 +127,9 @@ export type SaveFile = {
 
   a11y: Settings;
 
-  telemetry: { optedIn: boolean; sessionCount: number; totalPlayMs: number };
+  telemetry: { optedIn: boolean; sessionCount: number };
   flags: Record<string, boolean | number | string>;
-  story: StoryState;
 };
-
-export const SEASON_DAYS = 40;
 
 function uuid(): string {
   const c = globalThis.crypto as Crypto | undefined;
@@ -168,11 +138,7 @@ function uuid(): string {
 }
 
 export function newNpcState(): NpcState {
-  return {
-    ...newRelState(),
-    freebies: 0, heard: 0, lastSeenDay: 0,
-    knownFacts: [], microCheatCounter: {}, gone: false,
-  };
+  return { visits: 0, lastSeenDay: 0 };
 }
 
 export function newGame(name: string, saveId = uuid()): SaveFile {
@@ -184,101 +150,30 @@ export function newGame(name: string, saveId = uuid()): SaveFile {
     savedAt: now,
     buildId: BUILD_ID,
     checksum: "",
-    // Khớp `DEFAULT_PLAYER_NAME` ở `content/intro.ts`. Gõ cứng chứ không import: `core/` không
-    // được biết `content/` tồn tại (P0-01 §6) — đổi một chỗ thì đổi cả hai.
-    playerName: name || "Cô chủ",
+    // Khớp `DEFAULT_PLAYER_NAME` ở `content/shop.ts`; `core/` không import `content/` (P0-01 §6).
+    playerName: name || "Phương Anh",
     progress: {
       dayIndex: 1, band: "PRE_OPEN", gameMinutes: 6 * 60, scene: "Market",
-      weather: weatherOf(1), standPoint: "DAU_HEM", dayStartSnapshotRef: null,
+      weather: weatherOf(1), dayStartSnapshotRef: null,
       today: { served: 0, lost: 0, revenue: 0, talksDeep: 0, talkOffers: 0 },
     },
     rng: { counters: [] },
-    money: { cash: scaledVnd(ECON.startCash_k), debtsOwedToPlayer: [], debtsPlayerOwes: [], qrEnabled: false },
+    money: { cash: scaledVnd(ECON.startCash_k), qrEnabled: false },
     inventory: newInventory(),
     econ: newEconState(),
     equipment: newEquipState(),
-    suppliers: {},
     npcs: {},
-    gossip: newGossipState(),
     shuffleBags: {},
     dialogState: { spokenOnce: [], norepeat: {}, appliedContext: [], barkCooldowns: {} },
-    notebook: newNotebook(),
     stall: { cleanliness: 1, layoutSide: "LEFT", presets: [], board: null, hand: null },
     ledger: [],
     a11y: { ...DEFAULT_SETTINGS, ...loadSettings() },
-    telemetry: { optedIn: false, sessionCount: 0, totalPlayMs: 0 },
+    telemetry: { optedIn: false, sessionCount: 0 },
     flags: {},
-    story: newStoryState(),
   };
 }
 
-// ─────────────────────────────────────────────────────────────── migration (§2.7)
-
-const LEGACY_NPC_IDS: Record<string, NpcId> = { bay: "BA_BAY", tu: "CHU_TU", dung: "ANH_DUNG" };
-
-/**
- * Bốn luật: chỉ tiến không lùi · chạy tuần tự từng bước · backup trước khi migrate ·
- * thêm field mới luôn có mặc định, không bao giờ đổi nghĩa field cũ.
- */
-export const MIGRATIONS: Record<number, (s: any) => any> = {
-  // 1 → 2: bản dựng thử đầu tiên (một object phẳng) → SaveFile đầy đủ của P0-02.
-  1: (old) => {
-    const s = newGame(old.playerName ?? "", `legacy-${old.seed ?? 0}`);
-    s.createdAt = old.savedAt ? new Date(old.savedAt).toISOString() : s.createdAt;
-    s.progress.dayIndex = old.day ?? 1;
-    s.money.cash = old.money ?? s.money.cash;
-    for (const [k, m] of Object.entries<any>(old.npcMemory ?? {})) {
-      const n = newNpcState();
-      n.visits = m.visits ?? 0;
-      n.freebies = m.freebies ?? 0;
-      // Đơn ruột giờ sinh theo saveId + id CANON, tức là ĐỔI so với bản cũ.
-      // Giữ `heard` thì khách sẽ nói "như mọi bữa" cho một đơn người chơi chưa nghe bao giờ.
-      n.heard = 0;
-      s.npcs[LEGACY_NPC_IDS[k] ?? k] = n;
-    }
-    if (old.settings) s.a11y = { ...s.a11y, ...old.settings };
-    return s;
-  },
-  // 2 → 3: P2-03 — trí nhớ 3 tầng + quan hệ đầy đủ. Khung memory của v2 chưa từng được
-  // ghi (MemorySlot cũ), nên chỉ bù field mới bằng mặc định, giữ nguyên field cũ.
-  2: (old) => {
-    for (const [k, n] of Object.entries<any>(old.npcs ?? {})) {
-      const fresh = newRelState();
-      old.npcs[k] = {
-        ...fresh, ...n,
-        memory: { short: [], long: [], core: null },
-        pointsAtDawn: n.relationPoints ?? 0,
-      };
-    }
-    // khung `gossip.inFlight` của v2 chưa từng được ghi → thay bằng state P2-04
-    old.gossip = newGossipState();
-    old.notebook = newNotebook();
-    return old;
-  },
-  // 3 → 4: P3 — kho theo lô, sổ kinh tế, 6 kiểu trời. Khung `inventory.items` cũ chưa từng dùng.
-  3: (old) => {
-    old.inventory = newInventory();
-    old.econ = newEconState();
-    old.suppliers = {};
-    old.money.debtsOwedToPlayer = [];
-    old.equipment = newEquipState();
-    old.progress.weather = weatherOf(old.progress.dayIndex ?? 1);
-    return old;
-  },
-  // 4 → 5: P4 — chuyện của mùa. Save giữa mùa bắt đầu với "chưa có chuyện gì" (không bịa quá khứ).
-  4: (old) => {
-    old.story = newStoryState();
-    return old;
-  },
-};
-
-export class SaveTooNewError extends Error {
-  constructor(readonly found: number) {
-    super(`Bản lưu này của phiên bản game mới hơn (schema ${found} > ${SCHEMA_VERSION}).`);
-  }
-}
-
-/** Bổ sung field thiếu — save sửa tay hay save cũ đều không được làm sập game. */
+/** Bổ sung field thiếu — save sửa tay không được làm sập game. */
 function normalize(s: SaveFile): SaveFile {
   const d = newGame(s.playerName, s.saveId);
   for (const k of Object.keys(d) as (keyof SaveFile)[]) (s as any)[k] ??= (d as any)[k];
@@ -307,13 +202,11 @@ function verifyChecksum(s: SaveFile): boolean {
 
 // ──────────────────────────────────────────────────────────────── SaveService
 
-const PREFIX = "banhmicoba.";
+const PREFIX = "byesep.";
 const K = {
   slotA: `${PREFIX}slotA`,
   slotB: `${PREFIX}slotB`,
   meta: `${PREFIX}meta`,
-  legacy: `${PREFIX}save.v1`,
-  backup: (tag: string) => `${PREFIX}backup.${tag}`,
   day: (saveId: string, day: number) => `${PREFIX}day.${saveId}:${day}`,
 };
 
@@ -323,7 +216,6 @@ export const AUTOSAVE_COALESCE_MS = 500;
 export const AUTOSAVE_IDLE_TIMEOUT_MS = 3000;
 export const SAVE_SIZE_WARN_KB = 512;
 export const DAY_SNAPSHOT_KEEP = 2;
-const BACKUP_KEEP = 3;
 
 export type DayStartSnapshot = { key: string; dayIndex: number; payload: SaveFile };
 
@@ -343,7 +235,7 @@ export class SaveService {
   }
 
   hasSave() {
-    return !!this.readMeta() || !!this.platform.read(K.legacy);
+    return this.readMeta()?.schemaVersion === SCHEMA_VERSION;
   }
 
   // ── ghi ──────────────────────────────────────────────────────────────────
@@ -418,59 +310,37 @@ export class SaveService {
     try { return JSON.parse(raw) as Meta; } catch { return null; }
   }
 
-  /**
-   * Đọc slot đang hoạt động; hỏng thì lùi về slot kia; không có gì thì thử save
-   * đời đầu. Save của phiên bản MỚI hơn → ném `SaveTooNewError`, không đoán mò.
-   */
+  /** Đọc slot đang hoạt động; hỏng thì lùi về slot kia. Save khác `SCHEMA_VERSION` = không có. */
   load(): SaveFile | null {
     const meta = this.readMeta();
-    const order: ("A" | "B")[] = meta ? [meta.activeSlot, meta.activeSlot === "A" ? "B" : "A"] : [];
-    for (const slot of order) {
+    if (meta?.schemaVersion !== SCHEMA_VERSION) return null;
+    for (const slot of [meta.activeSlot, meta.activeSlot === "A" ? "B" : "A"] as const) {
       const raw = this.platform.read(slot === "A" ? K.slotA : K.slotB);
       if (!raw) continue;
       try {
         const s = this.parse(raw);
+        if (!s) continue;
         this.slot = slot;
         return s;
-      } catch (e) {
-        if (e instanceof SaveTooNewError) throw e;
+      } catch {
         this.bus.emit("telemetry:mark", { key: "save.slot_corrupt", value: slot });
       }
-    }
-    const legacy = this.platform.read(K.legacy);
-    if (legacy) {
-      try { return this.parse(legacy); } catch (e) { if (e instanceof SaveTooNewError) throw e; }
     }
     return null;
   }
 
-  parse(raw: string): SaveFile {
-    let s = JSON.parse(raw);
-    s.schemaVersion ??= s.version ?? 1;
-    if (s.schemaVersion > SCHEMA_VERSION) throw new SaveTooNewError(s.schemaVersion);
-    if (s.schemaVersion < SCHEMA_VERSION) {
-      this.backup(`pre-migrate-v${s.schemaVersion}`, raw);
-      while (s.schemaVersion < SCHEMA_VERSION) {
-        const step = MIGRATIONS[s.schemaVersion];
-        if (!step) throw new Error(`Thiếu migration từ schema ${s.schemaVersion}`);
-        const from = s.schemaVersion;
-        s = step(s);
-        s.schemaVersion = from + 1;
-      }
-    } else if (s.checksum && !verifyChecksum(s)) {
+  parse(raw: string): SaveFile | null {
+    const s = JSON.parse(raw);
+    if (s?.schemaVersion !== SCHEMA_VERSION) return null;
+    if (s.checksum && !verifyChecksum(s)) {
       this.bus.emit("telemetry:mark", { key: "save.checksum_mismatch", value: 1 });
     }
     return normalize(s as SaveFile);
   }
 
-  private backup(tag: string, raw: string) {
-    this.platform.write(K.backup(`${tag}.${Date.now()}`), raw);
-    const all = this.platform.keys(`${PREFIX}backup.`).sort();
-    for (const k of all.slice(0, Math.max(0, all.length - BACKUP_KEEP))) this.platform.remove(k);
-  }
-
   clear() {
-    for (const k of [K.slotA, K.slotB, K.meta, K.legacy]) this.platform.remove(k);
+    this.pending = null;
+    for (const k of [K.slotA, K.slotB, K.meta]) this.platform.remove(k);
     for (const k of this.platform.keys(`${PREFIX}day.`)) this.platform.remove(k);
   }
 
@@ -490,7 +360,10 @@ export class SaveService {
   readDayStart(saveId: string, day: number): SaveFile | null {
     const raw = this.platform.read(K.day(saveId, day));
     if (!raw) return null;
-    try { return normalize((JSON.parse(raw) as DayStartSnapshot).payload); } catch { return null; }
+    try {
+      const p = (JSON.parse(raw) as DayStartSnapshot).payload;
+      return p?.schemaVersion === SCHEMA_VERSION ? normalize(p) : null;
+    } catch { return null; }
   }
 }
 

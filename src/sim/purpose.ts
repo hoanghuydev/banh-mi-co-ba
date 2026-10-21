@@ -90,8 +90,7 @@ export function purposeById(id: PurposeId): Purpose | null {
 }
 
 /**
- * Những tâm trạng mục đích này ghép được — đã đổi sang object, đã bỏ id lạ.
- * Đây là CHỖ DUY NHẤT dịch từ id sang state: không ai được tự ghép bằng tay chỗ khác.
+ * Tâm trạng mục đích này ghép được. Đây là CHỖ DUY NHẤT dịch từ id sang state: không ai được tự ghép bằng tay chỗ khác.
  */
 export function statesOf(p: Purpose): readonly NpcState[] {
   return p.states.map((id) => STATE_OF.get(id)).filter((s): s is NpcState => !!s);
@@ -189,7 +188,7 @@ export function purposeAngerMul(p: Purpose, s: NpcState): number {
 }
 
 /**
- * Một dòng đọc được: *"đi chợ về · mệt"*. Dùng cho sổ tay, bong bóng thoại, dev overlay.
+ * Một dòng đọc được: *"đi chợ về · mệt"*. Dùng cho bong bóng thoại, dev overlay.
  * KHÔNG hiện số — T3: người chơi đọc ra mục đích qua lời nói, không qua thanh phần trăm.
  */
 export function describe(p: Purpose, s: NpcState): string {

@@ -1,8 +1,7 @@
 import type { Rng } from "../core/rng";
 import type { NpcDef, Personality } from "../content/npcs";
-import type { ArcDay } from "../content/arcs";
 import type { BodyStyle } from "../art/character";
-import { makeOrder, type OrderSpec } from "./order";
+import { randomOrder, type OrderSpec } from "./order";
 import { traitMulFrom, type Observation, type Observer, type Zone } from "./perception";
 import { GazeMachine, WALKIN_GAZE, type GazeState } from "./gaze";
 import { ReactionState } from "./reaction";
@@ -29,13 +28,8 @@ export const LEAVE_AT = 1.6;
 export const PATIENCE_BONUS_SEC = 6;
 
 /**
- * RÓT MỘT LY LÀ MUA THÊM 20 GIÂY. Chủ dự án: *"Rót nước trà sẽ tăng hảo cảm + tăng thời gian chờ.
- * Thời gian chờ nên tăng lên tầm 20 giây."*
- *
- * Cộng vào `waitT` (sức chờ) chứ không trừ `waitSec` (quãng đã chờ) như `soothe`: dỗ một câu thì
- * xoá bớt chuyện đã qua, còn đưa ly nước trà thì người ta chịu đứng thêm — hai việc khác nhau, và
- * cái sau là thứ người chơi bỏ 210 nghìn ra mua. Cộng THẲNG 20 s nên người ít kiên nhẫn được đỡ
- * nhiều hơn theo tỉ lệ, y như `PATIENCE_BONUS_SEC`.
+ * RÓT MỘT LY LÀ MUA THÊM 20 GIÂY. Cộng vào `waitT` (sức chờ) chứ không trừ `waitSec` (quãng đã
+ * chờ) như `soothe`; cộng THẲNG nên người ít kiên nhẫn được đỡ nhiều hơn theo tỉ lệ.
  */
 export const TEA_PATIENCE_SEC = 20;
 
@@ -51,8 +45,6 @@ export const TEA = {
 /** Trần áp cho MỌI khách, không riêng người soi: soi ≥ 0,7 bắt bài ở ly 3, xuề xoà nhất cũng tới ly 6. Đếm theo NGÀY. */
 export const teaSuspectAtCup = (soi: number) =>
   TEA.suspectAtCup + Math.round(Math.max(0, TEA.suspectSoi - soi) * TEA.suspectSpan);
-
-export type VisitPlan = ArcDay & { key?: string; name?: string; style?: number; paysWith?: number };
 
 /**
  * 0,55 chứ không 0 — ngồi lâu vẫn sốt ruột; cái ghế không được thành một nút tắt kiên nhẫn.
@@ -83,7 +75,7 @@ export class Customer implements Observer {
 
   // ── chờ (kênh THỜI GIAN, P1-02 §2.7) ─────────────────────────────────────────
   waitSec = 0;
-  /** KHÔNG `readonly` nữa: ly nước trà nới sức chờ ra (`waitMore`). Mốc bỏ đi vẫn là `waitT · LEAVE_AT`. */
+  /** Không `readonly`: ly nước trà nới sức chờ ra (`waitMore`). Mốc bỏ đi vẫn là `waitT · LEAVE_AT`. */
   waitT: number;
   waitStage = 0;
 
@@ -110,21 +102,11 @@ export class Customer implements Observer {
   binDetour = false;
   binAt = -1;
   carrying = false;
-  /** Nghe đồn "ăn bớt" / "bánh rớt" thì NHÌN TAY kỹ hơn — gaze nền cộng thêm ngần này. */
-  gazeBias = 0;
-  /** Người chơi nghiêng người nghe lỏm → khách trước quầy thấy mình lơ đễnh: gaze ×1,3 trong 5 s. */
-  watchedIdleUntil = 0;
   /** Thấy người bán rửa tay ở vòi (P3-04 C1) — tới lúc này soi bớt đi một chút. */
   washRelief = 0;
-  /** Trời + chỗ đứng (P3-01 weather.gazeMul · P3-05 avgGazeFactor) — nhân vào gaze nền. */
+  /** Hệ số trời (`weatherInfo.gazeMul`) — nhân vào gaze nền. */
   gazeMul = 1;
   orderedAt = 0;
-  /** P4 — kịch bản của lượt ghé này (arc P4-01 / sự kiện P4-03). null = lượt thường. */
-  plan: VisitPlan | null = null;
-  /** Gọi sau khi đã nhận ổ trước — một người, từng ổ một. */
-  more: OrderSpec[] = [];
-  /** Câu nói có hẹn giờ (giây của service) — ai nói (`by` = người khác trong hàng). */
-  script: { at: number; text: string; by?: string }[] = [];
   /** Đứng lại `stay` giây ở chỗ dừng rồi đi. `spot`/`exit` vắng thì về mặc định; người qua đường khai cả hai vì họ đi XUYÊN cái hẻm. */
   pass: {
     stay: number; until: number; nod?: boolean;
@@ -175,8 +157,7 @@ export class Customer implements Observer {
   /** Đang quay nhìn vào quầy vì MỘT CÂU NÓI (`LOOK_INSIDE`), tới thời điểm này. */
   lookInsideUntil = 0;
   /**
-   * TRONG LƯỢT GHÉ NÀY — tầng `v.*`, nằm giữa "trong cuộc" (`TalkSession`) và "cả mùa"
-   * (`RelState`).
+   * TRONG LƯỢT GHÉ NÀY — tầng `v.*`, nằm giữa "trong cuộc" (`TalkSession`) và `NpcState` (save).
    *
    * Cần một tầng riêng vì kho dùng chung rút lại được trong CÙNG một lượt ghé (`eligible()` chỉ
    * chặn theo chủ đề trong ngày), nên mời ăn hai lần với cùng một người là chuyện xảy ra được.
@@ -208,8 +189,6 @@ export class Customer implements Observer {
   purposeLabel = "";
   /** Lúc dừng lại ngó cái hàng (giây của khách), trước khi quay lưng. −1 = chưa tới chỗ ngó. */
   balkAt = -1;
-  /** Ngồi im trước khi gọi (anh Dũng ngày 11) — không tính vào thời gian chờ. */
-  holdLeft = 0;
   /** Lời thoại đang hiện trên bong bóng, và còn hiện bao lâu. */
   say: string | null = null;
   sayFor = 0;
@@ -234,13 +213,12 @@ export class Customer implements Observer {
 
   constructor(
     readonly id: string,
-    /** Khoá tra sổ nhớ xuyên mùa — khách vãng lai dùng chung khoá theo kiểu người. */
+    /** Khoá tra `NpcState` trong save — khách vãng lai dùng chung khoá theo kiểu người. */
     readonly memKey: string,
     readonly name: string,
     readonly personality: Personality,
     readonly body: BodyStyle,
     readonly npc: NpcDef | null,
-    readonly usual: OrderSpec,
     readonly visitCount: number,
     spawn: { x: number; y: number },
     /** `patienceBaseSec` đã tính cả khung giờ vội. */
@@ -255,8 +233,8 @@ export class Customer implements Observer {
   }
 
   /** `day` chỉ để `order.ts` biết hôm nay sáu bữa đầu mở mấy món (`sim/ease.ts`). */
-  rollOrder(canAskUsual: boolean, day?: number) {
-    this.order = makeOrder(this.rng, this.usual, canAskUsual, day);
+  rollOrder(day?: number) {
+    this.order = randomOrder(this.rng, day);
   }
 
   speak(text: string, seconds = 3.2, pri = 100) {
@@ -291,7 +269,7 @@ export class Customer implements Observer {
      * thành một nút tắt kiên nhẫn), nhưng phải ĐO ĐƯỢC, nếu không thì 320 nghìn tiền ghế mua về
      * một hình vẽ.
      */
-    if (pressure && this.holdLeft <= 0 && (this.phase === "queueing" || this.phase === "waiting")) {
+    if (pressure && (this.phase === "queueing" || this.phase === "waiting")) {
       this.waitSec += dt * (this.sitting ? SIT_PATIENCE_MUL : 1);
     }
 
@@ -301,8 +279,7 @@ export class Customer implements Observer {
     });
     this.loudCue = false;
     this.questionPending = false;
-    this.gaze = this.gazeOverride ?? Math.min(1, (this.gazeM.factor + (this.gazeM.hard ? 0 : this.gazeBias)) * this.gazeMul);
-    if (this.gazeOverride === null && this.clock < this.watchedIdleUntil) this.gaze = Math.min(1, this.gaze * 1.3);
+    this.gaze = this.gazeOverride ?? Math.min(1, this.gazeM.factor * this.gazeMul);
   }
 
   get gazeState(): GazeState { return this.gazeM.state; }
@@ -351,11 +328,8 @@ export class Customer implements Observer {
     this.teaCount++;
     this.holdingTeaFor = 7;
     /*
-     * 20 GIÂY TRẢ Ở ĐÂY, TRƯỚC CỔNG COOLDOWN. Hảo cảm (`CARED_FOR_THEM`) thì có nhỏ dần và có
-     * cooldown — vì đó là tình cảm, mà tình cảm không farm được. Thời gian chờ thì KHÔNG: ly nước
-     * trà thứ hai vẫn là một ly nước trà, và người đứng nắng vẫn chịu đứng thêm vì nó. Trần chống
-     * lạm dụng đã có ở chỗ khác và đủ chặt: còn cầm ly thì không nhận ly nữa, và `teaSuspectAtCup`
-     * cho người soi bắt bài ở ly thứ ba.
+     * 20 GIÂY TRẢ Ở ĐÂY, TRƯỚC CỔNG COOLDOWN: `CARED_FOR_THEM` nhỏ dần và có cooldown, thời gian chờ
+     * thì không. Trần chống lạm dụng: còn cầm ly thì không nhận ly nữa, và `teaSuspectAtCup`.
      */
     this.waitMore(TEA_PATIENCE_SEC);
     if (onCd) return 0;

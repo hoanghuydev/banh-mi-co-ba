@@ -8,6 +8,6 @@
     "allowNpcs": ["CHI_HANH"],
     "words": { "bát": "chén", "mũ": "nón", "bố": "ba", "mẹ": "má", "ngô": "bắp", "vào": "vô", "lạc": "đậu phộng", "dứa": "thơm" }
   },
-  "unaccentedRisk": ["banh mi", "co ba", "do chua", "cha lua", "thit nguoi", "khong", "duoc", "roi"],
+  "unaccentedRisk": ["banh mi", "do chua", "cha lua", "thit nguoi", "khong", "duoc", "roi"],
   "enPronounLeaks": ["aunt", "auntie", "uncle", "older sister", "older brother", "little sister", "little brother", "grandma", "granny"]
 }

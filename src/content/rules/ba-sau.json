@@ -1,16 +1,14 @@
 {
-  "_note": "Bà Sáu — gánh tàu hũ đi ngang hẻm. ĐỒNG NGHIỆP, ngang hàng, không phải người để thương hại. Nút đồn thổi thứ hai (pGossip 0.65).",
+  "_note": "Bà Sáu — gánh tàu hũ đi ngang hẻm. ĐỒNG NGHIỆP, ngang hàng, không phải người để thương hại.",
   "rules": [
     {"id": "sau.dropped_food", "concept": "NOTICE_EVENT", "when": {"npcId": "BA_SAU", "eventId": "DROPPED_FOOD", "obsState": ">=NOTICED", "ctxBarkT1_DROP": "absent"}, "applycontext": {"ctxBarkT1_DROP": {"value": 1, "duration": 90}}, "say": ["Rớt rồi bây ơi. Thôi bỏ, bán đồ ăn mà."]},
     {"id": "sau.dirty_hands", "concept": "NOTICE_EVENT", "when": {"npcId": "BA_SAU", "eventId": "DIRTY_HANDS", "obsState": ">=NOTICED", "ctxBarkT1_TAY": "absent"}, "applycontext": {"ctxBarkT1_TAY": {"value": 1, "duration": 90}}, "say": ["Tui bán tàu hũ tui cũng vậy à. Mà thôi, lau cái đi bây."]},
     {"id": "sau.burnt_or_cold", "concept": "NOTICE_EVENT", "when": {"npcId": "BA_SAU", "eventId": "BURNT_OR_COLD", "eventBurnt": true, "obsState": ">=NOTICED", "ctxBarkT1_KHET": "absent"}, "applycontext": {"ctxBarkT1_KHET": {"value": 1, "duration": 90}}, "say": ["Cháy rồi bây. Để đó tui ăn cho, đừng bỏ uổng."]},
     {"id": "sau.cold", "concept": "NOTICE_EVENT", "when": {"npcId": "BA_SAU", "eventId": "BURNT_OR_COLD", "eventBurnt": false, "obsState": ">=NOTICED", "ctxBarkT1_NGUOI": "absent"}, "applycontext": {"ctxBarkT1_NGUOI": {"value": 1, "duration": 90}}, "say": ["Nguội rồi nè bây. Thôi kệ, tui ăn cũng được."]},
-    {"id": "sau.wrong_name", "concept": "NOTICE_EVENT", "when": {"npcId": "BA_SAU", "eventId": "WRONG_NAME", "obsState": ">=NOTICED"}, "say": ["Sáu chứ Bảy gì bây! Hai bà già bán hàng rong, lộn hoài à."]},
     {"id": "sau.flourish", "concept": "NOTICE_EVENT", "when": {"npcId": "BA_SAU", "eventId": "FLOURISH", "obsState": ">=NOTICED"}, "say": ["Tay nghề lên rồi bây ơi."], "cooldown": 300},
     {"id": "sau.wait.confirmed", "concept": "NOTICE_EVENT", "when": {"npcId": "BA_SAU", "eventId": "MADE_THEM_WAIT", "obsState": "CONFIRMED"}, "say": ["Kệ bây, tui ngồi đây tui nghỉ cái chân."]},
     {"id": "sau.del.seen", "concept": "DELIVERY", "when": {"npcId": "BA_SAU", "defectCount": ">=1", "defectWasSeen": true}, "say": ["Bây bỏ thiếu kìa."]},
     {"id": "sau.del.found", "concept": "DELIVERY", "when": {"npcId": "BA_SAU", "defectCount": ">=1", "defectWasSeen": false}, "say": ["Thôi kệ, ăn cũng được."]},
-    {"id": "sau.del.usual", "concept": "DELIVERY", "when": {"npcId": "BA_SAU", "defectCount": 0, "orderIsUsual": true}, "say": ["Bây nhớ tui hả? Trời, tui bán tàu hũ hai chục năm có ai nhớ tui đâu."]},
     {"id": "sau.del.toomuch", "concept": "DELIVERY", "when": {"npcId": "BA_SAU", "defectCount": 0, "freeExtraTooMuch": true}, "say": ["Bây cho nhiều quá. Mai tui đổi cho bây chén tàu hũ."]},
     {"id": "sau.tea", "concept": "INTERACT", "when": {"npcId": "BA_SAU", "interaction": "TEA"}, "say": ["Trời, người bán hàng rong mà đi rót nước cho người bán hàng rong. Ngộ hen."]},
     {"id": "sau.chan", "concept": "SMALLTALK", "when": {"npcId": "BA_SAU", "queueLength": "<=2"}, "say": ["Cái chân tui dạo này nhức. Gánh từ đầu hẻm vô tới đây là muốn ngồi."], "norepeat": true, "odds": 50}

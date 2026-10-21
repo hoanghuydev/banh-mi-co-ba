@@ -196,9 +196,6 @@ test("đứng ngay cạnh ai thì F nói chuyện với NGƯỜI ĐÓ, không ph
        * `talkCost` cho người vừa mở lời `TALK_B_ADDRESSED` = −99 — thắng tuyệt đối, và
        * ĐÚNG như vậy: làm lơ một người vừa hỏi mình là chuyện khác hẳn. Lưới này đo luật
        * KHOẢNG CÁCH, nên phải đo lúc luật kia không bật.
-       *
-       * Trước đây không cần lọc vì khách hiếm khi tự mở lời (đo được 0,6 lần/ngày). Sau
-       * đợt P2-10 thì 1,8 lần/ngày, và lưới bắt đầu rơi trúng mấy lúc đó.
        */
       if (x.service.pendingTalkers.length) return;
       x.service.playerAt = standBy(back);
@@ -402,7 +399,7 @@ test("một người chỉ có MỘT câu trả lời — mời hụt rồi mờ
 test("hàng dài thì mời cũng vô ích — cơ chế này chỉ đáng dùng lúc VẮNG", () => {
   const warm = {
     person: { soi: 0.2, deTha: 0.9, thanThien: 0.9 },
-    glanced: true, tone: "AM", warmth: 10, soldOut: false, slots: QUEUE_SLOTS.length,
+    glanced: true, tone: "AM", soldOut: false, slots: QUEUE_SLOTS.length,
   };
   const empty = inviteChance({ ...warm, ahead: 0 });
   assert.ok(empty > 0.5, `quán trống, mời hết sức mà mới ${empty.toFixed(2)}`);
@@ -418,7 +415,7 @@ test("hai người đi NGƯỢC chiều gặp nhau thì chào nhau — và chỉ
   /**
    * Nguyên tắc Orkin: người chơi cần NGHE THẤY hai người quen nhau, không cần hai người
    * đó thật sự có quan hệ trong mô phỏng. Nên lưới này chỉ đòi đúng ba chuyện: có xảy
-   * ra · là thiểu số · và KHÔNG mang thông tin gì (không claim, không ghi sổ tay).
+   * ra · là thiểu số · và KHÔNG mang thông tin gì (không claim).
    */
   let greeted = 0, seen = 0, bothSpoke = 0;
   for (const day of [3, 9, 13, 21, 27]) {
@@ -443,9 +440,7 @@ test("hai người đi NGƯỢC chiều gặp nhau thì chào nhau — và chỉ
 
 test("cái chào KHÔNG được mang thông tin — nền thì miễn phí, bỏ qua không mất gì", async () => {
   /**
-   * Ranh giới cứng với cảnh nghe lỏm ở góc hẻm (CANON §12 RB4). Nếu chuyện thời tiết
-   * cũng đáng nghiêng người nghe thì hai chấm `..` hết là một lời hứa đáng tin, và người
-   * chơi bỏ luôn cơ chế nghe lỏm — mà không có nghe lỏm thì bỏ cả đồn thổi lẫn nhớ nhầm.
+   * Cái chào là nền, không chứa thông tin gì để người chơi phải nghe.
    */
   const g = JSON.parse(
     await readFile(new URL("../src/content/lines/generic.json", import.meta.url), "utf8"),

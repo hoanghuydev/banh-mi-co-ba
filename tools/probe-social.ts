@@ -1,16 +1,7 @@
 /**
- * BOT XÃ GIAO CÓ THẬT SỰ RÓT TRÀ, MỜI NGỒI, CHO MƯỢN ÁO MƯA KHÔNG.
+ * Bot xã giao (rót trà, mời ngồi, mời ghé…) chạy mọi act nội dung: in act nào CHẠY bao nhiêu lần, act nào ĐỨNG YÊN.
  *
- * `tools/probe-facts.ts` đo ra `v.gaveTea` 0% · `t.sitting` 0% · `t.filming` 0% ·
- * `m.borrowing` 0% · `w.cartChung` 0%, và tôi đã khai mấy dòng đó là "không đo được, vì
- * bot `greedy` chỉ biết gói bánh". Chủ dự án: *"viết bot biết rót trà, mời ngồi, cho mượn
- * áo mưa đi"*. Đây là cái máy trả lời câu đó.
- *
- * Bot đi qua ĐÚNG hai hàm `StallScene` gọi (`openTalk` → `chooseTalk`), không gọi tắt
- * `service.serveTea()`: gọi tắt là đo cái hàm, không đo cái game.
- *
- * In ra: act nào CHẠY được bao nhiêu lần, và act nào vẫn ĐỨNG YÊN — vì sau đợt này,
- * "0 lần" mới thật sự có nghĩa là một nhánh nội dung không với tới được.
+ * Bot đi qua đúng hai hàm `StallScene` gọi (`openTalk` → `chooseTalk`), không gọi tắt `service.serveTea()`.
  */
 import { Bus } from "../src/core/eventbus";
 import { newGame } from "../src/core/save";
@@ -36,7 +27,7 @@ let moCuoc = 0, nhip = 0, ban = 0;
 const w = newGame("social", "p210");
 const bus = new Bus(false);
 const platform = memoryPlatform();
-for (let d = 1; d < 5; d++) nextDay(w, bus);
+for (let d = 1; d < 5; d++) nextDay(w);
 
 for (let ngay = 0; ngay < NGAY; ngay++) {
   /** Săn XOAY VÒNG qua mọi act nội dung có gọi — không có cái này thì act hiếm không tới lượt. */
@@ -59,7 +50,7 @@ for (let ngay = 0; ngay < NGAY; ngay++) {
   for (let i = 0; i < 140_000 && !h.closed; i++) h.step(1000 / 30);
   ban += w.progress.today.served;
   troi.add(w.progress.weather);
-  nextDay(w, bus);
+  nextDay(w);
 }
 
 console.log(`\nbot \`social\` · ${NGAY} buổi · mở ${moCuoc} cuộc · ${nhip} nhịp · bán ${ban} ổ\n`);
@@ -67,18 +58,13 @@ const tat = [...CO_TRONG_KHO].filter((k) => !chay.has(k)).sort();
 for (const [k, n] of [...chay].sort((a, b) => b[1] - a[1])) {
   console.log(`  ${k.padEnd(16)} ${String(n).padStart(4)} lần`);
 }
-/*
- * ⚠️ BẢNG NÀY PHẢI TỰ KHAI NÓ KHÔNG ĐO ĐƯỢC CÁI GÌ — quy tắc rút ra sau ba đợt liền khai
- * sai vì một phép đo im lặng. Một act "đứng yên" có thể là nhánh chết, mà cũng có thể chỉ
- * là ván chơi này không có điều kiện cho nó.
- */
+// ⚠️ Act "đứng yên" có thể là nhánh chết hoặc chỉ là ván này thiếu điều kiện — in kèm điều kiện ván.
 console.log(`\nVẪN ĐỨNG YÊN (${tat.length}/${CO_TRONG_KHO.size} act nội dung có gọi):`);
 for (const k of tat) console.log(`  ${k}`);
 console.log("\nĐiều kiện ván chơi này CÓ hay KHÔNG — đọc cột trên với mấy dòng này:");
-// ⚠️ Hỏi `isRain` chứ đừng so chuỗi: mưa có HAI tên (`MUA_RAO`, `MUA_DAM`), và bản đầu
-// của chính dòng này so với "MUA" nên in ra "không có ngày mưa" giữa một mùa có mưa.
+// ⚠️ Hỏi `isRain` chứ đừng so chuỗi: mưa có hai tên (`MUA_RAO`, `MUA_DAM`).
 const coMua = [...troi].some((x) => isRain(x as never));
-console.log(`  thời tiết gặp: ${[...troi].join(", ")}${coMua ? "" : "  ← KHÔNG có ngày mưa: arc áo mưa (LEND_ITEM/CLEAR_DEBT) không có cửa"}`);
-console.log(`  đồ nghề cuối mùa: ${w.equipment.owned.join(", ") || "(không mua được gì)"}`);
+console.log(`  thời tiết gặp: ${[...troi].join(", ")}${coMua ? "" : "  ← KHÔNG có ngày mưa"}`);
+console.log(`  đồ nghề cuối ván: ${w.equipment.owned.join(", ") || "(không mua được gì)"}`);
 console.log("  act dính một NGƯỜI cụ thể (RAO·MOVE_GANH·BARTER của bà Sáu, OVERHEARD_BY của anh Dũng)");
 console.log("  chỉ chạy khi đúng người đó có mặt VÀ đúng cuộc đó được rút — số buổi càng ít càng khó gặp.");

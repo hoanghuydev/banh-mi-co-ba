@@ -1,13 +1,9 @@
 /**
  * SỰ THẬT VỀ THẾ GIỚI, lúc một câu được nói ra — P2-07 §3, gộp vào một bảng đen ở P2-09 §2.2.
  *
- * File này KHÔNG còn là một từ vựng thứ hai. Nó chỉ làm đúng một việc: dịch *trạng thái
- * game* thành một `Query` của bảng đen, rồi để `dialog/gates.ts` trả lời. Bảng khoá nằm
- * ở `content/rules/_blackboard.json` mục `aliases` — một chỗ, cho cả rule DB lẫn cây thoại.
- *
- * Vì sao phải gộp (bản cũ có hai bảng): cùng một lỗi gõ sai, bảng của rule DB **ném lỗi
- * lúc nạp** còn bảng ở đây **im lặng trả `false`** — câu đó không bao giờ hiện, và không
- * ai biết. Hai chế độ hỏng ngược nhau cho cùng một sai lầm.
+ * File này chỉ làm đúng một việc: dịch *trạng thái game* thành một `Query` của bảng đen, rồi
+ * để `dialog/gates.ts` trả lời. Bảng khoá nằm ở `content/rules/_blackboard.json` mục `aliases`
+ * — một chỗ, cho cả rule DB lẫn cây thoại.
  *
  * Thuần dữ liệu: không Phaser, không đọc file. `Service` dựng `WorldSnapshot` mỗi lần cần
  * hỏi, rồi `holds()` trả lời.
@@ -40,21 +36,16 @@ export type WorldSnapshot = {
     inShade: boolean;
     sitting: boolean;
     filming: boolean;
-    /** Người này đang mượn một món đồ của mình (`LEND_ITEM`). */
-    borrowing: boolean;
     onPhone: boolean;
     eating: boolean;
     hasOrder: boolean;
     waitRatio: number;
     purpose: string | null;
     state: string | null;
-    tier: string;
-    visits: number;
   };
 
   convo: {
     tones: readonly string[];
-    warmth: number;
     angered: boolean;
     openedBy: "PLAYER" | "NPC";
   };
@@ -72,10 +63,6 @@ export type WorldSnapshot = {
     told: readonly string[];
   };
 
-  season: {
-    remembers: boolean;
-  };
-
   hot: boolean;
   rain: boolean;
   peak: boolean;
@@ -83,26 +70,20 @@ export type WorldSnapshot = {
   shadeFree: boolean;
   seatFree: boolean;
   ganhOut: boolean;
-  /** Còn mấy cái áo mưa chưa cho mượn — act `LEND_ITEM`. */
-  coats: number;
   cartLan: boolean;
   cartChung: boolean;
   ovenHot: boolean;
   /**
-   * MẺ VỪA RA LÒ — hẹp hơn `ovenHot` và đó là cả lý do nó tồn tại.
-   *
-   * `ovenHot` đúng cả lúc lò ĐANG NHEN, mà đang bán thì lò gần như lúc nào cũng nhen —
-   * đo ra 100%. Hai cuộc khoá vào nó ("thơm quá", "mẻ mới ra lò") coi như không khoá gì.
-   * Cái mùi mà hai cuộc đó nói tới là một KHOẢNH KHẮC, không phải một trạng thái.
+   * MẺ VỪA RA LÒ — hẹp hơn `ovenHot` (đúng cả lúc lò ĐANG NHEN, tức gần như suốt buổi bán):
+   * cái mùi "thơm quá", "mẻ mới ra lò" là một KHOẢNH KHẮC, không phải một trạng thái.
    */
   meVuaRa: boolean;
   band: string;
   /**
-   * Ngày thứ mấy của mùa — cho `w.day(N)`.
+   * Ngày thứ mấy của ván — cho `w.day(N)` (N ngày đầu).
    *
-   * Tên là `dayIndex` chứ không phải `day` vì `day` đã là TẦNG `d.*` (trong ngày) ở trên.
-   * Hai thứ khác hẳn nhau: một cái là "hôm nay là ngày mấy của mùa", một cái là "sáng nay
-   * đã xảy ra chuyện gì".
+   * Tên là `dayIndex` chứ không phải `day` vì `day` đã là TẦNG `d.*` (trong ngày) ở trên:
+   * một cái là "hôm nay là ngày mấy của ván", một cái là "sáng nay đã xảy ra chuyện gì".
    */
   dayIndex: number;
 };
@@ -139,7 +120,6 @@ export function queryOf(w: WorldSnapshot, q = new Query()): Query {
   q.set("npcInShade", t.inShade);
   q.set("npcSitting", t.sitting);
   q.set("npcFilming", t.filming);
-  q.set("npcBorrowing", t.borrowing);
   q.set("npcOnPhone", t.onPhone);
   q.set("npcEating", t.eating);
   q.set("npcHasOrder", t.hasOrder);
@@ -148,7 +128,6 @@ export function queryOf(w: WorldSnapshot, q = new Query()): Query {
   if (t.state) q.set("npcState", t.state);
 
   q.set("convoAngered", c.angered);
-  q.set("convoWarmth", Math.round(c.warmth));
   q.set("convoOpenedBy", c.openedBy);
   // Nhiều giọng cùng lúc: `convoTone` giữ giọng NẶNG NHẤT đã dùng, và mỗi giọng còn được
   // ghi riêng để `c.saidTone(X)` hỏi được từng cái — xem `toneMark`.
@@ -161,10 +140,6 @@ export function queryOf(w: WorldSnapshot, q = new Query()): Query {
 
   q.set("dayMetToday", d.met);
 
-  q.set("seasonVisits", Math.max(0, Math.round(t.visits)));
-  q.set("seasonTier", t.tier);
-  if (w.season.remembers) q.set("seasonRemembers", true);
-
   q.set("worldHot", w.hot);
   q.set("worldRain", w.rain);
   q.set("worldPeak", w.peak);
@@ -172,7 +147,6 @@ export function queryOf(w: WorldSnapshot, q = new Query()): Query {
   q.set("worldShadeFree", w.shadeFree);
   q.set("worldSeatFree", w.seatFree);
   q.set("worldGanhOut", w.ganhOut);
-  q.set("playerCoats", w.coats);
   q.set("worldCartLan", w.cartLan);
   q.set("worldCartChung", w.cartChung);
   q.set("worldOvenHot", w.ovenHot);
@@ -199,7 +173,7 @@ const SCRATCH = new Query();
 /**
  * Một khoá có đúng không.
  *
- * Khoá lạ **ném lỗi** — khác hẳn bản cũ (im lặng trả `false`). Chỗ chặn thật nằm ở
+ * Khoá lạ **ném lỗi**. Chỗ chặn thật nằm ở
  * `tools/validate-talks.ts` + test `W-4`: cả hai quét toàn bộ nội dung lúc build, nên
  * một chữ gõ sai không bao giờ đi được tới tay người chơi.
  */

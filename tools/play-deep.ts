@@ -1,16 +1,9 @@
 /**
  * npx tsx tools/play-deep.ts [--day N] [--n N] [--pool QUA_DUONG|WALKIN|ALL]
  *
- * ĐÓNG VAI NGƯỜI CHƠI CHO TỚI HẾT CUỘC — không dừng ở nhịp đầu.
+ * Đóng vai người chơi cho tới hết cuộc, đo số nhịp mỗi cuộc.
  *
- * `play-passers.ts` chỉ in NHỊP ĐẦU. Mà chỗ hỏng không nằm ở nhịp đầu: nó nằm ở chỗ
- * bấm xong một câu thì cuộc TẮT. Chủ dự án chơi thật rồi nói *"sao cái của tôi nó trả
- * lời ngu lắm"* — đo trong trình duyệt ra 8/9 cuộc dài đúng MỘT nhịp. Không công cụ nào
- * trước đó nhìn thấy, vì không công cụ nào bấm tới nhịp hai.
- *
- * Đi đúng đường cú bấm F đi: `service.openTalk()` → `service.chooseTalk(i)`, y hệt
- * `StallScene.askFront()` / `pickTalk()`. Khác bản chơi tay đúng hai chỗ: không có
- * Phaser vẽ, và chọn ngẫu nhiên thay vì cân nhắc.
+ * Đi đúng đường cú bấm F: `service.openTalk()` → `service.chooseTalk(i)` như `StallScene`, chọn ngẫu nhiên.
  */
 import { Bus } from "../src/core/eventbus";
 import { newGame } from "../src/core/save";
@@ -31,21 +24,14 @@ const argS = (k: string, d: string) => {
 };
 const DAY = argN("day", 5), WANT = argN("n", 20), POOL = argS("pool", "ALL"), DAYS = argN("days", 1);
 const QUIET = process.argv.includes("--quiet");
-/*
- * `--engaged`: NGƯỜI CHƠI MUỐN NÓI CHUYỆN thì không bấm vào đường ra.
- *
- * Mặc định bot bấm ngẫu nhiên đều, nên nó chọn đúng câu "Thôi, hổng có gì" khoảng một
- * phần ba số lần — và mỗi lần như vậy cuộc dừng ở nhịp một vì ĐÓ LÀ VIỆC câu đó làm.
- * Đếm chung vào "cuộc chết sau một nhịp" là đổ lỗi cho nội dung một chuyện do cách đo.
- * Chế độ này bỏ qua `LANH`/`IM`/`GAT` khi còn dòng khác — đo ĐỘ SÂU có thật của cây.
- */
+/** `--engaged`: bỏ qua câu đường ra (`LANH`/`IM`/`GAT`) khi còn dòng khác, để đo độ sâu thật của cây. */
 const ENGAGED = process.argv.includes("--engaged");
 const EXITS = new Set(["LANH", "IM", "GAT"]);
 
 const w = newGame("deep", "p209");
 const bus = new Bus(false);
 const platform = memoryPlatform();
-for (let d = 1; d < DAY; d++) nextDay(w, bus);
+for (let d = 1; d < DAY; d++) nextDay(w);
 
 let h!: HeadlessStall, svc: any;
 async function openStall() {
@@ -69,21 +55,14 @@ const byTalk = new Map<string, { n: number; beats: number }>();
 const byBag = new Map<string, number>();
 
 for (let day = 0; day < DAYS && shown < WANT; day++) {
- if (day) { nextDay(w, bus); await openStall(); }
+ if (day) { nextDay(w); await openStall(); }
  for (let i = 0; i < 60000 && shown < WANT; i++) {
   h.step(1000 / 30);
   if (i % 3) continue;
   await Promise.resolve();
   for (const c of svc.customers) {
     if (seen.has(c.id) || shown >= WANT) continue;
-    /*
-     * BẮT CHUYỆN Ở MỘT LÚC NGẪU NHIÊN TRONG LƯỢT GHÉ, không phải ở frame đầu tiên.
-     *
-     * Bản đầu mở cuộc ngay lần đầu thấy người đó — tức là luôn ở `phase: "arriving"`.
-     * Thế là `t.served` (28% ngoài đời) và `w.queue(1)` (54%) không bao giờ đúng, và hai
-     * cuộc viết cho đúng hai lúc đó báo "không chạy lần nào" — một kết luận SAI do công
-     * cụ đo chứ không do nội dung. Người chơi thật bấm F rải ra cả lượt ghé.
-     */
+    // Bắt chuyện ở lúc ngẫu nhiên trong lượt ghé (không phải frame đầu), như người chơi thật.
     if (rnd() > 0.05) continue;
     const pool = c.ambient ? "QUA_DUONG" : (svc.talkKey(c) as string);
     if (POOL !== "ALL" && POOL !== pool && !(POOL === "NAMED" && NAMED_IDS.includes(pool))) continue;

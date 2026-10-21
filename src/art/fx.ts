@@ -29,12 +29,7 @@ export const FLY_W = 7;
 /** Khung vuông của texture ruồi — chừa chỗ cho cánh lúc ảnh bị XOAY theo hướng bay. */
 export const FLY_BOX = 14;
 
-/**
- * Cỡ hạt bụi. 32 px là dư: mặt thớt chỉ rộng `BOARD_W = 28`, mà hạt còn được emitter
- * thu xuống 0,2 lúc sinh ra. Lấy dư rồi thu lại thì rìa hạt mới mượt — P5-02 §621
- * cho ngân sách 4–6 texture hạt cho cả lửa/khói/mưa/bụi, nên một texture tròn mềm
- * dùng chung, đổi tông bằng `tint`, là đúng khoản đó.
- */
+/** Cỡ hạt bụi. Cố ý dư (mặt thớt chỉ rộng `BOARD_W = 28`, emitter còn thu xuống 0,2): lấy dư rồi thu thì rìa hạt mới mượt. */
 const PUFF_PX = 32;
 /**
  * Số lớp vẽ chồng. Mỗi lớp phủ alpha 0,11 nên tâm hạt (bị cả 14 lớp phủ) đậm
@@ -74,7 +69,7 @@ const RIPPLE_H = 16;
  */
 const SHADOW_W = 44, SHADOW_H = 22;
 /**
- * Bề ngang phần đậm — bằng đúng sải chân, giữ nguyên cỡ cũ (24) để không ai phải chỉnh lại scale.
+ * Bề ngang phần đậm — bằng đúng sải chân (24).
  * Cũng là MỐC QUY ĐỔI cho bóng đạo cụ: `scale = bề ngang muốn có / SHADOW_CORE`, nên người chơi
  * (sải chân 24) ra đúng scale 1.
  */
@@ -84,7 +79,7 @@ export const SHADOW_CORE = 24;
  * Bề ngang bóng của từng đạo cụ, tính bằng px thiết kế. Không có tên trong bảng = KHÔNG có bóng,
  * nên tường, cửa, nhà bên và mặt quầy tự khắc đứng ngoài (chúng ra key `BUILD.*`/`COUNTER.*`).
  *
- * ⚠️ Lấy theo BỀ NGANG VẬT CHE NẮNG, không theo chỗ nó chạm đất. Đo thực tế hai cột lệch nhau rất xa:
+ * ⚠️ Lấy theo BỀ NGANG VẬT CHE NẮNG, không theo chỗ nó chạm đất — hai cột lệch nhau rất xa:
  *
  *      vật        bề ngang vẽ   bề ngang đáy
  *      dù            109,5          24,0
@@ -92,12 +87,8 @@ export const SHADOW_CORE = 24;
  *      bàn            75,5          40,1
  *      bảng gỗ        41,5           3,8
  *
- * Cái dù mà lấy 24 thì ra một chấm bé tí dưới cây cột, trong khi thứ che nắng là cái TÁN rộng gấp
- * bốn; cái ghế đẩu lấy 2,1 thì gần như không có bóng, dù mặt ghế vẫn chắn sáng. Nên các số dưới đây
- * bám theo cột TRÁI, hạ bớt một chút vì nguồn sáng ở đây tản chứ không phải đèn chiếu thẳng đứng.
- *
- * Con số 76 của cái dù không phải bịa: bản vẽ-code dự phòng trong `StallScene` xưa nay vẫn vẽ
- * `fillEllipse(x, y + 2, 76, 26)` dưới chân dù — giữ đúng nó để hai bản không lệch nhau.
+ * Các số dưới đây bám cột TRÁI, hạ bớt một chút vì nguồn sáng tản. Số 76 của cái dù khớp bản
+ * vẽ-code dự phòng trong `StallScene` (`fillEllipse(x, y + 2, 76, 26)`) — đổi thì đổi cả hai.
  */
 /**
  * `w` bề ngang (px thiết kế) · `a` độ đậm so với bóng tiếp đất, mặc định 1.
@@ -125,10 +116,8 @@ export const PROP_SHADOW: Record<string, { w: number; a?: number }> = {
 /**
  * Bóng đổ. Vẽ bằng CANVAS chứ không bằng `Graphics`, vì cần chuyển sắc.
  *
- * ⚠️ Bản cũ là một ê-líp ĐẶC, màu đều, mép cắt ngọt (`fillEllipse` + alpha 0,26). Mép ngọt
- * là thứ tố cáo ngay: bóng thật không có đường biên: nó đậm nhất ngay dưới chỗ chạm đất rồi
- * nhoè dần ra — chính vùng nhoè đó (nửa tối) mới làm người ta tin vật đang ĐỨNG TRÊN sàn
- * chứ không phải có ai dán một miếng ê-líp xám xuống đất.
+ * ⚠️ Bóng thật không có đường biên: đậm nhất dưới chỗ chạm đất rồi nhoè dần — vùng nửa tối đó
+ * mới làm vật trông ĐỨNG TRÊN sàn; ê-líp đặc mép ngọt thì trông như miếng dán.
  *
  * Hai lớp, cùng một mẹo với vòng sáng dưới chân trạm ngay bên dưới:
  *
@@ -189,7 +178,7 @@ export function buildFx(scene: Phaser.Scene) {
   // và đó không phải thứ sửa được bằng cách tăng alpha, vấn đề là ĐỘ TƯƠNG PHẢN với nền.
   //
   // Nên: nét MỰC SẬM bọc ngoài (đọc trên nền sáng) · nét HỔ PHÁCH đậm ở giữa (đọc trên nền sậm) ·
-  // lõi sáng mảnh làm nó "có đèn". Bọc mực là cùng mẹo mũi tên "cô Ba đây" dùng ngay dưới.
+  // lõi sáng mảnh làm nó "có đèn". Bọc mực là cùng mẹo mũi tên "mình đây" dùng ngay dưới.
   const g2 = scene.make.graphics({ x: 0, y: 0 }, false);
   const cx = (TW + RING_PAD * 2) / 2, cy = (TH + RING_PAD * 2) / 2;
   const rw = TW - 12, rh = TH - 6;
@@ -202,7 +191,7 @@ export function buildFx(scene: Phaser.Scene) {
   g2.generateTexture(FX.ring, TW + RING_PAD * 2, TH + RING_PAD * 2);
   g2.destroy();
 
-  // Ruồi bản vẽ code — đúng cái chấm đen trước giờ. `art/photo.ts` đè ảnh thật lên
+  // Ruồi bản vẽ code: một chấm đen. `art/photo.ts` đè ảnh thật lên
   // nếu `fly.png` về kịp; không kịp thì vẫn còn chấm này, không thủng lỗ.
   const g3 = scene.make.graphics({ x: 0, y: 0 }, false);
   g3.fillStyle(0x1b1b1b, 1);
@@ -210,7 +199,7 @@ export function buildFx(scene: Phaser.Scene) {
   g3.generateTexture(FX.fly, FLY_BOX, FLY_BOX);
   g3.destroy();
 
-  // Mũi tên "cô Ba đây". Vẽ viền bằng một tam giác TO HƠN nằm dưới, không dùng
+  // Mũi tên "mình đây". Vẽ viền bằng một tam giác TO HƠN nằm dưới, không dùng
   // `lineStyle` — nét viền của Graphics bị cắt ngang ở mỗi đỉnh nhọn, ra ba cái sừng.
   const g5 = scene.make.graphics({ x: 0, y: 0 }, false);
   const w = YOU_W + YOU_PAD * 2, h = YOU_H + YOU_PAD * 2;

@@ -1,11 +1,10 @@
 /**
  * Khẩu vị ẩn — P1-01 §2.6. Mỗi NPC có một `TasteVector` lý tưởng + trọng số cho biết họ
- * để ý chiều nào. KHÔNG BAO GIỜ hiện số (T3): người chơi suy ra qua lời, qua sổ tay,
- * qua việc họ boa nhiều hay ít.
+ * để ý chiều nào. KHÔNG BAO GIỜ hiện số (T3): người chơi suy ra qua lời.
  *
  * Ranh giới không được lẫn (P1-01 §2.6, CANON Đ3): lệch KHẨU VỊ ≠ ORDER_DEFECT.
  * Khách NÓI RA "không hành" → ràng buộc cứng (xử lý ở `order.ts`). Khách không nói mà
- * vốn thích ít rau → chỉ là `satisfaction` thấp, im lặng, đi vào tiền boa.
+ * vốn thích ít rau → chỉ là `satisfaction` thấp, im lặng.
  */
 import TASTES from "../content/npcs/taste.json";
 import { portionsOf, type Ingredient } from "./order";
@@ -39,8 +38,7 @@ export function servedVector(dish: readonly Ingredient[], crust: number): TasteV
   const g = (id: Ingredient) => n.get(id) ?? 0;
   // Mẫu số = TRẦN THẬT của từng trục trên thang hai nấc (`INGREDIENTS[].max` = 2):
   // một món 2, nhóm nhân bốn món 8 nhưng không ai kẹp đủ bốn — 4 là "đã nhiều thịt",
-  // rau ba món 6. Lấy mẫu số cũ (thang bốn nấc) thì không ổ nào chạm nổi 1,0 và NPC nào
-  // cũng đọc ra là nhạt — `satisfaction` lệch vĩnh viễn về một phía.
+  // rau ba món 6. Mẫu số lớn hơn thì không ổ nào chạm nổi 1,0 và NPC nào cũng thấy nhạt.
   return {
     pate: clamp01(g("pate") / 2),
     meat: clamp01((g("thit") + g("chalua") + g("xiumai") + g("opla")) / 4),

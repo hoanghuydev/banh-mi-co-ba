@@ -2,22 +2,18 @@ import type Phaser from "phaser";
 import { MENU_BOARD, MENU_DRINKS, MENU_TIPS, type MenuItem } from "../../sim/menu";
 import { ECON, loafPriceVnd, vnd } from "../../sim/econ";
 import { INGREDIENTS, levelsOf } from "../../sim/order";
-import { shopName } from "../../content/intro";
+import { shopName } from "../../content/shop";
 
 /**
  * BẢNG MENU — cái người chơi ĐỌC, không phải cái người chơi bấm.
  *
  * Game này không có màn hình nào dạy công thức: khách nói "cho ổ xíu mại" và người chơi
- * phải biết ổ đó có gì. Trước đây chỗ duy nhất biết điều ấy là `diffDish`, tức người chơi
- * chỉ học được bằng cách LÀM SAI rồi bị trừ. Tấm bảng này là chỗ học trước khi sai — đúng
- * như ngoài đời: ai mới vô làm cũng đứng ngó cái bảng một lúc.
+ * phải biết ổ đó có gì. Tấm bảng này là chỗ học trước khi làm sai.
  *
- * Lớp DOM phủ lên canvas (giống `ui/notebook`): chữ Việt nhiều dấu, nhiều cỡ chữ, và phải
+ * Lớp DOM phủ lên canvas: chữ Việt nhiều dấu, nhiều cỡ chữ, và phải
  * cuộn được ở 200% — mấy thứ đó trình duyệt làm sẵn, vẽ trong Phaser thì phải làm tay.
  *
- * Hình thức là một luận điểm, không phải trang trí: P4-01 §prop_a chốt rằng xe chú Kiệt có
- * "bảng menu IN DECAL" và *"đây là toàn bộ chủ đề của game gói trong hai cái bảng"*. Nên
- * bảng này sơn tay, chữ không đều, treo lệch, và tờ giấy dán bên cạnh thì quăn mép.
+ * Bảng sơn tay, chữ không đều, treo lệch — đối lại bảng IN DECAL của xe chú Kiệt.
  *
  * MỘT NGUỒN: mọi dòng dưới đây đọc từ `sim/menu` + `sim/econ`. Không một tên món hay con
  * số nào được gõ tay vào file này — bảng treo trên vách, bảng người chơi đọc, và bảng
@@ -70,18 +66,12 @@ const STYLE = `
 .mb-btn:focus-visible{outline:2px solid #8e2a20;outline-offset:2px}
 `;
 
-/**
- * Tiền ghi bằng SỐ trên bảng: "25.000₫".
- *
- * ⚠️ KHÔNG dùng `dongVi()` — hàm đó đọc số thành LỜI ("hai mươi lăm ngàn") vì nó sinh ra
- * cho câu thoại của NPC. Lọt vào bảng giá thì tấm bảng đọc như một người đang nói, và chủ
- * dự án bắt được ngay: *"sao chỗ menu hiện hai mươi lăm ngàn thế. 25.000đ chứ"*.
- */
+/** Tiền ghi bằng SỐ trên bảng ("25.000₫"); ⚠️ không dùng `dongVi()` — hàm đó đọc số thành lời cho thoại. */
 const tien = (d: number) => `${d.toLocaleString("vi-VN")}₫`;
 
 export type MenuBoardOpts = {
   textScale: number;
-  /** Tên con đặt ở màn mở đầu — ghi dưới tên quán, y như dòng trên tấm bảng ngoài vách. */
+  /** Tên nhân vật chính — ra tên quán, y như tấm bảng ngoài vách. */
   playerName?: string;
   onClose: () => void;
 };
@@ -93,11 +83,10 @@ export class MenuBoardView {
      * Esc và E đều đóng bảng — E vì đó là phím vừa MỞ nó, và bấm lại phím vừa bấm để
      * thoát là phản xạ của mọi người chơi.
      *
-     * CANON §15.2 mục 7: không một lớp UI nào được nuốt phím tạm dừng. `P` và `Tab` đi
-     * thẳng xuống scene, nên từ đây vẫn vào được menu tạm dừng và vẫn mở được sổ tay.
+     * CANON §15.2 mục 7: không một lớp UI nào được nuốt phím tạm dừng — `P` đi thẳng xuống scene.
      */
     if (ev.code === "Escape" || ev.code === "KeyE") { ev.preventDefault(); this.close(); return; }
-    if (ev.code === "KeyP" || ev.code === "Tab") return;
+    if (ev.code === "KeyP") return;
     ev.stopPropagation();
   };
 
@@ -112,7 +101,7 @@ export class MenuBoardView {
     this.root.className = "mb-root";
     this.root.style.fontSize = `${Math.round(14 * opts.textScale)}px`;
     this.root.addEventListener("keydown", this.keyGuard, true);
-    this.root.addEventListener("keyup", (e) => { if (e.code !== "KeyP" && e.code !== "Tab") e.stopPropagation(); }, true);
+    this.root.addEventListener("keyup", (e) => { if (e.code !== "KeyP") e.stopPropagation(); }, true);
     this.root.addEventListener("pointerdown", (e) => { if (e.target === this.root) this.close(); });
     document.body.appendChild(this.root);
     if (this.game.input.keyboard) this.game.input.keyboard.enabled = false;
@@ -143,7 +132,7 @@ export class MenuBoardView {
    */
   private ingChips(it: MenuItem): HTMLElement {
     const box = this.el("div", "mb-ing");
-    const lv = levelsOf({ mon: it.id, rau: "day-du", ot: 1, tuong: 1, usual: false });
+    const lv = levelsOf({ mon: it.id, rau: "day-du", ot: 1, tuong: 1 });
     for (const i of INGREDIENTS) {
       const n = lv[i.id] ?? 0;
       if (n <= 0) continue;

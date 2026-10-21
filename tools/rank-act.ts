@@ -1,15 +1,8 @@
 /**
- * XẾP ACT THEO ĐỘ HIẾM — và nói mỗi act đó là CẢNH GÌ.
+ * Xếp act theo độ hiếm, kèm cuộc chứa nó.
  *
- * Chủ dự án: *"hiếm thì cũng được nhưng sắp xếp theo độ hiếm đi. Cho một số xuất hiện
- * thường xuyên hơn tý."* Muốn chỉnh thì trước hết phải NHÌN THẤY cái thang, chứ không
- * phải một đống số rời.
- *
- * ⚠️ `weight` của một cuộc KHÔNG phải cái cần vặn: `pickTalk` dùng `c.score` khi `Service`
- * đưa vào, nên `t.weight` chỉ còn tác dụng ở test và công cụ. Núm thật là `initiates`
- * (xác suất chính họ mở lời) và trần `TALK_OFFERS_PER_DAY` — mỗi buổi CẢ HẺM chỉ có ngần
- * ấy lượt người ta tự bắt chuyện, nên nâng `initiates` của một cuộc là lấy chỗ của cuộc
- * khác, không phải thêm chỗ.
+ * ⚠️ Núm chỉnh là `initiates` và trần `TALK_OFFERS_PER_DAY`, không phải `t.weight` (`pickTalk` dùng `c.score`);
+ * trần tính cho cả hẻm nên nâng `initiates` một cuộc là lấy chỗ cuộc khác.
  */
 import { Bus } from "../src/core/eventbus";
 import { newGame } from "../src/core/save";
@@ -36,7 +29,7 @@ const dem = new Map<string, number>();
 const w = newGame("rank", "p210");
 const bus = new Bus(false);
 const platform = memoryPlatform();
-for (let d = 1; d < 5; d++) nextDay(w, bus);
+for (let d = 1; d < 5; d++) nextDay(w);
 const pol = { ...POLICIES.social, socialActs: [...canh.keys()].sort() };
 for (let i = 0; i < NGAY; i++) {
   const h = new HeadlessStall(w, pol, { bus, platform });
@@ -45,11 +38,11 @@ for (let i = 0; i < NGAY; i++) {
   const goc = svc.applyAct.bind(svc);
   svc.applyAct = (c: any, a: any, t: any) => { dem.set(a.kind, (dem.get(a.kind) ?? 0) + 1); return goc(c, a, t); };
   for (let f = 0; f < 140_000 && !h.closed; f++) h.step(1000 / 30);
-  nextDay(w, bus);
+  nextDay(w);
 }
 
 const BAC = (n: number) =>
-  n === 0 ? "KHÔNG GẶP" : n / NGAY >= 1 ? "mỗi buổi" : n / NGAY >= 0.3 ? "vài bữa một lần" : n >= 3 ? "dăm lần một mùa" : "cả mùa một hai lần";
+  n === 0 ? "KHÔNG GẶP" : n / NGAY >= 1 ? "mỗi buổi" : n / NGAY >= 0.3 ? "vài bữa một lần" : n >= 3 ? "dăm lần cả ván" : "cả ván một hai lần";
 
 console.log(`\n${NGAY} buổi · xếp theo độ hiếm (dày → thưa)\n`);
 const rows = [...canh.keys()].map((k) => [k, dem.get(k) ?? 0] as const).sort((a, b) => b[1] - a[1]);

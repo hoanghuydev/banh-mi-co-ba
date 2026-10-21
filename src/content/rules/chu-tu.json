@@ -1,15 +1,13 @@
 {
-  "_note": "Chú Tư — bảo vệ, 6h45 T2–T6, dễ tha nhất hẻm (deTha 0.9). Arc: công ty dời chỗ (P4). Câu buồn nhất game là câu THA THỨ.",
+  "_note": "Chú Tư — bảo vệ, 6h45 T2–T6, dễ tha nhất hẻm (deTha 0.9). Câu buồn nhất game là câu THA THỨ.",
   "rules": [
     {"id": "tu.dropped_food", "concept": "NOTICE_EVENT", "when": {"npcId": "CHU_TU", "eventId": "DROPPED_FOOD", "obsState": ">=NOTICED", "ctxBarkT1_DROP": "absent"}, "applycontext": {"ctxBarkT1_DROP": {"value": 1, "duration": 90}}, "say": ["Ui."]},
     {"id": "tu.dirty_hands", "concept": "NOTICE_EVENT", "when": {"npcId": "CHU_TU", "eventId": "DIRTY_HANDS", "obsState": ">=NOTICED"}, "silent": true, "say": []},
     {"id": "tu.burnt_or_cold", "concept": "NOTICE_EVENT", "when": {"npcId": "CHU_TU", "eventId": "BURNT_OR_COLD", "eventBurnt": true, "obsState": ">=NOTICED", "ctxBarkT1_KHET": "absent"}, "applycontext": {"ctxBarkT1_KHET": {"value": 1, "duration": 90}}, "say": ["Ờ hơi cháy chút. Không sao, chú ăn được."]},
     {"id": "tu.cold", "concept": "NOTICE_EVENT", "when": {"npcId": "CHU_TU", "eventId": "BURNT_OR_COLD", "eventBurnt": false, "obsState": ">=NOTICED", "ctxBarkT1_NGUOI": "absent"}, "applycontext": {"ctxBarkT1_NGUOI": {"value": 1, "duration": 90}}, "say": ["Ờ nguội chút xíu. Không sao, chú ăn được."]},
-    {"id": "tu.wrong_name", "concept": "NOTICE_EVENT", "when": {"npcId": "CHU_TU", "eventId": "WRONG_NAME", "obsState": ">=NOTICED"}, "say": ["Ừ… ờ. Không sao con."], "odds": 50},
     {"id": "tu.wait.confirmed", "concept": "NOTICE_EVENT", "when": {"npcId": "CHU_TU", "eventId": "MADE_THEM_WAIT", "obsState": "CONFIRMED"}, "say": ["Con… chú vô ca 7 giờ."], "norepeat": true},
     {"id": "tu.del.seen", "concept": "DELIVERY", "when": {"npcId": "CHU_TU", "defectCount": ">=1", "defectWasSeen": true}, "say": ["Ờ, thôi khỏi cũng được."]},
     {"id": "tu.del.found", "concept": "DELIVERY", "when": {"npcId": "CHU_TU", "defectCount": ">=1", "defectWasSeen": false}, "silent": true, "say": []},
-    {"id": "tu.del.usual", "concept": "DELIVERY", "when": {"npcId": "CHU_TU", "defectCount": 0, "orderIsUsual": true}, "say": ["Chú chưa nói gì hết mà. Con giỏi."]},
     {"id": "tu.del.toomuch", "concept": "DELIVERY", "when": {"npcId": "CHU_TU", "defectCount": 0, "freeExtraTooMuch": true}, "say": ["Ờ cảm ơn con."]},
     {"id": "tu.bye.served", "concept": "FAREWELL", "when": {"npcId": "CHU_TU", "leaveReason": "SERVED", "serveOutcome": "CLEAN"}, "odds": 75, "say": ["Ờ, chú vô ca đây con.", "Rồi, chú đi gác. Mai chú ghé.", "Cảm ơn con nghen. Chú chạy cho kịp 7 giờ."], "_note": "Ba điều kiện nên thắng mọi dòng generic — chú Tư lúc nào cũng đang chạy cho kịp ca, và câu chào của chú luôn có cái đồng hồ trong đó."},
     {"id": "tu.tea", "concept": "INTERACT", "when": {"npcId": "CHU_TU", "interaction": "TEA"}, "say": ["Chú uống miếng thôi, chú vô ca liền."]},

@@ -1,4 +1,4 @@
-/** Lời mời mới ở `any.banh` có ĂN được không — đo trên người ĐI NGANG thật, mỗi người một lần. */
+/** Mỗi lời mời INVITE của ANY/QUA_DUONG có ĂN được không — đo trên người ĐI NGANG thật, mỗi người một lần. */
 import { Bus } from "../src/core/eventbus";
 import { newGame } from "../src/core/save";
 import { memoryPlatform } from "../src/core/platform";
@@ -7,7 +7,7 @@ import { TalkStore } from "../src/content/talks";
 import { walkNodes } from "../src/sim/talk";
 
 const TALKS = await TalkStore.loadAll();
-/** So với mấy lời mời VIẾT SẴN trong `qua-duong.json`: 7% là bình thường hay là nút yếu? */
+/** Mọi lời mời viết sẵn trong ANY và QUA_DUONG. */
 const MOI: { ten: string; node: any }[] = [];
 for (const t of TALKS) {
   if (t.npc !== "ANY" && t.npc !== "QUA_DUONG") continue;
@@ -21,7 +21,7 @@ let moiLan = 0, ghe = 0;
 for (let d = 0; d < 4; d++) {
   const w = newGame(`ab${d}`, "p210");
   const bus = new Bus(false);
-  for (let k = 0; k < d; k++) nextDay(w, bus);
+  for (let k = 0; k < d; k++) nextDay(w);
   const h = new HeadlessStall(w, POLICIES.greedy, { bus, platform: memoryPlatform() });
   const svc = (h as any).service;
   const xong = new Set<string>();

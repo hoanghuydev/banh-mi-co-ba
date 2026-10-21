@@ -15,8 +15,8 @@ const HELP_UNTIL_DAY = 3;
 /** Ba ngày, ba dòng, mỗi dòng thêm đúng những phím hôm đó mới có chỗ dùng; hết ngày 3 thì tắt hẳn. */
 const HELP_BY_DAY = [
   "WASD đi · E làm việc · Esc tạm dừng",
-  "WASD đi · Shift chạy · E làm việc · Q đặt xuống · Tab sổ tay",
-  "WASD đi · E làm việc · R cầm ổ trên thớt · Q đặt xuống · F hỏi chuyện · giữ C che tay · Tab sổ tay",
+  "WASD đi · Shift chạy · E làm việc · Q đặt xuống",
+  "WASD đi · E làm việc · R cầm ổ trên thớt · Q đặt xuống · F hỏi chuyện · giữ C che tay",
 ];
 
 /** `GLANCE` = có người nhìn MẶT mình · `CLOSE` = có người nhìn thẳng vào TAY mình. */
@@ -73,7 +73,7 @@ type Toast = {
   life: number;
 };
 
-/** Được hiện: giờ, tiền, câu khách gọi NGUYÊN VĂN, thứ đã bỏ vào ổ. KHÔNG hiện: điểm, sao, thanh kiên nhẫn, chỉ số quan hệ, "đúng/sai" của hệ thống. */
+/** Được hiện: giờ, tiền, câu khách gọi NGUYÊN VĂN, thứ đã bỏ vào ổ. KHÔNG hiện: điểm, sao, thanh kiên nhẫn, "đúng/sai" của hệ thống. */
 export class Hud {
   private left: Phaser.GameObjects.Text;
   private right: Phaser.GameObjects.Text;
@@ -267,7 +267,7 @@ export class Hud {
   }
 
   update(s: {
-    day: number; seasonDays: number; clock: Clock; money: number; served: number;
+    day: number; clock: Clock; money: number; served: number;
     near: Station | null; hand: Hand; busy: { st: Station; ms: number } | null;
     frozen: boolean;
     ticket: { name: string; text: string; urgent: boolean } | null;

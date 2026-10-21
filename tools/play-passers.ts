@@ -1,14 +1,8 @@
 /**
  * npx tsx tools/play-passers.ts [--day N] [--n N]
  *
- * ĐÓNG VAI NGƯỜI CHƠI: chạy một buổi bán, mỗi lần có người đi ngang thì bấm F và IN RA
- * ĐÚNG NHỮNG DÒNG HIỆN LÊN, kèm hoàn cảnh (họ đang đi đâu, đang thế nào, lò có nóng
- * không, còn mấy ổ).
- *
- * Có mặt vì `validate:talks` chỉ kiểm CẤU TRÚC — nó không biết một câu có ai nói ngoài
- * đời hay không. Chủ dự án bắt được bốn câu vô lý mà cả mười hai lưới đều cho qua
- * (*"Cô cần gì cứ nói con nghen"* với một người đang rảo bước). Thứ duy nhất bắt được
- * loại đó là ĐỌC, và muốn đọc thì phải in ra.
+ * Đóng vai người chơi: chạy một buổi bán, bấm F với từng người đi ngang và in đúng những dòng
+ * hiện lên kèm hoàn cảnh, để đọc bằng mắt (`validate:talks` chỉ kiểm cấu trúc).
  */
 import { Bus } from "../src/core/eventbus";
 import { newGame } from "../src/core/save";
@@ -26,15 +20,11 @@ const DAY = argN("day", 5), WANT = argN("n", 14);
 const w = newGame("play", "p209");
 const bus = new Bus(false);
 const platform = memoryPlatform();
-for (let d = 1; d < DAY; d++) nextDay(w, bus);
+for (let d = 1; d < DAY; d++) nextDay(w);
 
 const h = new HeadlessStall(w, POLICIES.greedy, { bus, platform });
 const svc = (h as unknown as { service: any }).service;
-/*
- * Bot headless không có lò và không cầm gì, nên `stock`/`playerHand`/`ovenBusy` ở mặc
- * định — và thế là mọi lời mời bị `!p.soldOut` loại hết, bản ghi ra toàn câu xã giao.
- * Người chơi thật thì đang đứng với một khay bánh. Đặt cho đúng cảnh đó.
- */
+// Bot headless không có lò, không cầm gì: đặt cảnh đang đứng với một khay bánh để lời mời không bị `!p.soldOut` loại.
 svc.stock = 12;
 svc.ovenBusy = true;
 svc.playerHand = "loaf_filled";

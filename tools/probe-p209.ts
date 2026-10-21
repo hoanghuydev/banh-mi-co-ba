@@ -1,10 +1,4 @@
-/**
- * npx tsx tools/probe-p209.ts [--days N]
- *
- * THĂM DÒ, không phải test: chạy N ngày headless rồi đếm mấy chuyện P2-09 vừa dựng có
- * THẬT SỰ XẢY RA không. Một cơ chế không bao giờ nổ ra trong một mùa bốn mươi ngày thì
- * nó không tồn tại, dù test đơn vị có xanh.
- */
+/** npx tsx tools/probe-p209.ts [--days N] — chạy N ngày headless, đếm các cơ chế có thật sự xảy ra không. */
 import { Bus } from "../src/core/eventbus";
 import { newGame } from "../src/core/save";
 import { memoryPlatform } from "../src/core/platform";

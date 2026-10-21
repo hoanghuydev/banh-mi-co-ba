@@ -5,17 +5,13 @@ import { Bus } from "../src/core/eventbus";
 import { newGame } from "../src/core/save";
 import { buy, portionsFor, putBack, take } from "../src/sim/econ";
 import { HeadlessStall, POLICIES } from "../src/sim/headless";
-import { CAPACITY, INGREDIENTS, dishFor, type Ingredient } from "../src/sim/order";
+import { CAPACITY, INGREDIENTS, dishFor, mkDefect, type Ingredient } from "../src/sim/order";
 import { CRUST } from "../src/sim/oven";
-import { SALIENCE } from "../src/sim/perception";
-import { extraHabit, newRelState } from "../src/sim/memory";
 import { STATIONS, blockedReason, stationNear } from "../src/world/stations";
 
 /**
- * 26 s → 60 s (xem khối ⚖️ CÂN BẰNG trong `sim/loaf.ts`). Con số được chốt bằng CÁCH
- * CHƠI nó cho phép, không phải bằng một mốc tròn: nướng sẵn một lô ba ổ rồi gác lại
- * phải SỐNG được qua ba vòng phục vụ. Bài này kiểm đúng điều đó, nên nó vẫn gãy nếu
- * ai hạ `COOL_RATE` về mức cũ.
+ * Nguội sau 60 s (xem khối ⚖️ CÂN BẰNG trong `sim/loaf.ts`): một lô ba ổ nướng sẵn gác
+ * lại phải SỐNG được qua ba vòng phục vụ.
  */
 test("ổ ra lò nguội sau 60 s, đủ cho một lô ba ổ gác sẵn; mưa nguội nhanh hơn 1,4 lần", () => {
   const tCold = (1 - WARM_OK) / COOL_RATE;
@@ -111,13 +107,7 @@ test("trạm bám dính: đứng giữa thùng trà và bồn rửa thì không 
   assert.equal(stationNear(tea.tx + 0.5, tea.ty + 0.5, sink)?.id, "tea");
 
   // Ra khỏi tầm với của cả hai thì không còn trạm nào, dù trạm cũ là gì.
-  // Điểm thử phải TỰ CHỨNG MINH là xa mọi trạm chứ không ghi cứng một toạ độ: bản cũ
-  // lấy y=6 làm "chỗ xa tít", rồi quầy dời xuống đúng hàng y6 và chỗ đó hoá ra sát
-  // ngay chỗ đưa hàng — test đỏ vì cái mốc, không phải vì cái luật.
-  //
-  // Nên giờ nó tự DÒ ra chỗ trống nhất trong khu làm việc thay vì ghi một toạ độ: ghi
-  // cứng thì cứ thêm một cái trạm là đỏ một lần (đã hai lần — quầy dời xuống y6, rồi
-  // thùng rác mọc lên hàng trạm ngay trên đầu điểm thử cũ (10,5 · 3,5)).
+  // Điểm thử tự DÒ chỗ trống nhất trong khu làm việc thay vì ghi cứng toạ độ: thêm trạm là toạ độ cứng sai.
   const distTo = (p: { x: number; y: number }) =>
     Math.min(...STATIONS.map((s) => Math.hypot(s.tx + 0.5 - p.x, s.ty + 0.5 - p.y)));
   let far = { x: 10.5, y: 3.5 }, nearest = -1;
@@ -147,9 +137,8 @@ test("rổ bánh nóng đứng đủ xa thớt và chỗ đưa hàng để khôn
 });
 
 /**
- * Kẹp nhầm rồi bấm "Gói lại" KHÔNG ĐƯỢC là một cánh cửa đóng sập: kẹp có miếng ớt, hay quên
- * mất chả, là chuyện xảy ra suốt — mà đường ra duy nhất từng là thùng rác (mất cả ổ bánh và
- * cả phần nhân). Thớt phải nhận lại ổ ĐÃ GÓI để mở ra kẹp thêm / gỡ bớt (`unwrapToBoard`).
+ * Kẹp nhầm rồi gói thì thớt phải nhận lại ổ ĐÃ GÓI để mở ra kẹp thêm / gỡ bớt
+ * (`unwrapToBoard`), không phải bỏ cả ổ vào thùng rác.
  */
 test("ổ đã gói đem lại thớt được: kẹp nhầm thì mở ra sửa, không phải bỏ cả ổ", () => {
   const board = STATIONS.find((s) => s.id === "board")!;
@@ -186,15 +175,13 @@ test("mở ổ ra thì kho nhận lại đúng số phần đã trừ lúc gói"
 });
 
 test("bánh nướng CHƯA TỚI là một lỗi thật, nặng dần, nhưng không bao giờ bằng bánh cháy", () => {
-  // Trước đây ổ chưa giòn chỉ bị trừ điểm NGẦM, và chỉ với khách soi >= 0,7 — bán một ổ
-  // bột sống cho người thường thì tuyệt đối không có gì xảy ra. Giờ nó đi cùng đường với
-  // ổ nguội: thành defect, có người nói ra, có ghi vào trí nhớ.
+  // Ổ chưa giòn đi cùng đường với ổ nguội: thành defect, có người nói ra.
   const run = (crust: number) => {
     const w = newGame("t", "raw");
     w.progress.dayIndex = 6;
     const bus = new Bus();
     const mem: number[] = [];
-    bus.on("memory:written", (p) => { if (p.kind === "ORDER_DEFECT") mem.push(p.intensity); });
+    bus.on("delivery:diffed", (p) => { for (const d of p.defects) if (d.kind === "WRONG_TEMP") mem.push(d.weight); });
     const h = new HeadlessStall(w, POLICIES.greedy, { bus });
     const svc = h.service as any;
     const orig = svc.serveDish.bind(svc);
@@ -213,42 +200,8 @@ test("bánh nướng CHƯA TỚI là một lỗi thật, nặng dần, nhưng kh
   const dough = run(0);
   assert.ok(barely > 0, "thiếu một chút vẫn phải có người càu nhàu, không được chìm nghỉm");
   assert.ok(barely < half && half < dough, "càng sống càng nặng");
-  // Trần có chủ ý: bột sống vẫn nhẹ hơn ổ cháy khét — cháy là hỏng hẳn, sống là chưa tới.
-  assert.ok(dough < SALIENCE.BURNT_OR_COLD, `ổ bột sống ${dough} phải nhẹ hơn ổ cháy ${SALIENCE.BURNT_OR_COLD}`);
+  // Trần có chủ ý: bột sống vẫn nhẹ hơn ổ nguội ngắt.
+  const cold = mkDefect("WRONG_TEMP", null).weight;
+  assert.ok(dough < cold, `ổ bột sống ${dough} phải nhẹ hơn ổ nguội ${cold}`);
 });
 
-test("nếp cho thêm: ba lượt thành thói quen, bỏ một lượt là hụt hẫng — và chỉ hụt MỘT lần", () => {
-  const pen = (seq: readonly ("GAVE" | "NONE" | "REFUSED")[]) => {
-    const s = newRelState();
-    return seq.map((k) => extraHabit(s, k));
-  };
-  // Hai lượt chưa thành nếp: bỏ cũng không ai để ý.
-  assert.deepEqual(pen(["GAVE", "GAVE", "NONE"]), [0, 0, 0]);
-  // Ba lượt là thành nếp. Lượt thứ tư không có thì hụt — rồi thôi, không hụt mãi.
-  const [, , , miss, again] = pen(["GAVE", "GAVE", "GAVE", "NONE", "NONE"]);
-  assert.ok(miss > 0, "gãy nếp phải có giá");
-  assert.equal(again, 0, "gãy rồi thì thôi, không phạt tiếp mỗi lượt");
-  // Bị chính khách từ chối ("cho nhiều vậy chi") thì nếp đứt mà KHÔNG bị phạt — không thì
-  // lời từ chối của họ thành một cái bẫy.
-  assert.deepEqual(pen(["GAVE", "GAVE", "GAVE", "REFUSED", "NONE"]).slice(3), [0, 0]);
-  // Save cũ chưa có trường này: đọc ra 0, không nổ.
-  assert.equal(extraHabit({} as ReturnType<typeof newRelState>, "NONE"), 0);
-});
-
-test("T3 — báo quan hệ nhích KHÔNG được mang con số nào ra màn hình", () => {
-  const w = newGame("t", "t3");
-  const bus = new Bus();
-  const notes: string[] = [];
-  let perDelivery = 0, maxPerDelivery = 0;
-  bus.on("order:delivered", () => { maxPerDelivery = Math.max(maxPerDelivery, perDelivery); perDelivery = 0; });
-  bus.on("relationship:moved", (p) => { notes.push(p.note); perDelivery++; });
-  for (let d = 1; d <= 8; d++) {
-    w.progress.dayIndex = d;
-    new HeadlessStall(w, POLICIES.greedy, { bus }).run();
-  }
-  assert.ok(notes.length > 0, "cả tuần phải có lúc quan hệ nhích");
-  // CANON T3: không `+3 trust`, không thanh tình cảm. Một chữ số lọt ra là vỡ trụ cột.
-  const withDigits = notes.filter((n) => /\d/.test(n));
-  assert.deepEqual(withDigits, [], "mẩu lý do có chữ số");
-  assert.ok(maxPerDelivery <= 1, "mỗi lượt đưa bánh chỉ được MỘT dòng, không phải một dòng mỗi lần ghi nhớ");
-});

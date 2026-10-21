@@ -74,8 +74,8 @@ CARRY_FORE = (0.93, -0.30, 0.20)   # khuỷu -> bàn tay: đưa ra trước và 
 # hẳn. Render tư thế nghỉ của hai người đó ra tám tấm đứng dang tay như bù nhìn.
 #
 # Số lấy từ chính dáng nghỉ của `chef.glb` (đo trong hệ armature): `LeftArm`
-# (−0,081, +0,363, −0,928) · `LeftForeArm` (+0,116, +0,269, −0,956). Nhờ vậy cô Ba đứng
-# y như cũ, còn hai rig T-pose thì được kéo về cùng một dáng.
+# (−0,081, +0,363, −0,928) · `LeftForeArm` (+0,116, +0,269, −0,956): hai rig T-pose được kéo về
+# cùng dáng nghỉ của `chef.glb`.
 IDLE_ARM = (-0.08, 0.36, -0.93)    # vai -> khuỷu: xuôi xuống, hơi dang ra
 IDLE_FORE = (0.12, 0.27, -0.96)    # khuỷu -> bàn tay: tiếp tục xuôi, hơi ra trước
 

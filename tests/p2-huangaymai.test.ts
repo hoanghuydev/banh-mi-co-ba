@@ -1,9 +1,7 @@
 /**
  * "MAI CON ĐEM RA CHO CÔ COI" — lời hứa của HỌ, và cái hẹn phải qua đêm thật.
  *
- * Rà lại toàn kho (`tools/audit-loi.ts`) sau khi chủ dự án bắt được chuyện người đi ngang
- * hẹn hôm sau: 17 câu đáp hẹn "mai", 7 câu không có gì ghi lại. Ghi bằng cờ thì chưa đủ —
- * cờ trơn (`need: "cờ"`) ĐÚNG NGAY trong cùng buổi, nên người ta vừa hứa xong là cuộc trả
+ * Cờ trơn (`need: "cờ"`) ĐÚNG NGAY trong cùng buổi, nên người ta vừa hứa xong là cuộc trả
  * bài mở ra liền. Tiền tố `~` bắt cờ phải đặt từ một NGÀY TRƯỚC.
  *
  * Lưới này canh đúng chỗ đó, vì nó không nổ ra thành lỗi: nó chỉ làm một lời hứa mất
@@ -31,8 +29,8 @@ test("HM-1 có cuộc trả bài, và cuộc nào cũng khớp một nút ĐẶT
 });
 
 const ctx = (t: Talk, day: number, flags: TalkCtx["flags"]): TalkCtx => ({
-  npcId: t.npc, day, slot: "MID", rain: false, tier: "FRIEND", visits: 9, flags,
-  usedToday: [], usedSeason: [], practice: t.practice?.[0] as TalkCtx["practice"],
+  npcId: t.npc, day, slot: "MID", rain: false, flags,
+  usedToday: [], usedBefore: [], practice: t.practice?.[0] as TalkCtx["practice"],
 });
 
 test("HM-2 hứa hôm nay thì hôm nay CHƯA trả bài được — qua đêm mới mở", () => {
@@ -47,13 +45,13 @@ test("HM-2 hứa hôm nay thì hôm nay CHƯA trả bài được — qua đêm 
   }
 });
 
-test("HM-3 cờ KHÔNG có `~` thì vẫn ăn ngay trong ngày — không đổi luật cũ", () => {
+test("HM-3 cờ KHÔNG có `~` thì ăn ngay trong ngày", () => {
   const cu = TALKS.find((t) => t.when?.needFlag && !t.when.needFlag.startsWith("~"));
   assert.ok(cu, "không còn cuộc nào dùng cờ trơn để đối chứng");
   const co = cu!.when!.needFlag!;
-  const ngay = Math.max(cu!.when!.day?.[0] ?? 1, 12);
+  const ngay = 12;
   assert.equal(eligible([cu!], ctx(cu!, ngay, { [co]: ngay }), "NPC").length, 1,
-    `${cu!.id}: cờ trơn mà cũng bị hoãn qua đêm — luật cũ bị đổi sau lưng`);
+    `${cu!.id}: cờ trơn mà cũng bị hoãn qua đêm`);
 });
 
 test("HM-4 chạy thật: hứa hôm nay thì cờ ghi ĐÚNG NGÀY, và hôm sau cuộc trả bài mở ra", async () => {
@@ -64,7 +62,7 @@ test("HM-4 chạy thật: hứa hôm nay thì cờ ghi ĐÚNG NGÀY, và hôm sa
 
   const w = newGame("hua", "p210");
   const bus = new Bus(false);
-  for (let d = 1; d < 9; d++) nextDay(w, bus);
+  for (let d = 1; d < 9; d++) nextDay(w);
   const h = new HeadlessStall(w, POLICIES.greedy, { bus, platform: memoryPlatform() });
   const svc = (h as unknown as { service: any }).service;
   const homNay = w.progress.dayIndex;
@@ -74,12 +72,12 @@ test("HM-4 chạy thật: hứa hôm nay thì cờ ghi ĐÚNG NGÀY, và hôm sa
   for (let i = 0; i < 20000 && !svc.customers.length; i++) h.step(1000 / 30);
   assert.ok(svc.customers.length, "cả buổi không ai tới");
   svc.applyTalkOption(svc.customers[0], { flag: "suHuaQuayChim" });
-  assert.equal(w.story.flags.suHuaQuayChim, homNay, "cờ không ghi NGÀY — `~` không có gì để so");
+  assert.equal(w.flags.suHuaQuayChim, homNay, "cờ không ghi NGÀY — `~` không có gì để so");
 
   const chim = TALKS.find((t) => t.id === "su.chim")!;
   const nen = (day: number): TalkCtx => ({
-    npcId: chim.npc, day, slot: "MID", rain: false, tier: "FRIEND", visits: 9,
-    flags: w.story.flags as TalkCtx["flags"], usedToday: [], usedSeason: [],
+    npcId: chim.npc, day, slot: "MID", rain: false,
+    flags: w.flags as TalkCtx["flags"], usedToday: [], usedBefore: [],
     practice: chim.practice?.[0] as TalkCtx["practice"],
   });
   assert.equal(eligible([chim], nen(homNay), "NPC").length, 0, "hứa xong trả bài ngay trong buổi");

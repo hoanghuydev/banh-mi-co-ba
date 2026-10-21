@@ -18,7 +18,6 @@
             {
               "say": "Dạ {call} đi mạnh giỏi nghen.",
               "tone": "AM",
-              "rel": 2,
               "reply": "Ừ. {you} bán đắt nghen.",
               "mood": "CUOI",
               "act": {
@@ -48,7 +47,6 @@
         {
           "say": "{me} đang bận {call} ơi.",
           "tone": "LANH",
-          "rel": -1,
           "reply": "Ờ. Xin lỗi nghen.",
           "mood": "NGUONG"
         }
@@ -89,7 +87,6 @@
             {
               "say": "Dạ {call} đi đường cẩn thận nghen.",
               "tone": "AM",
-              "rel": 2,
               "reply": "Ừ. Bán đắt nghen con.",
               "mood": "CUOI",
               "act": {
@@ -109,7 +106,6 @@
         {
           "say": "Bánh mới ra lò nè {call}. Thơm hông?",
           "tone": "AM",
-          "rel": 1,
           "need": [
             "c.openedBy(PLAYER)",
             "!p.soldOut"
@@ -120,7 +116,6 @@
             {
               "say": "{call} ăn một ổ nóng hổi đi.",
               "tone": "AM",
-              "rel": 1,
               "need": [
                 "!p.soldOut"
               ],
@@ -133,7 +128,6 @@
             {
               "say": "Mẻ này {me} canh lửa kỹ lắm {call} à.",
               "tone": "THUONG",
-              "rel": 1,
               "reply": "Vậy để tui coi. Tui ăn bánh mì ba chục năm rồi nghen.",
               "mood": "CUOI"
             },
@@ -147,7 +141,6 @@
         {
           "say": "{call} ngửi thấy mùi than hông? Lò {me} đó.",
           "tone": "DUA",
-          "rel": 1,
           "need": [
             "c.openedBy(PLAYER)"
           ],
@@ -220,7 +213,6 @@
           {
             "say": "Nắng vầy đi đứng cẩn thận nghen {call}.",
             "tone": "AM",
-            "rel": 1,
             "reply": "Ừ. Tui đội nón rồi nè.",
             "mood": "CUOI"
           },
@@ -250,7 +242,6 @@
         {
           "say": "Nắng gắt quá {call} ha.",
           "tone": "THUONG",
-          "rel": 1,
           "need": [
             "c.openedBy(PLAYER)"
           ],
@@ -260,7 +251,6 @@
         {
           "say": "{call} đứng nhờ cái dù cho mát cái đã.",
           "tone": "AM",
-          "rel": 2,
           "reply": "Ờ, cho tui đứng nhờ chút. Đi bộ từ ngã tư tới đây muốn xỉu.",
           "mood": "CUOI",
           "ref": "moi",
@@ -281,7 +271,6 @@
         {
           "say": "{call} nhích vô bóng xe cho đỡ rát cái đã.",
           "tone": "AM",
-          "rel": 2,
           "reply": "Ờ há. Đỡ thiệt. Cái bóng xe này mát hơn cái dù bên kia.",
           "mood": "CUOI",
           "ref": "moi",
@@ -313,7 +302,6 @@
         {
           "say": "Dạ {call} đứng vô trong cho khỏi ướt.",
           "tone": "AM",
-          "rel": 3,
           "reply": "Cảm ơn con. Mưa vầy đi hổng nổi.",
           "then": [
             {
@@ -324,7 +312,6 @@
             {
               "say": "Mưa này chút là tạnh hà {call}.",
               "tone": "AM",
-              "rel": 1,
               "reply": "Mong vậy. Tui còn phải ghé chỗ làm.",
               "need": [
                 "w.rain"
@@ -355,7 +342,6 @@
         {
           "say": "Chỗ này chật lắm {call} ơi.",
           "tone": "LANH",
-          "rel": -1,
           "reply": "Ờ... vậy thôi. Tui chạy đại qua bên kia.",
           "mood": "BUC",
           "while": [
@@ -406,7 +392,6 @@
             {
               "say": "Trễ dữ hả {call}?",
               "tone": "DUA",
-              "rel": -1,
               "reply": "con này nói chuyện ngang à nghen.",
               "mood": "BUC"
             },
@@ -471,7 +456,6 @@
             {
               "say": "Dạ đông khách lắm {call}.",
               "tone": "DUA",
-              "rel": -1,
               "reply": "Cha. Nói nghe sướng lỗ tai ghê.",
               "mood": "CUOI_KHAN",
               "while": [
@@ -536,14 +520,12 @@
             {
               "say": "Bữa nay {call} về trễ ha.",
               "tone": "THUONG",
-              "rel": 1,
               "reply": "Ừ. Họp hành gì đó tới giờ này mới xong.",
               "mood": "MET"
             },
             {
               "say": "{call} ăn giùm {me} ổ cuối nghen.",
               "tone": "DUA",
-              "rel": 1,
               "act": {
                 "kind": "INVITE",
                 "yes": "Ha. Thôi được, ổ cuối thì tui lấy.",
@@ -564,7 +546,6 @@
         {
           "say": "Dạ {me} bán tới hết thì về {call}.",
           "tone": "THUONG",
-          "rel": 1,
           "need": [
             "c.openedBy(NPC)"
           ],
@@ -574,7 +555,6 @@
         {
           "say": "Còn mấy ổ cuối hà {call}. Lấy giùm {me} đi.",
           "tone": "AM",
-          "rel": 1,
           "need": [
             "c.openedBy(PLAYER)",
             "p.stock(3)",
@@ -589,7 +569,6 @@
         {
           "say": "Hết bánh rồi {call} ơi.",
           "tone": "AM",
-          "rel": 2,
           "need": [
             "c.openedBy(PLAYER)",
             "p.soldOut"
@@ -603,7 +582,6 @@
         {
           "say": "{call} đi mạnh giỏi nghen.",
           "tone": "THUONG",
-          "rel": 1,
           "need": [
             "c.openedBy(PLAYER)"
           ],
@@ -647,7 +625,6 @@
         {
           "say": "Dạ {call} cứ ngó thoải mái.",
           "tone": "AM",
-          "rel": 2,
           "reply": "con này dễ thương ghê. Bên kia người ta đuổi tui.",
           "mood": "CUOI",
           "then": [
@@ -678,7 +655,6 @@
             {
               "say": "Xe {me} dọn ra từ sáu giờ sáng đó {call}.",
               "tone": "THUONG",
-              "rel": 1,
               "reply": "Dữ ha. Tui sáu giờ còn chưa dậy.",
               "mood": "NGAC_NHIEN"
             },
@@ -702,7 +678,6 @@
         {
           "say": "{call} coi thử đi, hổng mua cũng được.",
           "tone": "AM",
-          "rel": 2,
           "need": [
             "c.openedBy(PLAYER)",
             "!p.soldOut"
@@ -713,7 +688,6 @@
             {
               "say": "{call} cầm một ổ cho chắc bụng.",
               "tone": "AM",
-              "rel": 1,
               "need": [
                 "!p.soldOut"
               ],
@@ -726,7 +700,6 @@
             {
               "say": "Ngó rồi mua luôn cho rồi {call}.",
               "tone": "DUA",
-              "rel": 1,
               "need": [
                 "!p.soldOut"
               ],
@@ -739,7 +712,6 @@
             {
               "say": "{call} ngó thoải mái đi, {me} hổng nói gì đâu.",
               "tone": "AM",
-              "rel": 1,
               "reply": "Ha. Lạ ghê. Ai bán cũng mời muốn chết.",
               "mood": "CUOI"
             },
@@ -753,7 +725,6 @@
         {
           "say": "{call} coi gì đó? {me} lấy cho.",
           "tone": "AM",
-          "rel": 1,
           "need": [
             "c.openedBy(PLAYER)"
           ],
@@ -763,7 +734,6 @@
         {
           "say": "Hổng mua thì ngó chi {call}.",
           "tone": "GAT",
-          "rel": -3,
           "reply": "Ủa. Thôi tui đi.",
           "mood": "BUC",
           "need": [
@@ -787,7 +757,7 @@
           "t.glanced"
         ]
       },
-      "_note": "Cả cuộc khoá `t.glanced` ở tầng cuộc: KHÔNG AI DỪNG LẠI NGÓ thì không có cuộc này. Khác hẳn khoá từng nút — khoá từng nút thì cuộc vẫn được rút ra rồi mọi lựa chọn biến mất, đúng cái chủ dự án bắt được: hỏi 'cô ngó gì đó' một người đang rảo bước ngang qua."
+      "_note": "Cả cuộc khoá `t.glanced` ở tầng cuộc: KHÔNG AI DỪNG LẠI NGÓ thì không có cuộc này. Khác hẳn khoá từng nút — khoá từng nút thì cuộc vẫn được rút ra rồi mọi lựa chọn biến mất, hoặc hỏi 'cô ngó gì đó' một người đang rảo bước ngang qua."
     },
     {
       "id": "duong.nhinra",
@@ -813,8 +783,7 @@
             "kind": "WALK_ON"
           },
           "reply": "…Dạ. Cảm ơn {you}.",
-          "mood": "NGAC_NHIEN",
-          "rel": 3
+          "mood": "NGAC_NHIEN"
         },
         {
           "say": "{call} coi bộ mệt. Nghỉ chút rồi hẵng đi.",
@@ -823,8 +792,7 @@
             "t.state(MET)"
           ],
           "reply": "Ờ… {self} đi từ sớm tới giờ.",
-          "mood": "MET",
-          "rel": 2
+          "mood": "MET"
         },
         {
           "say": "Thấy {call} vui ha. Có chuyện gì hay vậy {call}?",
@@ -833,8 +801,7 @@
             "t.state(VUI)"
           ],
           "reply": "Hớn hở gì đâu. Tại sáng nay trời đẹp thôi.",
-          "mood": "CUOI",
-          "rel": 2
+          "mood": "CUOI"
         },
         {
           "say": "{call} có chuyện gì hả? Nhìn lo lo.",
@@ -843,8 +810,7 @@
             "t.state(LO)"
           ],
           "reply": "…Hổng có gì đâu. Chuyện nhà, nói ra cũng vậy hà.",
-          "mood": "BUON",
-          "rel": 1
+          "mood": "BUON"
         },
         {
           "say": "Đi đâu mà thong thả vậy {call}.",
@@ -853,13 +819,11 @@
             "t.state(THONG_THA)"
           ],
           "reply": "Bữa nay {self} rảnh. Đi lòng vòng cho khuây.",
-          "mood": "CUOI",
-          "rel": 1
+          "mood": "CUOI"
         },
         {
           "say": "Xách giỏ đi chợ hả {call}?",
           "tone": "THUONG",
-          "rel": 1,
           "need": [
             "t.purpose(DI_CHO)"
           ],
@@ -869,14 +833,12 @@
             {
               "say": "Trễ vậy đồ còn tươi hông {call}?",
               "tone": "AM",
-              "rel": 1,
               "reply": "Còn. Mà hết đồ ngon. Mấy bà đi sớm hốt hết rồi.",
               "mood": "MET"
             },
             {
               "say": "{call} mua giùm {me} bó rau được hông?",
               "tone": "DUA",
-              "rel": 1,
               "reply": "Ha. Được chớ. Mà {self} quên thì đừng có trách nghen.",
               "mood": "CUOI"
             },
@@ -891,7 +853,6 @@
         {
           "say": "{call} đi chợ về hả? Nặng dữ ha.",
           "tone": "THUONG",
-          "rel": 1,
           "need": [
             "t.purpose(DI_CHO_VE)"
           ],
@@ -901,14 +862,12 @@
             {
               "say": "{call} để xuống nghỉ tay chút đi.",
               "tone": "AM",
-              "rel": 2,
               "reply": "Ờ… để {self} đặt xuống cái. Tay {self} tê rồi.",
               "mood": "MET"
             },
             {
               "say": "Mua nhiều vậy chắc nhà {call} đông người ha.",
               "tone": "THUONG",
-              "rel": 1,
               "reply": "Bốn người. Mà đứa nào cũng ăn như tằm ăn rỗi.",
               "mood": "CUOI"
             },
@@ -923,7 +882,6 @@
         {
           "say": "{call} đi làm hả? Mới {gio} hà.",
           "tone": "THUONG",
-          "rel": 1,
           "need": [
             "t.purpose(DI_LAM)"
           ],
@@ -933,14 +891,12 @@
             {
               "say": "Chỗ làm {call} xa hông?",
               "tone": "AM",
-              "rel": 1,
               "reply": "Qua cầu, chừng bảy cây. Ngày nào {self} cũng chạy hai lượt.",
               "mood": "THUONG"
             },
             {
               "say": "Vậy {call} ăn sáng ở đâu?",
               "tone": "THUONG",
-              "rel": 1,
               "reply": "Tới công ty ăn. Căn tin bán dở mà rẻ.",
               "mood": "MET"
             },
@@ -955,7 +911,6 @@
         {
           "say": "{call} đưa nhỏ đi học hả?",
           "tone": "THUONG",
-          "rel": 1,
           "need": [
             "t.purpose(DUA_CON_DI_HOC)"
           ],
@@ -965,7 +920,6 @@
             {
               "say": "Nhỏ học lớp mấy rồi {call}?",
               "tone": "AM",
-              "rel": 1,
               "reply": "Lớp ba. Năm nay nó được cô khen đọc to.",
               "mood": "CUOI"
             },
@@ -986,7 +940,6 @@
         {
           "say": "{call} đi học hả? Sách vở đâu hết rồi?",
           "tone": "THUONG",
-          "rel": 1,
           "need": [
             "t.purpose(DI_HOC)"
           ],
@@ -996,14 +949,12 @@
             {
               "say": "Nay {call} có kiểm tra gì hông?",
               "tone": "AM",
-              "rel": 1,
               "reply": "Có. Toán. {self} học tới hai giờ sáng mà vẫn hổng chắc.",
               "mood": "MET"
             },
             {
               "say": "Ăn sáng chưa mà đi học?",
               "tone": "THUONG",
-              "rel": 1,
               "reply": "Chưa. Dậy trễ. Tới trường {self} mua ổ bánh ở cổng.",
               "mood": "NGUONG"
             },
@@ -1018,7 +969,6 @@
         {
           "say": "{call} chờ cuốc hả? Sáng giờ có khách chưa?",
           "tone": "THUONG",
-          "rel": 1,
           "need": [
             "t.purpose(CHAY_XE_OM)"
           ],
@@ -1034,7 +984,6 @@
             {
               "say": "{call} đứng đây chờ cũng được mà.",
               "tone": "AM",
-              "rel": 2,
               "reply": "Ờ, cho {self} đứng nhờ chút. Có bóng mát đỡ hơn.",
               "mood": "THUONG"
             },
@@ -1049,7 +998,6 @@
         {
           "say": "{call} đi tập về hả? Coi khoẻ ghê.",
           "tone": "THUONG",
-          "rel": 1,
           "need": [
             "t.purpose(TAP_VE)"
           ],
@@ -1059,14 +1007,12 @@
             {
               "say": "{call} đi được mấy năm rồi?",
               "tone": "AM",
-              "rel": 1,
               "reply": "Hai năm. Từ hồi bác sĩ nói mỡ máu. Giờ bỏ một bữa là {self} thấy khó chịu.",
               "mood": "CUOI"
             },
             {
               "say": "Tập xong chắc {call} đói dữ ha.",
               "tone": "DUA",
-              "rel": 2,
               "reply": "Đói chớ! Đi tập về mà ngửi mùi bánh là chịu hổng nổi.",
               "mood": "CUOI_TUOI"
             },
@@ -1081,7 +1027,6 @@
         {
           "say": "{call} mua đồ ăn sáng cho cả nhà hả?",
           "tone": "THUONG",
-          "rel": 1,
           "need": [
             "t.purpose(MUA_DO_AN_SANG)"
           ],
@@ -1091,7 +1036,6 @@
             {
               "say": "Ghé {me} làm luôn một lượt cho {call} đỡ phải đi xa.",
               "tone": "AM",
-              "rel": 3,
               "act": {
                 "kind": "INVITE",
                 "yes": "Ờ hay! Vậy làm giùm {self} bốn ổ. Một ổ không ớt, một ổ nhiều pate.",
@@ -1104,7 +1048,6 @@
             {
               "say": "Nhà {call} khó chiều ha.",
               "tone": "DUA",
-              "rel": 1,
               "reply": "Khó thấy mồ. Mà hổng mua là tụi nó nhịn luôn, {self} chịu sao nổi.",
               "mood": "CUOI"
             },
@@ -1119,7 +1062,6 @@
         {
           "say": "{call} đi giao hàng hả? Chất cao quá trời.",
           "tone": "THUONG",
-          "rel": 1,
           "need": [
             "t.purpose(GIAO_HANG)"
           ],
@@ -1129,14 +1071,12 @@
             {
               "say": "Hai chục đơn mà {call} nhớ hết đường hả?",
               "tone": "AM",
-              "rel": 1,
               "reply": "Nhớ. Chạy riết thuộc hẻm hơn thuộc nhà mình.",
               "mood": "NGHIEM"
             },
             {
               "say": "{call} cầm một ổ ăn dọc đường cho kịp.",
               "tone": "AM",
-              "rel": 1,
               "need": [
                 "!p.soldOut"
               ],
@@ -1157,7 +1097,6 @@
         {
           "say": "{call} mới tan ca hả? Mắt đỏ hết rồi.",
           "tone": "THUONG",
-          "rel": 1,
           "need": [
             "t.purpose(TAN_CA_DEM)"
           ],
@@ -1167,14 +1106,12 @@
             {
               "say": "{call} làm ca đêm lâu chưa?",
               "tone": "THUONG",
-              "rel": 1,
               "reply": "Ba năm. Lương cao hơn ca ngày hai trăm ngàn một tháng.",
               "mood": "MET"
             },
             {
               "say": "Ăn miếng gì rồi hẵng ngủ {call}.",
               "tone": "AM",
-              "rel": 2,
               "reply": "Ờ… ừ. Đói mà ngủ là {self} tỉnh dậy xót ruột lắm.",
               "mood": "MET",
               "act": {
@@ -1198,7 +1135,6 @@
         {
           "say": "{call} ra bến xe đón ai hả?",
           "tone": "THUONG",
-          "rel": 1,
           "need": [
             "t.purpose(DI_DON_NGUOI_NHA)"
           ],
@@ -1208,14 +1144,12 @@
             {
               "say": "Nửa năm lận hả {call}. Chắc {call} mong dữ.",
               "tone": "THUONG",
-              "rel": 2,
               "reply": "Mong chớ. {self} dậy từ bốn giờ, dọn phòng nó ba lần rồi.",
               "mood": "RUNG_RUNG"
             },
             {
               "say": "{call} mua ổ để sẵn cho nó ăn nghen.",
               "tone": "AM",
-              "rel": 2,
               "need": [
                 "!p.soldOut"
               ],
@@ -1236,7 +1170,6 @@
         {
           "say": "{call} ra mở sạp hả? Chợ mở sớm ghê.",
           "tone": "THUONG",
-          "rel": 1,
           "need": [
             "t.purpose(MO_SAP_CHO)"
           ],
@@ -1246,14 +1179,12 @@
             {
               "say": "{call} bán gì ngoài đó?",
               "tone": "AM",
-              "rel": 1,
               "reply": "Rau. Sạp nhỏ xíu ở hàng trong. Mười mấy năm rồi.",
               "mood": "NGHIEM"
             },
             {
               "say": "Bữa nào {me} ra lấy rau của {call} nghen.",
               "tone": "AM",
-              "rel": 2,
               "reply": "Ờ! Nói tên {self} là tụi nó chỉ. {self} để rau ngon cho.",
               "mood": "CUOI"
             },
@@ -1268,21 +1199,18 @@
         {
           "say": "{call} đi đâu đó?",
           "tone": "THUONG",
-          "rel": 1,
           "reply": "Đi có chút chuyện hà.",
           "mood": "THUONG",
           "then": [
             {
               "say": "Dạ. {me} hỏi cho vui thôi.",
               "tone": "THUONG",
-              "rel": 1,
               "reply": "Ừ. {self} biết mà.",
               "mood": "CUOI"
             },
             {
               "say": "Chút chuyện mà {call} đi từ sớm vậy?",
               "tone": "DUA",
-              "rel": 1,
               "reply": "Ha. {call} này. Chuyện nhà thôi, nói ra cũng dài.",
               "mood": "CUOI_KHAN"
             },
@@ -1317,14 +1245,13 @@
         "DI_NGANG"
       ],
       "weight": 16,
-      "_note": "HAI NHỊP, cố ý. Nhịp đầu là một lựa chọn thật: **mời luôn** (roll ngay, xác suất nền) hay **đọc người một câu rồi mới mời** (+`warmth`, nhưng tốn thêm một nhịp giờ bán — `clock.busy` chạy). Đó đúng là *'một bài test tay nghề'* của P2-06 §2.12, và là chỗ `inviteChance.warmth` cuối cùng có việc để làm: bản trước đặt `INVITE` ngay nhịp đầu nên `warmth` LUÔN bằng 0 và cả cơ chế mời khéo chết cứng. Câu đọc người khoá theo TÂM TRẠNG nhiều hơn theo mục đích: 34 tâm trạng phủ rộng hơn 60 mục đích, vì ai cũng mang một tâm trạng còn mục đích thì tản ra rất mỏng.",
+      "_note": "HAI NHỊP, cố ý. Nhịp đầu là một lựa chọn thật: **mời luôn** (roll ngay, xác suất nền) hay **đọc người một câu rồi mới mời** (+`warmth`, nhưng tốn thêm một nhịp giờ bán — `clock.busy` chạy). Đó đúng là *'một bài test tay nghề'* của P2-06 §2.12, và là chỗ `inviteChance.warmth` có tác dụng (đặt `INVITE` ngay nhịp đầu thì `warmth` luôn bằng 0). Câu đọc người khoá theo TÂM TRẠNG nhiều hơn theo mục đích: 34 tâm trạng phủ rộng hơn 60 mục đích, vì ai cũng mang một tâm trạng còn mục đích thì tản ra rất mỏng.",
       "opener": "Ủa. Chi đó {you}?",
       "openMood": "NGAC_NHIEN",
       "tree": [
         {
           "say": "{call} coi bộ mệt ha.",
           "tone": "AM",
-          "rel": 3,
           "need": [
             "t.state(MET)"
           ],
@@ -1334,7 +1261,6 @@
             {
               "say": "Làm ổ bánh cho lại sức đi {call}.",
               "tone": "AM",
-              "rel": 1,
               "act": {
                 "kind": "INVITE",
                 "yes": "Ờ há. Cho tui một ổ, ăn rồi đi tiếp.",
@@ -1347,7 +1273,6 @@
             {
               "say": "Thôi {call} về nghỉ đi, {me} hổng giữ.",
               "tone": "AM",
-              "rel": 1,
               "act": {
                 "kind": "WALK_ON"
               },
@@ -1367,7 +1292,6 @@
         {
           "say": "Thấy {call} vui ghê. Có chuyện gì hay vậy?",
           "tone": "AM",
-          "rel": 3,
           "need": [
             "t.state(VUI)"
           ],
@@ -1377,7 +1301,6 @@
             {
               "say": "Vui vầy làm ổ ăn mừng đi {call}.",
               "tone": "AM",
-              "rel": 1,
               "act": {
                 "kind": "INVITE",
                 "yes": "Ha. Thôi được, cho tui một ổ. Coi như ăn mừng.",
@@ -1390,7 +1313,6 @@
             {
               "say": "Vậy {call} đi đi, kẻo lỡ chuyện.",
               "tone": "AM",
-              "rel": 1,
               "act": {
                 "kind": "WALK_ON"
               },
@@ -1410,7 +1332,6 @@
         {
           "say": "{call} đi đâu mà thong thả vậy?",
           "tone": "AM",
-          "rel": 3,
           "need": [
             "t.state(THONG_THA)"
           ],
@@ -1420,7 +1341,6 @@
             {
               "say": "Rảnh vầy ghé ăn ổ bánh cái đã {call}.",
               "tone": "AM",
-              "rel": 1,
               "act": {
                 "kind": "INVITE",
                 "yes": "Ừ. Lâu rồi tui chưa ăn bánh mì đầu hẻm.",
@@ -1433,7 +1353,6 @@
             {
               "say": "Vậy {call} đi vòng cho khoẻ.",
               "tone": "AM",
-              "rel": 1,
               "act": {
                 "kind": "WALK_ON"
               },
@@ -1453,7 +1372,6 @@
         {
           "say": "{call} có chuyện gì hả? Nhìn lo lo.",
           "tone": "AM",
-          "rel": 3,
           "need": [
             "t.state(LO)"
           ],
@@ -1463,7 +1381,6 @@
             {
               "say": "Ăn miếng gì rồi hẵng đi {call}.",
               "tone": "AM",
-              "rel": 1,
               "act": {
                 "kind": "INVITE",
                 "yes": "…Ừ. Cho tui một ổ. Nói vậy chớ cũng đói.",
@@ -1476,7 +1393,6 @@
             {
               "say": "Thôi {call} đi đi. Chuyện gì rồi cũng qua.",
               "tone": "AM",
-              "rel": 1,
               "act": {
                 "kind": "WALK_ON"
               },
@@ -1496,7 +1412,6 @@
         {
           "say": "Xách nặng hông {call}? Để đó chút đã.",
           "tone": "AM",
-          "rel": 3,
           "need": [
             "t.purpose(DI_CHO_VE)"
           ],
@@ -1506,7 +1421,6 @@
             {
               "say": "Nghỉ tay làm ổ bánh đi {call}.",
               "tone": "AM",
-              "rel": 1,
               "act": {
                 "kind": "INVITE",
                 "yes": "Ờ. Cho tui một ổ, để tui đặt giỏ xuống cái đã.",
@@ -1519,7 +1433,6 @@
             {
               "say": "Thôi {call} về kẻo rau héo.",
               "tone": "AM",
-              "rel": 1,
               "act": {
                 "kind": "WALK_ON"
               },
@@ -1539,7 +1452,6 @@
         {
           "say": "Tập về rồi hả {call}?",
           "tone": "AM",
-          "rel": 3,
           "need": [
             "t.purpose(TAP_VE)"
           ],
@@ -1549,7 +1461,6 @@
             {
               "say": "Vậy làm ổ cho lại sức đi {call}.",
               "tone": "AM",
-              "rel": 1,
               "act": {
                 "kind": "INVITE",
                 "yes": "Ha. Tập xong là đói thiệt. Cho tui một ổ.",
@@ -1562,7 +1473,6 @@
             {
               "say": "Vậy {call} về tắm cái đã.",
               "tone": "AM",
-              "rel": 1,
               "act": {
                 "kind": "WALK_ON"
               },
@@ -1582,7 +1492,6 @@
         {
           "say": "Mua đồ ăn sáng cho nhà hả {call}?",
           "tone": "AM",
-          "rel": 3,
           "need": [
             "t.purpose(MUA_DO_AN_SANG)"
           ],
@@ -1592,7 +1501,6 @@
             {
               "say": "Lấy luôn mấy ổ bánh mì cho tiện {call}.",
               "tone": "AM",
-              "rel": 1,
               "act": {
                 "kind": "INVITE",
                 "yes": "Ừ, cho tui hai ổ. Thằng nhỏ nhà tui ăn một mình một ổ.",
@@ -1605,7 +1513,6 @@
             {
               "say": "Thôi {call} về kẻo tụi nhỏ đói.",
               "tone": "AM",
-              "rel": 1,
               "act": {
                 "kind": "WALK_ON"
               },
@@ -1625,7 +1532,6 @@
         {
           "say": "{call} đợi ai hả? Đứng không cũng chán.",
           "tone": "AM",
-          "rel": 3,
           "need": [
             "t.purpose(DI_CHO_NGUOI_HEN)"
           ],
@@ -1635,7 +1541,6 @@
             {
               "say": "Vậy làm ổ bánh cho đỡ sốt ruột đi {call}.",
               "tone": "AM",
-              "rel": 1,
               "act": {
                 "kind": "INVITE",
                 "yes": "Cũng được. Đứng không cũng chán thiệt.",
@@ -1648,7 +1553,6 @@
             {
               "say": "Thôi {call} đợi tiếp đi, {me} làm đây.",
               "tone": "AM",
-              "rel": 1,
               "act": {
                 "kind": "WALK_ON"
               },
@@ -1668,7 +1572,6 @@
         {
           "say": "{call} đi gấp hả? Thôi {call} đi đi.",
           "tone": "AM",
-          "rel": 2,
           "need": [
             "t.state(CUONG)"
           ],
@@ -1681,7 +1584,6 @@
         {
           "say": "Trễ giờ hả {call}. {me} hổng giữ đâu.",
           "tone": "AM",
-          "rel": 2,
           "need": [
             "t.purpose(DI_LAM_TRE)"
           ],
@@ -1694,7 +1596,6 @@
         {
           "say": "{call} ghé làm một ổ đi {call}.",
           "tone": "AM",
-          "rel": 1,
           "act": {
             "kind": "INVITE",
             "yes": "Ờ, cho tui một ổ. Sáng giờ chưa có gì trong bụng.",

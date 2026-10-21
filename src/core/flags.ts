@@ -73,32 +73,13 @@ export type Settings = {
    */
   telemetry: boolean | null;
   /**
-   * CANON §15 công tắc số 1 / P2-04 RB6: NPC nhớ nhầm & đổ oan. TẮT không tắt đồn thổi —
-   * tin vẫn lan, vẫn có nguồn, vẫn nghe lỏm được, chỉ là LUÔN ĐÚNG (mutation = 0).
-   */
-  allowFalseMemory: boolean;
-  /**
-   * CANON §15 công tắc #4 / P2-05 §4.4: trang cuối ngày của cô Ba tự mở. TẮT thì nhật ký
-   * thô vẫn ghi, vẫn mở bằng tay (Tab); giả thuyết vẫn chạy; báo trước vẫn còn qua lớp 1–2.
-   */
-  notebookAuto: boolean;
-  /** P3-01 §2.6: "Bỏ qua nghi thức đốt vía" — minigame không bao giờ hiện, vía về 0 lúc 6h30. */
-  skipRitual: boolean;
-  /**
    * P3-03 §4 luật UI #4 — công tắc trợ năng "hiện tổng khi đang chọn". TẮT thì đi chợ không
    * có tổng chạy, người chơi phải nhẩm, tổng chỉ hiện ở bước xác nhận. BẬT thì chân trang
    * hiện tổng giỏ ngay lúc đang bấm +/−. Dù bật hay tắt, con số vẫn là dữ liệu thô: tổng
    * và tiền trong ống, không gợi ý, không "còn mua được mấy ổ nữa".
    */
   marketRunningTotal: boolean;
-  /**
-   * Mũi tên chỉ xuống trên đầu cô Ba (`entities/Player.ts`). Mặc định BẬT.
-   *
-   * Nó không phải trang trí: cô Ba là nhân vật DUY NHẤT không có bảng tên dưới chân,
-   * nên trong một quán đông người thì cách duy nhất tìm ra mình là bấm thử một phím rồi
-   * xem ai nhúc nhích. Mũi tên đã tự mờ đi khi đang đi, nên công tắc này là cho người
-   * chơi quen cảnh rồi và muốn khung hình sạch hẳn — không phải để sửa một lỗi nhấp nháy.
-   */
+  /** Mũi tên trên đầu người chơi (`entities/Player.ts`) — nhân vật duy nhất không có bảng tên. Mặc định BẬT. */
   playerMarker: boolean;
 };
 
@@ -116,15 +97,12 @@ export const DEFAULT_SETTINGS: Settings = {
   a11yPerceptionPing: false,
   monoAudio: false,
   telemetry: DEV_TOOLS || PLAYTEST ? true : null,
-  allowFalseMemory: true,
-  notebookAuto: true,
-  skipRitual: false,
   marketRunningTotal: true,
   playerMarker: true,
 };
 
 /** Cài đặt sống độc lập với save: đổi ở menu là có hiệu lực ngay, kể cả chưa có ván nào. */
-const SKEY = "banhmicoba.settings.v1";
+const SKEY = "byesep.settings.v1";
 
 export function loadSettings(): Settings {
   const raw = platform.read(SKEY);

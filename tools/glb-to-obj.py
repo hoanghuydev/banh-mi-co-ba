@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""GLB cua Tripo -> .obj + .mtl + texture, cho ai mo bang phan mem khong doc duoc glTF.
-
-Anh LAY THANG byte goc trong GLB chu khong de Blender ghi lai: anh mau la JPEG 3,4 MB,
-qua tay Blender no thanh PNG 13,9 MB — nang gap bon lan ma khong them mot chi tiet nao.
-"""
+"""GLB cua Tripo -> .obj + .mtl + texture; anh lay thang byte goc (qua Blender JPEG thanh PNG nang gap 4 lan)."""
 import bpy, sys, os, json, struct
 
 args = sys.argv[sys.argv.index("--")+1:]
@@ -40,7 +36,7 @@ def dump_textures(glb_path, dest):
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=src)
 
-# Vut mesh rac khong dinh xuong (Icosphere cua Tripo) — cung moc voi render-character.py
+# Vut mesh rac khong dinh xuong (Icosphere cua Tripo)
 skinned = [o for o in bpy.data.objects if o.type == "MESH"
            and any(m.type == "ARMATURE" for m in o.modifiers)]
 for o in [o for o in bpy.data.objects if o.type == "MESH" and o not in skinned]:
@@ -50,8 +46,7 @@ for o in [o for o in bpy.data.objects if o.type == "MESH" and o not in skinned]:
 files = dump_textures(src, outdir)
 for img in bpy.data.images:
     if img.name in files:
-        # Chi tro duong dan, KHONG goi img.save(): file da nam san tren dia voi dung
-        # byte goc. Trinh xuat obj doc `filepath` de viet map_Kd, no khong can anh that.
+        # Chi tro duong dan, khong img.save(): file da co byte goc tren dia.
         img.filepath_raw = os.path.join(outdir, files[img.name])
 
 for o in bpy.data.objects:

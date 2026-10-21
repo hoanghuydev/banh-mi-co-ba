@@ -1,12 +1,8 @@
 /**
  * npm run probe:offer
  *
- * MỘT NGÀY KHÁCH TỰ MỞ LỜI BAO NHIÊU LẦN — và rớt ở cổng nào.
- *
- * Con số này quyết số phận của 60% kho thoại: lưới `V-3` (nguyên tắc Orkin) đòi đa số
- * nội dung là `NPC_ONLY`, nên nếu `offerTalk` hiếm thì phần lớn những gì đã viết không
- * bao giờ tới tai người chơi. Đo lần đầu: **0,6 lần/ngày**, 87% rớt ở *"không cuộc nào
- * chạy được"* — tức nghẹt ở NỘI DUNG, không ở thiết kế.
+ * Một ngày khách tự mở lời bao nhiêu lần, và rớt ở cổng nào của `offerTalk`.
+ * Quan trọng vì đa số kho thoại là `NPC_ONLY` (lưới `V-3`): `offerTalk` hiếm thì chúng không tới tai người chơi.
  */
 import { Bus } from "../src/core/eventbus";
 import { newGame } from "../src/core/save";
@@ -38,7 +34,7 @@ for (let d = 0; d < DAYS; d++) {
     return orig(c);
   };
   for (let i = 0; i < 60000; i++) { h.step(1000 / 30); if (!(i % 7)) await Promise.resolve(); }
-  nextDay(w, bus);
+  nextDay(w);
 }
 const tot = [...why.values()].reduce((a, b) => a + b, 0);
 const ok = why.get("9 ✓ MỞ LỜI") ?? 0;

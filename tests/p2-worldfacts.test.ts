@@ -23,20 +23,19 @@ const W = (over: Partial<WorldSnapshot> = {}): WorldSnapshot => ({
   cash: 0, teaLeft: 10, stock: 20,
   them: {
     phase: "waiting", practice: "DOI_BANH", passing: false, served: false, named: true,
-    cutLine: false, blocking: false, glanced: false, lookingInside: false, inShade: false, sitting: false, filming: false, borrowing: false,
+    cutLine: false, blocking: false, glanced: false, lookingInside: false, inShade: false, sitting: false, filming: false,
     onPhone: false, eating: false, hasOrder: true, waitRatio: 0,
-    purpose: null, state: null, tier: "ACQUAINTANCE", visits: 1,
+    purpose: null, state: null,
   },
-  convo: { tones: [], warmth: 0, angered: false, openedBy: "PLAYER" },
+  convo: { tones: [], angered: false, openedBy: "PLAYER" },
   visit: { gaveTea: false, gaveFood: false, apologised: false, promised: [], inviteRefused: false },
   day: { met: false, told: [] },
-  season: { remembers: false },
-  hot: false, rain: false, peak: false, queue: 0, shadeFree: false, seatFree: false, ganhOut: false, coats: 2, cartLan: false, cartChung: false, ovenHot: false, meVuaRa: false, band: "SANG", dayIndex: 5,
+  hot: false, rain: false, peak: false, queue: 0, shadeFree: false, seatFree: false, ganhOut: false, cartLan: false, cartChung: false, ovenHot: false, meVuaRa: false, band: "SANG", dayIndex: 5,
   ...over,
 });
 
 const convo = (over: Partial<WorldSnapshot["convo"]>): Partial<WorldSnapshot> =>
-  ({ convo: { tones: [], warmth: 0, angered: false, openedBy: "PLAYER", ...over } });
+  ({ convo: { tones: [], angered: false, openedBy: "PLAYER", ...over } });
 
 // ────────────────────────────────────────────── máy đọc khoá
 
@@ -73,8 +72,7 @@ test("W-3 `while` là phép VÀ; rỗng = luôn đúng", () => {
   assert.equal(firstBroken(["p.handsEmpty", "w.rain"], W()), "w.rain");
 });
 
-test("W-3b bảy tầng khoá đều đọc được — p t w c v d m", () => {
-  /** P2-07 §4ter đòi bốn tầng trí nhớ; P2-08 §4 ghi `v.*` và `d.*` là "chưa tồn tại". */
+test("W-3b sáu tầng khoá đều đọc được — p t w c v d", () => {
   assert.equal(holds("p.hasTea", W({ teaLeft: 3 })), true);
   assert.equal(holds("p.hasTea", W({ teaLeft: 0 })), false);
   assert.equal(holds("t.practice(DOI_BANH)", W()), true);
@@ -85,10 +83,6 @@ test("W-3b bảy tầng khoá đều đọc được — p t w c v d m", () => {
   assert.equal(holds("v.promised(ROT_TRA)", W({ visit: { ...W().visit, promised: ["ROT_TRA"] } })), true);
   assert.equal(holds("d.metToday", W({ day: { met: true, told: [] } })), true);
   assert.equal(holds("d.toldMe(ve-so)", W({ day: { met: true, told: ["ve-so"] } })), true);
-  assert.equal(holds("m.visits(3)", W({ them: { ...W().them, visits: 5 } })), true);
-  assert.equal(holds("m.visits(3)", W({ them: { ...W().them, visits: 2 } })), false);
-  assert.equal(holds("m.remembers", W({ season: { remembers: true } })), true);
-  assert.equal(holds("m.remembers", W()), false);
 });
 
 test("W-3e `w.day(N)` — câu \"mới ra đây bán\" không nói được ở ngày 40", () => {
@@ -127,9 +121,7 @@ test("W-4 mọi khoá cổng trong nội dung đều CÓ THẬT trong bảng đe
   /**
    * Gõ sai một chữ thì câu đó không bao giờ hiện. Đây là loại bug chỉ lộ ra khi có người
    * ngồi chơi đủ lâu để thấy một lựa chọn lẽ ra phải có mà không bao giờ thấy.
-   *
-   * Từ P2-09 lưới này phủ CẢ `need` — trước đây nó chỉ phủ `while`, mà `need` mới là chỗ
-   * 374 nút đang chờ.
+   * Lưới phủ cả `need` lẫn `while`.
    */
   const bad: string[] = [];
   for (const t of TALKS) {
@@ -146,17 +138,13 @@ test("W-4 mọi khoá cổng trong nội dung đều CÓ THẬT trong bảng đe
 
 test("W-4b bảng khoá của người viết KHỚP bảng đen — không còn hai danh sách", () => {
   assert.equal(FACT_KEYS.length + FACT_FNS.length, ALIAS_NAMES.length);
-  // bảy namespace, không có cái thứ tám lẻn vào
   const ns = new Set(ALIAS_NAMES.map((k) => k.split(".")[0]));
-  assert.deepEqual([...ns].sort(), ["c", "d", "m", "p", "t", "v", "w"]);
+  assert.deepEqual([...ns].sort(), ["c", "d", "p", "t", "v", "w"]);
 });
 
 test("W-5 câu MỜI ĂN phải đang cầm bánh; câu MỜI UỐNG phải có trà", () => {
   /**
-   * Chủ dự án: *"Nói họ cần ăn ổ bánh mì (mình cho) thì thật sự mình phải đang cầm bánh
-   * mì mới được nói câu đó. Nếu cầm trà đá mời nước họ thì thật sự phải cầm trà đá."*
-   *
-   * P2-07 §4.1 nói thêm: đó là sự thật TĨNH ⇒ phải nằm ở `need` (ẩn hẳn), không phải
+   * Mời ăn thì phải đang cầm bánh, mời uống thì phải có trà. Đó là sự thật TĨNH ⇒ phải nằm ở `need` (ẩn hẳn), không phải
    * `while` (ra "?"). Lưới nhận cả hai chỗ, nhưng `W-7` mới là chỗ bắt đặt sai phía.
    */
   const GIVE_FOOD = /(ăn thử|nếm thử|bẻ miếng|cầm ổ này|lấy ổ này|cho \S+ ổ này)/iu;

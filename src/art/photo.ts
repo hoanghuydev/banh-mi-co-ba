@@ -9,7 +9,7 @@ import { HELD, type HeldLook } from "./held";
 import { FOOD } from "./food";
 import { FX, FLY_W, FLY_BOX } from "./fx";
 import {
-  BODY_H, WALK_FRAMES, markEightWay, markGait, textureFor, walkKey,
+  WALK_FRAMES, markEightWay, markGait, textureFor, walkKey,
   type Gait, type Pose,
 } from "./character";
 import type { Facing8 } from "../world/iso";
@@ -63,29 +63,6 @@ export function artScale(key: string) {
   return ssOf.get(key) ?? 1;
 }
 
-/** 0,55 là đầu + một chút vai: cái cổ rơi vào trong khung nên chân dung không bị cắt ngang cằm. */
-const FACE_CROP = 0.55;
-
-/**
- * ⚠️ Cắt bằng HÌNH HỌC chứ không giao cho `object-fit: cover`: người vẽ code chừa 16 px trống trên
- * đỉnh đầu, còn ảnh thật thì `standing()` cắt sát — cùng một luật `cover` trên hai tỉ lệ khung
- * khác nhau ra hai kiểu ảnh khác hẳn.
- */
-export function faceCrop(scene: Phaser.Scene, key: string): string {
-  const src = scene.textures.get(key).getSourceImage() as CanvasImageSource & { width: number; height: number };
-  const ss = artScale(key);
-  const headTop = src.height / ss - 1 - BASE - TH / 2 - BODY_H;
-  const side = Math.round(BODY_H * FACE_CROP * ss);
-  const out = document.createElement("canvas");
-  out.width = out.height = side;
-  const ctx = out.getContext("2d");
-  if (!ctx) return "";
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(src, Math.round((src.width - side) / 2), Math.round(headTop * ss), side, side, 0, 0, side, side);
-  return out.toDataURL();
-}
-
 /** ⚠️ Phải gọi LẠI sau mỗi `setTexture`: hệ số thuộc về texture chứ không thuộc sprite, mà cùng một sprite đổi qua lại giữa ảnh thật (dư pixel) và hình vẽ code (1:1). */
 export function fitPhoto<T extends Phaser.GameObjects.Image>(img: T, extra = 1): T {
   img.setScale(extra / artScale(img.texture.key));
@@ -111,7 +88,7 @@ const SIT = 10;
 /** Lấy mốc theo NGƯỜI (`BODY_H` = 64): cái ghế nhựa phải thấp hơn hẳn, cái tủ phải cao hơn. */
 const STANDING: Record<string, [src: string, o: Standing]> = {
   [PROP.oven]: ["prop_oven", { h: 70 }],
-  // Cùng tỉ lệ khung với lò than (0,773) nên nó rơi đúng chỗ cũ; cao hơn 4 px để cú nâng
+  // Cùng tỉ lệ khung với lò than (0,773) nên đứng đúng chỗ lò than; cao hơn 4 px để cú nâng
   // cấp ĐỌC RA ĐƯỢC từ xa mà vẫn hẹp hơn một ô (74 × 0,773 = 57 < TW 60).
   [PROP.ovenE]: ["prop_e-oven", { h: 74 }],
   [PROP.shelf]: ["prop_shelf", { h: 86 }],
@@ -133,12 +110,9 @@ const STANDING: Record<string, [src: string, o: Standing]> = {
   [PROP.fire]: ["prop_extinguisher", { h: 44, dy: SIT - 5 }],
   // Vật CAO NHẤT trong bộ. Mốc không phải "cao bao nhiêu px cho đẹp" mà là TỈ LỆ VỚI
   // NGƯỜI: dù sân thật cao cỡ 2,2 m so với người 1,6 m, nên 100 px trên `BODY_H` = 64.
-  // Bản vẽ code cũ để 110 — ở đó tán dù ngang tầm mái hiên và đọc ra như một cái ô
-  // dựng trên sân khấu chứ không phải cái dù cắm ngoài vỉa hè.
   [PROP.umbrella]: ["prop_umbrella", { h: 100 }],
   // Tủ lạnh hai ngăn cỡ gia đình: cao ~1,55 m, tức THẤP HƠN người một chút — 62 trên
-  // `BODY_H` = 64. Cao hơn bồn rửa (58), thấp hơn cái lò (70). Hình vẽ code cũ để 40 px,
-  // ở đó nó ngang tầm cái ghế nhựa và đọc ra như một cái thùng xốp dựng đứng.
+  // `BODY_H` = 64. Cao hơn bồn rửa (58), thấp hơn cái lò (70).
   [PROP.fridge]: ["prop_fridge", { h: 62 }],
 };
 
@@ -157,17 +131,15 @@ const PLAYER_H = 65;
  * Mỗi người một THƯ MỤC RIÊNG: chung thư mục rồi phân biệt bằng tiền tố là có ngày đặt trùng tên,
  * mà trùng tên thì ảnh người này lặng lẽ đè lên người kia, không lỗi nào nổ ra.
  *
- * ⚠️ Ba bảng lệch với `content/npcs.ts` ở phần phụ kiện. KHÔNG sửa `npcs.ts` theo ảnh — từ lúc có
- * ảnh thật, `body` chỉ còn dùng để lấy MÀU cho huy hiệu nét mặt.
+ * ⚠️ Ba bảng lệch với `content/npcs.ts` ở phần phụ kiện. KHÔNG sửa `npcs.ts` theo ảnh — có ảnh
+ * thật thì `body` chỉ dùng để lấy MÀU cho huy hiệu nét mặt.
  *
  * `walk` là tên atlas chu kỳ đi trong `public/art/`, chỉ ai có model 3D đã rig mới có —
- * xem `docs/phu-luc/xuong-render-nhan-vat.md`. Thiếu thì người đó vẫn đứng yên như cũ.
+ * xem `docs/phu-luc/xuong-render-nhan-vat.md`. Thiếu thì người đó đứng yên.
  */
 const NPC_PHOTOS: Record<string, { src: (d: Facing8) => string; h: number; walk?: string }> = {
   // Anh Dũng — nón bảo hiểm nửa đầu, áo khoác xanh lá. Bảng `anh-dung-list.png`:
-  // bảng DUY NHẤT đủ tám hướng, không hướng nào phải lật ngang. (Bản render đầu,
-  // `driver_char_list.png`, có hai ô nghiêng mới xoay ~70° nên `e`/`w` đọc ra thành
-  // `se`/`sw`; artist render lại, bảng cũ còn trong `art-raw/` nhưng không dùng.)
+  // bảng DUY NHẤT đủ tám hướng, không hướng nào phải lật ngang.
   ANH_DUNG: { src: (d) => `npc/anh-dung/${d}`, h: 64 },
   // Bà Bảy — tóc búi bạc, áo tím nhạt, đi chân đất. Bảng `ba-bay-list.png`.
   // Ảnh thiếu kính lão và lưng còng (`npcs.ts` có cả hai): còn tóc búi bạc làm dấu,
@@ -200,7 +172,7 @@ const CARRIED: Partial<Record<HeldLook, [src: string, size: Fit]>> = {
 
 // ──────────────────────────────────────────────────────────────────────── nhân
 
-/** ⚠️ Lưu ý cho lần vẽ tiếp: thịt nguội và chả lụa giờ đều là LÁT TRÒN HỒNG, chỉ khác sắc độ — bản vẽ code cũ cố tình cho thịt nguội hình vuông để nhìn đen trắng vẫn tách được. */
+/** ⚠️ Thịt nguội và chả lụa đều là LÁT TRÒN HỒNG, chỉ khác sắc độ — nhìn đen trắng là khó tách. */
 const FILLINGS: Partial<Record<Ingredient, [src: string, fill?: number, inLoaf?: number]>> = {
   pate: ["ing_pate"],
   thit: ["ing_thit"],
@@ -401,13 +373,13 @@ function floors(scene: Phaser.Scene) {
  * Tám hướng ĐỨNG YÊN, ưu tiên lấy từ chính atlas của chu kỳ đi.
  *
  * ⚠️ Đứng yên và bước đi phải ra từ MỘT nguồn. Bảng xoay của artist (`art-raw/*-list.png`)
- * và model 3D trong `art-raw/model/` là hai bộ đèn khác nhau — với cô Ba còn là hai bản
+ * và model 3D trong `art-raw/model/` là hai bộ đèn khác nhau — với người chơi còn là hai bản
  * MODEL khác nhau: tạp dề trong bảng artist có dây chéo sau lưng và cái nơ thắt, tạp dề
  * của `chef.glb` thì không có. Trộn hai nguồn thì mỗi lần thả phím nhân vật đổi màu và
  * đổi luôn cái tạp dề, nhìn như nhấp nháy giữa hai người.
  *
- * Ai chưa render tư thế nghỉ (`render-character.py --idle`) thì vẫn rơi về bảng artist
- * như cũ — vẫn lệch, nhưng còn hơn không có ảnh.
+ * Ai chưa render tư thế nghỉ (`render-character.py --idle`) thì rơi về bảng artist —
+ * vẫn lệch, nhưng còn hơn không có ảnh.
  */
 function eightWay(
   scene: Phaser.Scene, who: string,
@@ -445,7 +417,7 @@ function eightWayFromAtlas(
   markEightWay(who);
   for (const dir of DIRS8) {
     for (const pose of poses) {
-      // Cùng một tấm cho cả buông tay lẫn bưng đồ, như bản cũ: lúc thật sự bưng thì
+      // Cùng một tấm cho cả buông tay lẫn bưng đồ: lúc thật sự bưng thì
       // `Player` ghim vào frame 0 của chu kỳ `carry` chứ không dùng tấm tĩnh này.
       standingFromAtlas(scene, textureFor(dir, who, pose).key, atlas,
                         `idle_${dir}_00`, { h, dy: 0 });
@@ -464,9 +436,8 @@ function player(scene: Phaser.Scene) {
 /**
  * Bàn chân frame này cách mặt đất bao nhiêu px thiết kế.
  *
- * ĐO từ chính tấm ảnh chứ không dựng lại bằng sine. Dãy đáy chân tám frame đo được là
- * 359·364·361·361·359·366·363·369 — không phải một hình sin sạch, nên mọi công thức đoán
- * đều lệch. Mà bóng chỉ thuyết phục khi nó ăn khớp ĐÚNG với bàn chân trong ảnh.
+ * ĐO từ chính tấm ảnh chứ không dựng lại bằng sine: đáy chân các frame không theo hình sin
+ * sạch, mà bóng chỉ thuyết phục khi khớp ĐÚNG bàn chân trong ảnh.
  *
  * Quét từ đáy lên và dừng ngay hàng đục đầu tiên, nên dù gọi 64 lần vẫn rẻ: bàn chân
  * luôn nằm sát đáy khung.
@@ -562,7 +533,7 @@ function npcPhotos(scene: Phaser.Scene) {
   for (const [who, o] of Object.entries(NPC_PHOTOS)) {
     eightWay(scene, who, o.src, o.h, ["idle"], o.walk);
     // Cũng vì không bưng gì: chỉ một chu kỳ `walk`, không có `carry`. Đó là lý do một
-    // người khách tốn 1,1 MB trong khi cô Ba tốn 2,6 MB.
+    // người khách tốn 1,1 MB trong khi người chơi tốn 2,6 MB.
     if (o.walk) paintWalk(scene, who, o.walk, o.h, ["walk"]);
   }
 }

@@ -2,13 +2,7 @@
  * CỜ CHUYỆN PHẢI CÓ CHỖ VỀ — P2-06 §2.14.
  *
  * Một `flag` trong kho thoại là lời hứa của hệ thống: *"game vừa ghi lại việc bạn làm."*
- * Đặt cờ rồi không ai đọc là hứa suông — và nó không nổ ra thành bug, không ai thấy,
- * nên nó lặng lẽ chất lên. Đo lúc dựng lưới này: **106 cờ đặt ra, 2 được đọc**.
- *
- * Mấy cờ đó không phải chuyện vặt. Chúng ghi LỜI HỨA và BÍ MẬT: `maiTraGiumBay` (người
- * chơi ngỏ ý trả giùm một phần nợ của bà Bảy mà cô Mai đang gánh), `sauNhoNoi` (hứa nói
- * lại với anh Dũng chuyện ôm cua), `maiNhoLan` (nhận lời để ý chị Lan giùm cô Mai).
- * Người viết đã dựng sẵn một mạng lưới; không ai nối dây.
+ * Đặt cờ rồi không ai đọc là hứa suông, và nó không nổ ra thành bug nên lặng lẽ chất lên.
  *
  * Luật: mỗi cờ phải HOẶC được đọc ở đâu đó, HOẶC bị xoá. Không có ô thứ ba.
  */
@@ -20,7 +14,7 @@ import { TalkStore } from "../src/content/talks";
 
 const TALKS: Talk[] = await TalkStore.loadAll();
 
-/** Mọi chỗ NGOÀI kho thoại có thể đọc một cờ: arc, sự kiện, luật chơi, UI. */
+/** Mọi chỗ NGOÀI kho thoại có thể đọc một cờ: sự kiện, luật chơi, UI. */
 async function outsideText(): Promise<string> {
   const parts: string[] = [];
   const walkDir = async (d: URL) => {
@@ -74,7 +68,7 @@ test("F-3 phải có đủ cầu BẮC NGANG giữa hai người — đó là th
   /**
    * Cờ mà người đặt và người đọc là HAI NPC khác nhau mới là thứ làm cái hẻm đáng lục
    * lọi: chuyện mình kể cho cô Mai tới tai chị Lan. Cờ đặt rồi chính người đó đọc lại
-   * chỉ là trí nhớ một chiều — vẫn tốt, nhưng không phải khám phá.
+   * vẫn tốt, nhưng không phải khám phá.
    */
   const npcOf = new Map(TALKS.map((t) => [t.id, t.npc]));
   const readerNpc = new Map<string, Set<string>>();
@@ -91,5 +85,5 @@ test("F-3 phải có đủ cầu BẮC NGANG giữa hai người — đó là th
     if (readers && [...readers].some((r) => !setters.has(r))) bridges++;
   }
   assert.ok(bridges >= 15,
-    `mới ${bridges} cờ bắc cầu giữa hai người cho cả mùa 40 ngày — cái hẻm chưa đáng đi lục`);
+    `mới ${bridges} cờ bắc cầu giữa hai người — cái hẻm chưa đáng đi lục`);
 });

@@ -1,9 +1,4 @@
-/**
- * Hệ số sức chờ theo chỗ xếp hàng — bổ sung của bản dựng (xem `sim/service.queuePatienceMul`).
- *
- * Mấy con số ở đây là HỢP ĐỒNG, không phải chi tiết cài đặt: đổi chúng là đổi cảm giác
- * của giờ cao điểm, nên phải đổi có chủ ý chứ không phải vô tình trong một lần dọn code.
- */
+/** Hệ số sức chờ theo chỗ xếp hàng: các con số là hợp đồng cảm giác giờ cao điểm, đổi phải có chủ ý. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { queuePatienceMul } from "../src/sim/service";

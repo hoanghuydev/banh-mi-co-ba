@@ -1,12 +1,9 @@
 /**
  * npm run gates [-- --dist]
  *
- * Cổng kỹ thuật cứng của P0 — CANON §8.1 + P0-01 §6 + P0-02 §6. Đây là CỔNG, không
- * phải khuyến nghị: một `Math.random()` lọt vào là cơ chế chống save-scum hỏng âm
- * thầm, và không ai biết cho tới khi người chơi viết lên Reddit.
+ * Cổng kỹ thuật cứng của P0 — CANON §8.1 + P0-01 §6 + P0-02 §6; trượt là exit 1.
  *
- * `--dist` quét thêm bản build: code overlay dev không được lọt vào bản phát hành
- * (một thanh certainty trong bản bán ra là giết T5).
+ * `--dist` quét thêm bản build: code overlay dev không được lọt vào bản phát hành.
  */
 import { existsSync } from "node:fs";
 import { join } from "node:path";
@@ -47,19 +44,8 @@ if (existsSync(join(ROOT, "src/econ/ledger.ts"))) {
   gates.push({ name: "econ/ledger.ts không dùng rng", hits });
 }
 /*
- * P0-02 §2.3 — DÒNG SỐ DÙNG CHUNG KHÔNG ĐƯỢC RÚT CÓ ĐIỀU KIỆN.
- *
- * `spawn()` nhận một `rng` dùng chung cho cả lượt khách. Rút thêm một số từ nó **chỉ
- * trong một số trường hợp** là kiểu lệch tệ nhất: nó dịch mọi lần rút sau đó, nhưng chỉ
- * ở một số lượt, nên golden không vỡ ngay mà vỡ lệch pha vài ngày sau.
- *
- * Đã xảy ra thật: `maybeCutLine` nhận `rng` của `spawn` rồi `rng.next()` chỉ khi đã có
- * người đứng trước — `tests/p1-hollow` bỗng gặp một NPC khác hẳn ở quầy và `takesHollowLoaf`
- * ra kết quả ngược. Mất một buổi để truy. Cách đúng: `hub.derive("<việc>:<ngày>:<id>")`,
- * y như `invite` và `askStepAside`.
- *
- * Cổng này bắt chữ ký `(..., rng: Rng)` ở mấy hàm KHÔNG nằm trên đường spawn/plan —
- * chúng phải tự derive, không nhận dòng chung vào.
+ * P0-02 §2.3 — dòng số dùng chung không được rút có điều kiện (dịch mọi lần rút sau, golden vỡ lệch pha).
+ * Bắt chữ ký `(..., rng: Rng)` ở hàm ngoài đường spawn/plan — chúng phải tự `hub.derive("<việc>:<ngày>:<id>")`.
  */
 {
   const src = read(join(ROOT, "src/sim/service.ts"));
@@ -74,20 +60,13 @@ if (existsSync(join(ROOT, "src/econ/ledger.ts"))) {
   gates.push({ name: "không hàm nào ngoài spawn/plan nhận `rng` dùng chung", hits });
 }
 
-// P0-01 §2.1 — không còn netcode.
+// P0-01 §2.1 — không netcode.
 scan("không colyseus", ["src"], /colyseus/i);
 if (/colyseus/i.test(read(join(ROOT, "package.json")))) gates.push({ name: "package.json không có colyseus", hits: ["package.json"] });
 // P0-02 §6 — đúng một nơi gọi advance() (StallScene; headless là bản sao của nó để test).
 scan("clock.advance() chỉ ở StallScene + sim/headless", ["src"], /\.advance\(/, {
   exclude: (f) => ["src/core/clock.ts", "src/scenes/StallScene.ts", "src/sim/headless.ts"].includes(rel(f)),
 });
-// P0-01 §2.5 — đủ 44 event.
-{
-  const src = read(join(ROOT, "src/core/eventbus.ts"));
-  const body = src.slice(src.indexOf("export type EventMap = {"), src.indexOf("export type EventKey"));
-  const n = [...body.matchAll(/^\s*"[a-z0-9]+:[A-Za-z]+":/gm)].length;
-  gates.push({ name: `EventMap khai báo ≥ 44 event (đang có ${n})`, hits: n >= 44 ? [] : [`chỉ có ${n}`] });
-}
 // P0-01 §2.1 kỷ luật — README / trang giới thiệu không hứa co-op.
 {
   const hits = ["README.md", "index.html"].flatMap((f) =>

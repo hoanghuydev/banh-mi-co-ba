@@ -1,20 +1,3 @@
-/**
- * VỎ BÁNH NÓI ĐƯỢC THÀNH LỜI — hai đầu của vòng độ giòn, và cách chúng GHÉP với mấy chuyện
- * khác xảy ra trong cùng một lần đưa bánh.
- *
- * Bốn hợp đồng, và cái thứ ba mới là cái dễ mất nhất:
- *
- *  1. ĐỦ HAI ĐẦU. Rút sớm quá → "chưa giòn"; rút trễ quá (dải `SINGED`) → "cháy cạnh".
- *     Trước đây chỉ có đầu non bị phạt, nên nửa còn lại của cái vòng trên cửa lò không
- *     có hậu quả nào hết.
- *  2. VỎ BÁNH KHÔNG CƯỚP CHỖ. Ổ vừa thiếu món vừa chưa giòn thì câu chính nói chuyện THIẾU
- *     MÓN — vỏ bánh nối thêm vào cuối. Để nó tranh chỗ thì có lúc khách chỉ kêu bánh mềm,
- *     và người chơi không bao giờ biết mình quên miếng đồ chua.
- *  3. Ổ CÓ LỖI THÌ KHÔNG BAO GIỜ IM. Túi im lặng 7/20 từng nuốt luôn câu chê ngay tại
- *     khoảnh khắc duy nhất người chơi đọc được mình làm trật chỗ nào.
- *  4. CHO THÊM LUÔN ĐƯỢC NÓI RA — cả hai phía: cô Ba nói mình cho thêm gì, và người ta
- *     cảm ơn, kể cả khi ổ đó còn trật. Điểm thì vẫn chỉ cộng trên ổ sạch (`freeExtra`).
- */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Bus } from "../src/core/eventbus";
@@ -43,23 +26,16 @@ function atCounter(seed = "crust-1") {
 }
 
 const pick = (ev: Ev[], e: string) => ev.filter((x) => x.e === e).map((x) => x.p);
-/** Lỗi mà khách NÓI RA (một cái), và cả rổ lỗi hệ ghi ngầm. */
 const diffed = (ev: Ev[]) => pick(ev, "delivery:diffed")[0];
 const without = (dish: Ingredient[], ...ids: Ingredient[]) => dish.filter((x) => !ids.includes(x));
-/**
- * Một thứ khách CÓ gọi mà bỏ ra được — cố ý tránh nhân mặn: rút hết nhân thì ổ thành ổ TRỐNG
- * (`HOLLOW_LOAF`), một luật khác hẳn, có bài riêng ở `p1-hollow`.
- */
+/** Món khách có gọi mà bỏ ra được — tránh nhân mặn vì rút hết nhân thành `HOLLOW_LOAF`. */
 function dropMe(spec: OrderSpec): Ingredient {
   const i = INGREDIENTS.find((x) => x.kind !== "nhan" && (spec.levels[x.id] ?? 0) > 0);
   assert.ok(i, "đơn này không có rau nào để bỏ bớt — đổi seed");
   return i.id;
 }
 
-/**
- * Mọi câu NGƯỜI NÀY nói ra sau lúc đưa bánh. Phải lọc theo `memKey`: cả hẻm cùng nói, và câu
- * đầu tiên bay ra thường là lời chào của một người khác đứng kế bên.
- */
+/** Lọc theo `memKey` vì câu đầu tiên thường là lời chào của người đứng kế bên. */
 function linesOf(h: HeadlessStall, ev: Ev[], memKey: string) {
   h.run({ maxFrames: 1200 });
   return pick(ev, "dialog:spoken").filter((p) => p.npcId === memKey).map((p) => p.text as string);
@@ -134,7 +110,7 @@ test("ổ có lỗi KHÔNG qua túi im lặng — hai chục lượt liền đ�
 
 // ──────────────────────────────────────────────────────── 4 · chuyện cho thêm
 
-test("cho thêm: cô Ba nói ra mình cho thêm gì, có kể tên món", () => {
+test("cho thêm: chủ quán nói ra mình cho thêm gì, có kể tên món", () => {
   const { h, c } = atCounter();
   const r = h.service.serveDish([...dishFor(c.order!), "dochua", "ot"], { crust: CRISP });
   assert.ok(r.playerSay, "bỏ thêm đồ mà không ai nói gì thì người chơi không biết hệ có đọc ra");
@@ -143,7 +119,7 @@ test("cho thêm: cô Ba nói ra mình cho thêm gì, có kể tên món", () => 
   assert.doesNotMatch(r.playerSay!, /\{/, "danh xưng phải được điền, không để nguyên {call}");
 });
 
-test("không cho thêm gì thì cô Ba không nói gì", () => {
+test("không cho thêm gì thì chủ quán không nói gì", () => {
   const { h, c } = atCounter();
   assert.equal(h.service.serveDish(dishFor(c.order!), { crust: CRISP }).playerSay, undefined);
 });

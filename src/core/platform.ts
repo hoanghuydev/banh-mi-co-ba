@@ -1,17 +1,10 @@
-/**
- * Adapter hệ điều hành — P0-01 §2.7. Mọi truy cập lưu trữ / file đi qua ĐÚNG MỘT chỗ,
- * để đường sang Electron (file JSON + `rename` nguyên tử) và Capacitor còn mở.
- *
- * v1 chỉ có `web` (localStorage). Mọi lỗi (hết quota, chế độ riêng tư) đều nuốt:
- * không được làm sập game vì chuyện lưu trữ.
- */
+/** Mọi truy cập lưu trữ/file đi qua đây; lỗi (hết quota, chế độ riêng tư) đều nuốt để không sập game. */
 export type Platform = {
   kind: "web" | "electron" | "memory";
   read(key: string): string | null;
   write(key: string, value: string): boolean;
   remove(key: string): void;
   keys(prefix: string): string[];
-  /** Đưa người chơi một file để lưu (xuất telemetry, sao lưu save). */
   download(filename: string, text: string, mime?: string): void;
 };
 
@@ -41,7 +34,7 @@ function webPlatform(): Platform {
   };
 }
 
-/** Bộ nhớ trong RAM — cho test và headless sim chạy bằng Node. */
+/** Lưu trong RAM cho test và headless sim. */
 export function memoryPlatform(): Platform {
   const m = new Map<string, string>();
   return {

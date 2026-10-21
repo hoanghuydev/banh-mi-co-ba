@@ -1,5 +1,5 @@
 {
-  "_note": "Anh Bảo — sinh viên, gaze thấp nhất hẻm (cắm mặt điện thoại), thanThien 0,4. Gọi người chơi 'chị', tự xưng 'em'. Giọng sinh viên hướng nội 2026 (docs/revamp/plan-thoai-anh-bao.md): nói ÍT, hay bỏ lửng, đệm 'á/ha/ờm'. Tật 'Dạ' đầu câu giữ nhưng thưa — arc bao.noi sống nhờ nó. Dịch truyện tranh tiếng Nhật không công — tiếng Nhật khá hơn tiếng Anh, và em KHÔNG BAO GIỜ tự nói ra chuyện đó. Ăn cay được hơn em dám gọi. Cuối tháng hết tiền.",
+  "_note": "Anh Bảo — sinh viên, gaze thấp nhất hẻm (cắm mặt điện thoại), thanThien 0,4. Gọi người chơi 'chị', tự xưng 'em'. Giọng sinh viên hướng nội 2026: nói ÍT, hay bỏ lửng, đệm 'á/ha/ờm'. Tật 'Dạ' đầu câu giữ nhưng thưa — cuộc bao.noi sống nhờ nó. Dịch truyện tranh tiếng Nhật không công — tiếng Nhật khá hơn tiếng Anh, và em KHÔNG BAO GIỜ tự nói ra chuyện đó. Ăn cay được hơn em dám gọi. Cuối tháng hết tiền.",
   "talks": [
     {
       "id": "bao.hettien",
@@ -7,12 +7,6 @@
       "topic": "hettien",
       "source": "NPC_ONLY",
       "depth": "FULL",
-      "when": {
-        "day": [
-          6,
-          40
-        ]
-      },
       "opener": "Dạ chị ơi… ổ không thôi bao nhiêu vậy chị?",
       "weight": 12,
       "shared": {
@@ -20,13 +14,11 @@
           {
             "say": "Rồi, em ăn đi nha.",
             "tone": "THUONG",
-            "rel": 1,
             "reply": "Dạ, em cảm ơn chị."
           },
           {
             "say": "Mai ghé nữa nha em.",
             "tone": "AM",
-            "rel": 3,
             "reply": "Dạ… mai em ghé.",
             "mood": "CUOI"
           }
@@ -36,23 +28,16 @@
         {
           "say": "Cuối tháng rồi ha em?",
           "tone": "AM",
-          "rel": 3,
           "reply": "Ủa… sao chị biết hay vậy.",
           "then": [
             {
               "say": "Chị bán ở đây lâu rồi. Nhìn là biết à.",
               "tone": "AM",
-              "rel": 2,
               "reply": "Hơi quê ha… Còn ba ngày nữa nhà mới gửi tiền á chị.",
               "then": [
                 {
                   "say": "Chị thêm chút pate nha, không tính tiền.",
                   "tone": "AM",
-                  "rel": 4,
-                  "mem": {
-                    "kind": "CARED_FOR_THEM",
-                    "intensity": 55
-                  },
                   "flag": "baoDuocCho",
                   "reply": "Thôi chị ơi… dạ. Em cảm ơn chị nhiều.",
                   "act": {
@@ -64,25 +49,18 @@
                 {
                   "say": "Ba ngày đó em ăn gì?",
                   "tone": "AM",
-                  "rel": 3,
                   "reply": "Em còn thùng mì. Ăn mì cũng ổn mà chị.",
                   "mood": "CUOI"
                 },
                 {
                   "say": "Ghi sổ đi em, có tiền rồi trả chị.",
                   "tone": "THUONG",
-                  "rel": 2,
                   "reply": "Thôi chị… em ngại lắm."
                 },
                 {
                   "say": "Không có tiền thì nhịn sáng đi em.",
                   "tone": "GAT",
-                  "rel": -6,
                   "anger": 25,
-                  "mem": {
-                    "kind": "RUDE_TO_THEM",
-                    "intensity": 70
-                  },
                   "silent": true,
                   "mood": "GIAN"
                 }
@@ -91,7 +69,6 @@
             {
               "say": "Nhà gửi em tháng bao nhiêu?",
               "tone": "THANG",
-              "rel": -1,
               "reply": "Dạ… hai triệu rưỡi. Trừ tiền trọ là hết á chị."
             },
             {
@@ -106,28 +83,17 @@
         {
           "say": "{gia} nha. Mà ăn vậy em no hông?",
           "tone": "AM",
-          "rel": 3,
           "reply": "No mà chị. Em quen rồi.",
           "then": [
             {
               "say": "Quen là sao em?",
               "tone": "AM",
-              "rel": 3,
-              "mem": {
-                "kind": "REMEMBERED_STORY",
-                "intensity": 45
-              },
               "reply": "Tháng nào cũng vậy á chị. Tuần cuối là ăn ổ không.",
               "mood": "THUONG"
             },
             {
               "say": "Thôi để chị thêm miếng chả.",
               "tone": "AM",
-              "rel": 3,
-              "mem": {
-                "kind": "CARED_FOR_THEM",
-                "intensity": 45
-              },
               "reply": "Ơ… thôi chị. Dạ, em cảm ơn chị.",
               "act": {
                 "kind": "PROMISE",
@@ -147,7 +113,6 @@
         {
           "say": "{gia}. Em đứng qua bên xíu cho chị bán nha.",
           "tone": "LANH",
-          "rel": -2,
           "reply": "Dạ… em xin lỗi chị.",
           "act": {
             "kind": "STEP_ASIDE",
@@ -170,70 +135,41 @@
       "topic": "nhat",
       "source": "NPC_ONLY",
       "depth": "SHORT",
-      "when": {
-        "day": [
-          14,
-          40
-        ],
-        "minVisits": 6,
-        "tier": [
-          "ACQUAINTANCE",
-          "FRIEND"
-        ]
-      },
       "opener": "Chị ơi… bé Su có nói gì về em với chị hông?",
       "weight": 10,
       "tree": [
         {
           "say": "Nó nói em đọc chữ gì ngoằn ngoèo á.",
           "tone": "DUA",
-          "rel": 2,
           "reply": "À… tiếng Nhật á chị. Em dịch truyện tranh.",
           "then": [
             {
               "say": "Em dịch cho ai vậy?",
               "tone": "AM",
-              "rel": 3,
               "reply": "Hông cho ai hết. Em đăng lên group thôi. Không có tiền đâu chị.",
               "then": [
                 {
                   "say": "Không có tiền mà em làm chi vậy?",
                   "tone": "THANG",
-                  "rel": 1,
                   "reply": "Tại em thích… Với lại có người đọc xong vô cmt cảm ơn em.",
                   "mood": "CUOI"
                 },
                 {
                   "say": "Em giỏi ghê. Vậy mà chị không biết luôn.",
                   "tone": "AM",
-                  "rel": 4,
-                  "mem": {
-                    "kind": "CARED_FOR_THEM",
-                    "intensity": 55
-                  },
                   "reply": "Em hông dám kể… kể ra người ta nói em rảnh.",
                   "mood": "THUONG"
                 },
                 {
                   "say": "Em học tiếng Nhật bao lâu rồi?",
                   "tone": "AM",
-                  "rel": 3,
-                  "mem": {
-                    "kind": "REMEMBERED_STORY",
-                    "intensity": 50
-                  },
                   "reply": "Bốn năm. Tự học á chị. Tiếng Nhật em còn khá hơn tiếng Anh nữa á.",
                   "mood": "THUONG"
                 },
                 {
                   "say": "Lo học đi em, dịch truyện chi cho mất thời gian.",
                   "tone": "GAT",
-                  "rel": -5,
                   "anger": 25,
-                  "mem": {
-                    "kind": "RUDE_TO_THEM",
-                    "intensity": 65
-                  },
                   "silent": true,
                   "mood": "BUC"
                 }
@@ -243,13 +179,11 @@
             {
               "say": "Truyện gì vậy? Chị có biết hông?",
               "tone": "THUONG",
-              "rel": 1,
               "reply": "Chắc chị hông biết đâu. Truyện cũ lắm rồi."
             },
             {
               "say": "Ờ.",
               "tone": "LANH",
-              "rel": -1,
               "silent": true
             }
           ]
@@ -262,14 +196,12 @@
             {
               "say": "Mà em muốn nói gì thì cứ nói đi.",
               "tone": "AM",
-              "rel": 3,
               "reply": "Thôi chị… để hôm khác.",
               "mood": "CUOI"
             },
             {
               "say": "Ừ.",
               "tone": "LANH",
-              "rel": -1,
               "silent": true
             }
           ]
@@ -277,7 +209,6 @@
         {
           "say": "Nó nói nó tính chào em một tiếng á.",
           "tone": "AM",
-          "rel": 3,
           "need": "suChaoBao",
           "reply": "Hả?! …Thôi để em chào trước. Em tập trong phòng hai hôm rồi.",
           "mood": "NGUONG"
@@ -285,12 +216,7 @@
         {
           "say": "Em hỏi gì kỳ vậy.",
           "tone": "GAT",
-          "rel": -5,
           "anger": 20,
-          "mem": {
-            "kind": "RUDE_TO_THEM",
-            "intensity": 60
-          },
           "silent": true,
           "mood": "BUC"
         }
@@ -308,36 +234,23 @@
       "topic": "thi",
       "source": "NPC_ONLY",
       "depth": "BARK",
-      "when": {
-        "day": [
-          17,
-          23
-        ]
-      },
       "opener": "Dạ cho em hai ổ đầy đủ. Em đi thi á chị.",
       "weight": 11,
       "tree": [
         {
           "say": "Thi gì vậy em? Chúc em làm bài tốt nha.",
           "tone": "AM",
-          "rel": 3,
           "reply": "Cuối kỳ á chị. Em cảm ơn chị.",
           "then": [
             {
               "say": "Thức nguyên đêm hả? Mắt đỏ hoe kìa.",
               "tone": "AM",
-              "rel": 4,
-              "mem": {
-                "kind": "CARED_FOR_THEM",
-                "intensity": 50
-              },
               "reply": "Ngủ được hai tiếng à… Chị để ý ghê.",
               "mood": "THUONG"
             },
             {
               "say": "Hai ổ lận hả? Ăn hết nổi hông em?",
               "tone": "DUA",
-              "rel": 2,
               "reply": "Một ổ để trưa á chị. Thi xong là hông kịp ăn."
             },
             {
@@ -356,14 +269,12 @@
             {
               "say": "…Mà thi tốt nha em.",
               "tone": "AM",
-              "rel": 3,
               "reply": "Dạ! Em cảm ơn chị.",
               "mood": "CUOI"
             },
             {
               "say": "Hai ổ, {gia2} nha em.",
               "tone": "LANH",
-              "rel": -1,
               "reply": "Dạ."
             }
           ]
@@ -382,11 +293,6 @@
       "source": "NPC_ONLY",
       "depth": "SHORT",
       "when": {
-        "day": [
-          14,
-          40
-        ],
-        "minVisits": 5,
         "needFlag": "suXoaClip"
       },
       "weight": 11,
@@ -396,20 +302,17 @@
           {
             "say": "Khỏi lo. Nó dễ thương lắm.",
             "tone": "AM",
-            "rel": 3,
             "reply": "Vậy em yên tâm rồi. Cảm ơn chị.",
             "mood": "CUOI"
           },
           {
             "say": "Ổ của em nè.",
             "tone": "THUONG",
-            "rel": 1,
             "reply": "Dạ, em cảm ơn chị."
           },
           {
             "say": "Ừ.",
             "tone": "LANH",
-            "rel": -1,
             "silent": true
           }
         ]
@@ -418,44 +321,34 @@
         {
           "say": "Nó không giận đâu. Nó xoá liền rồi á.",
           "tone": "AM",
-          "rel": 3,
           "reply": "Thật hả chị… Em bắt bạn xoá xong thấy mình kỳ ghê.",
           "then": [
             {
               "say": "Kỳ gì đâu. Mặt em mà, em có quyền chứ.",
               "tone": "THANG",
-              "rel": 2,
               "reply": "Em sợ bạn nghĩ em khó chịu. Em hông có khó chịu. Em chỉ là… thôi.",
               "then": [
                 {
                   "say": "Chỉ là gì? Nói hết câu đi em.",
                   "tone": "AM",
-                  "rel": 4,
-                  "mem": {
-                    "kind": "CARED_FOR_THEM",
-                    "intensity": 60
-                  },
                   "reply": "…Em chỉ không muốn ai thấy mặt em. Rồi. Em nói xong rồi đó chị.",
                   "mood": "RUNG_RUNG"
                 },
                 {
                   "say": "Không khó chịu mà em xin lỗi nó ba lần lận đó.",
                   "tone": "DUA",
-                  "rel": 3,
                   "reply": "Ba lần lận hả chị… Trời. Em hông có đếm.",
                   "mood": "CUOI"
                 },
                 {
                   "say": "Vậy hôm nào em nói với nó một tiếng đi.",
                   "tone": "AM",
-                  "rel": 3,
                   "reply": "Để em… em sẽ nói. Chắc vậy.",
                   "mood": "CUOI"
                 },
                 {
                   "say": "Em overthinking quá rồi đó.",
                   "tone": "LANH",
-                  "rel": -2,
                   "reply": "Dạ… chắc vậy."
                 }
               ]
@@ -463,7 +356,6 @@
             {
               "say": "Nó còn khen đoạn đó quay đẹp nữa đó.",
               "tone": "DUA",
-              "rel": 3,
               "reply": "Hả?! Đẹp gì chị. Em đứng đọc truyện chứ có làm gì đâu.",
               "ref": "ket",
               "mood": "NGAC_NHIEN"
@@ -480,42 +372,28 @@
         {
           "say": "Cuốn truyện em cầm hôm đó là truyện gì vậy?",
           "tone": "AM",
-          "rel": 2,
           "reply": "Truyện tiếng Nhật á… Em đọc bản gốc. Mà đọc chậm lắm.",
           "then": [
             {
               "say": "Đọc được bản gốc luôn hả em?",
               "tone": "AM",
-              "rel": 3,
-              "mem": {
-                "kind": "REMEMBERED_STORY",
-                "intensity": 50
-              },
               "reply": "Cũng tàm tạm à. Em tự học. Trên mạng có hết á chị.",
               "then": [
                 {
                   "say": "Tự học mà đọc được là xịn lắm đó.",
                   "tone": "AM",
-                  "rel": 4,
-                  "flag": "baoRespect",
-                  "mem": {
-                    "kind": "CARED_FOR_THEM",
-                    "intensity": 60
-                  },
                   "reply": "Chị đừng khen… em không biết để tay đâu luôn á.",
                   "mood": "THUONG"
                 },
                 {
                   "say": "Vậy dịch giùm chị cái hộp bánh tiếng Nhật kia đi.",
                   "tone": "DUA",
-                  "rel": 3,
                   "reply": "Ờm… cái đó tiếng Hàn á chị. Sorry chị.",
                   "mood": "CUOI"
                 },
                 {
                   "say": "Ừ. Hay.",
                   "tone": "LANH",
-                  "rel": -1,
                   "silent": true
                 }
               ],
@@ -524,7 +402,6 @@
             {
               "say": "Chậm mà đọc đều là được rồi.",
               "tone": "AM",
-              "rel": 3,
               "reply": "Dạ… em cảm ơn chị.",
               "ref": "ket",
               "mood": "CUOI"
@@ -532,7 +409,6 @@
             {
               "say": "Ừ.",
               "tone": "LANH",
-              "rel": -1,
               "silent": true
             }
           ]
@@ -540,11 +416,6 @@
         {
           "say": "Chị đang bận lắm. Chuyện đó em tự lo nha.",
           "tone": "LANH",
-          "rel": -3,
-          "mem": {
-            "kind": "RUDE_TO_THEM",
-            "intensity": 45
-          },
           "reply": "Dạ… em xin lỗi chị.",
           "mood": "BUON"
         }
@@ -562,13 +433,6 @@
       "topic": "lamthem",
       "source": "NPC_ONLY",
       "depth": "FULL",
-      "when": {
-        "day": [
-          12,
-          40
-        ],
-        "minVisits": 4
-      },
       "weight": 12,
       "opener": "Chị ơi… tối qua em bưng bê tới hai giờ sáng. Ngủ được ba tiếng.",
       "shared": {
@@ -576,24 +440,17 @@
           {
             "say": "Ráng giữ sức nha em.",
             "tone": "AM",
-            "rel": 3,
-            "mem": {
-              "kind": "CARED_FOR_THEM",
-              "intensity": 45
-            },
             "reply": "Dạ, em cảm ơn chị.",
             "mood": "THUONG"
           },
           {
             "say": "Ổ của em nè.",
             "tone": "THUONG",
-            "rel": 1,
             "reply": "Dạ."
           },
           {
             "say": "Ừ.",
             "tone": "LANH",
-            "rel": -1,
             "silent": true
           }
         ]
@@ -602,26 +459,19 @@
         {
           "say": "Hai giờ sáng lận hả? Rồi kịp lên trường hông em?",
           "tone": "AM",
-          "rel": 3,
           "reply": "Kịp chị. Ngủ gục tiết đầu thôi. Thầy quen mặt em luôn rồi.",
           "then": [
             {
               "say": "Ăn sáng cho đàng hoàng chút đi em. Ngủ có ba tiếng mà ăn uống qua loa.",
               "tone": "AM",
-              "rel": 3,
               "reply": "Em quen rồi chị. Thấy cũng đủ mà.",
               "then": [
                 {
                   "say": "Hôm nay chị thêm miếng chả cho em nha.",
                   "tone": "AM",
-                  "rel": 4,
                   "act": {
                     "kind": "PROMISE",
                     "item": "chalua"
-                  },
-                  "mem": {
-                    "kind": "CARED_FOR_THEM",
-                    "intensity": 55
                   },
                   "reply": "Hả?! Thôi chị ơi… dạ, em cảm ơn chị. Em nợ chị lắm rồi á.",
                   "mood": "NGAC_NHIEN"
@@ -629,13 +479,11 @@
                 {
                   "say": "Bưng bê một đêm được bao nhiêu em?",
                   "tone": "THANG",
-                  "rel": 1,
                   "reply": "Hai trăm. Hôm nào khách tip thì được hai trăm rưỡi."
                 },
                 {
                   "say": "Nói vậy chứ hồi chị bằng tuổi em chị cũng y vậy à.",
                   "tone": "AM",
-                  "rel": 3,
                   "reply": "Thật hả? …Vậy chắc em cũng qua được ha.",
                   "mood": "CUOI"
                 },
@@ -650,30 +498,22 @@
             {
               "say": "Làm chi cực dữ vậy em. Để dành tiền làm gì?",
               "tone": "THANG",
-              "rel": 1,
               "reply": "Gửi về nhà một ít… Với lại em đang gom mua cái laptop cũ.",
               "then": [
                 {
                   "say": "Laptop để làm gì em?",
                   "tone": "AM",
-                  "rel": 3,
-                  "mem": {
-                    "kind": "REMEMBERED_STORY",
-                    "intensity": 50
-                  },
                   "reply": "Em làm cái này không ai trả tiền đâu chị. Thích thì làm thôi.",
                   "mood": "THUONG"
                 },
                 {
                   "say": "Em nói nửa chừng hoài vậy.",
                   "tone": "DUA",
-                  "rel": 2,
                   "reply": "Tại kể ra sợ người ta nói em rảnh á."
                 },
                 {
                   "say": "Ừ. Tiền của em, em lo.",
                   "tone": "LANH",
-                  "rel": -2,
                   "reply": "Dạ."
                 }
               ]
@@ -681,7 +521,6 @@
             {
               "say": "Ba tiếng là không đủ đâu. Bớt ca lại đi em.",
               "tone": "THUONG",
-              "rel": 2,
               "reply": "Bớt ca là tháng này em hụt tiền trọ á chị.",
               "ref": "ket"
             }
@@ -691,18 +530,12 @@
         {
           "say": "Em đứng ngủ gục ở đây luôn kìa.",
           "tone": "DUA",
-          "rel": 2,
           "reply": "Hả?! Em đâu có ngủ… ờ, chắc có.",
           "then": [
             {
               "say": "Ngồi ghế kia đi, chị gọi em dậy cho.",
               "tone": "AM",
-              "rel": 4,
               "calm": 28,
-              "mem": {
-                "kind": "CARED_FOR_THEM",
-                "intensity": 55
-              },
               "reply": "Thôi kỳ lắm chị… …Dạ. Em ngồi.",
               "mood": "THUONG",
               "needEquip": "GHE_BAN",
@@ -717,7 +550,6 @@
             {
               "say": "Uống ly trà đá cho tỉnh nha em.",
               "tone": "AM",
-              "rel": 3,
               "calm": 20,
               "reply": "Dạ, em cảm ơn chị.",
               "mood": "THUONG",
@@ -728,7 +560,6 @@
             {
               "say": "Ừ, tỉnh rồi thì gọi món đi em.",
               "tone": "LANH",
-              "rel": -1,
               "reply": "Dạ."
             }
           ],
@@ -737,12 +568,7 @@
         {
           "say": "Em kể hoài chị làm không kịp nè.",
           "tone": "GAT",
-          "rel": -5,
           "anger": 25,
-          "mem": {
-            "kind": "RUDE_TO_THEM",
-            "intensity": 70
-          },
           "reply": "…Dạ. Em xin lỗi chị. Em đứng im.",
           "mood": "BUC"
         }
@@ -759,17 +585,6 @@
       "topic": "noi",
       "source": "NPC_ONLY",
       "depth": "FULL",
-      "when": {
-        "day": [
-          26,
-          40
-        ],
-        "minVisits": 9,
-        "tier": [
-          "ACQUAINTANCE",
-          "FRIEND"
-        ]
-      },
       "weight": 10,
       "opener": "Chị ơi. Cho em ổ đầy đủ, nhiều ớt. Em nói trọn một câu rồi nè.",
       "shared": {
@@ -777,14 +592,12 @@
           {
             "say": "Ừ. Mai nói tiếp nha.",
             "tone": "AM",
-            "rel": 3,
             "reply": "Dạ. Mai em nói.",
             "mood": "CUOI"
           },
           {
             "say": "Ổ của em nè.",
             "tone": "THUONG",
-            "rel": 1,
             "reply": "Dạ, em cảm ơn chị."
           }
         ]
@@ -793,43 +606,33 @@
         {
           "say": "Ủa. Hôm nay em không \"dạ\" đầu câu luôn ha.",
           "tone": "DUA",
-          "rel": 3,
           "reply": "Dạ… ơ. Có mà. Hồi nãy em quên. Em tập hai tuần đó chị.",
           "then": [
             {
               "say": "Em tập nói hả?",
               "tone": "AM",
-              "rel": 3,
               "reply": "Dạ. Em đứng trong phòng trọ tập. Nói với cái tường.",
               "then": [
                 {
                   "say": "Tập ở đây cũng được mà. Chị nghe cho.",
                   "tone": "AM",
-                  "rel": 4,
-                  "mem": {
-                    "kind": "CARED_FOR_THEM",
-                    "intensity": 65
-                  },
                   "reply": "…Em biết. Ở đây em nói dễ hơn mấy chỗ khác.",
                   "mood": "RUNG_RUNG"
                 },
                 {
                   "say": "Cái tường có rep em hông?",
                   "tone": "DUA",
-                  "rel": 3,
                   "reply": "Hông. …Nên em mới ra đây.",
                   "mood": "CUOI"
                 },
                 {
                   "say": "Tập chi vậy? Em nói sao cũng được mà.",
                   "tone": "THANG",
-                  "rel": 1,
                   "reply": "Em đi phỏng vấn, người ta hỏi ba câu, em đứng im cả ba câu luôn chị ơi."
                 },
                 {
                   "say": "Ừ, hay.",
                   "tone": "LANH",
-                  "rel": -2,
                   "silent": true
                 }
               ],
@@ -838,11 +641,6 @@
             {
               "say": "Hai tuần để nói một câu. Em lì ghê.",
               "tone": "AM",
-              "rel": 4,
-              "mem": {
-                "kind": "CARED_FOR_THEM",
-                "intensity": 60
-              },
               "reply": "Em làm gì cũng chậm. Mà đã làm là làm tới luôn.",
               "ref": "ket",
               "mood": "THUONG"
@@ -850,7 +648,6 @@
             {
               "say": "Ừ, em gọi gì chị cũng làm được hết.",
               "tone": "THUONG",
-              "rel": 1,
               "reply": "Dạ.",
               "ref": "ket"
             }
@@ -860,22 +657,15 @@
         {
           "say": "Nhiều ớt hả? Em ăn cay được hả?",
           "tone": "THANG",
-          "rel": 2,
           "reply": "Được chị. Em ăn cay từ nhỏ. Hồi giờ hông dám kêu tại sợ phiền chị.",
           "then": [
             {
               "say": "Phiền gì. Thêm chút ớt có mất gì đâu.",
               "tone": "AM",
               "need": "baoDuocCho",
-              "rel": 4,
               "act": {
                 "kind": "PROMISE",
                 "item": "ot"
-              },
-              "flag": "baoAsksChili",
-              "mem": {
-                "kind": "CARED_FOR_THEM",
-                "intensity": 55
               },
               "reply": "Vậy từ mai em kêu luôn nha chị.",
               "mood": "THUONG"
@@ -883,14 +673,12 @@
             {
               "say": "Sợ phiền chị mà sáng nào cũng đứng đây đó.",
               "tone": "DUA",
-              "rel": 3,
               "reply": "Ờ ha… Em kỳ thiệt.",
               "mood": "NGUONG"
             },
             {
               "say": "Nói sớm thì chị bỏ sớm rồi.",
               "tone": "THANG",
-              "rel": 1,
               "reply": "Em biết. Mà nói cái gì với em cũng khó hết á chị."
             }
           ]
@@ -898,7 +686,6 @@
         {
           "say": "Ừ. Một ổ đầy đủ.",
           "tone": "LANH",
-          "rel": -2,
           "reply": "…Dạ.",
           "mood": "LANH"
         }
@@ -916,19 +703,12 @@
       "source": "PLAYER_ONLY",
       "depth": "SHORT",
       "weight": 25,
-      "when": {
-        "day": [
-          7,
-          40
-        ]
-      },
       "opener": "Dạ… chị gọi em hả?",
       "openMood": "NGUONG",
       "tree": [
         {
           "say": "Ăn sáng chưa em?",
           "tone": "AM",
-          "rel": 2,
           "reply": "Em ăn ổ không thôi chị. No mà.",
           "mood": "NGUONG",
           "then": [
@@ -941,9 +721,6 @@
                 "kind": "PROMISE",
                 "item": "pate"
               },
-              "onKept": {
-                "rel": 3
-              },
               "need": [
                 "!p.soldOut"
               ]
@@ -951,7 +728,6 @@
             {
               "say": "Ăn vậy hoài hả em?",
               "tone": "THANG",
-              "rel": 1,
               "reply": "Cũng mấy tháng rồi chị. Quen rồi á.",
               "mood": "NGUONG"
             },
@@ -966,28 +742,24 @@
         {
           "say": "Nói từ từ thôi em. Chị không có gấp đâu.",
           "tone": "THUONG",
-          "rel": 1,
           "reply": "Dạ… Chị là người đầu tiên nói với em câu đó á.",
           "mood": "NGUONG",
           "then": [
             {
               "say": "Người ta hay hối em hả?",
               "tone": "THUONG",
-              "rel": 2,
               "reply": "Em nói chậm nên người ta nói giùm luôn. Riết rồi em hết muốn nói.",
               "mood": "BUON"
             },
             {
               "say": "Ở đây em nói bao lâu cũng được.",
               "tone": "AM",
-              "rel": 3,
               "reply": "Dạ… em cảm ơn chị. …Em nói được rồi nè.",
               "mood": "RUNG_RUNG"
             },
             {
               "say": "Rồi. Em gọi gì chị làm nấy nha.",
               "tone": "THUONG",
-              "rel": 1,
               "reply": "Dạ… cho em ổ đầy đủ. Khỏi ớt nha chị.",
               "mood": "THUONG",
               "act": {
@@ -1006,7 +778,6 @@
         {
           "say": "Em muốn gì thì nói lẹ giùm. Chị làm không kịp nè.",
           "tone": "GAT",
-          "rel": -2,
           "anger": 25,
           "reply": "…Dạ. Em xin lỗi chị. Em đứng im.",
           "mood": "NGUONG"
@@ -1027,41 +798,30 @@
       "source": "PLAYER_ONLY",
       "depth": "SHORT",
       "weight": 20,
-      "when": {
-        "day": [
-          15,
-          40
-        ],
-        "minVisits": 6
-      },
       "opener": "Ủa… chị gọi em hả chị?",
       "openMood": "NGUONG",
       "tree": [
         {
           "say": "Dịch tới đâu rồi em?",
           "tone": "AM",
-          "rel": 2,
           "reply": "Được nửa chương à. Em dịch chậm lắm chị.",
           "mood": "NGUONG",
           "then": [
             {
               "say": "Sách gì vậy em?",
               "tone": "AM",
-              "rel": 2,
               "reply": "Sách nấu ăn. Của Nhật. Nhiều từ em tra hoài hông ra luôn.",
               "mood": "NGUONG"
             },
             {
               "say": "Dịch chậm mà đúng thì hơn chứ.",
               "tone": "THUONG",
-              "rel": 2,
               "reply": "Chị nói y chang thầy em hồi xưa á.",
               "mood": "THUONG"
             },
             {
               "say": "Khi nào xong cho chị coi với nha.",
               "tone": "DUA",
-              "rel": 1,
               "reply": "Dạ… Mà sách nấu ăn đó, chị coi chắc cười em xỉu.",
               "mood": "CUOI_KHAN"
             }
@@ -1070,21 +830,18 @@
         {
           "say": "Tối qua ngủ được mấy tiếng em?",
           "tone": "DUA",
-          "rel": 1,
           "reply": "Ba tiếng à. Quen rồi chị.",
           "mood": "MET",
           "then": [
             {
               "say": "Ngủ ba tiếng mà ngồi dịch cả ngày hả?",
               "tone": "THANG",
-              "rel": 1,
               "reply": "Em dịch ban đêm. Đêm yên, chữ nó vô đầu dễ hơn á chị.",
               "mood": "MET"
             },
             {
               "say": "Có ngủ bù hôm nào chưa?",
               "tone": "AM",
-              "rel": 1,
               "reply": "Chủ nhật. Ngủ tới trưa luôn, dậy thấy có lỗi ghê.",
               "mood": "NGUONG"
             },
@@ -1099,7 +856,6 @@
         {
           "say": "Thôi. Chị hỏi cho có thôi.",
           "tone": "LANH",
-          "rel": -1,
           "reply": "…Dạ.",
           "mood": "LANH"
         }
@@ -1109,114 +865,6 @@
         "XEP_HANG",
         "QUAY_VANG",
         "DI_NGANG"
-      ]
-    },
-    {
-      "id": "bao.nhochuyen",
-      "npc": "ANH_BAO",
-      "topic": "nhochuyen",
-      "source": "PLAYER_ONLY",
-      "depth": "SHORT",
-      "weight": 18,
-      "when": {
-        "day": [
-          4,
-          40
-        ],
-        "minVisits": 2
-      },
-      "about": [
-        "TU_TE",
-        "CARED_FOR_THEM",
-        "FREE_EXTRA",
-        "DUOC_NHO"
-      ],
-      "opener": "Dạ… chị gọi em hả?",
-      "openMood": "NGAC_NHIEN",
-      "practice": [
-        "GOI_MON",
-        "XEP_HANG",
-        "QUAY_VANG",
-        "DI_NGANG"
-      ],
-      "tree": [
-        {
-          "say": "Em còn nhớ {m.what} hông?",
-          "tone": "AM",
-          "rel": 2,
-          "need": [
-            "m.remembers"
-          ],
-          "reply": "Nhớ chứ… Em nhớ dai lắm. Chuyện nhỏ xíu cũng nhớ.",
-          "mood": "NGUONG",
-          "then": [
-            {
-              "say": "Nhớ dai vậy chắc cũng mệt ha em.",
-              "tone": "THUONG",
-              "rel": 2,
-              "reply": "Cũng có. Mà chuyện vui em cũng nhớ lâu y vậy á chị.",
-              "mood": "THUONG"
-            },
-            {
-              "say": "Vậy em nhớ chuyện gì của chị nhất?",
-              "tone": "AM",
-              "rel": 2,
-              "reply": "Hôm chị nói em cứ nói từ từ. Em nhớ nguyên câu luôn.",
-              "mood": "RUNG_RUNG"
-            },
-            {
-              "say": "Rồi. Chị làm ổ cho em nha.",
-              "tone": "THUONG",
-              "act": {
-                "kind": "PROMISE_DEED",
-                "deed": "DUA_BANH"
-              },
-              "onKept": {
-                "rel": 2
-              },
-              "need": [
-                "!p.soldOut"
-              ],
-              "reply": "Dạ, em cảm ơn chị.",
-              "mood": "THUONG"
-            }
-          ]
-        },
-        {
-          "say": "Hôm nay dịch được nhiêu rồi em?",
-          "tone": "THUONG",
-          "rel": 1,
-          "reply": "Ba trang. Sáng nay kẹt đúng một chữ hoài à chị.",
-          "mood": "MET",
-          "then": [
-            {
-              "say": "Chữ gì mà kẹt dữ vậy?",
-              "tone": "AM",
-              "rel": 2,
-              "reply": "Tên một món ăn. Bên mình hông có món đó nên em hông biết gọi sao.",
-              "mood": "NGUONG"
-            },
-            {
-              "say": "Để đó mai tính đi em.",
-              "tone": "THUONG",
-              "rel": 1,
-              "reply": "Để là em nghĩ hoài á… Thôi em ráng.",
-              "mood": "MET"
-            },
-            {
-              "say": "Ừ. Ráng nha.",
-              "tone": "LANH",
-              "reply": "Dạ.",
-              "mood": "LANH"
-            }
-          ]
-        },
-        {
-          "say": "Thôi. Chị hỏi cho có thôi.",
-          "tone": "LANH",
-          "reply": "…Dạ.",
-          "mood": "LANH"
-        }
       ]
     },
     {
@@ -1226,16 +874,7 @@
       "source": "NPC_ONLY",
       "depth": "SHORT",
       "weight": 16,
-      "when": {
-        "day": [
-          5,
-          40
-        ]
-      },
       "initiates": 0.3,
-      "ignore": {
-        "rel": -1
-      },
       "opener": "Chị ơi… em thiếu hai ngàn. Em quên ví ở phòng rồi.",
       "openMood": "NGUONG",
       "practice": [
@@ -1247,12 +886,6 @@
         {
           "say": "Không sao. Mai ghé trả chị cũng được.",
           "tone": "AM",
-          "act": {
-            "kind": "CREDIT_LOAF"
-          },
-          "onKept": {
-            "rel": 3
-          },
           "need": [
             "!p.soldOut"
           ],
@@ -1262,14 +895,12 @@
             {
               "say": "Nhớ ghé nha, chị ghi sổ rồi đó.",
               "tone": "DUA",
-              "rel": 1,
               "reply": "Dạ em nhớ. Hông dám quên đâu chị.",
               "mood": "NGUONG"
             },
             {
               "say": "Có hai ngàn mà em lo dữ vậy.",
               "tone": "THUONG",
-              "rel": 2,
               "reply": "Em sợ người ta nghĩ em xạo. Bị vậy mấy lần rồi á chị.",
               "mood": "BUON"
             },
@@ -1284,22 +915,17 @@
         {
           "say": "Vậy chị làm ổ nhỏ hơn cho vừa tiền nha.",
           "tone": "THUONG",
-          "rel": 1,
           "reply": "Dạ được chị. Vậy cũng được.",
           "mood": "NGUONG",
           "then": [
             {
               "say": "Ổ nhỏ mà nhân y chang nha em.",
               "tone": "AM",
-              "rel": 2,
               "reply": "Chị tốt ghê… Mai em đem đủ tiền mua ổ lớn.",
               "mood": "THUONG",
               "act": {
                 "kind": "PROMISE",
                 "item": "pate"
-              },
-              "onKept": {
-                "rel": 3
               },
               "need": [
                 "!p.soldOut"
@@ -1308,7 +934,6 @@
             {
               "say": "Đừng ngại, ai cũng có lúc quên ví mà.",
               "tone": "AM",
-              "rel": 2,
               "reply": "Dạ… em đỡ quê rồi.",
               "mood": "NGUONG"
             },

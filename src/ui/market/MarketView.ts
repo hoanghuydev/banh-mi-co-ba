@@ -2,16 +2,11 @@ import type Phaser from "phaser";
 import type { SaveFile } from "../../core/save";
 import {
   CAL, GOODS, GOOD_IDS, SELLERS, WEEKDAY_VI, buy, coldSlotCap, coldSlotsUsed, lotQuality,
-  weatherOf, weekdayIdx, type GoodId,
+  calDay, weatherOf, weekdayIdx, type GoodId,
 } from "../../sim/econ";
-import { basketCost, fmtUnits, forcedSell, noteBasketLoaves, quenMat, unitPriceVnd } from "../../sim/day";
-import { moment } from "../../sim/story";
-import { EQUIP, priceVnd, resaleVnd, resellable, type EquipId } from "../../sim/equipment";
-import { STANDS, alleyRumours, standClosed } from "../../sim/stands";
-import {
-  SUPPLIERS, afterMarket, borrow, creditCeiling, greetingOf, isClosed, repay, state, type SupplierId,
-} from "../../sim/suppliers";
-import { NOTICE_LINES, rentVnd, upcoming } from "../../sim/obligations";
+import { basketCost, fmtUnits, unitPriceVnd } from "../../sim/day";
+import { SUPPLIERS, isClosed, type SupplierId } from "../../sim/suppliers";
+import { rentVnd } from "../../sim/obligations";
 import { TOUR_TOTAL, tourAt, tourIndex, tourSkip } from "../../sim/tour";
 import { TourCoach } from "../tour/TourCoach";
 
@@ -46,7 +41,6 @@ const STYLE = `
 /* lời ở chợ: một khối CÓ VẠCH, tách hẳn khỏi mấy con số phía trên */
 .mk-talk{margin-top:9px;padding-left:10px;border-left:3px solid #ddd2b8}
 .mk-talk div{font-size:.85em;color:#4a5a6a;font-style:italic;line-height:1.5}
-.mk-owe{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:.86em;color:#6d624e}
 
 /* ── thân: sạp bên trái, giỏ bên phải ── */
 .mk-main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) clamp(220px,17.8em,330px);min-height:0}
@@ -108,17 +102,11 @@ const STYLE = `
 
 const money = (v: number) => `${Math.round(v).toLocaleString("vi-VN")}₫`;
 
-/**
- * Bán ép ở màn "phải xoay cho đủ" — gương của `forcedSell` trong sim/day.ts, nó gọi
- * `sellEquip(id, …, 0,5/0,6)`: bán lại thường được sáu phần mười, bán gấp chỉ còn năm.
- */
-const FORCED_SELL_SHARE = 0.5 / 0.6;
-const forcedSellVnd = (id: EquipId) => Math.round(resaleVnd(id) * FORCED_SELL_SHARE / 1000) * 1000;
-
 function rumours(day: number): string[] {
   const out: string[] = [];
+  const d = calDay(day);
   for (const e of CAL.events) {
-    if (!e.line || day < e.telegraphFromDay || day >= e.fromDay) continue;
+    if (!e.line || d < e.telegraphFromDay || d >= e.fromDay) continue;
     out.push(`"${e.line}"`);
   }
   return out;
@@ -141,8 +129,6 @@ export class MarketView {
 
   constructor(private game: Phaser.Game, private w: SaveFile, private opts: {
     textScale: number; showTotal?: boolean;
-    /** Chân dung cô Ba (`art/faces`) — scene đưa xuống vì lớp DOM này không cầm scene. */
-    face?: string;
     onDone: (r: MarketResult) => void;
   }) {
     if (!document.getElementById("mk-style")) {
@@ -159,7 +145,7 @@ export class MarketView {
     if (game.input.keyboard) game.input.keyboard.enabled = false;
     if (tourAt(w, "CHO")) {
       this.coach = new TourCoach({
-        face: opts.face, textScale: opts.textScale,
+        textScale: opts.textScale,
         onSkip: () => { tourSkip(w); this.coach?.destroy(); this.coach = null; },
       });
       window.addEventListener("resize", this.onResize);
@@ -181,7 +167,7 @@ export class MarketView {
     const lots = inv.lots.filter((l) => l.good === g && lotQuality(l, this.day, inv.storage, inv.noiU) !== null && l.left > 0);
     if (!lots.length) return "hết";
     if (d.pickle || g === "DO_CHUA_SAN") {
-      return lots.map((l) => `hũ ${g === "DO_CHUA_SAN" ? "mua" : "ngâm"} ngày ${l.day < 1 ? "cô Ba" : l.day} (còn ${fmtUnits(l.left / d.perUnit)})`).join(" · ");
+      return lots.map((l) => `hũ ${g === "DO_CHUA_SAN" ? "mua" : "ngâm"} ngày ${l.day} (còn ${fmtUnits(l.left / d.perUnit)})`).join(" · ");
     }
     const byDay = new Map<number, number>();
     for (const l of lots) byDay.set(l.day, (byDay.get(l.day) ?? 0) + l.left);
@@ -200,7 +186,6 @@ export class MarketView {
     const act = document.activeElement as HTMLElement | null;
     const focusKey = act && r.contains(act) ? act.dataset.k ?? "" : "";
     r.replaceChildren();
-    if (this.w.econ.mustSell) { r.append(this.mustSell()); this.restore(scroll, focusKey); return; }
     const book = this.el("div", "mk-book");
     const w = this.w, day = this.day;
     const cold = coldSlotsUsed(w.inventory, day) + this.coldAdded();
@@ -239,7 +224,7 @@ export class MarketView {
       return;
     }
     if (!this.picked().length) {
-      c.pointEl(q('[data-k^="plus:"]'), "Bấm + để bỏ đồ vào giỏ. Đồ hôm qua còn trong thùng, xem thiếu gì thì bù.", step, total);
+      c.pointEl(q('[data-k^="plus:"]'), "Bấm + để bỏ đồ vào giỏ.", step, total);
       return;
     }
     c.pointEl(q('[data-k="done"]'), "Lấy đủ rồi thì bấm đây.", step, total);
@@ -250,10 +235,7 @@ export class MarketView {
    *   1. ngày nào, trời gì            — chữ lớn, đọc lướt
    *   2. mấy con số của hôm nay       — ô vuông, mắt bắt được ngay con nào đổi
    *   3. người ta nói gì ở chợ        — chữ nghiêng sau một vạch, biết là LỜI chứ không phải số
-   *
-   * Tầng 2 là chỗ cái thùng xốp dọn về. Trước đây nó là một dòng chữ nhỏ màu nâu-đỏ nằm
-   * lẫn giữa mấy cái nút ở chân trang, và "thùng xốp còn chỗ" — một tin MỪNG — hiện ra
-   * y hệt một lời cảnh báo, cùng màu với "thùng xốp không đủ chỗ".
+   * Thùng xốp nằm ở tầng 2.
    */
   private head(cold: number, cap: number, overCold: boolean) {
     const w = this.w, day = this.day, e = w.econ;
@@ -274,33 +256,12 @@ export class MarketView {
     stat("trong ống", money(w.money.cash));
     if (e.today.rent) stat("tiền chỗ", `đã đóng ${money(e.today.rent)}`);
     else if (e.rentOwed) stat("tiền chỗ", `nợ ${money(e.rentOwed)}`, true);
-    else stat("tiền chỗ", money(rentVnd(e.stand)));
+    else stat("tiền chỗ", money(rentVnd()));
     stat("thùng xốp", `${fmtUnits(cold)}/${cap} ô`, overCold);
-    if (e.stand !== "L1") stat("chỗ bán", STANDS[e.stand].name.toLowerCase());
     head.append(stats);
 
-    for (const id of Object.keys(SUPPLIERS) as SupplierId[]) {
-      const sup = w.suppliers?.[id];
-      if (!sup || sup.owed <= 0) continue;
-      const line = this.el("div", "mk-owe");
-      line.append(this.el("span", "", `Còn nợ ${SUPPLIERS[id].name} ${money(sup.owed)}, hẹn cuối tuần.`));
-      const b = this.el("button", "mk-btn", "Trả");
-      b.dataset.k = `repay:${id}`;
-      b.disabled = w.money.cash <= 0;
-      // `w.econ` là cuốn sổ hôm nay: trả nợ mối là tiền ra khỏi két, phải để lại một dòng
-      // (`today.debtRepay`) — không thì tối đếm tiền hụt mà không biết vì đâu
-      b.onclick = () => { repay(sup, w.money, day, w.econ); this.render(); };
-      line.append(b);
-      head.append(line);
-    }
-
     const said: string[] = [];
-    for (const n of e.notices ?? []) said.push(...(NOTICE_LINES[n] ?? []));
-    said.push(...(e.morningLines ?? []));
-    if (upcoming(e, day, 2).some((d) => d.kind === "HUI")) said.push(`Cô Mai: "Mốt góp hụi nghen con."`);
     said.push(...rumours(day));
-    said.push(...alleyRumours(day, w.npcs.CHU_KIET?.tier === "FRIEND"));
-    if (standClosed(e.stand, day)) said.push(`Hôm nay ${STANDS[e.stand].name.toLowerCase()} không bán được — người ta chắn hết.`);
     if (e.today.wasted.length) said.push(`Sáng nay bỏ đi: ${e.today.wasted.join(", ")} — đã hư.`);
     if (said.length) {
       const talk = this.el("div", "mk-talk");
@@ -311,7 +272,7 @@ export class MarketView {
   }
 
   private stalls() {
-    const w = this.w, day = this.day;
+    const day = this.day;
     const body = this.el("div", "mk-body");
     const bySeller = new Map<string, GoodId[]>();
     for (const g of GOOD_IDS) (bySeller.get(GOODS[g].seller) ?? bySeller.set(GOODS[g].seller, []).get(GOODS[g].seller)!).push(g);
@@ -320,7 +281,7 @@ export class MarketView {
       const sup = SUPPLIERS[sid as SupplierId];
       const closed = sup && isClosed(sid as SupplierId, day);
       card.append(this.el("div", "mk-seller", closed ? `${SELLERS[sid]?.name} — nghỉ giỗ` : SELLERS[sid]?.name ?? sid));
-      if (sup && !closed) card.append(this.el("div", "mk-blurb", `"${greetingOf(sid as SupplierId, state(w.suppliers ??= {}, sid as SupplierId))}"`));
+      if (sup && !closed) card.append(this.el("div", "mk-blurb", `"${sup.greet}"`));
       // Nghỉ giỗ KHÔNG phải là hết hàng: calendar.json `lo_ba_tam_nghi` (ngày 28–30) định
       // giá sẵn cho lò khác — bánh 4,2 ngàn thay vì 3,5 và ruột xấu hơn (breadQ0 0,90). Cái
       // sai là tấm blurb cũ ("giá không bao giờ đổi") nói ngược với con số ngay dưới nó.
@@ -359,7 +320,7 @@ export class MarketView {
       if (this.opts.showTotal) {
         const box = this.el("div", "mk-sub");
         const t = this.el("div", "mk-bi");
-        t.append(this.el("span", "", "Tạm tính"), this.el("span", "", money(basketCost(this.basket, day, w.suppliers))));
+        t.append(this.el("span", "", "Tạm tính"), this.el("span", "", money(basketCost(this.basket, day))));
         box.append(t);
         list.append(box);
       }
@@ -395,9 +356,8 @@ export class MarketView {
     const bill = this.el("div", "mk-bill");
     const inner = this.el("div", "mk-bill-in");
     bill.append(inner);
-    const total = basketCost(this.basket, day, w.suppliers);
-    const plan = this.creditPlan(total);
-    const short = Math.max(0, total - w.money.cash - plan.credit);
+    const total = basketCost(this.basket, day);
+    const short = Math.max(0, total - w.money.cash);
 
     const bySeller = new Map<string, { g: GoodId; n: number }[]>();
     for (const it of this.picked()) {
@@ -410,7 +370,7 @@ export class MarketView {
         const d = GOODS[g];
         const r = this.el("div", "mk-bi");
         r.append(this.el("span", "", `${d.label} · ${fmtUnits(n)} ${d.unit}`),
-          this.el("span", "", money(unitPriceVnd(g, day, w.suppliers) * n)));
+          this.el("span", "", money(unitPriceVnd(g, day) * n)));
         inner.append(r);
       }
     }
@@ -423,9 +383,8 @@ export class MarketView {
     };
     line("Hết thảy", money(total), "big");
     line("Trong ống", money(w.money.cash));
-    for (const [id, v] of plan.by) if (v > 0) line(`Ghi sổ ${SUPPLIERS[id].name}`, money(v));
     if (short) line("Còn thiếu", money(short), "short");
-    else line("Trả xong còn lại", money(w.money.cash - (total - plan.credit)));
+    else line("Trả xong còn lại", money(w.money.cash - total));
     inner.append(sum);
     return bill;
   }
@@ -435,9 +394,7 @@ export class MarketView {
     const foot = this.el("div", "mk-foot");
 
     if (this.confirming) {
-      const total = basketCost(this.basket, day, w.suppliers);
-      const plan = this.creditPlan(total);
-      const short = total > w.money.cash + plan.credit;
+      const short = basketCost(this.basket, day) > w.money.cash;
       foot.append(this.el("span", `mk-msg${short || overCold ? " warn" : ""}`,
         short ? "Không đủ tiền. Bớt lại ít món." : overCold ? "Thùng xốp không đủ chỗ." : "Xem lại rồi trả tiền."));
       const acts = this.el("div", "mk-acts");
@@ -496,51 +453,6 @@ export class MarketView {
     (el && !el.disabled ? el : pick(focusKey.replace("minus:", "plus:")))?.focus();
   }
 
-  /**
-   * P3-06 §2.4 — màn hình DUY NHẤT trong game không có nút thoát: phải xoay đủ tiền học.
-   * Ảnh món, giá mua và giá bán cạnh nhau. Không sting, không rung.
-   */
-  private mustSell() {
-    const w = this.w;
-    const book = this.el("div", "mk-book");
-    const head = this.el("div", "mk-head");
-    const top = this.el("div", "mk-head-top");
-    top.append(this.el("div", "mk-title", "Phải xoay cho đủ"));
-    head.append(top);
-    const talk = this.el("div", "mk-talk");
-    talk.append(this.el("div", "", "Tiền học của em không chờ được nữa. Bán cái nào?"));
-    head.append(talk);
-    book.append(head);
-    const body = this.el("div", "mk-body solo");
-    const items = resellable(w.equipment).filter((id) => forcedSellVnd(id) > 0);
-    for (const id of items) {
-      const card = this.el("div", "mk-card");
-      card.append(this.el("div", "mk-seller", EQUIP[id].name));
-      // con số phải là con số người chơi NHẬN — `forcedSell` bán qua `sellEquip(…, 0,5/0,6)`,
-      // tức 50% giá mua tính TRÊN giá bán lại, không phải 50% giá mua tính thẳng. Hai công
-      // thức hiện ra cùng kết quả cho mọi món đang bán được, nhưng món nào có `resale_k`
-      // riêng (thùng xốp) là lệch ngay — nên tính từ đúng cái hàm bán.
-      card.append(this.el("div", "mk-price", `mua ${money(priceVnd(id))} · bán lại ${money(forcedSellVnd(id))}`));
-      const b = this.el("button", "mk-btn primary", "Bán");
-      b.onclick = () => { forcedSell(w, id); this.render(); };
-      card.append(b);
-      body.append(card);
-    }
-    book.append(body);
-    // P3-06 §2.4 nói màn này KHÔNG có nút thoát — nhưng "không có lối ra" chỉ đúng khi còn
-    // cái để bán. Trên xe không còn món nào đáng đồng nào thì không có lựa chọn nào để bắt
-    // người chơi chọn, và màn hình chỉ còn một cái tiêu đề với không một cái nút.
-    if (!items.length) {
-      const foot = this.el("div", "mk-foot");
-      foot.append(this.el("span", "mk-msg warn", "Trên xe không còn món nào bán được."));
-      const out = this.el("button", "mk-btn primary", "Đẩy xe đi bán");
-      out.onclick = () => { w.econ.mustSell = false; this.render(); };
-      foot.append(out);
-      book.append(foot);
-    }
-    return book;
-  }
-
   private coldAdded() {
     let s = 0;
     for (const [g, n] of Object.entries(this.basket)) {
@@ -558,12 +470,9 @@ export class MarketView {
     const row = this.el("div", `mk-row${n > 0 ? " has" : ""}`);
     const left = this.el("div");
     left.append(this.el("div", "mk-name", d.label));
-    const pr = this.el("div", "mk-price", `${money(unitPriceVnd(g, day, this.w.suppliers))}/${d.unit}`);
-    // dòng mờ này để học pattern "thứ Hai đắt, thứ Năm rẻ" BẰNG MẮT, nên hai con số phải
-    // CÙNG MỘT LOẠI giá. Giá trần hôm qua so với giá đã bớt mối quen hôm nay thì dạy ngược:
-    // ngày 20, bà Tám streak 9 → "43.000₫ · hôm qua 44.000₫" trong khi thật ra hôm qua trả
-    // 39.500₫, tức giá TĂNG. Mối càng thân sai càng nặng.
-    if (day > 1) pr.append(this.el("span", "mk-y", `hôm qua ${money(unitPriceVnd(g, day - 1, this.w.suppliers))}`));
+    const pr = this.el("div", "mk-price", `${money(unitPriceVnd(g, day))}/${d.unit}`);
+    // dòng mờ để học pattern "thứ Hai đắt, thứ Năm rẻ" bằng mắt
+    if (day > 1) pr.append(this.el("span", "mk-y", `hôm qua ${money(unitPriceVnd(g, day - 1))}`));
     left.append(pr, this.el("div", "mk-have", `trong thùng: ${this.haveText(g)}`));
     const step = this.el("div", "mk-step");
     const minus = this.el("button", "", "−"), plus = this.el("button", "", "+");
@@ -579,56 +488,22 @@ export class MarketView {
     return row;
   }
 
-  /**
-   * Thiếu tiền thì người cho nợ được (bà Tám, dì Năm — người đã quen) ghi sổ phần của họ,
-   * tới trần. Không có "vay" ở đâu khác (P3-02 §2.6.1).
-   */
-  private creditPlan(total: number) {
-    const w = this.w, day = this.day;
-    const by = new Map<SupplierId, number>();
-    let need = Math.max(0, total - w.money.cash), credit = 0;
-    for (const id of Object.keys(SUPPLIERS) as SupplierId[]) {
-      if (need <= 0) break;
-      const s = state(w.suppliers ??= {}, id);
-      const part = Object.entries(this.basket).filter(([g, n]) => n && GOODS[g as GoodId].seller === id)
-        .reduce((a, [g, n]) => a + unitPriceVnd(g as GoodId, day, w.suppliers) * (n ?? 0), 0);
-      const room = Math.max(0, creditCeiling(id, s) - s.owed);
-      const v = Math.min(part, room, need);
-      if (v > 0) { by.set(id, v); need -= v; credit += v; }
-    }
-    return { credit, by };
-  }
-
   private finish() {
     const w = this.w, day = this.day;
-    const total = basketCost(this.basket, day, w.suppliers);
-    const plan = this.creditPlan(total);
-    if (total > w.money.cash + plan.credit) return;
-    for (const [id, v] of plan.by) borrow(state(w.suppliers, id), v, day);
-    w.money.cash -= total - plan.credit;
-    // sổ ghi tiền RA KHỎI KÉT, không ghi giá trị giỏ hàng: phần ghi nợ mối chưa trả đồng nào
-    // (nó sẽ thành dòng `debtRepay` hôm mình trả). Ghi cả `total` thì mua chịu 38 ngàn với 20
-    // ngàn tiền mặt mà sổ ghi "chợ sáng −58.000₫".
-    w.econ.today.market += total - plan.credit;
+    const total = basketCost(this.basket, day);
+    if (total > w.money.cash) return;
+    w.money.cash -= total;
+    w.econ.today.market += total;
     // tiền lẻ: đổi bạc lớn lấy bạc nhỏ — không mất tiền, chỉ là có sẵn để thối. Đổi được
     // nhiều nhất là đúng số đang có trong ống sau khi trả tiền hàng.
     w.econ.float = w.econ.floatLeft = Math.max(0, Math.min(this.float * 1000, w.money.cash));
-    afterMarket(w.suppliers, new Set(Object.entries(this.basket).filter(([, n]) => n).map(([g]) => GOODS[g as GoodId].seller as SupplierId)), day);
     const bought: MarketResult["bought"] = [];
     for (const [g, n] of Object.entries(this.basket)) {
       if (!n) continue;
-      // `unitPriceVnd` ĐÃ tính người chơi khoản tăng giá của mối quen mất mặt, nên mốc
-      // chuyện cũng phải được ghi — nếu không thì nó chỉ tồn tại ở đường bot (P4-04 §2.3).
-      if (w.story && quenMat(g as GoodId, day, w.suppliers)) moment(w.story, "QUEN_MAT_DAT_HANG");
       buy(w.inventory, g as GoodId, n, day);
       bought.push({ good: g as GoodId, units: n });
     }
     w.inventory.lastBasket = { ...this.basket };
-    // P4-04 §2.3 — "còn cái xe… con tính sao thì tính": ngày 35–39 người chơi trả lời bằng
-    // việc MUA HÀNG. `buyBasket` (bot) ghi sẵn; người thật đi qua đây, không ghi thì nhánh
-    // kết đó chết với mọi người chơi thật.
-    if (w.story) noteBasketLoaves(w.story, day, this.basket.BANH ?? 0);
-    w.econ.notices = [];
     this.close();
     this.opts.onDone({ spent: total, bought });
   }

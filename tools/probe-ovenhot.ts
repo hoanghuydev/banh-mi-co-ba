@@ -9,7 +9,7 @@ const bus = new Bus(false);
 const platform = memoryPlatform();
 let total = 0, hot = 0, served0 = 0;
 for (let d = 1; d <= 5; d++) {
-  if (d > 1) nextDay(w, bus);
+  if (d > 1) nextDay(w);
   const h = new HeadlessStall(w, POLICIES.greedy, { bus, platform });
   const svc = (h as unknown as { service: any }).service;
   h.run({ inject: () => {

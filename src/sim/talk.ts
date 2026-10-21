@@ -2,13 +2,10 @@
  * Trò chuyện có nhánh: mỗi nút mang `reply` và `then` của riêng nó; `ref` trỏ vào cây
  * con dùng chung trong `shared`. Thuần dữ liệu — không Phaser, không RNG riêng.
  *
- * ⚠️ Mở cuộc KHÔNG được đóng băng đồng hồ (`StallScene` đặt `clock.busy`), và `rel` /
- * `anger` không bao giờ lên màn hình (CANON T3).
+ * ⚠️ Mở cuộc KHÔNG được đóng băng đồng hồ (`StallScene` đặt `clock.busy`), và `anger`
+ * không bao giờ lên màn hình (CANON T3).
  */
-import type { Personality } from "../content/npcs";
-import type { RelTier } from "../core/types";
 import type { Rng } from "../core/rng";
-import { record, talkPoints, type BaseKind, type RelState } from "./memory";
 import { weekdayOf, type Weekday } from "./schedule";
 import type { TimeBand } from "../core/clock";
 import type { Face, PoseId } from "./reaction";
@@ -28,8 +25,6 @@ export const TONE_LABEL: Record<TalkTone, string> = {
 export const MAX_DEPTH = 6;
 
 export type TalkEffect = {
-  rel?: number;
-  mem?: { kind: BaseKind; intensity: number };
   anger?: number;
   calm?: number;
   flag?: string;
@@ -88,38 +83,11 @@ export type TalkAct =
   /** `XA` chú về bên kia hẻm (mặt tiền thông, mà mình vừa đuổi ông ta) · `CHUNG` hai xe chung một mái (mình mất một khúc). */
   | { kind: "MOVE_CART"; toi: "XA" | "CHUNG" }
   /**
-   * CẤT TIẾNG RAO — bà Sáu dạy (7 nhắc), `sau.rao`.
-   *
-   * *"Con bán mà con hổng rao. Người ta đi ngang đâu có biết con ơi."* — cả cuộc đó dựng
-   * quanh một câu người chơi tự nói ra (*"Bánh mì nóng hông…"*), mà tới đợt này nó không
-   * làm một ai ngoái lại.
-   *
-   * Đây là nước đi NGƯỢC với cái xe chú Kiệt: xe lấn thì ăn bớt người đi ngang, tiếng rao
-   * thì kéo họ quay đầu lại.
+   * CẤT TIẾNG RAO (`sau.rao`) — kéo người đi ngang quay đầu lại; ngược với xe chú Kiệt lấn.
    */
   | { kind: "RAO"; forSec: ForSec }
   /**
-   * CHO MƯỢN ĐỒ — arc áo mưa (anh Dũng · chị Lan, 5 nhắc).
-   *
-   * *"Anh lấy cái áo mưa này của em đi anh. Em có hai cái."* — một câu nói ra con số của
-   * chính nó, mà tới đợt này không có cái áo mưa nào tồn tại để mà cho.
-   *
-   * Khác `FREE_LOAF` (cho hẳn) và khác `BARTER` (đổi): cho mượn là món đồ CÒN PHẢI VỀ,
-   * và chuyện nó có về hay không mới là chỗ đáng chơi.
-   */
-  | { kind: "LEND_ITEM"; item: string }
-  /** Họ mang trả món đã mượn. */
-  | { kind: "CLEAR_DEBT" }
-  /**
-   * ĐỔI CÁI ĐƠN — *"Vậy em làm đầy đủ cho anh nghen."*
-   *
-   * Lỗi chủ dự án bắt được: câu đó mang `PROMISE { item: "pate" }`, nên NGƯỜI TA GẬT
-   * (*"Ừ. Đầy đủ. Khỏi hỏi."*) mà **cái đơn vẫn y như cũ** — và tiền vẫn tính theo đơn cũ.
-   * Một câu đổi đơn thì phải đổi ĐƠN, không phải hứa thêm một món.
-   *
-   * `ok`/`no` là hai câu đáp do CHÍNH HỌ quyết: không phải ai cũng chịu đổi, và người
-   * đang vội thì càng không. Giá đi theo `tierOf(order.intent)` nên đổi đơn là đổi tiền —
-   * không có đường nào làm ổ đầy đủ mà thu tiền ổ thường.
+   * ĐỔI CÁI ĐƠN — đổi thật `order.intent` nên đổi cả giá; `ok`/`no` là câu đáp khi họ chịu / không chịu.
    */
   | {
       kind: "ORDER_CHANGE";
@@ -135,29 +103,14 @@ export type TalkAct =
       aiXin?: "MINH" | "HO";
     }
   | { kind: "LEAVE_SHADE" }
-  /**
-   * NGƯỜI TA NGHE THẤY — hai nút đòi (`dung.basau`: nói xấu bà Sáu *ngay giữa hẻm bà đang
-   * gánh đi qua*).
-   *
-   * Trước đợt này câu đó chỉ mất `rel −3` với anh Dũng; **bà Sáu không biết gì**. Nói xấu
-   * một người ngay lúc người đó đi ngang phải có giá, và cái giá phải nằm đúng chỗ: ở
-   * TRÍ NHỚ CỦA NGƯỜI BỊ NÓI, không ở người nghe cùng.
-   *
-   * Chỉ ăn khi người đó CÓ MẶT và đủ gần. Không có mặt thì không có gì xảy ra — và đó là
-   * một nước đi hợp lệ, không phải một cái bẫy: người chơi NHÌN THẤY bà đứng đó hay không
-   * trước khi bấm (T5).
-   */
+  /** Nói xấu một người đang đứng gần — người đó NGHE THẤY. Không có mặt thì không có gì xảy ra. */
   | {
       kind: "OVERHEARD_BY";
-      /** `memKey` của người NGHE THẤY — người đang bị nói xấu, không phải người đang đứng nói chuyện. */
+      /** `memKey` của người bị nói xấu. */
       ai: string;
-      /** Vết nhớ ghi vào sổ của HỌ. Mặc định `RUDE_TO_THEM`. */
-      vet?: BaseKind;
-      intensity?: number;
     }
   | { kind: "LOOK_INSIDE"; forSec: ForSec }
-  | { kind: "PROMISE_DEED"; deed: Deed }
-  | { kind: "CREDIT_LOAF" };
+  | { kind: "PROMISE_DEED"; deed: Deed };
 
 
 /** ⚠️ KHÔNG dùng emoji: bảng glyph của game (linter L013) chỉ có chữ Việt và dấu câu. */
@@ -212,8 +165,6 @@ export const MOOD_NEGATIVE: ReadonlySet<TalkMood> = new Set<TalkMood>(["GIAN", "
  */
 export type TalkNode = TalkEffect & {
   while?: string[];
-  /** Vắng = kế thừa `about` của cả cuộc. */
-  about?: string[];
   act?: TalkAct;
   needCash?: number;
   say: string;
@@ -226,19 +177,16 @@ export type TalkNode = TalkEffect & {
   ref?: string;
   /**
    * Chỉ dùng cho sự thật TĨNH — sự thật ĐỘNG thì dùng `while`. Hai loại khoá phân biệt bằng DẤU CHẤM:
-   * `coBienHieu` = cờ chuyện · `p.holdsBread` = khoá bảng đen · `m.visits(3)` = khoá có tham số · `!x` phủ định.
+   * `coBienHieu` = cờ chuyện · `p.holdsBread` = khoá bảng đen · `w.queue(2)` = khoá có tham số · `!x` phủ định.
    */
   need?: string | string[];
   needEquip?: string;
 };
 
 export type TalkWhen = {
-  day?: [number, number];
   weekday?: Weekday[];
-  tier?: RelTier[];
   slot?: TimeBand[];
   rain?: boolean;
-  minVisits?: number;
   needFlag?: string;
   notFlag?: string;
   needEquip?: string;
@@ -246,7 +194,7 @@ export type TalkWhen = {
   world?: string[];
 };
 
-/** Bắt buộc khai (linter L014). `NPC_ONLY` là ĐA SỐ — 81/86 cuộc: ý định của chính họ thì người chơi không moi ra bằng một cú bấm phím. */
+/** Bắt buộc khai. `NPC_ONLY` là đa số: ý định của chính họ thì người chơi không moi ra bằng một cú bấm phím. */
 export type TalkSource = "NPC_ONLY" | "PLAYER_ONLY" | "BOTH";
 
 /**
@@ -256,8 +204,7 @@ export type TalkSource = "NPC_ONLY" | "PLAYER_ONLY" | "BOTH";
 export type TalkDepth = "BARK" | "SHORT" | "FULL";
 
 /**
- * Trục vuông góc với `depth`: chuyện này để LÀM GÌ. ⚠️ `MOI` không trí nhớ, không điểm quan hệ,
- * không tiêu trần ngày (người đi ngang dùng chung `memKey` cho tám dáng); `CHUYEN` là chỗ duy nhất có cả ba.
+ * Trục vuông góc với `depth`: chuyện này để LÀM GÌ. ⚠️ `MOI` không tiêu trần ngày; chỉ `CHUYEN` tiêu.
  */
 export type TalkKind = "MOI" | "CHAO" | "MUA" | "CHUYEN";
 
@@ -315,9 +262,6 @@ export const opensWithInvite = (t: Talk): boolean =>
 
 export const countsAgainstDailyCap = (t: Talk) => kindOf(t) === "CHUYEN" && t.depth === "FULL";
 
-/** `MOI` thì không: `memKey` của người đi ngang dùng chung cho tám dáng suốt cả mùa. */
-export const touchesRelationship = (t: Talk) => kindOf(t) !== "MOI";
-
 export type TalkOpenBy = "PLAYER" | "NPC";
 
 export const TALK_CHOICES_MAX = 3;
@@ -337,13 +281,11 @@ export type Talk = {
   openMood?: TalkMood;
   /** 0..0,6, roll lúc họ đứng chờ. Người chơi làm lơ được, và làm lơ có giá — xem `ignore`. */
   initiates?: number;
-  ignore?: { reply?: string; rel?: number; anger?: number; mem?: TalkEffect["mem"]; mood?: TalkMood };
+  ignore?: { reply?: string; anger?: number; mood?: TalkMood };
   when?: TalkWhen;
   /** ĐƯỜNG LUI: `pickTalk` chấm điểm theo drive khi `TalkCtx.score` có mặt. */
   weight?: number;
   drives?: Partial<Record<DriveId, number>>;
-  /** ⚠️ KHÔNG phải chỗ khai chuyện gì đã xảy ra — chỉ là chủ đề; nhớ ra gì là việc của `retrieve()`. */
-  about?: string[];
   tree: TalkNode[];
   shared?: Record<string, TalkNode[]>;
 };
@@ -412,26 +354,21 @@ export type TalkCtx = {
   day: number;
   slot: TimeBand;
   rain: boolean;
-  tier: RelTier;
-  visits: number;
   flags: Record<string, string | number | boolean | undefined>;
   usedToday: readonly string[];
-  usedSeason: readonly string[];
+  usedBefore: readonly string[];
   hasEquip?: (id: string) => boolean;
   practice?: PracticeId;
   holds?: (key: string) => boolean;
-  /** Vắng = rơi về `weight`, để `tools/sim.ts` và golden bốn mươi ngày chạy y như cũ. */
+  /** Vắng = rơi về `weight`. */
   score?: (t: Talk) => number;
 };
 
 export function okWhen(w: TalkWhen | undefined, c: TalkCtx): boolean {
   if (!w) return true;
-  if (w.day && (c.day < w.day[0] || c.day > w.day[1])) return false;
   if (w.weekday && !w.weekday.includes(weekdayOf(c.day))) return false;
-  if (w.tier && !w.tier.includes(c.tier)) return false;
   if (w.slot && !w.slot.includes(c.slot)) return false;
   if (w.rain !== undefined && w.rain !== c.rain) return false;
-  if (w.minVisits !== undefined && c.visits < w.minVisits) return false;
   if (w.needFlag && !flagHeld(c.flags, w.needFlag, c.day)) return false;
   if (w.needEquip && !(c.hasEquip?.(w.needEquip) ?? true)) return false;
   if (w.notFlag && flagHeld(c.flags, w.notFlag, c.day)) return false;
@@ -450,7 +387,7 @@ export function okSource(t: Talk, by: TalkOpenBy): boolean {
 }
 
 /**
- * Cuộc dùng chung KHÔNG BAO GIỜ CẠN: không áp `usedSeason`, chỉ còn `usedToday` theo chủ
+ * Cuộc dùng chung KHÔNG BAO GIỜ CẠN: không áp `usedBefore`, chỉ còn `usedToday` theo chủ
  * đề. Hôm nay hỏi thăm rồi thì mai hỏi tiếp.
  */
 export const isSharedTalk = (t: Talk) => t.npc === "ANY";
@@ -469,7 +406,7 @@ export function eligible(all: readonly Talk[], c: TalkCtx, by: TalkOpenBy = "PLA
     (t.npc === c.npcId || t.npc === "ANY")
     && okSource(t, by)
     && okPractice(t, c.practice)
-    && (isSharedTalk(t) || !c.usedSeason.includes(t.id))
+    && (isSharedTalk(t) || !c.usedBefore.includes(t.id))
     && !c.usedToday.includes(t.topic)
     && okWhen(t.when, c));
 }
@@ -517,8 +454,7 @@ export function pickTalk(all: readonly Talk[], c: TalkCtx, rng: Rng, by: TalkOpe
 export type TalkGate = {
   flags: TalkCtx["flags"];
   /**
-   * Ngày hôm nay — chỉ để chấm `~cờ` ("đặt từ một ngày TRƯỚC"). Vắng = `~cờ` rơi về
-   * "có cờ là được", y như cũ.
+   * Ngày hôm nay — chỉ để chấm `~cờ` ("đặt từ một ngày TRƯỚC"). Vắng = có cờ là được.
    */
   day?: number;
   /**
@@ -561,11 +497,9 @@ export const EXHAUSTIVE_KEYS: Record<string, readonly string[]> = {
 
 /**
  * Khoá CHỈ NHẬN MỘT GIÁ TRỊ một lúc, nên `beatWidth` đếm chúng là MỘT dòng.
- *
- * ⚠️ `m.tier` và `t.tier` là CÙNG một sự thật (`seasonTier`) dưới hai alias — cả hai phải
- * có mặt ở đây. (`c.saidTone` và `v.promised` KHÔNG thuộc đây — chúng là tập.)
+ * (`c.saidTone` và `v.promised` KHÔNG thuộc đây — chúng là tập.)
  */
-const SINGLE_VALUED = ["t.purpose", "t.state", "t.practice", "t.tier", "m.tier", "w.band", "c.openedBy"];
+const SINGLE_VALUED = ["t.purpose", "t.state", "t.practice", "w.band", "c.openedBy"];
 
 /**
  * MỘT NHỊP RA MẤY DÒNG — đếm thứ người chơi THẤY, không đếm phần tử trong mảng.
@@ -629,17 +563,10 @@ export function beatWidth(nodes: readonly TalkNode[]): { min: number; max: numbe
   return { min, max, worst };
 }
 
-/**
- * Một cờ chuyện có đang giữ không, với tiền tố `~` = ĐẶT TỪ MỘT NGÀY TRƯỚC.
- *
- * Mọi lời hứa "mai con đem ra cho cô coi" đều cần `~`: cờ trơn thì câu trả bài nổ NGAY
- * trong cùng buổi, người ta vừa hứa xong đã làm xong — đúng cái vô lý chủ dự án bắt được
- * ở người đi ngang. Cờ lưu NGÀY đặt (`story.flags[f] = day`), nên so ngày là đủ; cờ kiểu
- * boolean cũ rơi về "có là được".
- */
 /** Bỏ tiền tố `~` để lấy TÊN cờ — lưới F-1/F-2/M-5 phải so bằng tên, không bằng cách hỏi. */
 export const bareFlag = (key: string): string => (key.startsWith("~") ? key.slice(1) : key);
 
+/** Cờ chuyện có đang giữ không; tiền tố `~` = đặt từ một ngày TRƯỚC (cờ lưu ngày đặt). */
 export function flagHeld(flags: TalkCtx["flags"], key: string, day?: number): boolean {
   if (!key.startsWith("~")) return !!flags[key];
   const at = flags[key.slice(1)];
@@ -649,10 +576,6 @@ export function flagHeld(flags: TalkCtx["flags"], key: string, day?: number): bo
 /**
  * Một khoá `need` có thoả không. Không có dấu chấm = cờ chuyện; có dấu chấm = khoá bảng
  * đen, hỏi qua `gate.holds`. ⚠️ Thiếu `gate.holds` thì coi như ĐÚNG, không coi như sai.
- *
- * Tiền tố `~` = CỜ ĐẶT TỪ MỘT NGÀY TRƯỚC. Mọi lời hứa "mai con đem ra cho cô coi" đều
- * cần nó: `need: "cờ"` trơn thì câu trả bài nổ NGAY trong cùng buổi, người ta vừa hứa
- * xong đã làm xong — đúng cái vô lý chủ dự án bắt được ở người đi ngang.
  */
 function gateOk(key: string, gate: TalkGate): boolean {
   const neg = key.startsWith("!");
@@ -754,25 +677,6 @@ export class TalkSession {
 }
 
 // ─────────────────────────────────────────────────────────────── hệ quả
-
-export const DEFAULT_IGNORE_REL = -1;
-
-export type TalkOutcome = { relDelta: number; mem: BaseKind | null; anger: number; flag?: string };
-
-/**
- * Áp hiệu ứng của MỘT lựa chọn lên quan hệ + trí nhớ. ⚠️ KHÔNG đi qua `Service.remember()`
- * nên không vào tin đồn — chỉ hành động mới đi xa được, lời nói ở quầy thì không.
- */
-export function applyTalk(e: TalkEffect, s: RelState, p: Personality, day: number): TalkOutcome {
-  const out: TalkOutcome = { relDelta: 0, mem: null, anger: e.anger ?? 0, flag: e.flag };
-  if (e.rel) out.relDelta += talkPoints(s, p, e.rel);
-  if (e.mem) {
-    const r = record(s, p, e.mem.kind, e.mem.intensity, day);
-    out.relDelta += r.delta;
-    out.mem = e.mem.kind;
-  }
-  return out;
-}
 
 /**
  * Giận → sức chờ: `anger` 0..100 = đốt ngần ấy % quãng kiên nhẫn CÒN LẠI của lượt ghé.

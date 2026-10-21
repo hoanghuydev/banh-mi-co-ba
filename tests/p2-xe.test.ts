@@ -89,7 +89,8 @@ test("X-5 MỌI act có trong nội dung đều có nhánh trong `applyAct` — 
 async function buoiBan(dayXe: boolean) {
   const w = newGame("xe-test", "p209");
   const bus = new Bus(false); const platform = memoryPlatform();
-  for (let d = 1; d < 10; d++) nextDay(w, bus);
+  // Ngày 11 của seed này có cả chú Kiệt lẫn bà Sáu theo `rollVisit`.
+  for (let d = 1; d < 11; d++) nextDay(w);
   const h = new HeadlessStall(w, POLICIES.greedy, { bus, platform });
   const svc = (h as unknown as { service: any }).service;
   let mat = 0;

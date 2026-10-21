@@ -1,17 +1,4 @@
-/**
- * NGỒI THẤY ĐƯỢC, VÀ CÁI MÁY ĐANG QUAY THẤY ĐƯỢC.
- *
- * Hai món art cuối của bảng nợ, và cả hai không phải chuyện thẩm mỹ:
- *
- *   · `THEY_SIT` làm kiên nhẫn trôi chậm 45% từ đợt `GHE_BAN`, nhưng người ngồi và người
- *     đứng vẽ Y HỆT nhau — tức bỏ 320 nghìn mua bộ ghế mà màn hình không đổi một pixel.
- *   · `FILM` đặt `c.filming`, và clip hỏng nếu quầy dơ lúc máy chạy. Không vẽ gì thì người
- *     chơi KHÔNG BIẾT máy đang chạy, nên cái giá đó là một cái bẫy chứ không phải một rủi
- *     ro đọc được trước khi hành động (T5).
- *
- * Lưới đọc THẲNG mã vẽ: không dựng được Phaser trong `node:test`, mà cái cần canh là "có
- * nhánh vẽ cho hai trạng thái đó hay không", không phải từng pixel.
- */
+/** Đọc thẳng mã vẽ (không dựng được Phaser trong `node:test`) để canh có nhánh vẽ cho người ngồi và máy đang quay. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";

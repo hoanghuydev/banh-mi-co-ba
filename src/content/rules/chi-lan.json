@@ -1,12 +1,10 @@
 {
-  "_note": "Chị Lan — ô số 8 (CANON §4): soi cao, điềm đạm, để bụng, khép kín. NGƯỜI IM LẶNG BIẾN MẤT. Im lặng cài bằng rule `silent` — không phải 35% may rủi mà là luật tính cách (P2-02 §4.6). Con đường tới Friend chỉ có một cửa: NHỚ ĐÚNG.",
+  "_note": "Chị Lan — ô số 8 (CANON §4): soi cao, điềm đạm, để bụng, khép kín. NGƯỜI IM LẶNG BIẾN MẤT. Im lặng cài bằng rule `silent` — không phải 35% may rủi mà là luật tính cách (P2-02 §4.6).",
   "rules": [
     {"id": "lan.im.notice", "concept": "NOTICE_EVENT", "when": {"npcSoi": ">=70", "npcNongTinh": "<=30", "npcThanThien": "<=40", "obsState": ">=GLIMPSED"}, "silent": true, "say": []},
     {"id": "lan.im.delivery", "concept": "DELIVERY", "when": {"npcSoi": ">=70", "npcNongTinh": "<=30", "npcThanThien": "<=40", "defectCount": ">=1"}, "silent": true, "say": []},
     {"id": "lan.im.farewell", "concept": "FAREWELL", "when": {"npcSoi": ">=70", "npcNongTinh": "<=30", "npcThanThien": "<=40"}, "silent": true, "say": []},
     {"id": "lan.del.ok", "concept": "DELIVERY", "when": {"npcId": "CHI_LAN", "defectCount": 0}, "silent": true, "say": []},
-    {"id": "lan.del.usual", "concept": "DELIVERY", "when": {"npcId": "CHI_LAN", "defectCount": 0, "orderIsUsual": true}, "say": ["…Cảm ơn em."]},
-    {"id": "lan.del.nohabit", "concept": "DELIVERY", "when": {"npcId": "CHI_LAN", "defectCount": 0, "extraHabitBroken": true, "freeExtraTooMuch": false}, "silent": true, "say": [], "_note": "Nếp 'cho thêm' gãy: chị thấy, và chị không nói một chữ. Điểm 4 nên thắng dòng gen.del.nohabit — đúng luật tính cách của ô số 8, không phải quên viết thoại. Người chơi chỉ còn một đường biết: nét mặt, và dòng HUD của relationship:moved."},
     {"id": "lan.del.toomuch", "concept": "DELIVERY", "when": {"npcId": "CHI_LAN", "defectCount": 0, "freeExtraTooMuch": true}, "say": ["Em không cần làm vậy đâu."]},
     {"id": "lan.tea", "concept": "INTERACT", "when": {"npcId": "CHI_LAN", "interaction": "TEA"}, "say": ["Dạ, cảm ơn em."]},
     {"id": "lan.tea.suspect", "concept": "INTERACT", "when": {"npcId": "CHI_LAN", "interaction": "TEA_SUSPECT"}, "say": ["…Sao bữa nay em tử tế dữ vậy?"]}

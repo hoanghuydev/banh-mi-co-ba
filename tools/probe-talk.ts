@@ -3,9 +3,7 @@
  *
  * Bấm F ở mọi khung cảnh và xem CÓ RA DẢI LỰA CHỌN KHÔNG — và nếu không thì vì sao.
  *
- * ⚠️ Phải `await` cho `TalkStore` nạp xong: `talks.ensure()` là bất đồng bộ, mà `h.run()`
- * chạy một mạch không nhả frame. Trong game thật rAF nhả mỗi frame nên không gặp; ở đây
- * không await là mọi lần mở đều trượt với lý do "chưa nạp xong", và probe sẽ nói dối.
+ * ⚠️ Phải `await` `talks.ensure()` trước khi chạy: headless không nhả frame, không await thì mọi lần mở trượt "chưa nạp xong".
  */
 import { Bus } from "../src/core/eventbus";
 import { newGame } from "../src/core/save";
@@ -28,7 +26,7 @@ const picked = new Map<string, number>();
 const firstLines = new Map<string, string[]>();
 
 for (let d = 1; d <= 6; d++) {
-  if (d > 1) nextDay(world, bus);
+  if (d > 1) nextDay(world);
   const h = new HeadlessStall(world, POLICIES.greedy, { bus, platform });
   const svc = (h as unknown as { service: any }).service;
   for (const k of [...TALK_NPC_IDS, "WALKIN", "QUA_DUONG", "ANY"]) await svc.talks.ensure(k);

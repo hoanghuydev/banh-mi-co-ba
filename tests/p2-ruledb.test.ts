@@ -16,7 +16,7 @@ import { HeadlessStall, POLICIES } from "../src/sim/headless";
 const st = (): SpokenState => ({ once: new Set(), norepeat: {}, lastAt: new Map(), day: 1 });
 
 function baBay(q = new Query()) {
-  return q.reset().set("npcId", "BA_BAY").set("npcRelTier", "ACQUAINTANCE").set("npcVisitCount", 5)
+  return q.reset().set("npcId", "BA_BAY").set("npcVisitCount", 5)
     .set("queueLength", 1).set("stallCleanliness", 90).set("playerHandsDirty", false);
 }
 
@@ -132,10 +132,8 @@ test("ngày chơi thật (headless) vẫn tất định và có thoại từ rul
 });
 
 /**
- * `BURNT_OR_COLD` gánh HAI chuyện — ổ cháy trong lò và ổ nguội lúc đưa — và trước đây
- * cả hai cùng rơi vào một nhúm rule nói "khét". Người chơi đưa một ổ chỉ nguội, nhìn
- * quanh không có khói nào, mà cả hàng kêu "khét lẹt": lời thoại tố cáo một thứ không
- * có trên màn hình. `eventBurnt` là chỗ duy nhất tách hai nhánh đó.
+ * `BURNT_OR_COLD` gánh HAI chuyện — ổ cháy trong lò và ổ nguội lúc đưa. `eventBurnt` là
+ * chỗ duy nhất tách hai nhánh, để ổ chỉ nguội không bị kêu "khét".
  */
 test("ổ NGUỘI không bao giờ lôi ra được một câu 'khét' — eventBurnt tách hai nhánh", () => {
   const db = ruleDb();

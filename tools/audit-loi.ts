@@ -1,28 +1,18 @@
 /**
- * RÀ LẠI TOÀN BỘ LỜI THOẠI — cùng mấy lớp lỗi chủ dự án bắt được khi chơi người đi ngang.
- *
- * *"cái lỗi này tôi chỉ mới test của người qua đường thôi. không biết người mua có bị thế
- * không."* — đúng câu hỏi phải trả lời bằng máy, không bằng cảm giác.
- *
- * Bốn lớp, mỗi lớp từ một lỗi CÓ THẬT đã sửa:
- *   M1 HỨA SUÔNG     — câu đáp nhận lời (mua / đổi / lấy / cho mượn) mà nút không có `act`:
- *                      đúng cái bẫy "làm đầy đủ" mà vẫn tính tiền ổ thường.
+ * Rà toàn bộ lời thoại tìm bốn lớp lỗi:
+ *   M1 HỨA SUÔNG     — câu đáp nhận lời (mua / đổi / lấy / cho mượn) mà nút không có `act`.
  *   M2 MỜI SUÔNG     — mình mời người ta ngồi / đứng / dời chỗ mà không có act nào dời họ.
- *   M3 SAI THÂN PHẬN — người ĐI NGANG mà nói chuyện mùa vụ ("mai ghé", "bữa trước", "như
- *                      mọi khi"): họ không có trí nhớ mùa, lời hứa đó game không giữ nổi.
- *   M4 HẸN NGÀY MAI  — câu đáp hẹn hôm sau mà nút KHÔNG ghi lại gì (`flag` / `mem` / `act`):
- *                      không ghi thì hôm sau không ai nhắc, lời hứa rơi xuống đất. Cuộc trả
- *                      bài đọc cờ bằng `~cờ` để cái hẹn phải qua đêm thật.
+ *   M3 SAI THÂN PHẬN — người ĐI NGANG nói như khách quen ("mai ghé", "bữa trước", "như mọi khi").
+ *   M4 HẸN NGÀY MAI  — câu đáp hẹn hôm sau mà nút không ghi lại gì (`flag` / `act`).
  *
- * In ra rồi sửa tay — đây là máy DÒ, không phải máy gác: cố gác cứng thì văn nói tiếng
- * Việt sẽ đẻ ra một rừng ngoại lệ.
+ * Máy DÒ, không phải máy gác: in ra rồi sửa tay.
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 type Node = {
   say?: string; reply?: string; act?: { kind: string }; then?: Node[]; ref?: string;
-  flag?: string; mem?: unknown; onKept?: unknown;
+  flag?: string; onKept?: unknown;
 };
 type Talk = { id: string; npc: string; opener?: string; tree: Node[] };
 
@@ -30,19 +20,10 @@ const DIR = "src/content/talks";
 const files = readdirSync(DIR).filter((f) => f.endsWith(".json"));
 
 /**
- * Câu đáp NHẬN LỜI — người ta chốt một việc có HỆ QUẢ VẬT CHẤT ngay lúc đó (ổ bánh đổi
- * chủ, giá đổi, món đổi).
+ * Câu đáp NHẬN LỜI — chốt một việc có hệ quả vật chất ngay lúc đó (ổ bánh đổi chủ, giá đổi, món đổi).
+ * Cố ý bắt rộng (không cần đại từ), thừa thì loại bằng mắt.
  *
- * ⚠️ Bản đầu viết HẸP (bắt buộc có đại từ: "cho TUI một ổ") và nó sót đúng một câu chủ dự
- * án bắt được sau đó: *"Ờ thì… cho một ổ coi sao."* — không đại từ, không act, người ta
- * nói xong đi mất. Thà ôm thêm mấy chỗ kể chuyện rồi loại bằng mắt còn hơn sót một giao
- * dịch: đây là máy DÒ, không phải máy gác.
- *
- * ⚠️⚠️ KHÔNG dùng `\b` sau một chữ có dấu. `\b` của JS tính theo ASCII, mà "ổ" không phải
- * ký tự từ ASCII, nên `ổ\b` KHÔNG BAO GIỜ khớp "cho một ổ coi sao" — mà `cái\b` thì khớp.
- * Tức cái lưới im lặng bỏ qua đúng nhóm câu quan trọng nhất và vẫn in ra mười kết quả
- * trông có vẻ đúng. Đây là lần thứ hai cái bẫy này cắn (lần đầu: `dạ\b` khớp "Dạo" trong
- * `validate-talks.ts`). Dùng `(?![\p{L}])` với cờ `u`.
+ * ⚠️ Không dùng `\b` sau chữ có dấu: `\b` của JS tính theo ASCII nên `ổ\b` không bao giờ khớp; dùng `(?![\p{L}])` với cờ `u`.
  */
 const NHAN_LOI = /(cho|lấy|mua|bán|gói|làm|đổi|thêm)\s+(?:\S+\s+){0,2}?(?:một|hai|ba|[123])?\s*(ổ|cái|phần)(?![\p{L}])|lấy luôn|đổi (qua|sang|thành|lại)|(làm|lấy) (ổ )?đầy đủ|khỏi hỏi/iu;
 /**
@@ -50,7 +31,7 @@ const NHAN_LOI = /(cho|lấy|mua|bán|gói|làm|đổi|thêm)\s+(?:\S+\s+){0,2}?
  * nói đá "Chú đứng đây hai phút là con mất một khách đó chú."
  */
 const MOI_CHO = /((ngồi|đứng) (đây|đó|xuống|vô|lại)|vô đây|ghé vô|lại đây|đứng cho mát)[^.?!]*\b(đi|nghen|nha|được mà|chút)\b/i;
-/** Chuyện MÙA VỤ — chỉ người quen mới có. */
+/** Lời của khách quen (nhắc hôm khác) — người đi ngang không được nói. */
 const MUA_VU = /\bmai\b|\bhôm qua\b|bữa trước|bữa nay như|như mọi khi|như thường|dạo này|lần trước|tuần rồi|hổm rày/i;
 const HEN_MAI = /\bmai\b.*(ghé|qua|lấy|đem|trả|đưa)|(ghé|qua|lấy|đem|trả|đưa).*\bmai\b/i;
 
@@ -63,7 +44,6 @@ let nodes = 0;
 for (const f of files) {
   const raw = JSON.parse(readFileSync(join(DIR, f), "utf8")) as { talks?: Talk[] };
   for (const t of raw.talks ?? []) {
-    /** Người ĐI NGANG: không ở lại, không nhớ mùa. `WALKIN` thì có mua nhưng cũng không nhớ. */
     const diNgang = t.npc === "QUA_DUONG";
     const laKhach = t.npc === "WALKIN" || diNgang;
     const walk = (n: Node, path: string) => {
@@ -76,8 +56,8 @@ for (const f of files) {
         hit.M2.push(`${o}\n     mình: ${n.say}`);
       if (laKhach && diNgang && [n.say, n.reply].some((x) => x && MUA_VU.test(x)))
         hit.M3.push(`${o}\n     ${n.say ?? ""} / ${n.reply ?? ""}`);
-      /** GHI LẠI = cờ chuyện, vết nhớ, hay một act có hệ quả. Thiếu cả ba thì cái hẹn bốc hơi. */
-      const ghi = !!n.flag || !!n.mem || !!n.act || !!n.onKept;
+      /** Ghi lại = cờ chuyện hoặc act có hệ quả; thiếu thì cái hẹn bốc hơi. */
+      const ghi = !!n.flag || !!n.act || !!n.onKept;
       if (n.reply && HEN_MAI.test(n.reply) && !ghi && !(n.act && ACT_HUA.has((n.act as { kind: string }).kind)))
         hit.M4.push(`${o}\n     họ: ${n.reply}`);
       n.then?.forEach((c, i) => walk(c, `${path}.${i}`));
@@ -101,7 +81,7 @@ console.log(
   "\nCòn sót thì đọc kỹ trước khi sửa — mấy chỗ này đã soi và CHO QUA:\n"
   + "  · \"mai ghé nữa\" của người ngày nào cũng tới (chị Hạnh giao hàng, chú Tư) —\n"
   + "    game giữ được lời đó mà không cần ghi gì.\n"
-  + "  · người lạ hẹn hôm sau: `memKey` của họ là `walkin<dáng>`, tám dáng dùng chung một\n"
-  + "    sổ cả mùa, nên cái dáng đó CÓ quay lại thật.\n"
+  + "  · người lạ hẹn hôm sau: tám dáng `walkin<dáng>` dùng chung cả ván,\n"
+  + "    nên cái dáng đó CÓ quay lại thật.\n"
   + "  · câu nói đá kiểu \"chú đứng đây hai phút là con mất một khách\" không phải lời mời.",
 );

@@ -1,8 +1,7 @@
 {
-  "_note": "Cây thiết bị. Ba luật còn lại sau đợt rút gọn: TB-1 mỗi món NHÌN THẤY trên xe (hoặc trên vỉa hè) + đổi cảm giác một thao tác · TB-2 không món nào BỎ một thao tác bắt buộc của người chơi (chỉ rút ngắn / nới cửa sổ / giảm rủi ro) · TB-4 xe có sức chứa hữu hạn, nhưng rộng tay: 12 ô nền + giá treo = 14, mà mua hết thì cần 16 — thiếu đúng một hai món, không phải một bài toán. Giá gốc (nghìn đồng) — code nhân ECON.scale.",
-  "_bo": "ĐÃ BỎ (quyết định của chủ dự án): dao bén · thớt riêng sống/chín · khung gia cố + bánh xe · khăn ba màu · thùng rác nắp đạp · vòi + bồn rửa · ĐÈN CA TỐI. Đèn ca tối bỏ vì một lý do khác hẳn sáu món kia: nó HỨA SUÔNG. Thẻ ghi \"bán được ca tối — thêm khách chạy đêm\" mà đo ra 914 → 914 ổ, chênh đúng 0 (`tools/audit-gain.ts`) — bản dựng không có ca bán tối nào. Thứ nó thật sự làm là giữ anh Dũng trong màn kết, và việc đó đã có một đường khác, đúng hơn: rót cho anh ly nước trà lúc anh ngồi im (SK-15 → cờ `dungStory`). Một món đồ 420 nghìn mua một kết truyện là chuyện nên mua bằng việc làm, không bằng tiền. Lý do chung: hoặc không vẽ ra được trên xe ở cỡ pixel này (dao, thớt, khăn — ba vật thể dài 10px nằm chồng nhau ở góc quầy), hoặc trùng với thứ CÓ SẴN trong cảnh (bồn rửa đã là một trạm trên bản đồ từ ngày 1, thùng rác đã có một cái trong quầy và một cái đầu hẻm), hoặc chỉ là một con số nhân giấu sau lưng (khung gia cố = `grip.lossMul`). Món nào không chỉ tay vào được thì không phải một món đồ, nó là một chỉ số — và người chơi không mua chỉ số.",
-  "_viet": "MỖI MÓN: `feel` một câu người bán kể (KHÔNG phải tờ quảng cáo), rồi `gain` là LỢI ÍCH QUY RA SỐ. Chủ dự án: *\"nên viết theo kiểu. Mua thì +10% khả năng khách ghé hay gì đó. Nói chung ghi kiểu đơn giản và quy ra chỉ số để user dễ nắm.\"* Nên: mỗi dòng `gain` một con số đọc ra ngay (+20% khách ghé · chờ thêm 20 giây · để được 6 ngày thay vì 2). KHÔNG CÒN `drawbacks`: mua là được, không phải cân đo. Tiền mua và tiền mỗi ngày đã là cái giá, và chúng hiện sẵn trên thẻ.",
-  "_do": "SỐ TRÊN THẺ LÀ SỐ ĐO, KHÔNG PHẢI SỐ KHAI. Chủ dự án: *\"mấy con số + đó có đúng thật không hay chỉ đang giả\"* — câu đó lòi ra bốn dòng sai, và lưới TB-5 không bắt được dòng nào vì nó chỉ so chữ với HẰNG SỐ, không so với HÀNH VI. Chạy `npx tsx tools/audit-gain.ts` để đo lại: nó bật/tắt từng món trong sim thật rồi đếm. Sửa hằng số thì chạy lại và chép số mới vào đây.",
+  "_note": "Cây thiết bị. Ba luật: TB-1 mỗi món NHÌN THẤY trên xe (hoặc trên vỉa hè) + đổi cảm giác một thao tác · TB-2 không món nào BỎ một thao tác bắt buộc của người chơi (chỉ rút ngắn / nới cửa sổ / giảm rủi ro) · TB-4 xe có sức chứa hữu hạn, nhưng rộng tay: 12 ô nền + giá treo = 14, mà mua hết thì cần 16 — thiếu đúng một hai món, không phải một bài toán. Giá gốc (nghìn đồng) — code nhân ECON.scale.",
+  "_viet": "MỖI MÓN: `feel` một câu người bán kể (KHÔNG phải tờ quảng cáo), rồi `gain` là LỢI ÍCH QUY RA SỐ. Mỗi dòng `gain` một con số đọc ra ngay (+20% khách ghé · chờ thêm 20 giây · để được 6 ngày thay vì 2). Không có `drawbacks`: tiền mua và tiền mỗi ngày là cái giá, hiện sẵn trên thẻ.",
+  "_do": "SỐ TRÊN THẺ LÀ SỐ ĐO, KHÔNG PHẢI SỐ KHAI. Lưới TB-5 chỉ so chữ với HẰNG SỐ, không so với HÀNH VI. Chạy `npx tsx tools/audit-gain.ts` để đo lại: nó bật/tắt từng món trong sim thật rồi đếm. Sửa hằng số thì chạy lại và chép số mới vào đây.",
   "_so": "CON SỐ Ở ĐÂY PHẢI KHỚP MÃ. `gain` là hợp đồng với người chơi, không phải chữ trang trí — đổi `walkInMul` / `dirtMul` / `equipPatienceMul` trong `sim/equipment.ts`, `rateMul`+`burnAt` trong `StallScene`, `shelfDays` trong `sim/econ.ts`, `TEA_PATIENCE_SEC` + `SIT_PATIENCE_MUL` trong `sim/customer.ts` thì sửa luôn dòng chữ tương ứng. `tests/p3-equipment.test.ts` canh phần canh được.",
   "cart": {
     "baseSlots": 12,
@@ -21,14 +20,14 @@
   },
   "items": {
     "LO_THAN": {
-      "name": "Lò than của cô Ba",
+      "name": "Lò than",
       "group": "LAM_BANH",
       "price_k": 0,
       "slots": 2,
       "daily_k": 25,
       "starting": true,
       "resellable": false,
-      "feel": "Lò này cô Ba nhen từ hồi chưa có con. Nó không có nút vặn.",
+      "feel": "Lò than cũ, nhen bằng tay. Nó không có nút vặn.",
       "gain": []
     },
     "THUNG_XOP": {
@@ -51,7 +50,7 @@
       "daily_k": 27,
       "replaces": "LO_THAN",
       "feel": "Vặn số, nó giữ đúng số đó. Trở tay chậm một nhịp bánh vẫn chưa sao.",
-      "_vat": "Mua rồi thì ô `O` trên bản đồ ĐỔI ẢNH sang `public/art/prop_e-oven.png` (`PROP.ovenE`) — cái lò than biến mất, lò điện đứng vào đúng chỗ đó. KHÔNG vẽ thêm vật gì bằng code cạnh nó: chủ dự án *\"không render cái lò bằng code dạng kia nữa\"*. Bản trước dán một hộp bo góc xanh 12×22 px cạnh lò than, nên mua xong trên xe có hai cái lò.",
+      "_vat": "Mua rồi thì ô `O` trên bản đồ ĐỔI ẢNH sang `public/art/prop_e-oven.png` (`PROP.ovenE`) — cái lò than biến mất, lò điện đứng vào đúng chỗ đó. KHÔNG vẽ thêm vật gì bằng code cạnh nó.",
       "gain": [
         "Tốc độ nướng +25%",
         "Giảm 15% khả năng cháy"
@@ -172,7 +171,7 @@
         "+20% khách lạ ghé",
         "Trả một lần, không tốn đồng nào mỗi ngày"
       ],
-      "_vat": "ĐÂY LÀ Ô `A` (17,7) trên bản đồ — tấm bảng gỗ \"bánh mì ngon\", ảnh `prop_sign.png`. KHÔNG phải tấm banner đỏ trên vách sau (`art/sign.ts`): banner đó là TÊN QUÁN của cô Ba, có trước ngày 1 và không bán. Chủ dự án: *\"cái bảng hiệu là cái bảng hiệu chỗ ra vào quầy á… mặc định là bảng hiệu cái hình bánh mì ngon á. Dùng cái bảng đó.\"*"
+      "_vat": "ĐÂY LÀ Ô `A` (17,7) trên bản đồ — tấm bảng gỗ \"bánh mì ngon\", ảnh `prop_sign.png`. KHÔNG phải tấm banner đỏ trên vách sau (`art/sign.ts`): banner đó là TÊN QUÁN, có từ ngày 1 và không bán."
     },
     "BANG_QR": {
       "name": "Bảng QR",
@@ -180,16 +179,11 @@
       "price_k": 0,
       "slots": 0,
       "daily_k": 0,
-      "unlock": {
-        "minDay": 14
-      },
       "costsMorning": true,
       "feel": "Khách giơ điện thoại quét cái tách. Khỏi lục giỏ tìm tiền lẻ.",
       "gain": [
-        "Khách quên đem tiền ít hơn 2/3 (8% → 2% mỗi lượt)",
-        "Ngày 36–38 khỏi mất 15% khách vì chưa có quẹt thẻ"
-      ],
-      "_khoa": "Ngày 14 KHÔNG phải để giãn nhịp: SK-23 là một cảnh có ngày cố định (cô Mai dẫn đi làm giấy ngân hàng). Mở sớm là để cảnh đó mời người ta mua thứ họ đã mua rồi."
+        "Một nửa số khách quét mã, khỏi thối tiền lẻ"
+      ]
     },
     "GIA_TREO": {
       "name": "Giá treo nóc xe",

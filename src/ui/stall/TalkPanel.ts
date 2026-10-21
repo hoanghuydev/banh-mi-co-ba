@@ -51,7 +51,7 @@ export class TalkPanel {
   /**
    * @param onPick  người chơi chọn dòng thứ i
    * @param onClose người chơi đóng thẻ (Esc) — LUÔN MIỄN PHÍ, xem `StallScene.endTalk`
-   * @param blocked thẻ đang bị một lớp khác che (menu tạm dừng, sổ tay) ⇒ nuốt hết phím
+   * @param blocked thẻ đang bị một lớp khác che (menu tạm dừng) ⇒ nuốt hết phím
    */
   constructor(
     private scene: Phaser.Scene,
@@ -182,9 +182,9 @@ export class TalkPanel {
     if (!kb) return;
     const onKey = (ev: KeyboardEvent) => {
       if (!this.root) return;
-      /** Không lọc `ev.repeat` thì giữ Space là key-repeat bấm qua cả cây trong một phần mười giây — nội dung đó mất VĨNH VIỄN cả mùa. */
+      /** Không lọc `ev.repeat` thì giữ Space là key-repeat bấm qua cả cây trong một phần mười giây — cuộc đó coi như đã nghe. */
       if (TalkPanel.PASS_THROUGH.has(ev.code)) return;
-      /** ⚠️ `return` ngay khi `ev.repeat` mà chưa `stopPropagation()` thì mọi sự kiện lặp lọt xuống plugin bàn phím và bật `keys.W/A/S/D.isDown` — cô Ba đi mất khỏi quầy. */
+      /** ⚠️ `return` ngay khi `ev.repeat` mà chưa `stopPropagation()` thì mọi sự kiện lặp lọt xuống plugin bàn phím và bật `keys.W/A/S/D.isDown` — người chơi đi mất khỏi quầy. */
       ev.stopPropagation();
       if (ev.repeat && ev.code !== "ArrowUp" && ev.code !== "ArrowDown"
         && ev.code !== "KeyW" && ev.code !== "KeyS") return;

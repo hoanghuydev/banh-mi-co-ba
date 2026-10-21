@@ -21,7 +21,7 @@ import { passerAlpha } from "../sim/passersby";
  * ánh nhìn có đạo cụ riêng (người chơi phải thấy VÌ SAO khách không thấy mình làm rớt bánh).
  *
  * ⚠️ VÒNG KIÊN NHẪN là NGOẠI LỆ CÓ CHỦ Ý — CANON L2 cấm đúng hình dạng này. Ba cái hãm: chỉ hiện
- * khi đang xếp hàng · không số, không vạch chia · `certainty`/quan hệ/khẩu vị vẫn không có thanh nào.
+ * khi đang xếp hàng · không số, không vạch chia · `certainty`/khẩu vị không có thanh nào.
  */
 
 /** Nội suy liên tục chứ không nhảy bậc — nhảy bậc là một cái thước đo trá hình. */
@@ -58,9 +58,8 @@ const EDGE = 6;
 /** 0,09 s ⇒ đi ~96% quãng trong một phần tư giây: mắt đọc ra là nó DI CHUYỂN, mà chữ không bị kéo lê đủ lâu để khó đọc. */
 const BUBBLE_GLIDE_TAU = 0.09;
 /**
- * ⚠️ KHÔNG mờ dần theo MÉP KHUNG NHÌN — đã thử và đã bỏ: hệ số đó tính trên toạ độ MÀN HÌNH nên
- * người đi ngang tan ra giữa đường, và alpha của họ nhảy theo mỗi bước chân người chơi.
- * Cú bật THẬT chỉ có ở hai đầu dải, và `passersby.passerAlpha` đã lo (theo toạ độ THẾ GIỚI).
+ * ⚠️ KHÔNG mờ dần theo MÉP KHUNG NHÌN: tính trên toạ độ MÀN HÌNH thì người đi ngang tan ra giữa
+ * đường. Hai đầu dải do `passersby.passerAlpha` lo (theo toạ độ THẾ GIỚI).
  */
 
 /** ⚠️ `Container.getBounds()` chỉ gộp con nào CÓ `getBounds`, mà Graphics thì không — nó trả về đúng ô CHỮ, nhỏ hơn hẳn nền giấy. */
@@ -118,7 +117,7 @@ const SIT_SQUASH = 0.12;
  *
  * Quay vuông góc với mặt quầy — `(0, −1)` trong hệ ô, tức lên-phải 26,57° trên màn hình —
  * chứ KHÔNG quay về chỗ người chơi đang đứng: quay theo người chơi thì cả hàng xoay
- * qua xoay lại mỗi lần cô Ba nhích một bước, nhìn thành một đám rối. Vuông góc với quầy
+ * qua xoay lại mỗi lần người chơi nhích một bước, nhìn thành một đám rối. Vuông góc với quầy
  * cũng đúng với cả hàng, từ người đầu tới người cuối, nên không phải tính theo từng chỗ.
  */
 const COUNTER_FACING = facingOf8(0, COUNTER_Y - QUEUE_SLOTS[0].y);
@@ -162,7 +161,7 @@ export class CustomerActor {
    * Quãng đường ĐÃ ĐI, tính bằng ô — mốc quay chu kỳ chân của ai có atlas đi bộ.
    *
    * Cộng dồn quãng đường chứ không đọc đồng hồ, cùng lý do với `Player`: bàn chân
-   * trong ảnh phải khớp mặt đất. Khách đi chậm hơn cô Ba (1,7 so với 2,6 ô/giây) nên
+   * trong ảnh phải khớp mặt đất. Khách đi chậm hơn người chơi (1,7 so với 2,6 ô/giây) nên
    * bước THƯA hơn đúng tỉ lệ, không phải chỉnh thêm gì — xem `character.STRIDE`.
    */
   private gait = 0;
@@ -203,17 +202,9 @@ export class CustomerActor {
     const moved = Math.hypot(c.x - this.lastX, c.y - this.lastY);
     const walking = moved > 0.002;
     /*
-     * TÁM hướng, không phải bốn — và đây là chỗ đã làm dáng đi trông sai hẳn.
-     *
-     * `facingOf` bốn hướng chọn theo trục LỚN HƠN, nên người đi CHÉO (ở ô `se`, tức
-     * đi xuống-phải trên màn hình một góc 26,57°) lại được vẽ bằng tấm `s` — tấm nhìn
-     * thẳng vào người chơi, tức hướng 90°. Lệch **63,4°**: nhìn ra ngay là người đang
-     * bước ngang trong khi mặt quay thẳng ra trước.
-     *
-     * Hướng chéo của `facingOf8` không tốn thêm một tấm ảnh nào: ai có bảng tám hướng
-     * (`art/photo.NPC_PHOTOS`) thì bốn tấm chéo VỐN ĐÃ sơn sẵn mà chưa đời nào được vẽ,
-     * còn ai chưa có ảnh thì `textureFor` gộp `se`/`ne` về hình nghiêng `e` — cũng đúng
-     * hơn hình chính diện cũ, vì trên màn hình họ đang đi gần như ngang.
+     * TÁM hướng, không phải bốn: `facingOf` bốn hướng vẽ người đi CHÉO bằng tấm `s`, lệch 63,4° —
+     * bước ngang mà mặt quay thẳng ra trước. Ai chưa có ảnh tám hướng thì `textureFor` gộp
+     * `se`/`ne` về hình nghiêng `e`.
      */
     if (walking) this.facing = facingOf8(c.x - this.lastX, c.y - this.lastY);
     else if (atCounter(c)) this.facing = COUNTER_FACING;
@@ -229,9 +220,9 @@ export class CustomerActor {
 
     /**
      * Chu kỳ đi — chỉ ai đã có atlas (`art/photo.NPC_PHOTOS[...].walk`) mới có, còn lại
-     * `walkTextureFor` trả `null` và người đó đứng yên nhún như cũ.
+     * `walkTextureFor` trả `null` và người đó đứng yên nhún.
      *
-     * Khác cô Ba ở chỗ KHÔNG dùng lúc đứng yên: khách không bưng gì nên không có bộ
+     * Khác người chơi ở chỗ KHÔNG dùng lúc đứng yên: khách không bưng gì nên không có bộ
      * `carry`, mà đứng yên thì ảnh của artist đẹp hơn frame 0 của chu kỳ.
      *
      * `reducedMotion` vẫn được tôn trọng gián tiếp: người ngừng đi là `walking` tắt.
@@ -258,12 +249,7 @@ export class CustomerActor {
     const s = intensityMul(c.personality);
     let tFwd = pose.fwd * s, tUp = pose.up * s, tRot = pose.rot * s;
     const tSy = pose.sy ?? 1;
-    /*
-     * NGỒI THẤY ĐƯỢC. `THEY_SIT` đã làm kiên nhẫn trôi chậm từ đợt `GHE_BAN`, nhưng người
-     * ngồi và người đứng vẽ y hệt nhau — tức người chơi bỏ 320 nghìn mua bộ ghế và KHÔNG
-     * THẤY GÌ ĐỔI. Không nướng sprite mới: hạ thân xuống `SIT_DROP` và nén nhẹ chiều cao
-     * (chân gập), đúng lối "một bộ target cho lò xo, 0 sprite mới" của P2-02 §3.2.
-     */
+    // NGỒI THẤY ĐƯỢC: hạ thân `SIT_DROP` và nén nhẹ chiều cao (chân gập), 0 sprite mới (P2-02 §3.2).
     const tSit = c.sitting ? SIT_DROP : 0;
     const since = c.now - c.react.poseSince;
     if (pose.osc && !reducedMotion && (!pose.osc.beats || since < pose.osc.beats * pose.osc.period)) {
@@ -321,7 +307,7 @@ export class CustomerActor {
     const watching = c.phase !== "leaving" && c.phase !== "arriving";
 
     // ── dấu trên đầu ───────────────────────────────────────────────────────
-    // KHÔNG còn tia nhìn kẻ từ mắt khách tới vùng quầy: lúc đông khách màn hình thành một nắm
+    // KHÔNG kẻ tia nhìn từ mắt khách tới vùng quầy: lúc đông khách màn hình thành một nắm
     // dây nhợ che đúng cái người chơi cần nhìn. Dấu `?`/`!`/cặp mày nói AI đã thấy; con mắt ở
     // đỉnh màn hình (`Hud.drawEye`) nói CÓ NGƯỜI ĐANG NHÌN.
     const st = watching ? nowState(c, nowSec) : null;
@@ -451,10 +437,8 @@ export class CustomerActor {
     }
 
     /*
-     * BÉ SU GIƠ ĐIỆN THOẠI LÊN QUAY — act `FILM`. Trước đợt này `FILM` đổi `c.filming`,
-     * trừ điểm nếu quầy dơ, và KHÔNG VẼ GÌ: người chơi không biết máy đang chạy, nên cái
-     * giá "quầy dơ thì clip hỏng" là một cái bẫy chứ không phải một rủi ro đọc được (T5).
-     * Chấm đỏ nhấp nháy là thứ ai cũng đọc được mà không cần học.
+     * BÉ SU GIƠ ĐIỆN THOẠI LÊN QUAY — act `FILM`. Chấm đỏ nhấp nháy cho thấy máy đang chạy, để
+     * "quầy dơ thì clip hỏng" là rủi ro đọc được chứ không phải cái bẫy (T5).
      */
     if (c.filming) {
       const px = x + 10, py = shoulder - 2;

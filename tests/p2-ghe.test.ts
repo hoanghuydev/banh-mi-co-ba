@@ -1,19 +1,8 @@
-/**
- * CÁI GHẾ PHẢI ĐÁNG 320 NGHÌN — act `THEY_SIT`.
- *
- * Trước đợt này `GHE_BAN` mua được, vẽ ra được, và **không nút thoại nào làm ai ngồi
- * xuống**: 19 câu mời ngồi khai `needEquip: "GHE_BAN"` rồi thôi. Người chơi bỏ tiền mua
- * ghế, mời người ta ngồi, người ta đứng nguyên. Đó là "lời nói miễn phí" ở tầng act —
- * lưới `A-1` không thấy vì nó đọc CHỮ, còn chữ thì không sai.
- *
- * Bốn chuyện phải đúng, và mỗi chuyện là một lý do cái ghế tồn tại.
- */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Customer } from "../src/sim/customer";
 import { Rng } from "../src/core/rng";
 import { NPCS } from "../src/content/npcs";
-import { makeUsual } from "../src/sim/order";
 
 const P = Object.fromEntries(NPCS.map((n) => [n.id, n.personality]));
 import { SEAT_SPOT, SHADE_SPOT, ASIDE_SPOT, SEAT_CAPACITY } from "../src/world/map";
@@ -21,10 +10,9 @@ import { TalkStore } from "../src/content/talks";
 import { needKeys, walkNodes, type TalkNode } from "../src/sim/talk";
 
 test("G-1 ngồi thì kiên nhẫn trôi CHẬM hơn — nhưng vẫn trôi", () => {
-  /** Một lượt ghé trần trụi, sức chờ 100 s — chỉ để đo đồng hồ chờ. */
   const ai = (id: string) => new Customer(
     id, "CHU_TU", "Chú Tư", P.CHU_TU, NPCS[1].body, null,
-    makeUsual(new Rng(1)), 0, { x: 0, y: 0 }, 100, new Rng(2),
+    0, { x: 0, y: 0 }, 100, new Rng(2),
   );
   const dung = ai("a"), ngoi = ai("b");
   dung.phase = "waiting"; ngoi.phase = "waiting"; ngoi.sitting = true;

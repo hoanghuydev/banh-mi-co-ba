@@ -7,7 +7,7 @@ let gap = 0, roll = 0, ban = 0, canh = 0, chao = 0;
 for (let d = 0; d < 6; d++) {
   const w = newGame(`t${d}`, "p210");
   const bus = new Bus(false);
-  for (let k = 0; k < d; k++) nextDay(w, bus);
+  for (let k = 0; k < d; k++) nextDay(w);
   const h = new HeadlessStall(w, POLICIES.greedy, { bus, platform: memoryPlatform() });
   const svc = (h as any).service;
   const goc = svc.greetPassers.bind(svc), gocC = svc.chatScene.bind(svc);

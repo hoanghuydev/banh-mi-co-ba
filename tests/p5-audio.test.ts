@@ -102,7 +102,7 @@ test("mấy id mà code gọi thẳng theo tên đều có trong danh mục", ()
    */
   const must = [
     "sfx_dao_rach", "sfx_vo_gion", "sfx_goi_giay", "sfx_rot_tra_da", "sfx_lau_khan",
-    "sfx_rua_tay", "sfx_do_roi_dat", "sfx_tien_le", "sfx_buoc_co_ba", "sfx_buoc_chan",
+    "sfx_rua_tay", "sfx_do_roi_dat", "sfx_tien_le", "sfx_buoc_chu_quan", "sfx_buoc_chan",
     "sfx_khet", "sfx_ruoi", "sfx_lo_bed",
     "amb_hem_sang", "amb_hem_trua", "amb_hem_chieu", "amb_crowd", "amb_cho", "amb_toi_nha",
     "amb_mua_mai_ton", "amb_mua_nen",
@@ -138,7 +138,7 @@ test("âm MÔ TẢ THẾ GIỚI không nằm trên bus âm báo (P5-03 §5.5)", 
 test("âm dùng nhiều nhất phải có nhiều biến thể, không thì nghe như súng máy", () => {
   // Con số nhỏ hơn bảng BT của §4.2 (bộ tạm chỉ 3–6 thay vì 5–8) và bù bằng rung
   // cao độ lúc chạy (`JITTER` trong `sfx.ts`) — nhưng dưới 3 thì rung cũng không cứu.
-  for (const id of ["sfx_dao_rach", "sfx_kep_gap", "sfx_tien_le", "sfx_buoc_co_ba", "vox_blip"]) {
+  for (const id of ["sfx_dao_rach", "sfx_kep_gap", "sfx_tien_le", "sfx_buoc_chu_quan", "vox_blip"]) {
     assert.ok(CAT[id].files.length >= 3, `${id} mới có ${CAT[id].files.length} biến thể`);
   }
 });

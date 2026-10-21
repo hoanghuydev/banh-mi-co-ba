@@ -1,15 +1,4 @@
-/**
- * PHÂN BỐ ĐIỂM CHỌN CHUYỆN, chia theo KHUNG CẢNH.
- *
- * `tools/tune-drives.ts` cho thấy ba núm của `sim/drives.ts` quét 8× mà KHÔNG đổi một con
- * số nào. Lý do phải đo chứ không đoán: cái duy nhất so điểm với một mốc TUYỆT ĐỐI là
- * `TALK_SCORE_FLOOR`, và nếu không cuộc nào rơi xuống dưới nó thì `ATT_K` chỉ là một phép
- * nhân đều — `pickWeighted` chuẩn hoá lại, nên nhân bao nhiêu cũng ra cùng một lựa chọn.
- *
- * Bảng này in điểm THẤP NHẤT / trung vị theo từng khung cảnh. Chỗ phải nhìn là `DOI_BANH`:
- * `sim/talk.ts` khai cái sàn để *"người ta đang bận thì KHÔNG AI BẮT CHUYỆN ĐƯỢC"*, nên nếu
- * lúc đợi bánh mà chuyện tán gẫu vẫn nằm trên sàn thì lời khai đó không đúng.
- */
+/** Phân bố điểm chọn chuyện theo khung cảnh — kiểm có cuộc nào rơi dưới `TALK_SCORE_FLOOR` (nhất là lúc `DOI_BANH`) không. */
 import { Bus } from "../src/core/eventbus";
 import { newGame } from "../src/core/save";
 import { memoryPlatform } from "../src/core/platform";
@@ -18,13 +7,13 @@ import { TALK_NPC_IDS } from "../src/content/talks";
 import { TALK_SCORE_FLOOR, eligible, kindOf } from "../src/sim/talk";
 
 const theo = new Map<string, number[]>();
-/** Riêng chuyện TÁN GẪU — cuộc `CHUYEN`, thứ đáng lẽ phải im khi người ta đang đợi bánh. */
+/** Riêng cuộc `CHUYEN` — đáng lẽ phải im khi người ta đang đợi bánh. */
 const tanGau = new Map<string, number[]>();
 
 for (let d = 1; d <= 6; d++) {
   const w = newGame(`diem${d}`, "p210");
   const bus = new Bus(false);
-  for (let k = 1; k < d * 3; k++) nextDay(w, bus);
+  for (let k = 1; k < d * 3; k++) nextDay(w);
   const h = new HeadlessStall(w, POLICIES.greedy, { bus, platform: memoryPlatform() });
   const svc = (h as any).service;
   for (const k of [...TALK_NPC_IDS, "WALKIN", "QUA_DUONG", "ANY"]) await svc.talks.ensure(k);

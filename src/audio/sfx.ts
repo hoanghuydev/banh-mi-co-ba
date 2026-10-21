@@ -85,7 +85,6 @@ const VOICE_PITCH: Record<string, number> = {
   ANH_DUNG: 0.95, ANH_BAO: 1.0,
   CHI_LAN: 1.18, CHI_HANH: 1.14, CO_MAI: 1.22,
   BE_SU: 1.45,                                     // bé Sứ — cao hẳn, nghe ra ngay là trẻ con
-  CO_BA: 1.05,
 };
 const DEFAULT_PITCH = 1.0;
 
@@ -119,8 +118,8 @@ class SfxDirector {
   private game: Phaser.Game | null = null;
   private loops = new Map<string, Loop>();
   private bags = new Map<string, ShuffleBag>();
-  /** Dòng ngẫu nhiên RIÊNG cho phần trình bày — không đụng 6 stream của P0-02 §2.3.
-   *  Chọn biến thể nào không được phép làm lệch chuỗi số của lịch khách hay tin đồn. */
+  /** Dòng ngẫu nhiên RIÊNG cho phần trình bày — không đụng các stream của P0-02 §2.3.
+   *  Chọn biến thể nào không được phép làm lệch chuỗi số của lịch khách. */
   private rng = new Rng(fnv1a("sfx|presentation"));
 
   private vol: Record<BusId, number> = { ...SILENT_BUS };
@@ -265,8 +264,7 @@ class SfxDirector {
         volume: TALK_GAIN * (i === 0 ? 1 : 0.78 + this.rng.next() * 0.16),
         delay: at,
       });
-      // Khoảng cách KHÔNG ĐỀU. Bản đầu dùng `i * (70 + ngẫu nhiên)`, tức là một lưới
-      // đều tăm tắp — nghe ra máy gõ chứ không ra người nói.
+      // Khoảng cách KHÔNG ĐỀU: lưới đều tăm tắp nghe ra máy gõ chứ không ra người nói.
       at += 85 + this.rng.next() * 85;
     }
     this.duckForVoice(at / 1000 + 0.2);

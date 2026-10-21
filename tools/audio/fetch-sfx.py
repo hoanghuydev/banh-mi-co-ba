@@ -35,7 +35,7 @@ PROV = os.path.join(ROOT, "public", "audio", "PROVENANCE.csv")
 CATALOG = os.path.join(ROOT, "src", "audio", "catalog.json")
 TMP = os.path.join(CACHE, "_tmp")
 
-UA = "Mozilla/5.0 (BanhMiCoBa asset fetch; hoanghuy@sepay.vn)"
+UA = "Mozilla/5.0 (ByeSep asset fetch; hoanghuy@sepay.vn)"
 CC0 = "https://creativecommons.org/publicdomain/zero/1.0/"
 
 

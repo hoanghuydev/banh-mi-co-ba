@@ -1,5 +1,5 @@
 {
-  "_note": "Chú Kiệt — xe bánh mì bên kia hẻm. ĐỐI THỦ, và là người bán duy nhất đứng phía khách. soi 0,7 nongTinh 0,6 deTha 0,3: để bụng lâu. Tự xưng 'tao', gọi người chơi 'mày' — người chơi vẫn gọi 'chú' và tự xưng 'tui'. Chú KHÔNG MUA bánh mì ở đây bao giờ. Chú chỉ đẩy xe ngang, liếc vô lò. Nhiều nút `silent` nhất hẻm: chú không đáp là chuyện thường, không phải thiếu nội dung. Ráp mô hình Gundam — chỉ lộ ra ở nhánh người chơi giúp chú (SK-32).",
+  "_note": "Chú Kiệt — xe bánh mì bên kia hẻm. ĐỐI THỦ, và là người bán duy nhất đứng phía khách. soi 0,7 nongTinh 0,6 deTha 0,3: để bụng lâu. Tự xưng 'tao', gọi người chơi 'mày' — người chơi vẫn gọi 'chú' và tự xưng 'tui'. Chú KHÔNG MUA bánh mì ở đây bao giờ. Chú chỉ đẩy xe ngang, liếc vô lò. Nhiều nút `silent` nhất hẻm: chú không đáp là chuyện thường, không phải thiếu nội dung. Ráp mô hình Gundam — chỉ lộ ra ở nhánh người chơi giúp chú.",
   "talks": [
     {
       "id": "kiet.lo",
@@ -7,12 +7,6 @@
       "topic": "lo",
       "source": "NPC_ONLY",
       "depth": "SHORT",
-      "when": {
-        "day": [
-          5,
-          40
-        ]
-      },
       "opener": "Lò mày nóng chưa đó. Tao ngó cái là tao biết.",
       "weight": 13,
       "tree": [
@@ -24,42 +18,29 @@
             {
               "say": "Chú lo gì mà lo chú?",
               "tone": "THANG",
-              "rel": 1,
               "reply": "Lo mày giành khách chớ lo gì. Tao nói thiệt đó, tao hổng giấu.",
               "then": [
                 {
                   "say": "Chú nói thiệt vậy con nể chú đó.",
                   "tone": "AM",
-                  "rel": 3,
-                  "mem": {
-                    "kind": "CARED_FOR_THEM",
-                    "intensity": 40
-                  },
                   "reply": "…Ờ. Tao hổng biết nói vòng.",
                   "mood": "THUONG"
                 },
                 {
                   "say": "Hẻm này đủ chỗ cho hai xe mà chú.",
                   "tone": "AM",
-                  "rel": 2,
                   "reply": "Mày nói nghe hay. Chờ tháng ế rồi nói lại câu đó coi."
                 },
                 {
                   "say": "Vậy chú ráng lo đi chú.",
                   "tone": "DUA",
-                  "rel": -1,
                   "reply": "Ha. Con nhỏ này cũng gan.",
                   "mood": "CUOI_TUOI"
                 },
                 {
                   "say": "Chú rảnh thì về đẩy xe chú đi.",
                   "tone": "GAT",
-                  "rel": -5,
                   "anger": 40,
-                  "mem": {
-                    "kind": "RUDE_TO_THEM",
-                    "intensity": 70
-                  },
                   "silent": true,
                   "mood": "GIAN",
                   "act": {
@@ -75,13 +56,11 @@
             {
               "say": "Chú coi giùm con luôn đi chú.",
               "tone": "DUA",
-              "rel": 2,
               "reply": "Tao đâu rảnh. …Mà than mày chất sát vách quá đó."
             },
             {
               "say": "Dạ.",
               "tone": "LANH",
-              "rel": -1,
               "silent": true
             }
           ]
@@ -89,42 +68,29 @@
         {
           "say": "Dạ con nướng chưa tới chú à.",
           "tone": "AM",
-          "rel": 2,
           "reply": "Ờ. Chưa tới mà biết là chưa tới thì còn đỡ.",
           "then": [
             {
               "say": "Chú chỉ con cách canh lò với chú.",
               "tone": "AM",
-              "rel": 3,
               "reply": "…Nghe tiếng. Vỏ nó nổ lách tách là tới. Nhìn màu là trễ rồi.",
               "then": [
                 {
                   "say": "Dạ con cảm ơn chú.",
                   "tone": "AM",
-                  "rel": 4,
                   "flag": "kietChiLo",
-                  "mem": {
-                    "kind": "CARED_FOR_THEM",
-                    "intensity": 55
-                  },
                   "reply": "Ờ. …Đừng nói ai là tao chỉ mày nghen.",
                   "mood": "THUONG"
                 },
                 {
                   "say": "Chú chỉ con chi vậy chú? Con là đối thủ mà.",
                   "tone": "THANG",
-                  "rel": 2,
                   "reply": "Tao ghét bánh dở. Mày bán dở là cả hẻm chê bánh mì."
                 },
                 {
                   "say": "Chú nói vậy chớ chú gạt con hả.",
                   "tone": "GAT",
-                  "rel": -6,
                   "anger": 45,
-                  "mem": {
-                    "kind": "RUDE_TO_THEM",
-                    "intensity": 75
-                  },
                   "silent": true,
                   "mood": "GIAN"
                 }
@@ -141,7 +107,6 @@
         {
           "say": "…",
           "tone": "IM",
-          "rel": 1,
           "reply": "Ờ. Mày hổng nói gì cũng được. Tao cũng có hỏi đâu."
         },
         {
@@ -149,9 +114,6 @@
           "tone": "AM",
           "reply": "…Ờ. Than đượm đó. Mày biết nhen lò hơn tao tưởng.",
           "mood": "NGHIEM",
-          "onKept": {
-            "rel": 2
-          },
           "act": {
             "kind": "LOOK_INSIDE",
             "forSec": 8
@@ -169,7 +131,6 @@
       "initiates": 0.65,
       "ignore": {
         "reply": "Hứ. Nói với mày như nói với cái cột.",
-        "rel": -2,
         "mood": "BUC"
       },
       "drives": {
@@ -184,12 +145,6 @@
       "topic": "gia",
       "source": "NPC_ONLY",
       "depth": "SHORT",
-      "when": {
-        "day": [
-          8,
-          40
-        ]
-      },
       "opener": "Mày bán hai lăm hả? Tao bán mười lăm đó.",
       "weight": 12,
       "shared": {
@@ -209,7 +164,6 @@
           {
             "say": "Mai gặp chú nghen chú.",
             "tone": "AM",
-            "rel": 2,
             "reply": "…Ờ."
           }
         ]
@@ -218,7 +172,6 @@
         {
           "say": "Dạ bánh con nhiều nhân hơn chú.",
           "tone": "THANG",
-          "rel": 1,
           "reply": "Ờ. Rồi mày bán được mấy ổ một bữa?",
           "then": [
             {
@@ -229,32 +182,24 @@
                 {
                   "say": "Dạ con hổng muốn nói chú à.",
                   "tone": "THANG",
-                  "rel": 2,
                   "reply": "Ờ. Vậy mới phải. Nói hết cho người ta biết chi."
                 },
                 {
                   "say": "Chú bán nhiêu ổ mà chú hỏi con?",
                   "tone": "DUA",
-                  "rel": 2,
                   "reply": "Ha. Trả đũa hả. Ờ, huề.",
                   "mood": "CUOI_TUOI"
                 },
                 {
                   "say": "Dạ bảy chục ổ chú.",
                   "tone": "THUONG",
-                  "rel": -1,
                   "reply": "…Bảy chục. Ờ. Tao biết rồi.",
                   "mood": "LANH"
                 },
                 {
                   "say": "Chuyện của con, mắc gì chú hỏi.",
                   "tone": "GAT",
-                  "rel": -4,
                   "anger": 35,
-                  "mem": {
-                    "kind": "RUDE_TO_THEM",
-                    "intensity": 60
-                  },
                   "silent": true,
                   "mood": "BUC"
                 }
@@ -263,14 +208,12 @@
             {
               "say": "Chú bán mười lăm mà chú lời nổi hả chú?",
               "tone": "THANG",
-              "rel": 1,
               "reply": "Nhân ít. Bánh tao mua rẻ hơn. Tao đi chợ bốn giờ.",
               "ref": "ket"
             },
             {
               "say": "Dạ.",
               "tone": "LANH",
-              "rel": -1,
               "silent": true,
               "then": [
                 {
@@ -290,9 +233,6 @@
                   "tone": "AM",
                   "reply": "…Ờ. Đưa đây tao ăn. Ăn xong tao nói thiệt, đừng có giận.",
                   "mood": "NGHIEM",
-                  "onKept": {
-                    "rel": 2
-                  },
                   "act": {
                     "kind": "DISCOUNT",
                     "vnd": 10000
@@ -313,24 +253,17 @@
         {
           "say": "Chú bán rẻ vậy chú sống sao chú?",
           "tone": "AM",
-          "rel": 2,
           "reply": "Thì bán nhiều. Mày bán cho người sang, tao bán cho thợ hồ.",
           "then": [
             {
               "say": "Vậy là hai xe hổng đụng nhau chú ha.",
               "tone": "AM",
-              "rel": 3,
               "reply": "…Ờ. Tao cũng nghĩ vậy. Mà nghĩ vậy rồi vẫn ngó mày mỗi sáng.",
               "mood": "CUOI"
             },
             {
               "say": "Thợ hồ ăn no mới quan trọng chú ha.",
               "tone": "AM",
-              "rel": 3,
-              "mem": {
-                "kind": "CARED_FOR_THEM",
-                "intensity": 45
-              },
               "reply": "Ờ! Tụi nó làm nặng. Ăn ổ bánh mỏng sao chịu nổi.",
               "ref": "ket",
               "mood": "THUONG"
@@ -345,7 +278,6 @@
         {
           "say": "Chú có nghe tui rao hồi sáng hông chú?",
           "tone": "DUA",
-          "rel": 2,
           "need": "sauRaoThu",
           "reply": "Nghe. Rao như kêu đò. …Mà có rao còn hơn đứng im như tao.",
           "mood": "CUOI_KHAN"
@@ -353,12 +285,7 @@
         {
           "say": "Chú qua đây dò giá con hả chú.",
           "tone": "GAT",
-          "rel": -4,
           "anger": 35,
-          "mem": {
-            "kind": "RUDE_TO_THEM",
-            "intensity": 60
-          },
           "silent": true,
           "mood": "BUC"
         }
@@ -375,7 +302,6 @@
       "initiates": 0.6,
       "ignore": {
         "reply": "Làm thinh hả. Ờ, để coi ai bán được lâu hơn.",
-        "rel": -3,
         "mood": "BUC"
       },
       "drives": {
@@ -390,12 +316,6 @@
       "topic": "bienhieu",
       "source": "NPC_ONLY",
       "depth": "FULL",
-      "when": {
-        "day": [
-          12,
-          40
-        ]
-      },
       "weight": 12,
       "opener": "Cái bảng hiệu xe mày. Chữ đỏ viền vàng đó. Ai viết?",
       "shared": {
@@ -415,7 +335,6 @@
           {
             "say": "Mai gặp chú nghen chú.",
             "tone": "AM",
-            "rel": 2,
             "reply": "…Ờ."
           }
         ]
@@ -424,44 +343,34 @@
         {
           "say": "Dạ chú Hải viết đó chú. Hồi xưa chú viết bảng hiệu mướn.",
           "tone": "THUONG",
-          "rel": 2,
           "reply": "…Ông già hay nhậu đó hả. Hèn gì. Chữ đó bây giờ hổng ai viết được.",
           "then": [
             {
               "say": "Chú rành chữ nghĩa ghê chú.",
               "tone": "AM",
-              "rel": 3,
               "reply": "Tao đứng ngó cái bảng đó ba tháng rồi. Mày tưởng tao ngó cái lò không hả.",
               "then": [
                 {
                   "say": "Chú muốn có cái bảng cho xe chú hả chú?",
                   "tone": "THANG",
-                  "rel": 2,
                   "flag": "kietMuonBang",
                   "reply": "…Ờ. Xe tao treo cái bạt in. Mưa một mùa là bong. Nhìn nó rẻ tiền.",
                   "then": [
                     {
                       "say": "Để tui nói chú Hải một tiếng giùm chú nghen chú.",
                       "tone": "AM",
-                      "rel": 4,
                       "flag": "kietNhoNoi",
-                      "mem": {
-                        "kind": "CARED_FOR_THEM",
-                        "intensity": 55
-                      },
                       "reply": "…Khỏi. …Ờ. Mày nói đi. Mà đừng nói là tao nhờ nghen.",
                       "mood": "RUNG_RUNG"
                     },
                     {
                       "say": "Chú qua hỏi chú đi chú. Chú đâu có ăn thịt chú.",
                       "tone": "DUA",
-                      "rel": 2,
                       "reply": "Tao hổng sợ ổng. Tao sợ ổng hỏi tao trả nhiêu rồi tao hổng trả nổi."
                     },
                     {
                       "say": "Bảng in rẻ hơn mà chú. Chú tiếc tiền chi.",
                       "tone": "THANG",
-                      "rel": -1,
                       "reply": "Mày nói y cái đứa bán bạt. Rồi tao nghe nó, giờ tao đứng đây tiếc."
                     }
                   ]
@@ -469,19 +378,13 @@
                 {
                   "say": "Chú ngó cái bảng chớ hổng phải ngó cái lò hả chú.",
                   "tone": "DUA",
-                  "rel": 2,
                   "reply": "Ngó cả hai. Tao ngó cái gì tao cũng ngó kỹ.",
                   "ref": "ket"
                 },
                 {
                   "say": "Chú ngó hoài vậy tui bán hổng được chú ơi.",
                   "tone": "GAT",
-                  "rel": -4,
                   "anger": 35,
-                  "mem": {
-                    "kind": "RUDE_TO_THEM",
-                    "intensity": 60
-                  },
                   "silent": true,
                   "mood": "BUC"
                 }
@@ -491,72 +394,19 @@
             {
               "say": "Chú thích cái bảng đó hả chú?",
               "tone": "THANG",
-              "rel": 1,
               "reply": "Thích. Tao hổng khen hai lần đâu nghen, nghe một lần thôi.",
               "ref": "ket"
             },
             {
               "say": "Dạ.",
               "tone": "LANH",
-              "rel": -1,
               "silent": true
-            }
-          ]
-        },
-        {
-          "say": "Dạ cái bảng đó của cô Ba để lại chú.",
-          "tone": "THUONG",
-          "reply": "Ờ. Để lại được cái bảng đó là bả khôn. Người ta nhớ cái bảng trước khi nhớ cái mặt.",
-          "then": [
-            {
-              "say": "Chú nói nghe chí lý ghê chú.",
-              "tone": "AM",
-              "rel": 3,
-              "reply": "Tao bán mười năm. Tao có mỗi cái đó để nói.",
-              "then": [
-                {
-                  "say": "Vậy xe chú nên có một cái bảng đàng hoàng chú.",
-                  "tone": "AM",
-                  "rel": 3,
-                  "flag": "kietMuonBang",
-                  "reply": "…Ờ. Tao biết. Tao để dành ba tháng rồi mà tao chưa dám kêu ai.",
-                  "mood": "CUOI"
-                },
-                {
-                  "say": "Mười năm mà chú còn đứng ngó xe người ta hả chú.",
-                  "tone": "THANG",
-                  "rel": -2,
-                  "reply": "…Ờ. Mười năm. Mày nói cũng đau đó nghen.",
-                  "mood": "LANH"
-                },
-                {
-                  "say": "Dạ.",
-                  "tone": "LANH",
-                  "rel": -1,
-                  "silent": true
-                }
-              ],
-              "mood": "CUOI"
-            },
-            {
-              "say": "Chú nhớ mặt khách hông chú?",
-              "tone": "THANG",
-              "rel": 1,
-              "reply": "Nhớ. Mà khách hổng nhớ tao. Tụi nó nhớ cái xe đẩy có mái xanh.",
-              "ref": "ket"
-            },
-            {
-              "say": "Dạ tui hổng rành mấy cái đó chú.",
-              "tone": "LANH",
-              "rel": -1,
-              "reply": "Ờ."
             }
           ]
         },
         {
           "say": "…",
           "tone": "IM",
-          "rel": 1,
           "reply": "Ờ. Hỏi cho có hỏi hà. Tao đi."
         }
       ],
@@ -581,10 +431,6 @@
       "source": "NPC_ONLY",
       "depth": "FULL",
       "when": {
-        "day": [
-          6,
-          40
-        ],
         "rain": true
       },
       "weight": 13,
@@ -594,12 +440,7 @@
           {
             "say": "Chú đứng tới chừng nào tạnh cũng được chú.",
             "tone": "AM",
-            "rel": 3,
             "calm": 26,
-            "mem": {
-              "kind": "CARED_FOR_THEM",
-              "intensity": 50
-            },
             "reply": "…Ờ. Tao đứng chút.",
             "mood": "THUONG",
             "act": {
@@ -613,7 +454,6 @@
           {
             "say": "Chú kéo xe sát vô đây đi chú.",
             "tone": "AM",
-            "rel": 3,
             "calm": 22,
             "reply": "Ờ. …Ờ, chỗ này khuất gió thiệt.",
             "mood": "THUONG",
@@ -628,7 +468,6 @@
           {
             "say": "Dạ.",
             "tone": "LANH",
-            "rel": -1,
             "silent": true
           }
         ]
@@ -637,25 +476,18 @@
         {
           "say": "Chú đẩy xe vô dưới mái này đi chú. Rộng mà chú.",
           "tone": "AM",
-          "rel": 3,
           "calm": 24,
           "reply": "Khỏi. Tao đứng đây tao che tay được rồi.",
           "then": [
             {
               "say": "Chú che tay chớ bánh chú ai che chú.",
               "tone": "THANG",
-              "rel": 2,
               "reply": "…Ờ. Bánh ướt là tao lỗ nguyên buổi. Mà đứng ké xe mày tao kỳ lắm.",
               "then": [
                 {
                   "say": "Kỳ gì chú. Hai cái xe đứng chung một cái mái thôi mà chú.",
                   "tone": "AM",
-                  "rel": 4,
                   "flag": "kietDungChung",
-                  "mem": {
-                    "kind": "CARED_FOR_THEM",
-                    "intensity": 60
-                  },
                   "reply": "…Ờ. Thôi. Tao đẩy vô. Mưa tạnh tao đi liền nghen.",
                   "ref": "diyen",
                   "mood": "RUNG_RUNG"
@@ -663,20 +495,17 @@
                 {
                   "say": "Chú sợ người ta nói chú qua xin xỏ tui hả chú?",
                   "tone": "THANG",
-                  "rel": 2,
                   "reply": "Ờ. Đúng đó. Mày nói trúng tao đâm ra khó chịu.",
                   "then": [
                     {
                       "say": "Vậy tui đứng qua xe chú, chú đứng bên này. Huề.",
                       "tone": "DUA",
-                      "rel": 3,
                       "reply": "Ha! …Con nhỏ này. Thôi được. Tao vô.",
                       "mood": "CUOI_TUOI"
                     },
                     {
                       "say": "Chú muốn ướt thì chú ướt chú.",
                       "tone": "LANH",
-                      "rel": -2,
                       "anger": 20,
                       "reply": "Ờ. Tao ướt.",
                       "mood": "BUC"
@@ -686,7 +515,6 @@
                 {
                   "say": "Chú hổng vô thì thôi chú. Tui mời một lần hà.",
                   "tone": "LANH",
-                  "rel": -2,
                   "anger": 20,
                   "reply": "…Ờ. Mày cũng cứng. Được.",
                   "mood": "BUC"
@@ -696,11 +524,6 @@
             {
               "say": "Dạ chú lấy cái bạt này che tạm đi chú.",
               "tone": "AM",
-              "rel": 3,
-              "mem": {
-                "kind": "CARED_FOR_THEM",
-                "intensity": 50
-              },
               "reply": "…Ờ. Mày để tao mượn hả. Chiều tao trả.",
               "ref": "diyen",
               "mood": "THUONG"
@@ -724,19 +547,16 @@
         {
           "say": "Mưa vầy chú bán cho ai hả chú?",
           "tone": "THANG",
-          "rel": 1,
           "reply": "Thợ hồ. Tụi nó nghỉ làm mà tụi nó vẫn ăn. Mưa tao bán còn hơn nắng.",
           "then": [
             {
               "say": "Vậy mưa là chú hên hả chú?",
               "tone": "DUA",
-              "rel": 2,
               "reply": "Hên cái con khỉ. Bán được mười ổ mà ướt hết hai chục ổ.",
               "then": [
                 {
                   "say": "Vậy chú đứng đây đợi tạnh đi chú.",
                   "tone": "AM",
-                  "rel": 3,
                   "calm": 25,
                   "reply": "…Ờ. Tao đợi. Một chút thôi nghen.",
                   "mood": "THUONG"
@@ -744,13 +564,11 @@
                 {
                   "say": "Chú lỗ mà chú còn ra đường hả chú.",
                   "tone": "THANG",
-                  "rel": 1,
                   "reply": "Nghỉ một bữa là khách quen nó đi chỗ khác. Mày rồi cũng biết."
                 },
                 {
                   "say": "Dạ.",
                   "tone": "LANH",
-                  "rel": -1,
                   "silent": true
                 }
               ]
@@ -758,7 +576,6 @@
             {
               "say": "Chú bán cho thợ hồ, tui bán cho dân văn phòng. Hổng đụng mà chú.",
               "tone": "AM",
-              "rel": 3,
               "reply": "Ờ. Mày nói câu đó lần thứ hai rồi đó. …Mà tao nghe hoài cũng lọt.",
               "ref": "diyen",
               "mood": "CUOI"
@@ -766,7 +583,6 @@
             {
               "say": "Dạ chuyện của chú chú lo chú.",
               "tone": "LANH",
-              "rel": -2,
               "silent": true
             }
           ]
@@ -774,12 +590,7 @@
         {
           "say": "Chú đứng chắn hết lối rồi chú ơi.",
           "tone": "GAT",
-          "rel": -5,
           "anger": 40,
-          "mem": {
-            "kind": "RUDE_TO_THEM",
-            "intensity": 70
-          },
           "act": {
             "kind": "MOVE_CART",
             "toi": "XA"
@@ -801,7 +612,6 @@
       "initiates": 0.6,
       "ignore": {
         "reply": "…Ờ. Mưa thì ai cũng ướt, hỏi thăm một câu cũng không.",
-        "rel": -2,
         "mood": "BUC"
       },
       "drives": {
@@ -816,12 +626,6 @@
       "topic": "khachchung",
       "source": "NPC_ONLY",
       "depth": "SHORT",
-      "when": {
-        "day": [
-          18,
-          40
-        ]
-      },
       "weight": 11,
       "opener": "Có thằng sáng nào cũng mua tao. Bữa nay nó qua mua mày.",
       "shared": {
@@ -841,7 +645,6 @@
           {
             "say": "Chú đừng để bụng nghen chú.",
             "tone": "AM",
-            "rel": 3,
             "reply": "…Tao để bụng chớ. Mà tao hổng trách mày.",
             "mood": "CUOI"
           }
@@ -851,31 +654,23 @@
         {
           "say": "Dạ tui hổng biết ảnh là khách chú chú.",
           "tone": "THANG",
-          "rel": 1,
           "reply": "Mày biết sao được. Tao nói cho mày biết thôi. Tao hổng kiện mày.",
           "then": [
             {
               "say": "Vậy chú nói tui chi vậy chú?",
               "tone": "THANG",
-              "rel": 1,
               "reply": "…Tại tao tức. Tao tức mà tao hổng biết tức ai nên tao nói mày.",
               "then": [
                 {
                   "say": "Chú nói ra được là đỡ rồi chú. Chú nói đi.",
                   "tone": "AM",
                   "need": "kietDungChung",
-                  "rel": 4,
-                  "mem": {
-                    "kind": "CARED_FOR_THEM",
-                    "intensity": 55
-                  },
                   "reply": "…Mười năm. Nó ăn tao mười năm. Bữa nay nó đi qua xe tao, nó hổng ngó tao một cái.",
                   "mood": "RUNG_RUNG"
                 },
                 {
                   "say": "Mai tui nói ảnh ghé chú một bữa nghen chú.",
                   "tone": "AM",
-                  "rel": 3,
                   "flag": "kietKeoKhach",
                   "reply": "…Đừng. Khách nó tự đi thì tự về. Kéo nó về là nhục tao.",
                   "mood": "CUOI"
@@ -883,18 +678,12 @@
                 {
                   "say": "Khách ai nấy giữ chú. Chú tức tui chi.",
                   "tone": "THANG",
-                  "rel": -2,
                   "reply": "Ờ. Tao biết. Tao nói rồi tao cũng thấy tao vô duyên."
                 },
                 {
                   "say": "Chú bán dở thì khách đi chớ sao chú.",
                   "tone": "GAT",
-                  "rel": -6,
                   "anger": 50,
-                  "mem": {
-                    "kind": "RUDE_TO_THEM",
-                    "intensity": 80
-                  },
                   "silent": true,
                   "mood": "GIAN"
                 }
@@ -903,31 +692,23 @@
             {
               "say": "Ảnh ăn chú mười năm mà chú biết ảnh tên gì hông chú?",
               "tone": "THANG",
-              "rel": 2,
               "reply": "…Hổng biết. Mười năm tao chưa hỏi tên nó một lần.",
               "then": [
                 {
                   "say": "Vậy chắc tại cái đó đó chú.",
                   "tone": "THANG",
-                  "rel": 2,
-                  "mem": {
-                    "kind": "REMEMBERED_STORY",
-                    "intensity": 50
-                  },
                   "reply": "…Ờ. Mày nói một câu mà tao đứng đây tao ngẫm cả buổi.",
                   "mood": "THUONG"
                 },
                 {
                   "say": "Chú hỏi tên ảnh đi chú. Chưa trễ đâu chú.",
                   "tone": "AM",
-                  "rel": 3,
                   "reply": "…Giờ hỏi nó kỳ lắm. …Mà ờ. Để tao hỏi.",
                   "mood": "CUOI"
                 },
                 {
                   "say": "Dạ.",
                   "tone": "LANH",
-                  "rel": -1,
                   "silent": true
                 }
               ]
@@ -935,7 +716,6 @@
             {
               "say": "Dạ.",
               "tone": "LANH",
-              "rel": -1,
               "silent": true
             }
           ]
@@ -943,25 +723,18 @@
         {
           "say": "Dạ mai ảnh qua, tui nói ảnh ghé chú trước nghen chú.",
           "tone": "AM",
-          "rel": 3,
           "reply": "…Mày làm vậy thiệt hả. Mày khùng hả.",
           "then": [
             {
               "say": "Tui hổng muốn lấy khách của ai hết chú.",
               "tone": "AM",
-              "rel": 4,
               "flag": "kietNeNguoiChoi",
-              "mem": {
-                "kind": "CARED_FOR_THEM",
-                "intensity": 65
-              },
               "reply": "…Mười năm tao chưa gặp ai nói câu đó. Mày giữ nó đi. Tao hổng cần thương.",
               "mood": "RUNG_RUNG"
             },
             {
               "say": "Tui giỡn thôi chú. Khách ai nấy giữ.",
               "tone": "DUA",
-              "rel": 1,
               "reply": "Ha. Mày giỡn kiểu đó tao muốn đứng tim.",
               "mood": "CUOI_TUOI"
             },
@@ -976,7 +749,6 @@
         {
           "say": "Chú Hải có qua xe chú hông chú?",
           "tone": "DUA",
-          "rel": 2,
           "need": "haiKietNoi",
           "reply": "…Có. Ổng đứng ngó cái bạt của tao, ổng chê một câu. Rồi ổng hỏi tao thích chữ gì.",
           "mood": "NGUONG"
@@ -984,12 +756,7 @@
         {
           "say": "Chú qua đây nói chuyện khách khứa chi vậy chú.",
           "tone": "GAT",
-          "rel": -5,
           "anger": 40,
-          "mem": {
-            "kind": "RUDE_TO_THEM",
-            "intensity": 70
-          },
           "silent": true,
           "mood": "GIAN"
         }
@@ -1014,10 +781,6 @@
       "source": "NPC_ONLY",
       "depth": "FULL",
       "when": {
-        "day": [
-          20,
-          40
-        ],
         "needFlag": "kietChiLo",
         "notFlag": "kietKeoKhach"
       },
@@ -1028,7 +791,6 @@
           {
             "say": "Dạ tui kín miệng mà chú.",
             "tone": "AM",
-            "rel": 3,
             "reply": "Ờ. Tao tin mày một lần nghen.",
             "mood": "CUOI"
           },
@@ -1055,41 +817,28 @@
             {
               "say": "Chú ráp mô hình hả chú?",
               "tone": "AM",
-              "rel": 3,
               "reply": "…Ờ. Mày cười đi. Tao biết mày cười.",
               "then": [
                 {
                   "say": "Tui cười gì chú. Chú sơn khéo quá trời chú.",
                   "tone": "AM",
-                  "rel": 4,
-                  "mem": {
-                    "kind": "CARED_FOR_THEM",
-                    "intensity": 60
-                  },
                   "reply": "…Cọ số không. Tao sơn ba lớp. Một con tao làm hai tuần.",
                   "then": [
                     {
                       "say": "Hai tuần cho một con hả chú. Chú kiên nhẫn ghê chú.",
                       "tone": "AM",
-                      "rel": 3,
                       "reply": "Bán bánh mì mười năm mà. Cái gì tao cũng làm chậm, làm kỹ.",
                       "mood": "CUOI"
                     },
                     {
                       "say": "Bữa nào chú đem qua tui coi đi chú.",
                       "tone": "AM",
-                      "rel": 4,
-                      "mem": {
-                        "kind": "CARED_FOR_THEM",
-                        "intensity": 60
-                      },
                       "reply": "…Thôi. …Ờ. Để tao đem một con. Con đó tao ưng nhất.",
                       "mood": "RUNG_RUNG"
                     },
                     {
                       "say": "Chú mà chơi mấy cái đó, ai mà tin chú.",
                       "tone": "DUA",
-                      "rel": -2,
                       "reply": "…Ờ. Nên tao hổng nói ai. Mày quên giùm tao đi.",
                       "mood": "LANH"
                     }
@@ -1099,13 +848,11 @@
                 {
                   "say": "Chú giấu chi vậy chú? Có gì đâu mà giấu.",
                   "tone": "THANG",
-                  "rel": 2,
                   "reply": "Mày bán hàng mà mày đi khoe mày chơi đồ con nít coi. Khách nó nghĩ sao."
                 },
                 {
                   "say": "Dạ tui hổng ngó nữa nè chú.",
                   "tone": "THUONG",
-                  "rel": 1,
                   "reply": "…Ờ. Thôi mày ngó cũng được. Lỡ rồi."
                 }
               ],
@@ -1120,11 +867,6 @@
             {
               "say": "Dạ tui đưa chú nè. Tui hổng hỏi gì hết.",
               "tone": "AM",
-              "rel": 3,
-              "mem": {
-                "kind": "CARED_FOR_THEM",
-                "intensity": 50
-              },
               "reply": "…Ờ. Mày biết điều. Tao ghi nhận.",
               "ref": "ket",
               "mood": "THUONG"
@@ -1134,31 +876,23 @@
         {
           "say": "Dạ tui lượm rồi nè chú. Chú cất đi chú.",
           "tone": "THUONG",
-          "rel": 2,
           "reply": "Ờ. …Mày hổng hỏi gì hả.",
           "then": [
             {
               "say": "Chú biểu đừng ngó thì tui đừng ngó chú.",
               "tone": "AM",
               "need": "kietNeNguoiChoi",
-              "rel": 4,
-              "mem": {
-                "kind": "CARED_FOR_THEM",
-                "intensity": 55
-              },
               "reply": "…Ờ. Lâu rồi tao mới gặp đứa nghe lời.",
               "mood": "RUNG_RUNG"
             },
             {
               "say": "Chú muốn tui hỏi hả chú?",
               "tone": "DUA",
-              "rel": 2,
               "reply": "…Hổng. …Ờ, một chút."
             },
             {
               "say": "Dạ.",
               "tone": "LANH",
-              "rel": -1,
               "silent": true
             }
           ]
@@ -1166,12 +900,7 @@
         {
           "say": "Chú rớt đồ tùm lum trước xe tui chú ơi.",
           "tone": "GAT",
-          "rel": -6,
           "anger": 45,
-          "mem": {
-            "kind": "RUDE_TO_THEM",
-            "intensity": 80
-          },
           "silent": true,
           "mood": "GIAN"
         },
@@ -1180,9 +909,6 @@
           "tone": "AM",
           "reply": "…Ờ. Mày đưa đây. Mày mà hở ra là tao nghỉ chơi mày.",
           "mood": "NGUONG",
-          "onKept": {
-            "rel": 2
-          },
           "act": {
             "kind": "PROMISE_DEED",
             "deed": "LAY_SO"
@@ -1210,40 +936,30 @@
       "source": "PLAYER_ONLY",
       "depth": "SHORT",
       "weight": 25,
-      "when": {
-        "day": [
-          5,
-          40
-        ]
-      },
       "opener": "Gì. Kêu tao chi.",
       "openMood": "LANH",
       "tree": [
         {
           "say": "Bữa nay chú bán được hông chú?",
           "tone": "THANG",
-          "rel": 1,
           "reply": "Được. Mà được nhiêu thì tao hổng nói mày.",
           "mood": "NGHIEM",
           "then": [
             {
               "say": "Tui hỏi cho có chớ tui đâu có rình chú.",
               "tone": "DUA",
-              "rel": 1,
               "reply": "Ha. Rình thì rình, mà đứng xa xa giùm.",
               "mood": "CUOI_KHAN"
             },
             {
               "say": "Lò chú sáng giờ ra mấy mẻ rồi chú?",
               "tone": "THANG",
-              "rel": 1,
               "reply": "Ba mẻ. Mẻ hai tao để già lửa, cháy mất một đầu.",
               "mood": "NGHIEM"
             },
             {
               "say": "Thôi. Hỏi cho có hà chú.",
               "tone": "LANH",
-              "rel": -1,
               "reply": "Biết ngay mà.",
               "mood": "LANH"
             }
@@ -1252,14 +968,12 @@
         {
           "say": "Thằng cha hồi nãy trả giá xong nó quạu với tui đó chú.",
           "tone": "CHUI",
-          "rel": 1,
           "reply": "Thứ đó ngày nào tao cũng gặp. Mày quen đi.",
           "mood": "NGHIEM"
         },
         {
           "say": "Chú đứng ngó xe tui hoài vậy chú.",
           "tone": "GAT",
-          "rel": -2,
           "anger": 20,
           "reply": "Tao ngó cái lò. Mày tưởng tao ngó mày hả.",
           "mood": "BUC"
@@ -1281,40 +995,30 @@
       "source": "PLAYER_ONLY",
       "depth": "SHORT",
       "weight": 20,
-      "when": {
-        "day": [
-          9,
-          40
-        ]
-      },
       "opener": "Nói đi. Tao nghe.",
       "openMood": "NGHIEM",
       "tree": [
         {
           "say": "Chú đi chợ bốn giờ sáng thiệt hả chú?",
           "tone": "DUA",
-          "rel": 1,
           "reply": "Bốn giờ. Mày ngủ thì tao đi. Bánh rẻ hơn được hai trăm một ổ.",
           "mood": "NGHIEM",
           "then": [
             {
               "say": "Hai trăm một ổ thì chú lời thêm nhiêu một ngày chú?",
               "tone": "THANG",
-              "rel": 1,
               "reply": "Bán tám chục ổ thì mười sáu ngàn. Mày thấy ít chớ tao thấy đủ một bữa cơm.",
               "mood": "NGHIEM"
             },
             {
               "say": "Chú chỉ con mối đó được hông chú?",
               "tone": "AM",
-              "rel": 2,
               "reply": "…Mày hỏi thiệt hả. Ờ. Lò bà Tám, dãy trong cùng. Nói tao giới thiệu.",
               "mood": "NGAC_NHIEN"
             },
             {
               "say": "Bốn giờ sáng thì chú ngủ hồi nào chú?",
               "tone": "AM",
-              "rel": 1,
               "reply": "Chín giờ tối tao nằm. Tao hổng coi tivi, coi là mất giấc.",
               "mood": "MET"
             }
@@ -1323,21 +1027,18 @@
         {
           "say": "Cái đám sáng giờ chê bánh tui mắc đó chú. Thứ gì đâu.",
           "tone": "CHUI",
-          "rel": 1,
           "reply": "Mày bán hai lăm thì có đứa trả mười lăm hoài. Quen đi.",
           "mood": "NGHIEM",
           "then": [
             {
               "say": "Vậy chú bị chê hoài hả chú?",
               "tone": "THANG",
-              "rel": 1,
               "reply": "Ngày nào cũng có. Tao nghe riết tao điếc. Mày mới bán nên mày xót.",
               "mood": "NGHIEM"
             },
             {
               "say": "Chú chỉ con nói sao cho người ta nghe lọt với chú.",
               "tone": "AM",
-              "rel": 2,
               "reply": "Đừng cãi giá. Đưa cho nó miếng ăn thử. Miệng nó cãi chớ bụng nó hổng cãi.",
               "mood": "NGHIEM",
               "need": [
@@ -1355,7 +1056,6 @@
         {
           "say": "Chú qua đây chi. Lo xe chú đi chú.",
           "tone": "GAT",
-          "rel": -2,
           "anger": 20,
           "reply": "Tao đứng đường tao. Mày la gì dữ vậy.",
           "mood": "BUC",
@@ -1384,19 +1084,12 @@
       "source": "PLAYER_ONLY",
       "depth": "SHORT",
       "weight": 18,
-      "when": {
-        "day": [
-          9,
-          40
-        ]
-      },
       "opener": "Ờ. Mày kêu tao chi.",
       "openMood": "LANH",
       "tree": [
         {
           "say": "Chú ăn gì chưa chú? Trưa trờ trưa trật rồi.",
           "tone": "AM",
-          "rel": 1,
           "reply": "…Chưa. Tao bán tao quên ăn. Mười năm rồi vậy.",
           "mood": "MET",
           "then": [
@@ -1408,9 +1101,6 @@
               "act": {
                 "kind": "FREE_LOAF"
               },
-              "onKept": {
-                "rel": 3
-              },
               "need": [
                 "!p.soldOut"
               ]
@@ -1418,7 +1108,6 @@
             {
               "say": "Mười năm quên ăn thì cái bao tử chú nó chịu sao chú.",
               "tone": "THANG",
-              "rel": 1,
               "reply": "Nó hổng chịu. Năm ngoái tao nằm bệnh viện một tuần. Rồi tao ra tao bán tiếp.",
               "mood": "MET"
             },
@@ -1433,7 +1122,6 @@
         {
           "say": "Mai chú bán mười lăm nữa thôi hả chú?",
           "tone": "DUA",
-          "rel": 1,
           "reply": "Ờ. Tao bán mười lăm tới chết. Mày lo chuyện mày đi.",
           "mood": "NGHIEM",
           "then": [
@@ -1446,7 +1134,6 @@
             {
               "say": "Vậy chú với con bán hai kiểu khác nhau ha chú.",
               "tone": "AM",
-              "rel": 2,
               "reply": "Ờ. Mày bán cho người có tiền, tao bán cho người đếm tiền lẻ. Hổng đụng nhau.",
               "mood": "NGHIEM"
             },
@@ -1461,7 +1148,6 @@
         {
           "say": "Chú nói chuyện với tui thì bỏ cái giọng đó đi chú.",
           "tone": "GAT",
-          "rel": -2,
           "anger": 25,
           "reply": "…Tao có giọng nào khác đâu. Mày chịu thì nghe.",
           "mood": "BUC"
@@ -1476,124 +1162,13 @@
       ]
     },
     {
-      "id": "kiet.nhochuyen",
-      "npc": "CHU_KIET",
-      "topic": "nhochuyen",
-      "source": "PLAYER_ONLY",
-      "depth": "SHORT",
-      "weight": 18,
-      "when": {
-        "day": [
-          4,
-          40
-        ],
-        "minVisits": 2
-      },
-      "about": [
-        "O_BANH",
-        "ORDER_DEFECT",
-        "BURNT_OR_COLD",
-        "XAU"
-      ],
-      "opener": "Ờ. Mày kêu tao chi.",
-      "openMood": "NGAC_NHIEN",
-      "practice": [
-        "GOI_MON",
-        "XEP_HANG",
-        "QUAY_VANG",
-        "NAN_LAI",
-        "DOI_BANH",
-        "DI_NGANG"
-      ],
-      "tree": [
-        {
-          "say": "Chú còn nhớ {m.what} hông chú?",
-          "tone": "AM",
-          "rel": 2,
-          "need": [
-            "m.remembers"
-          ],
-          "reply": "Nhớ. Tao bán hai chục năm, cái gì liên quan tới ổ bánh là tao nhớ hết.",
-          "mood": "NGHIEM",
-          "then": [
-            {
-              "say": "Chú chỉ con cách tránh được hông chú?",
-              "tone": "AM",
-              "rel": 2,
-              "need": [
-                "!c.angered"
-              ],
-              "reply": "Kẹp xong mày bóp thử cái vỏ. Nghe rột là được, nghe mềm là nó nguội rồi.",
-              "mood": "NGHIEM"
-            },
-            {
-              "say": "Chú nhớ chi cho mệt vậy chú.",
-              "tone": "DUA",
-              "reply": "Tao nhớ để tao khỏi làm lại. Mày hổng nhớ thì mày làm hoài.",
-              "mood": "NGHIEM"
-            },
-            {
-              "say": "Dạ con rút kinh nghiệm rồi chú.",
-              "tone": "THUONG",
-              "rel": 1,
-              "reply": "Ờ. Vậy mới là bán hàng.",
-              "mood": "NGHIEM"
-            }
-          ]
-        },
-        {
-          "say": "Bữa nay chú bán được bao nhiêu rồi chú?",
-          "tone": "THANG",
-          "rel": 1,
-          "reply": "Bốn chục ổ. Còn nửa thùng. Trưa tao bán hết.",
-          "mood": "NGHIEM",
-          "then": [
-            {
-              "say": "Chú bán hết sớm vậy hả chú?",
-              "tone": "DUA",
-              "rel": 1,
-              "reply": "Tao bán rẻ mà. Rẻ thì hết sớm, lời ít. Mày chọn kiểu nào thì chọn.",
-              "mood": "NGHIEM"
-            },
-            {
-              "say": "Con còn ế quá chú ơi.",
-              "tone": "THANG",
-              "reply": "Mới bán mấy bữa mà đòi hết hàng. Tao năm đầu tao đổ bánh hoài.",
-              "mood": "NGHIEM"
-            },
-            {
-              "say": "Ừ. Chú bán đi chú.",
-              "tone": "LANH",
-              "reply": "Ờ.",
-              "mood": "LANH"
-            }
-          ]
-        },
-        {
-          "say": "Thôi. Hổng có gì đâu chú.",
-          "tone": "LANH",
-          "reply": "…Ờ. Vậy đừng kêu.",
-          "mood": "LANH"
-        }
-      ]
-    },
-    {
       "id": "kiet.hethang",
       "npc": "CHU_KIET",
       "topic": "hethang",
       "source": "NPC_ONLY",
       "depth": "SHORT",
       "weight": 16,
-      "when": {
-        "day": [
-          5,
-          40
-        ]
-      },
       "initiates": 0.3,
-      "ignore": {
-        "rel": -1
-      },
       "opener": "Ê. Tao hết bánh rồi. Bán tao một ổ. Mà đừng có kể ai nghen.",
       "openMood": "NGUONG",
       "practice": [
@@ -1606,28 +1181,24 @@
         {
           "say": "Dạ chú lấy ổ nào chú? Con làm đầy đủ nghen.",
           "tone": "AM",
-          "rel": 2,
           "reply": "Ờ. Đầy đủ. Mà bỏ ít rau, tao ăn rau nó đầy bụng.",
           "mood": "NGHIEM",
           "then": [
             {
               "say": "Chú hết hàng sớm vậy là chú bán đắt rồi chú.",
               "tone": "AM",
-              "rel": 2,
               "reply": "Ờ. Bữa nay đắt. Mà đắt thì hết sớm, hết sớm thì đói. Nghề này vậy đó.",
               "mood": "NGHIEM"
             },
             {
               "say": "Con hổng kể ai đâu chú.",
               "tone": "THUONG",
-              "rel": 2,
               "reply": "…Ờ. Mày biết điều. Tao bán hai chục năm mà qua mua bánh con nít, kỳ thấy mồ.",
               "mood": "NGUONG"
             },
             {
               "say": "Chú ăn thử rồi chú nói con nghe nó dở chỗ nào chú.",
               "tone": "THANG",
-              "rel": 1,
               "reply": "Ờ. Tao nói thiệt đó, đừng có giận.",
               "mood": "NGHIEM",
               "need": [
@@ -1648,9 +1219,6 @@
           "act": {
             "kind": "DISCOUNT",
             "vnd": 10000
-          },
-          "onKept": {
-            "rel": 3
           },
           "need": [
             "!p.soldOut"

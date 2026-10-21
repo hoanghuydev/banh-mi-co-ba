@@ -29,15 +29,12 @@ const VISIBILITY: Record<Zone, Record<Slot, number>> = {
 };
 
 export const SALIENCE: Record<StimId, number> = {
-  WRONG_NAME: 100,
   MADE_THEM_WAIT: 100,
   BURNT_OR_COLD: 80,
   DROPPED_FOOD: 75,
   ORDER_DEFECT: 20,
   DIRTY_HANDS: 40,
   REFUSED_SERVICE: 85,
-  REMEMBERED_USUAL: 90,
-  REMEMBERED_STORY: 70,
   CARED_FOR_THEM: 50,
   FREE_EXTRA: 25,
   FLOURISH: 15,
@@ -48,16 +45,13 @@ export const SALIENCE: Record<StimId, number> = {
  *  · AUDIO_DIRECTED: nói thẳng vào MỘT người → bỏ qua gaze, chỉ người đó nghe
  *  · SMELL: gaze có sàn (đang bấm điện thoại vẫn ngửi thấy khét)
  *  · MADE_THEM_WAIT đi kênh THỜI GIAN riêng của từng khách, không phải kích thích chung
- *  · REMEMBERED_USUAL là sự kiện lúc giao bánh, không phải thứ để "bắt gặp"
  */
 type StimSpec = { lifetime: number; channel: "VISUAL" | "AUDIO_DIRECTED" | "AUDIO_AMBIENT" | "SMELL"; gazeFloor?: number };
 export const STIM_SPEC: Partial<Record<StimId, StimSpec>> = {
-  WRONG_NAME:       { lifetime: 1.2, channel: "AUDIO_DIRECTED" },
   BURNT_OR_COLD:    { lifetime: 12.0, channel: "SMELL", gazeFloor: 0.40 },
   DROPPED_FOOD:     { lifetime: 3.5, channel: "AUDIO_AMBIENT" },
   ORDER_DEFECT:     { lifetime: 8.0, channel: "VISUAL" },
   DIRTY_HANDS:      { lifetime: 6.0, channel: "VISUAL" },
-  REMEMBERED_STORY: { lifetime: 2.5, channel: "AUDIO_DIRECTED" },
   CARED_FOR_THEM:   { lifetime: 3.0, channel: "AUDIO_DIRECTED" },
   FREE_EXTRA:       { lifetime: 3.0, channel: "VISUAL" },
   FLOURISH:         { lifetime: 3.0, channel: "VISUAL" },
@@ -124,7 +118,7 @@ export type Observer = {
 
 /**
  * CANON §4 (chốt ở P1-02): `soi = 0.5` cho đúng 1.000, nên "khách chuẩn" trong mọi
- * bảng hiệu chỉnh là một NPC có thật (Ông Hải / Chị Hạnh). KHÔNG BAO GIỜ gắn với quan hệ.
+ * bảng hiệu chỉnh là một NPC có thật (Ông Hải / Chị Hạnh).
  */
 export function traitMulFrom(soi: number) {
   return Math.min(2.2, Math.max(0.5, 0.65 + 0.70 * soi));

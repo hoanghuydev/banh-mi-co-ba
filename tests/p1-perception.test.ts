@@ -118,20 +118,20 @@ test("câu gọi món TỰ NÓ quyết định ổ bánh: làm theo câu là 0 l
     const spec = specOf({
       mon: rng.pick(MENU_IDS),
       rau: rng.next() < 0.5 ? "it" : "day-du",
-      ot: rng.pick([0, 1, 2] as const), tuong: rng.pick([0, 1, 2] as const), usual: false,
+      ot: rng.pick([0, 1, 2] as const), tuong: rng.pick([0, 1, 2] as const),
     });
     assert.deepEqual(diffDish(spec, dishFor(spec)), [], sayOrder(spec));
   }
 });
 
 test("'cho ít rau' là rau MỘT NỬA, không cấm hành ngò (P1-03 §2.3 luật vàng)", () => {
-  const spec = specOf({ mon: "pate", rau: "it", ot: 1, tuong: 1, usual: false });
+  const spec = specOf({ mon: "pate", rau: "it", ot: 1, tuong: 1 });
   assert.equal(spec.levels.hanhngo, 1);
   assert.ok(!sayOrder(spec).includes("đầy đủ"));
 });
 
-test("thang hai nấc: kể tên là một phần, 'nhiều' là hai phần — không còn nấc nào khác", () => {
-  const spec = specOf({ mon: "daydu", nhieu: "thit", rau: "day-du", ot: 2, tuong: 1, usual: false });
+test("thang hai nấc: kể tên là một phần, 'nhiều' là hai phần — không có nấc nào khác", () => {
+  const spec = specOf({ mon: "daydu", nhieu: "thit", rau: "day-du", ot: 2, tuong: 1 });
   assert.equal(spec.levels.pate, 1);
   assert.equal(spec.levels.thit, 2);
   assert.equal(spec.levels.dochua, 2);
@@ -141,11 +141,10 @@ test("thang hai nấc: kể tên là một phần, 'nhiều' là hai phần — 
 });
 
 /**
- * Thang ngắn lại thì lệch một nấc là lệch NỬA ổ thứ đó, không còn là một phần ba —
- * nó phải nặng hơn hồi bốn nấc, và tuyệt đối không được tụt xuống "trong dung sai".
+ * Thang hai nấc thì lệch một nấc là lệch NỬA ổ thứ đó — không được tụt xuống "trong dung sai".
  */
 test("lệch một nấc vẫn là WRONG_RATIO, cả thiếu lẫn thừa", () => {
-  const spec = specOf({ mon: "pate", nhieu: "pate", rau: "day-du", ot: 1, tuong: 1, usual: false });
+  const spec = specOf({ mon: "pate", nhieu: "pate", rau: "day-du", ot: 1, tuong: 1 });
   const thieu = dishFor(spec).filter((x, i) => !(x === "pate" && i === 0));   // pate 2 → 1
   const d1 = diffDish(spec, thieu);
   assert.equal(d1.length, 1);
@@ -154,7 +153,7 @@ test("lệch một nấc vẫn là WRONG_RATIO, cả thiếu lẫn thừa", () =
   assert.equal(d1[0].dir, "under");
   assert.ok(d1[0].magnitude > 0.25, "nặng hơn mức lệch một nấc của thang bốn nấc");
 
-  const nheo = specOf({ mon: "pate", rau: "day-du", ot: 1, tuong: 1, usual: false });
+  const nheo = specOf({ mon: "pate", rau: "day-du", ot: 1, tuong: 1 });
   const thua = [...dishFor(nheo), "pate" as Ingredient];                      // pate 1 → 2
   const d2 = diffDish(nheo, thua);
   assert.equal(d2.length, 1);
@@ -170,7 +169,7 @@ test("lệch một nấc vẫn là WRONG_RATIO, cả thiếu lẫn thừa", () =
  * không thành lỗi, vừa còn đếm được, không thì `Service.freeExtra()` không bao giờ bắn.
  */
 test("cho thêm một phần đồ chua / ớt: không phải lỗi, và vẫn đếm là hào phóng", () => {
-  const spec = specOf({ mon: "pate", rau: "it", ot: 1, tuong: 1, usual: false });
+  const spec = specOf({ mon: "pate", rau: "it", ot: 1, tuong: 1 });
   const hao = [...dishFor(spec), "dochua" as Ingredient, "ot" as Ingredient];
   assert.deepEqual(diffDish(spec, hao), []);
   assert.ok(generosityOf(spec, hao) > 0, "Service.freeExtra() sống bằng dấu > 0 này");
@@ -181,11 +180,10 @@ test("cho thêm một phần đồ chua / ớt: không phải lỗi, và vẫn �
 });
 
 /**
- * §8(i) — hào phóng phải TỐN. Tính bằng số phần thì ớt với tương là cách cày thiện cảm
- * rẻ nhất trong game; tính bằng giá chợ thì không ai cày nổi.
+ * §8(i) — hào phóng phải TỐN: tính bằng giá chợ, không bằng số phần (ớt với tương rẻ quá).
  */
 test("hào phóng tính theo giá chợ: ớt rẻ hơn đồ chua, và cho hết cỡ vẫn chưa bằng một lát thịt", () => {
-  const spec = specOf({ mon: "pate", rau: "it", ot: 1, tuong: 1, usual: false });
+  const spec = specOf({ mon: "pate", rau: "it", ot: 1, tuong: 1 });
   const them = (id: Ingredient) => generosityOf(spec, [...dishFor(spec), id]);
   assert.ok(them("ot") < them("dochua"), "một nhúm ớt 0,35k không bằng một gắp đồ chua 0,44k");
   assert.ok(them("hanhngo") < them("tuongot"));
@@ -202,23 +200,17 @@ test("salience lỗi theo doc: MISSING đồ chua 20 tại quầy / 100 lúc ăn
   assert.ok(mkDefect("MISSING", "pate").sCounter > mkDefect("MISSING", "hanhngo").sCounter);
 });
 
-test("không bao giờ trừ tiền bánh: tệ nhất là không có boa", () => {
+test("không bao giờ trừ tiền bánh vì làm thiếu", () => {
   const bus = new Bus();
   const h = new HeadlessStall(newGame("t", "tip-1"), { ...POLICIES.greedy, workSec: [1e9, 1e9] }, { bus });
   h.run({ until: (x) => x.service.front?.phase === "waiting" });
   const dish = dishFor(h.service.front!.order!);
   h.service.serveDish(dish.slice(0, -1));         // thiếu MỘT thứ — vẫn là món khách gọi
   const paid = h.service.drain().find((e) => e.kind === "paid");
-  assert.ok(paid && paid.kind === "paid" && paid.amount >= 25_000 && paid.tip === 0);
+  assert.ok(paid && paid.kind === "paid" && paid.amount >= 25_000);
 });
 
-/**
- * Ranh giới của luật trên. §2.12 là mục TIỀN BOA: "không có cơ chế trừ tiền, tệ nhất là
- * không tip" — nó không nói ổ nào cũng bán bằng giá món khách gọi. Ổ không có một miếng
- * nhân mặn nào THẬT SỰ là bánh mì không, nên tính đúng bậc `khong` của thực đơn
- * (P3-03 §2.5). Boa vẫn 0, không âm. Thiếu bao nhiêu thứ đi nữa mà còn nhân mặn thì
- * vẫn giá cũ — test ngay trên giữ chỗ đó.
- */
+/** Ranh giới của luật trên: ổ không có miếng nhân mặn nào THẬT SỰ là bánh mì không (P3-03 §2.5). */
 test("ổ không có miếng nhân mặn nào = bánh mì không, 10.000₫ (P3-03 §2.5)", () => {
   const bus = new Bus();
   const h = new HeadlessStall(newGame("t", "tip-1"), { ...POLICIES.greedy, workSec: [1e9, 1e9] }, { bus });
@@ -226,7 +218,7 @@ test("ổ không có miếng nhân mặn nào = bánh mì không, 10.000₫ (P3-
   takesAnything(h.service.front!);
   h.service.serveDish([]);
   const paid = h.service.drain().find((e) => e.kind === "paid");
-  assert.ok(paid && paid.kind === "paid" && paid.amount === 10_000 && paid.tip === 0);
+  assert.ok(paid && paid.kind === "paid" && paid.amount === 10_000);
 });
 
 test("ANTICIPATED khi đứng nhìn thẳng lúc gói, DISCOVERED khi không ai kịp thấy", () => {

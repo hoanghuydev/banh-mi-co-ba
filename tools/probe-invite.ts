@@ -8,7 +8,7 @@ import { eligible, hasInvite, kindOf } from "../src/sim/talk";
 const w = newGame("inv", "p209");
 const bus = new Bus(false);
 const platform = memoryPlatform();
-for (let d = 1; d < 5; d++) nextDay(w, bus);
+for (let d = 1; d < 5; d++) nextDay(w);
 const h = new HeadlessStall(w, POLICIES.greedy, { bus, platform });
 const svc = (h as unknown as { service: any }).service;
 await svc.talks.ensure("QUA_DUONG");
@@ -34,7 +34,7 @@ for (let i = 0; i < 3000 && n < 4; i++) {
       const why = [
         t.npc !== ctx.npcId && t.npc !== "ANY" ? "npc" : "",
         t.source === "NPC_ONLY" ? "source" : "",
-        ctx.usedSeason.includes(t.id) ? "usedSeason" : "",
+        ctx.usedBefore.includes(t.id) ? "usedBefore" : "",
         ctx.usedToday.includes(t.topic) ? "usedToday" : "",
       ].filter(Boolean);
       const w2 = t.when;

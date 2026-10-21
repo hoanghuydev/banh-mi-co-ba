@@ -26,7 +26,7 @@ test("TB-1: món nào cũng có một câu về cảm giác; món mua được t
   }
 });
 
-test("TB-3 đã gỡ: KHÔNG món nào còn khai nhược điểm (chủ dự án: \"không cần nhược điểm món đồ\")", () => {
+test("TB-3 KHÔNG món nào khai nhược điểm", () => {
   const raw = read(join(ROOT, "src/content/econ/equipment.json"));
   assert.ok(!/"drawbacks"\s*:/.test(raw), "`drawbacks` còn trong dữ liệu — mua là được, không cân đo");
   // Đọc CHỖ DÙNG (`d.drawbacks`), không bắt chữ trong chú thích — chú thích còn nói tới nó là đúng,
@@ -69,23 +69,22 @@ test("TB-5 con số trên thẻ khớp con số trong mã", () => {
 });
 
 test("TB-4: xe vẫn không chứa nổi mọi thứ — nhưng chỉ thiếu một hai món, không phải một bài toán", () => {
-  const maxCap = CART.baseSlots + 2;                        // nền 12 + giá treo (khung gia cố đã bỏ)
+  const maxCap = CART.baseSlots + 2;                        // nền 12 + giá treo
   const allSlots = EQUIP_IDS.reduce((a, id) => a + Math.max(0, EQUIP[id].slots), 0)
-    - EQUIP.LO_THAN.slots - EQUIP.THUNG_XOP.slots;          // hai món đầu mùa bị thay chứ không cộng dồn
+    - EQUIP.LO_THAN.slots - EQUIP.THUNG_XOP.slots;          // hai món ban đầu bị thay chứ không cộng dồn
   assert.ok(allSlots > maxCap, `mua hết vẫn vừa xe (${allSlots} ≤ ${maxCap}) — sức chứa thôi là một lựa chọn`);
   assert.ok(allSlots - maxCap <= 4, `thiếu tới ${allSlots - maxCap} ô — chật như vậy thì lại thành bài toán`);
 });
 
-test("đầu mùa: lò than + thùng xốp chiếm 4 ô, còn 8 ô trống", () => {
+test("lúc bắt đầu: lò than + thùng xốp chiếm 4 ô, còn 8 ô trống", () => {
   const e = newEquipState();
   assert.equal(capacity(e), 12);
   assert.equal(used(e), 4);
 });
 
-test("mua tủ mát thay thùng xốp (+1 ô ròng, thùng xốp bán lại được); lò điện thay lò than (lò của cô Ba không bán)", () => {
+test("mua tủ mát thay thùng xốp (+1 ô ròng, thùng xốp bán lại được); lò điện thay lò than (lò than không bán)", () => {
   const e = newEquipState(); const m = { cash: 10_000_000 };
-  // Tủ mát KHÔNG còn cổng `requiresAny`: hai món nó từng đòi (thớt riêng / vòi rửa) đã bỏ.
-  assert.equal(whyNot("TU_MAT", e, m.cash, 30, {}), null);
+  assert.equal(whyNot("TU_MAT", e, m.cash), null);
   const before = m.cash;
   buyEquip("TU_MAT", e, m);
   assert.ok(!has(e, "THUNG_XOP") && has(e, "TU_MAT"));
@@ -96,7 +95,7 @@ test("mua tủ mát thay thùng xốp (+1 ô ròng, thùng xốp bán lại đư
   assert.equal(used(e), 3 + 3);                                           // tủ mát 3 + lò điện 3
 });
 
-test("bán lại = 60% giá; bán lò điện thì lò than của cô Ba vẫn còn đó", () => {
+test("bán lại = 60% giá; bán lò điện thì lò than vẫn còn đó", () => {
   const e = newEquipState(); const m = { cash: 10_000_000 };
   buyEquip("LO_DIEN", e, m);
   const v = sellEquip("LO_DIEN", e, m);
@@ -128,16 +127,11 @@ test("cái xe LÀ bảng thành tựu: không achievement / toast / progress bar
 /*
  * ─────────────────────────────────────────────────────────────────────────────
  * ĐỒ CHƯA MUA THÌ KHÔNG ĐƯỢC CÓ MẶT — CẢ VỀ HÌNH LẪN VỀ CHỖ ĐỨNG
- *
- * Lượt trước mới làm nửa đầu: `StallScene.propHidden` thôi vẽ bốn ô đạo cụ mua được, nhưng
- * `isBlocked` vẫn đọc bản đồ gốc. Chủ dự án chơi và bắt được ngay: *"hiện tại nếu chưa mua ghế
- * thì ghế ẩn rồi. Nhưng mà cái chỗ ô của ghế vẫn bị chiếm chỗ chứ không hề bỏ ra"* — tức là một
- * cái ghế VÔ HÌNH chặn đường, lỗi tệ hơn hẳn cái ghế thừa vì không ai đọc ra nổi chuyện gì.
  */
 
 test("TB-6 bốn ô đạo cụ mua được trỏ vào món CÓ THẬT, và ký tự của chúng CÓ THẬT trên bản đồ", () => {
   // `BUYABLE_TILES` để giá trị kiểu `string` vì `world/` không được biết tới `sim/`. Chỗ hở đó
-  // bịt ở đây: gõ sai một mã là không món nào khớp, rồi cái ô ấy lặng lẽ mở suốt cả mùa.
+  // bịt ở đây: gõ sai một mã là không món nào khớp, rồi cái ô ấy lặng lẽ mở mãi.
   for (const [code, id] of Object.entries(BUYABLE_TILES)) {
     assert.ok(EQUIP_IDS.includes(id as EquipId), `ô "${code}" trỏ vào món không có: ${id}`);
     assert.ok(MAP.some((row) => row.includes(code)), `ký tự "${code}" không có trên bản đồ`);

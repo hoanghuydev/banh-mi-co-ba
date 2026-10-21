@@ -80,16 +80,16 @@
    "audio/sfx/sfx_buoc_chan.3.mp3"
   ]
  },
- "sfx_buoc_co_ba": {
+ "sfx_buoc_chu_quan": {
   "bus": "thaoTac",
-  "desc": "buoc chan co Ba tren nen xi mang trong quay",
+  "desc": "buoc chan chu quan tren nen xi mang trong quay",
   "files": [
-   "audio/sfx/sfx_buoc_co_ba.0.mp3",
-   "audio/sfx/sfx_buoc_co_ba.1.mp3",
-   "audio/sfx/sfx_buoc_co_ba.2.mp3",
-   "audio/sfx/sfx_buoc_co_ba.3.mp3",
-   "audio/sfx/sfx_buoc_co_ba.4.mp3",
-   "audio/sfx/sfx_buoc_co_ba.5.mp3"
+   "audio/sfx/sfx_buoc_chu_quan.0.mp3",
+   "audio/sfx/sfx_buoc_chu_quan.1.mp3",
+   "audio/sfx/sfx_buoc_chu_quan.2.mp3",
+   "audio/sfx/sfx_buoc_chu_quan.3.mp3",
+   "audio/sfx/sfx_buoc_chu_quan.4.mp3",
+   "audio/sfx/sfx_buoc_chu_quan.5.mp3"
   ]
  },
  "sfx_chim_se": {
@@ -225,16 +225,6 @@
    "audio/sfx/sfx_khet.0.mp3"
   ]
  },
- "sfx_lat_so": {
-  "bus": "thaoTac",
-  "desc": "lat trang so no / so tay",
-  "files": [
-   "audio/sfx/sfx_lat_so.0.mp3",
-   "audio/sfx/sfx_lat_so.1.mp3",
-   "audio/sfx/sfx_lat_so.2.mp3",
-   "audio/sfx/sfx_lat_so.3.mp3"
-  ]
- },
  "sfx_lau_khan": {
   "bus": "thaoTac",
   "desc": "lau khan len mat xe / thot",
@@ -357,15 +347,6 @@
    "audio/sfx/sfx_tien_le.3.mp3"
   ]
  },
- "sfx_viet_but": {
-  "bus": "thaoTac",
-  "desc": "viet but bi len giay — canh toi, so tay",
-  "files": [
-   "audio/sfx/sfx_viet_but.0.mp3",
-   "audio/sfx/sfx_viet_but.1.mp3",
-   "audio/sfx/sfx_viet_but.2.mp3"
-  ]
- },
  "sfx_vo_gion": {
   "bus": "thaoTac",
   "desc": "vo banh nut / bop nghe gion",
@@ -469,13 +450,6 @@
   "desc": "mo menu",
   "files": [
    "audio/sfx/ui_mo_menu.0.mp3"
-  ]
- },
- "ui_mo_so_tay": {
-  "bus": "amBao",
-  "desc": "mo so tay",
-  "files": [
-   "audio/sfx/ui_mo_so_tay.0.mp3"
   ]
  },
  "ui_ngay_am_tien": {

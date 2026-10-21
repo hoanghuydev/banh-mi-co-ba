@@ -1,11 +1,4 @@
-/**
- * MỖI NGƯỜI CÓ TÊN SỐNG TRONG KHUNG CẢNH NÀO — và kho thoại của họ gắn thẻ khung nào.
- *
- * `okPractice` là cổng im lặng nhất của cả hệ: thẻ gắn trật thì cuộc không bao giờ rút ra
- * được, mà không có lỗi nào nổ. `tools/probe-act.ts` chỉ ra sáu act "chưa bao giờ đủ điều
- * kiện"; máy này nói VÌ SAO — so khung cảnh người đó THẬT SỰ ở, với khung cảnh kho thoại
- * của họ KHAI.
- */
+/** So khung cảnh mỗi người có tên THẬT SỰ ở với thẻ khung kho thoại KHAI, để tìm cuộc bị `okPractice` chôn im lặng. */
 import { Bus } from "../src/core/eventbus";
 import { newGame } from "../src/core/save";
 import { memoryPlatform } from "../src/core/platform";
@@ -23,7 +16,7 @@ const o = new Map<string, Record<string, number>>();
 const w = newGame("khung", "p210");
 const bus = new Bus(false);
 const platform = memoryPlatform();
-for (let d = 1; d < 5; d++) nextDay(w, bus);
+for (let d = 1; d < 5; d++) nextDay(w);
 for (let ngay = 0; ngay < NGAY; ngay++) {
   const h = new HeadlessStall(w, POLICIES.social, { bus, platform });
   const svc = (h as unknown as { service: any }).service;
@@ -38,7 +31,7 @@ for (let ngay = 0; ngay < NGAY; ngay++) {
       o.set(c.memKey, r);
     }
   }
-  nextDay(w, bus);
+  nextDay(w);
 }
 
 console.log(`\n${NGAY} buổi · khung cảnh người đó THẬT SỰ ở (%), và thẻ kho thoại KHAI\n`);

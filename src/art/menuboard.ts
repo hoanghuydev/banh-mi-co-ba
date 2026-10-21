@@ -7,11 +7,10 @@ import { FONT } from "../ui/theme";
 import { MENU_BOARD } from "../sim/menu";
 
 /**
- * BẢNG MENU TREO VÁCH — tấm tôn sơn tay của cô Ba, treo cạnh bảng hiệu.
+ * BẢNG MENU TREO VÁCH — tấm tôn sơn tay, treo cạnh bảng hiệu.
  *
- * P4-01 §prop_a chốt chuyện này: xe của chú Kiệt có "bảng menu IN DECAL", và *"đây là
- * toàn bộ chủ đề của game gói trong hai cái bảng"*. Nên tấm này phải TRÔNG RA LÀ VẼ TAY:
- * nghiêng chừng một độ, chữ không đều cột, một vệt sơn lem ở góc, mép tôn gỉ.
+ * Tấm này phải TRÔNG RA LÀ VẼ TAY: nghiêng chừng một độ, chữ không đều cột, một vệt sơn
+ * lem ở góc, mép tôn gỉ.
  *
  * Cùng kỹ thuật với `art/sign.ts`: bảng phải NẰM TRONG mặt phẳng vách, nên tấm bảng là
  * hình bình hành nghiêng đúng độ dốc của vách và chữ xoay đúng góc đó. Vẽ chữ nhật thẳng
@@ -30,7 +29,7 @@ const HALF_W = 40;
 const HALF_H = 24;
 /** Cách mép trên của tường bao nhiêu px, đo dọc theo mặt vách — ngang tầm bảng hiệu. */
 const DROP = 28;
-/** Treo bằng một cái đinh nên nó lệch — bảng in decal thì không bao giờ lệch. */
+/** Treo bằng một cái đinh nên nó lệch. */
 const TILT = 0.015;
 
 export function createMenuBoard(scene: Phaser.Scene, sx: number, sy: number, depth: number) {

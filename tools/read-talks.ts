@@ -1,13 +1,4 @@
-/**
- * npx tsx tools/read-talks.ts [KHO] [--all]
- *
- * In TRỌN một cuộc trò chuyện dưới dạng kịch bản đọc được — không phải bảng cổng.
- *
- * Có mặt vì mọi công cụ trước đó chỉ soi NHỊP ĐẦU (`show-talk`) hoặc một lượt chơi
- * (`play-passers`), nên cái dở nằm ở nhịp hai trở đi không ai thấy. Chủ dự án đọc game
- * thật rồi nói *"trông nó đần lắm, chả ai nói như vậy cả"* — muốn chữa thì phải ĐỌC, và
- * muốn đọc thì phải in ra đúng hình dạng một đoạn đối thoại.
- */
+/** npx tsx tools/read-talks.ts [KHO] [--all] — in trọn một cuộc trò chuyện dưới dạng kịch bản đọc được. */
 import { TalkStore } from "../src/content/talks";
 import { MAX_DEPTH, needKeys, type Talk, type TalkNode } from "../src/sim/talk";
 

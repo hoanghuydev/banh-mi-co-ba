@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Bus } from "../src/core/eventbus";
 import { memoryPlatform } from "../src/core/platform";
-import { Telemetry, estimateSeason, type DayMetrics } from "../src/core/telemetry";
+import { Telemetry } from "../src/core/telemetry";
 import { newGame } from "../src/core/save";
 import { HeadlessStall, POLICIES } from "../src/sim/headless";
 
@@ -35,16 +35,6 @@ test("DayMetrics sinh đủ field sau mỗi day:ended, pause tách khỏi thời
   for (const k of ["stimEmitted", "confirmRate", "attentionToolUses", "barkTierMix", "saveWriteMsP99", "bubblePoolSteals"] as const) {
     assert.ok(k in m, `thiếu ${k}`);
   }
-});
-
-test("bảng quyết định §2.1: < 4 giờ là QUÁ NGẮN, 6–8 là vùng mục tiêu, > 10 là QUÁ DÀI", () => {
-  const day = (min: number) => ({ realMsActive: min * 60_000, realMsTotal: min * 60_000 } as DayMetrics);
-  const five = (min: number) => Array.from({ length: 5 }, () => day(min));
-  assert.match(estimateSeason(five(5)).verdict, /QUÁ NGẮN/);
-  assert.match(estimateSeason(five(10)).verdict, /VÙNG MỤC TIÊU/);
-  assert.match(estimateSeason(five(16)).verdict, /QUÁ DÀI/);
-  assert.match(estimateSeason([day(10)]).verdict, /chưa đủ để chốt/);
-  assert.equal(estimateSeason(five(10)).seasonHours, 6.67);
 });
 
 test("telemetry tắt thì không ghi gì", () => {

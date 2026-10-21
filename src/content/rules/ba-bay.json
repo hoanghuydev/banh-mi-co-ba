@@ -1,5 +1,5 @@
 {
-  "_note": "Bà Bảy — người soi nhất hẻm nhưng dễ tha, an toàn để học luật (CANON §9). Rule chép từ mẫu của P2-01 §2.12 (vesinh.rules.yaml, chuỗi cải lương), đổi sang JSON. Nhiều criterion hơn rule generic nên thắng khi khớp.",
+  "_note": "Bà Bảy — người soi nhất hẻm nhưng dễ tha, an toàn để học luật (CANON §9). Rule theo mẫu P2-01 §2.12. Nhiều criterion hơn rule generic nên thắng khi khớp.",
   "rules": [
     { "id": "bay.drop.t1.lan1", "concept": "NOTICE_EVENT",
       "when": { "npcId": "BA_BAY", "eventId": "DROPPED_FOOD", "obsState": ">=NOTICED", "ctxSawDropToday": "absent", "ctxBarkT1_DROP": "absent", "queueLength": "<=4" },
@@ -15,10 +15,6 @@
     { "id": "bay.drop.follow.bobanh", "concept": "NOTICE_FOLLOW",
       "when": { "npcId": "BA_BAY", "ctxSawDropToday": true, "queueLength": "<=3" },
       "say": ["Bỏ đi con, cô chờ được mà.", "Làm lại ổ khác đi, cô không gấp."] },
-
-    { "id": "bay.lodien.aroma", "concept": "DELIVERY",
-      "when": { "npcId": "BA_BAY", "defectCount": 0, "equipLoDien": true, "npcVisitCount": ">=12" },
-      "say": ["Hồi đó cái lò than của cô Ba thơm lắm. Mà thôi, nhanh cũng được."], "odds": 18, "norepeat": true },
 
     { "id": "bay.flourish", "concept": "NOTICE_EVENT",
       "when": { "npcId": "BA_BAY", "eventId": "FLOURISH", "obsState": ">=NOTICED" },
@@ -37,7 +33,7 @@
       "applycontext": { "ctxNhacQuayDo": { "value": 1, "duration": -1 } } },
 
     { "id": "bay.cailuong.1", "concept": "SMALLTALK",
-      "when": { "npcId": "BA_BAY", "queueLength": "<=2", "ctxNhacCaiLuong": "absent", "npcRelTier": ">=ACQUAINTANCE", "npcVisitCount": ">=3" },
+      "when": { "npcId": "BA_BAY", "queueLength": "<=2", "ctxNhacCaiLuong": "absent", "npcVisitCount": ">=3" },
       "say": ["Con biết hông, hồi xưa cô mê cải lương dữ lắm."],
       "odds": 35, "norepeat": true,
       "applycontext": { "ctxNhacCaiLuong": { "value": 1, "duration": 240 }, "ctxDangDocThoai": { "value": 1, "duration": 30 } },
@@ -59,10 +55,6 @@
     { "id": "bay.bye.waited", "concept": "FAREWELL",
       "_note": "Soi nhất hẻm mà dễ tha nhất: chờ mỏi chưn vẫn đứng tới cùng, rồi đi ra còn dặn một câu. Đây là chỗ người chơi học được rằng soi không có nghĩa là khó.",
       "when": { "npcId": "BA_BAY", "leaveReason": "SERVED", "serveOutcome": "WAITED" }, "odds": 80,
-      "say": ["Lâu thì lâu, mà con làm kỹ là cô chịu rồi.", "Cô đứng nãy giờ đó nghen. Thôi, mai làm lẹ chút.", "Hồi nãy đông quá ha. Cô hiểu mà con."] },
-    { "id": "bay.del.nohabit", "concept": "DELIVERY",
-      "_note": "Người soi nhất hẻm là người đầu tiên thấy cái nếp gãy — và cũng là người nói thẳng ra. Bốn criterion nên thắng dòng gen.del.nohabit.",
-      "when": { "npcId": "BA_BAY", "defectCount": 0, "extraHabitBroken": true, "freeExtraTooMuch": false },
-      "say": ["Mấy bữa con cho cô thêm miếng, bữa nay hết rồi hả?", "Ủa, bữa nay khác mọi bữa à nghen con.", "Cô quen có thêm rồi đó con."] }
+      "say": ["Lâu thì lâu, mà con làm kỹ là cô chịu rồi.", "Cô đứng nãy giờ đó nghen. Thôi, mai làm lẹ chút.", "Hồi nãy đông quá ha. Cô hiểu mà con."] }
   ]
 }

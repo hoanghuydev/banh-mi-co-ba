@@ -1,8 +1,7 @@
 /**
  * PHÁ `GIVE_BREAD` VÀ `STAND_IN_SHADE` — viết theo lối ĐI TÌM LỖI, không đi tìm cái gật.
  *
- * Chủ dự án: *"test theo tư duy counter chứ đừng đồng ý"*. Nên mỗi lưới dưới đây hỏi
- * **"bấm kiểu gì thì nó vỡ"**, không hỏi "trường hợp thường có chạy không":
+ * Mỗi lưới dưới đây hỏi **"bấm kiểu gì thì nó vỡ"**, không hỏi "trường hợp thường có chạy không":
  *
  *   · bấm hai lần · bấm khi tay không · bấm khi hết bánh · bấm khi chỗ mát đã có người
  *   · bấm cho người đã ăn rồi · bấm cho người ĐANG xếp hàng · bấm rồi bỏ đi
@@ -25,7 +24,7 @@ const TALKS: Talk[] = await TalkStore.loadAll();
 async function quan(ngay = 9) {
   const w = newGame("pha", "p210");
   const bus = new Bus(false);
-  for (let d = 1; d < ngay; d++) nextDay(w, bus);
+  for (let d = 1; d < ngay; d++) nextDay(w);
   const h = new HeadlessStall(w, POLICIES.social, { bus, platform: memoryPlatform() });
   const svc = (h as unknown as { service: any }).service;
   for (const k of [...TALK_NPC_IDS, "WALKIN", "QUA_DUONG", "ANY"]) await svc.talks.ensure(k);
@@ -69,10 +68,8 @@ test("PHA-3 mọi nút `GIVE_BREAD` phải khoá TAY CÓ BÁNH — không thì n
 
 test("PHA-4 câu ĐƯA Ổ ĐÃ BÁN không được mang `GIVE_BREAD` — nếu không là bán mà cho không", () => {
   /*
-   * Mấy tờ rà đòi 31 nút `GIVE_BREAD`, phần lớn là câu kiểu *"Dạ ổ của chị đây chị."*
-   * Nhưng ổ đó đi qua `serveDish` rồi — gắn thêm act là ổ RỜI TAY MỘT LẦN NỮA, miễn phí,
-   * cộng một vết nhớ `CARED_FOR_THEM` cho một vụ mua bán bình thường. Lưới này giữ ranh
-   * giới đó, và cũng là lý do tôi KHÔNG nối đủ 31 nút.
+   * Câu kiểu *"Dạ ổ của chị đây chị."* đưa ổ đã qua `serveDish` — gắn thêm act là ổ RỜI
+   * TAY MỘT LẦN NỮA, miễn phí.
    */
   const DUA_HANG = /^(dạ |)ổ (của|pate|xíu|bánh)|ổ của (chị|anh|cô|chú|bà|em|con).{0,6}(đây|nè)/i;
   const xau: string[] = [];

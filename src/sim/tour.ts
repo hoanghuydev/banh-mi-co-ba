@@ -13,7 +13,7 @@ import { BY_ID, type Ingredient } from "./order";
  *   GOI   gói lại           → xong khi ổ rời thớt lên tay
  *
  * Hiện ra bằng BONG BÓNG DẪN kiểu tour của web (`ui/tour/TourCoach`): khoanh tròn thứ cần bấm,
- * cô Ba hiện lên cạnh đó nói một câu, có nút "Bỏ qua".
+ * kèm một câu hướng dẫn, có nút "Bỏ qua".
  *
  * Ba luật, và cả ba đều là để nó KHÔNG thành một cái bảng nhiệm vụ:
  *

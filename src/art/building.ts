@@ -115,12 +115,8 @@ function wall(scene: Phaser.Scene, i: number) {
 }
 
 /**
- * Cửa ra vào phía sau quán — lối vào nhà cô Ba.
- * Vẽ trên mặt "left" (mặt hướng +y): đó là mặt duy nhất của hàng tường sau
- * mà camera nhìn thấy, vì phía trước nó là sàn quán chứ không phải tường khác.
- *
- * Rèm hạt là chi tiết đắt nhất ở đây: nó nói ngay rằng sau cánh cửa này là NHÀ
- * chứ không phải kho — và nhà là nơi cô Ba đang nằm trong (CANON §7.4).
+ * Cửa ra vào phía sau quán, vẽ trên mặt "left" — mặt duy nhất của hàng tường sau camera thấy.
+ * Rèm hạt nói ngay rằng sau cửa là NHÀ chứ không phải kho.
  */
 function door(scene: Phaser.Scene) {
   prop(scene, BUILD.door, heightFor(WALL_H), (g, cx, cy) => {

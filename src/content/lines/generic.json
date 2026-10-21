@@ -1,5 +1,5 @@
 {
-  "_note": "Pool GENERIC dùng chung cho mọi khách (CANON §11 đòn bẩy 2). Bag là PER-NPC: bagId = generic:{pool}:{npcId}. Luật viết P1-03 §2.7: ANTICIPATED = thì quá khứ, nói VỀ PHÍA người chơi, bình tĩnh hơn; DISCOVERED = thì hiện tại, nói về ổ bánh, mở đầu bằng 'ủa'. {item} = tên món. ⚠️ Bản nháp của dev — cần người viết giọng Nam duyệt. · P2-01: thoại của KHÁCH đã chuyển sang rule DB (content/rules/*.json). · P5-01: túi `askPlayer` (câu người chơi tự nói khi bấm F) ĐÃ BỎ — người chơi giờ CHỌN câu ở bảng hội thoại, không rút ngẫu nhiên nữa; rút riêng là lý do câu hỏi và câu đáp không bao giờ khớp.",
+  "_note": "Pool GENERIC dùng chung cho mọi khách (CANON §11 đòn bẩy 2). Bag là PER-NPC: bagId = generic:{pool}:{npcId}. Luật viết P1-03 §2.7: ANTICIPATED = thì quá khứ, nói VỀ PHÍA người chơi, bình tĩnh hơn; DISCOVERED = thì hiện tại, nói về ổ bánh, mở đầu bằng 'ủa'. {item} = tên món. ⚠️ Bản nháp của dev — cần người viết giọng Nam duyệt. · Thoại của KHÁCH nằm ở rule DB (content/rules/*.json).",
   "pools": [
     {
       "id": "promiseKept",
@@ -7,7 +7,7 @@
       "vars": [
         "mon"
       ],
-      "_note": "P5-02 — người chơi HỨA bỏ thêm {mon} và đã bỏ thật. Nhẹ thôi: giữ lời chỉ là làm đúng điều mình nói, không phải ân huệ.",
+      "_note": "người chơi HỨA bỏ thêm {mon} và đã bỏ thật. Nhẹ thôi: giữ lời chỉ là làm đúng điều mình nói, không phải ân huệ.",
       "variants": [
         "Ờ, có bỏ thiệt nghen. Cảm ơn con.",
         "Con nói sao làm vậy. Hiếm à nghen.",
@@ -21,7 +21,7 @@
       "vars": [
         "mon"
       ],
-      "_note": "P5-02 — HỨA bỏ thêm {mon} rồi KHÔNG bỏ gì hết. Câu nặng nhất của hệ trò chuyện: người ta không cãi, người ta chỉ nói ra cái mình vừa nghe.",
+      "_note": "HỨA bỏ thêm {mon} rồi KHÔNG bỏ gì hết. Câu nặng nhất của hệ trò chuyện: người ta không cãi, người ta chỉ nói ra cái mình vừa nghe.",
       "variants": [
         "Ủa… hồi nãy nói có {mon} mà.",
         "Thôi khỏi. Mà lần sau đừng hứa.",
@@ -35,7 +35,7 @@
       "vars": [
         "mon"
       ],
-      "_note": "P5-02 — HỨA {mon} mà bỏ món khác. Có lòng, mà trật. Nhẹ hơn nuốt lời, nặng hơn làm đúng.",
+      "_note": "HỨA {mon} mà bỏ món khác. Có lòng, mà trật. Nhẹ hơn nuốt lời, nặng hơn làm đúng.",
       "variants": [
         "Cái này đâu phải {mon}.",
         "Ủa, nói {mon} mà sao cái này.",
@@ -67,7 +67,7 @@
       "id": "chaoDap",
       "tier": 3,
       "vars": [],
-      "_note": "P2-06 §2.11(A) — câu đáp, nói sau câu chào ~1,2 giây. Ngắn hơn câu chào: ngoài đời người ta đáp gọn rồi ai đi đường nấy. ⚠️ HAI TÚI RÚT ĐỘC LẬP (`greetPassers` lấy `chaoNhau` cho người này, `chaoDap` cho người kia, không ghép cặp). Nên MỌI câu đáp phải theo được BẤT KỲ câu chào nào — đừng viết câu chỉ trả lời đúng một câu hỏi. \"Khoẻ. Còn đằng đó?\" đã bị thay vì nó trả lời một câu hỏi sức khoẻ có thể chưa ai hỏi.",
+      "_note": "P2-06 §2.11(A) — câu đáp, nói sau câu chào ~1,2 giây. Ngắn hơn câu chào: ngoài đời người ta đáp gọn rồi ai đi đường nấy. ⚠️ HAI TÚI RÚT ĐỘC LẬP (`greetPassers` lấy `chaoNhau` cho người này, `chaoDap` cho người kia, không ghép cặp). Nên MỌI câu đáp phải theo được BẤT KỲ câu chào nào — đừng viết câu chỉ trả lời đúng một câu hỏi. Tránh kiểu \"Khoẻ. Còn đằng đó?\": nó trả lời một câu hỏi sức khoẻ có thể chưa ai hỏi.",
       "variants": [
         "Đi chút hà.",
         "Rồi rồi.",
@@ -89,7 +89,7 @@
         "me",
         "call"
       ],
-      "_note": "Câu CÔ BA nói lúc chìa ổ có đồ cho thêm (sim/service.ts: serveDish → playerSay). Bỏ thêm miếng đồ chua mà cả hẻm im thì người chơi không có đường nào biết trò chơi đã đọc ra hành động đó — và chuyện cho thêm là một trong hai đòn bẩy quan hệ rẻ nhất họ có. {mon} đã là một chuỗi kể sẵn (\"đồ chua với ớt\"), đừng thêm \"miếng\" hay \"chút\" vào trước nó. Danh xưng để trống, `Service.fill` điền theo người đang đứng trước mặt.",
+      "_note": "Câu chủ quán nói lúc chìa ổ có đồ cho thêm (sim/service.ts: serveDish → playerSay). {mon} đã là một chuỗi kể sẵn (\"đồ chua với ớt\"), đừng thêm \"miếng\" hay \"chút\" vào trước nó. Danh xưng để trống, `Service.fill` điền theo người đang đứng trước mặt.",
       "variants": [
         "{me} cho thêm {mon} cho {call} nè.",
         "{call} ơi, {me} bỏ thêm {mon} nghen.",

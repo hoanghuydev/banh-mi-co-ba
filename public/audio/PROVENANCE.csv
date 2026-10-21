@@ -19,12 +19,12 @@ audio/sfx/sfx_buoc_chan.0.mp3,sfx_buoc_chan,Cloth_And_Shoes_On_Concrete_22,Blond
 audio/sfx/sfx_buoc_chan.1.mp3,sfx_buoc_chan,Footstep Wood/Concrete Chamber Echo 10,Jakegwizdak,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/565489/,no,buoc chan khach den / di
 audio/sfx/sfx_buoc_chan.2.mp3,sfx_buoc_chan,ESE - Foot Step - Concrete 17.wav,EpicSoundEffects,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/475860/,no,buoc chan khach den / di
 audio/sfx/sfx_buoc_chan.3.mp3,sfx_buoc_chan,Concrete Footstep 2.mp3,matth3wc04,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/690006/,no,buoc chan khach den / di
-audio/sfx/sfx_buoc_co_ba.0.mp3,sfx_buoc_co_ba,concrete footstep 3,Yoyodaman234,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/166507/,no,buoc chan co Ba tren nen xi mang trong quay
-audio/sfx/sfx_buoc_co_ba.1.mp3,sfx_buoc_co_ba,Concrete Footstep 2.mp3,matth3wc04,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/690006/,no,buoc chan co Ba tren nen xi mang trong quay
-audio/sfx/sfx_buoc_co_ba.2.mp3,sfx_buoc_co_ba,ESE - Foot Step - Concrete 17.wav,EpicSoundEffects,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/475860/,no,buoc chan co Ba tren nen xi mang trong quay
-audio/sfx/sfx_buoc_co_ba.3.mp3,sfx_buoc_co_ba,snd_footsteps_concrete.wav,gristi,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/562192/,no,buoc chan co Ba tren nen xi mang trong quay
-audio/sfx/sfx_buoc_co_ba.4.mp3,sfx_buoc_co_ba,snd_footsteps_concrete.wav,gristi,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/562192/,no,buoc chan co Ba tren nen xi mang trong quay
-audio/sfx/sfx_buoc_co_ba.5.mp3,sfx_buoc_co_ba,Cloth_And_Shoes_On_Concrete_22,BlondPanda,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/778502/,no,buoc chan co Ba tren nen xi mang trong quay
+audio/sfx/sfx_buoc_chu_quan.0.mp3,sfx_buoc_chu_quan,concrete footstep 3,Yoyodaman234,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/166507/,no,buoc chan co Ba tren nen xi mang trong quay
+audio/sfx/sfx_buoc_chu_quan.1.mp3,sfx_buoc_chu_quan,Concrete Footstep 2.mp3,matth3wc04,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/690006/,no,buoc chan co Ba tren nen xi mang trong quay
+audio/sfx/sfx_buoc_chu_quan.2.mp3,sfx_buoc_chu_quan,ESE - Foot Step - Concrete 17.wav,EpicSoundEffects,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/475860/,no,buoc chan co Ba tren nen xi mang trong quay
+audio/sfx/sfx_buoc_chu_quan.3.mp3,sfx_buoc_chu_quan,snd_footsteps_concrete.wav,gristi,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/562192/,no,buoc chan co Ba tren nen xi mang trong quay
+audio/sfx/sfx_buoc_chu_quan.4.mp3,sfx_buoc_chu_quan,snd_footsteps_concrete.wav,gristi,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/562192/,no,buoc chan co Ba tren nen xi mang trong quay
+audio/sfx/sfx_buoc_chu_quan.5.mp3,sfx_buoc_chu_quan,Cloth_And_Shoes_On_Concrete_22,BlondPanda,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/778502/,no,buoc chan co Ba tren nen xi mang trong quay
 audio/sfx/sfx_chim_se.0.mp3,sfx_chim_se,bird sparrow chirp int flew into warehouse roomy bg.flac,kyles,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/451766/,no,chim se
 audio/sfx/sfx_chim_se.1.mp3,sfx_chim_se,White-crowned Sparrow Chirp,Zott820,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/695297/,no,chim se
 audio/sfx/sfx_cho_sua.0.mp3,sfx_cho_sua,Single Dog Bark,kwahmah_02,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/277058/,no,cho sua xa
@@ -68,10 +68,6 @@ audio/sfx/sfx_kep_gap.1.mp3,sfx_kep_gap,Tongs.m4a,TiidWunduniik,CC0 1.0,https://
 audio/sfx/sfx_kep_gap.2.mp3,sfx_kep_gap,Tap_Tap_Tap.wav,Brokenphono,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/344396/,no,kep gap kim loai
 audio/sfx/sfx_kep_gap.3.mp3,sfx_kep_gap,Tap_Tap_Tap.wav,Brokenphono,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/344396/,no,kep gap kim loai
 audio/sfx/sfx_khet.0.mp3,sfx_khet,Fire Crackling,AntumDeluge,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/188038/,no,banh chay — khet no lach tach (ganh vai 'co mui' cua BURNT_OR_COLD)
-audio/sfx/sfx_lat_so.0.mp3,sfx_lat_so,Page Turn 03,LilMati,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/397550/,no,lat trang so no / so tay
-audio/sfx/sfx_lat_so.1.mp3,sfx_lat_so,Page Turn 05,LilMati,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/397552/,no,lat trang so no / so tay
-audio/sfx/sfx_lat_so.2.mp3,sfx_lat_so,"Page Turn, Big Book",supaluci,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/726518/,no,lat trang so no / so tay
-audio/sfx/sfx_lat_so.3.mp3,sfx_lat_so,Page turn,chungus43A,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/705384/,no,lat trang so no / so tay
 audio/sfx/sfx_lau_khan.0.mp3,sfx_lau_khan,Wipe_Wood.wav,Harrisando,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/496471/,no,lau khan len mat xe / thot
 audio/sfx/sfx_lau_khan.1.mp3,sfx_lau_khan,wipeL-R_2S.wav,Sclolex,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/210858/,no,lau khan len mat xe / thot
 audio/sfx/sfx_lau_khan.2.mp3,sfx_lau_khan,20131911_Wipe_Panel,Soundscape_Leuphana,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/207628/,no,lau khan len mat xe / thot
@@ -110,9 +106,6 @@ audio/sfx/sfx_tien_le.0.mp3,sfx_tien_le,money5.wav,florian_reinke,CC0 1.0,https:
 audio/sfx/sfx_tien_le.1.mp3,sfx_tien_le,money4.mp3,MorganPalmer,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/179102/,no,dua / dem tien giay
 audio/sfx/sfx_tien_le.2.mp3,sfx_tien_le,money.mp3,MorganPalmer,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/179105/,no,dua / dem tien giay
 audio/sfx/sfx_tien_le.3.mp3,sfx_tien_le,Money on Table.wav,MTJohnson,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/444436/,no,dua / dem tien giay
-audio/sfx/sfx_viet_but.0.mp3,sfx_viet_but,Pen sign writing 1 sec.mp3,aleKfx,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/562153/,no,"viet but bi len giay — canh toi, so tay"
-audio/sfx/sfx_viet_but.1.mp3,sfx_viet_but,"Pencil writing on paper (3 strokes, Take B)",ani_music,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/632478/,no,"viet but bi len giay — canh toi, so tay"
-audio/sfx/sfx_viet_but.2.mp3,sfx_viet_but,"Signing document, writing quickly",UnderASpell,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/611719/,no,"viet but bi len giay — canh toi, so tay"
 audio/sfx/sfx_vo_gion.0.mp3,sfx_vo_gion,crunch crispy breadbun,Slowmote,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/406336/,no,vo banh nut / bop nghe gion
 audio/sfx/sfx_vo_gion.1.mp3,sfx_vo_gion,Crunch,steenish,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/528962/,no,vo banh nut / bop nghe gion
 audio/sfx/sfx_vo_gion.2.mp3,sfx_vo_gion,Crunch,qubodup,CC0 1.0,https://creativecommons.org/publicdomain/zero/1.0/,https://freesound.org/s/816237/,no,vo banh nut / bop nghe gion

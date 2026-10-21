@@ -9,14 +9,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Rng } from "../src/core/rng";
 import { MENU_BOARD, MENU_IDS, MENU_ITEMS, MENU_TIPS, RAU_CO_GIAN, RAU_NEN, isBare, itemOf, nhanOf } from "../src/sim/menu";
-import { INGREDIENTS, CAPACITY, diffDish, dishFor, levelsOf, makeUsual, sayOrder, specOf, type Ingredient } from "../src/sim/order";
+import { INGREDIENTS, CAPACITY, diffDish, dishFor, levelsOf, randomOrder, sayOrder, specOf, type Ingredient } from "../src/sim/order";
 import { ECON, loafPriceVnd, tierOf, vnd } from "../src/sim/econ";
 import { assertMenuSpotFree } from "../src/world/stations";
-import { NPCS } from "../src/content/npcs";
-import { arcToday, extraVisits, usualOf, type ArcCtx } from "../src/content/arcs";
-
-const ctx = (day: number): ArcCtx =>
-  ({ day, flags: {}, count: () => 0, rain: false, owns: () => false, hasWrongName: () => false });
 
 const NHAN_IDS = INGREDIENTS.filter((i) => i.kind === "nhan").map((i) => i.id);
 
@@ -39,7 +34,7 @@ test("làm đúng công thức trên bảng là 0 lỗi — với MỌI món, m�
   for (const mon of MENU_IDS) {
     for (const rau of ["day-du", "it", "khong"] as const) {
       for (const ot of [0, 1, 2] as const) {
-        const spec = specOf({ mon, rau, ot, tuong: 1, usual: false });
+        const spec = specOf({ mon, rau, ot, tuong: 1 });
         assert.deepEqual(diffDish(spec, dishFor(spec)), [], `${mon} / ${rau} / ớt ${ot} — ${sayOrder(spec)}`);
       }
     }
@@ -47,35 +42,31 @@ test("làm đúng công thức trên bảng là 0 lỗi — với MỌI món, m�
 });
 
 /**
- * HỒI QUY — đây chính là cái sai tấm bảng sinh ra để sửa.
- *
- * Hồi đơn hàng còn là một tổ hợp nguyên liệu, "ổ xíu mại" = `nhan: ["xiumai"]`, nên ổ bánh
- * mì xíu mại trong game KHÔNG có pate: không có chỗ nào khai rằng nó có. Người chơi quết
- * pate theo đúng phản xạ đời thật thì bị `UNWANTED` một miếng pate.
+ * Ổ xíu mại cũng có pate: người chơi quết pate theo phản xạ đời thật thì không được bị `UNWANTED`.
  */
 test("ổ nào cũng quết pate trước — trừ bánh mì không", () => {
   for (const mon of MENU_IDS) {
-    const lv = levelsOf({ mon, rau: "day-du", ot: 1, tuong: 1, usual: false });
+    const lv = levelsOf({ mon, rau: "day-du", ot: 1, tuong: 1 });
     if (isBare(mon)) { assert.equal(lv.pate, 0, `${mon} là ổ trơn`); continue; }
     assert.equal(lv.pate, 1, `${mon}: thiếu pate`);
   }
-  const xm = specOf({ mon: "xiumai", rau: "day-du", ot: 1, tuong: 1, usual: false });
+  const xm = specOf({ mon: "xiumai", rau: "day-du", ot: 1, tuong: 1 });
   assert.equal(xm.levels.xiumai, 1);
-  assert.equal(xm.levels.pate, 1, "bánh mì xíu mại có pate — chuyện này từng sai");
+  assert.equal(xm.levels.pate, 1, "bánh mì xíu mại có pate");
   assert.equal(diffDish(xm, dishFor(xm).filter((x) => x !== "pate"))[0]?.kind, "MISSING");
 });
 
 test("bánh mì không là ổ TRƠN: khay rau không chạm tới nó, kể cả khi đơn ghi rau đầy đủ", () => {
-  const lv = levelsOf({ mon: "khong", rau: "day-du", ot: 2, tuong: 2, usual: false });
+  const lv = levelsOf({ mon: "khong", rau: "day-du", ot: 2, tuong: 2 });
   for (const i of INGREDIENTS) assert.equal(lv[i.id], 0, `${i.id} lọt vào ổ bánh mì không`);
-  const spec = specOf({ mon: "khong", rau: "khong", ot: 0, tuong: 0, usual: false });
+  const spec = specOf({ mon: "khong", rau: "khong", ot: 0, tuong: 0 });
   assert.deepEqual(diffDish(spec, []), [], "ổ trống là ổ ĐÚNG — bẫy dịch lớn nhất của game");
   assert.ok(sayOrder(spec).includes("bánh mì không"));
 });
 
 test("'cho ít rau' là rau MỘT NỬA của khay, không phải bỏ thứ nào (P1-03 §2.3)", () => {
-  const du = levelsOf({ mon: "thit", rau: "day-du", ot: 1, tuong: 1, usual: false });
-  const it = levelsOf({ mon: "thit", rau: "it", ot: 1, tuong: 1, usual: false });
+  const du = levelsOf({ mon: "thit", rau: "day-du", ot: 1, tuong: 1 });
+  const it = levelsOf({ mon: "thit", rau: "it", ot: 1, tuong: 1 });
   for (const id of RAU_CO_GIAN) {
     assert.equal(du[id], RAU_NEN[id], `${id}: rau đầy đủ phải đúng bằng khay`);
     assert.equal(it[id], Math.round((RAU_NEN[id] ?? 0) / 2), `${id}: "ít rau" là một nửa`);
@@ -95,7 +86,7 @@ test("giá đọc từ econ.json theo MÓN, không đếm số nhân", () => {
 
 test("khách vãng lai chỉ gọi món CÓ TRÊN BẢNG, và câu gọi luôn nêu tên món", () => {
   for (let seed = 0; seed < 400; seed++) {
-    const spec = makeUsual(new Rng(seed));
+    const spec = randomOrder(new Rng(seed));
     assert.ok(MENU_IDS.includes(spec.intent.mon), `seed ${seed}: món "${spec.intent.mon}" không có trên bảng`);
     const call = itemOf(spec.intent.mon).call;
     assert.ok(sayOrder(spec).toLowerCase().includes(call), `seed ${seed}: "${sayOrder(spec)}" không nêu "${call}"`);
@@ -111,7 +102,7 @@ test("đơn nặng nhất gọi được vẫn kẹp lọt một ổ (CAPACITY) 
   let nang = 0;
   for (const mon of MENU_IDS) {
     for (const nhieu of [undefined, ...nhanOf(mon)]) {
-      const spec = specOf({ mon, nhieu, rau: "day-du", ot: 2, tuong: 2, usual: false });
+      const spec = specOf({ mon, nhieu, rau: "day-du", ot: 2, tuong: 2 });
       const dish = dishFor(spec);
       nang = Math.max(nang, dish.length);
       assert.deepEqual(diffDish(spec, dish), [], `${mon} + nhiều ${nhieu} bị chấm lỗi`);
@@ -127,7 +118,7 @@ test("đơn nặng nhất gọi được vẫn kẹp lọt một ổ (CAPACITY) 
  */
 test("từ vựng bảng dạy là từ vựng game nói: mỗi câu dặn đều ra được từ `sayOrder`", () => {
   const noi = (mon: "thit", over: Partial<Parameters<typeof specOf>[0]>) =>
-    sayOrder(specOf({ mon, rau: "day-du", ot: 1, tuong: 1, usual: false, ...over }));
+    sayOrder(specOf({ mon, rau: "day-du", ot: 1, tuong: 1, ...over }));
   assert.ok(noi("thit", { rau: "it" }).includes("cho ít rau"));
   assert.ok(noi("thit", { rau: "khong" }).includes("không rau"));
   assert.ok(noi("thit", { bo: ["hanhngo"] }).includes("không hành"));
@@ -145,14 +136,8 @@ test("chỗ đứng đọc bảng nằm ngoài tầm với của mọi trạm �
 });
 
 /**
- * Gỡ một món khỏi `menu.json` thì `itemOf()` trả `undefined` và cả 40 ngày đơn hàng viết
- * tay vỡ ở một chỗ không ai đoán ra. Đã xảy ra thật với "bánh mì không".
- */
-/**
- * `onBoard: false` là cờ HIỂN THỊ, không phải cờ tồn tại.
- *
- * "Bánh mì không" từng bị gỡ hẳn khỏi `menu.json` cho tấm bảng gọn mắt — và cả mùa vỡ:
- * bé Su, bà Sáu (đổi hàng) và SK-31 gọi đúng tên món đó. Giấu thì được, xoá thì không.
+ * `onBoard: false` là cờ HIỂN THỊ, không phải cờ tồn tại: gỡ một món khỏi `menu.json` thì
+ * `itemOf()` trả `undefined` và đơn viết tay gọi món đó (bé Su, bà Sáu) vỡ. Giấu thì được, xoá thì không.
  */
 test("món ẩn khỏi bảng vẫn gọi được, vẫn có giá, vẫn chấm điểm đúng", () => {
   const an = MENU_ITEMS.filter((i) => i.onBoard === false);
@@ -160,28 +145,10 @@ test("món ẩn khỏi bảng vẫn gọi được, vẫn có giá, vẫn chấm
   assert.ok(!MENU_BOARD.some((i) => i.onBoard === false), "món ẩn lọt lên bảng");
   assert.ok(MENU_BOARD.every((i) => MENU_IDS.includes(i.id)), "bảng có món không nằm trong dữ liệu");
   for (const it of an) {
-    const spec = specOf({ mon: it.id, rau: "khong", ot: 0, tuong: 0, usual: false });
+    const spec = specOf({ mon: it.id, rau: "khong", ot: 0, tuong: 0 });
     assert.deepEqual(diffDish(spec, dishFor(spec)), [], `${it.id}: ẩn khỏi bảng mà chấm điểm sai`);
     assert.ok(loafPriceVnd(tierOf(spec.intent)) > 0, `${it.id}: ẩn khỏi bảng mà mất giá`);
   }
-  assert.ok(MENU_IDS.includes("khong"), "bánh mì không PHẢI còn trong dữ liệu — xem bé Su / bà Sáu / SK-31");
+  assert.ok(MENU_IDS.includes("khong"), "bánh mì không PHẢI còn trong dữ liệu — xem bé Su / bà Sáu");
 });
 
-test("mọi món có đơn viết tay trong arcs đều còn trên bảng", () => {
-  for (let d = 1; d <= 40; d++) {
-    const c = ctx(d);
-    for (const n of NPCS) {
-      const o = usualOf(n.id, c, 7 * 60);
-      if (o) assert.ok(MENU_IDS.includes(o.intent.mon), `${n.id} ngày ${d}: "${o.intent.mon}"`);
-      const a = arcToday(n.id, c, 7 * 60);
-      for (const x of [a?.order, ...(a?.more ?? [])]) {
-        if (x) assert.ok(MENU_IDS.includes(x.intent.mon), `${n.id} ngày ${d}: "${x.intent.mon}"`);
-      }
-    }
-    for (const v of extraVisits(c)) {
-      for (const x of [v.order, ...(v.more ?? [])]) {
-        if (x) assert.ok(MENU_IDS.includes(x.intent.mon), `${v.key}: "${x.intent.mon}"`);
-      }
-    }
-  }
-});

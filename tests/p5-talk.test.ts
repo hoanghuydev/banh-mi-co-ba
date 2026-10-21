@@ -7,17 +7,15 @@
  * người viết nội dung phải tự nhớ 100 lần — và sẽ quên.
  */
 import { test } from "node:test";
-import { readFile } from "node:fs/promises";
 import assert from "node:assert/strict";
 import { NPCS } from "../src/content/npcs";
 import { Rng } from "../src/core/rng";
-import { DECAY, REDEEM, newRelState } from "../src/sim/memory";
 import { bareFlag,
-  ADDRESS, ANON_TALK_POOLS, DEFAULT_IGNORE_REL, EXTRA_TALK_POOLS, FORBIDDEN_SELF, MAX_DEPTH,
+  ADDRESS, ANON_TALK_POOLS, EXTRA_TALK_POOLS, FORBIDDEN_SELF, MAX_DEPTH,
   MOOD_FACE, MOOD_LABEL, MOOD_NEGATIVE,
-  MOOD_POSE, TalkSession, angerToWaitSec, applyTalk,
+  MOOD_POSE, TalkSession, angerToWaitSec,
   childrenOf, countsAgainstDailyCap, eligible, isSharedTalk, kindOf, linesOf, okSource,
-  beatWidth, pickTalk, touchesRelationship, trimKeepingExit, visibleOptions, walkNodes,
+  beatWidth, pickTalk, trimKeepingExit, visibleOptions, walkNodes,
   TALK_CHOICES_MAX, WALKIN_CALLS,
   type Talk, type TalkCtx, type TalkMood, type TalkNode,
 } from "../src/sim/talk";
@@ -26,21 +24,19 @@ import { INVITE_MAX, INVITE_TONE, inviteChance } from "../src/sim/passersby";
 import { newGame } from "../src/core/save";
 import { HeadlessStall, POLICIES } from "../src/sim/headless";
 import { Customer } from "../src/sim/customer";
-import { makeUsual } from "../src/sim/order";
 
 const P = Object.fromEntries(NPCS.map((n) => [n.id, n.personality]));
 const TALKS: Talk[] = await TalkStore.loadAll();
 
 const ctx = (over: Partial<TalkCtx> = {}): TalkCtx => ({
-  npcId: "BA_BAY", day: 10, slot: "PEAK", rain: false, tier: "ACQUAINTANCE",
-  visits: 8, flags: {}, usedToday: [], usedSeason: [], ...over,
+  npcId: "BA_BAY", day: 10, slot: "PEAK", rain: false, flags: {}, usedToday: [], usedBefore: [], ...over,
 });
 
 const byId = (id: string) => TALKS.find((t) => t.id === id)!;
 
 const mkCustomer = (id: string) =>
   new Customer(id, "CHU_TU", "Chú Tư", P.CHU_TU, NPCS[1].body, null,
-    makeUsual(new Rng(1)), 0, { x: 0, y: 0 }, 50, new Rng(2));
+    0, { x: 0, y: 0 }, 50, new Rng(2));
 
 // ────────────────────────────────────────────────────────────── T — máy chạy
 
@@ -106,30 +102,6 @@ test("T-5 khách im lặng vẫn là một nước đi: `silent` đi tiếp bìn
   assert.equal(r.reply, undefined, "khai `silent` mà vẫn có câu đáp");
 });
 
-test("T-6 ấm thì lên điểm, gắt thì xuống — và gắt xuống NẶNG hơn ấm lên", () => {
-  const warm = newRelState(), rude = newRelState();
-  // Có sẵn vốn liếng quan hệ: `clampPoints` có SÀN theo bucket đã đạt (P2-03 §2.5), nên
-  // người chưa từng lên bucket nào đứng ở 0 và không tụt xuống dưới được. Đo "nói nặng
-  // thì nguội đi" trên một trạng thái 0 điểm là đo cái sàn, không phải đo câu nói.
-  rude.relationPoints = warm.relationPoints = 40;
-  const up = applyTalk({ rel: 3 }, warm, P.BA_BAY, 10);
-  const down = applyTalk({ rel: -4, mem: { kind: "RUDE_TO_THEM", intensity: 55 } }, rude, P.BA_BAY, 10);
-  assert.ok(up.relDelta > 0, "nói tử tế mà không ấm lên");
-  assert.ok(down.relDelta < 0, "nói nặng mà không nguội đi");
-  assert.ok(Math.abs(down.relDelta) > up.relDelta, "chửi người ta rẻ hơn nói tử tế");
-  assert.equal(down.mem, "RUDE_TO_THEM");
-  assert.equal(rude.memory.short.length, 1, "câu nặng phải thành ký ức, không chỉ là điểm");
-});
-
-test("T-6b `relGainMul` chỉ nhân cho phần DƯƠNG — khép kín không vì vậy mà bớt đau", () => {
-  const a = applyTalk({ rel: 4 }, newRelState(), P.BE_SU, 10).relDelta;
-  const b = applyTalk({ rel: 4 }, newRelState(), P.CHI_LAN, 10).relDelta;
-  assert.ok(a > b, "người mở lòng phải ấm lên nhanh hơn");
-  const na = applyTalk({ rel: -4 }, newRelState(), P.BE_SU, 10).relDelta;
-  const nb = applyTalk({ rel: -4 }, newRelState(), P.CHI_LAN, 10).relDelta;
-  assert.equal(na, nb, "bị nói nặng mà tính cách lại làm đau ít đi");
-});
-
 test("T-7 giận ăn vào sức chờ, nhưng MỘT câu không bao giờ đẩy thẳng ra khỏi cửa", () => {
   const waitT = 50, leaveAt = 1.6;
   assert.equal(angerToWaitSec(0, waitT, 0, leaveAt), 0);
@@ -140,25 +112,12 @@ test("T-7 giận ăn vào sức chờ, nhưng MỘT câu không bao giờ đẩy
   assert.ok(late >= 0 && late <= 2);
 });
 
-test("T-8 không nghe lại một cuộc cả mùa, không đụng một chủ đề hai lần trong ngày", () => {
+test("T-8 không nghe lại một cuộc đã nghe, không đụng một chủ đề hai lần trong ngày", () => {
   const all = eligible(TALKS, ctx());
   assert.ok(all.length >= 2);
   const first = all[0];
-  assert.ok(!eligible(TALKS, ctx({ usedSeason: [first.id] })).some((t) => t.id === first.id));
+  assert.ok(!eligible(TALKS, ctx({ usedBefore: [first.id] })).some((t) => t.id === first.id));
   assert.ok(!eligible(TALKS, ctx({ usedToday: [first.topic] })).some((t) => t.topic === first.topic));
-});
-
-test("T-9 `when` lọc đúng: ngày, số lần ghé, bucket quan hệ", () => {
-  const late = TALKS.find((t) => t.when?.day && t.when.day[0] > 1)!;
-  const okCtx = ctx({ npcId: late.npc, day: late.when!.day![0], visits: 99 });
-  assert.ok(!eligible(TALKS, { ...okCtx, day: late.when!.day![0] - 1 }).some((t) => t.id === late.id));
-  assert.ok(eligible(TALKS, okCtx).some((t) => t.id === late.id));
-
-  const gated = TALKS.find((t) => t.when?.minVisits);
-  if (gated) {
-    const c = ctx({ npcId: gated.npc, day: gated.when!.day?.[0] ?? 10, visits: 0 });
-    assert.ok(!eligible(TALKS, c).some((t) => t.id === gated.id), "minVisits bị bỏ qua");
-  }
 });
 
 test("T-10 rút cuộc là TẤT ĐỊNH theo seed — bấm F không được làm xê dịch gì của ngày mai", () => {
@@ -263,20 +222,6 @@ test("L-3 mỗi cuộc có đường từ chối ngay ở nhịp đầu — ngư
   }
 });
 
-test("L-4 câu GẮT luôn có giá, câu ẤM không bị phạt, câu CHỬI ĐỔNG không trung tính", () => {
-  for (const t of TALKS) {
-    for (const { node: o } of walkNodes(t)) {
-      if (o.tone === "GAT") {
-        assert.ok((o.rel ?? 0) < 0 || (o.anger ?? 0) > 0 || o.mem, `${t.id}: "${o.say}" gắt mà miễn phí`);
-      }
-      if (o.tone === "AM") assert.ok((o.rel ?? 0) >= 0, `${t.id}: "${o.say}" tử tế mà bị trừ điểm`);
-      if (o.tone === "CHUI") {
-        assert.notEqual(o.rel ?? 0, 0, `${t.id}: "${o.say}" chửi đổng mà không ai thấy gì`);
-      }
-    }
-  }
-});
-
 test("L-5 không có `reply` thì phải khai `silent` — phân biệt im CÓ Ý với quên viết", () => {
   for (const t of TALKS) {
     for (const { node } of walkNodes(t)) {
@@ -336,21 +281,9 @@ test("L-8 bé Su không bị hỏi chuyện người lớn", () => {
   }
 });
 
-test("L-9 cuộc nào khách TỰ bắt chuyện cũng phải khai giá của việc làm thinh — và phải HIẾM", () => {
+test("L-9 cuộc khách tự bắt chuyện phải HIẾM", () => {
   for (const t of TALKS.filter((x) => x.initiates)) {
-    assert.ok(t.ignore, `${t.id}: tự bắt chuyện mà không khai \`ignore\` — làm thinh thành miễn phí`);
-    assert.ok((t.ignore!.rel ?? DEFAULT_IGNORE_REL) < 0, `${t.id}: làm thinh mà không mất gì`);
-    /*
-     * ⚠️ `initiates` KHÔNG phải tần suất tuyệt đối — nó là PHẦN CHIA của một ngân sách
-     * cứng: `TALK_OFFERS_PER_DAY` chặn số lượt người ta tự bắt chuyện mỗi buổi, và đó mới
-     * là cái giữ lời hứa "phải HIẾM".
-     *
-     * Trần 0,35 cũ là cái thắt THỨ HAI cho cùng một việc, và nó bóp chết đúng mấy cảnh
-     * hàng xóm hiếm-vì-điều-kiện: đo `tools/probe-offer2.ts` ra **6,4% lượt thử thành
-     * lời mời ⇒ ~0,9 lượt/buổi** trong khi trần là 3 — ngân sách không hề cạn, mà cảnh
-     * cái gánh thì cả mùa không gặp. Nới trần per-cuộc lên 0,8 và để `OF-1` dưới đây giữ
-     * lời hứa bằng ĐO THẬT.
-     */
+    // Trần per-cuộc; số lượt mỗi buổi do `TALK_OFFERS_PER_DAY` chặn.
     assert.ok((t.initiates ?? 0) > 0 && (t.initiates ?? 0) <= 0.8, `${t.id}: initiates ${t.initiates} quá dày`);
   }
   const share = TALKS.filter((t) => t.initiates).length / TALKS.length;
@@ -452,13 +385,12 @@ test("A-6 lời MỜI khai cả hai cái kết, và là câu CUỐI của nhánh
 test("A-7 mời KHÉO mở cửa rộng ra, nhưng không bao giờ mở toang", () => {
   const base = {
     person: { soi: 0.5, deTha: 0.5, thanThien: 0.5 },
-    glanced: false, tone: "AM", warmth: 0, ahead: 0, slots: 6, soldOut: false,
+    glanced: false, tone: "AM", ahead: 0, slots: 6, soldOut: false,
   };
   const at = (over: Partial<typeof base>) => inviteChance({ ...base, ...over });
   assert.ok(at({}) > 0 && at({}) < 1);
-  assert.ok(at({ glanced: true, warmth: 10, person: { soi: 0, deTha: 1, thanThien: 1 } }) <= INVITE_MAX);
+  assert.ok(at({ glanced: true, person: { soi: 0, deTha: 1, thanThien: 1 } }) <= INVITE_MAX);
   assert.ok(at({ glanced: true }) > at({}), "ngoái nhìn sẵn mà mời vẫn khó y như người đi thẳng");
-  assert.ok(at({ warmth: 5 }) > at({}), "nói tử tế trước rồi mời mà không hơn gì");
   assert.ok(at({ tone: "AM" }) > at({ tone: "THANG" }), "mời ngọt không hơn mời cộc");
   for (const tone of ["GAT", "LANH", "IM", "CHUI"]) assert.equal(at({ tone }), 0, `giọng ${tone}`);
   assert.ok(at({ ahead: 1 }) < at({ ahead: 0 }));
@@ -468,68 +400,26 @@ test("A-7 mời KHÉO mở cửa rộng ra, nhưng không bao giờ mở toang",
     > at({ person: { soi: 0.9, deTha: 0.1, thanThien: 0.1 } }));
 });
 
-test("A-4 nuốt lời đau hơn bỏ nhầm món, và cả hai đều đau hơn một câu nói nặng", () => {
-  const bad = (kind: "BROKEN_PROMISE" | "RUDE_TO_THEM", i: number) => {
-    const s = newRelState();
-    s.relationPoints = 60;
-    return -applyTalk({ mem: { kind, intensity: i } }, s, P.ANH_BAO, 10).relDelta;
-  };
-  const broken = bad("BROKEN_PROMISE", 85);
-  const swapped = bad("BROKEN_PROMISE", 55);
-  const rude = bad("RUDE_TO_THEM", 65);
-  assert.ok(broken > swapped, "nuốt lời mà rẻ hơn bỏ nhầm món");
-  assert.ok(broken > rude, "hứa rồi quên mà nhẹ hơn nói một câu khó nghe");
-});
-
-test("A-5 vết `BROKEN_PROMISE` phai chậm hơn và đọng lại cao hơn mọi vết âm khác", () => {
-  const bp = DECAY.BROKEN_PROMISE;
-  for (const k of ["RUDE_TO_THEM", "ORDER_DEFECT", "BURNT_OR_COLD", "MADE_THEM_WAIT"] as const) {
-    assert.ok(bp.floor >= DECAY[k].floor, `BROKEN_PROMISE đọng lại ít hơn ${k}`);
-  }
-  assert.ok(REDEEM.BROKEN_PROMISE, "không có đường chuộc lời hứa gãy");
-  assert.deepEqual(REDEEM.BROKEN_PROMISE!.requireKinds, ["FREE_EXTRA", "CARED_FOR_THEM"]);
-});
-
 // ───────────────────────────────── E — Esc giữa chừng (lỗi người chơi báo)
 
 test("E-1 mở bảng rồi Esc mà CHƯA nói câu nào: cuộc đó còn nguyên, bấm F lại vẫn vào", () => {
   /**
-   * Lỗi gốc: `markTalkUsed` chạy ngay lúc MỞ, nên Esc là đốt luôn cuộc đó cả mùa —
-   * `pickTalk` không còn gì để rút và nút F trông như chết. Giờ chỉ đánh dấu khi người
-   * chơi THẬT SỰ chọn một câu. Test này là cái chốt giữ, đừng tối ưu nó đi.
+   * Chỉ đánh dấu đã nghe khi người chơi THẬT SỰ chọn một câu.
    */
   const t = byId("bay.veso");
   const used: string[] = [];
   const s = new TalkSession(t, "BA_BAY");
   assert.equal(s.done, false);
   assert.deepEqual(s.picked, [], "chưa bấm gì mà đã tính là đã nói");
-  assert.ok(eligible(TALKS, ctx({ npcId: "BA_BAY", usedSeason: used }), "NPC").some((x) => x.id === t.id));
+  assert.ok(eligible(TALKS, ctx({ npcId: "BA_BAY", usedBefore: used }), "NPC").some((x) => x.id === t.id));
 });
 
-test("E-2 chọn MỘT câu rồi Esc: cuộc đó tính là đã nghe, không nghe lại cả mùa", () => {
+test("E-2 chọn MỘT câu rồi Esc: cuộc đó tính là đã nghe, không nghe lại", () => {
   const t = byId("bay.veso");
   const s = new TalkSession(t, "BA_BAY");
   s.choose(0, { flags: {} });
   assert.equal(s.picked.length, 1, "đã chọn mà không ghi lại");
-  assert.ok(!eligible(TALKS, ctx({ npcId: "BA_BAY", usedSeason: [t.id] }), "NPC").some((x) => x.id === t.id));
-});
-
-test("E-3 cơ chế hỏi chuyện CŨ đã bỏ hẳn — không còn túi `askPlayer`, không còn rule `gen.ask`", async () => {
-  const lines = JSON.parse(
-    await readFile(new URL("../src/content/lines/generic.json", import.meta.url), "utf8"),
-  ) as { pools: { id: string }[] };
-  assert.ok(!lines.pools.some((p) => p.id === "askPlayer"),
-    "túi `askPlayer` còn đó — câu người chơi lại rút ngẫu nhiên, và bug cũ quay lại");
-
-  const rules = JSON.parse(
-    await readFile(new URL("../src/content/rules/generic.json", import.meta.url), "utf8"),
-  ) as { rules: { id: string }[] };
-  assert.ok(!rules.rules.some((r) => r.id === "gen.ask"), "rule `gen.ask` còn đó");
-
-  const bb = JSON.parse(
-    await readFile(new URL("../src/content/rules/_blackboard.json", import.meta.url), "utf8"),
-  ) as { facts: Record<string, { values?: string[] }> };
-  assert.ok(!bb.facts.interaction.values?.includes("ASK"), "fact `interaction` còn giá trị ASK");
+  assert.ok(!eligible(TALKS, ctx({ npcId: "BA_BAY", usedBefore: [t.id] }), "NPC").some((x) => x.id === t.id));
 });
 
 test("E-4 trên Service THẬT: F → Esc → F lại vẫn mở được bảng (lỗi người chơi báo)", async () => {
@@ -665,9 +555,6 @@ test("M-3 cảm xúc KHỚP với hệ quả: chọc người ta mà họ cườ
       }
       if (o.calm) assert.ok(!MOOD_NEGATIVE.has(o.mood) || o.mood === "MET",
         `${t.id}: "${o.say}" dỗ mà mặt "${MOOD_LABEL[o.mood]}"`);
-      if (o.mem?.kind === "RUDE_TO_THEM" && (o.mem.intensity ?? 0) >= 60) {
-        assert.ok(!warm.has(o.mood), `${t.id}: "${o.say}" để lại vết RUDE_TO_THEM mà mặt vui`);
-      }
     }
   }
 });
@@ -748,11 +635,11 @@ test("V-4 tầng dùng chung KHÔNG BAO GIỜ cạn — đây là chỗ chữa '
     assert.notEqual(t.depth, "FULL", `${t.id}: tầng dùng chung không được tiêu vào trần cuộc sâu`);
   }
   const allIds = TALKS.map((t) => t.id);
-  const left = eligible(TALKS, ctx({ npcId: "BA_BAY", usedSeason: allIds }), "PLAYER");
-  assert.ok(left.length >= 6, "nghe hết một mùa là hết cả cách chào một người");
+  const left = eligible(TALKS, ctx({ npcId: "BA_BAY", usedBefore: allIds }), "PLAYER");
+  assert.ok(left.length >= 6, "nghe hết các cuộc riêng là hết cả cách chào một người");
   assert.ok(left.every(isSharedTalk));
   const topics = shared.map((t) => t.topic);
-  assert.equal(eligible(TALKS, ctx({ npcId: "BA_BAY", usedSeason: allIds, usedToday: topics }), "PLAYER").length, 0);
+  assert.equal(eligible(TALKS, ctx({ npcId: "BA_BAY", usedBefore: allIds, usedToday: topics }), "PLAYER").length, 0);
 });
 
 test("V-5 mỗi nhịp không bao giờ bày quá `TALK_CHOICES_MAX` dòng — ngân sách đọc", () => {
@@ -766,14 +653,9 @@ test("V-5 mỗi nhịp không bao giờ bày quá `TALK_CHOICES_MAX` dòng — n
   }
 });
 
-test("V-6 cuộc SÂU phải đủ ít để trần 2/ngày nuôi được cả mùa 40 ngày", () => {
-  /**
-   * Cái van ở §2.6 chỉ đúng nếu kho đủ sâu để nuôi nó. 86 cuộc ÷ 40 ngày = 2,15 — kho tự
-   * khai ra con số 2. Nếu ai đó đánh cả kho thành `FULL` thì trần 2/ngày biến thành một
-   * cái khoá: hết ngày thứ mười lăm là không còn cuộc nào để nói.
-   */
+test("V-6 kho đủ cuộc SÂU cho trần 2/ngày, mà không nghẹt kênh lời", () => {
   const full = TALKS.filter((t) => t.depth === "FULL").length;
-  assert.ok(full >= 40 * 0.6, `mới ${full} cuộc sâu — trần 2/ngày sẽ cạn trước ngày 40`);
+  assert.ok(full >= 24, `mới ${full} cuộc sâu — trần 2/ngày sẽ cạn sớm`);
   assert.ok(full <= TALKS.length * 0.6, `${full}/${TALKS.length} cuộc là FULL — kênh lời nghẹt`);
 });
 
@@ -803,9 +685,7 @@ test("V-7 cắt xuống 3 dòng KHÔNG được cắt mất đường từ chố
 
 test("V-8 BỐN LOẠI hội thoại, bốn bộ luật — mời khách không ăn vào ngân sách trò chuyện", () => {
   /**
-   * Chủ dự án nêu: "bắt chuyện với người qua đường và với người đang mua bánh nên khác
-   * nhau chứ". Đúng, và dữ liệu đã tự nói: cả 8 cuộc `QUA_DUONG` đều sâu đúng 2 nhịp và
-   * 6/8 kết thúc bằng `INVITE` — chúng vốn là LỜI MỜI, không phải cuộc trò chuyện.
+   * Cuộc `QUA_DUONG` là LỜI MỜI, không phải cuộc trò chuyện.
    */
   const byKind = new Map<string, Talk[]>();
   for (const t of TALKS) {
@@ -818,7 +698,6 @@ test("V-8 BỐN LOẠI hội thoại, bốn bộ luật — mời khách không 
 
   for (const t of byKind.get("MOI")!) {
     assert.equal(t.npc, "QUA_DUONG", `${t.id}: MOI mà không phải người đi ngang`);
-    assert.equal(touchesRelationship(t), false, `${t.id}: lời mời mà ghi vào trí nhớ`);
     assert.equal(countsAgainstDailyCap(t), false, `${t.id}: mời một người lạ mà ăn vào trần ngày`);
   }
   const named = new Set(NPCS.map((n) => n.id));

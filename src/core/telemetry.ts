@@ -5,8 +5,7 @@
  * "Xuất file" để người chơi thử tự gửi lại. Dev/playtest mặc định bật; bản bán ra
  * mặc định tắt và hỏi rõ một lần.
  *
- * Câu hỏi số 1 nó phải trả lời bằng CON SỐ: một ngày chơi mất bao nhiêu phút thật →
- * 40 ngày = bao nhiêu giờ? "Nếu bạn chưa đo, bạn chưa thiết kế."
+ * Câu hỏi số 1 nó phải trả lời bằng CON SỐ: một ngày chơi mất bao nhiêu phút thật.
  */
 import type { Bus, EventKey, EventMap } from "./eventbus";
 import type { AttentionTool, SceneKey, StimId } from "./types";
@@ -17,9 +16,9 @@ import { platform as defaultPlatform, type Platform } from "./platform";
 export const WATCHED: readonly EventKey[] = [
   "day:started", "day:ended", "npc:arrived", "npc:left", "order:placed",
   "order:delivered", "delivery:diffed", "stim:emitted", "perception:stateChanged",
-  "perception:confirmed", "attention:toolUsed", "dialog:selected", "dialog:spoken", "dialog:silent",
-  "gossip:propagated", "gossip:overheard", "money:changed", "save:written", "ui:pauseToggled",
-  "scene:transition", "notebook:hypothesisResolved", "telemetry:mark", "clock:bandChanged",
+  "perception:confirmed", "attention:toolUsed", "dialog:spoken", "dialog:silent",
+  "money:changed", "save:written", "ui:pauseToggled",
+  "scene:transition", "telemetry:mark", "clock:bandChanged",
   "stall:closed",
 ];
 
@@ -74,8 +73,8 @@ export type DayMetrics = {
 };
 
 const RING_ROWS = 20_000;
-const KEY_METRICS = "banhmicoba.telemetry.metrics";
-const KEY_ROWS = "banhmicoba.telemetry.rows";
+const KEY_METRICS = "byesep.telemetry.metrics";
+const KEY_ROWS = "byesep.telemetry.rows";
 const KEEP_DAYS_ROWS = 5;
 
 const pct = (xs: number[], p: number) => {
@@ -276,19 +275,19 @@ export class Telemetry {
     this.platform.write(KEY_ROWS, this.rows.filter((r) => r.day >= keepFrom).map((r) => JSON.stringify(r)).join("\n"));
   }
 
-  seasonEstimate(seasonDays = 40) {
-    return estimateSeason(this.days, seasonDays);
+  pace() {
+    return paceOf(this.days);
   }
 
   exportJsonl(): string {
-    const head = JSON.stringify({ kind: "metrics", days: this.days, estimate: this.seasonEstimate() });
+    const head = JSON.stringify({ kind: "metrics", days: this.days, pace: this.pace() });
     let rows = this.rows.map((r) => JSON.stringify(r));
     if (!rows.length) rows = (this.platform.read(KEY_ROWS) ?? "").split("\n").filter(Boolean);
     return [head, ...rows].join("\n");
   }
 
   download() {
-    this.platform.download(`banhmicoba-telemetry-${new Date().toISOString().slice(0, 10)}.jsonl`, this.exportJsonl());
+    this.platform.download(`byesep-telemetry-${new Date().toISOString().slice(0, 10)}.jsonl`, this.exportJsonl());
   }
 
   clear() {
@@ -306,30 +305,10 @@ function bandAtGameMin(m: number): TimeBand {
   return "LULL";
 }
 
-/**
- * gioMuaUocTinh = Σ(realMsActive của N ngày đã đo) / N × 40 / 3.600.000
- * Báo cáo CẢ HAI con số: người mua trên Steam thấy "playtime" gồm cả pause.
- */
-export function estimateSeason(days: DayMetrics[], seasonDays = 40) {
+/** Phút thật trung bình mỗi ngày đã đo — `total` gồm cả lúc tạm dừng. */
+export function paceOf(days: DayMetrics[]) {
   const n = days.length;
-  if (!n) return { days: 0, minPerDay: 0, minPerDayTotal: 0, seasonHours: 0, seasonHoursTotal: 0, verdict: "chưa đo ngày nào" };
-  const avg = (f: (d: DayMetrics) => number) => days.reduce((s, d) => s + f(d), 0) / n;
-  const minPerDay = avg((d) => d.realMsActive) / 60_000;
-  const minPerDayTotal = avg((d) => d.realMsTotal) / 60_000;
-  const seasonHours = (minPerDay * seasonDays) / 60;
-  const seasonHoursTotal = (minPerDayTotal * seasonDays) / 60;
-  const verdict =
-    seasonHours < 4 ? "QUÁ NGẮN (< 4 giờ) — giảm SEASON_DAYS 40 → 30 VÀ tăng mật độ. Không kéo dài bằng thời gian chờ."
-    : seasonHours < 6 ? "Ngắn nhưng đủ (4–6 giờ) — giữ 40 ngày, thêm 2–3 khách vãng lai/ngày."
-    : seasonHours <= 8 ? "VÙNG MỤC TIÊU (6–8 giờ) — không đổi."
-    : seasonHours <= 10 ? "Hơi dài (8–10 giờ) — tăng TIME_SCALE_IDLE_LULL, rút EveningScene."
-    : "QUÁ DÀI (> 10 giờ) — cắt xuống 30–35 ngày: người chơi sẽ bỏ dở trước cú quay lại ngày 40.";
-  return {
-    days: n,
-    minPerDay: Math.round(minPerDay * 100) / 100,
-    minPerDayTotal: Math.round(minPerDayTotal * 100) / 100,
-    seasonHours: Math.round(seasonHours * 100) / 100,
-    seasonHoursTotal: Math.round(seasonHoursTotal * 100) / 100,
-    verdict: n < 5 ? `${verdict} (mới đo ${n}/5 ngày — chưa đủ để chốt)` : verdict,
-  };
+  const avg = (f: (d: DayMetrics) => number) => (n ? days.reduce((s, d) => s + f(d), 0) / n : 0);
+  const r = (v: number) => Math.round(v * 100) / 100;
+  return { days: n, minPerDay: r(avg((d) => d.realMsActive) / 60_000), minPerDayTotal: r(avg((d) => d.realMsTotal) / 60_000) };
 }

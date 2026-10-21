@@ -11,7 +11,7 @@ Cố ý BỎ `Attribution NonCommercial` và `Sampling+`: game này bán.
 """
 import argparse, re, sys, time, urllib.parse, urllib.request
 
-UA = "Mozilla/5.0 (BanhMiCoBa asset sourcing; hoanghuy@sepay.vn)"
+UA = "Mozilla/5.0 (ByeSep asset sourcing; hoanghuy@sepay.vn)"
 BASE = "https://freesound.org/search/"
 
 LICENSES = {

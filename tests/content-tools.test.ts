@@ -33,7 +33,7 @@ test("validator bắt rule chết, mâu thuẫn, fact mồ côi, response thiế
   const dir = sandbox([
     rule("dead", { when: { khongCo: 1 } }),                                                   // R001
     rule("contra", { when: { npcVisitCount: "<-3" } }),                                        // R002 (ngoài miền ≥ 0)
-    rule("orphan", { when: { npcRelTier: "FRIEND" },
+    rule("orphan", { when: { npcVisitCount: ">=1" },
                      applycontext: { ctxKhachMoiToi: { value: 1, duration: 60 } } }),         // R005: không rule nào đọc
     rule("short", { when: { npcMood: ">=10" }, say: variants8.slice(0, 4) }),                // R007 (dòng dùng chung)
     rule("badnpc", { when: { npcId: "ONG_KHONG_TON_TAI" } }),                                 // R013
@@ -90,9 +90,8 @@ test("--fix sửa NFD, kiểu dấu, viết hoa — rồi lint lại sạch ba m
 test("nội dung thật của repo: 0 ERROR ở cả BA công cụ", () => {
   assert.equal(validateRules(real, join(ROOT, "src")).errors.length, 0);
   assert.equal(lintLines(real).errors.length, 0);
-  // `validateTalks` là chỗ DUY NHẤT giữ luật TĨNH/ĐỘNG của P2-07 §4.1 (lưới `T002`) và
-  // luật "một nhịp không được teo" (`T011`). Trước đây `p2-worldfacts` chép tay lại luật
-  // thứ nhất, và hai bản đã lệch nhau — giờ chỉ còn một bản, nên nó phải được chạy ở đây.
+  // `validateTalks` là chỗ DUY NHẤT giữ luật TĨNH/ĐỘNG của P2-07 §4.1 (`T002`) và luật
+  // "một nhịp không được teo" (`T011`), nên phải chạy ở đây.
   const r = validateTalks(real);
   assert.deepEqual(r.errors.map((e) => `${e.code} ${e.where} ${e.detail}`), []);
 });

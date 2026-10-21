@@ -15,8 +15,8 @@ export const SILENCE_RATE = 0.35;
 const SILENCE_BAG = 20, SILENCE_TICKETS = 7;
 
 /**
- * Thoại của khách đã sang rule DB (P2-01), câu người chơi đã sang `content/talks` (P5-01).
- * Còn lại đúng ba túi của P5-02: câu khách nói khi mình giữ / nuốt / làm trật lời hứa.
+ * Thoại của khách nằm ở rule DB (P2-01), câu người chơi ở `content/talks` (P5-01).
+ * Ở đây chỉ có ba túi của P5-02: câu khách nói khi mình giữ / nuốt / làm trật lời hứa.
  */
 export type LinePool = "promiseKept" | "promiseBroken" | "promiseWrong"
   /** P2-06 §2.11 — hai người đi ngang chào nhau giữa đường. Nền, không mang tin gì. */
@@ -24,7 +24,7 @@ export type LinePool = "promiseKept" | "promiseBroken" | "promiseWrong"
   /**
    * Ba túi của khoảnh khắc GIAO BÁNH (`sim/service.ts: serveDish`). Hai túi sau là VẾ KẸP
    * quanh câu rule DB chứ không phải câu đứng một mình — xem `_note` của từng túi.
-   *   extraOffer   cô Ba chìa ổ có đồ cho thêm
+   *   extraOffer   mình chìa ổ có đồ cho thêm
    *   thanksExtra  khách cảm ơn chuyện cho thêm, TRƯỚC khi nói ổ trật chỗ nào
    *   crustTail    "với lại ổ chưa giòn / cháy cạnh" nối vào cuối câu chê món
    */
@@ -59,8 +59,8 @@ export class Barks {
     const i = bag.draw(this.rng, this.day);
     this.bags[id] = bag.toJSON();
     /*
-     * Chỗ trống KHÔNG có trong `vars` được GIỮ NGUYÊN, không xoá. Túi `extraOffer` là lời của cô
-     * Ba: nó mang `{me}` / `{call}`, và chỉ `Service.fill` mới biết điền ai vào đó (và viết hoa
+     * Chỗ trống KHÔNG có trong `vars` được GIỮ NGUYÊN, không xoá. Túi `extraOffer` là lời của
+     * mình: nó mang `{me}` / `{call}`, và chỉ `Service.fill` mới biết điền ai vào đó (và viết hoa
      * nếu đứng đầu câu). Xoá sạch ở đây thì câu ra màn hình thành " ơi,  bỏ thêm ớt nghen."
      * Mọi túi khác đều được truyền đủ biến nên không đổi gì với chúng.
      */

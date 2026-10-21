@@ -1,22 +1,9 @@
-/**
- * Vòng đời MỘT frame — P0-01 §2.4. Thứ tự BẮT BUỘC, không được đổi:
- *
- *   0 clock → 1 input → 2 craft → 3 perception → 4 npc → 5 dialog → 6 render
- *
- * Cặp quan trọng nhất của cả game là craft → perception: `stim` phải được phát
- * TRƯỚC khi perception duyệt, nếu không frame cuối cùng trước khi khách ngẩng lên —
- * đúng frame người chơi đang nín thở nhìn — bị tính sai.
- *
- * Bước 0 là điểm DUY NHẤT trả `dt = 0` khi pause: mọi hệ dưới nó tự đứng im,
- * không hệ nào phải tự hỏi "có đang pause không" (CANON §15.2).
- *
- * Không import Phaser — test gọi thẳng `runFrame` với spy để bắt ai đổi thứ tự.
- */
+/** Thứ tự frame bắt buộc: craft phải phát `stim` trước perception; clock là chỗ duy nhất trả dt = 0 khi pause. */
 export const FRAME_STEPS = ["clock", "input", "craft", "perception", "npc", "dialog", "render"] as const;
 export type FrameStep = typeof FRAME_STEPS[number];
 
 export type FrameHandlers = {
-  /** Trả `dt` giây THẬT; 0 = đang pause. */
+  /** Trả `dt` giây thật; 0 = đang pause. */
   clock(rawDeltaMs: number): number;
   input(dt: number): void;
   craft(dt: number): void;
@@ -24,11 +11,11 @@ export type FrameHandlers = {
   npc(dt: number): void;
   dialog(dt: number): void;
   render(dt: number): void;
-  /** Frame bị pause: chỉ vẽ lại, KHÔNG đổi state. */
+  /** Chỉ vẽ lại, không đổi state. */
   renderPaused(): void;
 };
 
-/** Số đo của frame gần nhất + cửa sổ trượt cho p95 — overlay Perf (F7) và telemetry đọc. */
+/** Số đo frame gần nhất + cửa sổ trượt cho p95. */
 export const frameStats = {
   last: Object.fromEntries(FRAME_STEPS.map((s) => [s, 0])) as Record<FrameStep, number>,
   totals: [] as number[],

@@ -1,18 +1,14 @@
 {
-  "_note": "Kinh tế — nguồn sự thật DUY NHẤT (P3-01, P3-03, P3-06, CANON §13.1). Tiền tính bằng NGHÌN đồng (k). QUYẾT ĐỊNH của chủ dự án: bản dựng giữ nhịp ~18 ổ/ngày (1 khách = 1 ổ) thay vì 54 ổ của doc, nên mọi khoản tính THEO NGÀY / THEO MÙA (chi phí cố định, nghĩa vụ, tiền thuê, thiết bị, vốn đầu mùa) nhân chung `scale`. Giá TỪNG Ổ và giá TỪNG MÓN ở chợ giữ nguyên như đời thật — tỉ lệ lãi 45% trên mỗi ổ không đổi. Con số trong file là số GỐC của doc; code tự nhân `scale`.",
+  "_note": "Kinh tế — nguồn sự thật DUY NHẤT (CANON §13.1). Tiền tính bằng NGHÌN đồng (k). Mọi khoản tính theo ngày (chi phí cố định, tiền thuê, thiết bị, vốn ban đầu) nhân chung `scale`; giá TỪNG Ổ và giá TỪNG MÓN ở chợ giữ như đời thật. Con số trong file là số GỐC; code tự nhân `scale`.",
   "scale": 0.40,
-  "_scaleNote": "Hiệu chỉnh bằng npm run sim (40 ngày): 1/3 theo tỉ lệ ổ (18/54) làm bot giỏi dư quá nhiều; 0,40 cho bot giỏi mua được ~45–60% cây thiết bị (P3-06 §6). ⚠️ Cần đo bằng telemetry người thật.",
+  "_scaleNote": "Hiệu chỉnh bằng `npm run sim`. ⚠️ Cần đo bằng telemetry người thật.",
   "startCash_k": 3500,
   "fixedCost_k": { "base": 100, "fromDay": 33, "raised": 115,
     "_breakdown": "than/gas 25 · đá 15 · túi 20 · xăng 15 · gửi xe/rác/điện 15 · khấu hao 10" },
   "menu_k": { "khong": 10, "thuong": 25, "dayDu": 32, "dacBiet": 40,
-    "_note": "1 nhân = thường · 2 nhân hoặc 'đầy đủ' = đầy đủ · xin thêm một nhân trên nền đầy đủ = đặc biệt. Bánh mì không 10k theo P4-03 SK-31 (P3-03 ghi 8k)." },
+    "_note": "1 nhân = thường · 2 nhân hoặc 'đầy đủ' = đầy đủ · xin thêm một nhân trên nền đầy đủ = đặc biệt. Bánh mì không 10k." },
   "sendHome_k": 150,
-  "rent_k": { "L1": 42, "L2": 55, "L3": 85, "L4": 95, "L5": 12, "depositDays": 3, "graceDays": 3 },
-  "hui": { "perPeriod_k": 500, "days": [5, 10, 15, 20, 25, 30, 35, 40], "graceDays": 1, "lastGraceDays": 0,
-    "remindDays": [2, 13, 18, 23, 28, 33] },
-  "tuition": { "amount_k": 1200, "days": [18, 38], "graceDays": 5, "telegraphDays": 6 },
-  "medicine": { "amount_k": 600, "days": [20, 30] },
+  "rent_k": 42,
   "storage": { "thung_xop": { "coldSlots": 8, "dryShelfLifeDelta": {}, "coldShelfLifeDelta": { "PATE_THUONG": -1, "PATE_NHA": -1, "THIT_NGUOI": -1 } },
     "_note": "1 slot ≈ 20 phần. Thùng xốp làm pate chỉ còn 1 ngày, thịt còn 2 (P3-03 §2.2). Pate 2 ngày là trần tuyệt đối." }
 }

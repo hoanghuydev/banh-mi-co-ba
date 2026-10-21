@@ -22,7 +22,7 @@ export const RUN_MUL = 1.45;
 export type MoveInput = { up: boolean; down: boolean; left: boolean; right: boolean; run?: boolean };
 
 /**
- * Mũi tên "cô Ba đây". Cô Ba không có bảng tên dưới chân như khách, nên trong quán đông người
+ * Mũi tên "mình đây". Người chơi không có bảng tên dưới chân như khách, nên trong quán đông người
  * cách duy nhất tìm ra mình là BẤM THỬ MỘT PHÍM rồi xem ai nhúc nhích.
  *
  * Nhưng một mũi tên sáng treo suốt tám tiếng thì phá đúng thứ cảnh này dựng lên (mắt phải nhìn
@@ -250,7 +250,7 @@ export class Player {
   }
 
   /**
-   * Mũi tên "cô Ba đây" (xem khối hằng số đầu file). Đo từ `sy` chứ không `footY(sy)`, và dùng hằng
+   * Mũi tên "mình đây" (xem khối hằng số đầu file). Đo từ `sy` chứ không `footY(sy)`, và dùng hằng
    * `BODY_H` chứ không đo texture — giống hệt dấu trên đầu khách, nên hai thứ nằm cùng một độ cao
    * dù ảnh thật của artist có cao thấp khác nhau. Trừ `hop` để nó nhún cùng nhịp bước.
    */

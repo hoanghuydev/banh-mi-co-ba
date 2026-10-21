@@ -1,9 +1,4 @@
-/**
- * LỜI MỜI CHUYỆN RỤNG Ở ĐÂU — `offerTalk()` có bảy cổng, cái nào đang thắt?
- *
- * Trước khi vặn `TALK_OFFERS_PER_DAY` hay `initiates`, phải biết cổng NÀO đang chặn. Vặn
- * cái không thắt thì không đổi gì — đúng bài học `ATT_K`/`ATT_FLOOR` của mấy đợt trước.
- */
+/** Đếm lời mời chuyện rụng ở cổng nào của `offerTalk()`, để biết nên vặn tham số nào. */
 import { Bus } from "../src/core/eventbus";
 import { newGame } from "../src/core/save";
 import { memoryPlatform } from "../src/core/platform";
@@ -19,13 +14,13 @@ const bump = (k: string) => rung.set(k, (rung.get(k) ?? 0) + 1);
 const w = newGame("off2", "p210");
 const bus = new Bus(false);
 const platform = memoryPlatform();
-for (let d = 1; d < 5; d++) nextDay(w, bus);
+for (let d = 1; d < 5; d++) nextDay(w);
 for (let i = 0; i < NGAY; i++) {
   const h = new HeadlessStall(w, POLICIES.social, { bus, platform });
   const svc = (h as unknown as { service: any }).service;
   for (const k of [...TALK_NPC_IDS, "WALKIN", "QUA_DUONG", "ANY"]) await svc.talks.ensure(k);
 
-  // Chép lại đúng thứ tự cổng của `offerTalk()`, đếm chỗ rụng. Không đụng vào hàm thật.
+  // Chép lại đúng thứ tự cổng của `offerTalk()`, không đụng hàm thật.
   const goc = svc.offerTalk.bind(svc);
   svc.offerTalk = (c: any) => {
     if (svc.talkSession) { bump("1. đang nói chuyện"); return false; }
@@ -41,7 +36,7 @@ for (let i = 0; i < NGAY; i++) {
     return r;
   };
   for (let f = 0; f < 140_000 && !h.closed; f++) h.step(1000 / 30);
-  nextDay(w, bus);
+  nextDay(w);
 }
 
 const tong = [...rung.values()].reduce((a, b) => a + b, 0) || 1;

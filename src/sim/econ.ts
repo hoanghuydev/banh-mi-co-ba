@@ -1,9 +1,9 @@
 /**
  * Kinh tế lõi — P3-01 / P3-03 / P3-06. Thuần dữ liệu, không Phaser, không RNG lúc chạy
- * (lịch mùa là bảng cố định — chơi lại ngày nào cũng ra đúng trời đó, giá đó: CANON §8e).
+ * (lịch là bảng cố định — chơi lại ngày nào cũng ra đúng trời đó, giá đó: CANON §8e).
  *
  * Đơn vị: nội dung tính bằng NGHÌN đồng (k); `world.money.cash` tính bằng ĐỒNG.
- * `SCALE` (chủ dự án chốt): khoản theo ngày/mùa co theo nhịp ~18 ổ/ngày của bản dựng;
+ * `SCALE`: khoản theo ngày co theo nhịp ~18 ổ/ngày của bản dựng;
  * giá từng ổ, giá từng món ở chợ giữ nguyên như đời thật.
  *
  * Bốn luật của kho (P3-03 §2.1–2.3):
@@ -33,10 +33,7 @@ export const ECON = ECON_JSON as unknown as {
   fixedCost_k: { base: number; fromDay: number; raised: number };
   menu_k: { khong: number; thuong: number; dayDu: number; dacBiet: number };
   sendHome_k: number;
-  rent_k: Record<string, number> & { depositDays: number; graceDays: number };
-  hui: { perPeriod_k: number; days: number[]; graceDays: number; lastGraceDays: number; remindDays: number[] };
-  tuition: { amount_k: number; days: number[]; graceDays: number; telegraphDays: number };
-  medicine: { amount_k: number; days: number[] };
+  rent_k: number;
   storage: { thung_xop: { coldSlots: number; coldShelfLifeDelta: Partial<Record<GoodId, number>> } };
 };
 export const GOODS = (GOODS_JSON as unknown as { goods: Record<GoodId, GoodDef> }).goods;
@@ -93,14 +90,17 @@ export function dongVi(d: number): string {
   return `${parts.join(" ")} ngàn`;
 }
 
-// ─────────────────────────────────────────────────────────────── lịch mùa
+// ─────────────────────────────────────────────────────────────── lịch
 
-export const weatherOf = (day: number): Weather => CAL.weather[(Math.max(1, day) - 1) % CAL.weather.length];
+/** Lịch `calendar.json` quay vòng: ngày quá độ dài mảng lặp lại từ đầu. */
+export const calDay = (day: number) => ((Math.max(1, day) - 1) % CAL.weather.length) + 1;
+
+export const weatherOf = (day: number): Weather => CAL.weather[calDay(day) - 1];
 export const isRain = (w: Weather) => w === "MUA_RAO" || w === "MUA_DAM";
 export const weekdayIdx = (day: number) => (((day - 1) % 7) + 7) % 7;
 export const WEEKDAY_VI = ["thứ Hai", "thứ Ba", "thứ Tư", "thứ Năm", "thứ Sáu", "thứ Bảy", "Chủ nhật"];
 
-export const eventsOn = (day: number) => CAL.events.filter((e) => day >= e.fromDay && day <= e.toDay);
+export const eventsOn = (day: number) => CAL.events.filter((e) => calDay(day) >= e.fromDay && calDay(day) <= e.toDay);
 export const crowdMul = (day: number) => eventsOn(day).reduce((a, e) => a * (e.crowdMul ?? 1), 1);
 
 export function priceOf(g: GoodId, day: number): number {
@@ -206,11 +206,8 @@ export const coldSlotCap = (inv?: InventoryState) => (inv?.storage === "tu_mat" 
 export type Tier = "khong" | "thuong" | "dayDu" | "dacBiet";
 
 /**
- * BẬC GIÁ CỦA MỘT ĐƠN — đọc từ MÓN trên bảng, không còn ĐẾM số nhân.
- *
- * Đếm nhân là cái khoá cửa không cho bánh mì xíu mại có pate: thêm miếng pate cho đúng
- * đời thật là `n` nhảy từ 1 lên 2, và ổ 25k thành ổ 32k mà không ai sửa giá. Giờ bậc nằm
- * ngay trên bảng (`menu.json: items[].tier`), nên công thức và giá tách nhau ra.
+ * BẬC GIÁ CỦA MỘT ĐƠN — đọc từ MÓN trên bảng (`menu.json: items[].tier`), không đếm số nhân,
+ * để công thức và giá tách nhau.
  *
  * `dacBiet` vẫn là chuyện của LỜI DẶN, không của món: xin thêm một thứ nhân trên ổ đầy
  * đủ thì lên bậc đặc biệt (P3-01 `menu_k`). Trên ổ một nhân thì không — xin nhiều xíu mại

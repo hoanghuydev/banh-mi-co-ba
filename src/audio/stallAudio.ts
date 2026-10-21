@@ -19,17 +19,15 @@ const PRELOAD: readonly SfxId[] = [
   "sfx_rac_tieu", "sfx_kep_gap", "sfx_dat_thot", "sfx_goi_giay", "sfx_bich_nilon",
   "sfx_mo_tu_mat", "sfx_cua_lo", "sfx_rot_tra_da", "sfx_dat_ly", "sfx_lau_khan",
   "sfx_do_roi_dat", "sfx_tien_le", "sfx_xu", "sfx_ngan_keo", "sfx_thung_rac",
-  "sfx_lat_so", "sfx_viet_but", "sfx_buoc_co_ba",
+  "sfx_buoc_chu_quan",
   "sfx_xe_may_qua", "sfx_coi_xe", "sfx_cho_sua", "sfx_chim_se", "sfx_ga_gay",
   "sfx_buoc_chan", "sfx_keo_ghe",
   // giọng — CHỈ hai thứ đang thật sự dùng (xem luật "NPC chỉ lên tiếng ở hai chỗ").
-  // `vox_hm_glimpsed`, `vox_tho_dai`, `vox_chep_mieng`, `vox_cuoi_nhe`, `vox_a_ra`
-  // vẫn nằm trong `tools/audio/sources.py` và trong `public/` vì bảng §4.2 D cần
-  // chúng cho bark tier-2/tier-3 — nhưng CHƯA nạp, để khỏi kéo về thứ không phát.
+  // Các `vox_*` khác trong `tools/audio/sources.py` CHƯA nạp, để khỏi kéo về thứ không phát.
   "vox_hum", "vox_blip",
   "ui_click", "ui_chon_nguyen_lieu", "ui_dat_thanh_cong", "ui_khong_hop_le",
   "ui_click_go", "ui_mo_menu", "ui_dong_menu", "ui_chot_don", "ui_autosave",
-  "ui_mo_so_tay", "a11y_ping_glimpsed",
+  "a11y_ping_glimpsed",
 ];
 
 const BAND_BED: Record<TimeBand, SfxId> = {
@@ -41,9 +39,8 @@ const RAINY: ReadonlySet<Weather> = new Set<Weather>(["MUA_RAO", "MUA_DAM"]);
 /**
  * ⚠️ NPC CHỈ LÊN TIẾNG Ở ĐÚNG HAI CHỖ: lúc GỌI MÓN và lúc BỎ ĐI VÌ GIẬN.
  *
- * Đã thử đúng chữ của §5.2 (55% số lần chạm `GLIMPSED` thì khẽ "hm") và sai hẳn: §5.2 viết cho MỘT
- * khách, mà giờ cao điểm bốn người cùng đứng và `GLIMPSED` bật tắt liên tục. Giọng người thì đắt —
- * tiêu nó cho mọi cái liếc mắt thì tới lúc có người thật sự bỏ đi, không còn gì để nói.
+ * Không "hm" theo `GLIMPSED`: giờ cao điểm nó bật tắt liên tục, mà giọng người phải để dành cho lúc
+ * có người thật sự bỏ đi.
  */
 const ANGRY_PITCH = 0.78;
 
@@ -124,10 +121,6 @@ export class StallAudio {
       if (p.to === "GLIMPSED" || p.to === "NOTICED") sfx.perceptionPing(scene, this.d.panOf(p.npcId));
     });
 
-    // Bánh rớt: KHÔNG tắt được bằng công tắc âm báo tiêu cực (§5.5) — với người
-    // nhìn không rõ, đây là cách duy nhất biết mình vừa làm rớt.
-    this.listen("craft:dropped", () => sfx.play(scene, "sfx_do_roi_dat"));
-
     this.listen("save:written", () => sfx.play(scene, "ui_autosave"));
     this.listen("ui:pauseToggled", (p) => {
       sfx.play(scene, p.paused ? "ui_mo_menu" : "ui_dong_menu");
@@ -168,12 +161,12 @@ export class StallAudio {
     sfx.loop(scene, "sfx_ruoi", fly, {}, 1500);
     if (fly) sfx.loopVolume("sfx_ruoi", Math.min(1, (s.dirt - FLY_DIRT_MIN) / 0.35));
 
-    // ── bước chân cô Ba ─────────────────────────────────────────────────────
+    // ── bước chân người chơi ─────────────────────────────────────────────────────
     if (s.moving) {
       this.stepPhase += dt * (s.running ? 3.1 : 2.1);
       if (this.stepPhase >= 1) {
         this.stepPhase -= 1;
-        sfx.play(scene, "sfx_buoc_co_ba");
+        sfx.play(scene, "sfx_buoc_chu_quan");
       }
     } else {
       this.stepPhase = 0.92;
@@ -238,17 +231,6 @@ export class StallAudio {
   }
   bin() { this.one("sfx_thung_rac"); }
   drop() { this.one("sfx_do_roi_dat"); }
-  notebook() { this.one("ui_mo_so_tay"); }
-  writePen() { this.one("sfx_viet_but"); }
-
-  writeFor(seconds: number) {
-    this.one("sfx_lat_so");
-    const net = Math.max(1, Math.round(seconds / 1.1));
-    for (let i = 0; i < net; i++) {
-      this.one("sfx_viet_but", { delay: 180 + i * (seconds * 900) / net, volume: 0.9 });
-    }
-  }
-  pageTurn() { this.one("sfx_lat_so"); }
 
   money() {
     this.one("sfx_tien_le");

@@ -1,31 +1,25 @@
-/**
- * Luật QUAY ĐẦU Ở ĐẦU HẺM (`sim/service.balkChance`). Giữ hai thứ:
- *  1. HÌNH DẠNG đường cong — mấy con số là HỢP ĐỒNG, đổi chúng là đổi cảm giác giờ cao điểm
- *  2. ⚠️ RANH GIỚI với `queuePatienceMul`: hai luật NGƯỢC CHIỀU một cách cố ý (hàng dài làm người
- *     ta ngại VÀO, nhưng vào rồi thì chính nó làm người ta chờ LÂU HƠN). Trộn hai cái là vỡ ở đây.
- */
+/** `balkChance`: hàng dài làm người ta ngại vào, ngược chiều cố ý với `queuePatienceMul` (vào rồi thì chờ lâu hơn). */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Bus } from "../src/core/eventbus";
 import { newGame, type SaveFile } from "../src/core/save";
 import { HeadlessStall, POLICIES, type Policy } from "../src/sim/headless";
 import { balkChance, balkFrom } from "../src/sim/service";
-import { peakCap } from "../src/sim/season";
+import { peakCap } from "../src/sim/ease";
 import { QUEUE_SLOTS, CUSTOMER_GATE } from "../src/world/map";
 import type { Personality } from "../src/content/npcs";
 
 const SLOTS = QUEUE_SLOTS.length;
 const P = (nongTinh: number): Personality => ({ soi: 0.5, nongTinh, deTha: 0.5, thanThien: 0.5 });
-/** Người bình thường, quan hệ bình thường, tâm trạng bình thường, không vội. */
 const plain = (ahead: number, slots: number = SLOTS) =>
-  balkChance({ ahead, slots, person: P(0.5), relVisitMul: 1, moodPatience: 1, rushing: false });
+  balkChance({ ahead, slots, person: P(0.5), moodPatience: 1, rushing: false });
 
 // ────────────────────────────────────────────────────── hình dạng đường cong
 
 test("hàng ngắn thì KHÔNG AI quay đầu — kể cả người nóng nhất hẻm, đang vội, đang bực", () => {
   for (let ahead = 0; ahead < balkFrom(SLOTS); ahead++) {
     const p = balkChance({
-      ahead, slots: SLOTS, person: P(1), relVisitMul: 0.45, moodPatience: 0.85, rushing: true,
+      ahead, slots: SLOTS, person: P(1), moodPatience: 0.85, rushing: true,
     });
     assert.equal(p, 0, `hàng ${ahead} người mà đã có người quay đầu`);
   }
@@ -36,7 +30,6 @@ test("quầy TRỐNG thì xác suất đúng bằng 0, không phải 'rất nh�
 });
 
 test("ngưỡng suy ra từ SỐ CHỖ, không chép số người", () => {
-  // 6 chỗ → từ người thứ tư; 4 chỗ (bản đồ cũ) → từ người thứ ba. Cùng một dòng code.
   assert.equal(balkFrom(6), 4);
   assert.equal(balkFrom(4), 3);
   for (const slots of [4, 6]) {
@@ -51,8 +44,7 @@ test("đơn điệu không giảm: hàng dài thêm không bao giờ làm ngư�
 });
 
 test("mọi bậc đều là XÁC SUẤT THẬT (0 < p < 1) — cùng một hàng phải ra được hai câu trả lời", () => {
-  // Đây là cái chặn "ngưỡng cứng": nếu có bậc nào p = 1 thì người chơi học được một con
-  // số ma ("quá 5 người là mất khách"), thay vì học cách đọc tình hình.
+  // Chặn ngưỡng cứng: p = 1 thì người chơi học con số ma thay vì đọc tình hình.
   for (let ahead = balkFrom(SLOTS); ahead <= SLOTS + 2; ahead++) {
     const p = plain(ahead);
     assert.ok(p > 0 && p < 1, `bậc ${ahead} người ra ${p} — không còn là xác suất nữa`);
@@ -60,36 +52,26 @@ test("mọi bậc đều là XÁC SUẤT THẬT (0 < p < 1) — cùng một hàn
 });
 
 test("cùng độ dài hàng, hai người hai câu trả lời khác hẳn nhau", () => {
-  const ahead = SLOTS - 1;                               // còn đúng một chỗ trống
-  const nong = balkChance({ ahead, slots: SLOTS, person: P(0.9), relVisitMul: 0.45, moodPatience: 0.85, rushing: true });
-  const diem = balkChance({ ahead, slots: SLOTS, person: P(0.2), relVisitMul: 1.15, moodPatience: 1.1, rushing: false });
+  const ahead = SLOTS - 1;
+  const nong = balkChance({ ahead, slots: SLOTS, person: P(0.9), moodPatience: 0.85, rushing: true });
+  const diem = balkChance({ ahead, slots: SLOTS, person: P(0.2), moodPatience: 1.1, rushing: false });
   assert.ok(nong > diem * 2, `người nóng ${nong} phải ngại hơn hẳn người điềm đạm ${diem}`);
   assert.ok(diem > 0, "người điềm đạm vẫn có thể quay đầu — chỉ là ít hơn");
 });
 
-test("khách ruột quý mình thì chịu xếp hàng hơn người lạ, người lạ hơn người đang giận", () => {
-  const at = (relVisitMul: number) =>
-    balkChance({ ahead: SLOTS - 1, slots: SLOTS, person: P(0.5), relVisitMul, moodPatience: 1, rushing: false });
-  // đúng ba con số của `memory.visitProbabilityMul`: Friend 1,15 · Acquaintance 1,0 · Rival 0,45
-  assert.ok(at(1.15) < at(1.0), "người thân phải ngại ÍT hơn người lạ");
-  assert.ok(at(1.0) < at(0.45), "người đang giận phải ngại HƠN người lạ");
-  // nhưng không được phạt cùng một mối giận hai lần: 1/0,45 = 2,22 bị chặn lại
-  assert.ok(at(0.45) < at(1.0) * 2, "hệ số quan hệ phải bị chặn, không nhân nguyên 1/0,45");
-});
-
 test("hàng KÍN CHỖ: tính cách không đẻ ra được một chỗ đứng", () => {
-  const full = (p: Personality, rel: number) =>
-    balkChance({ ahead: SLOTS, slots: SLOTS, person: p, relVisitMul: rel, moodPatience: 1, rushing: false });
-  const a = full(P(0.1), 1.15), b = full(P(0.95), 0.45);
+  const full = (p: Personality) =>
+    balkChance({ ahead: SLOTS, slots: SLOTS, person: p, moodPatience: 1, rushing: false });
+  const a = full(P(0.1)), b = full(P(0.95));
   assert.equal(a, b, "hết chỗ đứng là chuyện vật lý, không phải chuyện tính cách");
   assert.ok(a > plain(SLOTS - 1), "kín chỗ phải cao hơn mọi bậc còn chỗ");
   assert.ok(a < 1, "vẫn phải là xác suất — còn người liều đứng tràn ra lề");
-  assert.equal(full(P(0.5), 1), plain(SLOTS + 3), "quá chỗ thì dài thêm cũng không hơn");
+  assert.equal(full(P(0.5)), plain(SLOTS + 3), "quá chỗ thì dài thêm cũng không hơn");
 });
 
 // ────────────────────────────────────────────────────────── chạy thật một ngày
 
-/** Người chơi chậm tay: đó là người duy nhất làm cái hàng dài ra được. */
+/** Người chơi chậm tay mới làm hàng dài ra được. */
 const CHAM: Policy = { ...POLICIES.greedy, name: "cham", workSec: [25, 40] };
 const dayOf = (day: number): SaveFile => {
   const w = newGame("t", "balk-save");
@@ -100,7 +82,6 @@ const dayOf = (day: number): SaveFile => {
 type Run = {
   h: HeadlessStall;
   balked: string[];
-  /** visitId của những người ĐÃ từng đứng vào hàng (slot ≥ 0, hoặc đã qua phase chờ). */
   queued: Set<string>;
   left: Map<string, string>;
   arrived: string[];
@@ -134,8 +115,7 @@ test("chạy thật: có người quay đầu, mà cái hàng đó vẫn có ng�
 });
 
 test("RANH GIỚI: không một ai đã xếp vào hàng mà bỏ đi vì 'đông'", () => {
-  // Đây là chỗ hợp đồng `queuePatienceMul` bị đụng tới. Người đã đứng vào hàng chỉ được
-  // bỏ đi vì IMPATIENT (chờ quá 1,6 lần sức chờ) — không bao giờ vì BALKED.
+  // Đã vào hàng thì chỉ bỏ đi vì IMPATIENT (chờ quá 1,6 lần sức chờ), không bao giờ vì BALKED.
   for (const day of [11, 12, 13, 16]) {
     const r = play(day);
     for (const id of r.balked) {
@@ -178,7 +158,7 @@ test("quay đầu KHÔNG tính vào `lost` của ngày", () => {
   assert.equal(r.h.service.lostCount, impatient);
 });
 
-test("quay đầu không phải một lượt ghé: không nhích `visits`, không ghi gì vào trí nhớ", () => {
+test("quay đầu không phải một lượt ghé: không nhích `visits`", () => {
   const r = play(13);
   const named = new Set(Object.keys(r.h.ctx.world.npcs));
   // người đi ngang có `npc:arrived` mà không bao giờ có `npc:left` — trừ ra
@@ -189,14 +169,7 @@ test("quay đầu không phải một lượt ghé: không nhích `visits`, khô
     if (!mine.length) continue;
     const balked = mine.filter((id) => r.balked.includes(id)).length;
     assert.equal(r.h.ctx.world.npcs[key].visits, mine.length - balked, `visits của ${key}`);
-    // người mà cả ngày chỉ ghé đúng một lần, và lần đó quay đầu: sổ nhớ phải SẠCH TRƠN
-    if (mine.length === 1 && balked === 1) {
-      const s = r.h.ctx.world.npcs[key];
-      assert.equal(s.relationPoints, 0, `${key}: quay đầu mà quan hệ vẫn nhúc nhích`);
-      assert.equal(s.memory.short.length + s.memory.long.length + (s.memory.core ? 1 : 0), 0,
-        `${key}: quay đầu mà vẫn bị ghi một mục trí nhớ — người bán có làm gì sai đâu`);
-      checked++;
-    }
+    if (balked) checked++;
   }
   assert.ok(checked > 0, "không có ca nào để kiểm — đổi ngày đi");
 });
@@ -210,10 +183,7 @@ test("tất định: cùng seed, cùng người quay đầu, cùng thứ tự", 
 });
 
 test("chế độ không giới hạn thời gian: trần MỘT khách nên không bao giờ chạm ngưỡng", () => {
-  // Hai lớp khoá, cố ý trùng nhau. Lớp ngoài: `spawn()` tắt hẳn luật quay đầu khi
-  // `deps.noTimePressure` — thêm một cửa mất khách vào chế độ dành cho người chơi thong
-  // thả là sai. Lớp trong (kiểm ở đây, vì nó đo được): `peakCap` ép MỘT khách một lượt
-  // (P4-02 §4), mà một người thì còn xa mới tới mốc "hàng dài".
+  // `spawn()` đã tắt luật quay đầu khi `noTimePressure`; ở đây kiểm lớp trong: `peakCap` ép một khách một lượt.
   for (const day of [1, 13, 40]) {
     assert.equal(peakCap(day, true), 1);
     assert.ok(peakCap(day, true) < balkFrom(SLOTS), "trần khách phải nằm dưới ngưỡng ngại");

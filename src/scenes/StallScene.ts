@@ -1,13 +1,11 @@
 import Phaser from "phaser";
-import { standDeps } from "../sim/day";
+import { dayDeps } from "../sim/day";
 import { GAME_W, GAME_H } from "../core/config";
 import { CLOCK_DT_CLAMP_MS, PEAK_START_MIN, type Clock } from "../core/clock";
 import { bus, type EventKey, type EventMap } from "../core/eventbus";
 import { NEGATIVE_STIMS, type StallCloseReason, type StimId } from "../core/types";
 import type { GameContext } from "../core/context";
-import { SEASON_DAYS, loadSettings, type Settings } from "../core/save";
-import { creditBookOpen } from "../sim/season";
-import { moment, onStoryOverheard } from "../sim/story";
+import { loadSettings, type Settings } from "../core/save";
 import { DEV_TOOLS, PLAYTEST } from "../core/flags";
 import { telemetry } from "../core/session";
 import { Service, bubbleLife } from "../sim/service";
@@ -20,21 +18,13 @@ import { Rain } from "../ui/stall/Rain";
 import { BubblePool } from "../ui/stall/BubblePool";
 import { TalkPanel } from "../ui/stall/TalkPanel";
 import { MoneyPops } from "../ui/stall/MoneyPops";
-import { GossipCorner } from "../ui/stall/GossipCorner";
-import { NotebookView } from "../ui/notebook/NotebookView";
 import { MenuBoardView } from "../ui/menu/MenuBoardView";
-import { logNote } from "../sim/notebook";
 import { chorePin } from "../ui/chorePin";
 import { TOUR_TOTAL, fillGap, tourAt, tourDone, tourIndex, tourSkip, touring } from "../sim/tour";
 import { TourCoach } from "../ui/tour/TourCoach";
-import { coBaFace } from "../art/faces";
-import { CLAIM } from "../sim/gossip";
-import { NPCS } from "../content/npcs";
 import { dishQuality, isRain, portionsFor, putBack, stockOf, take, goodsFor } from "../sim/econ";
-import { RITUAL_LINES, RITUAL_PRAYER, RITUAL_STEPS } from "../sim/till";
 import { dirtMul, has, type EquipId } from "../sim/equipment";
 import { labelOf } from "../sim/order";
-import { OverhearScene, type Tier } from "../sim/overhear";
 import { dev } from "../dev/registry";
 import type { DayScene } from "./DayScene";
 import { diffDish, type Ingredient } from "../sim/order";
@@ -100,13 +90,9 @@ const WIPED_CLEAN = 0.7;
 const HEAD_PX = 52;
 
 /**
- * Quãng ba chấm "đang nghĩ" trước câu đáp.
+ * Quãng ba chấm "đang nghĩ" trước câu đáp — đủ tách hai bong bóng mà không bắt người chơi ngồi đợi.
  *
- * 1,2 s lúc đầu là canh theo nhịp ĐỌC; chơi thật thì nó thành nhịp CHỜ, và chủ dự án nói
- * thẳng là chậm. 0,3 s vẫn đủ tách hai bong bóng (câu mình → câu họ) mà không bắt người
- * chơi ngồi đợi — một cuộc bốn nhịp tiết kiệm được gần bốn giây đồng hồ bán hàng.
- *
- * ⚠️ `PLAYER_SAY_TAIL` đo từ mốc này — nới chỗ này là nới cả quãng bong bóng của cô Ba nán lại.
+ * ⚠️ `PLAYER_SAY_TAIL` đo từ mốc này — nới chỗ này là nới cả quãng bong bóng của mình nán lại.
  */
 const REPLY_DELAY_SEC = 0.3;
 /** Ngắn hơn hẳn bong bóng khách: câu của mình là câu mình vừa tự bấm ra. Đủ cho cú tắt dần 260 ms. */
@@ -118,8 +104,6 @@ const HUSH_ON: ReadonlySet<StimId> = new Set<StimId>(["BURNT_OR_COLD", "DROPPED_
 
 const HUSH_SECONDS = 6;
 
-const FINALE_SECONDS = 40;
-const SKIP_AFTER = 1.5;
 
 /** Hệ số occluder 0,45 không được miễn phí: giữ C thì KHÔNG đi được. */
 const COVER_SLOW = 1.3;
@@ -149,19 +133,11 @@ export class StallScene extends Phaser.Scene {
   private ring!: Phaser.GameObjects.Image;
   private bubbles!: BubblePool;
   private audio!: StallAudio;
-  private corner: GossipCorner | null = null;
-  private overhearTier: Tier = 0;
-  private notebook: NotebookView | null = null;
   private menuBoard: MenuBoardView | null = null;
   /** Bong bóng dẫn bữa đầu — chỉ dựng ở ngày 1, và chỉ khi còn việc chưa làm. */
   private coach: TourCoach | null = null;
   /** Theo từng ổ, không phải một biến dùng chung — nếu không thì gác ổ A rồi nướng ổ B là A bị chấm bằng thông số của B. */
   private breadQ = 1;
-  private ritualOffered = false;
-  private finaleAt = -1;
-  private dishReadyAt = 0;
-  private pendingDebt: { record: import("../sim/till").DebtRecord; name: string; until: number } | null = null;
-  private debtQueued = false;
   private dishQ = 1;
 
   private near: Station | null = null;
@@ -197,7 +173,7 @@ export class StallScene extends Phaser.Scene {
   private choreGfx!: Phaser.GameObjects.Graphics;
   private basket: {
     hand: Hand; warmth: number; crust: number; q: number; soiled: boolean;
-    dish: Ingredient[]; dishQ: number; readyAt: number;
+    dish: Ingredient[]; dishQ: number;
   }[] = [];
   private basketImgs: Phaser.GameObjects.Image[] = [];
   private basketTopY = 0;
@@ -251,7 +227,7 @@ export class StallScene extends Phaser.Scene {
   private talkRing!: Phaser.GameObjects.Graphics;
   private pendingDots!: Phaser.GameObjects.Graphics;
   private talkHoldsClock = false;
-  /** Giữ cú bấm lại, mở ngay khi tay rảnh — cùng lối với `debtQueued`. */
+  /** Giữ cú bấm lại, mở ngay khi tay rảnh. */
   private talkQueued = -1;
   /** Ba vật ĐỘNG — xem `drawMovables()`. */
   private ganhImg: Phaser.GameObjects.Image | null = null;
@@ -287,9 +263,6 @@ export class StallScene extends Phaser.Scene {
     this.boardCrust = 0;
     this.breadQ = 1;
     this.boardQ = 1;
-    this.finaleAt = -1;
-    this.pendingDebt = null;
-    this.debtQueued = false;
     this.oven = ovenFor(has(this.world.equipment, "LO_DIEN"));
     this.grip = new Grip();
     this.handsBusyUntil = 0;
@@ -306,8 +279,6 @@ export class StallScene extends Phaser.Scene {
     this.actors.clear();
     this.off = [];
     this.resumed = !!data.resume;
-    // ⚠️ Phaser dùng lại instance scene: field initializer KHÔNG chạy lại giữa hai ngày.
-    this.ritualOffered = false;
     /**
      * ⚠️ Phaser KHÔNG chạy lại field initializer giữa hai ngày. Quên `talkHoldsClock` là `clock.busy`
      * kẹt true mọi frame hôm sau; quên `talkQueued` là thẻ trò chuyện tự bật lúc vừa mở hàng.
@@ -387,11 +358,11 @@ export class StallScene extends Phaser.Scene {
     }
     this.service = new Service({
       bus, hub: this.ctx.rng, saveId: w.saveId, day: w.progress.dayIndex,
-      npcs: w.npcs, bags: w.shuffleBags, dialog: w.dialogState, gossip: w.gossip, notebook: w.notebook,
-      ...standDeps(w),
-      debts: w.money.debtsOwedToPlayer, till: w.econ, allowFalseMemory: w.a11y.allowFalseMemory ?? true,
+      npcs: w.npcs, bags: w.shuffleBags, dialog: w.dialogState,
+      ...dayDeps(w),
+      till: w.econ, flags: w.flags,
       equip: w.equipment, loaOn: (w.econ?.loaOffUntil ?? 0) < w.progress.dayIndex,
-      story: w.story, noTimePressure: this.settings.noTimePressure,
+      noTimePressure: this.settings.noTimePressure,
       todayCounters: w.progress.today,
       readMul: (this.settings.textScale > 1 ? 1.25 : 1) * (this.settings.noTimePressure ? 1.5 : 1),
       resumeAt: this.resumed || w.flags.lateOpenDay === w.progress.dayIndex ? this.clock.minutes : undefined,
@@ -415,8 +386,6 @@ export class StallScene extends Phaser.Scene {
       () => this.orderIsEmptyLoaf(),
       (i) => this.consumePreset(i),
     );
-    // Kẹp gắp KHÔNG còn bị `addCooldownMs`: nó là món "mua là được", không phải một cuộc đánh đổi
-    // tay-nhanh-đổi-tay-sạch. Dao bén (vốn đặt `wrapSnapMs`) đã bỏ khỏi cây thiết bị.
     this.drawEquipment();
     this.bindInput();
     this.wire();
@@ -428,15 +397,6 @@ export class StallScene extends Phaser.Scene {
       panOf: (npcId) => this.panOf(npcId),
       rand: () => ambientRng.next(),
     });
-
-    this.corner?.destroy();
-    this.corner = null;
-    const plan = w.gossip?.overhear;
-    if (plan && plan.day === w.progress.dayIndex) {
-      this.corner = new GossipCorner(this, new OverhearScene(plan, {
-        reducedMotion: this.settings.reducedMotion, noTimePressure: this.settings.noTimePressure,
-      }), this.bubbles);
-    }
 
     if (DEV_TOOLS) {
       dev.stall = {
@@ -464,7 +424,6 @@ export class StallScene extends Phaser.Scene {
           soiled: !!l.soiled,
           dish: (l.dish ?? []) as Ingredient[],
           dishQ: l.dishQ ?? 1,
-          readyAt: l.readyAt ?? 0,
         }));
         this.floor = (st.floor ?? []).slice(0, FLOOR_MAX)
           .map((f) => ({ ...f, hand: f.hand as Hand, dish: f.dish as Ingredient[] }));
@@ -485,7 +444,6 @@ export class StallScene extends Phaser.Scene {
      */
     if (touring(this.world)) {
       this.coach = new TourCoach({
-        face: coBaFace(this),
         textScale: this.settings.textScale,
         onSkip: () => { tourSkip(this.world); this.coach?.destroy(); this.coach = null; },
       });
@@ -550,39 +508,6 @@ export class StallScene extends Phaser.Scene {
       this.moneyPops.pop(p.delta, sx, footY(sy) - HEAD_PX, this.popClock, ceil);
     });
     this.listen("save:written", () => this.hud.flashSaved());
-
-    /** T3 không bị phá: không con số, không tổng, không thanh — chỉ một dòng nói HƯỚNG và cái VIỆC vừa làm ra nó. */
-    this.listen("relationship:moved", (p) => {
-      if (this.closed) return;
-      const who = NPCS.find((n) => n.id === p.npcId)?.name ?? "khách";
-      const verb = p.dir === "UP"
-        ? (p.strength === "RO" ? "quý hẳn lên" : "vui hơn một chút")
-        : (p.strength === "RO" ? "phật ý" : "hơi kém vui");
-      this.hud.toast(`${who} ${verb} — ${p.note}`, p.dir === "UP" ? "good" : "bad", this.popClock);
-    });
-
-    /** Ba đường có sẵn đều rất kín, nên người chơi bị tin đồn làm cho ế mà không biết là có tin đồn. */
-    this.listen("gossip:mentioned", (p) => {
-      if (this.closed) return;
-      const c = CLAIM[p.claim];
-      if (!c) return;
-      const who = NPCS.find((n) => n.id === p.npcId)?.name ?? "khách";
-      const src = p.source ? NPCS.find((n) => n.id === p.source)?.name : null;
-      this.hud.toast(
-        `${who} nhắc chuyện ${c.label}${src ? ` — nghe từ ${src}` : ""}`,
-        c.valence < 0 ? "bad" : "good", this.popClock,
-      );
-    });
-    this.listen("gossip:overheard", (p) => {
-      if (this.closed || p.tier === 0) return;
-      const c = CLAIM[p.claim];
-      if (!c) return;
-      const src = p.tier === 2 && p.source ? NPCS.find((n) => n.id === p.source)?.name : null;
-      this.hud.toast(
-        `nghe lỏm ngoài hẻm: chuyện ${c.label}${src ? ` — từ ${src}` : ""}`,
-        c.valence < 0 ? "bad" : "good", this.popClock,
-      );
-    });
   }
 
   // ───────────────────────────────────────────────────────────────── dựng cảnh
@@ -624,29 +549,17 @@ export class StallScene extends Phaser.Scene {
   }
 
   /**
-   * ĐỒ CHƯA MUA THÌ KHÔNG ĐƯỢC CÓ MẶT TRÊN CẢNH.
-   *
-   * Chủ dự án: *"ghế nhựa + bàn nhỏ đã hiển thị trong khi chưa mua. Ẩn đi"* · *"ẩn cái bình nước
-   * hiện tại của game đi"* · *"bảng hiệu thì ẩn đi, nào mua sẽ hiện"*. Bốn ô này nằm sẵn trong
-   * `world/map.ts` từ bản dựng đầu (hai ô `s`, một ô `b`, một ô `T`, một ô `A`) — nên người chơi
-   * nhìn ra xe đã thấy đủ đồ rồi mà trang Đồ nghề vẫn bắt trả tiền cho chúng. Một món đồ đã thấy
-   * trước khi mua thì cú mua không đổi gì trên màn hình, và "cái xe LÀ bảng thành tựu" hoá thành
-   * chữ suông.
+   * ĐỒ CHƯA MUA THÌ KHÔNG ĐƯỢC CÓ MẶT TRÊN CẢNH (ô `s`, `b`, `T`, `A` của `world/map.ts`).
    *
    * ⚠️ `A` LÀ TẤM BẢNG GỖ CHỮ A "bánh mì ngon" đứng trên vỉa hè ở đầu quầy (17,7) — ĐÓ mới là
-   * `BANG_HIEU`. Lượt trước tôi gác nhầm sang tấm banner đỏ trên vách sau (`art/sign.ts`), và chủ
-   * dự án chỉ lại: *"cái bảng hiệu là cái bảng hiệu chỗ ra vào quầy á… mặc định là bảng hiệu cái
-   * hình bánh mì ngon á. Dùng cái bảng đó."* Tấm banner đỏ trên vách là TÊN CỦA QUÁN — quán cô Ba
-   * có trước ngày 1, nên nó treo đó từ đầu và không bán. Thứ mình bỏ tiền mua là tấm bảng đứng ra
-   * mặt tiền kéo người đi ngang, và đó đúng là cái "+15% khách ghé" trên thẻ.
+   * `BANG_HIEU` ("+15% khách ghé"). Tấm banner đỏ trên vách (`art/sign.ts`) là tên quán, treo từ đầu, không bán.
    *
    * Gác ở ĐÂY, chỗ dựng đạo cụ, chứ không ở bản đồ: bản đồ là dữ liệu tĩnh, còn chuyện mua được
    * hay chưa đổi theo từng ngày. Cảnh dựng lại mỗi sáng nên mua tối nay là sáng mai thấy.
    *
    * Ô nào ứng với món nào thì tra `BUYABLE_TILES` bên `world/map.ts` — ở đó vì nửa còn lại của
-   * cùng một chuyện nằm ở đó: ẩn rồi thì cũng THÔI CHẶN CHÂN (xem `openTiles`). Hai nửa tách ra
-   * hai bảng là có ngày ẩn cái ghế mà vẫn để lại một cái ghế vô hình chặn đường — đúng lỗi chủ
-   * dự án bắt được: *"chỗ ô của ghế vẫn bị chiếm chỗ chứ không hề bỏ ra"*.
+   * cùng một chuyện nằm ở đó: ẩn rồi thì cũng THÔI CHẶN CHÂN (xem `openTiles`). Tách hai bảng là có
+   * ngày ẩn cái ghế mà vẫn để lại một cái ghế vô hình chặn đường.
    */
   private propHidden(code: TileCode) {
     const id = BUYABLE_TILES[code];
@@ -681,10 +594,8 @@ export class StallScene extends Phaser.Scene {
     }
 
     // Depth phải vượt TOÀN BỘ hàng tường y=0: bảng trải ngang qua mấy ô, mỗi ô có depth riêng tăng dần.
-    // KHÔNG gác theo `BANG_HIEU`: banner đỏ trên vách là TÊN QUÁN của cô Ba, có trước ngày 1.
-    // Món mua được là tấm bảng gỗ đứng ở đầu quầy — xem `propHidden`.
+    // KHÔNG gác theo `BANG_HIEU`: banner đỏ là tên quán, có từ ngày 1; món mua được là tấm bảng gỗ — xem `propHidden`.
     const { sx, sy } = toScreen(SIGN_TILE.x, SIGN_TILE.y);
-    // Tên con (màn mở đầu) treo trên tấm ván nhỏ dưới banner — xem `art/sign.ts`.
     createSign(this, sx, sy, depthOf(WORLD_W, 0) + 1, this.world.playerName);
 
     /*
@@ -822,7 +733,6 @@ export class StallScene extends Phaser.Scene {
       if (ev.code === "KeyP" && this.paused && !this.overlayBack) { this.resume(); return; }
       if (ev.code === "Escape" || ev.repeat || this.paused) return;
       if (ev.code === "KeyP") { this.pause(); return; }
-      if (ev.code === "Tab") { ev.preventDefault(); this.openNotebook(); return; }
       if (this.assembly.isOpen) { this.assembly.handleKey(ev.code); return; }
       if (ev.code === "KeyQ") this.intents.push(() => this.discard());
       else if (ev.code === "KeyE" || ev.code === "Space") {
@@ -833,7 +743,6 @@ export class StallScene extends Phaser.Scene {
       }
       else if (ev.code === "KeyR") this.intents.push(() => this.liftFromBoard());
       else if (ev.code === "KeyF") this.intents.push(() => this.askFront());
-      else if (ev.code === "KeyG") this.intents.push(() => this.writeDebt());
     });
   }
 
@@ -849,7 +758,7 @@ export class StallScene extends Phaser.Scene {
       clock: (raw) => {
         frameDeltas.push(raw);
         if (frameDeltas.length > 5400) frameDeltas.shift();
-        this.clock.busy = this.service.busy || this.talkHoldsClock || this.finaleAt >= 0;
+        this.clock.busy = this.service.busy || this.talkHoldsClock;
         // `runFrame` bỏ qua TOÀN BỘ frame khi dt = 0 (xem `sim/frame`), nên một dòng này đóng
         // băng cả đồng hồ, cái lò lẫn sức chờ của khách — không có hệ nào chạy lén tiếp.
         if (this.tourHolding()) return 0;
@@ -878,11 +787,12 @@ export class StallScene extends Phaser.Scene {
       },
       craft: (dt) => {
         for (const act of this.intents.splice(0)) act();
-        this.tickDebt();
+        this.tickTalkQueue();
         this.tickStation(dt * 1000);
         this.tickTourOven();
         for (const _ of this.oven.tick(dt)) {
-          this.world.notebook.today.burnt++;
+          const t = this.world.progress.today;
+          t.burnt = (t.burnt ?? 0) + 1;
           bus.emit("stim:emitted", { stimId: "BURNT_OR_COLD", zone: "OVEN", salience: SALIENCE.BURNT_OR_COLD, at: this.elapsed, smell: true });
           this.hud.toast("khét rồi", "bad", this.popClock);
         }
@@ -924,47 +834,13 @@ export class StallScene extends Phaser.Scene {
       },
       dialog: (dt) => {
         this.service.tickDialog(dt);
-        this.tickOverhear(dt);
-        this.tickVia();
         this.drainService();
         telemetry.dialogDeferred = this.service.dialogDeferred;
-        // Khoảng lặng ngày 40 phải được mở TRƯỚC cú đóng quầy theo đồng hồ, trong CÙNG frame.
-        this.tickFinale();
-        if (this.clock.isOver && !this.service.busy && this.finaleAt < 0 && !this.hasFinale) this.close("CLOCK");
+        if (this.clock.isOver && !this.service.busy) this.close("CLOCK");
       },
       render: (dt) => { this.syncAudio(dt); this.renderSync(dt); },
       renderPaused: () => { this.syncAudio(0); this.renderSync(0); },
     }, dtMs);
-  }
-
-  /** Ba tầng theo việc người chơi đang làm: tay bận → biết có người nói · đứng yên → nghe nội dung · giữ Shift → nghe cả nguồn. */
-  private tickOverhear(dt: number) {
-    const k = this.corner;
-    if (!k) return;
-    const handsBusy = this.player.hand !== "empty" || this.assembly.isOpen || this.busy !== null || this.handsBusy;
-    const still = !this.player.moving;
-    const loud = has(this.world.equipment, "LOA_RAO") && (this.world.econ.loaOffUntil ?? 0) < this.world.progress.dayIndex;
-    const tier: Tier = handsBusy || !still ? 0 : this.keys.SHIFT.isDown && !loud ? 2 : 1;
-    this.overhearTier = tier;
-    if (k.sc.state === "PLAY" && tier === 2) this.service.playerLeaning();
-    const quiet = this.service.audience.length <= 2
-      && !this.service.customers.some((c) => c.memKey === k.sc.plan.a || c.memKey === k.sc.plan.b);
-    const ended = k.sc.tick(dt, { minutes: this.clock.minutes, quiet, tier });
-    if (ended) {
-      const p = k.sc.plan;
-      const source = k.sc.bestFirst >= 2 ? p.source : null;
-      bus.emit("gossip:overheard", { a: p.a, b: p.b, claim: p.claim, source, tier: k.sc.best });
-      const nb = this.world.notebook;
-      if (p.claim.startsWith("story:")) {
-        onStoryOverheard(this.world.story, p.claim, k.sc.best, this.world.progress.dayIndex);
-        if (nb && k.sc.best >= 1) logNote(nb, this.world.progress.dayIndex, this.clock.minutes, p.a, { t: "SAID_SOMETHING", text: p.lines.join(" — ") });
-        return;
-      }
-      if (nb && k.sc.best >= 1) {
-        logNote(nb, this.world.progress.dayIndex, this.clock.minutes, p.a, { t: "EAVESDROP", claim: p.claim, ...(source ? { source } : {}) });
-        if (CLAIM[p.claim]?.valence < 0) nb.today.heardBad = true; else nb.today.heardGood = true;
-      }
-    }
   }
 
   /** CHỈ ĐỌC state rồi vẽ. `dt` là giây THẬT và bằng 0 khi pause. */
@@ -981,16 +857,7 @@ export class StallScene extends Phaser.Scene {
     this.moneyPops.update(this.tickPopClock(), this.settings.reducedMotion);
     this.drawTalkTarget();
     this.drawPendingTalk();
-    /*
-     * GỌI Ở ĐÂY, KHÔNG LỒNG TRONG `drawPendingTalk()`.
-     *
-     * Lỗi có sẵn: `drawPendingDeeds()` nằm sau một `return` sớm — `drawPendingTalk()`
-     * thoát ngay khi KHÔNG có ai đang chờ mình trả lời. Nên mấy chấm "lời hứa còn nợ"
-     * chỉ hiện đúng vào những lúc tình cờ có một lời mời chuyện đang treo, tức gần như
-     * không bao giờ. Mà cả cơ chế lời hứa (P2-07 §4bis) dựa vào cái chấm đó để người chơi
-     * BIẾT mình đang nợ gì: không thấy chấm thì phạt vì quên là phạt trí nhớ, đúng thứ T5
-     * cấm. Lộ ra lúc gắn `drawMovables()` vào cùng chỗ và ba vật động không bao giờ hiện.
-     */
+    // ⚠️ GỌI Ở ĐÂY, KHÔNG LỒNG TRONG `drawPendingTalk()`: hàm đó `return` sớm khi không ai chờ trả lời.
     this.drawPendingDeeds();
     this.drawMovables();
     this.drawRing();
@@ -1003,12 +870,11 @@ export class StallScene extends Phaser.Scene {
     this.drawBasket();
     this.drawFloorItems();
     this.drawCover();
-    this.corner?.draw(this.overhearTier, this.clock.minutes, this.time.now, this.settings.reducedMotion);
     this.rain?.draw(this.cam.world.worldView, dt, this.time.now, this.settings.reducedMotion);
     const ticket = this.frontTicket();
     this.hud.dockFeed(this.assembly.isOpen);
     this.hud.update({
-      day: this.world.progress.dayIndex, seasonDays: SEASON_DAYS, clock: this.clock,
+      day: this.world.progress.dayIndex, clock: this.clock,
       money: this.world.money.cash, served: this.world.progress.today.served,
       near: this.assembly.isOpen ? null : this.near, hand: this.player.hand, busy: this.busy,
       frozen: this.paused || this.closed,
@@ -1065,12 +931,6 @@ export class StallScene extends Phaser.Scene {
     if (waiting && !this.talk.isOpen && this.service.pendingTalkers.includes(waiting.id)) {
       return `${this.service.label(waiting)} đang chờ mình trả lời — bấm F`;
     }
-    const d = this.pendingDebt;
-    if (d && this.elapsed <= d.until) {
-      const amt = d.record.trueAmount.toLocaleString("vi-VN");
-      return `G — ghi sổ nợ: ${d.name} ${amt}₫${this.debtQueued ? " (ghi ngay khi rảnh tay)" : ""}`;
-    }
-    if (this.finaleAt >= 0 && this.elapsed - this.finaleAt > SKIP_AFTER) return "Enter — thôi, dọn hàng";
     if (this.handsBusy) return `${this.handsBusyWhat || "tay đang bận"}…`;
     if (this.keys.C.isDown) return "che tay — đi chậm lại, không chạy được";
     if (this.player.hand === "empty" && this.nearestFloor() >= 0) {
@@ -1148,30 +1008,13 @@ export class StallScene extends Phaser.Scene {
       if (ev.kind === "cost") {
         w.money.cash -= ev.amount;
         // Phải vào sổ, không thì cột "đếm tiền" buổi tối lệch đúng bội số của `TEA_COST`.
-        if (ev.item === "talk") w.econ.today.story += ev.amount;
+        if (ev.item === "talk") w.econ.today.talk += ev.amount;
         else w.econ.today.fixed += ev.amount;
         bus.emit("money:changed", { delta: -ev.amount, balance: w.money.cash, reason: "TEA" });
         continue;
       }
-      if (ev.kind === "credit") {
-        w.progress.today.served++;
-        if (creditBookOpen(w.progress.dayIndex)) {
-          // Cửa sổ MỜI phải trùng cửa sổ NHẬN: cú bán vừa xong còn khoá tay `TAKE_MONEY_SEC`.
-          this.pendingDebt = { record: ev.record, name: ev.name, until: Math.max(this.elapsed, this.handsBusyUntil) + 4 };
-          this.debtQueued = false;
-          this.hud.toast(`${ev.name} mua chịu ${ev.record.trueAmount.toLocaleString("vi-VN")}₫ — bấm G để ghi sổ`, "info", this.popClock);
-        } else this.hud.toast(`${ev.name} mua chịu ${ev.record.trueAmount.toLocaleString("vi-VN")}₫ — chưa có sổ, nhớ trong đầu`, "info", this.popClock);
-        continue;
-      }
-      if (ev.kind === "repay") {
-        w.money.cash += ev.amount;
-        w.progress.today.revenue += ev.amount;
-        this.hud.toast(`${ev.name} trả tiền hôm trước ${ev.amount.toLocaleString("vi-VN")}₫`, "good", this.popClock);
-        bus.emit("money:changed", { delta: ev.amount, balance: w.money.cash, reason: "DEBT_REPAID" });
-        continue;
-      }
       // Khách tự bắt chuyện chỉ là một lời mời — không bấm F cũng không sao.
-      /** Toast là tín hiệu TỨC THỜI gắn vào một trạng thái BỀN. Thay bằng bong bóng trên đầu họ + dấu bền `drawPendingTalk()`. */
+      /** Không toast: đã có bong bóng trên đầu họ + dấu bền `drawPendingTalk()`. */
       if (ev.kind === "talkOffer") continue;
       /** ⚠️ Phải làm ở ĐÂY, không trong `Service`: `service.playerHand = player.hand` chạy mỗi frame. */
       if (ev.kind === "takeHand") {
@@ -1189,24 +1032,7 @@ export class StallScene extends Phaser.Scene {
     }
   }
 
-  /** Bấm sớm (tay còn bận) thì cú bấm được XẾP HÀNG, không bị vứt. */
-  private writeDebt() {
-    const p = this.pendingDebt;
-    if (!p || this.elapsed > p.until) return;
-    if (this.handsBusy) { this.debtQueued = true; return; }
-    p.record.playerWrote = p.record.trueAmount;
-    this.pendingDebt = null;
-    this.debtQueued = false;
-    const sec = this.workSeconds(2.0);
-    this.beBusy(sec, "đang ghi sổ");
-    this.audio.writeFor(sec);
-    this.hud.toast(`đã ghi sổ: ${p.name} ${p.record.trueAmount.toLocaleString("vi-VN")}₫`, "good", this.popClock);
-  }
-
-  /** Cú G bấm sớm: giữ lại tới đúng lúc tay rảnh rồi mới ghi. */
-  private tickDebt() {
-    if (this.pendingDebt && this.elapsed > this.pendingDebt.until) { this.pendingDebt = null; this.debtQueued = false; }
-    if (this.debtQueued && !this.handsBusy) this.writeDebt();
+  private tickTalkQueue() {
     // Cú bấm nói chuyện đã xếp hàng: mở ngay khi tay rảnh, và tự hết hạn sau 4 giây —
     // quá lâu thì người chơi đã quên mình bấm gì, mở ra là một cái bảng từ trên trời rơi xuống.
     if (this.talkQueued >= 0) {
@@ -1237,7 +1063,7 @@ export class StallScene extends Phaser.Scene {
   /** Thao tác giữ phím. Lò là chỗ duy nhất có "quá tay" — vạch đỏ luôn nhìn thấy (CANON T5). */
   private tickStation(dtMs: number) {
     const st = this.near;
-    // Lò không còn là "giữ phím canh 0,8 s" — nó là lò nền 3 slot (xem `pressOven`).
+    // Lò là lò nền 3 slot, không giữ phím (xem `pressOven`).
     const usable = st && st.id !== "oven" && !this.handsBusy && !blockedReason(st, this.player.hand) && st.holdMs > 0;
 
     if (!this.holdingWorkKey()) this.holdLatch = false;
@@ -1274,8 +1100,7 @@ export class StallScene extends Phaser.Scene {
 
   /**
    * Thời gian giữ phím của trạm. Trạm trà chỉ TỒN TẠI khi đã có bình nước trà (xem cổng ở
-   * `update.input`), nên 0,25 s là thời gian rót DUY NHẤT — không còn hai mức nhanh/chậm.
-   * Vòi rửa mất cổng `VOI_BON` cùng lúc món đó bị bỏ: cái bồn trên bản đồ giữ 1,5 s của nó.
+   * `update.input`), nên 0,25 s là thời gian rót DUY NHẤT.
    */
   private holdOf(st: Station) {
     if (st.id === "tea") return 250;
@@ -1305,7 +1130,6 @@ export class StallScene extends Phaser.Scene {
         depthOf(st.tx + 0.5, st.ty + 0.5) + 3, sec * 1000, this.settings.reducedMotion,
       );
       this.wipeBoard();
-      this.world.notebook.today.wipes++;
       this.audio.wipeFor(sec);                   // trải đủ lượt lau, không chỉ một nhát ở đầu
       this.hud.toast("lau thớt", "good", this.popClock);
       return;
@@ -1320,7 +1144,7 @@ export class StallScene extends Phaser.Scene {
       if (this.basket.length >= BASKET_SLOTS) { this.hud.toast("chỗ để bánh đầy rồi", "info", this.popClock); return; }
       this.basket.push({
         hand: h, warmth: this.handWarmth, crust: this.handCrust, q: this.breadQ,
-        soiled: this.handSoiled, dish: [...this.dish], dishQ: this.dishQ, readyAt: this.dishReadyAt,
+        soiled: this.handSoiled, dish: [...this.dish], dishQ: this.dishQ,
       });
       this.audio.putDown();
       this.player.hand = "empty";
@@ -1349,7 +1173,6 @@ export class StallScene extends Phaser.Scene {
     this.breadQ = l.q;
     this.dish = l.dish;
     this.dishQ = l.dishQ;
-    this.dishReadyAt = l.readyAt;
   }
 
   private basketPrompt(): string {
@@ -1448,7 +1271,6 @@ export class StallScene extends Phaser.Scene {
         return;
 
       case "bin": {                                     // bỏ đi THẬT — không lấy lại được
-        const wasBurnt = this.player.hand === "loaf_burnt";
         this.player.hand = "empty";
         this.dish = [];
         this.handSoiled = false;
@@ -1456,8 +1278,7 @@ export class StallScene extends Phaser.Scene {
         this.beBusy(this.workSeconds(BIN_SEC), "đang bỏ vào thùng", "quick");
         this.audio.bin();
         this.addDirt(0.004);                            // vụn bánh rơi quanh miệng thùng
-        if (wasBurnt) { this.hud.say("cô Ba: \"bánh đó con để cô ăn.\""); moment(this.world.story, "BANH_DO_CON_DE_CO_AN"); }  // CANON §7.4: cô buồn chứ không la
-        else this.hud.toast("bỏ vào thùng", "info", this.popClock);
+        this.hud.toast("bỏ vào thùng", "info", this.popClock);
         return;
       }
 
@@ -1469,8 +1290,7 @@ export class StallScene extends Phaser.Scene {
         this.hands = "CLEAN";
         this.dirtyEpisode++;
         this.addDirt(-0.1);
-        // Rửa ngay trước mặt khách — ai đang nhìn tay thì thấy. Không còn cổng `VOI_BON`: cái bồn
-        // là một TRẠM có sẵn trên bản đồ từ ngày 1, nên việc rửa lúc nào cũng diễn ra ở chỗ thấy được.
+        // Rửa ngay trước mặt khách — ai đang nhìn tay thì thấy.
         this.service.washedVisibly();
         return;
 
@@ -1515,7 +1335,6 @@ export class StallScene extends Phaser.Scene {
     this.handSoiled = this.boardSoiled;
     this.breadQ = this.boardQ;
     this.dish = dish;
-    this.dishReadyAt = this.elapsed;
     this.player.hand = "loaf_filled";
     // gói xong mới trừ kho — lô cũ nhất trước (P3-03); chất lượng từng phần vào dishQuality
     const day = this.world.progress.dayIndex;
@@ -1569,7 +1388,7 @@ export class StallScene extends Phaser.Scene {
     const res = this.player.hand === "tea"
       ? this.service.serveTea()
       : this.service.serveDish(this.dish, {
-        cold, crust: this.handCrust, quality: this.dishQ, readyAt: this.dishReadyAt,
+        cold, crust: this.handCrust, quality: this.dishQ,
         // `burnAt` THẬT của cái lò đang dùng — lò điện có ngưỡng riêng, lấy hằng số thì dải tốt
         // của nó bị đọc thành "cháy cạnh" (xem `serveDish`).
         burnAt: this.oven.burnAt, singeAt: this.oven.singeAt,
@@ -1578,7 +1397,7 @@ export class StallScene extends Phaser.Scene {
       });
 
     if (!res.ok) { this.hud.toast(res.reason ?? "chưa đưa được", "info", this.popClock); return; }
-    // Cô Ba nói ra chuyện mình vừa cho thêm — bong bóng của người chơi, ngay lúc chìa ổ bánh.
+    // Mình nói ra chuyện vừa cho thêm — bong bóng của người chơi, ngay lúc chìa ổ bánh.
     // Câu đáp của khách tới sau ~0,2–0,4 s (`BARK_DELAY_MIN`), nên hai bong bóng chồng nhau một
     // quãng: đúng như hai người nói chuyện, và `bubbleLayout` lo chuyện chúng không đè lên nhau.
     if (res.playerSay) this.sayAsPlayer(res.playerSay, bubbleLife(res.playerSay, this.readMul()));
@@ -1643,10 +1462,8 @@ export class StallScene extends Phaser.Scene {
   /**
    * Tay dính tiền thì đó là `DIRTY_HANDS` ở vùng TAY. Cùng một đợt tay dơ thì cùng một khoá.
    *
-   * CÁI KẸP GẮP GỠ HẲN CHUYỆN NÀY, ở đây chứ không ở từng chỗ gọi. Chủ dự án: *"kẹp gắp thì không
-   * cần rửa tay"* — nên cổng phải nằm tại CỬA của hệ tay dơ, không phải riêng cú bỏ nhân: gác ở
-   * `onPlace` thôi thì cầm tiền xong lấy ổ ở kệ vẫn bắn `DIRTY_HANDS`, và người chơi vừa bỏ tiền
-   * mua cái kẹp vẫn phải chạy đi rửa tay.
+   * CÁI KẸP GẮP GỠ HẲN CHUYỆN NÀY, ở cửa hệ tay dơ chứ không ở từng chỗ gọi (gác ở `onPlace` thôi thì
+   * lấy ổ ở kệ vẫn bắn `DIRTY_HANDS`).
    */
   private touchFood() {
     if (has(this.world.equipment, "KEP_GAP")) return;
@@ -1654,7 +1471,8 @@ export class StallScene extends Phaser.Scene {
     // đếm SAU cái cổng: "tay cầm tiền xong đụng vô đồ ăn" mới là việc cái kẹp gắp gỡ được.
     // Đếm ở chỗ gọi (mỗi lần bỏ một thứ nhân) thì ra con số của số nguyên liệu, không phải
     // của số lần tay dơ chạm đồ ăn.
-    this.world.notebook.today.bareHands++;
+    const t = this.world.progress.today;
+    t.bareHands = (t.bareHands ?? 0) + 1;
     bus.emit("stim:emitted", {
       stimId: "DIRTY_HANDS", zone: "HANDS", salience: SALIENCE.DIRTY_HANDS, at: this.elapsed,
       key: `DIRTY_HANDS:${this.dirtyEpisode}`,
@@ -1667,7 +1485,7 @@ export class StallScene extends Phaser.Scene {
 
   /** CÀNG BẨN CÀNG LÂU (×1,0 → ×2,0). Chưa gấp ba để không thành cái vòng xoáy mà `wipeBoard` vừa gỡ ra. */
   private wipeSeconds() {
-    const base = 2.5;                                  // khăn ba màu đã bỏ khỏi cây thiết bị
+    const base = 2.5;
     return base * (1 + this.dirt);
   }
 
@@ -1868,7 +1686,7 @@ export class StallScene extends Phaser.Scene {
     return (this.settings.textScale > 1 ? 1.25 : 1) * (this.settings.noTimePressure ? 1.5 : 1);
   }
 
-  /** Lời người chơi xưa nay chỉ rơi vào khung nhật ký góc dưới — nhỏ, ba dòng, xa chỗ mắt đang nhìn. */
+  /** Lời người chơi hiện thành bong bóng trên đầu, ngay chỗ mắt đang nhìn. */
   private sayAsPlayer(text: string, sec: number) {
     this.playerSay = { text, until: this.elapsed + sec };
   }
@@ -1887,7 +1705,7 @@ export class StallScene extends Phaser.Scene {
     this.playerSay = null;
   }
 
-  /** Bong bóng của cô Ba — cùng pool, cùng luật né với bong bóng của khách. */
+  /** Bong bóng của người chơi — cùng pool, cùng luật né với bong bóng của khách. */
   private drawPlayerBubble() {
     const p = this.playerSay;
     if (!p || this.elapsed >= p.until) {
@@ -1993,14 +1811,7 @@ export class StallScene extends Phaser.Scene {
     this.cartImg = put(this.cartImg, PROP.cart,
       k === "LAN" ? CART_LAN : k === "XA" ? CART_XA : k === "CHUNG" ? CART_CHUNG : null);
 
-    /*
-     * KHÔNG vẽ bộ bàn ghế ở đây — bản đồ đã có sẵn (`b` x14, hai `s` x16–17 ở hàng y11),
-     * và `SEAT_SPOT` đặt ngay trước nó. Dựng thêm một bộ nữa là hai bộ chồng lên nhau,
-     * đúng cái tôi vừa nhìn thấy trên màn hình.
-     *
-     * Việc còn thiếu không phải là TRANH mà là HÀNH VI — `THEY_SIT` đưa người ta tới chỗ
-     * đó. Chuyện "chưa mua `GHE_BAN` thì không ngồi được" đã khoá ở `Service.seatFree`.
-     */
+    // KHÔNG vẽ bộ bàn ghế ở đây — bản đồ đã có sẵn (`b` x14, hai `s` x16–17 ở hàng y11); chưa mua `GHE_BAN` thì khoá ở `Service.seatFree`.
   }
 
   private drawPendingDeeds() {
@@ -2041,7 +1852,6 @@ export class StallScene extends Phaser.Scene {
     this.busy = null;
     this.addDirt(0.04);                                // DROP_MESS — cộng với 0,02 của `putFloor`
     this.hud.toast("rơi rồi…", "bad", this.popClock);
-    moment(this.world.story, "BANH_DO_CON_DE_CO_AN");  // rớt thì bỏ — đúng luật (P4-05 §2.2 B)
   }
 
   /** Vật che tầm nhìn (P1-02 §2.6): thân người che tay (giữ C) · hơi lò khi lò đang nướng. */
@@ -2080,14 +1890,7 @@ export class StallScene extends Phaser.Scene {
       const col = band === "RAW" ? RAW_COL : band === "CRISP" ? CRISP_COL : band === "SINGED" ? SINGE_COL : BURNT_COL;
       const ang = (n: number) => -Math.PI / 2 + (n / burnAt) * Math.PI * 2;
 
-      /*
-       * BA NẤC PHẢI THẤY TRƯỚC KHI ĐI TỚI. Chủ dự án: *"tôi đang không rõ 3 nấc của cái nướng
-       * bánh"* — và cái vòng cũ chỉ tô MỘT cung đang chạy rồi khắc hai vạch trắng. Người chơi
-       * muốn biết "còn mấy giây nữa thì sém" thì phải đoán, vì phần vòng chưa tới không có màu.
-       *
-       * Giờ vẽ nền ba cung mờ trước (non · giòn · sém), rồi cung sáng chạy đè lên. Nhìn một cái
-       * là thấy khúc vàng nằm ở đâu và mình đang đứng chỗ nào trong nó.
-       */
+      // Ba nấc phải thấy trước khi đi tới: nền ba cung mờ (non · giòn · sém), rồi cung sáng chạy đè lên.
       g.lineStyle(4, RAW_COL, 0.22);
       g.beginPath(); g.arc(cx, baseY, R, ang(0), ang(CRUST.READY)); g.strokePath();
       g.lineStyle(4, CRISP_COL, 0.3);
@@ -2102,12 +1905,8 @@ export class StallScene extends Phaser.Scene {
       g.strokePath();
 
       /*
-       * ⚠️ VẠCH THỨ HAI ĐỌC `oven.singeAt`, KHÔNG ĐỌC `CRUST.SINGED`.
-       *
-       * Đây là lỗi chủ dự án nhìn ra: với lò điện (`burnAt` 1,9 · `singeAt` 1,30) vạch trắng vẽ
-       * ở 0,88/1,9 = 46,3% vòng trong khi MÀU đổi ở 1,30/1,9 = 68,4% — lệch 22% cả vòng. Nên
-       * nửa sau cái vòng đọc ra là "sắp cháy tới nơi" trong khi ổ bánh vẫn đang vàng giòn, và
-       * cú nâng cấp 1.800 nghìn trông như làm bánh dễ cháy hơn.
+       * ⚠️ VẠCH THỨ HAI ĐỌC `oven.singeAt`, KHÔNG ĐỌC `CRUST.SINGED`: lò điện có `singeAt` riêng,
+       * lấy hằng số là vạch trắng lệch khỏi chỗ đổi màu.
        */
       for (const n of [CRUST.READY, singeAt]) {
         const a = ang(n);
@@ -2119,20 +1918,20 @@ export class StallScene extends Phaser.Scene {
   }
 
   /**
-   * Bong bóng dẫn bữa đầu — khoanh tròn thứ cần bấm, cô Ba nói một câu bên cạnh.
+   * Bong bóng dẫn bữa đầu — khoanh tròn thứ cần bấm, kèm một câu hướng dẫn.
    *
    * Chạy MỖI FRAME vì camera còn trượt theo người chơi: cái vòng phải dính vào cái lò chứ không
    * dính vào màn hình. `TourCoach` chỉ ghi lại chữ khi chữ thật sự đổi, nên gọi liên tục không
    * làm bong bóng nhấp nháy.
    *
-   * Tắt hẳn khi có lớp khác đang mở (sổ tay, bảng menu, pause): khoanh một chỗ bị che là chỉ
+   * Tắt hẳn khi có lớp khác đang mở (bảng menu, pause): khoanh một chỗ bị che là chỉ
    * vào tấm màn.
    */
   private drawCoach() {
     const c = this.coach;
     if (!c) return;
     const w = this.world;
-    if (!touring(w) || this.paused || this.closed || this.notebook?.open || this.menuBoard?.open) {
+    if (!touring(w) || this.paused || this.closed || this.menuBoard?.open) {
       c.hide();
       return;
     }
@@ -2362,8 +2161,7 @@ export class StallScene extends Phaser.Scene {
     const lab = this.choreAt.get("board");
     this.drawFlies(
       !lab || d <= FLY_DIRT_MIN ? 0 : d >= 0.7 ? 5 : d >= 0.5 ? 3 : 1,
-      // Bay quanh MẶT THỚT. Trước đây neo theo nhãn tên trạm cộng 34 px — một con số
-      // chỉnh bằng mắt dựa trên đỉnh cả khối quầy, tức dựa trên một mốc vừa đổi nghĩa.
+      // Bay quanh MẶT THỚT.
       lab?.x ?? 0, this.boardTopY,
     );
   }
@@ -2454,8 +2252,7 @@ export class StallScene extends Phaser.Scene {
   private drawRing() {
     if (!this.near) { this.ring.setVisible(false); return; }
     const { sx, sy } = toScreen(this.near.tx + 0.5, this.near.ty + 0.5);
-    // Nền sáng 0,78…0,98, không 0,35…0,75 như bản cũ: một vòng mờ trên gạch men trắng
-    // là một vòng không ai thấy. Nhịp thở vẫn còn, chỉ là nó thở quanh một mức ĐỌC ĐƯỢC.
+    // Nền sáng 0,78…0,98: vòng mờ hơn thì không thấy trên gạch men trắng.
     const pulse = this.settings.reducedMotion ? 0.1 : Math.sin(this.time.now / 260) * 0.1;
     this.ring.setVisible(true)
       .setPosition(sx, sy)
@@ -2546,7 +2343,7 @@ export class StallScene extends Phaser.Scene {
     this.day.quitToMenu();
   }
 
-  /** Chơi lại cả ngày là ĐƯỢC PHÉP — và nói thẳng cho người chơi biết nó không reset quan hệ. */
+  /** Chơi lại cả ngày là ĐƯỢC PHÉP. */
   private confirmReplay() {
     this.overlay?.destroy(true);
     this.overlay = this.modal("Chơi lại ngày này?", [
@@ -2556,60 +2353,12 @@ export class StallScene extends Phaser.Scene {
     this.overlayBack = () => this.showPauseMenu("Tạm dừng");
   }
 
-  /** Một lần một ngày, bỏ qua được, KHÔNG phạt. Đốt xong vía xấu về 0, không bao giờ lên +1. */
-  private tickVia() {
-    const s = this.service;
-    if (this.ritualOffered || !s.viaSettled) return;
-    if (this.settings.skipRitual) { if (this.clock.minutes >= 6 * 60 + 30) { s.burnVia(); this.ritualOffered = true; } return; }
-    if (s.via >= 0) { this.ritualOffered = true; return; }
-    if (this.clock.minutes >= 6 * 60 + 30 || this.overlay || this.closed || this.notebook?.open) return;
-    this.ritualOffered = true;
-    this.paused = true;
-    this.clock.paused = true;
-    // Emitter không phải tween nên `tweens.pauseAll()` không đụng tới nó — bụi sẽ phun
-    // đều sau tấm che pause nếu không tắt bằng tay.
-    this.wipePuff.setPaused(true);
-    this.rain?.setPaused(true);
-    this.busy = null;
-    this.intents = [];
-    const econ = this.world.econ;
-    const skip = () => {
-      if (econ.ritualSkips === 0) { this.hud.say(RITUAL_LINES.skipFirst); s.burnVia(); }
-      econ.ritualSkips++;
-      this.resume();
-    };
-    const step = (i: number) => {
-      this.overlay?.destroy(true);
-      if (i >= RITUAL_STEPS.length) {
-        this.world.money.cash -= 2000;                           // giấy, muối, chanh, nhang
-        s.burnVia();
-        this.resume();
-        this.hud.say(RITUAL_LINES.done);
-        moment(this.world.story, "VIA_LANH_THI_O");
-        return;
-      }
-      this.overlay = this.modal(`Đốt vía · ${i + 1}/${RITUAL_STEPS.length}`, [[RITUAL_STEPS[i], () => step(i + 1)]], i === 0 ? RITUAL_PRAYER : undefined);
-      this.overlayBack = null;
-    };
-    this.overlay = this.modal("Mở hàng xui", [["Đốt vía", () => step(0)], ["Thôi", skip]], RITUAL_LINES.offer);
-    this.overlayBack = skip;
-  }
-
   /** Mỗi món đồ nghề phải NHÌN THẤY trên xe. Vẽ bằng code, tĩnh, một lần lúc dựng cảnh. */
   private drawEquipment() {
     const e = this.world.equipment;
-    // `at` không còn tham số `up`: nó chỉ còn một người gọi sau khi cái lò điện thôi vẽ ở đây.
     const at = (tx: number, ty: number) => { const p = toScreen(tx, ty); return { x: p.sx, y: footY(p.sy) }; };
     const depth = (tx: number, ty: number) => depthOf(tx, ty) + 5;
-    /*
-     * LÒ ĐIỆN KHÔNG VẼ Ở ĐÂY. Chủ dự án: *"thay lò prop_oven bằng cái lò này… không render cái
-     * lò bằng code dạng kia nữa."* Trước đợt này nó là một cái hộp bo góc màu xanh 12×22 px dán
-     * CẠNH cái lò than — nên mua xong thì trên xe có hai cái lò, một cái than đang đỏ lửa và một
-     * hình chữ nhật xanh không ai đọc ra là gì.
-     *
-     * Nâng cấp phải THAY thứ đang đứng đó. Ô `O` của bản đồ đổi ảnh sang `prop_e-oven` —
-     * xem `placeProps` và `art/index.ts` `textureForTile`.
-     */
+    // LÒ ĐIỆN KHÔNG VẼ Ở ĐÂY: nâng cấp THAY ảnh ô `O` sang `prop_e-oven` (xem `placeProps`, `art/index.ts` `textureForTile`).
     const draw = (tx: number, ty: number, fn: (x: number, y: number, gg: Phaser.GameObjects.Graphics) => void) => {
       const gg = this.add.graphics().setDepth(depth(tx, ty));
       const p = at(tx, ty);
@@ -2620,8 +2369,7 @@ export class StallScene extends Phaser.Scene {
     /*
      * BÌNH NƯỚC TRÀ không vẽ ở đây: nó là đạo cụ `T` thật trên bản đồ (13,1), và `propHidden` mở
      * ô đó ra lúc mua. Vẽ thêm một cái bình nhỏ cạnh cái thùng là hai cái bình cho một món đồ.
-     * BẢNG HIỆU cũng vậy — `createSign` dựng tấm bảng thật trên vách, không phải cái khung vàng
-     * trước đây vẽ lơ lửng ở (10,5 · 0,4).
+     * BẢNG HIỆU cũng vậy — `createSign` dựng tấm bảng thật trên vách.
      */
     if (has(e, "QUAT_DIEN")) draw(14.2, 4.3, (x, y, gg) => {
       gg.fillStyle(0x6a7076, 1).fillRect(x - 1.5, y - 46, 3, 46);        // chân đứng
@@ -2632,7 +2380,7 @@ export class StallScene extends Phaser.Scene {
     });
     if (has(e, "BANG_QR")) draw(12.2, 4.2, (x, y, gg) => { gg.fillStyle(0xf8f8f4, 1).fillRect(x - 7, y - 62, 14, 16); gg.fillStyle(0x222222, 1).fillRect(x - 5, y - 60, 4, 4).fillRect(x + 1, y - 60, 4, 4).fillRect(x - 5, y - 54, 4, 4).fillRect(x + 1, y - 52, 2, 2); });
     if (has(e, "LOA_RAO")) draw(10.2, 0.6, (x, y, gg) => { gg.fillStyle(0x3a3f45, 1).fillTriangle(x - 8, y - 86, x + 8, y - 80, x + 8, y - 92).fillRect(x - 12, y - 90, 5, 8); });
-    /* Cùng một lỗi với cái dù, nặng hơn: vẽ ở (5,5 · 8,4) trong khi người ta ngồi ở `SEAT_SPOT` (16,6 · 10,4) — lệch 11 ô. */
+    /* Vẽ đúng `SEAT_SPOT`, chỗ người ta ngồi. */
     if (has(e, "GHE_BAN")) draw(SEAT_SPOT.x, SEAT_SPOT.y, (x, y, gg) => {
       gg.fillStyle(0x2f6fb3, 1).fillRect(x - 10, y - 12, 20, 4).fillRect(x - 9, y - 8, 3, 8).fillRect(x + 6, y - 8, 3, 8);
     });
@@ -2643,23 +2391,15 @@ export class StallScene extends Phaser.Scene {
   }
 
   /**
-   * CÁI DÙ CHE — ảnh thật (`PROP.umbrella`), không còn vẽ bằng code.
+   * CÁI DÙ CHE — ảnh thật (`PROP.umbrella`).
    *
-   * ⚠️ PHẢI ĐỨNG ĐÚNG CHỖ MÁT. Trước đợt này nó vẽ ở (12,6 · 5,6) — sau quầy — trong khi
-   * `SHADE_SPOT` là (15,0 · 8,2) ngoài vỉa hè: lệch 3,5 ô. Nên mười câu "đứng dưới dù cho mát"
-   * đẩy người ta ra một khoảng vỉa hè TRỐNG, không có gì che. Đúng chỗ chủ dự án chỉ: *"họ chả
-   * thèm chạy lại chỗ cái ô để đứng hay đang đứng trong bóng mát"*. Lấy thẳng toạ độ từ
-   * `world/map` để nó không trôi được nữa.
+   * ⚠️ PHẢI ĐỨNG ĐÚNG CHỖ MÁT: lấy thẳng `SHADE_SPOT` từ `world/map`, đừng gõ toạ độ riêng.
    */
   private addUmbrella() {
     /*
      * LÙI RA SAU chỗ đứng mát, đúng `UMBRELLA_BACK` ô trên CẢ HAI trục — tức lùi thẳng theo
      * hướng xa camera, nên trên màn hình nó chỉ đi LÊN chứ không trôi ngang: tán dù vẫn nằm
-     * chính giữa đầu người đứng, mà cây cột với cái đế đá thì ra sau lưng họ.
-     *
-     * Cột trùng đúng chỗ người đứng là chuyện bản vẽ code cũ bỏ qua được (cột của nó rộng 2 px),
-     * ảnh thật thì không: cái đế đá choán cả ô, và `depthOf` cho hai vật cùng một tổng x+y thì ai
-     * vẽ sau nấy đè — ra cảnh người đứng LÚN trong đế dù.
+     * chính giữa đầu người đứng, mà cây cột với cái đế đá thì ra sau lưng họ (không thì người đứng LÚN trong đế dù).
      */
     const tx = SHADE_SPOT.x - UMBRELLA_BACK, ty = SHADE_SPOT.y - UMBRELLA_BACK;
     this.addPhotoProp(PROP.umbrella, tx, ty, (x, y, gg) => {
@@ -2670,13 +2410,9 @@ export class StallScene extends Phaser.Scene {
   }
 
   /**
-   * TỦ LẠNH — ảnh thật (`PROP.fridge`), không còn vẽ bằng code.
+   * TỦ LẠNH — ảnh thật (`PROP.fridge`).
    *
-   * ⚠️ 2,6 → 3,5 trên trục x. Hình vẽ code cũ rộng 24 px nên đứng ở x=2,6 nó đọc ra là "cái thùng
-   * trắng dựa vào vách trái"; nhưng x=2 LÀ Ô TƯỜNG (`MAP` hàng y2: `###...`), nên điểm chạm đất
-   * của nó nằm bên trong bức tường. Ảnh thật rộng 36 px thì cái mẹo đó hết che được — nửa cái tủ
-   * chui vào vách. x=3,5 là cột trong cùng còn đi được, tức cái tủ đứng hẳn trên sàn mà lưng vẫn
-   * sát vách.
+   * ⚠️ x=3,5 là cột trong cùng còn đi được (x=2 LÀ Ô TƯỜNG): tủ đứng hẳn trên sàn mà lưng vẫn sát vách.
    */
   private addFridge() {
     this.addPhotoProp(PROP.fridge, 3.5, 2.4, (x, y, gg) => {
@@ -2689,9 +2425,8 @@ export class StallScene extends Phaser.Scene {
    * Một món đồ nghề dựng bằng ẢNH THẬT, ở toạ độ thế giới có phần lẻ (đồ nghề không nằm trên lưới
    * ô như đạo cụ của `placeProps`).
    *
-   * `veDuPhong` là bản vẽ code cũ của chính món đó, chỉ chạy khi ảnh chưa về hay tải hỏng: người
-   * chơi vừa trả tiền cho món này và cả chục câu thoại trỏ vào chỗ nó đứng, nên để trống là mất
-   * nhiều hơn là vẽ tạm. Cùng lý do mà `placeProps` cho lò điện lùi về lò than.
+   * `veDuPhong` là bản vẽ code dự phòng, chỉ chạy khi ảnh chưa về hay tải hỏng — để trống thì mất
+   * món người chơi vừa trả tiền. Cùng lý do mà `placeProps` cho lò điện lùi về lò than.
    */
   private addPhotoProp(
     key: string, wx: number, wy: number,
@@ -2706,34 +2441,6 @@ export class StallScene extends Phaser.Scene {
       return;
     }
     veDuPhong(sx, y, this.add.graphics().setDepth(depth));
-  }
-
-  /** Cô Ba nói MỘT câu rồi hẻm trống 40 giây. Bấm phím bất kỳ là qua màn kết. Không nhạc, không swell. */
-  /** Ngày cuối mùa mới có khoảng lặng — ngoài ngày đó, đồng hồ đóng quầy như thường. */
-  private get hasFinale() {
-    return this.world.progress.dayIndex >= SEASON_DAYS;
-  }
-
-  private tickFinale() {
-    if (!this.hasFinale || this.closed) return;
-    // Chị Lan đi rồi là mở khoảng lặng. Hết giờ mà chị chưa từng tới thì bỏ qua.
-    if (this.finaleAt < 0 && (this.service.lanLeft || this.clock.isOver) && !this.service.busy) {
-      this.finaleAt = this.elapsed;
-      this.hud.say("Cô Ba: Hết rồi hả con.");
-      music.duck(true);
-      // `once` tự tiêu ngay lần bấm ĐẦU TIÊN, kể cả cú bấm trong 1,5 giây đầu lúc `skip` cố ý chưa nhận.
-      const kb = this.input.keyboard;
-      const skip = () => {
-        if (this.finaleAt < 0 || this.elapsed - this.finaleAt <= SKIP_AFTER) return;
-        off();
-        this.close("PLAYER");
-      };
-      const off = () => { kb?.off("keydown-ENTER", skip); kb?.off("keydown-SPACE", skip); };
-      kb?.on("keydown-ENTER", skip);
-      kb?.on("keydown-SPACE", skip);
-      this.off.push(off);
-    }
-    if (this.finaleAt >= 0 && this.elapsed - this.finaleAt >= FINALE_SECONDS) this.close("PLAYER");
   }
 
   /**
@@ -2751,7 +2458,7 @@ export class StallScene extends Phaser.Scene {
   }
 
   /**
-   * E ở bảng menu — ĐỨNG ĐỌC. Pause hoàn toàn, y như sổ tay (CANON §15.2 mục 2: pause
+   * E ở bảng menu — ĐỨNG ĐỌC. Pause hoàn toàn (CANON §15.2 mục 2: pause
    * đóng băng cả sự kiên nhẫn của khách).
    *
    * Đọc bảng không tốn thời gian trong game, nhưng tốn ĐƯỜNG ĐI: bảng treo tuốt khúc
@@ -2760,7 +2467,7 @@ export class StallScene extends Phaser.Scene {
    * cái bảng sinh ra chính là để họ thuộc bài.
    */
   private openMenuBoard() {
-    if (this.overlay || this.closed || this.notebook?.open || this.menuBoard?.open) return;
+    if (this.overlay || this.closed || this.menuBoard?.open) return;
     if (this.assembly.isOpen) this.assembly.park();
     this.paused = true;
     this.clock.paused = true;
@@ -2775,26 +2482,6 @@ export class StallScene extends Phaser.Scene {
       textScale: this.settings.textScale,
       playerName: this.world.playerName,
       onClose: () => { this.menuBoard = null; this.resume(); },
-    });
-  }
-
-  /** Tab — sổ tay giữa ngày. Mở sổ = pause hoàn toàn; đóng sổ = bán tiếp. */
-  private openNotebook() {
-    if (this.overlay || this.closed || this.notebook?.open) return;
-    if (this.assembly.isOpen) this.assembly.park();
-    this.paused = true;
-    this.clock.paused = true;
-    // Emitter không phải tween nên `tweens.pauseAll()` không đụng tới nó — bụi sẽ phun
-    // đều sau tấm che pause nếu không tắt bằng tay.
-    this.wipePuff.setPaused(true);
-    this.rain?.setPaused(true);
-    this.busy = null;
-    this.intents = [];
-    this.tweens.pauseAll();
-    bus.emit("ui:pauseToggled", { paused: true, source: "PLAYER" });
-    this.notebook = new NotebookView(this.game, this, this.world, {
-      mode: "midday", textScale: this.settings.textScale, showEvening: this.settings.notebookAuto ?? true,
-      onClose: () => { this.notebook = null; this.resume(); },
     });
   }
 
