@@ -51,7 +51,7 @@ test("hàng dỏm kém ngon, mau hỏng và mới có xác suất đau bụng", 
   assert.notEqual(lotQuality(q("THUONG"), 2), null);
   const got = takeFull(inv, "pate", 60, 1);
   assert.equal(got.filter((p) => p.sick > 0).length, 20);
-  assert.ok(sickChance(got.filter((p) => p.sick > 0).slice(0, 1)) === 0.4);
+  assert.ok(sickChance(got.filter((p) => p.sick > 0).slice(0, 1)) === 0.25);
 });
 
 test("ổ nhiều phần dỏm: 1 − Π(1 − p)", () => {

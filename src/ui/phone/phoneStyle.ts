@@ -279,7 +279,6 @@ export const PHONE_STYLE = `
 .ph-bar3 .pp i{width:16px;height:7px;border-radius:3px;background:#e6e1d4}
 .ph-bar3.g .pp i.on{background:#2f9e57}
 .ph-bar3.p .pp i.on{background:#e5532b}
-.ph-risk{margin-top:5px;font-size:.78em;font-weight:700;color:#b02f22}
 .ph-supnote{padding:6px 6px 2px;font-size:.88em;color:#5b6670}
 .ph-sec.in{padding:12px 16px 2px}
 

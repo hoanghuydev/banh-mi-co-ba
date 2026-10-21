@@ -102,7 +102,6 @@ function offerCard(ctx: AppCtx, o: Offer, showSupplier: boolean): HTMLElement {
   const t = trend(o, day);
   if (t) price.append(t);
   info.append(price);
-  if (o.tier === "BAN") info.append(el("div", "ph-risk", "⚠ Có thể làm khách đau bụng"));
   info.append(el("div", "st", haveText(ctx, o.good)));
   card.append(info, stepper(ctx, o.id, o.good, () => ctx.rerender()));
   return card;

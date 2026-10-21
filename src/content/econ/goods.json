@@ -30,7 +30,7 @@
       "step": 1,
       "storage": "COLD",
       "coldSlots": 0.5,
-      "sick": 0.4
+      "sick": 0.25
     },
     "THIT_NGUOI": {
       "label": "thịt nguội",
@@ -48,7 +48,7 @@
       "step": 1,
       "storage": "COLD",
       "coldSlots": 0.3,
-      "sick": 0.35
+      "sick": 0.22
     },
     "CHA_LUA": {
       "label": "chả lụa",
@@ -66,7 +66,7 @@
       "step": 1,
       "storage": "COLD",
       "coldSlots": 0.3,
-      "sick": 0.3
+      "sick": 0.19
     },
     "XIU_MAI": {
       "label": "xíu mại",
@@ -81,7 +81,7 @@
       "step": 1,
       "storage": "COLD",
       "coldSlots": 0.3,
-      "sick": 0.3
+      "sick": 0.19
     },
     "TRUNG": {
       "label": "trứng",
@@ -102,7 +102,7 @@
       "weekday": "fixed",
       "step": 1,
       "storage": "DRY",
-      "sick": 0.25
+      "sick": 0.16
     },
     "RAU": {
       "label": "rau (dưa leo, hành ngò)",
@@ -118,7 +118,7 @@
       "step": 1,
       "storage": "COLD",
       "coldSlots": 1.2,
-      "sick": 0.15
+      "sick": 0.09
     },
     "OT": {
       "label": "ớt",
@@ -135,7 +135,7 @@
       "weekday": "rau",
       "step": 1,
       "storage": "DRY",
-      "sick": 0.1
+      "sick": 0.06
     },
     "SOT": {
       "label": "tương ớt",
@@ -162,7 +162,7 @@
       "weekday": "fixed",
       "step": 1,
       "storage": "DRY",
-      "sick": 0.08
+      "sick": 0.05
     },
     "DO_CHUA_NL": {
       "label": "cà rốt củ cải (ngâm hũ mới)",
@@ -186,7 +186,7 @@
       "step": 1,
       "storage": "DRY",
       "pickle": true,
-      "sick": 0.2
+      "sick": 0.12
     },
     "DO_CHUA_SAN": {
       "label": "đồ chua làm sẵn",
@@ -206,7 +206,7 @@
       "weekday": "rau",
       "step": 1,
       "storage": "DRY",
-      "sick": 0.2
+      "sick": 0.12
     }
   },
   "ingredientGood": {
@@ -255,7 +255,7 @@
     "BAN": {
       "label": "Hàng dỏm",
       "taste": 0.72,
-      "price": 0.55,
+      "price": 0.4,
       "shelf": -1,
       "clean": 1,
       "tasteBar": 2

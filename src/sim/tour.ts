@@ -61,7 +61,9 @@ export const TOUR_ORDER: readonly { good: GoodId; units: number; label: string }
   { good: "BANH", units: 10, label: "bánh mì" },
   { good: "PATE", units: 1, label: "pate" },
   { good: "THIT_NGUOI", units: 1, label: "thịt nguội" },
-  { good: "RAU", units: 1, label: "rau" },
+  { good: "RAU", units: 1, label: "rau (dưa leo, hành ngò)" },
+  { good: "OT", units: 1, label: "ớt" },
+  { good: "SOT", units: 1, label: "tương ớt" },
 ];
 
 export type OrderStep = { good: GoodId; label: string; clicks: number; done: number; offerId: string };
