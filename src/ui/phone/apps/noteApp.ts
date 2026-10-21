@@ -15,7 +15,7 @@ function dayTitle(day: number) {
 
 function dayLine(r: LedgerRow) {
   const p = r.revenue - r.cost;
-  return `${p >= 0 ? "Lời" : "Lỗ"} ${money(Math.abs(p))} · bán ${r.served} ổ`;
+  return `${p >= 0 ? "Lời" : "Lỗ"} ${money(Math.abs(p))} · bán ${r.served} ổ${r.sick ? ` · ${r.sick} đau bụng` : ""}`;
 }
 
 export function noteList(ctx: AppCtx) {
@@ -66,6 +66,7 @@ export function dayNote(ctx: AppCtx, day: number) {
     const p = r.revenue - r.cost;
     const lines = [
       `Khách ghé ${r.served + r.lost}, bán ${r.served} ổ${r.lost ? `, ${r.lost} người bỏ đi` : ""}.`,
+      ...(r.sick ? [`${r.sick} khách đau bụng sau khi ăn.`] : []),
       `Thu ${money(r.revenue)}, chi ${money(r.cost)}.`,
       p >= 0 ? `Lời ${money(p)}.` : `Lỗ ${money(-p)}.`,
     ];

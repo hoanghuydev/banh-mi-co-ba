@@ -25,10 +25,10 @@ import { totalUnread } from "../sim/phone";
 import { chorePin } from "../ui/chorePin";
 import { TOUR_TOTAL, fillGap, tourAt, tourDone, tourIndex, tourSkip, tourStep, touring, type TourStep } from "../sim/tour";
 import { deliverDue } from "../sim/shop";
-import { canSpin, finishRookie, linked, questDone } from "../sim/system";
+import { SWIFT_MUL, canSpin, cleanHandsToday, finishRookie, linked, questDone, swiftToday } from "../sim/system";
 import { QUEST_DONE, QUEST_TEXT, ROOKIE_DONE } from "../content/system";
 import { TourCoach } from "../ui/tour/TourCoach";
-import { dishQuality, isRain, portionsFor, putBack, stockOf, take, goodsFor } from "../sim/econ";
+import { dishQuality, isRain, portionsFor, putBack, sickChance, stockOf, take, takeFull, goodsFor, type Portion } from "../sim/econ";
 import { dirtMul, has, type EquipId } from "../sim/equipment";
 import { labelOf } from "../sim/order";
 import { dev } from "../dev/registry";
@@ -129,6 +129,7 @@ export class StallScene extends Phaser.Scene {
   /** Theo từng ổ, không dùng chung, kẻo gác ổ A nướng ổ B thì A bị chấm bằng số của B. */
   private breadQ = 1;
   private dishQ = 1;
+  private dishSick = 0;
 
   private near: Station | null = null;
 
@@ -163,7 +164,7 @@ export class StallScene extends Phaser.Scene {
   private choreGfx!: Phaser.GameObjects.Graphics;
   private basket: {
     hand: Hand; warmth: number; crust: number; q: number; soiled: boolean;
-    dish: Ingredient[]; dishQ: number;
+    dish: Ingredient[]; dishQ: number; dishSick: number;
   }[] = [];
   private basketImgs: Phaser.GameObjects.Image[] = [];
   private basketTopY = 0;
@@ -391,6 +392,7 @@ export class StallScene extends Phaser.Scene {
           soiled: !!l.soiled,
           dish: (l.dish ?? []) as Ingredient[],
           dishQ: l.dishQ ?? 1,
+          dishSick: l.dishSick ?? 0,
         }));
         this.floor = (st.floor ?? []).slice(0, FLOOR_MAX)
           .map((f) => ({ ...f, hand: f.hand as Hand, dish: f.dish as Ingredient[] }));
@@ -956,7 +958,8 @@ export class StallScene extends Phaser.Scene {
   }
 
   private workSeconds(s: number) {
-    return this.keys.C.isDown ? s * COVER_SLOW : s;
+    const k = swiftToday(this.world) ? SWIFT_MUL : 1;
+    return this.keys.C.isDown ? s * COVER_SLOW * k : s * k;
   }
 
   private tickStation(dtMs: number) {
@@ -996,7 +999,7 @@ export class StallScene extends Phaser.Scene {
 
   private holdOf(st: Station) {
     if (st.id === "tea") return 250;
-    return st.holdMs;
+    return st.holdMs * (swiftToday(this.world) ? SWIFT_MUL : 1);
   }
 
   private press() {
@@ -1029,7 +1032,7 @@ export class StallScene extends Phaser.Scene {
       if (this.basket.length >= BASKET_SLOTS) { this.hud.toast("chỗ để bánh đầy rồi", "info", this.popClock); return; }
       this.basket.push({
         hand: h, warmth: this.handWarmth, crust: this.handCrust, q: this.breadQ,
-        soiled: this.handSoiled, dish: [...this.dish], dishQ: this.dishQ,
+        soiled: this.handSoiled, dish: [...this.dish], dishQ: this.dishQ, dishSick: this.dishSick,
       });
       this.audio.putDown();
       this.player.hand = "empty";
@@ -1057,6 +1060,7 @@ export class StallScene extends Phaser.Scene {
     this.breadQ = l.q;
     this.dish = l.dish;
     this.dishQ = l.dishQ;
+    this.dishSick = l.dishSick;
   }
 
   private basketPrompt(): string {
@@ -1223,8 +1227,10 @@ export class StallScene extends Phaser.Scene {
     // gói xong mới trừ kho — lô cũ nhất trước (P3-03); chất lượng từng phần vào dishQuality
     const day = this.world.progress.dayIndex;
     const parts: { ing: Ingredient; q: number }[] = [];
-    for (const ing of dish) for (const q of take(this.world.inventory, ing, 1, day)) parts.push({ ing, q });
+    const taken: Portion[] = [];
+    for (const ing of dish) for (const p of takeFull(this.world.inventory, ing, 1, day)) { parts.push({ ing, q: p.q }); taken.push(p); }
     this.dishQ = dishQuality(this.breadQ, parts);
+    this.dishSick = sickChance(taken);
 
     // Lỗi trong ổ phát tại BOARD với KHOÁ RIÊNG của ổ này + người này.
     this.addDirt(0.002);                               // giấy gói, vụn bánh
@@ -1272,7 +1278,7 @@ export class StallScene extends Phaser.Scene {
     const res = this.player.hand === "tea"
       ? this.service.serveTea()
       : this.service.serveDish(this.dish, {
-        cold, crust: this.handCrust, quality: this.dishQ,
+        cold, crust: this.handCrust, quality: this.dishQ, sick: this.dishSick,
         // `burnAt` THẬT của cái lò đang dùng — lò điện có ngưỡng riêng, lấy hằng số thì dải tốt
         // của nó bị đọc thành "cháy cạnh" (xem `serveDish`).
         burnAt: this.oven.burnAt, singeAt: this.oven.singeAt,
@@ -1294,7 +1300,7 @@ export class StallScene extends Phaser.Scene {
     // ⚖️ P1-01 §2.11 ghi 2,0 s, nhưng nhận tiền không phải thao tác có tay nghề. 0,8 s vẫn giữ cái giá
     // thật của nó: tay DÍNH TIỀN cho tới khi đi rửa.
     if (wasDish) {
-      this.hands = "MONEY";
+      if (!cleanHandsToday(this.world)) this.hands = "MONEY";
       this.audio.money();
       this.beBusy(this.workSeconds(TAKE_MONEY_SEC), "đang nhận tiền", "quick");
     }

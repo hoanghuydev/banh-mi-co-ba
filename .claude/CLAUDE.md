@@ -1,7 +1,7 @@
 # Bánh Mì Cô Ba — Luật làm việc cho agent
 
 Đọc trước: `docs/CANON.md`, `docs/VAN-PHONG-UI.md`. Đang revamp → `docs/revamp/00-YEU-CAU.md` thắng khi mâu thuẫn.
-Phase revamp gọi là **R0–R6 (+R0.1, R0.5)** (CANON §17.1). Doc cũ có banner ☠️/⚠️/✅ ở đầu — phần ☠️ không dùng làm căn cứ.
+Phase revamp gọi là **R0–R6 (+R0.1, R0.5, R0.7)** — R0.7 = nhà cung cấp (trước là R3) (CANON §17.1). Doc cũ có banner ☠️/⚠️/✅ ở đầu — phần ☠️ không dùng làm căn cứ.
 
 ## 1. Viết plan
 

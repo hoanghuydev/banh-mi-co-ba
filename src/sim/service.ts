@@ -288,7 +288,7 @@ export type ServiceDeps = {
   /** Reload giữa buổi: bỏ qua mọi lượt khách hẹn tới trước mốc này. */
   resumeAt?: number;
   /** Trỏ thẳng vào `world.progress.today`; vắng thì Service tự đếm trong bộ nhớ. */
-  todayCounters?: { talksDeep?: number; talkOffers?: number; strangers?: number };
+  todayCounters?: { talksDeep?: number; talkOffers?: number; strangers?: number; sick?: number };
   readMul?: number;
   dialog?: DialogState;
   patienceMul?: number;
@@ -1271,7 +1271,7 @@ export class Service {
   /** Lỗi thấy lúc làm → ANTICIPATED, không thấy → DISCOVERED; không bao giờ trừ tiền bánh. */
   serveDish(
     dish: Ingredient[],
-    opts: { cold?: boolean; crust?: number; quality?: number; soiled?: boolean; burnAt?: number; singeAt?: number } = {},
+    opts: { cold?: boolean; crust?: number; quality?: number; soiled?: boolean; burnAt?: number; singeAt?: number; sick?: number } = {},
   ): ServeResult {
     const c = this.front;
     if (!c || c.phase !== "waiting") return { ok: false, reason: "chưa có ai chờ lấy bánh" };
@@ -1392,6 +1392,10 @@ export class Service {
       && (o.id === "DROPPED_FOOD" || o.id === "DIRTY_HANDS" || o.id === "BURNT_OR_COLD"));
     if (c.personality.soi >= 0.7 && c.personality.nongTinh <= 0.3 && (sawHygiene || (isSilentGrudge(c.personality) && defects.length > 0))) {
       c.binDetour = true;
+    }
+    if ((opts.sick ?? 0) > 0 && this.deps.hub.derive(`sick:${this.deps.day}:${c.id}`).next() < opts.sick!) {
+      const t = this.deps.todayCounters;
+      if (t) t.sick = (t.sick ?? 0) + 1;
     }
     this.leave(c, "served");
     return { ok: true, playerSay };

@@ -1,6 +1,9 @@
 import type { SaveFile } from "../core/save";
 import { ORDER_KEEP } from "./shop";
+import { Rng, fnv1a, splitmix32 } from "../core/rng";
 import { EQUIP, capacity, has, installEquip, priceVnd, used, whyNot, type EquipId, type EquipState } from "./equipment";
+
+export const GEAR_COUPON_PCT = 0.15;
 
 /** Đồ nghề đã đặt, giao và lắp vào sáng mai. */
 export const pendingGear = (w: SaveFile) =>
@@ -38,21 +41,26 @@ export function toggleGear(w: SaveFile, id: EquipId): boolean {
   return true;
 }
 
-export type GearQuote = { total: number; blocked: "empty" | "cash" | "slots" | null };
+export type GearQuote = { subtotal: number; discount: number; total: number; blocked: "empty" | "cash" | "slots" | null };
 
-export function gearQuote(w: SaveFile): GearQuote {
+export function gearQuote(w: SaveFile, coupon = false): GearQuote {
   const cart = gearCart(w);
-  const total = cart.reduce((a, id) => a + priceVnd(id), 0);
-  if (!cart.length) return { total, blocked: "empty" };
-  if (total > w.money.cash) return { total, blocked: "cash" };
+  const subtotal = cart.reduce((a, id) => a + priceVnd(id), 0);
+  const discount = coupon && w.system.gearCoupon > 0 ? Math.round(subtotal * GEAR_COUPON_PCT / 1000) * 1000 : 0;
+  const total = subtotal - discount;
+  const base = { subtotal, discount, total };
+  if (!cart.length) return { ...base, blocked: "empty" };
+  if (total > w.money.cash) return { ...base, blocked: "cash" };
   const e = afterPending(w, true);
-  if (used(e) > capacity(e)) return { total, blocked: "slots" };
-  return { total, blocked: null };
+  if (used(e) > capacity(e)) return { ...base, blocked: "slots" };
+  return { ...base, blocked: null };
 }
 
-export function orderGear(w: SaveFile): number | null {
-  const q = gearQuote(w);
+export function orderGear(w: SaveFile, coupon = false): number | null {
+  const useCoupon = coupon && w.system.gearCoupon > 0;
+  const q = gearQuote(w, useCoupon);
   if (q.blocked) return null;
+  if (useCoupon) w.system.gearCoupon--;
   w.money.cash -= q.total;
   w.econ.today.tools += q.total;
   const id = ++w.shop.seq;
@@ -76,4 +84,17 @@ export function installPending(w: SaveFile): EquipId[] {
     o.delivered = true;
   }
   return done;
+}
+
+/** Đồ nghề nhỏ chưa có và còn chỗ để làm quà; hết món hợp thì null. */
+const GIFT_MAX_K = 400;
+
+export function giftGear(w: SaveFile): EquipId | null {
+  const pool = (Object.keys(EQUIP) as EquipId[]).filter((id) =>
+    !EQUIP[id].starting && EQUIP[id].price_k > 0 && EQUIP[id].price_k <= GIFT_MAX_K && !gearBlock(w, id) && !gearCart(w).includes(id));
+  if (!pool.length) return null;
+  const rng = new Rng(splitmix32(fnv1a(`${w.saveId}|gift|${w.progress.dayIndex}|${w.shop.seq}`)));
+  const id = rng.pick(pool);
+  w.shop.gearOrders.unshift({ id: ++w.shop.seq, day: w.progress.dayIndex, items: [id], total: 0, delivered: false, gift: true });
+  return id;
 }

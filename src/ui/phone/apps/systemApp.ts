@@ -3,18 +3,22 @@ import {
 } from "../../../content/system";
 import { HELP_FROM, rewinds } from "../../../core/rewinds";
 import { rewindLines } from "../../../content/system";
-import { SLOTS, accept, canSpin, refuse, say, spin, spinIndex, startCashText, wheelOf, type RewardId } from "../../../sim/system";
+import { BEAUTY_MAX, SLOTS, accept, canSpin, refuse, say, spin, spinIndex, startCashText, wheelOf, type RewardId } from "../../../sim/system";
 import { TOUR_TOTAL, tourIndex, tourStep, touring } from "../../../sim/tour";
 import { navBar, page, scroller, type AppCtx } from "../ctx";
 import { btn, el } from "../dom";
 
 const SHORT: Record<RewardId, string> = {
-  LUCK: "May mắn", TIEN_LE: "Tiền lẻ", KIM_KHO: "Kim khố", MY_NHAN: "Mỹ nhân",
-  DANH_TIENG: "Danh tiếng", THE_GIAM: "Thẻ giảm", THAN_HANH: "Hoả tốc",
+  LUCK: "May mắn", TIEN_LE: "Tiền lẻ", KIM_KHO: "Kim khố", NHAN_SAC: "Nhan sắc",
+  DANH_TIENG: "Danh tiếng", BAT_NHIEM: "Bất nhiễm", THIEN_DINH: "Thiền định", THE_GIAM: "Thẻ giảm",
+  LUONG_THAO: "Lương thảo", MIEN_TO: "Miễn tô", THAN_HANH: "Hoả tốc", TAI_CHUYEN: "Quay lại", HOI_TAM: "Hồi tâm",
+  BAO_KHI: "Bảo khí", THE_DO_NGHE: "Thẻ đồ nghề", NHAN_LIEU: "Nhân liệu", PHONG_HANH: "Tay nhanh", THIEN_CO: "Thiên cơ",
 };
 const FILL: Record<RewardId, string> = {
-  LUCK: "#3a4260", TIEN_LE: "#2f6f8f", KIM_KHO: "#b8860b", MY_NHAN: "#a8456f",
-  DANH_TIENG: "#6b4fa3", THE_GIAM: "#2f7d57", THAN_HANH: "#c0502b",
+  LUCK: "#0d2530", TIEN_LE: "#0b4a5c", KIM_KHO: "#6b5200", NHAN_SAC: "#5a1a48",
+  DANH_TIENG: "#31238a", BAT_NHIEM: "#0a5a5a", THIEN_DINH: "#1f3f7a", THE_GIAM: "#0a5a3a",
+  LUONG_THAO: "#5a4a10", MIEN_TO: "#6b3a00", THAN_HANH: "#7a3010", TAI_CHUYEN: "#4a1f7a", HOI_TAM: "#7a1030",
+  BAO_KHI: "#6b1f6b", THE_DO_NGHE: "#33465a", NHAN_LIEU: "#4f5a10", PHONG_HANH: "#0a4f7a", THIEN_CO: "#1a5a60",
 };
 
 export function systemApp(ctx: AppCtx): HTMLElement {
@@ -45,8 +49,11 @@ function statusCard(ctx: AppCtx) {
   row("Ký chủ", "Phương Anh");
   row("Cảnh giới", "Chủ Quán Mới Mở (Tầng 1)");
   row("Kinh nghiệm sống", String(w.system.exp));
+  if (w.system.beauty) row("Nhan sắc", `cấp ${w.system.beauty}/${BEAUTY_MAX}`);
   if (w.system.discount) row("Thẻ giảm giá", `×${w.system.discount}`);
+  if (w.system.gearCoupon) row("Thẻ giảm giá đồ nghề", `×${w.system.gearCoupon}`);
   if (w.system.express) row("Thần Hành Phù", `×${w.system.express}`);
+  if (w.system.fix) row("Hồi Tâm Chuyển Ý", `×${w.system.fix}`);
   return c;
 }
 
@@ -139,7 +146,7 @@ function wheelCard(ctx: AppCtx) {
   const day = w.progress.dayIndex;
   const card = el("div", "sys-card wheel");
   card.append(el("p", "ann", `Keng! Ký chủ đánh dấu thành công ngày ${day}.`));
-  card.append(el("p", "ann", "Mở ra vòng quay vận khí, phải chăng quay?"));
+  card.append(el("p", "ann", "Mở ra vòng quay vận khí, quay ngay?"));
   const slots = wheelOf(w);
   const box = el("div", "sys-wheel");
   const wheel = el("div", "disc");
@@ -160,7 +167,8 @@ function wheelCard(ctx: AppCtx) {
       if (!res) return;
       out.append(...res.lines.map((l) => el("p", "", l)));
       go.remove();
-      const done = btn("ph-primary", "Vào ngày mới", () => ctx.close());
+      const again = canSpin(w);
+      const done = btn("ph-primary", again ? "Quay tiếp" : "Vào ngày mới", () => (again ? ctx.rerender() : ctx.close()));
       card.append(done);
     }, reduce ? 0 : 4300);
   });
@@ -175,11 +183,11 @@ function wheelSvg(slots: RewardId[]) {
     const a0 = i * a - Math.PI / 2, a1 = (i + 1) * a - Math.PI / 2;
     const x0 = cx + R * Math.cos(a0), y0 = cy + R * Math.sin(a0);
     const x1 = cx + R * Math.cos(a1), y1 = cy + R * Math.sin(a1);
-    s += `<path d="M${cx} ${cy} L${x0.toFixed(1)} ${y0.toFixed(1)} A${R} ${R} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)} Z" fill="${FILL[id]}" stroke="#0f1430" stroke-width="2"/>`;
+    s += `<path d="M${cx} ${cy} L${x0.toFixed(1)} ${y0.toFixed(1)} A${R} ${R} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)} Z" fill="${FILL[id]}" stroke="#19e3ff" stroke-opacity=".55" stroke-width="1.5"/>`;
     const mid = ((i + 0.5) * 360) / n;
     s += `<text x="${cx}" y="${cy - 84}" transform="rotate(${mid} ${cx} ${cy})" fill="#fff" font-size="11.5" font-weight="700" text-anchor="middle" font-family="Be Vietnam Pro, sans-serif">${SHORT[id]}</text>`;
   });
-  s += `<circle cx="${cx}" cy="${cy}" r="22" fill="#0f1430" stroke="#ffd84a" stroke-width="3"/></svg>`;
+  s += `<circle cx="${cx}" cy="${cy}" r="${R - 1}" fill="none" stroke="#19e3ff" stroke-width="2"/><rect x="${cx - 16}" y="${cy - 16}" width="32" height="32" rx="3" fill="#06222c" stroke="#39ff9c" stroke-width="2"/><rect x="${cx - 7}" y="${cy - 7}" width="14" height="14" fill="#39ff9c"/></svg>`;
   return s;
 }
 

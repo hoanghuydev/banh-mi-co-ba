@@ -390,7 +390,9 @@ test("bước ra đường với người đi ngang thì LUÔN mời được �
           if (saidMoi) promised++;
           if (JSON.stringify(v.options) !== "" && x.service.talkOpen) {
             const t = (x.service as unknown as { talkSession: { talk: Talk } }).talkSession.talk;
-            if (hasInvite(t)) withInvite++;
+            // Người đi ngang vừa thành khách mua giữa chừng thì chuyển sang kho thoại khách, không tính.
+            if (t.npc !== "QUA_DUONG") { drew--; if (saidMoi) promised--; }
+            else if (hasInvite(t)) withInvite++;
           }
           x.service.closeTalk();
         }

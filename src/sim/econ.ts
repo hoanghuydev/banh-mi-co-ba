@@ -6,13 +6,15 @@ import type { Ingredient } from "./order";
 import { itemOf, type MenuItemId } from "./menu";
 
 export type Weather = "NANG_GAT" | "MAT" | "AM_U" | "MUA_RAO" | "MUA_DAM" | "OI";
-export type GoodId = "BANH" | "PATE_NHA" | "PATE_THUONG" | "THIT_NGUOI" | "CHA_LUA" | "XIU_MAI" | "TRUNG"
+export type GoodId = "BANH" | "PATE" | "THIT_NGUOI" | "CHA_LUA" | "XIU_MAI" | "TRUNG"
   | "RAU" | "OT" | "SOT" | "DO_CHUA_NL" | "DO_CHUA_SAN";
 
 export type GoodDef = {
   label: string; unit: string; perUnit: number; base_k: number; q0: number; curve: number[];
-  weekday: "fixed" | "pate" | "thit" | "rau"; seller: string; step: number; storage: "COLD" | "DRY";
+  weekday: "fixed" | "pate" | "thit" | "rau"; step: number; storage: "COLD" | "DRY";
   coldSlots?: number; pickle?: boolean;
+  /** Xác suất đau bụng mỗi phần hàng dỏm. */
+  sick?: number;
 };
 
 export const ECON = ECON_JSON as unknown as {
@@ -24,7 +26,10 @@ export const ECON = ECON_JSON as unknown as {
 };
 export const GOODS = (GOODS_JSON as unknown as { goods: Record<GoodId, GoodDef> }).goods;
 export const GOOD_IDS = Object.keys(GOODS) as GoodId[];
-export const SELLERS = (GOODS_JSON as unknown as { sellers: Record<string, { name: string; blurb: string }> }).sellers;
+export type Quality = "BAN" | "THUONG" | "NGON";
+export type QualityDef = { label: string; taste: number; price: number; shelf: number; clean: number; tasteBar: number };
+export const QUALITIES = (GOODS_JSON as unknown as { tiers: Record<Quality, QualityDef> }).tiers;
+export const QUALITY_IDS: Quality[] = ["BAN", "THUONG", "NGON"];
 const ING_GOOD = (GOODS_JSON as unknown as { ingredientGood: Record<string, GoodId[]> }).ingredientGood;
 export const goodsFor = (ing: Ingredient): GoodId[] => ING_GOOD[ing] ?? [];
 export const RECIPE_W = (GOODS_JSON as unknown as { recipeWeight: Record<string, number> }).recipeWeight;
@@ -88,23 +93,25 @@ export function q0Of(g: GoodId, day: number): number {
 
 export const fixedCostVnd = (day: number) => scaledVnd(day >= ECON.fixedCost_k.fromDay ? ECON.fixedCost_k.raised : ECON.fixedCost_k.base);
 
-export type Lot = { good: GoodId; day: number; left: number; q0: number };
+/** Lô cũ không có `tier` thì tính là hàng thường. */
+export type Lot = { good: GoodId; day: number; left: number; q0: number; tier?: Quality };
 export type Storage = "thung_xop" | "tu_mat";
 export type InventoryState = { lots: Lot[]; lastBasket: Partial<Record<GoodId, number>>; storage?: Storage; noiU?: boolean };
 export const newInventory = (): InventoryState => ({ lots: [], lastBasket: {}, storage: "thung_xop" });
 
 /** Tủ mát nhân đôi hạn đồ lạnh; nồi ủ giữ xíu mại qua đêm. */
-export function shelfDays(g: GoodId, storage: Storage = "thung_xop", noiU = false): number {
+export function shelfDays(g: GoodId, storage: Storage = "thung_xop", noiU = false, tier: Quality = "THUONG"): number {
   const d = GOODS[g];
-  if (g === "XIU_MAI" && noiU) return 2;
-  if (d.storage === "COLD" && storage === "tu_mat") return d.curve.length * 2;
+  const tierDelta = QUALITIES[tier].shelf;
+  if (g === "XIU_MAI" && noiU) return Math.max(1, 2 + tierDelta);
+  if (d.storage === "COLD" && storage === "tu_mat") return Math.max(1, d.curve.length * 2 + tierDelta);
   const delta = d.storage === "COLD" ? ECON.storage.thung_xop.coldShelfLifeDelta[g] ?? 0 : 0;
-  return Math.max(1, d.curve.length + delta);
+  return Math.max(1, d.curve.length + delta + tierDelta);
 }
 
 export function lotQuality(l: Lot, day: number, storage: Storage = "thung_xop", noiU = false): number | null {
   const age = day - l.day;
-  if (age < 0 || age >= shelfDays(l.good, storage, noiU)) return null;
+  if (age < 0 || age >= shelfDays(l.good, storage, noiU, l.tier)) return null;
   const c = GOODS[l.good].curve;
   const idx = GOODS[l.good].storage === "COLD" && storage === "tu_mat" ? Math.floor(age / 2) : age;
   return l.q0 * (c[Math.min(idx, c.length - 1)] ?? (l.good === "XIU_MAI" ? 0.85 : c[c.length - 1]));
@@ -119,18 +126,28 @@ export function portionsFor(inv: InventoryState, ing: Ingredient, day: number) {
   return goodsFor(ing).reduce((a, g) => a + stockOf(inv, g, day), 0);
 }
 
-export function take(inv: InventoryState, ing: Ingredient | "bread", n: number, day: number): number[] {
+/** Một phần hàng lấy ra khỏi kho: chất lượng và xác suất đau bụng của nó (chỉ hàng dỏm mới có). */
+export type Portion = { q: number; sick: number };
+
+export function takeFull(inv: InventoryState, ing: Ingredient | "bread", n: number, day: number): Portion[] {
   const goods = ing === "bread" ? (["BANH"] as GoodId[]) : goodsFor(ing);
   const lots = inv.lots.filter((l) => goods.includes(l.good) && l.left > 0 && lq(inv, l, day) !== null)
     .sort((a, b) => a.day - b.day);
-  const out: number[] = [];
+  const out: Portion[] = [];
   for (const l of lots) {
-    while (l.left > 0 && out.length < n) { l.left--; out.push(lq(inv, l, day)!); }
+    const sick = l.tier === "BAN" ? GOODS[l.good].sick ?? 0 : 0;
+    while (l.left > 0 && out.length < n) { l.left--; out.push({ q: lq(inv, l, day)!, sick }); }
     if (out.length >= n) break;
   }
   inv.lots = inv.lots.filter((l) => l.left > 0);
   return out;
 }
+
+export const take = (inv: InventoryState, ing: Ingredient | "bread", n: number, day: number): number[] =>
+  takeFull(inv, ing, n, day).map((p) => p.q);
+
+/** Xác suất khách đau bụng khi ăn ổ gồm các phần này. */
+export const sickChance = (parts: readonly Portion[]) => 1 - parts.reduce((a, p) => a * (1 - p.sick), 1);
 
 export function putBack(inv: InventoryState, ing: Ingredient, n: number, day: number) {
   const g = goodsFor(ing).find((x) => stockOf(inv, x, day) > 0) ?? goodsFor(ing)[0];
@@ -139,9 +156,9 @@ export function putBack(inv: InventoryState, ing: Ingredient, n: number, day: nu
   if (l) l.left += n; else inv.lots.push({ good: g, day, left: n, q0: q0Of(g, day) });
 }
 
-export function buy(inv: InventoryState, g: GoodId, units: number, day: number) {
+export function buy(inv: InventoryState, g: GoodId, units: number, day: number, tier: Quality = "THUONG") {
   if (units <= 0) return;
-  inv.lots.push({ good: g, day, left: units * GOODS[g].perUnit, q0: q0Of(g, day) });
+  inv.lots.push({ good: g, day, left: units * GOODS[g].perUnit, q0: q0Of(g, day) * QUALITIES[tier].taste, tier });
 }
 
 export function expire(inv: InventoryState, day: number): { good: GoodId; units: number }[] {

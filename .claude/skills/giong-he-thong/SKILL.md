@@ -66,3 +66,15 @@ Phép thử: *bỏ chữ "bánh mì" đi, câu này có đặt được vào m�
 
 Truyện hệ thống bản dịch trên các trang truyện mạng (metruyenchu, bachngocsach…): "keng", "túc chủ/ký chủ", "Chúc mừng túc chủ thu được…", "khen thưởng một:", "phải chăng lựa chọn mở ra", "đánh dấu thành công", "thẻ một trương", "tân thủ đại lễ bao".
 Muốn thêm khuôn → đọc thêm chương đầu các truyện thể loại *hệ thống đánh dấu / rút thưởng*, trích khuôn, **không chép nguyên văn**.
+
+## 7. Khuôn thêm (đã dùng trong game)
+
+| Tình huống | Khuôn |
+|---|---|
+| Chạm giới hạn cấp | `Keng! [Chỉ số] ký chủ đã đạt cảnh giới [Tên Cảnh Giới] (+[số]). Không thể [động từ] hơn nữa.` rồi `Tự động chuyển hoá thành 【…】.` — vd. `Nhan sắc ký chủ đã đạt cảnh giới Nghiêng Nước Nghiêng Thành (+15 giây). Không thể xinh hơn nữa.` |
+| Thẻ đầy | `Thẻ đã đạt giới hạn 3 trương. Tự động chuyển hoá thành 【Tiền Lẻ Trong Túi Áo】.` |
+| Cộng dồn | `Hiệu quả: [chỉ số] +1 (cấp N/tối đa). … vĩnh viễn, cộng dồn.` |
+| Quà vật chất | `Hiệu quả: Nhận ngay [số] [đơn vị] [món].` · `Mô tả: Của trời cho.` |
+| Miễn phí trong ngày | `Hiệu quả: Chi phí cố định hôm nay: 0đ.` · `Thời hạn: hôm nay.` |
+
+> Ghi chú: công cụ tìm kiếm không tra được truyện Việt cho các khuôn này (2026-10-21), khuôn dựa trên giọng convert đã có ở mục 1–4.

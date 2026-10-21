@@ -105,6 +105,7 @@ export class EveningView {
     if (e.rentOwed) says.append(this.el("div", "ev-say", `Chủ nhà: "Tiền chỗ mấy bữa nay con tính sao?"`));
     for (const l of this.opts.lines ?? []) says.append(this.el("div", "ev-say", l));
     if (t.lost) says.append(this.el("div", "ev-note", "có người đợi không nổi rồi về"));
+    if (t.sick) says.append(this.el("div", "ev-note", `${t.sick} khách đau bụng sau khi ăn`));
     if (et.soldOut) says.append(this.el("div", "ev-note", "có người tới mà hết bánh"));
     if (et.wasted.length) says.append(this.el("div", "ev-note", `sáng nay bỏ (hư): ${et.wasted.join(", ")}`));
     if (says.childElementCount) L.append(says);

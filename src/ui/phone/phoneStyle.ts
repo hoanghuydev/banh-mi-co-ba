@@ -12,7 +12,6 @@ export const PHONE_STYLE = `
 .ph-status .r{display:flex;gap:6px;align-items:center}
 .ph-status svg{display:block}
 .ph-dark .ph-status{color:#fff}
-.ph-sysbg{background:#0f1430}
 
 .ph-view{flex:1;min-height:0;display:flex;flex-direction:column;position:relative;font-size:15px}
 .ph-view.in-r{animation:ph-in-r .22s ease-out}
@@ -169,9 +168,9 @@ export const PHONE_STYLE = `
 .ph-doc{padding:16px 22px 28px}
 .ph-doc h2{margin:0 0 10px;font-size:1.45em;line-height:1.25}
 .ph-doc p{margin:0 0 8px;line-height:1.6;font-size:1.02em}
-.ph-ghost{width:100%;min-height:46px;border:0;border-radius:23px;background:transparent;color:#aab4e0;font:inherit;font-weight:500;cursor:pointer}
-.ph-ghost:hover{background:rgba(255,255,255,.08)}
-.ph-ghost:focus-visible{outline:2px solid #aab4e0;outline-offset:2px}
+.ph-ghost{width:100%;min-height:46px;border:0;border-radius:23px;background:transparent;color:#5b6670;font:inherit;font-weight:500;cursor:pointer}
+.ph-ghost:hover{background:rgba(0,0,0,.05)}
+.ph-ghost:focus-visible{outline:2px solid #5b6670;outline-offset:2px}
 .ph-primary:disabled{background:#c9c3b4;box-shadow:none;cursor:default;color:#fff}
 .ph-primary.slim{width:auto;padding:0 26px}
 .ph-warn{font-size:.84em;color:#b02f22;font-weight:500;text-align:center}
@@ -267,6 +266,23 @@ export const PHONE_STYLE = `
 .ph-buy:focus-visible{outline:3px solid #55626e;outline-offset:2px}
 .ph-gear .why{font-size:.82em;color:#b02f22}
 
+/* ── Nhà cung cấp: nhãn mức + 3 thanh ── */
+.ph-tier-tag{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:9px;font-size:.72em;font-weight:700;vertical-align:1px}
+.ph-tier-tag.bad{background:#fbe4e0;color:#a52a1f}
+.ph-tier-tag.mid{background:#ece8dc;color:#4a545c}
+.ph-tier-tag.good{background:#e3f3e9;color:#1e5a3d}
+.ph-prod .sup{margin-top:1px;font-size:.78em;color:#6b7680}
+.ph-bars3{display:flex;flex-direction:column;gap:3px;margin:7px 0 2px}
+.ph-bar3{display:flex;align-items:center;gap:8px;font-size:.74em;color:#5b6670}
+.ph-bar3 .lb{width:32px}
+.ph-bar3 .pp{display:flex;gap:3px}
+.ph-bar3 .pp i{width:16px;height:7px;border-radius:3px;background:#e6e1d4}
+.ph-bar3.g .pp i.on{background:#2f9e57}
+.ph-bar3.p .pp i.on{background:#e5532b}
+.ph-risk{margin-top:5px;font-size:.78em;font-weight:700;color:#b02f22}
+.ph-supnote{padding:6px 6px 2px;font-size:.88em;color:#5b6670}
+.ph-sec.in{padding:12px 16px 2px}
+
 /* ── Rao bán ── */
 .ph-listing{padding:14px 16px 6px;border-bottom:1px solid #eee9dc}
 .ph-listing:last-child{border-bottom:0}
@@ -288,36 +304,77 @@ export const PHONE_STYLE = `
 .ph-tier .r{font-weight:700;font-variant-numeric:tabular-nums}
 .ph-tier:focus-visible{outline:3px solid #2189a8;outline-offset:2px}
 
-/* ── Hệ thống ── */
-.sys{background:#0f1430;color:#e8ecff}
-.sys .ph-nav{background:rgba(15,20,48,.96);border-bottom-color:#232a5c}
-.sys .ph-nav .t{color:#fff}
-.sys .ph-btn-text{color:#ffd84a}
-.sys .ph-btn-text:hover{background:rgba(255,216,74,.1)}
-.sys .ph-scroll{padding:12px 14px 16px}
-.sys-card{background:#181f4a;border:1px solid #2a3470;border-radius:16px;padding:12px 16px;margin-bottom:12px}
-.sys-card .kv,.sys-stats .kv{display:flex;justify-content:space-between;gap:12px;padding:6px 0;font-size:.92em;border-bottom:1px dashed #2a3470}
+/* ── Hệ thống: giao diện máy, mạch, lưới ── */
+.sys{--c:#19e3ff;--g:#39ff9c;--ink:#cfeaf0;--dim:#6fa3b0;--line:rgba(25,227,255,.32);position:relative;color:var(--ink);letter-spacing:.01em}
+.sys::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(25,227,255,.035) 3px 4px)}
+.sys>*{position:relative;z-index:1}
+.ph-sysbg{background:
+  linear-gradient(rgba(25,227,255,.06) 1px,transparent 1px) 0 0/22px 22px,
+  linear-gradient(90deg,rgba(25,227,255,.06) 1px,transparent 1px) 0 0/22px 22px,
+  radial-gradient(ellipse at 50% 0,#0c2a35 0,#060d12 70%)}
+.sys .ph-nav{background:rgba(5,12,17,.9);border-bottom:1px solid var(--line)}
+.sys .ph-nav .t{color:var(--c);text-transform:uppercase;letter-spacing:.14em;font-size:.9em}
+.sys .ph-btn-text{color:var(--c)}
+.sys .ph-btn-text:hover{background:rgba(25,227,255,.1)}
+.sys .ph-scroll{padding:12px 14px 16px;overflow-x:hidden;scrollbar-color:#19e3ff #06222c}
+.sys-awake{scrollbar-color:#19e3ff #06222c}
+.sys-card{position:relative;background:rgba(8,26,34,.78);border:1px solid var(--line);border-radius:4px;padding:14px 16px;margin-bottom:12px;
+  background-image:linear-gradient(var(--c),var(--c)),linear-gradient(var(--c),var(--c)),linear-gradient(var(--c),var(--c)),linear-gradient(var(--c),var(--c)),linear-gradient(var(--c),var(--c)),linear-gradient(var(--c),var(--c)),linear-gradient(var(--c),var(--c)),linear-gradient(var(--c),var(--c));
+  background-size:12px 2px,2px 12px,12px 2px,2px 12px,12px 2px,2px 12px,12px 2px,2px 12px;
+  background-position:left top,left top,right top,right top,left bottom,left bottom,right bottom,right bottom;
+  background-repeat:no-repeat;box-shadow:0 0 18px rgba(25,227,255,.08) inset}
+.sys-card .kv,.sys-stats .kv{display:flex;justify-content:space-between;gap:12px;padding:6px 0;font-size:.88em;border-bottom:1px dashed rgba(25,227,255,.2)}
 .sys-card .kv:last-child,.sys-stats .kv:last-child{border-bottom:0}
-.sys-card .kv span,.sys-stats .kv span{color:#9aa6d4}
-.sys-card .kv b,.sys-stats .kv b{text-align:right;color:#ffd84a;font-weight:500}
-.sys-card.quest{border-color:#ffd84a}
-.sys-card .hd{font-weight:700;color:#ffd84a;font-size:.84em;letter-spacing:.04em;text-transform:uppercase}
-.sys-card p{margin:6px 0 0;line-height:1.55;font-size:.95em}
-.sys-card .ann{color:#c9d1ff}
-.sys-log p{margin:0 0 6px;padding:8px 12px;border-left:3px solid #ffd84a;background:#141a40;border-radius:0 10px 10px 0;font-size:.88em;line-height:1.5;color:#d6dcff}
-.sys-awake{flex:1;min-height:0;overflow-y:auto;padding:18px 20px 8px}
-.sys-awake p{margin:0 0 8px;line-height:1.55;animation:ph-pop .3s ease-out;color:#dfe4ff}
-.sys-stats{margin:10px 0 14px;padding:8px 14px;background:#181f4a;border:1px solid #2a3470;border-radius:14px;animation:ph-pop .3s ease-out}
-.sys-dock{background:#0f1430!important;border-top-color:#232a5c!important}
-.sys .ph-primary{background:#ffd84a;color:#0f1430;box-shadow:0 3px 12px rgba(255,216,74,.3)}
-.sys .ph-primary:hover{background:#ffe577}
-.sys .ph-primary:focus-visible{outline-color:#fff}
-.sys-wheel{position:relative;width:min(100%,268px);margin:14px auto 12px;aspect-ratio:1}
-.sys-wheel .disc{width:100%;height:100%;transform:rotate(0)}
-.sys-wheel .pin{position:absolute;left:50%;top:-8px;width:0;height:0;margin-left:-11px;border-left:11px solid transparent;border-right:11px solid transparent;border-top:24px solid #ffd84a;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}
-.sys-result p{margin:4px 0 0;font-size:.92em;line-height:1.5;color:#fff;animation:ph-pop .3s ease-out}
+.sys-card .kv span,.sys-stats .kv span{color:var(--dim);text-transform:uppercase;letter-spacing:.08em;font-size:.82em}
+.sys-card .kv b,.sys-stats .kv b{text-align:right;color:var(--g);font-weight:500;font-variant-numeric:tabular-nums;text-shadow:0 0 8px rgba(57,255,156,.45)}
+.sys-card.quest{border-color:var(--g)}
+.sys-card .hd{font-weight:700;color:var(--g);font-size:.8em;letter-spacing:.14em;text-transform:uppercase}
+.sys-card .hd::before{content:"// ";opacity:.7}
+.sys-card p{margin:8px 0 0;line-height:1.55;font-size:.95em}
+.sys-card .ann{color:var(--ink)}
+.sys-card .ann::before{content:"> ";color:var(--g)}
+.ph-sec.dark{color:var(--c);letter-spacing:.14em;padding-left:2px}
+.ph-sec.dark::before{content:"// ";opacity:.7}
+.sys-log p{margin:0 0 6px;padding:8px 12px;border-left:2px solid var(--g);background:rgba(8,26,34,.7);font-size:.86em;line-height:1.5;color:var(--ink)}
+.sys-awake{flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;padding:18px 20px 8px}
+.sys-awake p{margin:0 0 8px;line-height:1.55;animation:ph-pop .25s ease-out;color:var(--ink)}
+.sys-awake p::before{content:"> ";color:var(--g)}
+.sys-awake p:last-child::after{content:"▌";margin-left:3px;color:var(--g);animation:sys-blink 1s steps(1) infinite}
+@keyframes sys-blink{50%{opacity:0}}
+.sys-stats{margin:10px 0 14px;padding:8px 14px;background:rgba(8,26,34,.78);border:1px solid var(--line);border-radius:4px;animation:ph-pop .25s ease-out}
+.sys-dock{background:rgba(5,12,17,.92)!important;border-top:1px solid var(--line)!important}
+.sys .ph-primary{background:transparent;color:var(--g);border:1.5px solid var(--g);border-radius:4px;letter-spacing:.14em;text-transform:uppercase;font-size:.9em;box-shadow:0 0 14px rgba(57,255,156,.35),inset 0 0 12px rgba(57,255,156,.12)}
+.sys .ph-primary:hover:not(:disabled){background:rgba(57,255,156,.14)}
+.sys .ph-primary:disabled{opacity:.4;box-shadow:none}
+.sys .ph-primary:focus-visible{outline:2px solid #fff}
+.sys .ph-ghost{color:var(--dim);border-radius:4px;letter-spacing:.1em;text-transform:uppercase;font-size:.84em}
+.sys .ph-ghost:hover{background:rgba(25,227,255,.08)}
+.sys-wheel{position:relative;width:268px;height:284px;margin:10px auto 12px;overflow:hidden}
+.sys-wheel .disc{width:268px;height:268px;margin-top:16px;filter:drop-shadow(0 0 10px rgba(25,227,255,.35))}
+.sys-wheel .pin{position:absolute;left:50%;top:0;width:0;height:0;margin-left:-11px;border-left:11px solid transparent;border-right:11px solid transparent;border-top:24px solid var(--g);filter:drop-shadow(0 0 6px rgba(57,255,156,.8))}
+.sys-result p{margin:4px 0 0;font-size:.9em;line-height:1.5;color:var(--ink);animation:ph-pop .25s ease-out}
+.sys-result p:first-child{color:var(--g)}
 .sys-result{margin-bottom:10px}
 .wheel .ph-primary{margin-top:6px}
+
+/* ── Đánh giá: danh sách + Hồi Tâm ── */
+.ph-revs{padding:10px 14px 16px;display:flex;flex-direction:column;gap:8px}
+.ph-rev{background:#fff;border-radius:16px;padding:12px 14px 6px;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.ph-rev .tp{display:flex;align-items:center;gap:10px}
+.ph-rev .who{flex:1;min-width:0;display:flex;flex-direction:column}
+.ph-rev .who span{font-size:.78em;color:#6b7680}
+.ph-stars.sm{gap:1px}
+.ph-rev .tx{margin:8px 0 2px;line-height:1.5}
+.ph-rev .ed{font-size:.78em;color:#6b7680;margin-bottom:2px}
+.ph-fix{padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+.ph-fix .who{font-weight:700}
+.ph-fix textarea{box-sizing:border-box;width:100%;min-height:150px;resize:none;border:1.5px solid #cfc9b9;border-radius:14px;background:#fff;padding:12px 14px;font:inherit;line-height:1.5;color:#1c2329;outline:0}
+.ph-fix textarea:focus{border-color:#c0392b}
+.ph-pick{display:flex;gap:6px}
+.ph-star{width:46px;height:46px;border:0;background:none;cursor:pointer;border-radius:12px;padding:0;display:flex;align-items:center;justify-content:center;opacity:.55}
+.ph-star.on{opacity:1}
+.ph-star:focus-visible{outline:3px solid #c0392b;outline-offset:1px}
 
 /* ── nền sau điện thoại ở màn giới thiệu ── */
 .ph-root.bg{transition:background .6s}

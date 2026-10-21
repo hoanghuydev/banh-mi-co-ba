@@ -22,20 +22,19 @@ test("lịch 40 ngày cố định: ngày 1 thứ Hai; 11 mưa rào + 2 mưa d�
 
 test("giá chợ: thứ Hai đắt, thứ Năm rẻ; dịch heo ngày 19–23; bánh mì là mỏ neo 3,5 (trừ lò bà Tám nghỉ)", () => {
   assert.ok(priceOf("THIT_NGUOI", 1) > priceOf("THIT_NGUOI", 4));
-  assert.ok(priceOf("PATE_THUONG", 22) > priceOf("PATE_THUONG", 15) * 1.3); // 22 và 15 đều thứ Hai
+  assert.ok(priceOf("PATE", 22) > priceOf("PATE", 15) * 1.3); // 22 và 15 đều thứ Hai
   for (let d = 1; d <= 40; d++) assert.equal(priceOf("BANH", d), d >= 28 && d <= 30 ? 4.2 : 3.5);
-  // pate thường gốc 60k: thứ Hai ≈ 67; ngày 22 = thứ Hai × dịch heo 1,4 × rằm 0,95 ≈ 90
-  assert.ok(Math.abs((priceOf("PATE_THUONG", 1) / 20) * 60 - 67) <= 1);
-  assert.ok(Math.abs((priceOf("PATE_THUONG", 22) / 20) * 60 - 90) <= 2);
+  // pate gốc 24k: thứ Hai ×1,12; ngày 22 = thứ Hai × dịch heo 1,4 × rằm 0,95
+  assert.ok(Math.abs(priceOf("PATE", 1) / 24 - 1.12) <= 0.03);
+  assert.ok(Math.abs(priceOf("PATE", 22) / 24 - 1.12 * 1.4 * 0.95) <= 0.04);
 });
 
 test("kho: lô cũ nhất trước; pate trong thùng xốp chỉ sống 1 ngày; hàng hư là KHOÁ", () => {
   const inv = newInventory();
-  buy(inv, "PATE_THUONG", 1, 1);
-  buy(inv, "PATE_NHA", 1, 2);
+  buy(inv, "PATE", 1, 1);
   // hạn 1 ngày = dùng tới hết ngày sau ngày mua
-  assert.equal(stockOf(inv, "PATE_THUONG", 2), 20);
-  assert.equal(stockOf(inv, "PATE_THUONG", 3), 0);
+  assert.equal(stockOf(inv, "PATE", 2), 20);
+  assert.equal(stockOf(inv, "PATE", 3), 0);
   const inv2 = newInventory();
   buy(inv2, "THIT_NGUOI", 1, 1);
   buy(inv2, "THIT_NGUOI", 1, 2);
@@ -75,7 +74,7 @@ test("lịch quay vòng: ngày quá độ dài lịch vẫn có thời tiết v�
   assert.equal(weatherOf(n + 1), weatherOf(1));
   assert.equal(weatherOf(n + 24), weatherOf(24));
   assert.equal(priceOf("BANH", n + 28), priceOf("BANH", 28));
-  assert.ok(priceOf("PATE_THUONG", n + 22) > priceOf("PATE_THUONG", n + 15) * 1.3, "dịch heo không quay lại ở vòng lịch sau");
+  assert.ok(priceOf("PATE", n + 22) > priceOf("PATE", n + 15) * 1.3, "dịch heo không quay lại ở vòng lịch sau");
 });
 
 test("tiền thuê một mức mỗi ngày; thiếu thì dồn sang mai, trả nợ cũ trước", () => {

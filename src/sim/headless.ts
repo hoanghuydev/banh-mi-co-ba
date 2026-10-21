@@ -1,7 +1,7 @@
 // Buổi bán không render, cùng `runFrame` với `StallScene`, tay người chơi thay bằng bot.
 import { basketFor, buyBasket, dawn, dayDeps, eveningCounting, neighborTick } from "./day";
 import { EQUIP, buyEquip, has, priceVnd, whyNot, type EquipId } from "./equipment";
-import { dishQuality, portionsFor, take } from "./econ";
+import { dishQuality, portionsFor, sickChance, take, takeFull, type Portion, type Quality } from "./econ";
 import { Bus } from "../core/eventbus";
 import { GameContext } from "../core/context";
 import { DAY_START_MIN } from "../core/clock";
@@ -19,7 +19,8 @@ import { openTilesFor, setOpenTiles } from "../world/map";
 export type Policy = {
   name: string;
   buyLoaves?: number;
-  pate?: "PATE_NHA" | "PATE_THUONG";
+  /** Mức hàng bot mua, mặc định hàng thường. */
+  tier?: Quality;
   build?: [number, EquipId][];
   workSec: [number, number];
   dropRate: number;
@@ -104,7 +105,7 @@ export class HeadlessStall {
     this.bot = this.ctx.rng.derive(`bot:${policy.name}`);
     if (!opts.resume) {
       dawn(w);
-      buyBasket(w, basketFor(w.inventory, policy.buyLoaves ?? 16, w.progress.dayIndex, policy.pate ?? "PATE_NHA"));
+      buyBasket(w, basketFor(w.inventory, policy.buyLoaves ?? 16, w.progress.dayIndex), policy.tier ?? "THUONG");
     }
     const lateOpen = !opts.resume && w.flags.lateOpenDay === w.progress.dayIndex;
     if (lateOpen) this.ctx.clock.reset(8 * 60);
@@ -220,12 +221,13 @@ export class HeadlessStall {
     }
     if (w.left > 0) return;
     const parts: { ing: typeof w.dish[number]; q: number }[] = [];
+    const taken: Portion[] = [];
     const served: typeof w.dish = [];
     for (const ing of w.dish) {
-      const q = take(inv, ing, 1, day);
-      if (q.length) { parts.push({ ing, q: q[0] }); served.push(ing); }
+      const got = takeFull(inv, ing, 1, day);
+      if (got.length) { parts.push({ ing, q: got[0].q }); taken.push(got[0]); served.push(ing); }
     }
-    const res = s.serveDish(served, { quality: dishQuality(this.breadQ, parts) });
+    const res = s.serveDish(served, { quality: dishQuality(this.breadQ, parts), sick: sickChance(taken) });
     this.work = null;
     s.playerHand = "empty";
     if (!res.ok) this.refused.add(c.id);

@@ -8,7 +8,7 @@ import { resaleVnd, resellable } from "./equipment";
  */
 
 /** Rổ nhỏ nhất còn mở hàng được: mười ổ bánh với một lạng pate thường. Dưới mức này thì sáng mai không có gì để bán. */
-export const MIN_BASKET = { BANH: 10, PATE_THUONG: 1 } as const;
+export const MIN_BASKET = { BANH: 10, PATE: 1 } as const;
 
 export function minBasketVnd(day: number): number {
   return (Object.entries(MIN_BASKET) as [keyof typeof MIN_BASKET, number][])

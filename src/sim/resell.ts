@@ -7,16 +7,16 @@ import { EQUIP, has, priceVnd, resellable, type EquipId } from "./equipment";
 export type Tier = "RE" | "THUONG" | "CAO";
 
 export const TIERS: Record<Tier, { label: string; pay: number; odds: number }> = {
-  RE: { label: "Giá rẻ", pay: 0.4, odds: 1.5 },
-  THUONG: { label: "Giá thường", pay: 0.6, odds: 1 },
-  CAO: { label: "Giá cao", pay: 0.8, odds: 0.4 },
+  RE: { label: "Giá rẻ", pay: 0.5, odds: 1.5 },
+  THUONG: { label: "Giá thường", pay: 0.7, odds: 1 },
+  CAO: { label: "Giá cao", pay: 0.9, odds: 0.4 },
 };
 
-export const MAX_LISTINGS = 2;
-export const LISTING_DAYS = 3;
+export const MAX_LISTINGS = 3;
+export const LISTING_DAYS = 4;
 
 /** Xác suất có người mua mỗi sáng, chờ mô phỏng chốt. */
-export const BASE_ODDS = { small: 0.4, large: 0.15, dry: 0.2 } as const;
+export const BASE_ODDS = { small: 0.5, large: 0.2, dry: 0.3 } as const;
 
 /** Đồ nghề đắt từ mức này tính là đồ lớn. */
 const LARGE_FROM_K = 1000;

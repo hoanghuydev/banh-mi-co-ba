@@ -87,8 +87,8 @@ test("bán lại = 60% giá; bán lò điện thì lò than vẫn còn đó", ()
 });
 
 test("tủ mát: đồ lạnh để được gấp đôi (pate 2 ngày → 4), đồ chua KHÔNG đổi", () => {
-  assert.equal(shelfDays("PATE_NHA", "thung_xop"), 2);
-  assert.equal(shelfDays("PATE_NHA", "tu_mat"), 6);
+  assert.equal(shelfDays("PATE", "thung_xop"), 2);
+  assert.equal(shelfDays("PATE", "tu_mat"), 6);
   assert.equal(shelfDays("DO_CHUA_NL", "tu_mat"), shelfDays("DO_CHUA_NL", "thung_xop"));
   assert.equal(lotQuality({ good: "RAU", day: 1, left: 1, q0: 1 }, 2, "thung_xop"), 0.55);
   assert.equal(lotQuality({ good: "RAU", day: 1, left: 1, q0: 1 }, 2, "tu_mat"), 1.0);

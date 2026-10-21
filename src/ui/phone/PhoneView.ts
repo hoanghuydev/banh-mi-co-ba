@@ -14,6 +14,7 @@ import { shopApp } from "./apps/shopApp";
 import { systemApp } from "./apps/systemApp";
 import { page, type AppCtx, type Dir, type Host, type Route } from "./ctx";
 import { ICON, btn, el, money } from "./dom";
+import { OrderTour } from "./orderTour";
 import { PhoneShell } from "./PhoneShell";
 
 export type { Route } from "./ctx";
@@ -38,7 +39,7 @@ const APPS: AppDef[] = [
   { key: "msg", label: "Message", icon: ICON.msg, bg: "linear-gradient(160deg,#5bd17f,#2f9e57)", badge: (w) => totalUnread(w.phone) },
   { key: "rev", label: "Đánh giá", icon: ICON.star, bg: "linear-gradient(160deg,#ffcb52,#ee9a1c)" },
   { key: "note", label: "Note", icon: ICON.note, bg: "linear-gradient(160deg,#ffe58a,#f2bf3a)" },
-  { key: "sys", label: "Hệ thống", icon: ICON.sys, bg: "linear-gradient(160deg,#3b4a8c,#1c2559)", show: linked, badge: (w) => (canSpin(w) ? 1 : 0) },
+  { key: "sys", label: "Hệ thống", icon: ICON.sys, bg: "radial-gradient(circle at 30% 20%,#14485a,#04090d)", show: linked, badge: (w) => (canSpin(w) ? 1 : 0) },
   { key: "shop", label: "Thực phẩm", icon: ICON.bag, bg: "linear-gradient(160deg,#ff8a5c,#e5532b)", badge: (w) => inTransit(w).length },
   { key: "gear", label: "Đồ nghề", icon: ICON.tool, bg: "linear-gradient(160deg,#8d9aa6,#55626e)", badge: (w) => w.shop.gearOrders.filter((o) => !o.delivered).length },
   { key: "sell", label: "Rao bán", icon: ICON.tag, bg: "linear-gradient(160deg,#4fc3d9,#2189a8)" },
@@ -58,9 +59,11 @@ export class PhoneView {
   private shell: PhoneShell;
   private route: Route;
   private ctx: AppCtx;
+  private tour: OrderTour;
 
   constructor(game: Phaser.Game, private w: SaveFile, private opts: PhoneOpts) {
     this.route = opts.route ?? { app: "home" };
+    this.tour = new OrderTour(w, opts.textScale);
     this.ctx = {
       w, host: opts.host, route: this.route,
       go: (r, d) => this.go(r, d),
@@ -78,7 +81,7 @@ export class PhoneView {
         this.go(up, "l");
         return true;
       },
-      onClose: () => { opts.host.onSave(); opts.onClose(); },
+      onClose: () => { this.tour.destroy(); opts.host.onSave(); opts.onClose(); },
     });
     this.go(this.route, "up");
   }
@@ -116,6 +119,7 @@ export class PhoneView {
       body = r.app === "home" ? page(el("div", "ph-blank", "Điện thoại gặp lỗi")) : this.home();
     }
     this.shell.show(body, dir);
+    this.tour.update(r);
   }
 
   private home() {

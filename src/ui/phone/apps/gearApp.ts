@@ -10,6 +10,7 @@ import { tabBar } from "../tabs";
 type Tab = "shop" | "cart" | "orders";
 
 let justOrdered = 0;
+let useCoupon = false;
 
 export function gearApp(ctx: AppCtx): HTMLElement {
   const tab = (ctx.route.tab as Tab) ?? "shop";
@@ -58,7 +59,7 @@ function catalog(ctx: AppCtx) {
   wrap.append(sc);
   if (n) {
     const bar = btn("ph-cartbar", "", () => ctx.go({ app: "gear", tab: "cart" }));
-    bar.append(el("span", "", `${n} món trong giỏ`), el("b", "", money(gearQuote(ctx.w).total)), el("span", "go", "Xem giỏ ›"));
+    bar.append(el("span", "", `${n} món trong giỏ`), el("b", "", money(gearQuote(ctx.w).subtotal)), el("span", "go", "Xem giỏ ›"));
     wrap.append(bar);
   }
   return wrap;
@@ -113,7 +114,8 @@ function cart(ctx: AppCtx) {
     e.append(btn("ph-primary slim", "Xem đồ nghề", () => ctx.go({ app: "gear", tab: "shop" }, "")));
     return e;
   }
-  const q = gearQuote(w);
+  const coupon = useCoupon && w.system.gearCoupon > 0;
+  const q = gearQuote(w, coupon);
   const lines = el("div", "ph-card");
   for (const id of ids) {
     const row = el("div", "ph-line-item");
@@ -128,7 +130,8 @@ function cart(ctx: AppCtx) {
     r.append(el("span", "", k), el("b", "", v));
     sum.append(r);
   };
-  kv("Tạm tính", money(q.total));
+  kv("Tạm tính", money(q.subtotal));
+  if (q.discount) kv("Thẻ giảm giá", `−${money(q.discount)}`, "good");
   kv("Giao hàng", "sáng mai");
   kv("Tiền quán sau khi đặt", money(w.money.cash - q.total), q.blocked === "cash" ? "bad" : "");
 
@@ -136,9 +139,10 @@ function cart(ctx: AppCtx) {
   const warn = q.blocked === "cash" ? "Không đủ tiền quán." : q.blocked === "slots" ? "Xe hết chỗ cho cả giỏ này." : "";
   if (warn) dock.append(el("div", "ph-warn", warn));
   const go = btn("ph-primary", `Đặt hàng · ${money(q.total)}`, () => {
-    const id = orderGear(w);
+    const id = orderGear(w, coupon);
     if (!id) return;
     justOrdered = id;
+    useCoupon = false;
     ctx.host.onSave();
     ctx.go({ app: "gear", tab: "orders" }, "");
   });
@@ -147,7 +151,15 @@ function cart(ctx: AppCtx) {
 
   const wrap = el("div");
   wrap.style.cssText = "display:flex;flex-direction:column;flex:1;min-height:0";
-  wrap.append(scroller(lines, sum), dock);
+  const opts = el("div", "ph-card");
+  if (w.system.gearCoupon > 0) {
+    const sw = btn(`ph-switch${coupon ? " on" : ""}`, "", () => { useCoupon = !coupon; ctx.rerender(); });
+    sw.setAttribute("role", "switch");
+    sw.setAttribute("aria-checked", String(coupon));
+    sw.append(el("span", "lb", "Thẻ giảm giá −15%"), el("span", "ct", `còn ${w.system.gearCoupon}`), el("span", "sw"));
+    opts.append(sw);
+  }
+  wrap.append(scroller(lines, ...(opts.childElementCount ? [opts] : []), sum), dock);
   return wrap;
 }
 
@@ -169,12 +181,12 @@ function orders(ctx: AppCtx) {
   for (const o of w.shop.gearOrders) {
     const c = el("div", "ph-order");
     const hd = el("div", "hd");
-    hd.append(el("b", "", `Đơn #${o.id}`), el("span", "", o.day === w.progress.dayIndex ? "Hôm nay" : `Ngày ${o.day}`));
+    hd.append(el("b", "", o.gift ? `Quà #${o.id}` : `Đơn #${o.id}`), el("span", "", o.day === w.progress.dayIndex ? "Hôm nay" : `Ngày ${o.day}`));
     hd.append(el("span", `ph-st ${o.delivered ? "ok" : "go"}`, o.delivered ? "Đã lắp" : "Đang giao · sáng mai"));
     const ls = el("div", "ls");
     for (const id of o.items as EquipId[]) ls.append(el("div", "", EQUIP[id].name));
     const ft = el("div", "ft");
-    ft.append(el("b", "", money(o.total)));
+    ft.append(el("b", "", o.gift ? "Quà từ Hệ thống" : money(o.total)));
     c.append(hd, ls, ft);
     list.append(c);
   }

@@ -1,5 +1,7 @@
 import type { SaveFile } from "../core/save";
 import { BY_ID, type Ingredient } from "./order";
+import { GOODS, type GoodId } from "./econ";
+import { itemsOf } from "./shop";
 
 // Dẫn ngày 1, mỗi lúc một việc; lưu trong `flags` nên save cũ đọc ra `undefined` → bước đầu, khỏi migrate.
 export type TourStep = "CHO" | "MENU" | "BANH" | "LO" | "THOT" | "NHAN" | "GOI" | "GIAO" | "TAY" | "DT" | "XONG";
@@ -52,3 +54,30 @@ export function fillGap(stack: readonly Ingredient[]): FillGap {
   if (!stack.some((id) => BY_ID.get(id)?.kind === "rau")) return "RAU";
   return null;
 }
+
+/** Hàng tối thiểu để bán ngày đầu: đủ bánh, pate, một nhân mặn, rau. Tour dắt đặt từng món ở Fresh24. */
+export const TOUR_SUPPLIER = "FRESH24";
+export const TOUR_ORDER: readonly { good: GoodId; units: number; label: string }[] = [
+  { good: "BANH", units: 10, label: "bánh mì" },
+  { good: "PATE", units: 1, label: "pate" },
+  { good: "THIT_NGUOI", units: 1, label: "thịt nguội" },
+  { good: "RAU", units: 1, label: "rau" },
+];
+
+export type OrderStep = { good: GoodId; label: string; clicks: number; done: number; offerId: string };
+
+/** Mỗi món cần bấm + mấy lần và đã bấm mấy lần (đếm theo hàng trong giỏ, bất kể nhà cung cấp). */
+export function tourOrderSteps(w: SaveFile): OrderStep[] {
+  const inCart = new Map<GoodId, number>();
+  for (const l of itemsOf(w.shop.cart)) inCart.set(l.good, (inCart.get(l.good) ?? 0) + l.n);
+  return TOUR_ORDER.map((t) => {
+    const step = GOODS[t.good].step;
+    return {
+      good: t.good, label: t.label, clicks: Math.ceil(t.units / step),
+      done: Math.min(Math.ceil(t.units / step), Math.floor((inCart.get(t.good) ?? 0) / step)),
+      offerId: `${TOUR_SUPPLIER}.${t.good}`,
+    };
+  });
+}
+
+export const tourOrderReady = (w: SaveFile) => tourOrderSteps(w).every((s) => s.done >= s.clicks);

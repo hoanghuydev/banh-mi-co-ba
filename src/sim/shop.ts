@@ -1,9 +1,10 @@
 import type { SaveFile } from "../core/save";
 import { DAY_START_MIN, fmtHhmm } from "../core/clock";
-import { GOODS, GOOD_IDS, buy, coldSlotCap, coldSlotsUsed, type GoodId } from "./econ";
-import { basketCost, unitPriceVnd } from "./day";
+import { GOODS, buy, coldSlotCap, coldSlotsUsed, type GoodId, type Quality } from "./econ";
+import { defaultOffer, offerById, offerPrice, resolveKey, type Offer } from "./suppliers";
 
-export type Basket = Partial<Record<GoodId, number>>;
+/** Mã dòng hàng (`nhà.món`) → số đơn vị. */
+export type Basket = Record<string, number>;
 
 export type Order = {
   id: number;
@@ -16,7 +17,7 @@ export type Order = {
   delivered: boolean;
 };
 
-export type GearOrder = { id: number; day: number; items: string[]; total: number; delivered: boolean };
+export type GearOrder = { id: number; day: number; items: string[]; total: number; delivered: boolean; gift?: boolean };
 
 export type ShopState = {
   seq: number; orders: Order[]; cart: Basket;
@@ -36,18 +37,32 @@ export type Category = { id: string; label: string; goods: GoodId[] };
 
 export const CATEGORIES: Category[] = [
   { id: "banh", label: "Bánh", goods: ["BANH"] },
-  { id: "nhan", label: "Nhân", goods: ["PATE_NHA", "PATE_THUONG", "THIT_NGUOI", "CHA_LUA", "XIU_MAI", "TRUNG"] },
+  { id: "nhan", label: "Nhân", goods: ["PATE", "THIT_NGUOI", "CHA_LUA", "XIU_MAI", "TRUNG"] },
   { id: "rau", label: "Rau & đồ chua", goods: ["RAU", "DO_CHUA_NL", "DO_CHUA_SAN"] },
   { id: "gv", label: "Gia vị", goods: ["OT", "SOT"] },
 ];
 
-export const itemsOf = (b: Basket) => GOOD_IDS.filter((g) => (b[g] ?? 0) > 0).map((g) => ({ g, n: b[g]! }));
+export type Line = { key: string; good: GoodId; tier: Quality; n: number; offer: Offer | null };
+
+/** Các dòng trong giỏ/đơn; mã món cũ (save cũ) tính là hàng thường. */
+export function itemsOf(b: Basket): Line[] {
+  const out: Line[] = [];
+  for (const [key, n] of Object.entries(b)) {
+    const r = n > 0 ? resolveKey(key) : null;
+    if (r) out.push({ key, good: r.good, tier: r.tier, n, offer: offerById(key) ?? null });
+  }
+  return out;
+}
+
+export const unitPrice = (l: Line, day: number) => offerPrice(l.offer ?? defaultOffer(l.good, l.tier), day);
+
+export const basketTotal = (b: Basket, day: number) => itemsOf(b).reduce((a, l) => a + unitPrice(l, day) * l.n, 0);
 
 function coldOf(b: Basket) {
   let s = 0;
-  for (const [g, n] of Object.entries(b)) {
-    const d = GOODS[g as GoodId];
-    if (d.storage === "COLD") s += (n ?? 0) * (d.coldSlots ?? 1);
+  for (const l of itemsOf(b)) {
+    const d = GOODS[l.good];
+    if (d.storage === "COLD") s += l.n * (d.coldSlots ?? 1);
   }
   return s;
 }
@@ -75,7 +90,7 @@ export type Quote = {
 
 export function quote(w: SaveFile, b: Basket, nowMin: number, o: { coupon: boolean; express: boolean; beforeOpen: boolean }): Quote {
   const day = w.progress.dayIndex;
-  const subtotal = basketCost(b, day);
+  const subtotal = basketTotal(b, day);
   const discount = o.coupon ? Math.round(subtotal * DISCOUNT_PCT / 1000) * 1000 : 0;
   const total = subtotal - discount;
   let deliverDay = day, deliverMin = PRE_OPEN_ARRIVE_MIN;
@@ -102,7 +117,6 @@ export function placeOrder(w: SaveFile, b: Basket, nowMin: number, o: { coupon: 
     deliverDay: q.deliverDay, deliverMin: q.deliverMin, express, delivered: false,
   };
   w.shop.orders.unshift(order);
-  w.inventory.lastBasket = { ...b };
   if (w.shop.orders.length > ORDER_KEEP) w.shop.orders.length = ORDER_KEEP;
   return order;
 }
@@ -114,7 +128,7 @@ export function deliverDue(w: SaveFile, nowMin: number): Order[] {
   for (const o of w.shop.orders) {
     if (o.delivered) continue;
     if (o.deliverDay > day || (o.deliverDay === day && o.deliverMin > nowMin)) continue;
-    for (const [g, n] of Object.entries(o.items)) if (n) buy(w.inventory, g as GoodId, n, day);
+    for (const l of itemsOf(o.items)) buy(w.inventory, l.good, l.n, day, l.tier);
     o.delivered = true;
     out.push(o);
   }
@@ -124,5 +138,3 @@ export function deliverDue(w: SaveFile, nowMin: number): Order[] {
 export const arriveText = (o: Pick<Order, "deliverDay" | "deliverMin">, today: number) =>
   o.deliverDay > today ? `sáng mai ${fmtHhmm(o.deliverMin)}` : fmtHhmm(o.deliverMin);
 
-export const itemLine = (g: GoodId, n: number) => `${GOODS[g].label} × ${n}`;
-export const lineTotal = (g: GoodId, n: number, day: number) => unitPriceVnd(g, day) * n;

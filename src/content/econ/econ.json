@@ -1,13 +1,31 @@
 {
   "_note": "Kinh tế — nguồn sự thật DUY NHẤT (CANON §13.1). Tiền tính bằng NGHÌN đồng (k). Mọi khoản tính theo ngày (chi phí cố định, tiền thuê, thiết bị, vốn ban đầu) nhân chung `scale`; giá TỪNG Ổ và giá TỪNG MÓN ở chợ giữ như đời thật. Con số trong file là số GỐC; code tự nhân `scale`.",
-  "scale": 0.40,
+  "scale": 0.4,
   "_scaleNote": "Hiệu chỉnh bằng `npm run sim`. ⚠️ Cần đo bằng telemetry người thật.",
   "startCash_k": 3500,
-  "fixedCost_k": { "base": 100, "fromDay": 33, "raised": 115,
-    "_breakdown": "than/gas 25 · đá 15 · túi 20 · xăng 15 · gửi xe/rác/điện 15 · khấu hao 10" },
-  "menu_k": { "khong": 10, "thuong": 25, "dayDu": 32, "dacBiet": 40,
-    "_note": "1 nhân = thường · 2 nhân hoặc 'đầy đủ' = đầy đủ · xin thêm một nhân trên nền đầy đủ = đặc biệt. Bánh mì không 10k." },
+  "fixedCost_k": {
+    "base": 100,
+    "fromDay": 33,
+    "raised": 115,
+    "_breakdown": "than/gas 25 · đá 15 · túi 20 · xăng 15 · gửi xe/rác/điện 15 · khấu hao 10"
+  },
+  "menu_k": {
+    "khong": 10,
+    "thuong": 25,
+    "dayDu": 32,
+    "dacBiet": 40,
+    "_note": "1 nhân = thường · 2 nhân hoặc 'đầy đủ' = đầy đủ · xin thêm một nhân trên nền đầy đủ = đặc biệt. Bánh mì không 10k."
+  },
   "rent_k": 42,
-  "storage": { "thung_xop": { "coldSlots": 8, "dryShelfLifeDelta": {}, "coldShelfLifeDelta": { "PATE_THUONG": -1, "PATE_NHA": -1, "THIT_NGUOI": -1 } },
-    "_note": "1 slot ≈ 20 phần. Thùng xốp làm pate chỉ còn 1 ngày, thịt còn 2 (P3-03 §2.2). Pate 2 ngày là trần tuyệt đối." }
+  "storage": {
+    "thung_xop": {
+      "coldSlots": 8,
+      "dryShelfLifeDelta": {},
+      "coldShelfLifeDelta": {
+        "THIT_NGUOI": -1,
+        "PATE": -1
+      }
+    },
+    "_note": "1 slot ≈ 20 phần. Thùng xốp làm pate chỉ còn 1 ngày, thịt còn 2 (P3-03 §2.2). Pate 2 ngày là trần tuyệt đối."
+  }
 }

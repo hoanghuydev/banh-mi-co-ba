@@ -1,8 +1,9 @@
-import { GOODS, GOOD_IDS, lotQuality, type GoodId } from "../../../sim/econ";
-import { fmtUnits, unitPriceVnd } from "../../../sim/day";
+import { GOODS, QUALITIES, lotQuality, type GoodId } from "../../../sim/econ";
+import { fmtUnits } from "../../../sim/day";
 import {
-  CATEGORIES, arriveText, coldAfter, coldCap, inTransit, itemsOf, placeOrder, quote, type Basket, type Order,
+  CATEGORIES, arriveText, coldAfter, coldCap, inTransit, itemsOf, placeOrder, quote, unitPrice, type Basket, type Order,
 } from "../../../sim/shop";
+import { OFFERS, SUPPLIERS, marketPriceK, offerPrice, offerPriceK, supplierById, type Offer } from "../../../sim/suppliers";
 import { page, scroller, navBar, type AppCtx } from "../ctx";
 import { ICON, btn, el, money } from "../dom";
 import { tabBar } from "../tabs";
@@ -28,62 +29,105 @@ export function shopApp(ctx: AppCtx): HTMLElement {
   );
 }
 
+const TIER_CLASS = { BAN: "bad", THUONG: "mid", NGON: "good" } as const;
+
 function haveText(ctx: AppCtx, g: GoodId): string {
   const w = ctx.w, day = w.progress.dayIndex, inv = w.inventory, d = GOODS[g];
   const left = inv.lots
     .filter((l) => l.good === g && l.left > 0 && lotQuality(l, day, inv.storage, inv.noiU) !== null)
     .reduce((a, l) => a + l.left, 0);
-  return left > 0 ? `Còn ${fmtUnits(left / d.perUnit)} ${d.unit}` : "Hết hàng";
+  return left > 0 ? `Kho: ${fmtUnits(left / d.perUnit)} ${d.unit}` : "Kho trống";
 }
 
-function setQty(ctx: AppCtx, g: GoodId, n: number) {
+function setQty(ctx: AppCtx, key: string, n: number) {
   const cart = ctx.w.shop.cart;
-  if (n <= 0) delete cart[g]; else cart[g] = n;
+  if (n <= 0) delete cart[key]; else cart[key] = n;
   ctx.host.onSave();
 }
 
-function stepper(ctx: AppCtx, g: GoodId, after: () => void) {
-  const d = GOODS[g];
-  const n = ctx.w.shop.cart[g] ?? 0;
+function stepper(ctx: AppCtx, key: string, good: GoodId, after: () => void) {
+  const d = GOODS[good];
+  const n = ctx.w.shop.cart[key] ?? 0;
   const box = el("div", "ph-step");
-  const minus = btn("", "−", () => { setQty(ctx, g, n - d.step); after(); }, `Bớt ${d.label}`);
+  const minus = btn("", "−", () => { setQty(ctx, key, n - d.step); after(); }, `Bớt ${d.label}`);
   minus.disabled = n <= 0;
-  const plus = btn("", "+", () => { setQty(ctx, g, n + d.step); after(); }, `Thêm ${d.label}`);
+  const plus = btn("", "+", () => { setQty(ctx, key, n + d.step); after(); }, `Thêm ${d.label}`);
+  plus.dataset.offer = key;
   box.append(minus, el("span", "q", n > 0 ? fmtUnits(n) : "0"), plus);
   if (n <= 0) box.classList.add("zero");
   return box;
 }
 
-function trend(g: GoodId, day: number): HTMLElement | null {
+function trend(o: Offer, day: number): HTMLElement | null {
   if (day <= 1) return null;
-  const a = unitPriceVnd(g, day), b = unitPriceVnd(g, day - 1);
+  const a = offerPrice(o, day), b = offerPrice(o, day - 1);
   if (a === b) return null;
   const t = el("span", `ph-trend ${a > b ? "up" : "down"}`, `${a > b ? "▲" : "▼"} ${money(Math.abs(a - b))}`);
   t.setAttribute("aria-label", a > b ? "giá tăng" : "giá giảm");
   return t;
 }
 
+function pips(label: string, n: number, kind: string) {
+  const row = el("div", `ph-bar3 ${kind}`);
+  row.setAttribute("role", "img");
+  row.setAttribute("aria-label", `${label} ${n} trên 5`);
+  row.append(el("span", "lb", label));
+  const box = el("span", "pp");
+  for (let i = 1; i <= 5; i++) box.append(el("i", i <= n ? "on" : ""));
+  row.append(box);
+  return row;
+}
+
+/** Thanh Giá: so với giá thị trường của món. */
+const pricePips = (o: Offer, day: number) => {
+  const r = offerPriceK(o, day) / marketPriceK(o.good, day);
+  return Math.max(1, Math.min(5, Math.round((r - 0.35) / 0.2)));
+};
+
+function offerCard(ctx: AppCtx, o: Offer, showSupplier: boolean): HTMLElement {
+  const day = ctx.w.progress.dayIndex;
+  const d = GOODS[o.good];
+  const q = QUALITIES[o.tier];
+  const card = el("div", `ph-prod${(ctx.w.shop.cart[o.id] ?? 0) > 0 ? " has" : ""}`);
+  const info = el("div", "info");
+  const top = el("div", "nm");
+  top.append(document.createTextNode(d.label), el("span", `ph-tier-tag ${TIER_CLASS[o.tier]}`, q.label));
+  info.append(top);
+  if (showSupplier) info.append(el("div", "sup", supplierById(o.supplier)?.name ?? ""));
+  const bars = el("div", "ph-bars3");
+  bars.append(pips("Ngon", q.tasteBar, "g"), pips("Sạch", q.clean, "g"), pips("Giá", pricePips(o, day), "p"));
+  info.append(bars);
+  const price = el("div", "pr");
+  price.append(el("b", "", money(offerPrice(o, day))), document.createTextNode(` / ${d.unit}`));
+  const t = trend(o, day);
+  if (t) price.append(t);
+  info.append(price);
+  if (o.tier === "BAN") info.append(el("div", "ph-risk", "⚠ Có thể làm khách đau bụng"));
+  info.append(el("div", "st", haveText(ctx, o.good)));
+  card.append(info, stepper(ctx, o.id, o.good, () => ctx.rerender()));
+  return card;
+}
+
 function catalog(ctx: AppCtx, cat: string): HTMLElement {
   const day = ctx.w.progress.dayIndex;
   const chips = el("div", "ph-chips");
-  const all = [{ id: "all", label: "Tất cả", goods: GOOD_IDS }, ...CATEGORIES];
-  for (const c of all) {
-    chips.append(btn(`ph-pill${c.id === cat ? " on" : ""}`, c.label, () => ctx.go({ app: "shop", tab: "shop", id: c.id }, "")));
-  }
-  const goods = (all.find((c) => c.id === cat) ?? all[0]).goods;
+  const chip = (id: string, label: string) =>
+    chips.append(btn(`ph-pill${id === cat ? " on" : ""}`, label, () => ctx.go({ app: "shop", tab: "shop", id }, "")));
+  chip("all", "Tất cả");
+  for (const s of SUPPLIERS) chip(s.id, s.name);
+
   const list = el("div", "ph-prods");
-  for (const g of goods) {
-    const d = GOODS[g];
-    const card = el("div", `ph-prod${(ctx.w.shop.cart[g] ?? 0) > 0 ? " has" : ""}`);
-    const info = el("div", "info");
-    info.append(el("div", "nm", d.label));
-    const price = el("div", "pr");
-    price.append(el("b", "", money(unitPriceVnd(g, day))), document.createTextNode(` / ${d.unit}`));
-    const t = trend(g, day);
-    if (t) price.append(t);
-    info.append(price, el("div", "st", haveText(ctx, g)));
-    card.append(info, stepper(ctx, g, () => ctx.rerender()));
-    list.append(card);
+  const sup = supplierById(cat);
+  if (sup) {
+    list.append(el("div", "ph-supnote", sup.blurb));
+    for (const o of OFFERS.filter((x) => x.supplier === sup.id)) list.append(offerCard(ctx, o, false));
+  } else {
+    for (const c of CATEGORIES) {
+      list.append(el("div", "ph-sec", c.label));
+      const rows = OFFERS.filter((o) => c.goods.includes(o.good))
+        .sort((a, b) => GOODS[a.good].label.localeCompare(GOODS[b.good].label, "vi") || offerPrice(a, day) - offerPrice(b, day));
+      for (const o of rows) list.append(offerCard(ctx, o, true));
+    }
   }
   const sc = scroller(chips, list);
   sc.style.position = "relative";
@@ -115,14 +159,26 @@ function cart(ctx: AppCtx): HTMLElement {
   const useExpress = picked.has("express") && w.system.express > 0;
   const q = quote(w, w.shop.cart, ctx.host.minutes(), { coupon: useCoupon, express: useExpress, beforeOpen: ctx.host.beforeOpen() });
 
-  const lines = el("div", "ph-card");
-  for (const { g } of items) {
-    const d = GOODS[g];
-    const row = el("div", "ph-line-item");
-    const info = el("div", "info");
-    info.append(el("div", "nm", d.label), el("div", "pr", `${money(unitPriceVnd(g, day))} / ${d.unit}`));
-    row.append(info, stepper(ctx, g, () => ctx.rerender()));
-    lines.append(row);
+  const lines = el("div");
+  const bySupplier = new Map<string, typeof items>();
+  for (const l of items) {
+    const sid = l.offer?.supplier ?? "";
+    (bySupplier.get(sid) ?? bySupplier.set(sid, []).get(sid)!).push(l);
+  }
+  for (const [sid, rows] of bySupplier) {
+    const card = el("div", "ph-card");
+    card.append(el("div", "ph-sec in", supplierById(sid)?.name ?? "Đơn cũ"));
+    for (const l of rows) {
+      const d = GOODS[l.good];
+      const row = el("div", "ph-line-item");
+      const info = el("div", "info");
+      const nm = el("div", "nm");
+      nm.append(document.createTextNode(d.label), el("span", `ph-tier-tag ${TIER_CLASS[l.tier]}`, QUALITIES[l.tier].label));
+      info.append(nm, el("div", "pr", `${money(unitPrice(l, day))} / ${d.unit}`));
+      row.append(info, stepper(ctx, l.key, l.good, () => ctx.rerender()));
+      card.append(row);
+    }
+    lines.append(card);
   }
 
   const opts = el("div", "ph-card");
@@ -200,7 +256,7 @@ function orderCard(ctx: AppCtx, o: Order, day: number) {
   const status = el("span", `ph-st ${o.delivered ? "ok" : "go"}`, o.delivered ? "Đã giao" : `Đang giao · ${arriveText(o, day)}`);
   head.append(status);
   const lines = el("div", "ls");
-  for (const { g, n } of itemsOf(o.items)) lines.append(el("div", "", `${GOODS[g].label} × ${fmtUnits(n)}`));
+  for (const l of itemsOf(o.items)) lines.append(el("div", "", `${GOODS[l.good].label} · ${l.offer ? supplierById(l.offer.supplier)?.name : "đơn cũ"} (${QUALITIES[l.tier].label.toLowerCase()}) × ${fmtUnits(l.n)}`));
   const foot = el("div", "ft");
   foot.append(el("b", "", money(o.total)), btn("ph-btn-text", "Đặt lại", () => {
     ctx.w.shop.cart = { ...(o.items as Basket) };

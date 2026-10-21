@@ -1,20 +1,280 @@
 {
-  "_note": "Hàng chợ — P3-03 §2.1 bảng hạn dùng + §2.5 giá gốc. `perUnit` = số PHẦN kẹp được (một lần bấm trên bảng kẹp nhân) trên một đơn vị mua; doc tính 'phần' theo ổ (≈2 lần bấm), nên perUnit = 2 × phần của doc. `curve[d]` = chất lượng ngày thứ d kể từ ngày mua; hết mảng = HƯ (khoá, không có 'dùng đại'). `q0` = chất lượng gốc (pate thường 0,82). `weekday` = khoá bảng chỉ số theo thứ (bread = cố định, không bao giờ nhân). · BẢN DỰNG: đơn vị mua là cỡ nhỏ (lạng, chục, bó nhỏ) vì nhịp ~18 ổ/ngày; giá MỖI PHẦN giữ đúng doc (pate thường 1k/phần, pate bà Tám 1,6k, thịt 2k…). coldSlots = phần/40 (1 ô ≈ 20 phần doc = 40 lần kẹp).",
+  "_note": "Hàng chợ — P3-03 §2.1 bảng hạn dùng + §2.5 giá gốc. `perUnit` = số PHẦN kẹp được (một lần bấm trên bảng kẹp nhân) trên một đơn vị mua; doc tính 'phần' theo ổ (≈2 lần bấm), nên perUnit = 2 × phần của doc. `curve[d]` = chất lượng ngày thứ d kể từ ngày mua; hết mảng = HƯ (khoá, không có 'dùng đại'). `q0` = chất lượng gốc (pate thường 0,82). `weekday` = khoá bảng chỉ số theo thứ (bread = cố định, không bao giờ nhân). · BẢN DỰNG: đơn vị mua là cỡ nhỏ (lạng, chục, bó nhỏ) vì nhịp ~18 ổ/ngày; giá MỖI PHẦN giữ đúng doc (pate thường 1k/phần, pate bà Tám 1,6k, thịt 2k…). coldSlots = phần/40 (1 ô ≈ 20 phần doc = 40 lần kẹp). · R0.7: bỏ `seller`; mỗi món có 3 mức (`tiers`), `sick` = xác suất đau bụng mỗi phần hàng dỏm; nhà cung cấp ở `suppliers.json`.",
   "goods": {
-    "BANH": {"label": "bánh mì", "unit": "ổ", "perUnit": 1, "base_k": 3.5, "q0": 1.0, "curve": [1.0, 0.5], "weekday": "fixed", "seller": "LO_BA_TAM", "step": 5, "storage": "DRY"},
-    "PATE_NHA": {"label": "pate bà Tám", "unit": "lạng", "perUnit": 20, "base_k": 32, "q0": 1.0, "curve": [1.0, 0.95, 0.75], "weekday": "pate", "seller": "LO_BA_TAM", "step": 1, "storage": "COLD", "coldSlots": 0.5},
-    "PATE_THUONG": {"label": "pate thường", "unit": "lạng", "perUnit": 20, "base_k": 20, "q0": 0.82, "curve": [1.0, 0.95, 0.75], "weekday": "pate", "seller": "CO_NHUNG", "step": 1, "storage": "COLD", "coldSlots": 0.5},
-    "THIT_NGUOI": {"label": "thịt nguội", "unit": "lạng", "perUnit": 12, "base_k": 24, "q0": 1.0, "curve": [1.0, 1.0, 0.9, 0.7], "weekday": "thit", "seller": "CHU_CHIN", "step": 1, "storage": "COLD", "coldSlots": 0.3},
-    "CHA_LUA": {"label": "chả lụa", "unit": "lạng", "perUnit": 12, "base_k": 22, "q0": 1.0, "curve": [1.0, 0.98, 0.88, 0.68], "weekday": "thit", "seller": "CHU_CHIN", "step": 1, "storage": "COLD", "coldSlots": 0.3},
-    "XIU_MAI": {"label": "xíu mại", "unit": "chục viên", "perUnit": 12, "base_k": 18, "q0": 1.0, "curve": [1.0], "weekday": "thit", "seller": "CHU_CHIN", "step": 1, "storage": "COLD", "coldSlots": 0.3},
-    "TRUNG": {"label": "trứng", "unit": "chục", "perUnit": 10, "base_k": 25, "q0": 1.0, "curve": [1, 1, 1, 0.98, 0.95, 0.92, 0.88, 0.8], "weekday": "fixed", "seller": "CO_MAI", "step": 1, "storage": "DRY"},
-    "RAU": {"label": "rau (dưa leo, hành ngò)", "unit": "bó nhỏ", "perUnit": 48, "base_k": 15, "q0": 1.0, "curve": [1.0, 0.55], "weekday": "rau", "seller": "DI_NAM", "step": 1, "storage": "COLD", "coldSlots": 1.2},
-    "OT": {"label": "ớt", "unit": "nắm", "perUnit": 20, "base_k": 7, "q0": 1.0, "curve": [1.0, 0.96, 0.9, 0.78], "weekday": "rau", "seller": "DI_NAM", "step": 1, "storage": "DRY"},
-    "SOT": {"label": "tương ớt", "unit": "chai", "perUnit": 90, "base_k": 40, "q0": 1.0, "curve": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], "weekday": "fixed", "seller": "CO_MAI", "step": 1, "storage": "DRY"},
-    "DO_CHUA_NL": {"label": "cà rốt củ cải (ngâm hũ mới)", "unit": "hũ", "perUnit": 80, "base_k": 35, "q0": 1.0, "curve": [0.55, 0.75, 0.92, 1.0, 0.98, 0.9, 0.78, 0.6, 0.4, 0.22], "weekday": "rau", "seller": "DI_NAM", "step": 1, "storage": "DRY", "pickle": true},
-    "DO_CHUA_SAN": {"label": "đồ chua làm sẵn", "unit": "hũ", "perUnit": 80, "base_k": 55, "q0": 0.7, "curve": [1, 1, 1, 1, 1, 0.9, 0.8], "weekday": "rau", "seller": "DI_NAM", "step": 1, "storage": "DRY"}
+    "BANH": {
+      "label": "bánh mì",
+      "unit": "ổ",
+      "perUnit": 1,
+      "base_k": 3.5,
+      "q0": 1.0,
+      "curve": [
+        1.0,
+        0.5
+      ],
+      "weekday": "fixed",
+      "step": 5,
+      "storage": "DRY"
+    },
+    "PATE": {
+      "label": "pate",
+      "unit": "lạng",
+      "perUnit": 20,
+      "base_k": 24,
+      "q0": 1.0,
+      "curve": [
+        1.0,
+        0.95,
+        0.75
+      ],
+      "weekday": "pate",
+      "step": 1,
+      "storage": "COLD",
+      "coldSlots": 0.5,
+      "sick": 0.4
+    },
+    "THIT_NGUOI": {
+      "label": "thịt nguội",
+      "unit": "lạng",
+      "perUnit": 12,
+      "base_k": 24,
+      "q0": 1.0,
+      "curve": [
+        1.0,
+        1.0,
+        0.9,
+        0.7
+      ],
+      "weekday": "thit",
+      "step": 1,
+      "storage": "COLD",
+      "coldSlots": 0.3,
+      "sick": 0.35
+    },
+    "CHA_LUA": {
+      "label": "chả lụa",
+      "unit": "lạng",
+      "perUnit": 12,
+      "base_k": 22,
+      "q0": 1.0,
+      "curve": [
+        1.0,
+        0.98,
+        0.88,
+        0.68
+      ],
+      "weekday": "thit",
+      "step": 1,
+      "storage": "COLD",
+      "coldSlots": 0.3,
+      "sick": 0.3
+    },
+    "XIU_MAI": {
+      "label": "xíu mại",
+      "unit": "chục viên",
+      "perUnit": 12,
+      "base_k": 18,
+      "q0": 1.0,
+      "curve": [
+        1.0
+      ],
+      "weekday": "thit",
+      "step": 1,
+      "storage": "COLD",
+      "coldSlots": 0.3,
+      "sick": 0.3
+    },
+    "TRUNG": {
+      "label": "trứng",
+      "unit": "chục",
+      "perUnit": 10,
+      "base_k": 25,
+      "q0": 1.0,
+      "curve": [
+        1,
+        1,
+        1,
+        0.98,
+        0.95,
+        0.92,
+        0.88,
+        0.8
+      ],
+      "weekday": "fixed",
+      "step": 1,
+      "storage": "DRY",
+      "sick": 0.25
+    },
+    "RAU": {
+      "label": "rau (dưa leo, hành ngò)",
+      "unit": "bó nhỏ",
+      "perUnit": 48,
+      "base_k": 15,
+      "q0": 1.0,
+      "curve": [
+        1.0,
+        0.55
+      ],
+      "weekday": "rau",
+      "step": 1,
+      "storage": "COLD",
+      "coldSlots": 1.2,
+      "sick": 0.15
+    },
+    "OT": {
+      "label": "ớt",
+      "unit": "nắm",
+      "perUnit": 20,
+      "base_k": 7,
+      "q0": 1.0,
+      "curve": [
+        1.0,
+        0.96,
+        0.9,
+        0.78
+      ],
+      "weekday": "rau",
+      "step": 1,
+      "storage": "DRY",
+      "sick": 0.1
+    },
+    "SOT": {
+      "label": "tương ớt",
+      "unit": "chai",
+      "perUnit": 90,
+      "base_k": 40,
+      "q0": 1.0,
+      "curve": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "weekday": "fixed",
+      "step": 1,
+      "storage": "DRY",
+      "sick": 0.08
+    },
+    "DO_CHUA_NL": {
+      "label": "cà rốt củ cải (ngâm hũ mới)",
+      "unit": "hũ",
+      "perUnit": 80,
+      "base_k": 35,
+      "q0": 1.0,
+      "curve": [
+        0.55,
+        0.75,
+        0.92,
+        1.0,
+        0.98,
+        0.9,
+        0.78,
+        0.6,
+        0.4,
+        0.22
+      ],
+      "weekday": "rau",
+      "step": 1,
+      "storage": "DRY",
+      "pickle": true,
+      "sick": 0.2
+    },
+    "DO_CHUA_SAN": {
+      "label": "đồ chua làm sẵn",
+      "unit": "hũ",
+      "perUnit": 80,
+      "base_k": 55,
+      "q0": 0.7,
+      "curve": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        0.9,
+        0.8
+      ],
+      "weekday": "rau",
+      "step": 1,
+      "storage": "DRY",
+      "sick": 0.2
+    }
   },
-  "ingredientGood": {"_note": "Nguyên liệu trên bảng kẹp nhân → hàng trong kho. Pate lấy lô cũ nhất trước, bất kể loại nào (người chơi tự quyết mua loại nào).", "pate": ["PATE_NHA", "PATE_THUONG"], "thit": ["THIT_NGUOI"], "chalua": ["CHA_LUA"], "xiumai": ["XIU_MAI"], "opla": ["TRUNG"], "dochua": ["DO_CHUA_NL", "DO_CHUA_SAN"], "dualeo": ["RAU"], "hanhngo": ["RAU"], "ot": ["OT"], "tuongot": ["SOT"]},
-  "sellers": {"LO_BA_TAM": {"name": "Lò bà Tám", "blurb": "bánh mì 3,5 ngàn, giá không bao giờ đổi · pate nhà làm"}, "CO_NHUNG": {"name": "Sạp cô Nhung", "blurb": "pate thường"}, "CHU_CHIN": {"name": "Sạp chú Chín", "blurb": "thịt nguội, chả lụa, xíu mại"}, "DI_NAM": {"name": "Sạp dì Năm", "blurb": "rau, ớt, đồ để ngâm chua"}, "CO_MAI": {"name": "Tạp hoá cô Mai", "blurb": "trứng, tương ớt"}},
-  "recipeWeight": {"pate": 0.28, "meat": 0.24, "bread": 0.2, "dochua": 0.14, "rau": 0.1, "sot": 0.04}
+  "ingredientGood": {
+    "_note": "Nguyên liệu trên bảng kẹp nhân → hàng trong kho. Pate lấy lô cũ nhất trước, bất kể loại nào (người chơi tự quyết mua loại nào).",
+    "pate": [
+      "PATE"
+    ],
+    "thit": [
+      "THIT_NGUOI"
+    ],
+    "chalua": [
+      "CHA_LUA"
+    ],
+    "xiumai": [
+      "XIU_MAI"
+    ],
+    "opla": [
+      "TRUNG"
+    ],
+    "dochua": [
+      "DO_CHUA_NL",
+      "DO_CHUA_SAN"
+    ],
+    "dualeo": [
+      "RAU"
+    ],
+    "hanhngo": [
+      "RAU"
+    ],
+    "ot": [
+      "OT"
+    ],
+    "tuongot": [
+      "SOT"
+    ]
+  },
+  "recipeWeight": {
+    "pate": 0.28,
+    "meat": 0.24,
+    "bread": 0.2,
+    "dochua": 0.14,
+    "rau": 0.1,
+    "sot": 0.04
+  },
+  "tiers": {
+    "BAN": {
+      "label": "Hàng dỏm",
+      "taste": 0.72,
+      "price": 0.55,
+      "shelf": -1,
+      "clean": 1,
+      "tasteBar": 2
+    },
+    "THUONG": {
+      "label": "Hàng thường",
+      "taste": 0.92,
+      "price": 0.85,
+      "shelf": 0,
+      "clean": 3,
+      "tasteBar": 4
+    },
+    "NGON": {
+      "label": "Hàng ngon",
+      "taste": 1.0,
+      "price": 1.2,
+      "shelf": 0,
+      "clean": 5,
+      "tasteBar": 5
+    }
+  }
 }

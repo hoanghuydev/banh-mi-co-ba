@@ -81,7 +81,7 @@ line("LONG_BAN", the("LONG_BAN"),
   dirtMul({ owned: ["LONG_BAN"], installed: [], wear: {} }) === 0.8);
 
 {
-  const pate = [shelfDays("PATE_NHA", "thung_xop"), shelfDays("PATE_NHA", "tu_mat")];
+  const pate = [shelfDays("PATE", "thung_xop"), shelfDays("PATE", "tu_mat")];
   const o = [coldSlotCap(newInventory()), coldSlotCap({ ...newInventory(), storage: "tu_mat" })];
   line("TU_MAT", the("TU_MAT"), `pate ${pate[0]} → ${pate[1]} ngày · chỗ lạnh ${o[0]} → ${o[1]}`,
     pate[0] === 2 && pate[1] === 6 && o[0] === 8 && o[1] === 20);

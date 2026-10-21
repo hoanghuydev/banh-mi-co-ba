@@ -12,6 +12,7 @@ import { newPhone, type PhoneState } from "../sim/phone";
 import { newSystem, type SystemState } from "../sim/system";
 import { newShop, type ShopState } from "../sim/shop";
 import { newResell, type ResellState } from "../sim/resell";
+import { newReviews, type ReviewState } from "../sim/reviews";
 
 export { loadSettings, saveSettings, DEFAULT_SETTINGS, type Settings } from "./flags";
 
@@ -27,7 +28,7 @@ export type NpcState = {
   talkTopics?: { day: number; topics: string[] };
 };
 
-export type LedgerRow = { day: number; revenue: number; cost: number; served: number; lost: number };
+export type LedgerRow = { day: number; revenue: number; cost: number; served: number; lost: number; sick?: number };
 
 export type SaveFile = {
   schemaVersion: number;
@@ -50,7 +51,9 @@ export type SaveFile = {
       /** Lưu trong save để thoát ra vào lại không lách được trần cuộc/ngày. */
       talksDeep?: number; talkOffers?: number;
       /** Cho `sim/gearHint`: ổ cháy · tay cầm tiền bốc nhân · khách lạ ghé. */
-      burnt?: number; bareHands?: number; strangers?: number };
+      burnt?: number; bareHands?: number; strangers?: number;
+      /** Khách đau bụng hôm nay do hàng dỏm. */
+      sick?: number };
   };
 
   rng: { counters: [StreamName, number][] };
@@ -85,7 +88,7 @@ export type SaveFile = {
     hand?: { item: string; warmth: number; crust: number; q: number } | null;
     basket?: {
       hand?: string; warmth: number; crust: number; q: number; soiled?: boolean;
-      dish?: string[]; dishQ?: number;
+      dish?: string[]; dishQ?: number; dishSick?: number;
     }[] | null;
     floor?: { x: number; y: number; hand: string; warmth: number; crust: number; q: number; soiled?: boolean; dish: string[] }[] | null;
     handSoiled?: boolean;
@@ -98,6 +101,7 @@ export type SaveFile = {
   system: SystemState;
   shop: ShopState;
   resell: ResellState;
+  reviews: ReviewState;
 
   a11y: Settings;
 
@@ -145,6 +149,7 @@ export function newGame(name: string, saveId = uuid()): SaveFile {
     system: newSystem(),
     shop: newShop(),
     resell: newResell(),
+    reviews: newReviews(),
     a11y: { ...DEFAULT_SETTINGS, ...loadSettings() },
     telemetry: { optedIn: false, sessionCount: 0 },
     flags: {},
@@ -162,6 +167,7 @@ function normalize(s: SaveFile): SaveFile {
   s.system = { ...d.system, ...s.system };
   s.shop = { ...d.shop, ...s.shop };
   s.resell = { ...d.resell, ...s.resell };
+  s.reviews = { ...d.reviews, ...s.reviews };
   for (const [k, n] of Object.entries(s.npcs)) s.npcs[k] = { ...newNpcState(), ...n };
   return s;
 }

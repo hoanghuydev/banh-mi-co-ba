@@ -1,0 +1,104 @@
+{
+  "_note": "Nhà cung cấp R0.7. Mỗi nơi bán một số món, mức khác nhau. `mul` = hệ số giá riêng của nơi đó.",
+  "suppliers": [
+    {
+      "id": "HUNG_PHAT",
+      "name": "Chợ đầu mối Hưng Phát",
+      "blurb": "giá mềm, hàng lẫn lộn",
+      "mul": 0.95,
+      "offers": {
+        "PATE": "BAN",
+        "CHA_LUA": "BAN",
+        "THIT_NGUOI": "THUONG",
+        "XIU_MAI": "THUONG",
+        "TRUNG": "THUONG",
+        "RAU": "THUONG",
+        "OT": "THUONG"
+      }
+    },
+    {
+      "id": "TAM_AN",
+      "name": "Thực phẩm sạch Tâm An",
+      "blurb": "đắt, có nguồn gốc",
+      "mul": 1.05,
+      "offers": {
+        "PATE": "NGON",
+        "THIT_NGUOI": "NGON",
+        "CHA_LUA": "NGON",
+        "XIU_MAI": "NGON",
+        "TRUNG": "NGON",
+        "RAU": "NGON"
+      }
+    },
+    {
+      "id": "KIM_LONG",
+      "name": "Lò bánh Kim Long",
+      "blurb": "bánh mì mới ra lò",
+      "mul": 1.0,
+      "offers": {
+        "BANH": "NGON",
+        "TRUNG": "THUONG"
+      }
+    },
+    {
+      "id": "MINH_KHOA",
+      "name": "Tạp hoá Minh Khoa",
+      "blurb": "gia vị ngon, pate thì tuỳ",
+      "mul": 0.95,
+      "offers": {
+        "OT": "NGON",
+        "SOT": "NGON",
+        "PATE": "BAN",
+        "TRUNG": "THUONG",
+        "DO_CHUA_SAN": "THUONG",
+        "BANH": "THUONG"
+      }
+    },
+    {
+      "id": "VUON_XANH",
+      "name": "Rau củ Vườn Xanh",
+      "blurb": "rau củ trong ngày",
+      "mul": 1.0,
+      "offers": {
+        "RAU": "NGON",
+        "DO_CHUA_NL": "NGON",
+        "OT": "THUONG"
+      }
+    },
+    {
+      "id": "FRESH24",
+      "name": "Siêu thị mini Fresh24",
+      "blurb": "món nào cũng có, ổn định",
+      "mul": 1.1,
+      "offers": {
+        "BANH": "THUONG",
+        "PATE": "THUONG",
+        "THIT_NGUOI": "THUONG",
+        "CHA_LUA": "THUONG",
+        "XIU_MAI": "THUONG",
+        "TRUNG": "THUONG",
+        "RAU": "THUONG",
+        "OT": "THUONG",
+        "SOT": "THUONG",
+        "DO_CHUA_NL": "THUONG",
+        "DO_CHUA_SAN": "THUONG"
+      }
+    },
+    {
+      "id": "CHO_COC",
+      "name": "Chợ cóc 24h",
+      "blurb": "rẻ nhất, hỏi nguồn thì đừng",
+      "mul": 0.9,
+      "offers": {
+        "BANH": "BAN",
+        "PATE": "BAN",
+        "THIT_NGUOI": "BAN",
+        "CHA_LUA": "BAN",
+        "XIU_MAI": "BAN",
+        "RAU": "BAN",
+        "DO_CHUA_SAN": "BAN",
+        "SOT": "BAN"
+      }
+    }
+  ]
+}

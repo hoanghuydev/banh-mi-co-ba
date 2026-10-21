@@ -181,7 +181,9 @@ Ví dụ ốp la 15 / 20 / 30k:
 
 ---
 
-## 4. Phase 3 — Nhà cung cấp
+## 4. Phase 0.7 — Nhà cung cấp (trước là Phase 3)
+
+> Làm ngay sau Phase 0.5, trước Phase 1: app **Thực phẩm** (R0.5) là chỗ đặt hàng nên nhà cung cấp gắn thẳng vào đó. Các mã `T3.x` giữ nguyên để khỏi lệch tham chiếu.
 
 **T3.1 — Đổi "đi chợ" thành "nhà cung cấp".** Mỗi món có **2–3 mức chất lượng**: hàng bẩn/bỏ thuốc giá cực rẻ · hàng thường · hàng cực ngon nhưng đắt.
 
@@ -190,6 +192,8 @@ UI mỗi món hiện **3 thanh**: độ ngon · chất lượng · giá. Ngườ
 **T3.2 — Hàng kém thì khách đau bụng.** Mỗi nguyên liệu có xác suất gây đau bụng riêng khi dùng hàng kém (ví dụ pate 40%, thịt nguội 35%, ớt 10%). Khách đau bụng → review xấu. Bảng xác suất tự thiết kế.
 
 **T3.3 — Giá biến động.** Giá nhà cung cấp lên xuống theo thị trường, không cố định.
+
+**T3.4 — Hướng dẫn đặt hàng trong tour ngày đầu.** Xong nhà cung cấp thì bước đầu của tour (nhiệm vụ "Thu thập tài nguyên") phải **dắt người chơi đặt đủ hàng cho ngày 1**, từng món một: mở Thực phẩm → chọn nhà cung cấp/mức chất lượng → bấm thêm **đủ số lần** (vd. cần 10 ổ mà mỗi lần bấm +5 thì chỉ rõ bấm 2 lần) → xem giỏ → Đặt hàng. Mỗi món có vòng khoanh + đếm "đã 1/2". Chỉ xong bước khi giỏ đủ món tối thiểu bán được ngày đầu (ốp la: bánh + trứng + …, số lượng chốt cùng mô phỏng). ✅ Đã làm ở R0.7: tour dắt qua Fresh24, bánh mì bấm + hai lần (0/2 → 2/2), pate, thịt nguội, rau, rồi giỏ và Đặt hàng.
 
 ---
 

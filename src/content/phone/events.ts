@@ -42,6 +42,7 @@ export const PENDING_SIM = {
   lossStreakDeep: 6,
   huyEnvyAfterDays: 1,
   huyFiredAfterDays: 4,
+  sickWarn: 4,
   lowCashVnd: 150_000,
   recordMinDay: 3,
 } as const;
@@ -154,5 +155,23 @@ export const EVENTS: PhoneEvent[] = [
       { me: "quán tui không nhận người chê bánh mì bán không nổi", answer: "...tui nói vậy hồi nào 😶" },
     ],
     when: (w) => firedFor(w, "huy-bi-duoi-tin") >= 1,
+  },
+  {
+    id: "dau-bung-linh", from: "linh",
+    text: "ê bà. tui nghe có người kêu ăn quán bà xong bị đau bụng đó. coi lại hàng đi",
+    replies: [
+      { me: "cảm ơn bà, tui kiểm tra lại liền", answer: "ừa. đừng mua hàng rẻ quá nha" },
+      { me: "tin đồn thôi. bà nghe ai nói", answer: "tui nghe Huy nói á. ổng khoe cả group" },
+    ],
+    when: (w) => Number(w.flags.sickTotal ?? 0) >= 1,
+  },
+  {
+    id: "dau-bung-me", from: "mom",
+    text: "con ơi mẹ thấy trên mạng nói quán con có người đau bụng. con giữ vệ sinh hàng nha",
+    replies: [
+      { me: "dạ con biết rồi mẹ, con đổi hàng liền", answer: "ừ. tiền bạc từ từ, sức khoẻ khách quan trọng hơn" },
+      { me: "mẹ yên tâm, con lo được", answer: "ừ. mẹ lo thôi chứ không ép con" },
+    ],
+    when: (w) => Number(w.flags.sickTotal ?? 0) >= PENDING_SIM.sickWarn,
   },
 ];

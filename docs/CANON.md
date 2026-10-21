@@ -588,15 +588,16 @@ Nhân: thịt / heo quay / pate / xíu mại / chả lụa / cá / gà / ốp la
 |---|---|---|
 | **R0** | Canon & hạ tầng | CANON sửa, doc cũ đánh dấu phần chết, `.claude/` |
 | **R0.1** | Dọn code chết | **Ngay sau R0, trước R0.5.** Xoá hẳn module/content/test/save field của hệ đã ☠️. Không để lại code chết, không comment kể quá trình. Chi tiết: `revamp/00-YEU-CAU.md` §1a |
-| **R0.5** | Cốt truyện, màn vào game & điện thoại | **Ngay sau R0, trước R1.** Phương Anh, sếp cũ, quán thật, tên game mới · khung điện thoại 3 app (Note thay sổ tay · Message · Đánh giá) · intro kể bằng Message · tin nhắn theo sự kiện · menu + hướng dẫn ngày đầu |
+| **R0.5** ✅ | Cốt truyện, màn vào game & điện thoại | **Ngay sau R0, trước R1.** Phương Anh, sếp cũ, quán thật, tên game mới · khung điện thoại 3 app (Note thay sổ tay · Message · Đánh giá) · intro kể bằng Message · tin nhắn theo sự kiện · menu + hướng dẫn ngày đầu |
+| **R0.7** ✅ | Nhà cung cấp (trước là R3) | **Ngay sau R0.5, trước R1.** 2–3 mức chất lượng/món, đau bụng, giá biến động, gắn vào app Thực phẩm · tour ngày đầu dắt đặt đủ món (T3.4) |
 | **R1** | Map & quầy | Map thu nhỏ, chỉ giữ trạm có tác dụng; rửa tay theo lô |
 | **R2** | Topping, giá, mở khoá | Bảng mở khoá + 3 mốc giá, **chốt bằng mô phỏng** |
-| **R3** | Nhà cung cấp | 2–3 mức chất lượng/món, đau bụng, giá biến động |
 | **R4** | Review | Nội dung app Đánh giá (khung dựng ở R0.5): review đa yếu tố, phản hồi, game over ATTP |
 | **R5** | Vòng đời & số khách | Bỏ trần ngày, mốc tiền thắng (mô phỏng chọn), `Y(x)` theo sao |
 | **R6** | Nhân vật & văn phong | Tên riêng, thoại Nam gen Z |
 
-> Trong doc mới, gọi phase revamp là **R0–R6 (+R0.5)** để khỏi lẫn với P0–P6 cũ. Đề bài ghi "Phase N" = RN; "Phase 0.5" = R0.5 (trước tên R7).
+> **"Phase 3 / R3" ở mọi chỗ trong file này = R0.7.**
+> Trong doc mới, gọi phase revamp là **R0–R6 (+R0.1, R0.5, R0.7)** để khỏi lẫn với P0–P6 cũ. Đề bài ghi "Phase N" = RN; "Phase 0.5" = R0.5 (trước tên R7).
 > Các chỗ "⏳ Phase N" trong file này = **RN**.
 
 ### 17.2. ☠️ Bản đồ cũ (lịch sử)
