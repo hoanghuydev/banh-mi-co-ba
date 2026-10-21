@@ -57,7 +57,7 @@ const tien = (d: number) => `${d.toLocaleString("vi-VN")}₫`;
 
 export type MenuBoardOpts = {
   textScale: number;
-  playerName?: string;
+  shopName?: string;
   onClose: () => void;
 };
 
@@ -117,7 +117,7 @@ export class MenuBoardView {
     const b = this.el("div", "mb-board");
     b.appendChild(this.el("div", "mb-nail"));
     // Phải trùng tên trên biển ngoài vách (`art/sign.ts`).
-    const ten = this.el("div", "mb-ten", shopName(this.opts.playerName ?? ""));
+    const ten = this.el("div", "mb-ten", shopName(this.opts.shopName ?? ""));
     ten.appendChild(this.el("small", "", "bán từ 6 giờ sáng"));
     b.appendChild(ten);
     b.appendChild(this.el("div", "mb-ke"));

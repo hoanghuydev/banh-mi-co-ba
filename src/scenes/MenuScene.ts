@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import { fitDesignFrame } from "../core/render";
 import { Stack, button, buttonHeight, label, panel, textScale, toggle, UI } from "../ui/theme";
 import { drawAlleyBackdrop } from "../ui/backdrop";
-import { DEFAULT_PLAYER_NAME, GAME_TITLE, cleanName } from "../content/shop";
+import { GAME_TITLE, cleanName } from "../content/shop";
 import {
   SaveService, loadSettings, saveSettings, type SaveFile, type Settings,
 } from "../core/save";
@@ -14,11 +14,6 @@ import { CUES, MUSIC_STEPS, music } from "../audio/music";
 import { sfx } from "../audio/sfx";
 
 type Page = "main" | "settings" | "audio" | "about" | "telemetry" | "confirmNew";
-
-const playerLabel = (name: string) => {
-  const n = cleanName(name ?? "");
-  return n && n !== DEFAULT_PLAYER_NAME ? n : "";
-};
 
 /** Mỗi trang dựng lại trong một container, chuyển trang là xoá container cũ. */
 export class MenuScene extends Phaser.Scene {
@@ -80,7 +75,7 @@ export class MenuScene extends Phaser.Scene {
     const top = Math.round(88 / textScale());
     const st = new Stack(top, 10);
     const title = st.place(label(this, x, 0, GAME_TITLE, 40, UI.ink, "700"), 10);
-    const sub = st.place(label(this, x, 0, "Tiệm bánh mì nhỏ", 15, UI.muted, "400"), 0);
+    const sub = st.place(label(this, x, 0, "Một quán nhỏ đầu hẻm, Sài Gòn", 15, UI.muted, "400"), 0);
     body.add([title, sub]);
     this.card(body, top - 24, st.y + 24, [title, sub]);
     st.skip(Math.round(72 / textScale()));
@@ -93,7 +88,7 @@ export class MenuScene extends Phaser.Scene {
       save ? "Chơi tiếp" : "Chưa có ván nào",
       () => this.continueRun(), {
       width: 300, disabled: !save,
-      hint: save ? [playerLabel(save.playerName), `ngày ${save.progress.dayIndex}`,
+      hint: save ? [cleanName(save.shopName ?? ""), `ngày ${save.progress.dayIndex}`,
       `${save.money.cash.toLocaleString("vi-VN")}₫`].filter(Boolean).join(" · ") : undefined,
     }), 14));
 
@@ -124,7 +119,7 @@ export class MenuScene extends Phaser.Scene {
 
   private askTelemetryThenStart() {
     if (loadSettings().telemetry === null) { this.show("telemetry"); return; }
-    this.scene.start("day", { mode: "new" });
+    this.scene.start("intro");
   }
 
   private pageConfirmNew() {
@@ -228,8 +223,6 @@ export class MenuScene extends Phaser.Scene {
       "tự mờ đi khi đang đi, sáng lại lúc đứng yên");
     tg("Bỏ giới hạn thời gian", () => (s.noTimePressure ? "bật" : "tắt"), () => put({ noTimePressure: !s.noTimePressure }),
       "khách bỏ đi vì mình làm sai, không vì mình chậm");
-    tg("Hiện tổng tiền ở chợ", () => (s.marketRunningTotal ? "bật" : "tắt"),
-      () => put({ marketRunningTotal: !s.marketRunningTotal }), "tắt thì tổng chỉ hiện lúc trả tiền");
     tg("Ghi số liệu chơi thử", () => (s.telemetry ? "bật" : "tắt"),
       () => { put({ telemetry: !s.telemetry }); telemetry.enabled = !!s.telemetry; },
       "nằm trong máy này, không tự gửi đi đâu");
@@ -329,16 +322,18 @@ export class MenuScene extends Phaser.Scene {
     const title = st.place(label(this, x, 0, "Giới thiệu", 26, UI.ink, "700"), 22);
 
     const what = st.place(label(this, x, 0, [
-      "Một xe bánh mì ở đầu hẻm, Sài Gòn.",
+      "Phương Anh, 24 tuổi, nghỉ việc văn phòng sau hai năm OT không lương.",
+      "Cô dồn hết tiền tiết kiệm thuê một mặt bằng nhỏ đầu hẻm và mở quán bánh mì.",
       "",
-      "Khách đứng cách bạn nửa mét. Họ thấy hết:",
-      "tay có rửa không, ổ bánh có cháy không.",
+      "Khách đứng ngay trước quầy, thấy hết mọi thứ bạn làm,",
+      "rồi chấm sao trên điện thoại.",
       "",
-      "Hết vốn nhập hàng là thua.",
+      "Đủ tiền thì mở chi nhánh 2. Hết tiền hoặc bị đóng cửa",
+      "vì an toàn thực phẩm thì mất quán.",
     ].join("\n"), 14, UI.ink, "400").setAlign("center"), 26);
 
     const keys = st.place(label(this, x, 0,
-      "WASD đi  ·  E làm việc  ·  Esc tạm dừng\n"
+      "WASD đi  ·  E làm việc  ·  Tab điện thoại  ·  Esc tạm dừng\n"
       + "còn lại game nhắc khi tới lúc.", 13, UI.muted, "400").setAlign("center"), 20);
 
     // Nhạc CC BY 4.0 bắt buộc ghi công ở nơi người chơi thấy.

@@ -5,8 +5,8 @@ import { DEV_TOOLS } from "./core/flags";
 import "./core/session";
 import { BootScene } from "./scenes/BootScene";
 import { MenuScene } from "./scenes/MenuScene";
+import { IntroScene } from "./scenes/IntroScene";
 import { DayScene } from "./scenes/DayScene";
-import { MarketScene } from "./scenes/MarketScene";
 import { StallScene } from "./scenes/StallScene";
 import { EveningScene } from "./scenes/EveningScene";
 import { BrokeScene } from "./scenes/BrokeScene";
@@ -26,7 +26,7 @@ const game = new Phaser.Game({
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   render: { pixelArt: false, antialias: true, roundPixels: true },
   // Không khoá fps: mọi hệ chạy theo `dt`, 30 fps chỉ là sàn.
-  scene: [BootScene, MenuScene, DayScene, MarketScene, StallScene, EveningScene, BrokeScene],
+  scene: [BootScene, MenuScene, IntroScene, DayScene, StallScene, EveningScene, BrokeScene],
 });
 
 // Sống ngoài scene và fade bằng `game.events` để chuyển scene không đứt hay kẹt tiếng.

@@ -18,6 +18,8 @@ export type EconToday = {
   tools: number;
   /** Tiền chi trong lúc trò chuyện (act tốn tiền). */
   talk: number;
+  /** Gửi về nhà. */
+  family: number;
   wasted: string[];
   soldOut: number;
   counted: boolean;
@@ -40,7 +42,7 @@ export const newEconState = (): EconState => ({
   rentOwed: 0, today: newToday(1), float: 0, floatLeft: 0, neighborAnnoyance: 0, loaOffUntil: 0,
 });
 export const newToday = (day: number): EconToday =>
-  ({ day, market: 0, fixed: 0, rent: 0, tools: 0, talk: 0,
+  ({ day, market: 0, fixed: 0, rent: 0, tools: 0, talk: 0, family: 0,
     wasted: [], soldOut: 0, counted: false, closedAtMin: null });
 
 /** Tiền thuê mặt bằng mỗi ngày (đồng, đã co). */

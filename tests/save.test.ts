@@ -120,3 +120,20 @@ test("autosave gộp: nhiều request liên tiếp chỉ ghi một lần với b
   assert.equal(writes, 1);
   assert.equal(new SaveService(new Bus(), () => { throw new Error(); }, p).load()!.money.cash, 4);
 });
+
+test("save thiếu trường điện thoại mới vẫn đọc được, không sập app", async () => {
+  const { SaveService } = await import("../src/core/save");
+  const { Bus } = await import("../src/core/eventbus");
+  const { memoryPlatform } = await import("../src/core/platform");
+  const w = newGame("x", "old-shape");
+  const raw = JSON.parse(JSON.stringify(w));
+  delete raw.phone.firedDay;
+  raw.shop = { seq: 3, orders: [], cart: {}, gear: [] };
+  delete raw.system;
+  raw.checksum = "";
+  const svc = new SaveService(new Bus(false), () => w, memoryPlatform());
+  const back = svc.parse(JSON.stringify(raw))!;
+  assert.deepEqual(back.phone.firedDay, {});
+  assert.deepEqual(back.shop.gearOrders, []);
+  assert.equal(back.system.stage, "new");
+});

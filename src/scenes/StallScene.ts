@@ -19,8 +19,14 @@ import { BubblePool } from "../ui/stall/BubblePool";
 import { TalkPanel } from "../ui/stall/TalkPanel";
 import { MoneyPops } from "../ui/stall/MoneyPops";
 import { MenuBoardView } from "../ui/menu/MenuBoardView";
+import { sfx } from "../audio/sfx";
+import { PhoneView } from "../ui/phone/PhoneView";
+import { totalUnread } from "../sim/phone";
 import { chorePin } from "../ui/chorePin";
-import { TOUR_TOTAL, fillGap, tourAt, tourDone, tourIndex, tourSkip, touring } from "../sim/tour";
+import { TOUR_TOTAL, fillGap, tourAt, tourDone, tourIndex, tourSkip, tourStep, touring, type TourStep } from "../sim/tour";
+import { deliverDue } from "../sim/shop";
+import { canSpin, finishRookie, linked, questDone } from "../sim/system";
+import { QUEST_DONE, QUEST_TEXT, ROOKIE_DONE } from "../content/system";
 import { TourCoach } from "../ui/tour/TourCoach";
 import { dishQuality, isRain, portionsFor, putBack, stockOf, take, goodsFor } from "../sim/econ";
 import { dirtMul, has, type EquipId } from "../sim/equipment";
@@ -118,6 +124,7 @@ export class StallScene extends Phaser.Scene {
   private bubbles!: BubblePool;
   private audio!: StallAudio;
   private menuBoard: MenuBoardView | null = null;
+  private phoneView: PhoneView | null = null;
   private coach: TourCoach | null = null;
   /** Theo từng ổ, không dùng chung, kẻo gác ổ A nướng ổ B thì A bị chấm bằng số của B. */
   private breadQ = 1;
@@ -288,7 +295,8 @@ export class StallScene extends Phaser.Scene {
     this.player = new Player(this);
     this.player.reset();
 
-    this.hud = new Hud(this, this.settings, () => (this.paused ? this.resume() : this.pause()));
+    this.hud = new Hud(this, this.settings, () => (this.paused ? this.resume() : this.pause()), () => this.openPhone());
+    this.hud.setUnread(totalUnread(this.world.phone));
     this.talkRing = this.add.graphics();
     this.pendingDots = this.add.graphics();
     this.talk = new TalkPanel(this, (i) => this.pickTalk(i), () => this.endTalk(),
@@ -332,7 +340,7 @@ export class StallScene extends Phaser.Scene {
       (dish) => { this.boardLoaf = dish; },
       // Bước "bỏ nhân" xong khi ổ đủ ba phần (pate · nhân mặn · rau), không phải sau miếng đầu.
       (id) => this.intents.push(() => {
-        if (!fillGap(this.assembly.dish)) tourDone(this.world, "NHAN");
+        if (!fillGap(this.assembly.dish)) this.quest("NHAN");
         this.onPlace(id);
       }),
       (i) => this.usePreset(i),
@@ -403,6 +411,8 @@ export class StallScene extends Phaser.Scene {
         onSkip: () => { tourSkip(this.world); this.coach?.destroy(); this.coach = null; },
       });
     }
+
+    this.time.delayedCall(900, () => this.autoPhone());
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.coach?.destroy();
@@ -528,7 +538,7 @@ export class StallScene extends Phaser.Scene {
 
     // Depth vượt cả hàng tường y=0 vì bảng trải ngang mấy ô.
     const { sx, sy } = toScreen(SIGN_TILE.x, SIGN_TILE.y);
-    createSign(this, sx, sy, depthOf(WORLD_W, 0) + 1, this.world.playerName);
+    createSign(this, sx, sy, depthOf(WORLD_W, 0) + 1, this.world.shopName);
 
     // Menu không lấy depth trên tất cả như bảng hiệu vì người chơi đi ngay dưới nó.
     const m = toScreen(MENU_TILE.x, MENU_TILE.y);
@@ -631,6 +641,7 @@ export class StallScene extends Phaser.Scene {
     kb.on("keydown", (ev: KeyboardEvent) => {
       if (!first(seenKey, ev)) return;
       if (ev.code === "KeyP" && this.paused && !this.overlayBack) { this.resume(); return; }
+      if (ev.code === "Tab") { ev.preventDefault(); if (!ev.repeat) this.openPhone(); return; }
       if (ev.code === "Escape" || ev.repeat || this.paused) return;
       if (ev.code === "KeyP") { this.pause(); return; }
       if (this.assembly.isOpen) { this.assembly.handleKey(ev.code); return; }
@@ -716,6 +727,10 @@ export class StallScene extends Phaser.Scene {
         this.service.perceive(dt, this.elapsed, this.occluders());
       },
       npc: (dt) => {
+        for (const o of deliverDue(this.world, this.clock.minutes)) {
+          this.hud.toast(`Đơn #${o.id} đã giao`, "good", this.popClock);
+          sfx.play(this, "ui_dat_thanh_cong");
+        }
         this.service.tickNpcs(dt, {
           minutes: this.clock.minutes,
           pressure: !this.settings.noTimePressure,
@@ -1156,6 +1171,7 @@ export class StallScene extends Phaser.Scene {
       case "sink":                                      // WASH_HANDS: sạch cả hai tay
         // Vòi nước đã kêu suốt lượt giữ phím (xem `audio.tick`), ở đây chỉ còn cú vẩy tay.
         this.hands = "CLEAN";
+        this.quest("TAY", true);
         this.dirtyEpisode++;
         this.addDirt(-0.1);
         // Rửa ngay trước mặt khách — ai đang nhìn tay thì thấy.
@@ -1182,7 +1198,7 @@ export class StallScene extends Phaser.Scene {
   /** So ngay với đơn của người đứng trước mặt: sai thì phát `ORDER_DEFECT` tại slot BOARD — khách ĐANG NHÌN thì sẽ thấy. */
   /** Mở bảng với đúng phần nhân đang nằm trên ổ gác ở thớt. */
   private openBoard(slice = true) {
-    tourDone(this.world, "THOT");
+    this.quest("THOT");
     // Nhát dao rạch dọc ổ — "âm chữ ký của game" (P5-03 §4.2 A). Nó nổ ở ĐÂY vì đây
     // là lúc ổ bánh thật sự được mở ra, dù trên màn hình chỉ là một cái bảng hiện lên.
     // Ổ ĐÃ GÓI mở lại thì không có nhát dao nào nữa: nó đã bị rạch ở cú mở đầu tiên.
@@ -1193,7 +1209,7 @@ export class StallScene extends Phaser.Scene {
   }
 
   private finishDish(dish: Ingredient[], evenWrap = false) {
-    tourDone(this.world, "GOI");
+    this.quest("GOI");
     this.audio.wrap();
     this.boardLoaf = null;
     this.grip.reset();                                 // cầm ổ mới gói lên: tay chắc lại từ đầu
@@ -1265,6 +1281,7 @@ export class StallScene extends Phaser.Scene {
       });
 
     if (!res.ok) { this.hud.toast(res.reason ?? "chưa đưa được", "info", this.popClock); return; }
+    this.quest("GIAO", true);
     // Mình nói ra chuyện vừa cho thêm — bong bóng của người chơi, ngay lúc chìa ổ bánh.
     // Câu đáp của khách tới sau ~0,2–0,4 s (`BARK_DELAY_MIN`), nên hai bong bóng chồng nhau một
     // quãng: đúng như hai người nói chuyện, và `bubbleLayout` lo chuyện chúng không đè lên nhau.
@@ -1323,8 +1340,8 @@ export class StallScene extends Phaser.Scene {
      * đẩy người chơi vào một bước kế không làm nổi. Người dẫn ở lại bước lò và đổi câu: bỏ ổ
      * khét đi, lấy ổ khác (xem `ovenAim`).
      */
-    if (hand === "loaf_cold") tourDone(this.world, "BANH");
-    if (hand === "loaf_hot") tourDone(this.world, "LO");
+    if (hand === "loaf_cold") this.quest("BANH");
+    if (hand === "loaf_hot") this.quest("LO");
   }
 
   /**
@@ -1799,12 +1816,13 @@ export class StallScene extends Phaser.Scene {
     const c = this.coach;
     if (!c) return;
     const w = this.world;
-    if (!touring(w) || this.paused || this.closed || this.menuBoard?.open) {
+    if (!touring(w) || w.system.stage === "new" || this.paused || this.closed || this.menuBoard?.open || this.phoneView?.open) {
       c.hide();
       return;
     }
     const aim = this.coachAim();
     if (!aim) { c.hide(); return; }
+    c.setWho(linked(w) ? "Hệ thống" : "Hướng dẫn");
     c.pointDesign(this.game.canvas, GAME_W, GAME_H,
       { ...aim, step: tourIndex(w), total: TOUR_TOTAL });
   }
@@ -1830,18 +1848,32 @@ export class StallScene extends Phaser.Scene {
       };
     };
 
-    if (tourAt(w, "MENU")) return ring("menu", "Tới chỗ này, bấm E đọc bảng menu.");
-    if (tourAt(w, "BANH")) return ring("shelf", "Qua kệ, bấm E lấy một ổ bánh.");
+    const say = (step: TourStep, plain: string) => (linked(w) ? QUEST_TEXT[step] : plain);
+    if (tourAt(w, "CHO")) {
+      return { x: GAME_W / 2 + 36, y: 8, w: 48, h: 36, shape: "rect", text: say("CHO", "Mở điện thoại, vào Thực phẩm, đặt hàng đủ bán hôm nay.") };
+    }
+    if (tourAt(w, "MENU")) return ring("menu", say("MENU", "Tới chỗ này, bấm E đọc bảng menu."));
+    if (tourAt(w, "BANH")) {
+      if (stockOf(w.inventory, "BANH", w.progress.dayIndex) <= 0 && this.player.hand === "empty") {
+        return ring("shelf", "Hàng đang trên đường giao. Chờ một chút.");
+      }
+      return ring("shelf", say("BANH", "Qua kệ, bấm E lấy một ổ bánh."));
+    }
     if (tourAt(w, "LO")) return this.ovenAim(ring);
-    if (tourAt(w, "THOT")) return ring("board", "Gác ổ lên thớt — bấm E.");
+    if (tourAt(w, "THOT")) return ring("board", say("THOT", "Gác ổ lên thớt — bấm E."));
     if (tourAt(w, "NHAN")) {
       if (!this.assembly.isOpen) return ring("board", "Mở ổ ra: tới thớt bấm E.");
       return { ...this.assembly.trayBounds(), shape: "rect", text: this.fillText() };
     }
+    if (tourAt(w, "TAY")) return ring("sink", say("TAY", "Rửa tay ở bồn — bấm E."));
+    if (tourAt(w, "DT")) {
+      return { x: GAME_W / 2 + 36, y: 8, w: 48, h: 36, shape: "rect", text: say("DT", "Có tin nhắn mới. Bấm Tab hoặc bấm biểu tượng điện thoại.") };
+    }
     if (tourAt(w, "GOI")) {
       if (!this.assembly.isOpen) return ring("board", "Mở ổ ra: tới thớt bấm E.");
-      return { ...this.assembly.wrapBounds(), shape: "rect", text: "Đủ rồi — bấm Gói lại." };
+      return { ...this.assembly.wrapBounds(), shape: "rect", text: say("GOI", "Đủ rồi — bấm Gói lại.") };
     }
+    if (tourAt(w, "GIAO")) return ring("handoff", say("GIAO", "Đưa ổ cho khách ở quầy gọi món — bấm E."));
     return null;
   }
 
@@ -1908,11 +1940,11 @@ export class StallScene extends Phaser.Scene {
     // Từ đây trở xuống KHOANH BA CÁI VÒNG, không khoanh cái lò: thứ người chơi phải học đọc
     // là ba cái vòng đó. Khoanh cái lò lần nữa thì họ nhìn cái lò và cái vòng vẫn vô hình.
     if (band === "RAW") {
-      return this.crustAim("Ba cái vòng là ba ngăn lò. Vòng chạy tới khúc vàng mới là giòn — chờ thêm.");
+      return this.crustAim("Mỗi lò để được 3 ổ bánh mì. Mỗi vòng có 3 mức độ chín (chưa chín, giòn, cháy sém).");
     }
-    if (band === "CRISP") return this.crustAim("Khúc vàng rồi, bánh được. Bấm E lấy ra.");
-    if (band === "SINGED") return this.crustAim("Qua khúc cam — sém rồi. Lấy ra ngay.");
-    return this.crustAim("Hết vòng là khét. Lấy ra, bỏ thùng rác, lấy ổ khác.");
+    if (band === "CRISP") return this.crustAim("Bánh mì đã giòn rồi. Bấm E lấy ra.");
+    if (band === "SINGED") return this.crustAim("Bánh mì sắp cháy sém. Lấy ra ngay.");
+    return this.crustAim("Hết vòng là khét. Bỏ ổ này, lấy ổ khác.");
   }
 
   /**
@@ -2345,11 +2377,66 @@ export class StallScene extends Phaser.Scene {
     this.intents = [];
     this.tweens.pauseAll();
     bus.emit("ui:pauseToggled", { paused: true, source: "PLAYER" });
-    tourDone(this.world, "MENU");
+    this.quest("MENU");
     this.menuBoard = new MenuBoardView(this.game, {
       textScale: this.settings.textScale,
-      playerName: this.world.playerName,
+      shopName: this.world.shopName,
       onClose: () => { this.menuBoard = null; this.resume(); },
+    });
+  }
+
+  /** `exact`: chỉ tính khi đang đúng bước đó, không nhảy cóc. */
+  /** Đầu ngày: Hệ thống thức tỉnh (ngày 1) hoặc vòng quay điểm danh tự bật; tin rao bán báo qua HUD. */
+  private autoPhone() {
+    if (this.closed || this.paused) return;
+    const w = this.world;
+    for (const n of w.resell.news.splice(0)) this.hud.toast(n, "good", this.popClock);
+    if ((w.system.stage === "new" && w.progress.dayIndex === 1) || canSpin(w)) this.openPhone({ app: "sys" });
+  }
+
+  private quest(step: TourStep, exact = false) {
+    const w = this.world;
+    if (exact && !tourAt(w, step)) return;
+    const n = tourDone(w, step);
+    if (!n) return;
+    if (linked(w)) {
+      for (let i = 0; i < n; i++) questDone(w);
+      this.hud.toast(QUEST_DONE, "good", this.popClock);
+      if (tourStep(w) === "XONG") finishRookie(w, ROOKIE_DONE);
+    }
+  }
+
+  private phoneHost() {
+    return {
+      minutes: () => this.clock.minutes,
+      beforeOpen: () => this.clock.band === "PRE_OPEN",
+      onOrdered: () => this.quest("CHO", true),
+      onSave: () => this.ctx.save.request("EVENT"),
+    };
+  }
+
+  private openPhone(route?: { app: "sys" }) {
+    if (this.overlay || this.closed || this.menuBoard?.open || this.phoneView?.open) return;
+    if (this.assembly.isOpen) this.assembly.park();
+    this.paused = true;
+    this.clock.paused = true;
+    this.wipePuff.setPaused(true);
+    this.rain?.setPaused(true);
+    this.busy = null;
+    this.intents = [];
+    this.tweens.pauseAll();
+    bus.emit("ui:pauseToggled", { paused: true, source: "PLAYER" });
+    const rookieEnd = tourStep(this.world) === "DT" && linked(this.world);
+    this.quest("DT", true);
+    this.phoneView = new PhoneView(this.game, this.world, {
+      textScale: this.settings.textScale,
+      host: this.phoneHost(),
+      route: route ?? (rookieEnd ? { app: "sys" } : undefined),
+      onClose: () => {
+        this.phoneView = null;
+        this.hud.setUnread(totalUnread(this.world.phone));
+        if (!this.closed) this.resume();
+      },
     });
   }
 

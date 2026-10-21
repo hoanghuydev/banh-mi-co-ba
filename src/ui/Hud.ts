@@ -22,7 +22,7 @@ const HELP_BY_DAY = [
 export type Watch = "NONE" | "GLANCE" | "CLOSE";
 
 /** Không đặt giữa màn hình: vòng độ giòn trên cửa lò nằm ở quãng y 60–90. */
-const EYE_X = GAME_W / 2 + 58;
+const EYE_X = GAME_W / 2 + 124;
 const EYE_Y = 26;
 const EYE_PLATE_W = 44, EYE_PLATE_H = 36;
 const EYE_W = 33, EYE_H = 20;
@@ -61,6 +61,9 @@ type Toast = {
 };
 
 /** Không hiện điểm, sao, thanh kiên nhẫn hay "đúng/sai" của hệ thống. */
+const PHONE_X = GAME_W / 2 + 60;
+const PHONE_Y = 26;
+
 export class Hud {
   private left: Phaser.GameObjects.Text;
   private right: Phaser.GameObjects.Text;
@@ -79,6 +82,9 @@ export class Hud {
   private carryIcons: Phaser.GameObjects.Image[] = [];
   private carryNums: Phaser.GameObjects.Text[] = [];
   private carryKey = "";
+  private phoneGfx: Phaser.GameObjects.Graphics;
+  private phoneBadge: Phaser.GameObjects.Text;
+  private unread = 0;
   private handsGfx: Phaser.GameObjects.Graphics;
   private handsKey = "";
   private eyePlate: Phaser.GameObjects.Graphics;
@@ -88,7 +94,7 @@ export class Hud {
   private scene: Phaser.Scene;
   private fs: (n: number) => string;
 
-  constructor(scene: Phaser.Scene, private settings: Settings, onPause?: () => void) {
+  constructor(scene: Phaser.Scene, private settings: Settings, onPause?: () => void, onPhone?: () => void) {
     this.scene = scene;
     const fs = this.fs = (n: number) => `${Math.round(n * settings.textScale)}px`;
     const fixed = <T extends Phaser.GameObjects.GameObject>(o: T, d = DEPTH) =>
@@ -137,6 +143,14 @@ export class Hud {
     const hit = fixed(scene.add.zone(px, py, 48, 36).setInteractive({ useHandCursor: true }), DEPTH + 200);
     hit.on("pointerup", () => onPause?.());
 
+    this.phoneGfx = fixed(scene.add.graphics());
+    this.phoneBadge = fixed(scene.add.text(PHONE_X + 20, PHONE_Y - 17, "", {
+      fontFamily: FONT, fontSize: "12px", fontStyle: "700", color: "#ffffff",
+    }).setOrigin(0.5), DEPTH + 202);
+    this.paintPhone();
+    const phoneHit = fixed(scene.add.zone(PHONE_X, PHONE_Y, 48, 36).setInteractive({ useHandCursor: true }), DEPTH + 200);
+    phoneHit.on("pointerup", () => onPhone?.());
+
     this.handsGfx = fixed(scene.add.graphics());
 
     // Thiếu icon thì HUD vẫn chạy, chỉ không có mắt.
@@ -167,6 +181,25 @@ export class Hud {
   }
 
   /** Việc máy báo, không dùng cho lời người (đi `say()`); hết chỗ thì cướp dòng già nhất. */
+  setUnread(n: number) {
+    if (n === this.unread) return;
+    this.unread = n;
+    this.paintPhone();
+  }
+
+  private paintPhone() {
+    const g = this.phoneGfx;
+    g.clear();
+    g.fillStyle(UI.paper, 1).fillRoundedRect(PHONE_X - 24, PHONE_Y - 18, 48, 36, 10);
+    g.fillStyle(0x222a31, 1).fillRoundedRect(PHONE_X - 7, PHONE_Y - 12, 14, 24, 3);
+    g.fillStyle(UI.paper, 1).fillRect(PHONE_X - 5, PHONE_Y - 9, 10, 15);
+    if (this.unread > 0) {
+      g.fillStyle(0xe03a2c, 1).fillCircle(PHONE_X + 20, PHONE_Y - 17, 10);
+      g.lineStyle(2, 0xffffff, 1).strokeCircle(PHONE_X + 20, PHONE_Y - 17, 10);
+    }
+    this.phoneBadge.setText(this.unread > 9 ? "9+" : this.unread ? String(this.unread) : "");
+  }
+
   toast(text: string, tone: ToastTone = "info", now = this.scene.time.now) {
     // Trùng dòng đang hiện thì gộp "×N" và đếm lại giờ từ đầu.
     const same = this.toasts.find((t) => t.born >= 0 && t.body === text);

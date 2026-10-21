@@ -8,6 +8,10 @@ import { BUILD_ID, DEFAULT_SETTINGS, loadSettings, type Settings } from "./flags
 import type { Bus } from "./eventbus";
 import type { AutosaveReason, NpcId, SceneKey, Weather } from "./types";
 import type { TimeBand } from "./clock";
+import { newPhone, type PhoneState } from "../sim/phone";
+import { newSystem, type SystemState } from "../sim/system";
+import { newShop, type ShopState } from "../sim/shop";
+import { newResell, type ResellState } from "../sim/resell";
 
 export { loadSettings, saveSettings, DEFAULT_SETTINGS, type Settings } from "./flags";
 
@@ -33,7 +37,7 @@ export type SaveFile = {
   buildId: string;
   /** FNV-1a của payload, chỉ phát hiện hỏng, không chống sửa. */
   checksum: string;
-  playerName: string;
+  shopName: string;
 
   progress: {
     dayIndex: number;
@@ -90,6 +94,11 @@ export type SaveFile = {
 
   ledger: LedgerRow[];
 
+  phone: PhoneState;
+  system: SystemState;
+  shop: ShopState;
+  resell: ResellState;
+
   a11y: Settings;
 
   telemetry: { optedIn: boolean; sessionCount: number };
@@ -115,10 +124,10 @@ export function newGame(name: string, saveId = uuid()): SaveFile {
     savedAt: now,
     buildId: BUILD_ID,
     checksum: "",
-    // Khớp `DEFAULT_PLAYER_NAME` ở `content/shop.ts`; `core/` không import `content/`.
-    playerName: name || "Phương Anh",
+    // Khớp `DEFAULT_SHOP_NAME` ở `content/shop.ts`; `core/` không import `content/`.
+    shopName: name || "Bánh Mì Phương Anh",
     progress: {
-      dayIndex: 1, band: "PRE_OPEN", gameMinutes: 6 * 60, scene: "Market",
+      dayIndex: 1, band: "PRE_OPEN", gameMinutes: 6 * 60, scene: "Stall",
       weather: weatherOf(1), dayStartSnapshotRef: null,
       today: { served: 0, lost: 0, revenue: 0, talksDeep: 0, talkOffers: 0 },
     },
@@ -132,6 +141,10 @@ export function newGame(name: string, saveId = uuid()): SaveFile {
     dialogState: { spokenOnce: [], norepeat: {}, appliedContext: [], barkCooldowns: {} },
     stall: { cleanliness: 1, layoutSide: "LEFT", presets: [], board: null, hand: null },
     ledger: [],
+    phone: newPhone(),
+    system: newSystem(),
+    shop: newShop(),
+    resell: newResell(),
     a11y: { ...DEFAULT_SETTINGS, ...loadSettings() },
     telemetry: { optedIn: false, sessionCount: 0 },
     flags: {},
@@ -140,11 +153,15 @@ export function newGame(name: string, saveId = uuid()): SaveFile {
 
 /** Bổ sung field thiếu — save sửa tay không được làm sập game. */
 function normalize(s: SaveFile): SaveFile {
-  const d = newGame(s.playerName, s.saveId);
+  const d = newGame(s.shopName, s.saveId);
   for (const k of Object.keys(d) as (keyof SaveFile)[]) (s as any)[k] ??= (d as any)[k];
   s.progress = { ...d.progress, ...s.progress, today: { ...d.progress.today, ...s.progress?.today } };
   s.money = { ...d.money, ...s.money };
   s.dialogState = { ...d.dialogState, ...s.dialogState };
+  s.phone = { ...d.phone, ...s.phone };
+  s.system = { ...d.system, ...s.system };
+  s.shop = { ...d.shop, ...s.shop };
+  s.resell = { ...d.resell, ...s.resell };
   for (const [k, n] of Object.entries(s.npcs)) s.npcs[k] = { ...newNpcState(), ...n };
   return s;
 }

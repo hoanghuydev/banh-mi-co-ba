@@ -1,7 +1,7 @@
 /** Bus đồng bộ: `emit()` gọi listener ngay, các hệ nói chuyện qua đây chứ không import nhau. */
 import type {
   AttentionTool, AutosaveReason, CustomerSlot, DaySummary, Defect,
-  ItemId, LeaveReason, NpcId, ObsState, SceneKey, StallCloseReason,
+  LeaveReason, NpcId, ObsState, SceneKey, StallCloseReason,
   StallZone, StimId, Weather,
 } from "./types";
 import type { TimeBand } from "./clock";
@@ -50,10 +50,9 @@ export type EventMap = {
   "scene:transition":         { from: SceneKey; to: SceneKey };
   "telemetry:mark":           { key: string; value: number | string };
 
-  "market:done":              { spent: number; bought: { itemId: ItemId; qty: number }[] };
   "stall:closed":             { reason: StallCloseReason; served: number; revenue: number; lost: number };
   "evening:done":             { dayIndex: number };
-  "broke:done":               { dayIndex: number };
+  "broke:done":               { dayIndex: number; restart?: boolean };
 };
 
 export type EventKey = keyof EventMap;

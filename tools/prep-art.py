@@ -324,6 +324,21 @@ def open_loaf():
     return half(0, cut), half(cut, im.width)
 
 
+def phone_frame():
+    """phone.png: cắt sát thân máy, màn xanh -> trong suốt. Vùng màn đo ở PHONE_SCREEN, khớp `ui/phone/phoneStyle.ts`."""
+    im = Image.open(os.path.join(SRC, "phone.png")).convert("RGBA")
+    im = im.crop((529, 79, 967, 914))
+    px = im.load()
+    for y in range(im.height):
+        for x in range(im.width):
+            r, g, b, a = px[x, y]
+            green = g - max(r, b)
+            if a and green > 30:
+                k = max(0.0, min(1.0, 1 - (green - 30) / 110))
+                px[x, y] = (r, g if k > 0.5 else min(g, max(r, b)), b, int(a * k))
+    return im
+
+
 def main():
     """Không tham số thì rửa cả bộ, có tên thì chỉ rửa những tấm đó."""
     os.makedirs(OUT, exist_ok=True)
@@ -339,6 +354,10 @@ def main():
         im.save(os.path.join(OUT, name + ".png"))
         made += 1
         print(f"  {name}.png  {im.width}×{im.height}")
+
+    if want("phone"):
+        print("điện thoại")
+        save("phone", phone_frame())
 
     if any(want(f"{k}{i}") for k, _, _ in FLOORS for i in range(4)):
         print("ô sàn")

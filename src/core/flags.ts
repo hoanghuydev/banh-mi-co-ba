@@ -35,8 +35,6 @@ export type Settings = {
   monoAudio: boolean;
   /** Telemetry cục bộ, không gửi đi; `null` = chưa hỏi. */
   telemetry: boolean | null;
-  /** Hiện tổng giỏ khi đang chọn ở chợ; tắt thì tổng chỉ hiện ở bước xác nhận. */
-  marketRunningTotal: boolean;
   /** Mũi tên trên đầu người chơi — nhân vật duy nhất không có bảng tên. */
   playerMarker: boolean;
 };
@@ -55,7 +53,6 @@ export const DEFAULT_SETTINGS: Settings = {
   a11yPerceptionPing: false,
   monoAudio: false,
   telemetry: DEV_TOOLS || PLAYTEST ? true : null,
-  marketRunningTotal: true,
   playerMarker: true,
 };
 

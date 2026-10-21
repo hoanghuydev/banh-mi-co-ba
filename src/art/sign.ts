@@ -14,7 +14,7 @@ const DROP = 26;
 const BASE_PX = 18;
 const MIN_PX = 9;
 
-export function createSign(scene: Phaser.Scene, sx: number, sy: number, depth: number, playerName = "") {
+export function createSign(scene: Phaser.Scene, sx: number, sy: number, depth: number, name = "") {
   // Mép trên mặt vách "left" tại hoành độ sx (như `facePoint`).
   const cy = sy - WALL_H + TH / 2 + DROP;
   const at = (u: number, v: number) => ({ x: sx + u, y: cy + u * FACE_SLOPE + v });
@@ -32,7 +32,7 @@ export function createSign(scene: Phaser.Scene, sx: number, sy: number, depth: n
   g.strokePoints(quad(-HALF_W + 6, HALF_W - 6, -HALF_H + 5, HALF_H - 5), true, true);
 
   const mid = at(0, 0);
-  const t = scene.add.text(mid.x, mid.y, shopName(playerName), {
+  const t = scene.add.text(mid.x, mid.y, shopName(name), {
     fontFamily: FONT, fontSize: `${BASE_PX}px`, fontStyle: "700",
     color: Phaser.Display.Color.IntegerToColor(PAL.signYellow).rgba,
   })

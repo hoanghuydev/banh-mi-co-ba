@@ -69,11 +69,17 @@ export function whyNot(id: EquipId, e: EquipState, cash: number): string | null 
 
 /** `book` ghi vào `today.tools` (dương = chi ra); chỉ để trống khi gọi từ test. */
 export function buyEquip(id: EquipId, e: EquipState, m: { cash: number }, book?: EconBook): boolean {
-  const d = EQUIP[id];
   const v = priceVnd(id);
   if (m.cash < v || has(e, id)) return false;
   m.cash -= v;
   if (book) book.today.tools += v;
+  installEquip(id, e, m, book);
+  return true;
+}
+
+/** Lắp đồ đã trả tiền; thay món cũ thì được trả lại giá bán lại. */
+export function installEquip(id: EquipId, e: EquipState, m: { cash: number }, book?: EconBook) {
+  const d = EQUIP[id];
   if (d.replaces && has(e, d.replaces)) {
     if (EQUIP[d.replaces].resellable) {
       const back = resaleVnd(d.replaces);
@@ -84,7 +90,6 @@ export function buyEquip(id: EquipId, e: EquipState, m: { cash: number }, book?:
   }
   e.owned.push(id);
   e.installed = [...e.owned];
-  return true;
 }
 
 export function sellEquip(id: EquipId, e: EquipState, m: { cash: number }, share = 1, book?: EconBook): number {

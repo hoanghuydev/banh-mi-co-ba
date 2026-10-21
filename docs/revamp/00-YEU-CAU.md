@@ -80,6 +80,9 @@ Tên: **Phương Anh** (cố định). Tên quán mặc định *Bánh Mì Phư�
 
 **T0.5.2 — Phản diện: sếp cũ.** Hãm, bào nhân viên, OT không lương, phúc lợi kém. Lý do Phương Anh nghỉ, và là người ai chơi cũng muốn thắng.
 
+**T0.5.2b — Nam phụ: Hoàng Huy.** Đồng nghiệp cùng cấp, phản diện đi xuyên suốt cùng nữ chính. Tự cao, khinh thường người chơi, hay cà khịa, cố tình đánh giá xấu (R4). Mất não: tự tin sai, logic ngược. Sếp chỉ xuất hiện thưa, Huy mới là người bám.
+- Quán nổi tiếng (lên tin tức) → Huy bị sa thải, thất nghiệp, quay sang xin việc. Thua thì Huy khịa tiếp.
+
 **T0.5.3 — Chủ đề: làm điều người ta không dám làm.**
 Ai đi làm cũng từng nghĩ *"nghỉ quách, mở quán cho rồi"* — nhưng không dám. Game cho người chơi **dám**: đặt cược hết tiền tiết kiệm, tự làm chủ, và thấy nó thành.
 Thoả mãn nằm ở 3 chỗ: **dám bắt đầu** · **được công nhận** (tin tức, comment trên điện thoại) · **lớn lên** (từ quán nhỏ thành thương hiệu).
@@ -118,7 +121,8 @@ Thêm 3 app (thiết kế ở `R0.5-HE-THONG.md`):
 | App | Làm gì |
 |---|---|
 | **Hệ thống** | Đầu ngày tự điểm danh → vòng quay thưởng (tiền nhỏ, buff 1 ngày, thẻ sửa đánh giá…). Dẫn hướng dẫn ngày 1 |
-| **Shopping** | Thay màn đi chợ. Kiểu sàn TMĐT: đặt đơn trừ tiền ngay, giao lúc mở cửa / sáng mai, xem đơn cũ |
+| **Thực phẩm** | Thay màn đi chợ. Kiểu sàn TMĐT: đặt đơn trừ tiền ngay, giao lúc mở cửa / sáng mai, xem đơn cũ |
+| **Đồ nghề** | Mua đồ nghề (lò, tủ mát, ghế, quạt…), trả tiền ngay, lắp sáng mai |
 | **Rao bán** | Đăng bán đồ cũ, xác suất có người mua theo món + giá. Giới hạn để không bán tràn lan |
 
 App Đánh giá ở phase này chỉ dựng **khung + dữ liệu có sẵn**. Review thật (đa yếu tố, phản hồi, ATTP) làm ở Phase 4.
@@ -136,7 +140,7 @@ Mỗi tin có 1 trong 3 kiểu:
 
 **T0.5.9 — Đồng bộ toàn game.**
 - Xưng hô theo tuổi NPC: người lớn gọi `con/em/bé`, người trẻ gọi `chị`. Anh Bảo đã đổi sang `chị`.
-- Đổi tên game → **Bye Sếp, Em Bán Bánh Mì** (bỏ "Cô Ba"). Tên tiếng Anh: chốt sau.
+- Đổi tên game → **Bye Sếp, Em Bán Bánh Mì** (bỏ "Cô Ba"). Tên tiếng Anh: Bye Boss, I'll Sell Banh Mi.
 - Art xe → quán (biển hiệu, mặt tiền), intro, ending, CANON.
 - Bỏ chi tiết đời Cô Ba trong thoại các NPC.
 

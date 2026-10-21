@@ -2,9 +2,9 @@ import type { SaveFile } from "../core/save";
 import { BY_ID, type Ingredient } from "./order";
 
 // Dẫn ngày 1, mỗi lúc một việc; lưu trong `flags` nên save cũ đọc ra `undefined` → bước đầu, khỏi migrate.
-export type TourStep = "CHO" | "MENU" | "BANH" | "LO" | "THOT" | "NHAN" | "GOI" | "XONG";
+export type TourStep = "CHO" | "MENU" | "BANH" | "LO" | "THOT" | "NHAN" | "GOI" | "GIAO" | "TAY" | "DT" | "XONG";
 
-const ORDER: readonly TourStep[] = ["CHO", "MENU", "BANH", "LO", "THOT", "NHAN", "GOI", "XONG"];
+const ORDER: readonly TourStep[] = ["CHO", "MENU", "BANH", "LO", "THOT", "NHAN", "GOI", "GIAO", "TAY", "DT", "XONG"];
 
 export const TOUR_TOTAL = ORDER.length - 1;
 
@@ -33,13 +33,14 @@ export function tourSkip(w: SaveFile): void {
   w.flags[KEY] = "XONG";
 }
 
-/** Làm trước bước sau thì nhảy thẳng tới đó; bước đã qua thì bỏ qua. */
-export function tourDone(w: SaveFile, step: TourStep): void {
-  if (!touring(w)) return;
+/** Làm trước bước sau thì nhảy thẳng tới đó; bước đã qua thì bỏ qua. Trả về số việc vừa xong. */
+export function tourDone(w: SaveFile, step: TourStep): number {
+  if (!touring(w)) return 0;
   const at = ORDER.indexOf(tourStep(w));
   const of = ORDER.indexOf(step);
-  if (at > of) return;
+  if (at > of) return 0;
   w.flags[KEY] = ORDER[of + 1] ?? "XONG";
+  return of - at + 1;
 }
 
 /** Phần còn thiếu theo khung pate → nhân mặn → rau, chỉ để dẫn; chấm điểm là việc của `diffDish`. */

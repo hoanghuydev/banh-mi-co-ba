@@ -6,6 +6,7 @@ import {
 import { easePatience } from "./ease";
 import { eveningCount, morningRent, newEconState, newToday } from "./obligations";
 import { CAL, fixedCostVnd, isRain } from "./econ";
+import { extraGuests, patienceBonusSec } from "./system";
 import { equipPatienceMul, extraDailyVnd, has, newEquipState } from "./equipment";
 
 const DAWN = "dawnDay";
@@ -80,7 +81,7 @@ export function eveningCounting(w: SaveFile) {
   const day = w.progress.dayIndex;
   eveningCount(w.econ, w.money, fixedCostVnd(day) + extraDailyVnd(w.equipment ?? newEquipState()));
   const e = w.econ.today, t = w.progress.today;
-  const cost = e.market + e.rent + e.fixed + e.tools + e.talk;
+  const cost = e.market + e.rent + e.fixed + e.tools + e.talk + e.family;
   const row = { day, revenue: t.revenue, cost, served: t.served, lost: t.lost };
   const i = w.ledger.findIndex((r) => r.day === day);
   if (i >= 0) w.ledger[i] = row; else w.ledger.push(row);
@@ -110,6 +111,8 @@ export function dayDeps(w: SaveFile) {
   const day = w.progress.dayIndex;
   return {
     patienceMul: equipPatienceMul(w.equipment) * easePatience(day),
+    patienceBonusSec: patienceBonusSec(w),
+    extraGuests: extraGuests(w),
     gazeMul: CAL.weatherInfo[weatherOf(day)].gazeMul,
   };
 }

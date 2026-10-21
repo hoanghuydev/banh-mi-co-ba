@@ -29,6 +29,7 @@ export class BrokeScene extends Phaser.Scene {
     this.view = new BrokeView(w, {
       textScale: loadSettings().textScale,
       onMenu: () => bus.emit("broke:done", { dayIndex: w.progress.dayIndex }),
+      onRestart: () => bus.emit("broke:done", { dayIndex: w.progress.dayIndex, restart: true }),
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { this.view?.close(); sfx.stopLoops(700); });
   }

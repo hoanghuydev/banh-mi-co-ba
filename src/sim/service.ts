@@ -292,6 +292,10 @@ export type ServiceDeps = {
   readMul?: number;
   dialog?: DialogState;
   patienceMul?: number;
+  /** Giây cộng thêm vào kiên nhẫn mọi khách. */
+  patienceBonusSec?: number;
+  /** Số khách lạ thêm trong ngày. */
+  extraGuests?: number;
   gazeMul?: number;
   till?: { floatLeft: number };
   equip?: EquipState;
@@ -518,6 +522,9 @@ export class Service {
       if (rng.next() >= keep) continue;
       list.push({ at: t, npc: null });
     }
+    for (let i = 0; i < (this.deps.extraGuests ?? 0); i++) {
+      list.push({ at: DAY_START_MIN + 12 + rng.next() * (DAY_END_MIN - DAY_START_MIN - 30), npc: null });
+    }
     list.sort((a, b) => a.at - b.at);
     this.schedule = list.map((v, seq) => ({ ...v, seq }));
   }
@@ -533,7 +540,7 @@ export class Service {
   private patienceOf(npc: NpcDef | null, at: number, ahead: number) {
     const base = npc?.patience ?? DEFAULT_PATIENCE_SEC;
     const rush = npc?.rush && at >= npc.rush[0] && at < npc.rush[1] ? 0.65 : 1;
-    return base * rush * queuePatienceMul(ahead) * (this.deps.patienceMul ?? 1) + PATIENCE_BONUS_SEC;
+    return base * rush * queuePatienceMul(ahead) * (this.deps.patienceMul ?? 1) + PATIENCE_BONUS_SEC + (this.deps.patienceBonusSec ?? 0);
   }
 
   private spawn(v: Visit, nowMin: number) {

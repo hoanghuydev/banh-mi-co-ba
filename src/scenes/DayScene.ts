@@ -10,14 +10,19 @@ import { gcBags } from "../core/rng";
 import { DEV_TOOLS } from "../core/flags";
 import { dev } from "../dev/registry";
 import { refillPresets } from "../sim/presets";
-import { tourDone } from "../sim/tour";
-import { DEFAULT_PLAYER_NAME } from "../content/shop";
+import { installPending } from "../sim/gear";
+import { deliverDue } from "../sim/shop";
+import { clearBuffsIfStale, linked } from "../sim/system";
+import { addRewind } from "../core/rewinds";
+import { morning as resellMorning } from "../sim/resell";
+import { DEFAULT_SHOP_NAME } from "../content/shop";
+import { phoneTick, type PhoneState } from "../sim/phone";
 import { sfx } from "../audio/sfx";
 
 /** Scene thường trực sở hữu `GameContext`, không bao giờ restart; scene con nhận ctx lúc launch và chỉ phát event. */
-export type DayStart = { mode: "new" } | { mode: "continue" };
+export type DayStart = { mode: "new"; shopName?: string; phone?: PhoneState } | { mode: "continue" };
 
-const CHILDREN = ["market", "stall", "evening", "broke"] as const;
+const CHILDREN = ["stall", "evening", "broke"] as const;
 type Child = typeof CHILDREN[number];
 
 const MONEY_SAVE_THRESHOLD = 20_000;
@@ -38,7 +43,9 @@ export class DayScene extends Phaser.Scene {
       probe.clear();
     }
     const fresh = !world;
-    this.ctx = new GameContext(world ?? newGame(DEFAULT_PLAYER_NAME), bus);
+    const start = world ?? newGame(data.mode === "new" && data.shopName || DEFAULT_SHOP_NAME);
+    if (!world && data.mode === "new" && data.phone) start.phone = data.phone;
+    this.ctx = new GameContext(start, bus);
     this.ctx.world.telemetry.sessionCount++;
     if (DEV_TOOLS) dev.ctx = this.ctx;
 
@@ -57,19 +64,24 @@ export class DayScene extends Phaser.Scene {
     ctx.rng.beginDay(w.saveId, w.progress.dayIndex);
     ctx.clock.reset(DAY_START_MIN);
     w.progress.today = { served: 0, lost: 0, revenue: 0, talksDeep: 0, talkOffers: 0 };
-    w.progress.scene = "Market";
+    w.progress.scene = "Stall";
     w.stall.presets = refillPresets(w.stall.presets as never);
     w.stall.cleanliness = 1 - (1 - w.stall.cleanliness) * 0.4;
     gcBags(w.shuffleBags, w.progress.dayIndex);
     // Trước bản chụp đầu ngày, để chơi lại không thu tiền chỗ hai lần.
+    installPending(w);
     dawn(w);
+    clearBuffsIfStale(w);
+    deliverDue(w, DAY_START_MIN);
+    resellMorning(w);
+    phoneTick(w);
     ctx.sync();
     w.progress.dayStartSnapshotRef = ctx.save.writeDayStart(ctx.snapshot());
     bus.emit("day:started", { dayIndex: w.progress.dayIndex, daySeed: ctx.rng.daySeed, weather: w.progress.weather });
     // Ở đây chứ không ở `StallScene` vì cảnh quán còn bị mở lại giữa ngày.
     sfx.play(this, "ui_chuyen_ngay");
     sfx.play(this, "sfx_cua_cuon", { delay: 450, volume: 0.8 });
-    this.open("market");
+    this.open("stall");
     ctx.save.request("SCENE_CHANGE");
   }
 
@@ -82,8 +94,8 @@ export class DayScene extends Phaser.Scene {
       this.open("broke");
       return;
     }
-    const at: Record<string, Child> = { Market: "market", Stall: "stall", Evening: "evening", Broke: "broke" };
-    this.open(at[p.scene] ?? "market", { resume: true });
+    const at: Record<string, Child> = { Stall: "stall", Evening: "evening", Broke: "broke" };
+    this.open(at[p.scene] ?? "stall", { resume: true });
   }
 
   replayDay() {
@@ -110,7 +122,7 @@ export class DayScene extends Phaser.Scene {
 
   private open(child: Child, extra: Record<string, unknown> = {}) {
     this.closeChildren();
-    const key = ({ market: "Market", stall: "Stall", evening: "Evening", broke: "Broke" } as const)[child];
+    const key = ({ stall: "Stall", evening: "Evening", broke: "Broke" } as const)[child];
     this.ctx.setScene(key);
     this.scene.launch(child, { ctx: this.ctx, day: this, ...extra });
   }
@@ -123,10 +135,6 @@ export class DayScene extends Phaser.Scene {
     const { ctx } = this;
     const on = <K extends EventKey>(k: K, fn: (p: EventMap[K]) => void) => { this.off.push(bus.on(k, fn)); };
 
-    on("market:done", () => {
-      tourDone(ctx.world, "CHO");
-      this.open("stall");
-    });
     on("stall:closed", (p) => {
       const w = ctx.world;
       bus.emit("day:ended", {
@@ -150,10 +158,11 @@ export class DayScene extends Phaser.Scene {
       this.beginDay();
     });
 
-    on("broke:done", () => {
+    on("broke:done", (p) => {
+      if (p.restart && linked(ctx.world)) addRewind();
       ctx.save.clear();
       this.closeChildren();
-      this.scene.start("menu");
+      this.scene.start(p.restart ? "intro" : "menu");
     });
 
     on("npc:left", () => ctx.save.request("CUSTOMER_DONE"));

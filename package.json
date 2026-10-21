@@ -27,7 +27,8 @@
     "probe:invite": "tsx tools/probe-invite.ts",
     "play:deep": "tsx tools/play-deep.ts",
     "probe:facts": "tsx tools/probe-facts.ts",
-    "probe:offer": "tsx tools/probe-offer.ts"
+    "probe:offer": "tsx tools/probe-offer.ts",
+    "probe:tuition": "tsx tools/probe-tuition.ts"
   },
   "dependencies": {
     "phaser": "^3.90.0"

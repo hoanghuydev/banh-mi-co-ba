@@ -21,7 +21,7 @@ export type Slot = StallZone;
 
 export type CustomerSlot = "FRONT_CENTER" | "FRONT_SIDE" | "QUEUE_2" | "QUEUE_3" | "SEATED_FAR";
 export type ObsState = "UNAWARE" | "GLIMPSED" | "NOTICED" | "CONFIRMED";
-export type SceneKey = "Boot" | "Menu" | "Day" | "Market" | "Stall" | "Evening" | "Broke";
+export type SceneKey = "Boot" | "Menu" | "Day" | "Stall" | "Evening" | "Broke";
 export type AttentionTool = "TRA_DA" | "ASK_QUESTION" | "OCCLUDE_BODY" | "SWITCH_SIDE";
 
 /** Runtime `npcId` là `string` vì khách vãng lai mang khoá theo dáng (`walkin3`); validator nội dung mới ép đúng danh sách này. */

@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 import { newGame } from "../src/core/save";
 import { TOUR_TOTAL, fillGap, tourAt, tourDone, tourIndex, tourSkip, tourStep, touring } from "../src/sim/tour";
 
-test("dẫn bữa đầu chạy đủ bảy việc, theo thứ tự", () => {
+test("dẫn bữa đầu chạy đủ mười việc, theo thứ tự", () => {
   const w = newGame("x", "tour-1");
-  const order = ["CHO", "MENU", "BANH", "LO", "THOT", "NHAN", "GOI"] as const;
+  const order = ["CHO", "MENU", "BANH", "LO", "THOT", "NHAN", "GOI", "GIAO", "TAY", "DT"] as const;
   order.forEach((step, i) => {
     assert.equal(tourStep(w), step);
     assert.equal(tourIndex(w), i + 1);

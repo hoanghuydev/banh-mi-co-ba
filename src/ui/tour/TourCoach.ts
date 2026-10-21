@@ -42,6 +42,7 @@ export class TourCoach {
   private txt: HTMLParagraphElement;
   private stepEl: HTMLSpanElement;
   private last = "";
+  private who!: HTMLDivElement;
 
   constructor(opts: { textScale?: number; onSkip: () => void }) {
     if (!document.getElementById("tg-style")) {
@@ -64,6 +65,7 @@ export class TourCoach {
     const who = document.createElement("div");
     who.className = "tg-who";
     who.textContent = "Hướng dẫn";
+    this.who = who;
     this.txt = document.createElement("p");
     this.txt.className = "tg-text";
     const bar = document.createElement("div");
@@ -84,6 +86,8 @@ export class TourCoach {
   }
 
   destroy() { this.root.remove(); }
+
+  setWho(text: string) { if (this.who.textContent !== text) this.who.textContent = text; }
 
   hide() {
     if (this.root.style.display === "none") return;
