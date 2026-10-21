@@ -1,22 +1,22 @@
 // Camera nhìn từ (−x, −y): y càng lớn càng gần; chèn hàng thì sửa cả `STATION_ROW_Y` / `COUNTER_Y`.
 export const MAP = [
-  "NN###D###############NN",  // y0  tường sau, cửa x=5
-  "###XK..O..V..T.WP...###",  // y1  bình chữa cháy · kệ · lò · thùng rác · trà đá · bồn rửa · chậu cây
-  "###.................##N",
-  "###.................###",
-  "###.................###",
-  "###.................##N",
-  "###QQQQQQQQQQQQQQQ..###",  // y6  quầy x=3..17 (thớt x=4, rổ x=8, đưa hàng x=12), lối ra x=18,19
-  ".................A.....",  // y7  hàng khách · bảng chữ A x=17
-  ".......................",  // y8  lối khách đi
-  ".......................",
-  "..C.V..................",  // y10 két nước · thùng rác
-  "..............b.ss.MM.P",  // y11 bàn · ghế nhựa · xe máy · chậu cây
-  ".......................",  // y12+ lòng đường
-  ".......................",
-  ".......................",
-  ".......................",
-  ".......................",
+  "NN###D##########NN",  // y0  tường sau, cửa x=5
+  "###XK.O.V.T.W..###",  // y1  bình chữa cháy · kệ · lò · thùng rác · trà đá · bồn rửa
+  "###............##N",
+  "###............###",
+  "###............###",
+  "###............##N",
+  "###.Q.Q.Q......###",  // y6  ba bàn: thớt x=4, chỗ để bánh x=6, order x=8
+  "..............A...",  // y7  hàng khách · bảng chữ A x=14
+  "..................",  // y8  lối khách đi
+  "..................",
+  "..C.V.............",  // y10 két nước · thùng rác
+  "..........b.ss.MMP",  // y11 bàn · ghế nhựa · xe máy · chậu cây
+  "..................",  // y12+ lòng đường
+  "..................",
+  "..................",
+  "..................",
+  "..................",
 ] as const;
 
 export const WORLD_W = MAP[0].length;
@@ -94,33 +94,33 @@ export const STREET_BIN = { x: 4.5, y: 9.45 };
 
 /** Hàng ngang, không chéo, vì `depthOf` vẽ theo (x+y) sẽ cho người sau đè người đang gọi món. */
 export const QUEUE_SLOTS = [
-  { x: 12.5, y: 7.6, zone: "FRONT_CENTER" },
-  { x: 11.0, y: 7.6, zone: "FRONT_SIDE" },
-  { x: 9.5, y: 7.6, zone: "QUEUE_2" },
-  { x: 8.0, y: 7.6, zone: "QUEUE_3" },
-  { x: 6.5, y: 7.6, zone: "SEATED_FAR" },
-  { x: 5.0, y: 7.6, zone: "SEATED_FAR" },
+  { x: 8.5, y: 7.6, zone: "FRONT_CENTER" },
+  { x: 7.0, y: 7.6, zone: "FRONT_SIDE" },
+  { x: 5.5, y: 7.6, zone: "QUEUE_2" },
+  { x: 4.0, y: 7.6, zone: "QUEUE_3" },
+  { x: 2.5, y: 7.6, zone: "SEATED_FAR" },
+  { x: 1.0, y: 7.6, zone: "SEATED_FAR" },
 ] as const;
 
 /** Lùi ra ngoài hàng chờ, để không trông như hai người đổi chỗ trong hàng. */
-export const ASIDE_SPOT = { x: 13.9, y: 8.5 };
+export const ASIDE_SPOT = { x: 9.9, y: 8.5 };
 
 /** Tách khỏi `ASIDE_SPOT` và xe ở 16,1 để mỗi việc đọc ra một chỗ riêng. */
-export const SHADE_SPOT = { x: 15.0, y: 8.2 };
+export const SHADE_SPOT = { x: 11.0, y: 8.3 };
 
-export const SEAT_SPOT = { x: 16.6, y: 10.4 };
+export const SEAT_SPOT = { x: 12.6, y: 10.4 };
 
 /** Khớp `slots` của `GHE_BAN` trong `equipment.json`. */
 export const SEAT_CAPACITY = 2;
 
 // OUT: bà Sáu hạ gánh ngay mặt tiền; IN: mình bưng vô sát vách giùm.
-export const GANH_OUT = { x: 14.6, y: 7.4 };
-export const GANH_IN = { x: 11.9, y: 9.6 };
+export const GANH_OUT = { x: 10.6, y: 7.4 };
+export const GANH_IN = { x: 8.0, y: 9.6 };
 
 // Xe chú Kiệt: lấn mặt tiền / về bên kia hẻm / chung mái lúc mưa; CART_LAN phải nằm trong `SHOPFRONT_X` mà không đè `GANH_OUT`.
-export const CART_LAN = { x: 16.1, y: 7.6 };
-export const CART_XA = { x: 19.4, y: 7.6 };
-export const CART_CHUNG = { x: 14.0, y: 8.8 };
+export const CART_LAN = { x: 12.4, y: 7.5 };
+export const CART_XA = { x: 15.8, y: 7.6 };
+export const CART_CHUNG = { x: 10.2, y: 9.2 };
 
 export const SHADE_CAPACITY = 1;
 
@@ -170,12 +170,7 @@ export function assertWalkable() {
     if (row.length !== WORLD_W) bad.push(`hàng y${y} dài ${row.length} ô, phải là ${WORLD_W}`);
   });
 
-  const counter = MAP[COUNTER_Y];
-  const lo = counter.indexOf("Q"), hi = counter.lastIndexOf("Q");
-  if (lo < 0) bad.push(`COUNTER_Y = ${COUNTER_Y} mà hàng đó không có ô quầy nào`);
-  else for (let x = lo; x <= hi; x++) {
-    if (counter[x] !== "Q") { bad.push(`quầy thủng ở x=${x} (ô "${counter[x]}")`); break; }
-  }
+  if (!MAP[COUNTER_Y].includes("Q")) bad.push(`COUNTER_Y = ${COUNTER_Y} mà hàng đó không có bàn nào`);
 
   // `walk()` không né đồ đạc: soi khúc từ cổng tới chỗ xa nhất của hàng chờ, riêng y9 soi suốt vì là lối qua đường.
   const laneXs = [CUSTOMER_GATE.x, ...QUEUE_SLOTS.map((s) => s.x)];
@@ -205,20 +200,20 @@ export function assertWalkable() {
 }
 
 /** Lệch khỏi trục cửa và trạm vì bảng rộng gần 200px dễ đè nhãn trạm. */
-export const SIGN_TILE = { x: 10.5, y: 0.5 };
+export const SIGN_TILE = { x: 9.2, y: 0.5 };
 
 /** Phủ đúng ba ô tường x=15..17 (bảng 40px) để có một `depth` vừa khít, và chỗ đứng đọc nằm ngoài tầm mọi trạm (gác ở `stations.assertMenuSpotFree()`). */
-export const MENU_TILE = { x: 16.6, y: 0.5 };
+export const MENU_TILE = { x: 13.6, y: 0.5 };
 
 /** Mốc depth ngay sau mép phải bảng: trên ba ô tường nó treo, dưới người đứng đọc và nhà bên. */
 export const MENU_DEPTH_AT = { x: MENU_TILE.x + 1.5, y: MENU_TILE.y };
-export const MENU_SPOT = { x: 17.5, y: 1.5 };
+export const MENU_SPOT = { x: 14.5, y: 1.5 };
 export const MENU_REACH = 1.6;
 
 /** Mép mái hiên, nơi `ui/stall/Rain` nhỏ nước xuống. */
 export const SHOPFRONT_X = (() => {
   const row = MAP[COUNTER_Y];
-  return { lo: row.indexOf("Q"), hi: row.lastIndexOf("Q") + 1 };
+  return { lo: row.indexOf("."), hi: row.lastIndexOf(".", row.indexOf("###", 3)) + 1 };
 })();
 
 /** Hàng đầu tiên ngoài mái hiên, dùng chung cho cả nắng (`isSunlit`) lẫn mưa (`world/rain.ts`). */

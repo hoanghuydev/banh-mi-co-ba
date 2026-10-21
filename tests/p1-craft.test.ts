@@ -95,7 +95,7 @@ test("trạm bám dính: đứng giữa thùng trà và bồn rửa thì không 
   const distTo = (p: { x: number; y: number }) =>
     Math.min(...STATIONS.map((s) => Math.hypot(s.tx + 0.5 - p.x, s.ty + 0.5 - p.y)));
   let far = { x: 10.5, y: 3.5 }, nearest = -1;
-  for (let x = 3.5; x <= 21.5; x += 0.5) {
+  for (let x = 3.5; x <= 14.5; x += 0.5) {
     for (let y = 2.5; y <= 5.5; y += 0.5) {
       const d = distTo({ x, y });
       if (d > nearest) { nearest = d; far = { x, y }; }
@@ -105,14 +105,13 @@ test("trạm bám dính: đứng giữa thùng trà và bồn rửa thì không 
   assert.equal(stationNear(far.x, far.y, tea), null);
 });
 
-test("rổ bánh nóng đứng đủ xa thớt và chỗ đưa hàng để không bấm nhầm", () => {
+test("rổ bánh nóng cách thớt và chỗ đưa hàng ít nhất 2 ô để không bấm nhầm", () => {
   const basket = STATIONS.find((s) => s.id === "basket")!;
   assert.ok(basket, "có trạm rổ bánh nóng");
   for (const id of ["board", "handoff"]) {
     const other = STATIONS.find((s) => s.id === id)!;
     const d = Math.hypot(basket.tx - other.tx, basket.ty - other.ty);
-    // Hai lần bán kính với tới (1,6).
-    assert.ok(d > 3.2, `${id} cách rổ ${d} ô — phải hơn 3,2`);
+    assert.ok(d >= 2, `${id} cách rổ ${d} ô — phải từ 2 ô để trạm gần nhất thắng`);
   }
   assert.ok(basket.needs.includes("loaf_hot"));
   assert.ok(basket.needs.includes("loaf_cold"));

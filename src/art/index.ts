@@ -69,8 +69,8 @@ export function textureForTile(
     case "#": return BUILD.wall(((tx * 5 + ty * 3) >>> 0) % BUILD.WALL_COUNT);
     case "D": return BUILD.door;
     case "N": return BUILD.neighbour(tx % BUILD.NEIGHBOUR_COUNT);
-    case "Q": return opts.isCounterEnd ? COUNTER.end
-      : opts.isStation ? COUNTER.work
+    case "Q": return opts.isStation ? COUNTER.work
+      : opts.isCounterEnd ? COUNTER.end
       : COUNTER.case(tx % COUNTER.CASE_COUNT);
     case "O": return opts.eOven ? PROP.ovenE : PROP.oven;
     case "T": return PROP.tea;

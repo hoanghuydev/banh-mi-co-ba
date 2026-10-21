@@ -73,7 +73,7 @@ export const QUEST_TEXT: Record<string, string> = {
   NHAN: "Kẹp nhân. Bỏ miếng đầu tiên vào ổ.",
   GOI: "Gói. Bấm Gói lại.",
   GIAO: "Giao hàng. Đưa cho khách ở quầy gọi món.",
-  TAY: "Tẩy trần. Tới bồn, bấm E.",
+  TAY: "Tay dơ rồi rửa ngay. Tới bồn, bấm E. Cứ 10 ổ bán ra thì rửa tay một lần.",
   DT: "Kiểm tra truyền âm. Có tin nhắn mới, bấm Tab.",
 };
 
@@ -86,7 +86,7 @@ export const QUEST_TEXT_PLAIN: Record<string, string> = {
   NHAN: "Bỏ miếng đầu tiên vào ổ.",
   GOI: "Bấm Gói lại.",
   GIAO: "Đưa ổ cho khách ở quầy gọi món.",
-  TAY: "Tới bồn, bấm E để rửa tay.",
+  TAY: "Tay dơ rồi rửa ngay. Tới bồn, bấm E. Cứ 10 ổ bán ra thì rửa tay một lần",
   DT: "Có tin nhắn mới. Bấm Tab mở điện thoại.",
 };
 

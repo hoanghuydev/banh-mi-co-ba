@@ -158,6 +158,8 @@ Mỗi tin có 1 trong 3 kiểu:
 
 **T1.2 — Rửa tay theo lô.** Bán **10 ổ** mới phải rửa tay một lần, không phải mỗi ổ. Ghi vào hướng dẫn.
 
+> ✅ Xong 2026-10-21: map 23×16 → 18×16, quầy còn 3 bàn lẻ (thớt x4 · để bánh x6 · order x8), trạm sau lưng dồn lại; rửa tay mỗi 10 ổ + dòng hướng dẫn bước TAY.
+
 ---
 
 ## 3. Phase 2 — Topping, giá bán, mở khoá

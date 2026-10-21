@@ -1,5 +1,5 @@
 import type { Slot } from "../core/eventbus";
-import { COUNTER_Y, MENU_SPOT, STATION_ROW_Y } from "./map";
+import { COUNTER_Y, MENU_SPOT, STATION_ROW_Y, tileAt } from "./map";
 
 // `ty` đọc từ bản đồ, không chép số, để dời quầy thì trạm đi theo.
 
@@ -46,7 +46,7 @@ export const STATIONS: Station[] = [
     slot: "UNDER_COUNTER", needs: ["empty"], gives: "loaf_cold", holdMs: 0,
   },
   {
-    id: "oven", tx: 7, ty: STATION_ROW_Y, name: "lò than", verb: "nướng bánh",
+    id: "oven", tx: 6, ty: STATION_ROW_Y, name: "lò than", verb: "nướng bánh",
     slot: "OVEN", needs: ["loaf_cold"], gives: "loaf_hot",
     holdMs: 1500, overcookMs: 2300, spoils: "loaf_burnt",
   },
@@ -57,27 +57,27 @@ export const STATIONS: Station[] = [
   },
   {
     // Trạm hai chiều (lấy/để), luật thật nằm ở `pressBasket`; ổ để đây vẫn nguội dần.
-    id: "basket", tx: 8, ty: COUNTER_Y, name: "chỗ để bánh", verb: "để bánh xuống",
+    id: "basket", tx: 6, ty: COUNTER_Y, name: "chỗ để bánh", verb: "để bánh xuống",
     slot: "BOARD", needs: ["empty", "loaf_hot", "loaf_cold", "loaf_filled"], gives: "empty", holdMs: 0,
   },
   {
     // Nhận cả ổ trơn cho khách gọi bánh mì không; thiếu món thì `diffDish` đếm.
-    id: "handoff", tx: 12, ty: COUNTER_Y, name: "quầy gọi món", verb: "đưa cho khách",
+    id: "handoff", tx: 8, ty: COUNTER_Y, name: "quầy gọi món", verb: "đưa cho khách",
     slot: "HANDS", needs: ["loaf_filled", "loaf_hot", "loaf_cold", "tea"], gives: "empty", holdMs: 0,
   },
   {
-    id: "bin", tx: 10, ty: STATION_ROW_Y, name: "thùng rác", verb: "bỏ đi",
+    id: "bin", tx: 8, ty: STATION_ROW_Y, name: "thùng rác", verb: "bỏ đi",
     slot: "UNDER_COUNTER", needs: ["loaf_cold", "loaf_hot", "loaf_burnt", "loaf_filled", "tea"],
     gives: "empty", holdMs: 0,
   },
   {
     // 1,5 s: đủ lâu để khách kịp thấy mình rửa.
-    id: "sink", tx: 15, ty: STATION_ROW_Y, name: "rửa tay", verb: "rửa tay",
+    id: "sink", tx: 12, ty: STATION_ROW_Y, name: "rửa tay", verb: "rửa tay",
     slot: "HANDS", needs: ["empty"], gives: "empty", holdMs: 1500,
   },
   {
     // Chỉ có khi đã mua `BINH_TRA` (`StallScene` lọc, `propHidden` giấu trên bản đồ).
-    id: "tea", tx: 13, ty: STATION_ROW_Y, name: "bình nước trà", verb: "rót ly nước trà",
+    id: "tea", tx: 10, ty: STATION_ROW_Y, name: "bình nước trà", verb: "rót ly nước trà",
     slot: "UNDER_COUNTER", needs: ["empty"], gives: "tea", holdMs: 600,
   },
 ];
@@ -107,6 +107,14 @@ export function stationNear(wx: number, wy: number, current?: Station | null): S
   const dCur = dist2(current);
   if (dCur <= REACH * REACH && bestD > dCur * STICKY) return current;
   return best;
+}
+
+export function assertStationsOnCounter() {
+  for (const st of STATIONS) {
+    if (st.ty === COUNTER_Y && tileAt(st.tx, st.ty) !== "Q") {
+      throw new Error(`Trạm "${st.id}" (${st.tx}, ${st.ty}) không nằm trên bàn quầy, ô là "${tileAt(st.tx, st.ty)}".`);
+    }
+  }
 }
 
 // Phím E ưu tiên trạm gần, nên chỗ đọc bảng menu phải ngoài tầm với mọi trạm.

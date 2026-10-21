@@ -50,7 +50,7 @@ import { artScale, fitPhoto, BOARD_TEX, BOARD_W, BASKET_TEX, BASKET_W } from "..
 import { PROP_SHADOW, SHADOW_CORE } from "../art/fx";
 import { BUYABLE_TILES, CART_CHUNG, CART_LAN, CART_XA, GANH_IN, GANH_OUT, MENU_DEPTH_AT, MENU_REACH, MENU_SPOT, MENU_TILE, SEAT_SPOT, SHADE_SPOT, SIGN_TILE, SKY_FROM_Y, WORLD_H, WORLD_W, assertWalkable, floorAt, isSunlit, openTilesFor, setOpenTiles, tileAt, type TileCode } from "../world/map";
 import {
-  HAND_LABEL, STATIONS, assertMenuSpotFree, blockedReason, stationAtTile, stationNear, type Hand, type Station,
+  HAND_LABEL, STATIONS, assertMenuSpotFree, assertStationsOnCounter, blockedReason, stationAtTile, stationNear, type Hand, type Station,
 } from "../world/stations";
 import {
   BASE, COUNTER, FX, HELD, PROP, TILE, buildTextures, createMenuBoard, createSign, floorTextureAt, footY, heldFootPad,
@@ -81,6 +81,7 @@ const FLOOR_DIRT_RATE = 0.004;
 const FLOOR_SEC = 0.35;
 const BIN_SEC = 0.4;
 const TAKE_MONEY_SEC = 0.8;
+const WASH_EVERY = 10;
 const CHORE_R = 11;
 const CHORE_EDGE = 8;
 /** Không mượn `HUD_BAND_PX`: số đó cho tiền bay lên, còn cái lò nằm ngay hàng trên cùng. */
@@ -187,6 +188,7 @@ export class StallScene extends Phaser.Scene {
   private handsBusyBar = true;
   private holdLatch = false;
   private hands: "CLEAN" | "MONEY" = "CLEAN";
+  private soldSinceWash = 0;
   private dirtyEpisode = 0;
   private lastFlourish = new Map<string, number>();
   private lastMinutes = 0;
@@ -246,6 +248,7 @@ export class StallScene extends Phaser.Scene {
     this.boardSoiled = false;
     this.floor = [];
     this.hands = "CLEAN";
+    this.soldSinceWash = 0;
     this.lastFlourish = new Map();
     this.intents = [];
     this.elapsed = 0;
@@ -273,7 +276,7 @@ export class StallScene extends Phaser.Scene {
 
   create() {
     // Soi bản đồ gốc, trước khi mở ô đạo cụ chưa mua.
-    if (import.meta.env.DEV) { assertWalkable(); assertMenuSpotFree(); }
+    if (import.meta.env.DEV) { assertWalkable(); assertMenuSpotFree(); assertStationsOnCounter(); }
     // Trước mọi thứ biết đi.
     setOpenTiles(openTilesFor((id) => has(this.world.equipment, id as EquipId)));
 
@@ -1175,6 +1178,7 @@ export class StallScene extends Phaser.Scene {
       case "sink":                                      // WASH_HANDS: sạch cả hai tay
         // Vòi nước đã kêu suốt lượt giữ phím (xem `audio.tick`), ở đây chỉ còn cú vẩy tay.
         this.hands = "CLEAN";
+        this.soldSinceWash = 0;
         this.quest("TAY", true);
         this.dirtyEpisode++;
         this.addDirt(-0.1);
@@ -1300,7 +1304,10 @@ export class StallScene extends Phaser.Scene {
     // ⚖️ P1-01 §2.11 ghi 2,0 s, nhưng nhận tiền không phải thao tác có tay nghề. 0,8 s vẫn giữ cái giá
     // thật của nó: tay DÍNH TIỀN cho tới khi đi rửa.
     if (wasDish) {
-      if (!cleanHandsToday(this.world)) this.hands = "MONEY";
+      if (!cleanHandsToday(this.world) && ++this.soldSinceWash >= WASH_EVERY && this.hands === "CLEAN") {
+        this.hands = "MONEY";
+        this.hud.toast("tay dơ rồi, rửa ngay", "info", this.popClock);
+      }
       this.audio.money();
       this.beBusy(this.workSeconds(TAKE_MONEY_SEC), "đang nhận tiền", "quick");
     }
