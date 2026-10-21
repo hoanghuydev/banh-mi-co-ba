@@ -213,7 +213,8 @@ Nguồn review:
 
 **T4.3 — Phản hồi review.** Người chơi tự nhập trả lời, chỉ cần hiển thị ra.
 
-**T4.4 — Game over an toàn thực phẩm.** Tổng sao xuống **≤3★** *và* có **>10 review 1–2★ do đau bụng** → bị điều tra ATTP, đóng cửa, thua.
+**T4.4 — Game over an toàn thực phẩm.** Tổng sao xuống **≤3★** *và* có **>10 review 1–2★ do đau bụng** → bị điều tra ATTP, đóng cửa, thua. Hoặc tổng review đau bụng trên 15, bất kể tổng số sao cũng sẽ thua do ATTP
+> ✅ Chốt 2026-10-21 (xem `R0.7-PLAN.md` §9): đếm review đau bụng trong **cửa sổ trượt 14 ngày**; giả định ~**40%** khách đau bụng chịu viết review. Chỉnh lại bằng mô phỏng ở R4.
 
 ---
 
