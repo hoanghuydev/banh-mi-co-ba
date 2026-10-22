@@ -149,7 +149,7 @@ const standBy = (c: Customer) => ({ x: c.x, y: c.y - 1 });
 
 test("đứng ngay cạnh ai thì F nói chuyện với NGƯỜI ĐÓ, không phải người đứng đầu quầy", async () => {
   let checked = 0;
-  const h2 = new HeadlessStall(dayOf(13), POLICIES.greedy, { bus: new Bus() });
+  const h2 = new HeadlessStall(dayOf(14), POLICIES.greedy, { bus: new Bus() });
   await h2.service.talks.ensure("WALKIN");
   h2.run({
     inject: (_t, x) => {

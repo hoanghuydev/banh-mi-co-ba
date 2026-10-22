@@ -45,11 +45,11 @@ test("VD-3 hai chỗ đó không trùng nhau — đứng mát và ngồi là hai
 });
 
 test("VD-4 đồ nghề là ảnh thật không đứng chồng lên tường", () => {
-  const calls = [...SRC.matchAll(/addPhotoProp\(PROP\.(\w+),\s*([\d.]+),\s*([\d.]+)/g)];
+  const calls = [...SRC.matchAll(/addPhotoProp\(([^,]+),\s*([\d.]+),\s*([\d.]+)/g)];
   assert.ok(calls.length > 0, "không tìm thấy món đồ nghề ảnh thật nào đặt bằng toạ độ số");
   for (const [, ten, sx, sy] of calls) {
     const tx = Math.floor(Number(sx)), ty = Math.floor(Number(sy));
-    assert.equal(MAP[ty][tx], ".",
-      `${ten} đứng ở (${sx} · ${sy}) -> ô "${MAP[ty][tx]}" ở (${tx},${ty}), không phải sàn đi được`);
+    assert.ok(MAP[ty][tx] === "." || MAP[ty][tx] === "F",
+      `${ten} đứng ở (${sx} · ${sy}) -> ô "${MAP[ty][tx]}" ở (${tx},${ty}), không phải sàn hay ô kho`);
   }
 });

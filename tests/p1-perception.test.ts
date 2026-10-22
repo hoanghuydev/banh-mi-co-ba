@@ -6,6 +6,7 @@ import { Rng } from "../src/core/rng";
 import { orderDefectKey } from "../src/core/stimid";
 import { diffDish, dishFor, generosityOf, sayOrder, specOf, mkDefect, type Ingredient } from "../src/sim/order";
 import { MENU_IDS, nhanOf } from "../src/sim/menu";
+import { dishPriceVnd } from "../src/sim/econ";
 import { Bus } from "../src/core/eventbus";
 import { newGame } from "../src/core/save";
 import { HeadlessStall, POLICIES } from "../src/sim/headless";
@@ -180,10 +181,10 @@ test("không bao giờ trừ tiền bánh vì làm thiếu", () => {
   const bus = new Bus();
   const h = new HeadlessStall(newGame("t", "tip-1"), { ...POLICIES.greedy, workSec: [1e9, 1e9] }, { bus });
   h.run({ until: (x) => x.service.front?.phase === "waiting" });
-  const dish = dishFor(h.service.front!.order!);
-  h.service.serveDish(dish.slice(0, -1));
+  const order = h.service.front!.order!;
+  h.service.serveDish(dishFor(order).slice(0, -1));
   const paid = h.service.drain().find((e) => e.kind === "paid");
-  assert.ok(paid && paid.kind === "paid" && paid.amount >= 25_000);
+  assert.ok(paid && paid.kind === "paid" && paid.amount >= dishPriceVnd(order.intent));
 });
 
 test("ổ không có miếng nhân mặn nào = bánh mì không, 10.000₫ (P3-03 §2.5)", () => {

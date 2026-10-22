@@ -25,6 +25,7 @@ import { totalUnread } from "../sim/phone";
 import { chorePin } from "../ui/chorePin";
 import { TOUR_TOTAL, fillGap, tourAt, tourDone, tourIndex, tourSkip, tourStep, touring, type TourStep } from "../sim/tour";
 import { deliverDue } from "../sim/shop";
+import { openMenu, openedOn } from "../sim/unlock";
 import { SWIFT_MUL, canSpin, cleanHandsToday, finishRookie, linked, questDone, swiftToday } from "../sim/system";
 import { QUEST_DONE, QUEST_TEXT, ROOKIE_DONE } from "../content/system";
 import { TourCoach } from "../ui/tour/TourCoach";
@@ -33,7 +34,7 @@ import { dirtMul, has, type EquipId } from "../sim/equipment";
 import { labelOf } from "../sim/order";
 import { dev } from "../dev/registry";
 import type { DayScene } from "./DayScene";
-import { diffDish, type Ingredient } from "../sim/order";
+import { INGREDIENTS, diffDish, type Ingredient } from "../sim/order";
 import { isBare } from "../sim/menu";
 import { CRUST, OVEN_SLOTS, Oven, bandOfCrust, ovenFor, type CrustBand } from "../sim/oven";
 import { Grip, RUN_TEMPO, WALK_TEMPO } from "../sim/grip";
@@ -48,7 +49,7 @@ import { RENDER_SCALE } from "../core/render";
 import { StallCamera, ZOOM } from "../world/camera";
 import { artScale, fitPhoto, BOARD_TEX, BOARD_W, BASKET_TEX, BASKET_W } from "../art/photo";
 import { PROP_SHADOW, SHADOW_CORE } from "../art/fx";
-import { BUYABLE_TILES, CART_CHUNG, CART_LAN, CART_XA, GANH_IN, GANH_OUT, MENU_DEPTH_AT, MENU_REACH, MENU_SPOT, MENU_TILE, SEAT_SPOT, SHADE_SPOT, SIGN_TILE, SKY_FROM_Y, WORLD_H, WORLD_W, assertWalkable, floorAt, isSunlit, openTilesFor, setOpenTiles, tileAt, type TileCode } from "../world/map";
+import { BUYABLE_TILES, CART_CHUNG, CART_LAN, CART_XA, GANH_IN, GANH_OUT, MENU_DEPTH_AT, MENU_REACH, MENU_SPOT, MENU_TILE, SEAT_SPOT, SHADE_SPOT, SIGN_TILE, SKY_FROM_Y, WORLD_H, WORLD_W, assertWalkable, floorAt, isSunlit, openTilesFor, setOpenTiles, setPole, tileAt, type TileCode } from "../world/map";
 import {
   HAND_LABEL, STATIONS, assertMenuSpotFree, assertStationsOnCounter, blockedReason, stationAtTile, stationNear, type Hand, type Station,
 } from "../world/stations";
@@ -67,6 +68,8 @@ const LABEL_DEPTH = 8_000_000;
 const FLY_MAX = 5;
 const FLY_TILT = 0.6;
 const FLY_DIRT_MIN = 0.35;
+// Dải trên cùng bị HUD che (px màn hình game).
+const HUD_BAND_H = 72;
 /** Bằng số ngăn lò: rổ đỡ một mẻ, không phải kho bánh. */
 const BASKET_SLOTS = 3;
 /** Đo dọc mặt quầy chạy chéo, lệch cả hai trục theo tỉ lệ iso 2:1. */
@@ -279,6 +282,7 @@ export class StallScene extends Phaser.Scene {
     if (import.meta.env.DEV) { assertWalkable(); assertMenuSpotFree(); assertStationsOnCounter(); }
     // Trước mọi thứ biết đi.
     setOpenTiles(openTilesFor((id) => has(this.world.equipment, id as EquipId)));
+    setPole(has(this.world.equipment, "DU_CHE") ? { x: SHADE_SPOT.x - UMBRELLA_BACK, y: SHADE_SPOT.y - UMBRELLA_BACK } : null);
 
     buildTextures(this);
 
@@ -547,7 +551,7 @@ export class StallScene extends Phaser.Scene {
 
     // Menu không lấy depth trên tất cả như bảng hiệu vì người chơi đi ngay dưới nó.
     const m = toScreen(MENU_TILE.x, MENU_TILE.y);
-    createMenuBoard(this, m.sx, m.sy, depthOf(MENU_DEPTH_AT.x, MENU_DEPTH_AT.y));
+    createMenuBoard(this, m.sx, m.sy, depthOf(MENU_DEPTH_AT.x, MENU_DEPTH_AT.y), this.world.progress.dayIndex);
     // Dấu cắm ở chỗ đứng đọc, không ở tấm bảng treo cao.
     const ms = toScreen(MENU_SPOT.x, MENU_SPOT.y);
     this.choreAt.set("menu", { x: ms.sx, y: footY(ms.sy) });
@@ -1619,7 +1623,8 @@ export class StallScene extends Phaser.Scene {
 
   /** ⚠️ CỐ Ý ngắn và ĐỘNG: liệt kê cả cái quầy thì bong bóng rời hẳn khỏi người đang nói. Chỉ ba thứ. */
   private bubbleKeepOut(): BubbleKeepOutBox[] {
-    const out: BubbleKeepOutBox[] = [];
+    const v = this.cameras.main.worldView;
+    const out: BubbleKeepOutBox[] = [{ x0: v.left, x1: v.right, y0: v.top - 80, y1: v.top + HUD_BAND_H / ZOOM }];
     const at = (tx: number, ty: number, w = 92, h = 76) => {
       const { sx, sy } = toScreen(tx + 0.5, ty + 0.5);
       const y = footY(sy);
@@ -1976,13 +1981,18 @@ export class StallScene extends Phaser.Scene {
     return { x: cx - halfW, y: cy - halfH, w: halfW * 2, h: halfH * 2, shape: "rect" as const, text };
   }
 
+  private openFillings(): string {
+    const ids = new Set(openMenu(this.world.progress.dayIndex).flatMap((i) => Object.keys(i.nhan) as Ingredient[]));
+    return INGREDIENTS.filter((i) => i.kind === "nhan" && i.id !== "pate" && ids.has(i.id)).map((i) => i.label).join(", ");
+  }
+
   /** Thiếu phần nào nói phần đó — ổ bánh học bằng BA PHẦN, không học bằng con số (`sim/tour.fillGap`). */
   private fillText(): string {
     switch (fillGap(this.assembly.dish)) {
       case "PATE": return this.assembly.dish.length
         ? "Thiếu pate — quết một lớp trước."
         : "Ổ nào cũng ba phần: pate, một thứ nhân mặn, rồi rau. Bấm vào miếng nhân để bỏ vào ổ.";
-      case "MAN": return "Giờ tới nhân mặn — thịt nguội, chả lụa, xíu mại hay trứng.";
+      case "MAN": return `Giờ tới nhân mặn — ${this.openFillings()}.`;
       default: return "Còn rau nữa: đồ chua, dưa leo, hành ngò.";
     }
   }
@@ -2299,7 +2309,7 @@ export class StallScene extends Phaser.Scene {
     });
     if (has(e, "GIA_TREO")) draw(8.5, 4.0, (x, y, gg) => { gg.lineStyle(2, 0x8a7a60, 1).lineBetween(x - 60, y - 86, x + 60, y - 86); });
     if (has(e, "KEP_GAP")) draw(4.8, 4.5, (x, y, gg) => { gg.lineStyle(1.5, 0xbfc7cc, 1).lineBetween(x - 5, y - 49, x + 6, y - 46).lineBetween(x - 5, y - 47, x + 6, y - 46); });
-    if (has(e, "TU_MAT")) this.addFridge();
+    this.addStorage(has(e, "TU_MAT"));
     if (has(e, "NOI_U")) draw(9.4, 1.6, (x, y, gg) => { gg.fillStyle(0xb8bec3, 1).fillEllipse(x, y - 34, 18, 10).fillStyle(0x8a9095, 1).fillRect(x - 9, y - 34, 18, 8); });
   }
 
@@ -2322,15 +2332,12 @@ export class StallScene extends Phaser.Scene {
     });
   }
 
-  /**
-   * TỦ LẠNH — ảnh thật (`PROP.fridge`).
-   *
-   * ⚠️ x=3,5 là cột trong cùng còn đi được (x=2 LÀ Ô TƯỜNG): tủ đứng hẳn trên sàn mà lưng vẫn sát vách.
-   */
-  private addFridge() {
-    this.addPhotoProp(PROP.fridge, 3.5, 2.4, (x, y, gg) => {
-      gg.fillStyle(0xe8eef1, 1).fillRoundedRect(x - 12, y - 40, 24, 40, 3);
-      gg.lineStyle(1, 0x9aa6ae, 1).strokeRoundedRect(x - 12, y - 40, 24, 40, 3);
+  /** Ô `F` luôn chặn: thùng xốp lúc đầu, mua tủ mát thì thay bằng tủ (x=2 là tường nên đứng cột 3 cho lưng sát vách). */
+  private addStorage(fridge: boolean) {
+    this.addPhotoProp(fridge ? PROP.fridge : PROP.cooler, 3.5, 2.4, (x, y, gg) => {
+      const h = fridge ? 40 : 20;
+      gg.fillStyle(0xe8eef1, 1).fillRoundedRect(x - 12, y - h, 24, h, 3);
+      gg.lineStyle(1, 0x9aa6ae, 1).strokeRoundedRect(x - 12, y - h, 24, h, 3);
     });
   }
 
@@ -2393,6 +2400,8 @@ export class StallScene extends Phaser.Scene {
     this.quest("MENU");
     this.menuBoard = new MenuBoardView(this.game, {
       textScale: this.settings.textScale,
+      day: this.world.progress.dayIndex,
+      prices: this.world.menu.price,
       shopName: this.world.shopName,
       onClose: () => { this.menuBoard = null; this.resume(); },
     });
@@ -2404,6 +2413,9 @@ export class StallScene extends Phaser.Scene {
     if (this.closed || this.paused) return;
     const w = this.world;
     for (const n of w.resell.news.splice(0)) this.hud.toast(n, "good", this.popClock);
+    if (w.progress.dayIndex > 1) {
+      for (const it of openedOn(w.progress.dayIndex)) this.hud.toast(`Món mới: ${it.name}. Nhấn E ở bảng menu để chọn giá.`, "good", this.popClock);
+    }
     if ((w.system.stage === "new" && w.progress.dayIndex === 1) || canSpin(w)) this.openPhone({ app: "sys" });
   }
 

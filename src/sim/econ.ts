@@ -20,7 +20,7 @@ export type GoodDef = {
 export const ECON = ECON_JSON as unknown as {
   scale: number; startCash_k: number;
   fixedCost_k: { base: number; fromDay: number; raised: number };
-  menu_k: { khong: number; thuong: number; dayDu: number; dacBiet: number };
+  menu: { extra_k: number; price: { walkAway: number[]; praise: number[]; overpriced: number[] } };
   rent_k: number;
   storage: { thung_xop: { coldSlots: number; coldShelfLifeDelta: Partial<Record<GoodId, number>> } };
 };
@@ -182,14 +182,19 @@ export function coldSlotsUsed(inv: InventoryState, day: number) {
 }
 export const coldSlotCap = (inv?: InventoryState) => (inv?.storage === "tu_mat" ? 20 : ECON.storage.thung_xop.coldSlots);
 
-export type Tier = "khong" | "thuong" | "dayDu" | "dacBiet";
+/** 0 = rẻ · 1 = thường · 2 = đắt. */
+export type PricePick = 0 | 1 | 2;
+export type PricePicks = Partial<Record<string, number>>;
+export const PRICE_FX = ECON.menu.price;
 
-/** Bậc giá lấy từ món; chỉ ổ đầy đủ xin thêm nhân mới lên `dacBiet`. */
-export function tierOf(intent: { mon: MenuItemId; nhieu?: string }): Tier {
-  const t = itemOf(intent.mon).tier;
-  return t === "dayDu" && intent.nhieu ? "dacBiet" : t;
+export const pickOf = (picks: PricePicks | undefined, mon: MenuItemId): PricePick =>
+  (picks?.[mon] === 0 || picks?.[mon] === 2 ? picks[mon] : 1) as PricePick;
+
+/** Xin thêm nhân chỉ tính trên ổ đầy đủ. */
+export function dishPriceVnd(intent: { mon: MenuItemId; nhieu?: string }, pick: PricePick = 1): number {
+  const extra = intent.mon === "daydu" && intent.nhieu ? ECON.menu.extra_k : 0;
+  return vnd(itemOf(intent.mon).k[pick] + extra);
 }
-export const loafPriceVnd = (t: Tier) => vnd(ECON.menu_k[t]);
 
 const MEAT: ReadonlySet<string> = new Set(["thit", "chalua", "xiumai", "opla"]);
 const RAU_ING: ReadonlySet<string> = new Set(["dualeo", "hanhngo", "ot"]);

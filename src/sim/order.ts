@@ -1,5 +1,6 @@
 import type { Rng } from "../core/rng";
 import { easeOf } from "./ease";
+import { openMenu } from "./unlock";
 import { MENU_IDS, RAU_CO_GIAN, RAU_NEN, isBare, itemOf, nhanOf, type MenuItemId } from "./menu";
 
 // Món ăn LÀ lựa chọn hội thoại: người chơi không chọn câu nói, họ chọn nguyên liệu.
@@ -49,14 +50,15 @@ const WALK_IN_WEIGHT: Readonly<Record<MenuItemId, number>> = {
 const WALK_IN_BAG: readonly MenuItemId[] = MENU_IDS.flatMap((id) =>
   Array.from({ length: WALK_IN_WEIGHT[id] }, () => id));
 
-/** Lọc rổ theo món `easeOf(day)` mở, giữ nguyên tỉ lệ trọng số giữa các món còn lại. */
+/** Rổ chỉ gồm món đã mở, giữ tỉ lệ trọng số giữa các món còn lại. */
 const BAGS = new Map<string, readonly MenuItemId[]>();
 function walkInBag(day?: number): readonly MenuItemId[] {
-  const mon = easeOf(day).mon;
-  if (mon.length === MENU_IDS.length) return WALK_IN_BAG;
-  const key = mon.join(",");
+  if (day === undefined) return WALK_IN_BAG;
+  const open = openMenu(day).map((i) => i.id);
+  if (open.length === MENU_IDS.length) return WALK_IN_BAG;
+  const key = open.join(",");
   let bag = BAGS.get(key);
-  if (!bag) BAGS.set(key, (bag = WALK_IN_BAG.filter((id) => mon.includes(id))));
+  if (!bag) BAGS.set(key, (bag = WALK_IN_BAG.filter((id) => open.includes(id))));
   return bag;
 }
 

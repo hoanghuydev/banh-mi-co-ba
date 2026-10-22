@@ -179,6 +179,8 @@ Ví dụ ốp la 15 / 20 / 30k:
 | Thường (20k) | +5% khả năng 4–5★, 5% khách bỏ đi vì giá |
 | Đắt (30k) | 10% bị đánh giá thấp vì giá, 10% khách bỏ đi |
 
+> ✅ Xong 2026-10-21 (xem `R2-PLAN.md`): mở khoá theo ngày 1·2·4·6·8·10, ba mốc giá rẻ ×0,8 / đắt ×1,25, khách bỏ đi vì giá thật; khen / chê giá ghi sổ chờ R4.
+
 **T2.4 — Tự lập bảng cân bằng.** Thứ tự mở khoá, giá từng topping, 3 mốc giá cụ thể của từng loại bánh, và các con số `+% 4–5★ / +% bỏ đi / −% 4–5★` → **tự thiết kế thành bảng + công thức**, không để số lệch cân bằng. Các số trên chỉ là ví dụ.
 
 ---
@@ -258,6 +260,32 @@ Y(x) = floor(5 + (x-1)/5) × R × (1 + ε)
 
 **T6.2 — Giọng Nam gen Z.** Thoại miền Nam hiện đang như năm 1990. Đổi sang giọng Nam **trẻ, hiện đại, đời thường**.
 Văn phong lấy từ research (Lưu ý 2). Giữ nguyên luật cũ: UI viết tiếng phổ thông, giọng Nam chỉ ở lời thoại (`VAN-PHONG-UI.md`).
+
+---
+
+## 7a. Phase 7 — Kho đồ lạnh (thùng xốp / tủ mát)
+
+> Phase bổ sung. Ô kho ở góc trong cùng quán (x=3, y=2) **luôn chặn đường**: lúc đầu là thùng xốp (`prop_cooler`, thấp hơn tủ), mua `TU_MAT` thì đổi thành tủ mát.
+
+**T7.1 — Nhấn E vào kho để xem đồ.** Đứng sát thùng xốp / tủ mát, nhấn **E** → mở danh sách toàn bộ đồ đang có, **gộp chung một kho** (trứng, bánh mì, pate, thịt nguội, chả lụa, xíu mại, rau…). Mỗi dòng: tên · số lượng.
+
+**T7.2 — Tách dòng theo tình trạng.**
+- Cùng món nhưng **độ hư khác nhau** (vd. trứng mua hôm qua và hôm nay) → **hiện hai dòng riêng**, mỗi dòng số lượng + tình trạng (còn mấy ngày).
+- Cùng món nhưng **độ ngon / mức chất lượng khác nhau** (nhà cung cấp, T3.1) → *đề xuất* cũng tách dòng. Chốt khi làm: tách hẳn, gộp có mở rộng, hay chỉ gắn nhãn.
+- Sắp xếp: món sắp hư lên đầu.
+
+**T7.3 — Bỏ món Nồi ủ xíu mại (`NOI_U`).** Xíu mại bảo quản chung kho như mọi món khác. Xoá hẳn món khỏi thiết bị, shop, save, bản vẽ trong quán, gợi ý (`gearHint`), test và doc.
+
+**T7.4 — Thùng xốp → tủ mát khi nâng cấp.** Danh sách giữ nguyên, chỉ đổi dung lượng (8 → 20 phần) và hạn dùng. Danh sách phải hiện **dung lượng đã dùng / tối đa**.
+
+**⚠️ Research UI/UX kỹ trước khi thiết kế.** Không làm theo cảm tính. Cần tổng hợp từ:
+- **Người chơi thật** — review, thread, video chơi các game quản lý kho/nhà hàng (Dave the Diver, Cooking Diary, Papa's, Stardew Valley chest, Restaurant Tycoon, Overcooked…): họ khen/chê gì ở màn kho.
+- **Người dùng & BA** — nhu cầu: cần biết gì trong 2 giây đầu (còn đủ không · cái gì sắp hư · cái gì thiếu).
+- **Lý thuyết UI/UX** — Hick (bớt lựa chọn), Fitts (nút to, dễ bấm), Miller (nhóm ≤7±2), Gestalt (nhóm/ngăn), phân cấp thị giác, nhất quán, phản hồi.
+- **Chơi thực tế** — tự chơi các game trên, chụp màn hình, ghi lại điểm hay/dở.
+- **Quy tắc UI** — chữ đọc được trên mobile, tương phản, màu không là tín hiệu duy nhất (tình trạng hư cần icon + chữ), thao tác một tay.
+
+Ra **báo cáo research + vài phương án mock** trước, chủ dự án chọn rồi mới code.
 
 ---
 

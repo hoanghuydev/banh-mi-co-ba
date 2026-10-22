@@ -154,6 +154,6 @@ test("TB-8 ghế và bàn đi CHUNG một món — mua ghế là dọn cả hai 
 });
 
 test("TB-9 mặc định bản đồ KHÔNG mở ô nào — đi một bản đồ nới sẵn là lưới nào cũng dễ hơn thật", () => {
-  const { tx, ty } = { tx: MAP[11].indexOf("s"), ty: 11 };
+  const { tx, ty } = { tx: MAP[10].indexOf("s"), ty: 10 };
   assert.equal(isBlocked(tx, ty), true, "chưa ai khai gì mà ô ghế đã mở sẵn");
 });

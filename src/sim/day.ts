@@ -9,6 +9,7 @@ import { eveningCount, morningRent, newEconState, newToday } from "./obligations
 import { CAL, fixedCostVnd, isRain } from "./econ";
 import { extraGuests, feeWaivedToday, patienceBonusSec } from "./system";
 import { equipPatienceMul, extraDailyVnd, has, newEquipState } from "./equipment";
+import { goodOpen } from "./unlock";
 
 const DAWN = "dawnDay";
 
@@ -40,7 +41,7 @@ export function basketFor(inv: InventoryState, loaves: number, day: number) {
   const out: Partial<Record<GoodId, number>> = {};
   for (const g of GOOD_IDS) {
     const per = USE_PER_LOAF[g];
-    if (!per) continue;
+    if (!per || !goodOpen(g, day)) continue;
     const need = loaves * per;
     let have = stockOf(inv, g, day);
     if (g === "DO_CHUA_NL") have += stockOf(inv, "DO_CHUA_SAN", day);
@@ -116,5 +117,6 @@ export function dayDeps(w: SaveFile) {
     patienceBonusSec: patienceBonusSec(w),
     extraGuests: extraGuests(w),
     gazeMul: CAL.weatherInfo[weatherOf(day)].gazeMul,
+    prices: w.menu.price,
   };
 }

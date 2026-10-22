@@ -2,17 +2,16 @@
 export const MAP = [
   "NN###D##########NN",  // y0  tường sau, cửa x=5
   "###XK.O.V.T.W..###",  // y1  bình chữa cháy · kệ · lò · thùng rác · trà đá · bồn rửa
-  "###............##N",
+  "###F...........###",
   "###............###",
-  "###............###",
   "###............##N",
-  "###.Q.Q.Q......###",  // y6  ba bàn: thớt x=4, chỗ để bánh x=6, order x=8
-  "..............A...",  // y7  hàng khách · bảng chữ A x=14
-  "..................",  // y8  lối khách đi
+  "###.Q.Q.Q......###",  // y5  ba bàn: thớt x=4, chỗ để bánh x=6, order x=8
+  "..............A...",  // y6  hàng khách · bảng chữ A x=14
+  "..................",  // y7  lối khách đi
   "..................",
-  "..C.V.............",  // y10 két nước · thùng rác
-  "..........b.ss.MMP",  // y11 bàn · ghế nhựa · xe máy · chậu cây
-  "..................",  // y12+ lòng đường
+  "..C.V.............",  // y9  két nước · thùng rác
+  "..........b.ss.MMP",  // y10 bàn · ghế nhựa · xe máy · chậu cây
+  "..................",  // y11+ lòng đường
   "..................",
   "..................",
   "..................",
@@ -24,7 +23,7 @@ export const WORLD_H = MAP.length;
 
 export type TileCode =
   | "." | "#" | "N" | "D" | "Q" | "O" | "T" | "K" | "s" | "b" | "M" | "P"
-  | "C" | "V" | "W" | "A" | "X";
+  | "C" | "V" | "W" | "A" | "X" | "F";
 
 export function tileAt(tx: number, ty: number): TileCode {
   if (tx < 0 || ty < 0 || tx >= WORLD_W || ty >= WORLD_H) return "#";
@@ -57,14 +56,14 @@ export function isBlocked(tx: number, ty: number) {
 }
 
 export const STATION_ROW_Y = 1;
-export const COUNTER_Y = 6;
+export const COUNTER_Y = MAP.findIndex((row) => row.includes("Q"));
 
 /** Suy theo hàng chứ không theo ký tự, để ghế đặt trên vỉa hè vẫn có vỉa hè dưới chân. */
 export type Floor = "shop" | "walk" | "road";
 
-const SHOP_LAST_Y = 6;
-const WALK_LAST_Y = 11;
-const LANE_LAST_Y = 9;
+const SHOP_LAST_Y = COUNTER_Y;
+const WALK_LAST_Y = 10;
+const LANE_LAST_Y = 8;
 
 export function floorAt(_tx: number, ty: number): Floor {
   if (ty <= SHOP_LAST_Y) return "shop";
@@ -72,12 +71,21 @@ export function floorAt(_tx: number, ty: number): Floor {
   return "road";
 }
 
-export const ROAD_LANE_Y = 14;
+export const ROAD_LANE_Y = 13;
 
 /** Bán kính va chạm, đơn vị ô. */
 export const BODY_RADIUS = 0.3;
 
+/** Cột dù: cọc tròn nhỏ, không chiếm cả ô vì `SHADE_SPOT` và `GANH_OUT` nằm sát bên. */
+const POLE_R = 0.2;
+let pole: { x: number; y: number } | null = null;
+
+export function setPole(p: { x: number; y: number } | null) {
+  pole = p;
+}
+
 export function hitsWall(x: number, y: number, r = BODY_RADIUS) {
+  if (pole && Math.hypot(x - pole.x, y - pole.y) < POLE_R + r) return true;
   for (const ox of [-r, r])
     for (const oy of [-r, r])
       if (isBlocked(Math.floor(x + ox), Math.floor(y + oy))) return true;
@@ -87,47 +95,47 @@ export function hitsWall(x: number, y: number, r = BODY_RADIUS) {
 export const SPAWN = { x: 8.5, y: 3.5 };
 
 /** Ở y9 vì `walk()` đi thẳng không né, vào từ hàng ngoài để khỏi xuyên qua hàng chờ. */
-export const CUSTOMER_GATE = { x: 1.5, y: 9.5 };
+export const CUSTOMER_GATE = { x: 1.5, y: 8.5 };
 
 /** Cách cổng 3 ô để khỏi chạm bán kính despawn giữa động tác. */
-export const STREET_BIN = { x: 4.5, y: 9.45 };
+export const STREET_BIN = { x: 4.5, y: 8.45 };
 
 /** Hàng ngang, không chéo, vì `depthOf` vẽ theo (x+y) sẽ cho người sau đè người đang gọi món. */
 export const QUEUE_SLOTS = [
-  { x: 8.5, y: 7.6, zone: "FRONT_CENTER" },
-  { x: 7.0, y: 7.6, zone: "FRONT_SIDE" },
-  { x: 5.5, y: 7.6, zone: "QUEUE_2" },
-  { x: 4.0, y: 7.6, zone: "QUEUE_3" },
-  { x: 2.5, y: 7.6, zone: "SEATED_FAR" },
-  { x: 1.0, y: 7.6, zone: "SEATED_FAR" },
+  { x: 8.5, y: 6.6, zone: "FRONT_CENTER" },
+  { x: 7.0, y: 6.6, zone: "FRONT_SIDE" },
+  { x: 5.5, y: 6.6, zone: "QUEUE_2" },
+  { x: 4.0, y: 6.6, zone: "QUEUE_3" },
+  { x: 2.5, y: 6.6, zone: "SEATED_FAR" },
+  { x: 1.0, y: 6.6, zone: "SEATED_FAR" },
 ] as const;
 
 /** Lùi ra ngoài hàng chờ, để không trông như hai người đổi chỗ trong hàng. */
-export const ASIDE_SPOT = { x: 9.9, y: 8.5 };
+export const ASIDE_SPOT = { x: 9.9, y: 7.5 };
 
 /** Tách khỏi `ASIDE_SPOT` và xe ở 16,1 để mỗi việc đọc ra một chỗ riêng. */
-export const SHADE_SPOT = { x: 11.0, y: 8.3 };
+export const SHADE_SPOT = { x: 11.0, y: 7.3 };
 
-export const SEAT_SPOT = { x: 12.6, y: 10.4 };
+export const SEAT_SPOT = { x: 12.6, y: 9.4 };
 
 /** Khớp `slots` của `GHE_BAN` trong `equipment.json`. */
 export const SEAT_CAPACITY = 2;
 
 // OUT: bà Sáu hạ gánh ngay mặt tiền; IN: mình bưng vô sát vách giùm.
-export const GANH_OUT = { x: 10.6, y: 7.4 };
-export const GANH_IN = { x: 8.0, y: 9.6 };
+export const GANH_OUT = { x: 10.6, y: 6.4 };
+export const GANH_IN = { x: 8.0, y: 8.6 };
 
 // Xe chú Kiệt: lấn mặt tiền / về bên kia hẻm / chung mái lúc mưa; CART_LAN phải nằm trong `SHOPFRONT_X` mà không đè `GANH_OUT`.
-export const CART_LAN = { x: 12.4, y: 7.5 };
-export const CART_XA = { x: 15.8, y: 7.6 };
-export const CART_CHUNG = { x: 10.2, y: 9.2 };
+export const CART_LAN = { x: 12.4, y: 6.5 };
+export const CART_XA = { x: 15.8, y: 6.6 };
+export const CART_CHUNG = { x: 10.2, y: 8.2 };
 
 export const SHADE_CAPACITY = 1;
 
 // Lối người qua đường; y10/y11 có đồ đạc nên không dùng được.
 export const STREET_LANES = [
-  { id: "he", y: 9.6 },
-  { id: "duong", y: 12.4 },
+  { id: "he", y: 8.6 },
+  { id: "duong", y: 11.4 },
 ] as const;
 
 /** Ngoài khung nhìn nhưng trong bản đồ, vì ô ngoài biên là tường và `walk()` sẽ ghim người tại chỗ. */

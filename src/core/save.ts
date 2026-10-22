@@ -53,7 +53,9 @@ export type SaveFile = {
       /** Cho `sim/gearHint`: ổ cháy · tay cầm tiền bốc nhân · khách lạ ghé. */
       burnt?: number; bareHands?: number; strangers?: number;
       /** Khách đau bụng hôm nay do hàng dỏm. */
-      sick?: number };
+      sick?: number;
+      /** Ghi sổ giá: khách khen 4–5★ · chê giá 1–2★ · bỏ đi vì giá. */
+      praise?: number; overpriced?: number; priceLost?: number };
   };
 
   rng: { counters: [StreamName, number][] };
@@ -102,6 +104,8 @@ export type SaveFile = {
   shop: ShopState;
   resell: ResellState;
   reviews: ReviewState;
+  /** Mốc giá đang chọn theo mã món: 0 rẻ · 1 thường · 2 đắt; thiếu = thường. */
+  menu: { price: Record<string, number> };
 
   a11y: Settings;
 
@@ -150,6 +154,7 @@ export function newGame(name: string, saveId = uuid()): SaveFile {
     shop: newShop(),
     resell: newResell(),
     reviews: newReviews(),
+    menu: { price: {} },
     a11y: { ...DEFAULT_SETTINGS, ...loadSettings() },
     telemetry: { optedIn: false, sessionCount: 0 },
     flags: {},

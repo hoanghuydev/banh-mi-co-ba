@@ -1,6 +1,6 @@
 {
   "_note": "BẢNG MENU TREO VÁCH — nguồn sự thật DUY NHẤT cho 'ổ nào có gì'. Như đời thật: xe nào cũng quết pate trước, và giá ghi theo MÓN chứ không đếm số nhân. `sim/order.ts` đọc file này: khách gọi TÊN MÓN, món khai nhân của nó, lời dặn thêm là phần SỬA trên nền đó. Cái bảng người chơi đọc (E ở vách) và cái bảng `diffDish` chấm điểm là CÙNG MỘT bảng.",
-  "_gia": "`tier` tra sang `econ.json: menu_k` — tiền chỉ có một nguồn (P3-01). Năm món một nhân cùng bậc `thuong`, 'đầy đủ' bậc `dayDu`, 'bánh mì không' bậc `khong`; xin thêm một thứ nhân trên ổ đầy đủ thì lên `dacBiet`. Bảng ghi đúng cái game đang tính, không ghi giá tự nghĩ ra.",
+  "_gia": "`k` = ba mốc giá [rẻ, thường, đắt] tính nghìn đồng; người chơi chọn mốc trên bảng. `unlockDay` = ngày món lên bảng. Xin thêm một nhân trên ổ đầy đủ cộng `econ.json: menu.extra_k`.",
   "rauNen": {
     "_note": "RAU NỀN — khay rau của xe, ổ nào cũng rắc như nhau (P1-03 §2.2). 'Rau đầy đủ' là MẶC ĐỊNH nên không khách nào nói ra; họ chỉ nói khi muốn BỚT. 'Cho ít rau' = một nửa, KHÔNG phải bỏ thứ nào (P1-03 §2.3 luật vàng).",
     "dochua": 2,
@@ -11,43 +11,15 @@
   },
   "items": [
     {
-      "id": "thit",
-      "name": "bánh mì thịt nguội",
-      "call": "thịt nguội",
-      "tier": "thuong",
-      "nhan": {
-        "pate": 1,
-        "thit": 1
-      },
-      "note": ""
-    },
-    {
-      "id": "chalua",
-      "name": "bánh mì chả lụa",
-      "call": "chả lụa",
-      "tier": "thuong",
-      "nhan": {
-        "pate": 1,
-        "chalua": 1
-      },
-      "note": ""
-    },
-    {
-      "id": "xiumai",
-      "name": "bánh mì xíu mại",
-      "call": "xíu mại",
-      "tier": "thuong",
-      "nhan": {
-        "pate": 1,
-        "xiumai": 1
-      },
-      "note": ""
-    },
-    {
       "id": "opla",
       "name": "bánh mì ốp la",
       "call": "ốp la",
-      "tier": "thuong",
+      "unlockDay": 1,
+      "k": [
+        16,
+        20,
+        25
+      ],
       "nhan": {
         "pate": 1,
         "opla": 1
@@ -58,17 +30,75 @@
       "id": "pate",
       "name": "bánh mì pate",
       "call": "pate",
-      "tier": "thuong",
+      "unlockDay": 2,
+      "k": [
+        18,
+        22,
+        28
+      ],
       "nhan": {
         "pate": 1
       },
       "note": "Chỉ pate, không nhân mặn."
     },
     {
+      "id": "xiumai",
+      "name": "bánh mì xíu mại",
+      "call": "xíu mại",
+      "unlockDay": 4,
+      "k": [
+        20,
+        25,
+        31
+      ],
+      "nhan": {
+        "pate": 1,
+        "xiumai": 1
+      },
+      "note": ""
+    },
+    {
+      "id": "chalua",
+      "name": "bánh mì chả lụa",
+      "call": "chả lụa",
+      "unlockDay": 6,
+      "k": [
+        22,
+        27,
+        34
+      ],
+      "nhan": {
+        "pate": 1,
+        "chalua": 1
+      },
+      "note": ""
+    },
+    {
+      "id": "thit",
+      "name": "bánh mì thịt nguội",
+      "call": "thịt nguội",
+      "unlockDay": 8,
+      "k": [
+        23,
+        29,
+        36
+      ],
+      "nhan": {
+        "pate": 1,
+        "thit": 1
+      },
+      "note": ""
+    },
+    {
       "id": "daydu",
       "name": "bánh mì đầy đủ",
       "call": "đầy đủ",
-      "tier": "dayDu",
+      "unlockDay": 10,
+      "k": [
+        27,
+        34,
+        43
+      ],
       "nhan": {
         "pate": 1,
         "thit": 1,
@@ -81,7 +111,12 @@
       "id": "khong",
       "name": "bánh mì không",
       "call": "bánh mì không",
-      "tier": "khong",
+      "unlockDay": 10,
+      "k": [
+        8,
+        10,
+        12
+      ],
       "onBoard": false,
       "nhan": {},
       "note": "Chỉ ổ bánh. Không ai viết lên bảng, nhưng ai cũng gọi được."

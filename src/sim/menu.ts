@@ -1,6 +1,5 @@
-// ⚠️ Chỉ `import type` từ `order.ts`/`econ.ts` — `order.ts` nhập ngược file này, import thường là vòng lặp module.
+// ⚠️ Chỉ `import type` từ `order.ts` — `order.ts` nhập ngược file này, import thường là vòng lặp module.
 import type { Ingredient } from "./order";
-import type { Tier } from "./econ";
 import MENU_JSON from "../content/recipes/menu.json";
 
 export type MenuItemId = "thit" | "chalua" | "xiumai" | "opla" | "pate" | "daydu" | "khong";
@@ -10,8 +9,10 @@ export type MenuItem = {
   name: string;
   /** Khúc khách gọi ra miệng: "Cho một ổ **xíu mại**". */
   call: string;
-  /** Bậc giá, tra sang `econ.json: menu_k`. */
-  tier: Tier;
+  /** Ngày món lên bảng. */
+  unlockDay: number;
+  /** Ba mốc giá [rẻ, thường, đắt], nghìn đồng. */
+  k: readonly [number, number, number];
   /** Cờ HIỂN THỊ (mặc định có): `false` vẫn gọi được, chỉ không ghi lên bảng. */
   onBoard?: boolean;
   /** NHÂN theo phần; thứ không có mặt là mức 0. */

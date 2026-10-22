@@ -121,3 +121,23 @@ test("mẹ không xin khi két còn mỏng", () => {
     assert.ok(!phoneTick(w, true).some((m) => /học/.test(m.text)));
   }
 });
+
+test("Linh hỏi ngày đầu: lựa chọn trả lời khớp số ổ bán được, kể cả 0 ổ", () => {
+  for (const [served, me] of [[17, /được 17 ổ/], [3, /mới 3 ổ/], [0, /chưa bán được ổ nào/]] as const) {
+    const w = newGame("x", `ph-linh-${served}`);
+    w.ledger.push(dayRow(1, 0, 0, served));
+    phoneTick(w);
+    const pe = pendingEvent(w.phone.threads.find((t) => t.id === "linh")!);
+    assert.match(pe!.options[0].me, me);
+  }
+});
+
+test("Huy đoán 5 ổ: bán ít hơn thì không được trả lời 'nhiều hơn 5'", () => {
+  const w = newGame("x", "ph-huy-low");
+  w.progress.dayIndex = 2;
+  w.ledger.push(dayRow(1, 0, 0, 2));
+  phoneTick(w);
+  const pe = pendingEvent(w.phone.threads.find((t) => t.id === "huy")!);
+  assert.doesNotMatch(pe!.options[0].me, /nhiều hơn 5/);
+  assert.match(pe!.options[0].me, /2 ổ/);
+});

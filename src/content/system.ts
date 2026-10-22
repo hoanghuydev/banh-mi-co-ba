@@ -51,7 +51,7 @@ export function rewindLines(n: number): string[] {
 export const REWIND_ASK = [
   "Keng! Phát hiện ký chủ thất bại.",
   "Kích hoạt năng lực 【Nghịch Chuyển Thời Gian】.",
-  "Phải chăng quay về đêm ký chủ nộp đơn nghỉ việc?",
+  "Kí chủ có muốn quay về đêm ký chủ nộp đơn nghỉ việc?",
 ];
 
 export const QUEST_DONE = "Keng! Nhiệm vụ hoàn thành. Phần thưởng: Kinh nghiệm sống +1.";

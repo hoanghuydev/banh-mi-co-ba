@@ -1,6 +1,8 @@
 export const PHONE_STYLE = `
 .ph-root{position:fixed;inset:0;z-index:8995;display:flex;align-items:center;justify-content:center;background:rgba(12,16,20,.62);font-family:"Be Vietnam Pro",system-ui,sans-serif;color:#1c2329;animation:ph-fade .18s ease-out}
 @keyframes ph-fade{from{opacity:0}to{opacity:1}}
+.ph-root{user-select:none;-webkit-user-select:none}
+.ph-root input,.ph-root textarea{user-select:text;-webkit-user-select:text}
 .ph-fit{position:relative;flex:none}
 .ph-stage{position:absolute;left:0;top:0;width:438px;height:835px;transform-origin:0 0;animation:ph-rise .26s cubic-bezier(.2,.8,.2,1)}
 @keyframes ph-rise{from{transform:translateY(40px) scale(var(--k));opacity:0}}

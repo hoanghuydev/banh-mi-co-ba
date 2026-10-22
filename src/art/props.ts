@@ -11,7 +11,7 @@ export const PROP = {
   // Chỉ có ảnh thật; `ovenE` thiếu ảnh thì `StallScene.placeProps` phải lùi về `oven`.
   scooter: "scooter", sign: "sign", fire: "fire", ovenE: "oven_e",
   // Chỉ có ảnh thật, không nằm trên lưới ô — `StallScene.drawEquipment` dựng khi đã mua.
-  umbrella: "umbrella", fridge: "fridge",
+  umbrella: "umbrella", fridge: "fridge", cooler: "cooler",
   // Vật động: chỗ của chúng là một nước đi của người chơi.
   ganh: "ganh", cart: "cart",
 } as const;

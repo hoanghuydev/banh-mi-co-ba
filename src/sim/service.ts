@@ -35,8 +35,8 @@ import {
   type TalkOpenBy, type Deed, type ForSec,
   type Talk, type TalkAct, type TalkCtx, type TalkEffect, type TalkGate, type TalkMood, type TalkTone,
 } from "./talk";
-import { CAL, crowdMul, dongVi, isRain, loafPriceVnd, tasteThreshold, tierOf, weatherOf } from "./econ";
-import { nhanOf } from "./menu";
+import { CAL, PRICE_FX, crowdMul, dishPriceVnd, dongVi, isRain, pickOf, tasteThreshold, weatherOf, type PricePicks } from "./econ";
+import { nhanOf, type MenuItemId } from "./menu";
 import { easeBalk } from "./ease";
 import { peakCap } from "./ease";
 import { has, walkInMul as equipWalkIn, type EquipId, type EquipState } from "./equipment";
@@ -288,7 +288,9 @@ export type ServiceDeps = {
   /** Reload giữa buổi: bỏ qua mọi lượt khách hẹn tới trước mốc này. */
   resumeAt?: number;
   /** Trỏ thẳng vào `world.progress.today`; vắng thì Service tự đếm trong bộ nhớ. */
-  todayCounters?: { talksDeep?: number; talkOffers?: number; strangers?: number; sick?: number };
+  todayCounters?: { talksDeep?: number; talkOffers?: number; strangers?: number; sick?: number; praise?: number; overpriced?: number; priceLost?: number };
+  /** Mốc giá đang chọn theo món; trỏ thẳng vào save nên đổi giữa buổi có hiệu lực ngay. */
+  prices?: PricePicks;
   readMul?: number;
   dialog?: DialogState;
   patienceMul?: number;
@@ -598,6 +600,11 @@ export class Service {
     if (base) c.react.baseFace = c.react.face = base;
     if (mood.prop === "VAI_XUOI") c.react.basePose = c.react.pose = "SETTLE_IN";
     c.rollOrder(this.deps.day);
+    if (!c.balking && c.order && this.deps.hub.derive(`price:${v.seq}`).next()
+      < PRICE_FX.walkAway[pickOf(this.deps.prices, c.order.intent.mon)]) {
+      c.balking = true;
+      c.priceWalk = true;
+    }
     for (const o of this.customers) if (o.phase !== "leaving") this.speaker.apply(o.memKey, "ctxKhachMoiToi", 1, 8, this.nowSec);
     c.driveBase = baseDrives(c.personality);
     c.drives = { ...c.driveBase };
@@ -1019,6 +1026,20 @@ export class Service {
     this.speakConcept(c, "FAREWELL", { leaveReason: "SERVED", serveOutcome: outcome }, 55, true, {}, FAREWELL_DELAY);
   }
 
+  /** Ghi sổ khách khen hoặc chê giá sau khi trả tiền. */
+  private rollPriceVerdict(c: Customer) {
+    const t = this.deps.todayCounters;
+    if (!t || !c.order) return;
+    const pick = pickOf(this.deps.prices, c.order.intent.mon);
+    const rng = this.deps.hub.derive(`verdict:${this.deps.day}:${c.id}`);
+    if (rng.next() < PRICE_FX.praise[pick]) t.praise = (t.praise ?? 0) + 1;
+    if (rng.next() < PRICE_FX.overpriced[pick]) t.overpriced = (t.overpriced ?? 0) + 1;
+  }
+
+  private priceOf(intent: { mon: MenuItemId; nhieu?: string }) {
+    return dishPriceVnd(intent, pickOf(this.deps.prices, intent.mon));
+  }
+
   private leave(c: Customer, reason: LeaveReason) {
     this.pledges.delete(c.id);
     this.hollowShown.delete(c.id);
@@ -1047,7 +1068,12 @@ export class Service {
       this.out.push({ kind: "log", text: `${this.label(c)} bỏ đi — chờ lâu quá.` });
     }
     // Không tính vào `lost`: hàng dài là hệ quả của bán được.
-    if (reason === "balked") {
+    if (reason === "balked" && c.priceWalk) {
+      const t = this.deps.todayCounters;
+      if (t) t.priceLost = (t.priceLost ?? 0) + 1;
+      if (c.order) { const bubble = `${dongVi(this.priceOf(c.order.intent))}?!`; c.speak(bubble, bubbleLife(bubble)); }
+      this.out.push({ kind: "log", text: `${this.label(c)} xem giá rồi quay đi — đắt quá.` });
+    } else if (reason === "balked") {
       this.balkedCount++;
       this.speakConcept(c, "FAREWELL", { leaveReason: "BALKED" }, 80);
       this.out.push({ kind: "log", text: `${this.label(c)} nhìn hàng rồi quay về — đông quá.` });
@@ -1384,7 +1410,7 @@ export class Service {
     else this.react(c, "FREE_EXTRA", 2, "HAND_OUT");
 
     if (hollow) this.out.push({ kind: "log", text: `${this.label(c)} cầm ổ chưa có nhân — tính tiền bánh mì không.` });
-    this.settlePayment(c, this.pricedAfterPledge(c, loafPriceVnd(hollow ? "khong" : tierOf(c.order!.intent))));
+    this.settlePayment(c, this.pricedAfterPledge(c, this.priceOf(hollow ? { mon: "khong" } : c.order!.intent)));
     // GRIT đứng TRƯỚC DEFECT — xem `ServeOutcome`.
     this.serveOutcome.set(c.id, grit ? "GRIT" : defects.length ? "DEFECT" : c.waitStage >= 2 ? "WAITED" : "CLEAN");
     c.carrying = true;
@@ -1397,6 +1423,7 @@ export class Service {
       const t = this.deps.todayCounters;
       if (t) t.sick = (t.sick ?? 0) + 1;
     }
+    this.rollPriceVerdict(c);
     this.leave(c, "served");
     return { ok: true, playerSay };
   }
@@ -1864,7 +1891,7 @@ export class Service {
     const a = this.addressOf(c);
     if (s.includes("{gio}")) s = s.replace(/\{gio\}/g, gioVi(this.nowMin));
     if (s.includes("{gia")) {
-      const one = c.order ? loafPriceVnd(tierOf(c.order.intent)) : loafPriceVnd("thuong");
+      const one = c.order ? this.priceOf(c.order.intent) : this.priceOf({ mon: "opla" });
       s = s.replace(/\{gia(\d*)\}/g, (_m, n: string) => dongVi(one * (Number(n) || 1)));
     }
     return s.replace(/\{(call|me|self|you)\}/g, (_m, k: keyof typeof a, at: number) => {
@@ -2304,7 +2331,7 @@ export class Service {
     c.order.phrase = undefined;                        // câu gọi cũ không còn tả đúng ổ nữa
     this.out.push({
       kind: "log",
-      text: `${this.label(c)} đổi đơn — giờ tính ${dongVi(loafPriceVnd(tierOf(it)))}.`,
+      text: `${this.label(c)} đổi đơn — giờ tính ${dongVi(this.priceOf(it))}.`,
     });
   }
 

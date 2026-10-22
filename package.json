@@ -29,7 +29,8 @@
     "probe:facts": "tsx tools/probe-facts.ts",
     "probe:offer": "tsx tools/probe-offer.ts",
     "probe:tuition": "tsx tools/probe-tuition.ts",
-    "probe:supply": "tsx tools/probe-supply.ts"
+    "probe:supply": "tsx tools/probe-supply.ts",
+    "probe:price": "tsx tools/probe-price.ts"
   },
   "dependencies": {
     "phaser": "^3.90.0"

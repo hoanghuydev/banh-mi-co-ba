@@ -83,6 +83,7 @@ const STANDING: Record<string, [src: string, o: Standing]> = {
   [PROP.fire]: ["prop_extinguisher", { h: 44, dy: SIT - 5 }],
   [PROP.umbrella]: ["prop_umbrella", { h: 100 }],
   [PROP.fridge]: ["prop_fridge", { h: 62 }],
+  [PROP.cooler]: ["prop_cooler", { h: 30 }],
 };
 
 /** Tám file cùng khung, đáy là mặt đất, tâm ngang là tâm hai bàn chân. */

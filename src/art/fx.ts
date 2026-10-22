@@ -46,7 +46,7 @@ export const SHADOW_CORE = 24;
 export const PROP_SHADOW: Record<string, { w: number; a?: number }> = {
   oven: { w: 40 }, oven_e: { w: 42 }, shelf: { w: 40 }, tea: { w: 30 },
   stool: { w: 22 }, pothos: { w: 22 }, bin: { w: 28 }, crate: { w: 30 },
-  sign: { w: 26 }, fire: { w: 15 }, fridge: { w: 28 },
+  sign: { w: 26 }, fire: { w: 15 }, fridge: { w: 28 }, cooler: { w: 24 },
   table: { w: 56, a: 0.75 },
   bike: { w: 58, a: 0.8 }, scooter: { w: 52, a: 0.8 },
   sink: { w: 34, a: 0.6 },

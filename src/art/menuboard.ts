@@ -5,6 +5,7 @@ import { FACE_SLOPE, shade } from "./canvas";
 import { WALL_H } from "./building";
 import { FONT } from "../ui/theme";
 import { MENU_BOARD } from "../sim/menu";
+import { isOpen } from "../sim/unlock";
 
 // Bảng là hình bình hành theo độ dốc vách (như `art/sign.ts`), treo cao vì cả tấm chỉ có một depth nên thấp là bị người chơi che.
 const HALF_W = 40;
@@ -13,7 +14,7 @@ const HALF_H = 24;
 const DROP = 28;
 const TILT = 0.015;
 
-export function createMenuBoard(scene: Phaser.Scene, sx: number, sy: number, depth: number) {
+export function createMenuBoard(scene: Phaser.Scene, sx: number, sy: number, depth: number, day: number) {
   const cy = sy - WALL_H + TH / 2 + DROP;
   const at = (u: number, v: number) => ({ x: sx + u, y: cy + u * FACE_SLOPE + v + u * TILT });
   const quad = (u0: number, u1: number, v0: number, v1: number) =>
@@ -47,7 +48,7 @@ export function createMenuBoard(scene: Phaser.Scene, sx: number, sy: number, dep
 
   // Chỉ ghi tên món, không ghi giá: cỡ chữ này thêm cột số là nhoè; giá xem ở bảng bấm E.
   const COT = 4;                                                  // mỗi cột mấy dòng
-  MENU_BOARD.forEach((it, i) => {
+  MENU_BOARD.filter((it) => isOpen(it.id, day)).forEach((it, i) => {
     const cot = Math.floor(i / COT), hang = i % COT;
     const jitter = [0, 1.1, -0.7, 0.5][hang];
     objs.push(line(-HALF_W + 7 + jitter + cot * 36, -HALF_H + 19 + hang * 6.5,

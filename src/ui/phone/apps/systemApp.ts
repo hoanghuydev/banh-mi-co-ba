@@ -145,7 +145,7 @@ function wheelCard(ctx: AppCtx) {
   const { w } = ctx;
   const day = w.progress.dayIndex;
   const card = el("div", "sys-card wheel");
-  card.append(el("p", "ann", `Keng! Ký chủ đánh dấu thành công ngày ${day}.`));
+  card.append(el("p", "ann", `Keng! Ký chủ điểm danh thành công ngày ${day}.`));
   card.append(el("p", "ann", "Mở ra vòng quay vận khí, quay ngay?"));
   const slots = wheelOf(w);
   const box = el("div", "sys-wheel");

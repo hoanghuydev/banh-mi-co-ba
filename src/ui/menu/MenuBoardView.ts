@@ -1,6 +1,7 @@
 import type Phaser from "phaser";
 import { MENU_BOARD, MENU_DRINKS, MENU_TIPS, type MenuItem } from "../../sim/menu";
-import { ECON, loafPriceVnd, vnd } from "../../sim/econ";
+import { ECON, dishPriceVnd, pickOf, vnd, type PricePick } from "../../sim/econ";
+import { isOpen } from "../../sim/unlock";
 import { INGREDIENTS, levelsOf } from "../../sim/order";
 import { shopName } from "../../content/shop";
 
@@ -15,8 +16,13 @@ const STYLE = `
 .mb-ten{font-weight:700;font-size:1.5em;letter-spacing:.06em;line-height:1.2;text-shadow:0 1px 0 rgba(0,0,0,.35)}
 .mb-ten small{display:block;font-weight:500;font-size:.44em;letter-spacing:.14em;opacity:.85;margin-top:2px}
 .mb-ke{height:2px;background:#f5c542;opacity:.75;margin:10px 0 8px;transform:rotate(.25deg)}
-.mb-row{display:flex;align-items:baseline;gap:6px;padding:4px 0;font-size:1.02em}
+.mb-row{padding:5px 0;font-size:1.02em}
+.mb-row .top{display:flex;align-items:baseline;gap:6px}
 .mb-row .n{font-weight:700;white-space:nowrap}
+.mb-pk{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:5px}
+.mb-pk button{font:inherit;font-size:.84em;padding:4px 2px;min-height:32px;border-radius:5px;border:1px solid rgba(245,197,66,.65);background:transparent;color:#f5c542;cursor:pointer;font-variant-numeric:tabular-nums;line-height:1.3}
+.mb-pk button[aria-pressed=true]{background:#f5c542;color:#6b1d15;font-weight:700}
+.mb-pk button:focus-visible{outline:2px solid #fff2c6;outline-offset:2px}
 .mb-row .d{flex:1;border-bottom:1px dotted rgba(245,197,66,.5);transform:translateY(-3px)}
 .mb-row .g{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
 .mb-row:nth-child(odd) .n{transform:translateY(.5px)}
@@ -57,6 +63,9 @@ const tien = (d: number) => `${d.toLocaleString("vi-VN")}₫`;
 
 export type MenuBoardOpts = {
   textScale: number;
+  day: number;
+  /** Mốc giá theo món; sửa thẳng vào đây. */
+  prices: Record<string, number>;
   shopName?: string;
   onClose: () => void;
 };
@@ -113,6 +122,15 @@ export class MenuBoardView {
     return box;
   }
 
+  /** `MENU_BOARD`, không phải `MENU_ITEMS`: món `onBoard: false` gọi được nhưng không ghi lên bảng. */
+  private shown(): MenuItem[] {
+    return MENU_BOARD.filter((i) => isOpen(i.id, this.opts.day));
+  }
+
+  private priceOf(it: MenuItem, pick: PricePick) {
+    return dishPriceVnd({ mon: it.id }, pick);
+  }
+
   private board(): HTMLElement {
     const b = this.el("div", "mb-board");
     b.appendChild(this.el("div", "mb-nail"));
@@ -122,22 +140,34 @@ export class MenuBoardView {
     b.appendChild(ten);
     b.appendChild(this.el("div", "mb-ke"));
 
-    // `MENU_BOARD`, không phải `MENU_ITEMS`: món `onBoard: false` gọi được nhưng không ghi lên bảng.
-    for (const it of MENU_BOARD) {
+    for (const it of this.shown()) {
+      const pick = pickOf(this.opts.prices, it.id);
       const row = this.el("div", "mb-row");
-      row.appendChild(this.el("span", "n", it.name));
-      row.appendChild(this.el("span", "d"));
-      row.appendChild(this.el("span", "g", tien(loafPriceVnd(it.tier))));
+      const top = this.el("div", "top");
+      top.appendChild(this.el("span", "n", it.name));
+      top.appendChild(this.el("span", "d"));
+      top.appendChild(this.el("span", "g", tien(this.priceOf(it, pick))));
+      row.appendChild(top);
+      const pk = this.el("div", "mb-pk");
+      for (const i of [0, 1, 2] as const) {
+        const bt = this.el("button", "", `${it.k[i]}k`);
+        bt.type = "button";
+        bt.setAttribute("aria-pressed", String(pick === i));
+        bt.dataset.k = `${it.id}-${i}`;
+        bt.onclick = () => { this.opts.prices[it.id] = i; this.render(`${it.id}-${i}`); };
+        pk.appendChild(bt);
+      }
+      row.appendChild(pk);
       b.appendChild(row);
     }
 
     const chan = this.el("div", "mb-chan");
-    const db = this.el("div");
-    db.innerHTML = "";
-    db.append("ổ đầy đủ xin thêm một thứ nhân — ");
-    const bb = this.el("b", "", tien(vnd(ECON.menu_k.dacBiet)));
-    db.appendChild(bb);
-    chan.appendChild(db);
+    if (isOpen("daydu", this.opts.day)) {
+      const db = this.el("div");
+      db.append("ổ đầy đủ xin thêm một thứ nhân — +");
+      db.appendChild(this.el("b", "", tien(vnd(ECON.menu.extra_k))));
+      chan.appendChild(db);
+    }
     for (const d of MENU_DRINKS) chan.appendChild(this.el("div", "", `${d.name} — ${d.price}`));
     b.appendChild(chan);
     return b;
@@ -148,12 +178,12 @@ export class MenuBoardView {
     p.appendChild(this.el("div", "mb-bang"));
     p.appendChild(this.el("div", "mb-h", "Công thức món"));
 
-    for (const it of MENU_BOARD) {
+    for (const it of this.shown()) {
       const m = this.el("div", "mb-mon");
       const hd = this.el("div", "hd");
       hd.appendChild(this.el("span", "n", it.name));
       hd.appendChild(this.el("span", "dot"));
-      hd.appendChild(this.el("span", "gia", tien(loafPriceVnd(it.tier))));
+      hd.appendChild(this.el("span", "gia", tien(this.priceOf(it, pickOf(this.opts.prices, it.id)))));
       m.appendChild(hd);
       const chips = this.ingChips(it);
       if (chips.childElementCount) m.appendChild(chips);
@@ -182,12 +212,15 @@ export class MenuBoardView {
     return p;
   }
 
-  private render() {
+  private render(focusKey?: string) {
+    const scroll = [".mb-board", ".mb-giay"].map((s) => this.root.querySelector<HTMLElement>(s)?.scrollTop ?? 0);
     this.root.textContent = "";
     const wrap = this.el("div", "mb-wrap");
     wrap.appendChild(this.board());
     wrap.appendChild(this.paper());
     this.root.appendChild(wrap);
+    [".mb-board", ".mb-giay"].forEach((s, i) => { const e = this.root.querySelector<HTMLElement>(s); if (e) e.scrollTop = scroll[i]; });
+    if (focusKey) this.root.querySelector<HTMLButtonElement>(`[data-k="${focusKey}"]`)?.focus({ preventScroll: true });
   }
 
   close() {

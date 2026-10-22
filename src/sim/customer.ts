@@ -98,6 +98,8 @@ export class Customer implements Observer {
   ambient = false;
   /** Chỉ bật ở `phase === "arriving"` và không bao giờ bật lại. */
   balking = false;
+  /** Bỏ đi vì giá chứ không phải vì đông. */
+  priceWalk = false;
   inviteRefused = false;
   /** Bật cả lúc trượt roll, không thì bị xét lại mỗi frame. */
   greeted = false;

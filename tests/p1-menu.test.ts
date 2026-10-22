@@ -3,18 +3,19 @@ import assert from "node:assert/strict";
 import { Rng } from "../src/core/rng";
 import { MENU_BOARD, MENU_IDS, MENU_ITEMS, MENU_TIPS, RAU_CO_GIAN, RAU_NEN, isBare, itemOf, nhanOf } from "../src/sim/menu";
 import { INGREDIENTS, CAPACITY, diffDish, dishFor, levelsOf, randomOrder, sayOrder, specOf, type Ingredient } from "../src/sim/order";
-import { ECON, loafPriceVnd, tierOf, vnd } from "../src/sim/econ";
+import { ECON, dishPriceVnd, vnd } from "../src/sim/econ";
 import { assertMenuSpotFree } from "../src/world/stations";
 
 const NHAN_IDS = INGREDIENTS.filter((i) => i.kind === "nhan").map((i) => i.id);
 
-test("dữ liệu bảng lành lặn: id không trùng, nhân có thật, bậc giá tra được ra tiền", () => {
+test("dữ liệu bảng lành lặn: id không trùng, nhân có thật, ba mốc giá tăng dần", () => {
   assert.ok(MENU_ITEMS.length >= 5);
   assert.equal(new Set(MENU_IDS).size, MENU_IDS.length, "id món bị trùng");
   for (const it of MENU_ITEMS) {
     assert.ok(it.name.startsWith("bánh mì "), `${it.id}: tên trên bảng phải là "bánh mì …"`);
     assert.ok(it.call.length > 1, it.id);
-    assert.ok(loafPriceVnd(it.tier) > 0, `${it.id}: bậc "${it.tier}" không ra giá`);
+    assert.ok(it.k[0] > 0 && it.k[0] < it.k[1] && it.k[1] < it.k[2], `${it.id}: ba mốc giá phải tăng dần`);
+    assert.ok(Number.isInteger(it.unlockDay) && it.unlockDay >= 1, `${it.id}: thiếu ngày mở`);
     for (const [ing, n] of Object.entries(it.nhan)) {
       assert.ok(NHAN_IDS.includes(ing as Ingredient), `${it.id}: "${ing}" không phải nhân mặn`);
       assert.ok(n === 1 || n === 2, `${it.id}: thang chỉ có hai nấc, "${ing}" ghi ${n}`);
@@ -64,14 +65,13 @@ test("'cho ít rau' là rau MỘT NỬA của khay, không phải bỏ thứ nà
   }
 });
 
-test("giá đọc từ econ.json theo MÓN, không đếm số nhân", () => {
-  const k = ECON.menu_k;
-  assert.equal(loafPriceVnd(tierOf({ mon: "khong" })), vnd(k.khong));
-  assert.equal(loafPriceVnd(tierOf({ mon: "xiumai" })), vnd(k.thuong), "hai thứ nhân mà vẫn là giá món thường");
-  assert.equal(loafPriceVnd(tierOf({ mon: "daydu" })), vnd(k.dayDu));
-  assert.equal(loafPriceVnd(tierOf({ mon: "daydu", nhieu: "thit" })), vnd(k.dacBiet));
-  assert.equal(loafPriceVnd(tierOf({ mon: "thit", nhieu: "thit" })), vnd(k.thuong),
-    "xin nhiều một thứ trên ổ thường không làm nó thành ổ đặc biệt");
+test("giá đọc từ menu.json theo MÓN và mốc, không đếm số nhân", () => {
+  assert.equal(dishPriceVnd({ mon: "khong" }, 0), vnd(itemOf("khong").k[0]));
+  assert.equal(dishPriceVnd({ mon: "xiumai" }), vnd(itemOf("xiumai").k[1]), "hai thứ nhân mà vẫn là giá món");
+  assert.equal(dishPriceVnd({ mon: "opla" }, 2), vnd(itemOf("opla").k[2]));
+  assert.equal(dishPriceVnd({ mon: "daydu", nhieu: "thit" }), vnd(itemOf("daydu").k[1] + ECON.menu.extra_k));
+  assert.equal(dishPriceVnd({ mon: "thit", nhieu: "thit" }), vnd(itemOf("thit").k[1]),
+    "xin nhiều một thứ trên ổ thường không tính thêm tiền");
 });
 
 test("khách vãng lai chỉ gọi món CÓ TRÊN BẢNG, và câu gọi luôn nêu tên món", () => {
@@ -128,7 +128,7 @@ test("món ẩn khỏi bảng vẫn gọi được, vẫn có giá, vẫn chấm
   for (const it of an) {
     const spec = specOf({ mon: it.id, rau: "khong", ot: 0, tuong: 0 });
     assert.deepEqual(diffDish(spec, dishFor(spec)), [], `${it.id}: ẩn khỏi bảng mà chấm điểm sai`);
-    assert.ok(loafPriceVnd(tierOf(spec.intent)) > 0, `${it.id}: ẩn khỏi bảng mà mất giá`);
+    assert.ok(dishPriceVnd(spec.intent) > 0, `${it.id}: ẩn khỏi bảng mà mất giá`);
   }
   assert.ok(MENU_IDS.includes("khong"), "bánh mì không PHẢI còn trong dữ liệu — xem bé Su / bà Sáu");
 });

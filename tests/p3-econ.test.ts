@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  CAL, dishQuality, isRain, loafPriceVnd, lotQuality, newInventory, priceOf, stockOf, take, tasteThreshold, tierOf, weatherOf, buy,
+  CAL, dishQuality, isRain, dishPriceVnd, lotQuality, newInventory, priceOf, stockOf, take, tasteThreshold, weatherOf, buy,
 } from "../src/sim/econ";
 import { eveningCount, morningRent, newEconState, rentVnd } from "../src/sim/obligations";
 import { newGame } from "../src/core/save";
@@ -59,14 +59,8 @@ test("chất lượng ổ: pate rẻ một mình KHÔNG vượt ngưỡng chị 
   assert.ok(1 - bad >= lan);
 });
 
-test("giá đọc từ BẢNG MENU, không đếm nhân: món một nhân thường · đầy đủ · đầy đủ + xin thêm = đặc biệt", () => {
-  assert.equal(tierOf({ mon: "pate" }), "thuong");
-  assert.equal(tierOf({ mon: "xiumai" }), "thuong", "ổ xíu mại CÓ pate mà vẫn là giá món một nhân — đây là chỗ cách đếm nhân sai");
-  assert.equal(tierOf({ mon: "daydu" }), "dayDu");
-  assert.equal(tierOf({ mon: "daydu", nhieu: "pate" }), "dacBiet");
-  assert.equal(tierOf({ mon: "xiumai", nhieu: "xiumai" }), "thuong", "xin nhiều xíu mại không làm ổ thường thành ổ đặc biệt");
-  assert.equal(tierOf({ mon: "khong" }), "khong");
-  for (const it of MENU_ITEMS) assert.ok(loafPriceVnd(it.tier) > 0, it.id);
+test("mọi món trên bảng đều ra giá ở cả ba mốc", () => {
+  for (const it of MENU_ITEMS) for (const pick of [0, 1, 2] as const) assert.ok(dishPriceVnd({ mon: it.id }, pick) > 0, it.id);
 });
 
 test("lịch quay vòng: ngày quá độ dài lịch vẫn có thời tiết và giá", () => {

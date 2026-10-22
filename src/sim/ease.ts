@@ -1,11 +1,7 @@
 // Sáu bữa đầu nhẹ tay, chỉ cho khách vãng lai; ngày 7 trở đi mọi hệ số bằng 1.
-import type { MenuItemId } from "./menu";
-
 export const EASE_LAST_DAY = 6;
 
 export type Ease = {
-  /** Người có tên không đọc trường này. */
-  mon: readonly MenuItemId[];
   /** 0 = không ai dặn thêm gì · 1 = dặn đủ kiểu như ngày thường. */
   fuss: number;
   peak: number;
@@ -13,18 +9,8 @@ export type Ease = {
   balk: number;
 };
 
-/** Mỗi bữa mở thêm một món theo độ khó; "bánh mì không" là bẫy nên để cuối. */
-const MON: readonly MenuItemId[][] = [
-  ["pate", "chalua"],
-  ["pate", "chalua", "thit"],
-  ["pate", "chalua", "thit", "daydu"],
-  ["pate", "chalua", "thit", "daydu", "xiumai"],
-  ["pate", "chalua", "thit", "daydu", "xiumai", "opla"],
-  ["pate", "chalua", "thit", "daydu", "xiumai", "opla", "khong"],
-];
-
 /** `peak` lớn hơn `PEAK_CAP` thì không có tác dụng. */
-const ROWS: readonly Omit<Ease, "mon">[] = [
+const ROWS: readonly Ease[] = [
   { fuss: 0,    peak: 1, patience: 1.60, balk: 0    },
   { fuss: 0.30, peak: 1, patience: 1.45, balk: 0    },
   { fuss: 0.55, peak: 2, patience: 1.30, balk: 0.40 },
@@ -33,13 +19,13 @@ const ROWS: readonly Omit<Ease, "mon">[] = [
   { fuss: 1,    peak: 3, patience: 1.05, balk: 1    },
 ];
 
-const FULL: Ease = { mon: MON[MON.length - 1], fuss: 1, peak: 99, patience: 1, balk: 1 };
+const FULL: Ease = { fuss: 1, peak: 99, patience: 1, balk: 1 };
 
 /** `day` không truyền → hàng ngày thường, cố ý cho chỗ gọi không biết hôm nay ngày mấy. */
 export function easeOf(day?: number): Ease {
   if (day === undefined || !(day >= 1) || day > EASE_LAST_DAY) return FULL;
   const i = Math.floor(day) - 1;
-  return { mon: MON[i], ...ROWS[i] };
+  return ROWS[i];
 }
 
 /** Trần số khách vãng lai cùng đứng ở quầy. */

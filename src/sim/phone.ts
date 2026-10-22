@@ -1,6 +1,6 @@
 import type { SaveFile } from "../core/save";
 import { ME } from "../content/phone/contacts";
-import { EVENTS, TUITION, type PhoneEvent } from "../content/phone/events";
+import { EVENTS, TUITION, type PhoneEvent, type Vars } from "../content/phone/events";
 import { Rng, fnv1a, splitmix32 } from "../core/rng";
 import type { Beat, Chapter } from "../content/phone/intro";
 
@@ -68,6 +68,9 @@ export function beatToMsg(p: PhoneState, c: Chapter, b: Beat) {
   markRead(p, c.thread);
 }
 
+const repliesOf = (ev: PhoneEvent, vars?: Vars) =>
+  typeof ev.replies === "function" ? ev.replies(vars ?? {}) : ev.replies;
+
 export const eventById = (id: string): PhoneEvent | undefined => EVENTS.find((e) => e.id === id);
 
 const money = (v: number) => `${v.toLocaleString("vi-VN")}₫`;
@@ -81,8 +84,9 @@ export function pendingEvent(t: Thread): { ev: PhoneEvent; options: { me: string
     return { ev: { id: TUITION.id, from: "mom", text: "", when: () => false }, options: [{ me: `Gửi mẹ ${money(amount)}` }] };
   }
   const ev = eventById(t.pending.ev);
-  if (!ev?.replies) return null;
-  return { ev, options: ev.replies.map((r) => ({ me: fill(r.me, t.pending!.vars) })) };
+  const replies = ev && repliesOf(ev, t.pending.vars);
+  if (!ev || !replies) return null;
+  return { ev, options: replies.map((r) => ({ me: fill(r.me, t.pending!.vars) })) };
 }
 
 /** Trả lời bằng lựa chọn `i`; người kia đáp ngay nếu có. */
@@ -91,7 +95,7 @@ export function reply(w: SaveFile, threadId: string, i: number, at = stamp(w)): 
   const pe = t && pendingEvent(t);
   if (!t || !pe) return false;
   if (isTuition(t)) return payTuition(w, t, at);
-  const r = pe.ev.replies![i];
+  const r = repliesOf(pe.ev, t.pending!.vars)![i];
   if (!r) return false;
   const vars = t.pending!.vars;
   delete t.pending;

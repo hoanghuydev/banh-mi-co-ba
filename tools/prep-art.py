@@ -265,6 +265,7 @@ PROPS = [
     # Dù cao nhất bộ (110 px) nên cần dư pixel hơn.
     ("prop_umbrella", "patio_umbrella.png", 448),
     ("prop_fridge", "refrigerator-Photoroom.png", 384),
+    ("prop_cooler", "Soft White Foam Cooler Box-Photoroom.png", 320),
 ]
 
 # Cột 3: có xoay về ngang không.

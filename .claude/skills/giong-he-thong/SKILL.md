@@ -17,7 +17,7 @@ Công thức hài: **khuôn hệ thống nghiêm trang + nội dung đời thư�
 | Nhận thưởng | `Chúc mừng ký chủ thu được [tên] ×[số].` | `Chúc mừng ký chủ thu được Thần Hành Phù ×1.` |
 | Tên vật/kỹ năng | Trong `【】` | `【Thần Hành Phù】` |
 | Liệt kê | `Phần thưởng một: … / Phần thưởng hai: …` | |
-| Hỏi | Kiểu convert: `…, phải chăng [làm]?` | `Mở ra vòng quay vận khí, phải chăng quay?` |
+| Hỏi | Kiểu convert: `…, ký chủ có muốn [làm]?` | `Mở ra vòng quay vận khí, ký chủ có muốn quay?` |
 | Điểm danh | `đánh dấu thành công` | `Ký chủ đánh dấu thành công ngày 3.` |
 | Lượng từ | `một trương` (thẻ), `một khỏa` (viên), `một phần` | `Thẻ giảm giá một trương` |
 | Phẩm cấp | Trong `( )` sau tên | `(Sơ cấp)` `(Phổ thông)` `(Hiếm)` |

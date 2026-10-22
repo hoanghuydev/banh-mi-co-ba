@@ -9,13 +9,6 @@
     "raised": 115,
     "_breakdown": "than/gas 25 · đá 15 · túi 20 · xăng 15 · gửi xe/rác/điện 15 · khấu hao 10"
   },
-  "menu_k": {
-    "khong": 10,
-    "thuong": 25,
-    "dayDu": 32,
-    "dacBiet": 40,
-    "_note": "1 nhân = thường · 2 nhân hoặc 'đầy đủ' = đầy đủ · xin thêm một nhân trên nền đầy đủ = đặc biệt. Bánh mì không 10k."
-  },
   "rent_k": 42,
   "storage": {
     "thung_xop": {
@@ -27,5 +20,27 @@
       }
     },
     "_note": "1 slot ≈ 20 phần. Thùng xốp làm pate chỉ còn 1 ngày, thịt còn 2 (P3-03 §2.2). Pate 2 ngày là trần tuyệt đối."
+  },
+  "menu": {
+    "extra_k": 8,
+    "_note": "Xin thêm nhân trên ổ đầy đủ cộng chừng này.",
+    "price": {
+      "walkAway": [
+        0,
+        0.05,
+        0.15
+      ],
+      "praise": [
+        0.2,
+        0.05,
+        0
+      ],
+      "overpriced": [
+        0,
+        0,
+        0.12
+      ],
+      "_note": "Theo mốc giá [rẻ, thường, đắt]: xác suất khách bỏ đi vì giá · thêm khả năng khen 4–5★ · bị chê giá 1–2★."
+    }
   }
 }

@@ -1,7 +1,8 @@
 // Buổi bán không render, cùng `runFrame` với `StallScene`, tay người chơi thay bằng bot.
 import { basketFor, buyBasket, dawn, dayDeps, eveningCounting, neighborTick } from "./day";
 import { EQUIP, buyEquip, has, priceVnd, whyNot, type EquipId } from "./equipment";
-import { dishQuality, portionsFor, sickChance, take, takeFull, type Portion, type Quality } from "./econ";
+import { dishQuality, portionsFor, sickChance, take, takeFull, type Portion, type PricePick, type Quality } from "./econ";
+import { MENU_IDS } from "./menu";
 import { Bus } from "../core/eventbus";
 import { GameContext } from "../core/context";
 import { DAY_START_MIN } from "../core/clock";
@@ -21,6 +22,8 @@ export type Policy = {
   buyLoaves?: number;
   /** Mức hàng bot mua, mặc định hàng thường. */
   tier?: Quality;
+  /** Mốc giá bot đặt cho mọi món, mặc định Thường. */
+  price?: PricePick;
   build?: [number, EquipId][];
   workSec: [number, number];
   dropRate: number;
@@ -103,6 +106,7 @@ export class HeadlessStall {
     this.pressure = opts.pressure ?? true;
     this.ctx.clock.scaleMul = this.pressure ? 1 : 0.5;
     this.bot = this.ctx.rng.derive(`bot:${policy.name}`);
+    if (policy.price !== undefined) for (const id of MENU_IDS) w.menu.price[id] = policy.price;
     if (!opts.resume) {
       dawn(w);
       buyBasket(w, basketFor(w.inventory, policy.buyLoaves ?? 16, w.progress.dayIndex), policy.tier ?? "THUONG");

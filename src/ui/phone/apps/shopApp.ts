@@ -1,5 +1,6 @@
 import { GOODS, QUALITIES, lotQuality, type GoodId } from "../../../sim/econ";
 import { fmtUnits } from "../../../sim/day";
+import { goodOpen } from "../../../sim/unlock";
 import {
   CATEGORIES, arriveText, coldAfter, coldCap, inTransit, itemsOf, placeOrder, quote, unitPrice, type Basket, type Order,
 } from "../../../sim/shop";
@@ -119,11 +120,12 @@ function catalog(ctx: AppCtx, cat: string): HTMLElement {
   const sup = supplierById(cat);
   if (sup) {
     list.append(el("div", "ph-supnote", sup.blurb));
-    for (const o of OFFERS.filter((x) => x.supplier === sup.id)) list.append(offerCard(ctx, o, false));
+    for (const o of OFFERS.filter((x) => x.supplier === sup.id && goodOpen(x.good, day))) list.append(offerCard(ctx, o, false));
   } else {
     for (const c of CATEGORIES) {
+      if (!c.goods.some((g) => goodOpen(g, day))) continue;
       list.append(el("div", "ph-sec", c.label));
-      const rows = OFFERS.filter((o) => c.goods.includes(o.good))
+      const rows = OFFERS.filter((o) => c.goods.includes(o.good) && goodOpen(o.good, day))
         .sort((a, b) => GOODS[a.good].label.localeCompare(GOODS[b.good].label, "vi") || offerPrice(a, day) - offerPrice(b, day));
       for (const o of rows) list.append(offerCard(ctx, o, true));
     }

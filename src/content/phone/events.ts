@@ -1,15 +1,16 @@
 import type { SaveFile } from "../../core/save";
 
 export type Reply = { me: string; answer?: string };
+export type Vars = Record<string, string | number>;
 
 export type PhoneEvent = {
   id: string;
   from: string;
   text: string;
   /** Trống = tin báo, không cần trả lời; đủ 2 = cảm ơn rồi tới cà khịa. */
-  replies?: [Reply, Reply];
+  replies?: [Reply, Reply] | ((vars: Vars) => [Reply, Reply]);
   when: (w: SaveFile) => boolean;
-  vars?: (w: SaveFile) => Record<string, string | number>;
+  vars?: (w: SaveFile) => Vars;
 };
 
 /** Mẹ nhắn xin tiền học cho em; chỉ có một nút Gửi. */
@@ -50,6 +51,9 @@ export const PENDING_SIM = {
 const firedFor = (w: SaveFile, id: string) =>
   w.phone.firedDay[id] === undefined ? -1 : w.progress.dayIndex - w.phone.firedDay[id];
 
+/** Từ số ổ này của ngày đầu trở lên thì Linh khen. */
+const SOLD_GOOD = 6;
+
 const profit = (r: { revenue: number; cost: number }) => r.revenue - r.cost;
 const today = (w: SaveFile) => w.ledger.find((r) => r.day === w.progress.dayIndex);
 
@@ -68,10 +72,20 @@ export const EVENTS: PhoneEvent[] = [
   {
     id: "ngay1-linh", from: "linh",
     text: "khai trương sao rồi bà ơi. bán được nhiêu ổ?",
-    replies: [
-      { me: "được {n} ổ nè, mệt xỉu mà vui", answer: "đỉnh!! mai tui ghé" },
-      { me: "đủ để không phải nhìn mặt sếp nữa", answer: "😂😂 chuẩn" },
-    ],
+    replies: ({ n }) => Number(n) >= SOLD_GOOD
+      ? [
+        { me: "được {n} ổ nè, mệt xỉu mà vui", answer: "đỉnh!! mai tui ghé" },
+        { me: "đủ để không phải nhìn mặt sếp nữa", answer: "😂😂 chuẩn" },
+      ]
+      : Number(n) > 0
+        ? [
+          { me: "mới {n} ổ thôi bà ơi", answer: "ngày đầu vậy là ổn rồi. mai tui rủ thêm người ghé" },
+          { me: "ít hơn tui tưởng, mà tui chưa bỏ cuộc đâu", answer: "đúng chất bà. cố lên" },
+        ]
+        : [
+          { me: "chưa bán được ổ nào luôn 😅", answer: "hả?? thôi mai tui ghé mua, bà đừng nản nha" },
+          { me: "hôm nay tui tập làm quen thôi", answer: "ừa, từ từ. mai bán cho tui ổ đầu tiên nha" },
+        ],
     when: (w) => w.progress.dayIndex === 1 && !!today(w),
     vars: (w) => ({ n: today(w)?.served ?? 0 }),
   },
@@ -118,11 +132,17 @@ export const EVENTS: PhoneEvent[] = [
   {
     id: "huy-ngay2", from: "huy",
     text: "ngày đầu bán được mấy ổ vậy bà 😏 tui đoán 5 ổ",
-    replies: [
-      { me: "nhiều hơn 5. mai ông ghé đếm thử", answer: "thôi tui bận. tui là trưởng nhóm rồi, lịch kín 😎" },
-      { me: "đoán sai rồi, tính lại KPI đi", answer: "KPI của tui lúc nào cũng đạt nha, bà nhớ chưa" },
-    ],
+    replies: ({ n }) => Number(n) > 5
+      ? [
+        { me: "nhiều hơn 5. mai ông ghé đếm thử", answer: "thôi tui bận. tui là trưởng nhóm rồi, lịch kín 😎" },
+        { me: "đoán sai rồi, tính lại KPI đi", answer: "KPI của tui lúc nào cũng đạt nha, bà nhớ chưa" },
+      ]
+      : [
+        { me: "{n} ổ. ông đoán gần đúng, đừng vênh", answer: "tui nói rồi, dân văn phòng nhìn thị trường chuẩn lắm 😎" },
+        { me: "ít thôi, mai tui bán hơn cho ông coi", answer: "ờ, tui chờ coi 😏" },
+      ],
     when: (w) => w.progress.dayIndex === 2,
+    vars: (w) => ({ n: w.ledger.find((r) => r.day === 1)?.served ?? 0 }),
   },
   {
     id: "huy-lo-sau", from: "huy",
