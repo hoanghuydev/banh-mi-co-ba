@@ -8,7 +8,7 @@ export const faceHoldSec = (p: Personality) => 3.0 + 4.0 * p.deTha;
 /** Giây trễ trước khi mặt/dáng phản ứng. */
 export const reactionDelay = (p: Personality, jitter01: number) => 0.2 + 0.2 * jitter01 + (1 - p.nongTinh) * 0.25;
 
-/** "Im lặng rồi biến mất": chỉ chị Lan rơi vào ô này. */
+/** "Im lặng rồi biến mất": chỉ chị Trâm rơi vào ô này. */
 export const isSilentGrudge = (p: Personality) => p.soi >= 0.7 && p.nongTinh <= 0.3 && p.thanThien <= 0.4;
 
 export type Dim = "soi" | "nongTinh" | "deTha" | "thanThien";

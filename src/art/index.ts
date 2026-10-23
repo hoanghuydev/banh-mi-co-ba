@@ -8,9 +8,10 @@ import { buildCharacter } from "./character";
 import { buildHeld } from "./held";
 import { buildFood } from "./food";
 import { buildFx } from "./fx";
-import { paintPhotos, preloadPhotos } from "./photo";
+import { paintPhotos, preloadNpcPhotos, preloadPhotos } from "./photo";
 
 export { BASE, footY } from "./canvas";
+export { paintNpcPhotos, warmNpcPhotos } from "./photo";
 export {
   textureFor, buildBody, holdAnchor, BODY_H, PLAYER_STYLE,
   type BodyStyle, type Pose,
@@ -30,8 +31,9 @@ const SVGS: Record<string, { file: string; w: number; h: number }> = {
 };
 const askedSvg = new Set<string>();
 
-export function preloadArt(scene: Phaser.Scene) {
+export function preloadArt(scene: Phaser.Scene, withNpc = false) {
   preloadPhotos(scene);
+  if (withNpc) preloadNpcPhotos(scene);
   // Lúc đang tải `textures.exists` vẫn false, nên phải nhớ key đã xin kẻo Phaser báo trùng.
   for (const [key, svg] of Object.entries(SVGS)) {
     if (askedSvg.has(key) || scene.textures.exists(key)) continue;
@@ -63,13 +65,16 @@ export function floorTextureAt(kind: Floor, tx: number, ty: number) {
 
 export function textureForTile(
   code: TileCode, tx: number, ty: number,
-  opts: { isCounterEnd: boolean; isStation: boolean; eOven?: boolean },
+  opts: { isCounterEnd: boolean; stationId: string | null; eOven?: boolean },
 ): string | null {
   switch (code) {
     case "#": return BUILD.wall(((tx * 5 + ty * 3) >>> 0) % BUILD.WALL_COUNT);
     case "D": return BUILD.door;
     case "N": return BUILD.neighbour(tx % BUILD.NEIGHBOUR_COUNT);
-    case "Q": return opts.isStation ? COUNTER.work
+    case "R": return PROP.benchFar;
+    case "Q": return opts.stationId === "handoff" ? PROP.order
+      : opts.stationId === "board" ? PROP.benchNear
+      : opts.stationId ? PROP.prep
       : opts.isCounterEnd ? COUNTER.end
       : COUNTER.case(tx % COUNTER.CASE_COUNT);
     case "O": return opts.eOven ? PROP.ovenE : PROP.oven;

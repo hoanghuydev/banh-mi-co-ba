@@ -63,6 +63,10 @@ type Standing = {
 /** Ảnh chụp đáy thẳng nên tụt xuống chừng này px, không thì vật trông lơ lửng trên ô thoi. */
 const SIT = 10;
 
+/** Bàn nguyên ô vuông tới mép ô nên hạ thêm chừng này px để chân bàn chạm mặt sàn; thứ đặt lên mặt bàn phải trừ lại. */
+export const TABLE_DROP = 6;
+export const SUNK = new Set<string>([PROP.prep, PROP.benchNear]);
+
 /** `h` tính theo người cao `BODY_H` = 64. */
 const STANDING: Record<string, [src: string, o: Standing]> = {
   [PROP.oven]: ["prop_oven", { h: 70 }],
@@ -73,6 +77,8 @@ const STANDING: Record<string, [src: string, o: Standing]> = {
   [PROP.sink]: ["prop_sink", { h: 58, dx: -2 }],
   [PROP.stool]: ["prop_stool", { h: 38 }],
   [PROP.table]: ["prop_table", { h: 56 }],
+  [PROP.order]: ["prop_order", { h: 50, dy: SIT + TABLE_DROP }],
+  [PROP.prep]: ["prop_prep", { h: 59, dy: SIT + TABLE_DROP }],
   // Ảnh gần vuông, xe nằm chéo nên trông bé hơn `h`.
   [PROP.bike]: ["prop_bike", { h: 82 }],
   [PROP.scooter]: ["prop_scooter", { h: 78 }],
@@ -85,6 +91,9 @@ const STANDING: Record<string, [src: string, o: Standing]> = {
   [PROP.fridge]: ["prop_fridge", { h: 62 }],
   [PROP.cooler]: ["prop_cooler", { h: 30 }],
 };
+
+/** Bàn 1 × 2 ô; `foot` là vị trí ngang của đỉnh dưới trong ảnh (0–1), `body` là bề cao thân bàn theo px thiết kế. */
+const BENCH = { src: "prop_bench", h: 74, foot: 0.336, body: 28 };
 
 /** Tám file cùng khung, đáy là mặt đất, tâm ngang là tâm hai bàn chân. */
 const DIRS8: readonly Facing8[] = ["s", "se", "e", "ne", "n", "nw", "w", "sw"];
@@ -131,11 +140,10 @@ export function preloadPhotos(scene: Phaser.Scene) {
   const names = [
     ...FLOORS.flatMap((f) => [0, 1, 2, 3].map((i) => `f_${f}${i}`)),
     ...Object.values(STANDING).map(([src]) => src),
+    BENCH.src,
     ...Object.values(CARRIED).map(([src]) => src),
     ...Object.values(FILLINGS).map(([src]) => src),
     ...OPEN_LOAF,
-    // Ai có atlas thì ảnh đứng yên lấy từ atlas, khỏi tải tám file rời.
-    ...Object.values(NPC_PHOTOS).filter((o) => !o.walk).flatMap((o) => DIRS8.map(o.src)),
     FLY,
     BOARD,
     BASKET,
@@ -143,19 +151,63 @@ export function preloadPhotos(scene: Phaser.Scene) {
   for (const n of names) {
     if (asked.has(n) || scene.textures.exists(SRC + n)) continue;
     asked.add(n);
-    scene.load.image(SRC + n, `art/${n}.png`);
+    scene.load.image(SRC + n, `art/${n}.webp`);
   }
   preloadWalk(scene, "player", true);
-  for (const o of Object.values(NPC_PHOTOS)) {
-    if (o.walk) preloadWalk(scene, o.walk);
+}
+
+/** Ai có atlas thì ảnh đứng yên lấy từ atlas, khỏi tải tám file rời. */
+type NpcAsset = { walk: string } | { image: string };
+
+function npcAssets(): NpcAsset[] {
+  return Object.values(NPC_PHOTOS).flatMap((o): NpcAsset[] => (o.walk
+    ? [{ walk: o.walk }]
+    : DIRS8.map((d) => ({ image: o.src(d) }))));
+}
+
+/** Ảnh NPC không chặn lúc khởi động; ai gọi lúc cần ngay thì dùng cùng hàm này. */
+export function preloadNpcPhotos(scene: Phaser.Scene) {
+  for (const a of npcAssets()) {
+    if ("walk" in a) preloadWalk(scene, a.walk);
+    else if (!asked.has(a.image) && !scene.textures.exists(SRC + a.image)) {
+      asked.add(a.image);
+      scene.load.image(SRC + a.image, `art/${a.image}.webp`);
+    }
   }
+}
+
+function npcLoaded(scene: Phaser.Scene) {
+  return npcAssets().every((a) => scene.textures.exists("walk" in a ? walkAtlas(a.walk) : SRC + a.image));
+}
+
+let npcPainted = false;
+
+/** Gọi sau khi ảnh NPC đã tải; sơn một lần, vì sơn lại sẽ xoá texture đang có sprite dùng. */
+export function paintNpcPhotos(scene: Phaser.Scene) {
+  if (npcPainted || !npcLoaded(scene)) return;
+  npcPainted = true;
+  npcPhotos(scene);
+}
+
+/** Tải nền ngay sau khi vào menu; scene tắt giữa chừng thì loader bỏ dở nên phải quên các key đã xin. */
+export function warmNpcPhotos(scene: Phaser.Scene) {
+  if (npcPainted) return;
+  preloadNpcPhotos(scene);
+  scene.load.once(Phaser.Loader.Events.COMPLETE, () => paintNpcPhotos(scene));
+  scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+    for (const a of npcAssets()) {
+      if ("walk" in a) { if (!scene.textures.exists(walkAtlas(a.walk))) asked.delete(walkAtlas(a.walk)); }
+      else if (!scene.textures.exists(SRC + a.image)) asked.delete(a.image);
+    }
+  });
+  if (!scene.load.isLoading()) scene.load.start();
 }
 
 function preloadWalk(scene: Phaser.Scene, file: string, hold = false) {
   const key = walkAtlas(file);
   if (asked.has(key) || scene.textures.exists(key)) return;
   asked.add(key);
-  scene.load.atlas(key, `art/${file}.png`, `art/${file}.json`);
+  scene.load.atlas(key, `art/${file}.webp`, `art/${file}.json`);
   // File riêng vì Phaser nuốt atlas JSON, moi phụ chú ra rất lắt léo.
   if (hold) scene.load.json(HOLD_JSON, `art/${file}_hold.json`);
 }
@@ -224,6 +276,44 @@ function standing(scene: Phaser.Scene, key: string, src: string, o: Standing) {
   made.tex.refresh();
 }
 
+/** Một ảnh bàn dài cắt làm hai texture cùng khung; vẽ chồng lên nhau tại cùng chỗ thì liền như ảnh gốc. */
+function bench(scene: Phaser.Scene) {
+  const img = source(scene, BENCH.src);
+  if (!img) return;
+  const { h, foot, body } = BENCH;
+  const w = (img.width / img.height) * h;
+  const W = Math.ceil(2 * Math.max(foot, 1 - foot) * w) + 6;
+  const H = Math.ceil(h + BASE + TH / 2 + 1 - SIT - TABLE_DROP);
+  const cx = W / 2;
+  const left = cx - foot * w;
+  const small = shrink(img, w * ART_SS, h * ART_SS);
+  // Ranh giới hai ô: cạnh dốc 1/2 qua giữa mặt trên, rồi thẳng đứng xuống mặt dài bên phải.
+  const q0 = h - body - TH;
+  const cut = (shift: number): [number, number][] => [
+    [cx - 120, q0 - 60 - shift], [cx + TW / 2 + shift, q0 + TH / 2 - shift],
+    [cx + TW / 2 + shift, 2000], [cx - 120, 2000],
+  ];
+  for (const [key, near] of [[PROP.benchNear, true], [PROP.benchFar, false]] as const) {
+    const made = blank(scene, key, W, H, ART_SS);
+    if (!made) continue;
+    // Nửa gần lấn sang nửa xa 1,5 px để mép cắt khử răng cưa không hở.
+    const poly = cut(near ? 1.5 : 0);
+    made.ctx.save();
+    made.ctx.beginPath();
+    if (near) {
+      poly.forEach(([x, y], i) => (i ? made.ctx.lineTo(x, y) : made.ctx.moveTo(x, y)));
+    } else {
+      made.ctx.rect(-50, -50, W + 100, 2100);
+      poly.forEach(([x, y], i) => (i ? made.ctx.lineTo(x, y) : made.ctx.moveTo(x, y)));
+    }
+    made.ctx.closePath();
+    made.ctx.clip(near ? "nonzero" : "evenodd");
+    made.ctx.drawImage(small, Math.round(left), 0, w, h);
+    made.ctx.restore();
+    made.tex.refresh();
+  }
+}
+
 /** Cắt ô ra canvas riêng trước khi `shrink`, không thì màu ô bên cạnh loang sang. */
 function standingFromAtlas(
   scene: Phaser.Scene, key: string, atlas: string, frame: string, o: Standing,
@@ -249,6 +339,9 @@ function standingFromAtlas(
   made.ctx.drawImage(shrink(cut, w * ART_SS, h * ART_SS),
     Math.round(W / 2 - w / 2 + (o.dx ?? 0)), 0, w, h);
   made.tex.refresh();
+  const last = lowestOpaque(alphaOfAtlas(atlas, img), f);
+  const row = Math.ceil(((last + 1) * h * ART_SS) / f.cutHeight) - 1;
+  footLift.set(key, (Math.ceil(H * ART_SS) - 1 - row) / ART_SS);
   return true;
 }
 
@@ -318,21 +411,35 @@ function player(scene: Phaser.Scene) {
   readHoldAnchors(scene);
 }
 
-/** Bàn chân cách đất bao nhiêu px thiết kế, đo từ ảnh vì đáy chân không theo sin sạch. */
-function footLift(scene: Phaser.Scene, key: string): number {
-  const src = scene.textures.get(key).getSourceImage();
-  if (!(src instanceof HTMLCanvasElement)) return 0;
-  const ctx = src.getContext("2d", { willReadFrequently: true });
-  if (!ctx) return 0;
-  const ss = artScale(key);
-  for (let y = src.height - 1; y >= 0; y--) {
-    const row = ctx.getImageData(0, y, src.width, 1).data;
-    for (let x = 3; x < row.length; x += 4) {
-      if (row[x] > 40) return (src.height - 1 - y) / ss;
+/** Đọc alpha từ canvas CPU: đọc ngược từ texture đã vẽ phải chờ GPU, mỗi lần cả trăm ms. */
+const atlasAlpha = new Map<string, ImageData>();
+
+function alphaOfAtlas(atlas: string, img: HTMLImageElement | HTMLCanvasElement) {
+  let d = atlasAlpha.get(atlas);
+  if (!d) {
+    const cv = document.createElement("canvas");
+    cv.width = img.width;
+    cv.height = img.height;
+    const ctx = cv.getContext("2d", { willReadFrequently: true })!;
+    ctx.drawImage(img, 0, 0);
+    d = ctx.getImageData(0, 0, cv.width, cv.height);
+    atlasAlpha.set(atlas, d);
+  }
+  return d;
+}
+
+/** Hàng thấp nhất còn đục của ô, tính từ đỉnh ô. */
+function lowestOpaque(d: ImageData, f: Phaser.Textures.Frame) {
+  for (let y = f.cutY + f.cutHeight - 1; y >= f.cutY; y--) {
+    for (let x = f.cutX; x < f.cutX + f.cutWidth; x++) {
+      if (d.data[(y * d.width + x) * 4 + 3] > 40) return y - f.cutY;
     }
   }
-  return 0;
+  return f.cutHeight - 1;
 }
+
+/** Bàn chân cách đất bao nhiêu px thiết kế, đo từ ảnh vì đáy chân không theo sin sạch. */
+const footLift = new Map<string, number>();
 
 const liftOf = new Map<string, number>();
 
@@ -360,9 +467,10 @@ function paintWalk(
     }
     if (n === DIRS8.length * WALK_FRAMES) markGait(who, gait);
   }
+  atlasAlpha.delete(atlas);
   if (!lifts.length) return;
   // Mốc 0 là chân thấp nhất của mọi chu kỳ, không phải đáy khung, để bóng không giật khi đổi chu kỳ.
-  const raw = lifts.map((k) => footLift(scene, k));
+  const raw = lifts.map((k) => footLift.get(k) ?? 0);
   const floor = Math.min(...raw);
   lifts.forEach((k, i) => liftOf.set(k, raw[i] - floor));
 }
@@ -430,8 +538,8 @@ export function paintPhotos(scene: Phaser.Scene) {
   onCounter(scene, BOARD_TEX, BOARD, BOARD_W);
   onCounter(scene, BASKET_TEX, BASKET, BASKET_W);
   for (const [key, [src, o]] of Object.entries(STANDING)) standing(scene, key, src, o);
+  bench(scene);
   player(scene);
-  npcPhotos(scene);
   for (const [hand, [src, fit]] of Object.entries(CARRIED) as [HeldLook, [string, Fit]][]) {
     boxed(scene, HELD.key(hand), src, HELD.W, fit);
   }

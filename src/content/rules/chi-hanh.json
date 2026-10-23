@@ -1,5 +1,5 @@
 {
-  "_note": "Chị Hạnh — người Bắc mới vô Sài Gòn. Dùng từ Bắc là ĐẶC ĐIỂM NHÂN VẬT (linter cho phép). Lỗi ORDER_DEFECT của chị thường do khác từ vùng miền — game bắt người chơi học từ của chị, không ngược lại (CANON §14.1).",
+  "_note": "Chị Hà — người Bắc mới vô Sài Gòn. Dùng từ Bắc là ĐẶC ĐIỂM NHÂN VẬT (linter cho phép). Lỗi ORDER_DEFECT của chị thường do khác từ vùng miền — game bắt người chơi học từ của chị, không ngược lại (CANON §14.1).",
   "rules": [
     {"id": "hanh.dropped_food", "concept": "NOTICE_EVENT", "when": {"npcId": "CHI_HANH", "eventId": "DROPPED_FOOD", "obsState": ">=NOTICED", "ctxBarkT1_DROP": "absent"}, "applycontext": {"ctxBarkT1_DROP": {"value": 1, "duration": 90}}, "say": ["Ôi giời…"]},
     {"id": "hanh.dirty_hands", "concept": "NOTICE_EVENT", "when": {"npcId": "CHI_HANH", "eventId": "DIRTY_HANDS", "obsState": ">=NOTICED"}, "silent": true, "say": []},

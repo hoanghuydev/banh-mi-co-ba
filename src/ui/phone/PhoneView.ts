@@ -1,8 +1,10 @@
 import Phaser from "phaser";
+import { sfx } from "../../audio/sfx";
 import type { SaveFile } from "../../core/save";
 import { fmtHhmm } from "../../core/clock";
 import { WEEKDAY_VI, weekdayIdx } from "../../sim/econ";
 import { totalUnread } from "../../sim/phone";
+import { unseen } from "../../sim/reviews";
 import { canSpin, linked } from "../../sim/system";
 import { inTransit } from "../../sim/shop";
 import { chatPage, membersPage, messageList } from "./apps/messageApp";
@@ -37,7 +39,7 @@ type AppDef = {
 
 const APPS: AppDef[] = [
   { key: "msg", label: "Message", icon: ICON.msg, bg: "linear-gradient(160deg,#5bd17f,#2f9e57)", badge: (w) => totalUnread(w.phone) },
-  { key: "rev", label: "Đánh giá", icon: ICON.star, bg: "linear-gradient(160deg,#ffcb52,#ee9a1c)" },
+  { key: "rev", label: "Đánh giá", icon: ICON.star, bg: "linear-gradient(160deg,#ffcb52,#ee9a1c)", badge: unseen },
   { key: "note", label: "Note", icon: ICON.note, bg: "linear-gradient(160deg,#ffe58a,#f2bf3a)" },
   { key: "sys", label: "Hệ thống", icon: ICON.sys, bg: "radial-gradient(circle at 30% 20%,#14485a,#04090d)", show: linked, badge: (w) => (canSpin(w) ? 1 : 0) },
   { key: "shop", label: "Thực phẩm", icon: ICON.bag, bg: "linear-gradient(160deg,#ff8a5c,#e5532b)", badge: (w) => inTransit(w).length },
@@ -63,7 +65,7 @@ export class PhoneView {
 
   constructor(game: Phaser.Game, private w: SaveFile, private opts: PhoneOpts) {
     this.route = opts.route ?? { app: "home" };
-    this.tour = new OrderTour(w, opts.textScale);
+    this.tour = new OrderTour(w, opts.textScale, () => opts.host.onOrdered?.());
     this.ctx = {
       w, host: opts.host, route: this.route,
       go: (r, d) => this.go(r, d),
@@ -83,6 +85,7 @@ export class PhoneView {
       },
       onClose: () => { this.tour.destroy(); opts.host.onSave(); opts.onClose(); },
     });
+    sfx.ui("ph_mo_may");
     this.go(this.route, "up");
   }
 
@@ -90,6 +93,7 @@ export class PhoneView {
   close() { this.shell.close(); }
 
   go(r: Route, dir: Dir = r.app === "home" ? "l" : "r") {
+    if (dir && dir !== "up") sfx.ui("ui_click");
     this.route = r;
     this.ctx.route = r;
     this.shell.setClock(fmtHhmm(this.opts.host.minutes()));

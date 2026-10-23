@@ -1,5 +1,5 @@
 {
-  "_note": "Chị Lan — soi 0,9 nongTinh 0,1 deTha 0,2 thanThien 0,3. Ô 'im lặng rồi biến mất' DUY NHẤT của CANON §4. Gọi người chơi 'em', tự xưng 'em' (lối văn phòng, hạ mình). Người chơi gọi 'chị'. Cuộc của chị NGẮN, câu CỤT, nhiều `silent` — chị không cãi bao giờ, chị chỉ thôi tới. Móc len, một cái chăn hai năm chưa xong. Drama công ty của chị kể rất khẽ, và chị tiếc ngay sau khi kể.",
+  "_note": "Chị Trâm — soi 0,9 nongTinh 0,1 deTha 0,2 thanThien 0,3. Ô 'im lặng rồi biến mất' DUY NHẤT của CANON §4. Gọi người chơi 'em', tự xưng 'em' (lối văn phòng, hạ mình). Người chơi gọi 'chị'. Cuộc của chị NGẮN, câu CỤT, nhiều `silent` — chị không cãi bao giờ, chị chỉ thôi tới. Móc len, một cái chăn hai năm chưa xong. Drama công ty của chị kể rất khẽ, và chị tiếc ngay sau khi kể.",
   "talks": [
     {
       "id": "lan.sep",
@@ -22,7 +22,7 @@
             "mood": "RUNG_RUNG"
           },
           {
-            "say": "Dạ. Ổ chị đây chị.",
+            "say": "Ổ chị đây chị.",
             "tone": "THUONG",
             "reply": "Vâng. Cảm ơn em."
           }
@@ -79,7 +79,7 @@
           "mood": "CUOI"
         },
         {
-          "say": "Dạ chị cứ nói, em đang rảnh tay.",
+          "say": "Chị cứ nói, em đang rảnh tay.",
           "tone": "THUONG",
           "reply": "…Thôi. Để hôm khác. Em thấy em kỳ quá.",
           "then": [
@@ -156,7 +156,7 @@
               ]
             },
             {
-              "say": "Cô Mai bên kia có bán đó chị.",
+              "say": "Cô Thuý bên kia có bán đó chị.",
               "tone": "THUONG",
               "reply": "Vâng, em biết tiệm đó. Em ngại hỏi."
             },
@@ -179,12 +179,12 @@
           "mood": "CUOI"
         },
         {
-          "say": "Dạ em không biết chị ơi.",
+          "say": "Em không biết chị ơi.",
           "tone": "THUONG",
           "reply": "Vâng. Không sao.",
           "then": [
             {
-              "say": "Để em hỏi giùm chị nghen.",
+              "say": "Để em hỏi giùm chị nha.",
               "tone": "AM",
               "reply": "…Thế thì phiền em quá. Cảm ơn em.",
               "mood": "THUONG"
@@ -261,13 +261,13 @@
               "mood": "CUOI"
             },
             {
-              "say": "Dạ. Ổ chả lụa không ớt không hành của chị đây.",
+              "say": "Ổ chả lụa không ớt không hành của chị đây.",
               "tone": "AM",
               "reply": "…Vâng. Em cảm ơn.",
               "mood": "CUOI"
             },
             {
-              "say": "Dạ vậy thì tốt chị.",
+              "say": "Vậy thì tốt chị.",
               "tone": "THUONG",
               "reply": "Vâng."
             }
@@ -296,7 +296,7 @@
           "mood": "MET"
         },
         {
-          "say": "Chị Hạnh đứng sau chị có chào chị một tiếng hông chị?",
+          "say": "Chị Hà đứng sau chị có chào chị một tiếng không chị?",
           "tone": "AM",
           "need": "hanhChaoLan",
           "reply": "…Có. Chị ấy chào em bằng giọng trong này. Em nghe em hơi giựt mình.",
@@ -330,14 +330,14 @@
       "shared": {
         "ket": [
           {
-            "say": "Để em hỏi giùm chị nghen chị.",
+            "say": "Để em hỏi giùm chị nha chị.",
             "tone": "AM",
             "flag": "lanHoiPhong",
             "reply": "…Vâng. Cảm ơn em. Em đừng nói ai là em hỏi giùm chị nhé.",
             "mood": "RUNG_RUNG"
           },
           {
-            "say": "Dạ ổ của chị đây chị.",
+            "say": "Chị.",
             "tone": "THUONG",
             "reply": "Vâng. Cảm ơn em.",
             "mood": "CUOI"
@@ -346,7 +346,7 @@
       },
       "tree": [
         {
-          "say": "Dạ để em để ý giùm chị. Chị cần gấp hông chị?",
+          "say": "Để em để ý giùm chị. Chị cần gấp không chị?",
           "tone": "AM",
           "reply": "…Cuối tháng. Cũng không gấp lắm. Em đừng bận tâm.",
           "then": [
@@ -356,14 +356,14 @@
               "reply": "…Vâng. Em gấp. Em xin lỗi.",
               "then": [
                 {
-                  "say": "Chị khỏi xin lỗi. Em hỏi giùm chị bữa nay luôn.",
+                  "say": "Chị khỏi xin lỗi. Em hỏi giùm chị hôm nay luôn.",
                   "tone": "AM",
                   "flag": "lanHoiPhong",
-                  "reply": "…Em là người duy nhất chị nhờ. Chị không quen nhờ ai.",
+                  "reply": "…Em là người đầu tiên chị nhờ á. Chị không quen nhờ ai.",
                   "mood": "RUNG_RUNG"
                 },
                 {
-                  "say": "Chị cứ nói thẳng với em, em hổng kể ai đâu chị.",
+                  "say": "Chị cứ nói thẳng với em, em không kể ai đâu chị.",
                   "tone": "AM",
                   "reply": "…Vâng. Chị biết. Nên chị mới mở miệng.",
                   "mood": "CUOI"
@@ -382,7 +382,7 @@
               "ref": "ket"
             },
             {
-              "say": "Dạ cô Mai có nói chị khất tiền nhà bà Tám đó chị.",
+              "say": "Cô Thuý có nói chị khất tiền nhà bà Tám đó chị.",
               "tone": "THANG",
               "anger": 30,
               "act": {
@@ -395,7 +395,7 @@
           "mood": "CUOI"
         },
         {
-          "say": "Dạ em hổng biết chị ơi. Chỗ này em cũng mới.",
+          "say": "Em không biết chị ơi. Chỗ này em cũng mới.",
           "tone": "THUONG",
           "reply": "…Vâng. Không sao. Chị hỏi vu vơ thôi.",
           "then": [
@@ -405,7 +405,7 @@
               "reply": "…Vâng. Chị hỏi kỹ. Tật của chị."
             },
             {
-              "say": "Em hỏi cô Mai giùm chị được hông chị?",
+              "say": "Em hỏi cô Thuý giùm chị được không chị?",
               "tone": "AM",
               "reply": "…Thôi em. Đừng. Cô ấy nói nhiều lắm."
             },
@@ -451,7 +451,7 @@
             "mood": "RUNG_RUNG"
           },
           {
-            "say": "Dạ ổ của chị đây chị.",
+            "say": "Ổ của chị đây chị.",
             "tone": "THUONG",
             "reply": "Vâng."
           }
@@ -459,12 +459,12 @@
       },
       "tree": [
         {
-          "say": "Dạ em dẹp liền chị. Chị đứng lui ra chút nghen chị.",
+          "say": "Em dẹp liền chị. Chị đứng lui ra chút nha chị.",
           "tone": "AM",
           "reply": "…Vâng. Chị không sợ chuột đâu. Chị chỉ ngại đứng gần thôi.",
           "then": [
             {
-              "say": "Chị thấy mà chị hổng la tiếng nào hả chị?",
+              "say": "Chị thấy mà chị không la tiếng nào hả chị?",
               "tone": "DUA",
               "reply": "…Chị la thì người ta nhìn chị. Chị thà nhìn con chuột.",
               "then": [
@@ -486,7 +486,7 @@
                       "mood": "THUONG"
                     },
                     {
-                      "say": "Dạ em dọn đây chị.",
+                      "say": "Em dọn đây chị.",
                       "tone": "THUONG",
                       "reply": "Vâng. Em làm đi."
                     }
@@ -501,7 +501,7 @@
               ]
             },
             {
-              "say": "Bữa nay em bịt kín cái thùng đó lại chị.",
+              "say": "Hôm nay em bịt kín cái thùng đó lại chị.",
               "tone": "AM",
               "reply": "…Vâng. Thế thì chị yên tâm.",
               "ref": "ket",
@@ -517,18 +517,18 @@
           "mood": "CUOI"
         },
         {
-          "say": "Dạ em hổng thấy gì hết chị.",
+          "say": "Em không thấy gì hết chị.",
           "tone": "LANH",
           "reply": "…Vâng. Vậy chắc chị nhìn nhầm.",
           "then": [
             {
-              "say": "Dạ… thôi chị, em nói dối. Em dẹp liền nè.",
+              "say": "Thôi chị, em nói dối. Em dẹp liền nè.",
               "tone": "AM",
               "reply": "…Vâng. Em nói thật thì chị còn ghé.",
               "mood": "CUOI"
             },
             {
-              "say": "Dạ chị mua bánh của em đây mà chị.",
+              "say": "Chị mua bánh của em đây mà chị.",
               "tone": "THANG",
               "anger": 20,
               "act": {
@@ -586,7 +586,7 @@
             ]
           },
           {
-            "say": "Dạ ổ của chị đây chị.",
+            "say": "Ổ của chị đây chị.",
             "tone": "THUONG",
             "reply": "Vâng."
           }
@@ -594,7 +594,7 @@
       },
       "tree": [
         {
-          "say": "Dạ chị đứng đi chị. Chị vô sát trong này cho khỏi tạt.",
+          "say": "Chị đứng đi chị. Chị vô sát trong này cho khỏi tạt.",
           "tone": "AM",
           "calm": 24,
           "reply": "…Vâng. Chị đứng một tí thôi. Chị còn kịp giờ.",
@@ -627,7 +627,7 @@
           ]
         },
         {
-          "say": "Dạ chị đứng đó chị, mà chị lui vô chút, nước nhỏ ngay đầu chị.",
+          "say": "Chị đứng đó chị, mà chị lui vô chút, nước nhỏ ngay đầu chị.",
           "tone": "THUONG",
           "reply": "…Ơ. Vâng. Chị đứng ngay chỗ dột mà chị không biết.",
           "then": [
@@ -638,7 +638,7 @@
               "mood": "CUOI"
             },
             {
-              "say": "Dạ chị lui qua trái là khô chị.",
+              "say": "Chị lui qua trái là khô chị.",
               "tone": "AM",
               "reply": "…Vâng. Cảm ơn em.",
               "calm": 18,
@@ -652,7 +652,7 @@
           ]
         },
         {
-          "say": "Dạ mái em nhỏ lắm chị. Chị đứng qua bên hàng hiên kia đi chị.",
+          "say": "Mái em nhỏ lắm chị. Chị đứng qua bên hàng hiên kia đi chị.",
           "tone": "LANH",
           "act": {
             "kind": "STAND_IN_SHADE",
@@ -697,7 +697,7 @@
           "mood": "NGUONG",
           "then": [
             {
-              "say": "Em để sẵn ổ đây, lát chị ghé lấy nghen chị.",
+              "say": "Em để sẵn ổ đây, lát chị ghé lấy nha chị.",
               "tone": "AM",
               "reply": "…Vâng. Em để em tên gì để người ta khỏi lấy nhầm.",
               "mood": "THUONG",
@@ -716,7 +716,7 @@
               "mood": "BUON"
             },
             {
-              "say": "Dạ. Em hỏi vậy thôi.",
+              "say": "Em hỏi vậy thôi.",
               "tone": "LANH",
               "reply": "…Vâng.",
               "mood": "LANH"
@@ -724,7 +724,7 @@
           ]
         },
         {
-          "say": "Chị ngủ được hông chị?",
+          "say": "Chị ngủ được không chị?",
           "tone": "THUONG",
           "reply": "…Vâng. Chỗ em ồn, mà em quen rồi.",
           "mood": "THUONG",
@@ -800,7 +800,7 @@
           ]
         },
         {
-          "say": "Chỗ chị bữa nay đỡ hông chị?",
+          "say": "Chỗ chị hôm nay đỡ không chị?",
           "tone": "THUONG",
           "reply": "…Vâng. Hôm nay em không phải giả vờ gì cả.",
           "mood": "THUONG",
@@ -812,13 +812,13 @@
               "mood": "BUON"
             },
             {
-              "say": "Ở đây chị khỏi giả vờ nghen chị.",
+              "say": "Ở đây chị khỏi giả vờ nha chị.",
               "tone": "AM",
               "reply": "…Vâng. Em biết. Nên em mới đứng đây lâu.",
               "mood": "RUNG_RUNG"
             },
             {
-              "say": "Dạ. Vậy là mừng rồi chị.",
+              "say": "Vậy là mừng rồi chị.",
               "tone": "THUONG",
               "reply": "…Vâng.",
               "mood": "THUONG"
@@ -924,6 +924,75 @@
           "reply": "…Vâng. Em đi đây.",
           "mood": "LANH"
         }
+      ]
+    },
+    {
+      "id": "lan.sepnhan",
+      "npc": "CHI_LAN",
+      "topic": "sepnhan",
+      "source": "NPC_ONLY",
+      "depth": "SHORT",
+      "opener": "…Sếp nhắn lúc mười giờ đêm. Em trả lời luôn.",
+      "weight": 10,
+      "shared": {
+        "ket": [
+          {
+            "say": "Chị lấy ổ bánh nè chị.",
+            "tone": "THUONG",
+            "reply": "…Vâng. Cảm ơn em."
+          },
+          {
+            "say": "Mai chị ghé nữa nha chị.",
+            "tone": "AM",
+            "reply": "…Vâng. Mai chị ghé.",
+            "mood": "CUOI"
+          }
+        ]
+      },
+      "tree": [
+        {
+          "say": "Mười giờ đêm mà chị trả lời luôn hả chị?",
+          "tone": "AM",
+          "reply": "…Vâng. Em không biết nói không.",
+          "then": [
+            {
+              "say": "Chị tắt thông báo ban đêm đi chị.",
+              "tone": "THANG",
+              "reply": "…Em thử rồi. Sáng hôm sau sếp hỏi sao không trả lời.",
+              "mood": "BUON"
+            },
+            {
+              "say": "Sếp chị có biết chị mệt không chị?",
+              "tone": "THUONG",
+              "reply": "…Chắc không. Em chưa nói.",
+              "mood": "THUONG"
+            },
+            {
+              "say": "Chị ăn ổ bánh mì cho tỉnh chị.",
+              "tone": "AM",
+              "reply": "…Vâng. Cảm ơn em.",
+              "ref": "ket"
+            }
+          ]
+        },
+        {
+          "say": "Chị uống miếng nước đi chị.",
+          "tone": "THUONG",
+          "reply": "…Vâng.",
+          "ref": "ket"
+        },
+        {
+          "say": "Em đang làm chị ơi.",
+          "tone": "LANH",
+          "reply": "…Vâng."
+        }
+      ],
+      "openMood": "NGUONG",
+      "practice": [
+        "GOI_MON",
+        "XEP_HANG",
+        "QUAY_VANG",
+        "NAN_LAI"
       ]
     }
   ]

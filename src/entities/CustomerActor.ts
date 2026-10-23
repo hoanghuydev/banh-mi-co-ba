@@ -3,6 +3,7 @@ import { depthOf, facingOf8, toScreen, type Facing8 } from "../world/iso";
 import { COUNTER_Y, QUEUE_SLOTS } from "../world/map";
 import { pickBubbleSpot, type Box } from "../world/bubbleLayout";
 import { BODY_H, FX, buildBody, footY, textureFor } from "../art";
+import { castShadow } from "../art/fx";
 import { STRIDE, WALK_FRAMES, walkTextureFor } from "../art/character";
 import { artScale, walkLift } from "../art/photo";
 import type { Customer } from "../sim/customer";
@@ -214,9 +215,7 @@ export class CustomerActor {
     this.body.setScale(k, k * (this.sp.sy.x + Math.sin(this.bob * 2) * 0.02 * bodyAmp) * sitSquash);
     // Lúc đi `hop` đã tắt nên bóng lấy độ nhấc từ chính frame đang vẽ.
     const lift = walkTex ? walkLift(walkTex.key) : hop;
-    this.shadow.setPosition(sx, sy).setDepth(depth - 1)
-      .setScale(1 - lift * 0.03)
-      .setAlpha(fade * (1 - lift * 0.05));
+    castShadow(this.shadow, sx, sy, 1 - lift * 0.03, fade * (1 - lift * 0.05)).setDepth(depth - 1);
 
     const headX = sx + fidget, headY = footY(sy) - BODY_H + 12 - hop;
     const name = this.label(c);

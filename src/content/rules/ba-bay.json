@@ -1,20 +1,20 @@
 {
-  "_note": "Bà Bảy — người soi nhất hẻm nhưng dễ tha, an toàn để học luật (CANON §9). Rule theo mẫu P2-01 §2.12. Nhiều criterion hơn rule generic nên thắng khi khớp.",
+  "_note": "Dì Nguyệt — người soi nhất hẻm nhưng dễ tha, an toàn để học luật (CANON §9). Rule theo mẫu P2-01 §2.12. Nhiều criterion hơn rule generic nên thắng khi khớp.",
   "rules": [
     { "id": "bay.drop.t1.lan1", "concept": "NOTICE_EVENT",
       "when": { "npcId": "BA_BAY", "eventId": "DROPPED_FOOD", "obsState": ">=NOTICED", "ctxSawDropToday": "absent", "ctxBarkT1_DROP": "absent", "queueLength": "<=4" },
-      "say": ["Ủa con, cái bánh đó rớt xuống đất rồi mà?", "Ê ê ê — cái ổ đó rớt rồi đó con.", "Con ơi, cô thấy hết rồi nghen. Bỏ đi.", "Rớt rồi kìa con. Thôi bỏ, làm ổ khác."],
+      "say": ["Ủa con, cái bánh đó rớt xuống đất rồi mà?", "Ê ê ê — cái ổ đó rớt rồi đó con.", "Con ơi, dì thấy hết rồi nha. Bỏ đi.", "Rớt rồi kìa con. Thôi bỏ, làm ổ khác."],
       "emote": "NHIU_MAY_LO", "pose": "LEAN_IN",
       "applycontext": { "ctxSawDropToday": { "value": 1, "duration": 900 }, "ctxBarkT1_DROP": { "value": 1, "duration": 90 } },
       "followup": { "target": "SELF", "concept": "NOTICE_FOLLOW", "delay": 2.8 } },
     { "id": "bay.drop.t1.lan2", "concept": "NOTICE_EVENT",
       "when": { "npcId": "BA_BAY", "eventId": "DROPPED_FOOD", "obsState": ">=NOTICED", "ctxSawDropToday": true, "ctxBarkT1_DROP": "absent" },
-      "say": ["Lại rớt nữa hả con? Bữa nay tay con sao vậy?", "Trời, hai lần rồi đó nghen. Bình tĩnh lại đi con.", "Cô nói rồi mà. Rớt là bỏ, đừng tiếc."],
+      "say": ["Lại rớt nữa hả con? Hôm nay tay con sao vậy?", "Trời, hai lần rồi đó nha. Bình tĩnh lại đi con.", "Dì nói rồi mà. Rớt là bỏ, đừng tiếc."],
       "emote": "NHIU_MAY_LO",
       "applycontext": { "ctxBarkT1_DROP": { "value": 1, "duration": 90 } } },
     { "id": "bay.drop.follow.bobanh", "concept": "NOTICE_FOLLOW",
       "when": { "npcId": "BA_BAY", "ctxSawDropToday": true, "queueLength": "<=3" },
-      "say": ["Bỏ đi con, cô chờ được mà.", "Làm lại ổ khác đi, cô không gấp."] },
+      "say": ["Bỏ đi con, dì chờ được mà.", "Làm lại ổ khác đi, dì không gấp."] },
 
     { "id": "bay.flourish", "concept": "NOTICE_EVENT",
       "when": { "npcId": "BA_BAY", "eventId": "FLOURISH", "obsState": ">=NOTICED" },
@@ -22,19 +22,19 @@
 
     { "id": "bay.tay.t1", "concept": "NOTICE_EVENT",
       "when": { "npcId": "BA_BAY", "eventId": "DIRTY_HANDS", "obsState": ">=NOTICED", "playerHandsDirty": true, "ctxBarkT1_TAY": "absent" },
-      "say": ["Con ơi, cầm tiền rồi bốc đồ ăn kìa.", "Lau tay cái đi con, cô nhắc chừng thôi.", "Tiền bạc dơ lắm con. Cô già rồi cô biết."],
+      "say": ["Con ơi, cầm tiền rồi bốc đồ ăn kìa.", "Lau tay cái đi con, dì nhắc chừng thôi.", "Tiền bạc dơ lắm con. Dì già rồi dì biết."],
       "odds": 85,
       "applycontext": { "ctxBarkT1_TAY": { "value": 1, "duration": 120 } } },
 
     { "id": "bay.quaydo.nhacnho", "concept": "SMALLTALK",
       "when": { "npcId": "BA_BAY", "stallCleanliness": "<=40", "ctxNhacQuayDo": "absent" },
-      "say": ["Con quét cái sàn đi, ruồi bu kìa.", "Cái thùng rác đầy rồi con ơi. Đổ đi kẻo hôi.", "Sạch sẽ là bán được, con nhớ lời cô."],
+      "say": ["Con quét cái sàn đi, ruồi bu kìa.", "Cái thùng rác đầy rồi con ơi. Đổ đi kẻo hôi.", "Sạch sẽ là bán được, con nhớ lời dì."],
       "norepeat": true,
       "applycontext": { "ctxNhacQuayDo": { "value": 1, "duration": -1 } } },
 
     { "id": "bay.cailuong.1", "concept": "SMALLTALK",
       "when": { "npcId": "BA_BAY", "queueLength": "<=2", "ctxNhacCaiLuong": "absent", "npcVisitCount": ">=3" },
-      "say": ["Con biết hông, hồi xưa cô mê cải lương dữ lắm."],
+      "say": ["Con biết không, hồi xưa dì mê cải lương dữ lắm."],
       "odds": 35, "norepeat": true,
       "applycontext": { "ctxNhacCaiLuong": { "value": 1, "duration": 240 }, "ctxDangDocThoai": { "value": 1, "duration": 30 } },
       "followup": { "target": "SELF", "concept": "SMALLTALK_CAILUONG_2", "delay": 2.4 } },
@@ -48,13 +48,13 @@
       "followup": { "target": "SELF", "concept": "SMALLTALK_CAILUONG_4", "delay": 3.0 } },
     { "id": "bay.cailuong.3.ngat", "concept": "SMALLTALK_CAILUONG_3",
       "when": { "npcId": "BA_BAY", "queueLength": ">=3" },
-      "say": ["Thôi con lo cho khách đi, chút cô kể tiếp."] },
+      "say": ["Thôi con lo cho khách đi, chút dì kể tiếp."] },
     { "id": "bay.cailuong.4", "concept": "SMALLTALK_CAILUONG_4",
       "when": { "npcId": "BA_BAY", "queueLength": "<=2", "ctxKhachMoiToi": "absent" },
-      "say": ["Đào bây giờ mặt đẹp thiệt, mà hát tới câu vọng cổ là hụt hơi. Cô nói thiệt đó."] },
+      "say": ["Đào bây giờ mặt đẹp thiệt, mà hát tới câu vọng cổ là hụt hơi. Dì nói thiệt đó."] },
     { "id": "bay.bye.waited", "concept": "FAREWELL",
       "_note": "Soi nhất hẻm mà dễ tha nhất: chờ mỏi chưn vẫn đứng tới cùng, rồi đi ra còn dặn một câu. Đây là chỗ người chơi học được rằng soi không có nghĩa là khó.",
       "when": { "npcId": "BA_BAY", "leaveReason": "SERVED", "serveOutcome": "WAITED" }, "odds": 80,
-      "say": ["Lâu thì lâu, mà con làm kỹ là cô chịu rồi.", "Cô đứng nãy giờ đó nghen. Thôi, mai làm lẹ chút.", "Hồi nãy đông quá ha. Cô hiểu mà con."] }
+      "say": ["Lâu thì lâu, mà con làm kỹ là dì chịu rồi.", "Dì đứng nãy giờ đó nha. Thôi, mai làm lẹ chút.", "Hồi nãy đông quá ha. Dì hiểu mà con."] }
   ]
 }

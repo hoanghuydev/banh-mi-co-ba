@@ -85,8 +85,6 @@ line("LONG_BAN", the("LONG_BAN"),
   const o = [coldSlotCap(newInventory()), coldSlotCap({ ...newInventory(), storage: "tu_mat" })];
   line("TU_MAT", the("TU_MAT"), `pate ${pate[0]} → ${pate[1]} ngày · chỗ lạnh ${o[0]} → ${o[1]}`,
     pate[0] === 2 && pate[1] === 6 && o[0] === 8 && o[1] === 20);
-  const xm = [shelfDays("XIU_MAI", "thung_xop", false), shelfDays("XIU_MAI", "thung_xop", true)];
-  line("NOI_U", the("NOI_U"), `${xm[0]} → ${xm[1]} ngày`, xm[0] === 1 && xm[1] === 2);
 }
 
 {

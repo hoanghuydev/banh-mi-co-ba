@@ -1,5 +1,5 @@
 {
-  "_note": "Chú Tư — bảo vệ công ty, soi 0,3 nongTinh 0,3 deTha 0,9: xuề xoà nhất hẻm, không để bụng gì. Gọi người chơi 'con', tự xưng 'chú'. Khách 6h45 T2–T6, LUÔN vội vô ca (rush 6h30–7h, sức chờ 35 s → 23 s) nên cuộc nào của chú cũng ngắn hơn người khác. Chơi chim chào mào tên Sáu Ngón, đi thi hót mỗi tháng, thua hoài. Công ty tính dời qua Bình Dương.",
+  "_note": "Chú Quang — bảo vệ công ty, soi 0,3 nongTinh 0,3 deTha 0,9: xuề xoà nhất hẻm, không để bụng gì. Gọi người chơi 'con', tự xưng 'chú'. Khách 6h45 T2–T6, LUÔN vội vô ca (rush 6h30–7h, sức chờ 35 s → 23 s) nên cuộc nào của chú cũng ngắn hơn người khác. Chơi chim chào mào tên Sáu Ngón, đi thi hót mỗi tháng, thua hoài. Công ty tính dời qua Bình Dương.",
   "talks": [
     {
       "id": "tu.chim",
@@ -14,12 +14,12 @@
           {
             "say": "Thôi chú vô ca đi, trễ rồi.",
             "tone": "THUONG",
-            "reply": "Ờ, chú đi. Con làm lẹ giùm chú nghen.",
+            "reply": "Ờ, chú đi. Con làm lẹ giùm chú nha.",
             "calm": 15,
             "mood": "MET"
           },
           {
-            "say": "Tháng sau chú kể con nghe nữa nghen chú.",
+            "say": "Tháng sau chú kể con nghe nữa nha chú.",
             "tone": "AM",
             "reply": "Ờ! Tháng sau nó hót được là chú khao con một chầu.",
             "mood": "CUOI"
@@ -40,7 +40,7 @@
                 {
                   "say": "Vậy chú đừng cho nó đi thi nữa chú.",
                   "tone": "AM",
-                  "reply": "Ờ… chú cũng tính vậy. Mà sáng chủ nhật hổng đi thì chú biết đi đâu.",
+                  "reply": "Ờ… chú cũng tính vậy. Mà sáng chủ nhật không đi thì chú biết đi đâu.",
                   "mood": "THUONG"
                 },
                 {
@@ -50,7 +50,7 @@
                   "mood": "THUONG"
                 },
                 {
-                  "say": "Nuôi sáu năm mà hổng hót được, uổng ghê chú.",
+                  "say": "Nuôi sáu năm mà không hót được, uổng ghê chú.",
                   "tone": "THANG",
                   "reply": "Uổng gì. Nó ở với chú sáu năm rồi con."
                 },
@@ -73,7 +73,7 @@
             {
               "say": "Con chim thi hót là thi cái gì vậy chú?",
               "tone": "THUONG",
-              "reply": "Thi giọng, thi dáng, thi độ bền hơi. Có trọng tài đàng hoàng nghen con.",
+              "reply": "Thi giọng, thi dáng, thi độ bền hơi. Có trọng tài đàng hoàng nha con.",
               "ref": "ket"
             },
             {
@@ -86,7 +86,7 @@
         {
           "say": "Thi hoài thua hoài mà chú còn đi chú.",
           "tone": "DUA",
-          "reply": "Ha. Con nói y như vợ chú. Mà đi cho vui chớ ăn thua gì.",
+          "reply": "Ha. Con nói y như vợ chú. Mà đi cho vui chứ ăn thua gì.",
           "then": [
             {
               "say": "Vậy mới đúng chú.",
@@ -97,7 +97,7 @@
             {
               "say": "Chú đi riết vợ chú cằn nhằn chú ha.",
               "tone": "DUA",
-              "reply": "Cằn nhằn chớ. Mà bả cằn nhằn xong bả vẫn pha trà cho chú đem đi.",
+              "reply": "Cằn nhằn chứ. Mà bả cằn nhằn xong bả vẫn pha trà cho chú đem đi.",
               "ref": "ket"
             }
           ],
@@ -152,7 +152,7 @@
             {
               "say": "Năm mươi tám thì kiếm chỗ khác khó hả chú?",
               "tone": "THANG",
-              "reply": "Khó. Người ta lấy tới năm lăm thôi con. Chú biết chớ.",
+              "reply": "Khó. Người ta lấy tới năm lăm thôi con. Chú biết chứ.",
               "then": [
                 {
                   "say": "Chú đừng lo. Thế nào cũng có đường chú.",
@@ -166,9 +166,9 @@
                   "reply": "Ờ… chắc vậy quá. Mà xa vợ chú con à."
                 },
                 {
-                  "say": "Con hổng biết nói sao chú ơi.",
+                  "say": "Con không biết nói sao chú ơi.",
                   "tone": "AM",
-                  "reply": "Hổng cần nói gì đâu. Chú kể cho nhẹ bụng vậy thôi."
+                  "reply": "Không cần nói gì đâu. Chú kể cho nhẹ bụng vậy thôi."
                 },
                 {
                   "say": "Vậy thì chú ráng chịu thôi chú.",
@@ -181,7 +181,7 @@
             {
               "say": "Chú làm ở đó lâu chưa chú?",
               "tone": "AM",
-              "reply": "Mười một năm. Chú giữ cổng đó mười một năm, hổng mất cái xe nào."
+              "reply": "Mười một năm. Chú giữ cổng đó mười một năm, không mất cái xe nào."
             },
             {
               "say": "Sáng nào chú cũng ghé đây mà chú đi thì con nhớ chú.",
@@ -201,7 +201,7 @@
             {
               "say": "Chú dậy bốn giờ quen thiệt hả chú?",
               "tone": "DUA",
-              "reply": "Quen. Hai chục năm rồi. Chú hổng cần đồng hồ báo thức."
+              "reply": "Quen. Hai chục năm rồi. Chú không cần đồng hồ báo thức."
             },
             {
               "say": "Vậy chú đi được đó chú.",
@@ -224,7 +224,7 @@
           "mood": "NGUONG"
         },
         {
-          "say": "Dạ con đang đông khách chú ơi.",
+          "say": "Con đang đông khách chú ơi.",
           "tone": "LANH",
           "reply": "Ờ ờ. Chú nói nhiều. Con làm đi."
         }
@@ -254,14 +254,14 @@
             "mood": "MET"
           },
           {
-            "say": "Chú đừng để bụng nghen chú.",
+            "say": "Chú đừng để bụng nha chú.",
             "tone": "AM",
-            "reply": "Chú hổng để bụng đâu. Chú có để bụng cái gì bao giờ.",
+            "reply": "Chú không để bụng đâu. Chú có để bụng cái gì bao giờ.",
             "mood": "CUOI",
             "need": "!c.angered"
           },
           {
-            "say": "Dạ thôi con làm tiếp đây chú.",
+            "say": "Thôi con làm tiếp đây chú.",
             "tone": "LANH",
             "reply": "Ờ. Con làm đi.",
             "mood": "LANH"
@@ -270,14 +270,14 @@
       },
       "tree": [
         {
-          "say": "Trời. Rồi người ta có trách chú hông chú?",
+          "say": "Trời. Rồi người ta có trách chú không chú?",
           "tone": "AM",
           "reply": "Có. Sếp kêu chú lên. Mà camera hư từ tháng trước, chú báo ba lần rồi.",
           "then": [
             {
-              "say": "Chú có giữ cái giấy báo hông chú?",
+              "say": "Chú có giữ cái giấy báo không chú?",
               "tone": "THANG",
-              "reply": "Có chớ! Chú ghi sổ bàn giao đàng hoàng. Chú đưa ra là im hết.",
+              "reply": "Có chứ! Chú ghi sổ bàn giao đàng hoàng. Chú đưa ra là im hết.",
               "then": [
                 {
                   "say": "Chú kỹ ghê chú. Vậy là chú thoát rồi.",
@@ -292,9 +292,9 @@
                   "mood": "THUONG"
                 },
                 {
-                  "say": "Vậy mà chú còn lo chi chú.",
+                  "say": "Vậy mà chú còn lo gì chú.",
                   "tone": "DUA",
-                  "reply": "Lo chớ. Ghi là ghi, mà mất xe là mất xe."
+                  "reply": "Lo chứ. Ghi là ghi, mà mất xe là mất xe."
                 }
               ]
             },
@@ -305,7 +305,7 @@
               "ref": "ket"
             },
             {
-              "say": "Tại chú ngủ gục chớ gì chú.",
+              "say": "Tại chú ngủ gục chứ gì chú.",
               "tone": "GAT",
               "anger": 25,
               "silent": true,
@@ -316,17 +316,17 @@
         {
           "say": "Mất xe là chú phải đền hả chú?",
           "tone": "THANG",
-          "reply": "Hổng biết nữa. Họ còn đang họp. Chú chờ thôi con.",
+          "reply": "Không biết nữa. Họ còn đang họp. Chú chờ thôi con.",
           "then": [
             {
-              "say": "Có gì chú nói con nghe với nghen chú.",
+              "say": "Có gì chú nói con nghe với nha chú.",
               "tone": "AM",
-              "reply": "Ờ. Cảm ơn con nghen.",
+              "reply": "Ờ. Cảm ơn con nha.",
               "ref": "ket",
               "mood": "THUONG"
             },
             {
-              "say": "Chắc hổng sao đâu chú.",
+              "say": "Chắc không sao đâu chú.",
               "tone": "THUONG",
               "reply": "Ừ. Chú cũng nghĩ vậy.",
               "ref": "ket"
@@ -339,9 +339,9 @@
           "reply": "Ờ. Chú nói vậy thôi."
         },
         {
-          "say": "Chú ăn ổ rồi về ngủ nghen chú. Thức cả đêm rồi.",
+          "say": "Chú ăn ổ rồi về ngủ nha chú. Thức cả đêm rồi.",
           "tone": "AM",
-          "reply": "…Ờ. Chú ăn rồi chú về. Ngồi nghĩ hoài cũng hổng ra cái xe.",
+          "reply": "…Ờ. Chú ăn rồi chú về. Ngồi nghĩ hoài cũng không ra cái xe.",
           "mood": "MET",
           "act": {
             "kind": "PROMISE_DEED",
@@ -370,16 +370,16 @@
       "shared": {
         "ket": [
           {
-            "say": "Chú đi kịp ca hông chú? Con gói lẹ nè.",
+            "say": "Chú đi kịp ca không chú? Con gói lẹ nè.",
             "tone": "AM",
             "reply": "Kịp. Nói chuyện với con chú quên lo.",
             "calm": 18,
             "mood": "THUONG"
           },
           {
-            "say": "Dạ ổ của chú đây chú.",
+            "say": "Ổ của chú đây chú.",
             "tone": "THUONG",
-            "reply": "Ờ. Chú đi nghen con."
+            "reply": "Ờ. Chú đi nha con."
           },
           {
             "say": "Dạ.",
@@ -390,7 +390,7 @@
       },
       "tree": [
         {
-          "say": "Dạ bé Su đó chú. Nó mê con chim của chú hả chú?",
+          "say": "Dạ bé Hân đó chú. Nó mê con chim của chú hả chú?",
           "tone": "AM",
           "reply": "Su hả. Ờ. Nó đứng im re, cả năm phút. Rồi nó chạy, trễ học hoài.",
           "then": [
@@ -403,7 +403,7 @@
                   "say": "Vậy chú kêu nó đứng xa xa rồi chú mở chú.",
                   "tone": "AM",
                   "flag": "tuMoLong",
-                  "reply": "…Ờ ha. Chú ngu thiệt, nghĩ hổng ra. Mai chú thử.",
+                  "reply": "…Ờ ha. Chú ngu thiệt, nghĩ không ra. Mai chú thử.",
                   "mood": "THUONG"
                 },
                 {
@@ -413,7 +413,7 @@
                   "mood": "CUOI_TUOI"
                 },
                 {
-                  "say": "Thi hoài hổng được chắc tại vậy đó chú.",
+                  "say": "Thi hoài không được chắc tại vậy đó chú.",
                   "tone": "THANG",
                   "reply": "…Ờ. Chắc vậy. Lên sân khấu là nó ngậm miệng."
                 },
@@ -428,16 +428,16 @@
               "mood": "CUOI"
             },
             {
-              "say": "Nó hay kể chú nghe chuyện gì hông chú?",
+              "say": "Nó hay kể chú nghe chuyện gì không chú?",
               "tone": "THUONG",
-              "reply": "Nó có nói với chú câu nào đâu. Nó ngó chim thôi. Chú cũng hổng hỏi.",
+              "reply": "Nó có nói với chú câu nào đâu. Nó ngó chim thôi. Chú cũng không hỏi.",
               "ref": "ket"
             },
             {
               "say": "Nó sợ bị bắt đi ôn thi đó chú. Nên nó mới đứng ngó chim.",
               "tone": "AM",
               "need": "suSoThi",
-              "reply": "…Ờ. Vậy để nó đứng. Mấy phút đó là của nó chớ của ai.",
+              "reply": "…Ờ. Vậy để nó đứng. Mấy phút đó là của nó chứ của ai.",
               "mood": "THUONG"
             },
             {
@@ -450,7 +450,7 @@
           "mood": "CUOI"
         },
         {
-          "say": "Dạ nó trễ học là tại chú đó nghen chú.",
+          "say": "Dạ nó trễ học là tại chú đó nha chú.",
           "tone": "DUA",
           "reply": "Ủa, tại chú hả? Chú có kêu nó đứng đâu.",
           "then": [
@@ -466,21 +466,21 @@
                   "mood": "THUONG"
                 },
                 {
-                  "say": "Mai chú nói nó hót nhỏ nhỏ lại nghen chú.",
+                  "say": "Mai chú nói nó hót nhỏ nhỏ lại nha chú.",
                   "tone": "DUA",
                   "reply": "Nó mà nghe lời thì chú thắng giải lâu rồi con."
                 },
                 {
                   "say": "Dạ con giỡn thôi chú.",
                   "tone": "THUONG",
-                  "reply": "Chú biết. Giỡn chú mới vui chớ."
+                  "reply": "Chú biết. Giỡn chú mới vui chứ."
                 }
               ]
             },
             {
               "say": "Chú nói nó đi học đi, đừng đứng nữa chú.",
               "tone": "THANG",
-              "reply": "Thôi. Nó có vui được mấy phút đó. Chú hổng nỡ.",
+              "reply": "Thôi. Nó có vui được mấy phút đó. Chú không nỡ.",
               "ref": "ket"
             },
             {
@@ -492,7 +492,7 @@
           "mood": "NGAC_NHIEN"
         },
         {
-          "say": "Dạ chú vô ca đi chú, trễ rồi.",
+          "say": "Chú vô ca đi chú, trễ rồi.",
           "tone": "LANH",
           "reply": "Ờ. Chú đi. Chú nói lan man."
         }
@@ -516,9 +516,9 @@
       "shared": {
         "ket": [
           {
-            "say": "Mai chú ghé chú đưa con nghen chú.",
+            "say": "Mai chú ghé chú đưa con nha chú.",
             "tone": "THUONG",
-            "reply": "Ờ. Mai chú đưa. Chú hổng quỵt con đâu."
+            "reply": "Ờ. Mai chú đưa. Chú không quỵt con đâu."
           },
           {
             "say": "Chú đi lẹ đi chú, kẻo trễ.",
@@ -531,33 +531,33 @@
       },
       "tree": [
         {
-          "say": "Dạ chú cứ lấy đi chú. Bữa nay con hổng lấy tiền chú.",
+          "say": "Chú cứ lấy đi chú. Hôm nay con không lấy tiền chú.",
           "tone": "AM",
           "act": {
             "kind": "FREE_LOAF"
           },
-          "reply": "Ủa. Vậy đâu được con. Mười mấy ngàn chớ ít gì.",
+          "reply": "Ủa. Vậy đâu được con. Mười mấy ngàn chứ ít gì.",
           "then": [
             {
               "say": "Một bữa mà chú. Chú ăn sáng rồi đi làm cho khoẻ.",
               "tone": "AM",
               "flag": "tuNoBanh",
-              "reply": "…Ờ. Chú nhớ bữa nay nghen con. Chú nhớ lâu lắm.",
+              "reply": "…Ờ. Chú nhớ hôm nay nha con. Chú nhớ lâu lắm.",
               "then": [
                 {
-                  "say": "Chú nhớ chi cho mệt chú. Ăn đi chú.",
+                  "say": "Chú nhớ gì cho mệt chú. Ăn đi chú.",
                   "tone": "AM",
-                  "reply": "Nhớ chớ. Chú có nhiêu chuyện đâu mà hổng nhớ.",
+                  "reply": "Nhớ chứ. Chú có nhiêu chuyện đâu mà không nhớ.",
                   "mood": "CUOI"
                 },
                 {
-                  "say": "Vậy mai chú mua hai ổ bù cho con nghen chú.",
+                  "say": "Vậy mai chú mua hai ổ bù cho con nha chú.",
                   "tone": "DUA",
                   "reply": "Ha. Được. Mai chú mua hai. Chú ăn một, Sáu Ngón một.",
                   "mood": "CUOI_TUOI"
                 },
                 {
-                  "say": "Dạ thôi chú đi đi, trễ ca rồi chú.",
+                  "say": "Thôi chú đi đi, trễ ca rồi chú.",
                   "tone": "THUONG",
                   "reply": "Ờ ờ. Chú đi.",
                   "calm": 12,
@@ -567,7 +567,7 @@
               "mood": "THUONG"
             },
             {
-              "say": "Chú đừng kể ai nghen chú, con sợ người ta cũng quên ví.",
+              "say": "Chú đừng kể ai nha chú, con sợ người ta cũng quên ví.",
               "tone": "DUA",
               "reply": "Ha! Yên tâm. Chú kín miệng lắm. Chú làm bảo vệ mà.",
               "ref": "ket",
@@ -582,30 +582,30 @@
           "mood": "NGAC_NHIEN"
         },
         {
-          "say": "Dạ con ghi sổ, mai chú trả nghen chú.",
+          "say": "Con ghi sổ, mai chú trả nha chú.",
           "tone": "THUONG",
           "need": "maiSoNo",
           "reply": "Ờ, ghi đi con. Ghi tên chú với ngày luôn, chú hay quên.",
           "then": [
             {
-              "say": "Dạ con ghi rồi nè. Chú Tư, bữa nay, một ổ.",
+              "say": "Dạ con ghi rồi nè. Chú Quang, hôm nay, một ổ.",
               "tone": "AM",
               "reply": "Ờ. Vậy mới đàng hoàng. Chú ghét cái kiểu ai cũng nói thôi khỏi.",
               "then": [
                 {
-                  "say": "Dạ cô Mai cũng biểu con ghi sổ đó chú.",
+                  "say": "Dạ cô Thuý cũng kêu con ghi sổ đó chú.",
                   "tone": "THUONG",
                   "need": "maiDayGhiSo",
-                  "reply": "Bả nói đúng. Bả bán tạp hoá hai chục năm chớ ít gì."
+                  "reply": "Bả nói đúng. Bả bán tạp hoá hai chục năm chứ ít gì."
                 },
                 {
                   "say": "Chú đàng hoàng ghê chú.",
                   "tone": "AM",
-                  "reply": "Chú có nhiêu đó thôi con. Chú nghèo mà chú hổng thiếu ai.",
+                  "reply": "Chú có nhiêu đó thôi con. Chú nghèo mà chú không thiếu ai.",
                   "mood": "THUONG"
                 },
                 {
-                  "say": "Mai chú quên nữa là con xoá tên chú đó nghen.",
+                  "say": "Mai chú quên nữa là con xoá tên chú đó nha.",
                   "tone": "DUA",
                   "reply": "Ha. Đừng. Chú sợ bị xoá tên lắm.",
                   "mood": "CUOI_TUOI"
@@ -616,7 +616,7 @@
             {
               "say": "Dạ thôi khỏi ghi chú, một ổ hà.",
               "tone": "AM",
-              "reply": "Ghi đi con. Con mà xuề xoà vầy người ta ăn hết của con.",
+              "reply": "Ghi đi con. Con mà xuề xoà vậy người ta ăn hết của con.",
               "ref": "ket"
             },
             {
@@ -627,15 +627,15 @@
           ]
         },
         {
-          "say": "Dạ chú chạy về lấy kịp hông chú?",
+          "say": "Chú chạy về lấy kịp không chú?",
           "tone": "THANG",
-          "reply": "…Ờ. Chạy về cũng được. Mười phút. Thôi chú về, chú hổng thiếu ai đâu.",
+          "reply": "…Ờ. Chạy về cũng được. Mười phút. Thôi chú về, chú không thiếu ai đâu.",
           "act": {
             "kind": "WALK_ON"
           }
         },
         {
-          "say": "Chú hổng có tiền thì chú đứng đây chi chú.",
+          "say": "Chú không có tiền thì chú đứng đây gì chú.",
           "tone": "GAT",
           "anger": 50,
           "silent": true,
@@ -663,17 +663,17 @@
         "reply": "Ờ. Thôi con làm đi. Chú nói giỡn.",
         "mood": "LANH"
       },
-      "opener": "Con đừng nói ai nghen. Trong cặp chú có hộp cơm bà xã gói.",
+      "opener": "Con đừng nói ai nha. Trong cặp chú có hộp cơm bà xã gói.",
       "shared": {
         "ket": [
           {
-            "say": "Dạ con kín miệng mà chú.",
+            "say": "Con kín miệng mà chú.",
             "tone": "AM",
             "reply": "Ờ. Chú biết chú mới dám nói.",
             "mood": "CUOI"
           },
           {
-            "say": "Dạ ổ của chú đây chú. Chú đi kịp nghen.",
+            "say": "Ổ của chú đây chú. Chú đi kịp nha.",
             "tone": "THUONG",
             "reply": "Ờ. Chú đi."
           }
@@ -681,12 +681,12 @@
       },
       "tree": [
         {
-          "say": "Ủa vậy chú mua bánh mì con chi vậy chú?",
+          "say": "Ủa vậy chú mua bánh mì con gì vậy chú?",
           "tone": "THANG",
           "reply": "…Thì chú ăn hộp cơm lúc trưa. Sáng chú ăn bánh mì.",
           "then": [
             {
-              "say": "Chú nói thiệt đi chú. Con hổng cười chú đâu.",
+              "say": "Chú nói thiệt đi chú. Con không cười chú đâu.",
               "tone": "AM",
               "reply": "…Chú đứng đây hai phút. Cả ngày chú có hai phút này thôi.",
               "then": [
@@ -697,9 +697,9 @@
                   "mood": "RUNG_RUNG"
                 },
                 {
-                  "say": "Ở công ty chú hổng ai nói chuyện với chú hả chú?",
+                  "say": "Ở công ty chú không ai nói chuyện với chú hả chú?",
                   "tone": "AM",
-                  "reply": "Có chớ. Người ta gật đầu rồi người ta đi. Gật đầu đâu phải nói chuyện.",
+                  "reply": "Có chứ. Người ta gật đầu rồi người ta đi. Gật đầu đâu phải nói chuyện.",
                   "mood": "THUONG"
                 },
                 {
@@ -718,13 +718,13 @@
               "mood": "CUOI"
             },
             {
-              "say": "Dạ hộp cơm bà xã chú gói, chú để nguội uổng lắm chú.",
+              "say": "Hộp cơm bà xã chú gói, chú để nguội uổng lắm chú.",
               "tone": "AM",
-              "reply": "Hổng nguội đâu. Bả gói kỹ lắm, ba lớp lận.",
+              "reply": "Không nguội đâu. Bả gói kỹ lắm, ba lớp lận.",
               "ref": "ket"
             },
             {
-              "say": "Vậy bữa nay chú khỏi mua đi chú, để dành tiền.",
+              "say": "Vậy hôm nay chú khỏi mua đi chú, để dành tiền.",
               "tone": "THANG",
               "reply": "…Thôi. Chú mua. Mua rồi chú mới có cớ đứng.",
               "ref": "ket"
@@ -751,11 +751,11 @@
                 {
                   "say": "Vậy chú mua ổ bánh về cho bả đi chú.",
                   "tone": "DUA",
-                  "reply": "Cha. Con này bán hàng giỏi ghê. …Mà ờ, nghe cũng được đó.",
+                  "reply": "Trời. Con này bán hàng giỏi ghê. …Mà ờ, nghe cũng được đó.",
                   "mood": "CUOI_TUOI"
                 },
                 {
-                  "say": "Dạ thôi, chuyện nhà chú con hổng dám nói.",
+                  "say": "Thôi, chuyện nhà chú con không dám nói.",
                   "tone": "THUONG",
                   "reply": "Ờ. Con nói được mà. Chú đâu có giận."
                 }
@@ -777,7 +777,7 @@
           "mood": "CUOI"
         },
         {
-          "say": "Chú đem cơm rồi chú còn kể con nghe chi chú.",
+          "say": "Chú đem cơm rồi chú còn kể con nghe gì chú.",
           "tone": "GAT",
           "anger": 35,
           "silent": true,
@@ -816,7 +816,7 @@
       "openMood": "NGAC_NHIEN",
       "tree": [
         {
-          "say": "Sáu Ngón nay có chịu hót hông chú?",
+          "say": "Sáu Ngón nay có chịu hót không chú?",
           "tone": "AM",
           "reply": "Có. Sáng nay nó hót ba hồi liền. Chú nghe chú mát ruột.",
           "mood": "CUOI_TUOI",
@@ -842,9 +842,9 @@
           ]
         },
         {
-          "say": "Đêm qua cổng công ty chú yên hông chú?",
+          "say": "Đêm qua cổng công ty chú yên không chú?",
           "tone": "THANG",
-          "reply": "Yên. Hổng mất cái gì hết. Chú ghi sổ bàn giao đàng hoàng.",
+          "reply": "Yên. Không mất cái gì hết. Chú ghi sổ bàn giao đàng hoàng.",
           "mood": "NGHIEM",
           "then": [
             {
@@ -868,7 +868,7 @@
           ]
         },
         {
-          "say": "Thôi. Hổng có gì đâu chú.",
+          "say": "Thôi. Không có gì đâu chú.",
           "tone": "LANH",
           "reply": "Ờ. Chú đứng chú đợi.",
           "mood": "LANH"
@@ -890,17 +890,17 @@
       "source": "PLAYER_ONLY",
       "depth": "SHORT",
       "weight": 20,
-      "opener": "Ờ? Chi vậy con.",
+      "opener": "Ờ? Gì vậy con.",
       "openMood": "NGAC_NHIEN",
       "tree": [
         {
-          "say": "Bữa nay trong cặp chú có hộp cơm hông chú?",
+          "say": "Hôm nay trong cặp chú có hộp cơm không chú?",
           "tone": "DUA",
-          "reply": "…Có. Con đừng nói ai nghen. Bả gói ba lớp lận.",
+          "reply": "…Có. Con đừng nói ai nha. Bả gói ba lớp lận.",
           "mood": "NGUONG",
           "then": [
             {
-              "say": "Bả gói ba lớp chi vậy chú?",
+              "say": "Bả gói ba lớp gì vậy chú?",
               "tone": "DUA",
               "reply": "Sợ nguội. Bả quấn khăn, rồi bọc nilông, rồi bỏ vô cái hộp xốp.",
               "mood": "CUOI"
@@ -912,7 +912,7 @@
               "mood": "NGUONG"
             },
             {
-              "say": "Dạ con hổng nói đâu chú.",
+              "say": "Con không nói đâu chú.",
               "tone": "AM",
               "reply": "Ờ. Con ngoan. Mai chú ghé nữa.",
               "mood": "CUOI"
@@ -922,7 +922,7 @@
         {
           "say": "Chú ngủ được mấy tiếng vậy chú? Bốn giờ đã dậy rồi.",
           "tone": "AM",
-          "reply": "Năm tiếng. Quen rồi con, chú hổng cần đồng hồ.",
+          "reply": "Năm tiếng. Quen rồi con, chú không cần đồng hồ.",
           "mood": "MET",
           "then": [
             {
@@ -932,15 +932,15 @@
               "mood": "NGHIEM"
             },
             {
-              "say": "Chú làm vầy mấy năm rồi chú?",
+              "say": "Chú làm vậy mấy năm rồi chú?",
               "tone": "AM",
-              "reply": "Mười hai năm. Từ hồi chú nghỉ làm thợ hàn, mắt chú hổng chịu nổi lửa nữa.",
+              "reply": "Mười hai năm. Từ hồi chú nghỉ làm thợ hàn, mắt chú không chịu nổi lửa nữa.",
               "mood": "NGHIEM"
             },
             {
-              "say": "Dạ. Chú giữ sức nghen chú.",
+              "say": "Chú giữ sức nha chú.",
               "tone": "THUONG",
-              "reply": "Ờ. Con cũng vậy. Đứng bán cả buổi chớ ít gì.",
+              "reply": "Ờ. Con cũng vậy. Đứng bán cả buổi chứ ít gì.",
               "mood": "THUONG"
             }
           ]
@@ -968,7 +968,7 @@
       "depth": "SHORT",
       "weight": 16,
       "initiates": 0.28,
-      "opener": "Con ơi, xe chú chết máy ngoài kia. Cho chú đứng nhờ chút nghen con.",
+      "opener": "Con ơi, xe chú chết máy ngoài kia. Cho chú đứng nhờ chút nha con.",
       "openMood": "MET",
       "practice": [
         "GOI_MON",
@@ -979,11 +979,11 @@
         {
           "say": "Chú đứng đi chú. Tiệm sửa xe cách đây hai căn đó chú.",
           "tone": "AM",
-          "reply": "Ờ! Tiệm ông Chín hả. Để chú dắt qua. Cảm ơn con nghen.",
+          "reply": "Ờ! Tiệm ông Chín hả. Để chú dắt qua. Cảm ơn con nha.",
           "mood": "CUOI",
           "then": [
             {
-              "say": "Chú dắt nổi hông chú? Để con phụ.",
+              "say": "Chú dắt nổi không chú? Để con phụ.",
               "tone": "AM",
               "reply": "Nổi. Xe cà tàng mà nhẹ hều. Chú đi gác mười hai năm bằng cái xe đó.",
               "mood": "NGHIEM"
@@ -995,7 +995,7 @@
               "mood": "MET"
             },
             {
-              "say": "Chú cầm ổ ăn rồi hẵng dắt xe nghen chú.",
+              "say": "Chú cầm ổ ăn rồi hẵng dắt xe nha chú.",
               "tone": "AM",
               "act": {
                 "kind": "PROMISE_DEED",
@@ -1025,7 +1025,7 @@
           "mood": "MET"
         },
         {
-          "say": "Chú đứng xa cái bếp chút giùm con nghen chú.",
+          "say": "Chú đứng xa cái bếp chút giùm con nha chú.",
           "tone": "LANH",
           "reply": "…Ờ. Chú lui ra.",
           "mood": "LANH"

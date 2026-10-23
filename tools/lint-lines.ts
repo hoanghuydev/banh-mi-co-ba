@@ -1,7 +1,7 @@
 /**
  * npm run lint:lines [-- --fix] [-- --content <dir>]
  *
- * Linter cho file thoại — kiểm tra L001–L013.
+ * Linter cho file thoại — kiểm tra L001–L014.
  * `--fix` sửa được L004 (NFC), L005 (kiểu đặt dấu), L007 (viết hoa toàn bộ).
  *
  * Đọc `content/lines/**.json` (pool generic) và `content/rules/**.json` (response của rule).
@@ -27,6 +27,7 @@ const PANEL: Box = { px: 520, font: 19, maxLines: 4 };
 type Red = {
   war: string[]; demeaning: string[];
   northern: { allowNpcs: string[]; words: Record<string, string> };
+  archaic: Record<string, string>;
   unaccentedRisk: string[]; enPronounLeaks: string[];
 };
 
@@ -190,6 +191,10 @@ export function lintLines(contentDir: string, opts: { fix?: boolean } = {}): Rep
         for (const [bac, nam] of Object.entries(red.northern.words)) {
           if (hasWord(s, bac)) r.add("L008", "WARN", b.file, where, `từ giọng Bắc "${bac}" → giọng Nam "${nam}"`);
         }
+      }
+
+      for (const [cu, moi] of Object.entries(red.archaic)) {
+        if (hasWord(s, cu)) r.add("L014", "ERROR", b.file, where, `giọng Nam cổ "${cu}" → "${moi}"`);
       }
 
       for (const w of [...red.war, ...red.demeaning]) {

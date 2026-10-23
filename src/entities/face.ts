@@ -4,7 +4,7 @@ import type { Face } from "../sim/reaction";
 /**
  *   Mày  B0 thường · B1 nhíu nhẹ · B2 nhíu sâu · B3 nhướn · B4 lệch · B5 xuôi (buồn)
  *   Mắt  E0 thường · E1 nheo (soi) · E2 mở to · E3 liếc ngang · E4 nhắm (chịu) · E5 cười
- *   Miệng M0 thường · M1 mím (chữ ký chị Lan) · M2 cười nhẹ · M3 cười tươi · M4 méo · M5 há
+ *   Miệng M0 thường · M1 mím (chữ ký chị Trâm) · M2 cười nhẹ · M3 cười tươi · M4 méo · M5 há
  */
 export const FACE_R = 11;
 const INK = 0x2b2f31;

@@ -62,7 +62,7 @@ export const INTRO: Chapter[] = [
       { from: "landlord", text: "hợp đồng 6 tháng, cọc 2 tháng nha cháu" },
       { from: "landlord", text: "mặt bằng nhỏ nhưng ngay đầu hẻm, người qua lại cũng đông" },
       { from: ME, text: "dạ cháu ký ạ", typing: true },
-      { from: "landlord", text: "🔑 chìa khoá để ở tiệm tạp hoá cô Mai nha" },
+      { from: "landlord", text: "🔑 chìa khoá để ở tiệm tạp hoá cô Thuý nha" },
     ],
   },
   {

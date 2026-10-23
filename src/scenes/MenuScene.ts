@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { fitDesignFrame } from "../core/render";
-import { Stack, button, buttonHeight, label, panel, textScale, toggle, UI } from "../ui/theme";
+import { Stack, button, buttonHeight, label, panel, slider, sliderDragging, sliderHeight, textScale, toggle, UI } from "../ui/theme";
 import { drawAlleyBackdrop } from "../ui/backdrop";
 import { GAME_TITLE, cleanName } from "../content/shop";
 import {
@@ -10,8 +10,9 @@ import { bus } from "../core/eventbus";
 import { PLAYTEST } from "../core/flags";
 import { telemetry } from "../core/session";
 import { GAME_W, GAME_H } from "../core/config";
-import { CUES, MUSIC_STEPS, music } from "../audio/music";
+import { CUES, music } from "../audio/music";
 import { sfx } from "../audio/sfx";
+import { warmNpcPhotos } from "../art";
 
 type Page = "main" | "settings" | "audio" | "about" | "telemetry" | "confirmNew";
 
@@ -32,6 +33,7 @@ export class MenuScene extends Phaser.Scene {
     });
     // Bị chặn autoplay thì Phaser tự phát sau cú chạm đầu tiên.
     music.play(this, "menu");
+    warmNpcPhotos(this);
   }
 
   private show(page: Page) {
@@ -215,8 +217,8 @@ export class MenuScene extends Phaser.Scene {
     tg("Cỡ chữ", () => `${Math.round(s.textScale * 100)}%`,
       () => { put({ textScale: sizes[(sizes.indexOf(s.textScale) + 1) % sizes.length] }); this.show("settings"); });
     // Đặt hàng thứ hai vì cuộn ở trang này còn lệch vùng bấm.
-    tg("Âm thanh", () => (s.musicVolume === 0 ? "nhạc đang tắt" : "5 kênh riêng"),
-      () => this.show("audio"), "nhạc · hẻm · giọng người · thao tác · âm báo");
+    tg("Âm thanh", () => (s.masterVolume === 0 ? "tắt" : `${s.masterVolume}%`),
+      () => this.show("audio"), "tổng · nhạc nền · đường phố · giọng người · thao tác · âm báo");
     tg("Giảm chuyển động", () => (s.reducedMotion ? "bật" : "tắt"), () => put({ reducedMotion: !s.reducedMotion }),
       "tắt xe chạy qua, lá bay, rung màn hình");
     tg("Mũi tên trên đầu mình", () => (s.playerMarker ? "bật" : "tắt"), () => put({ playerMarker: !s.playerMarker }),
@@ -248,11 +250,6 @@ export class MenuScene extends Phaser.Scene {
       music.applySettings(s);
       sfx.applySettings(s);
     };
-    const nextStep = (v: number) => {
-      const at = (MUSIC_STEPS as readonly number[]).indexOf(v);
-      return MUSIC_STEPS[(Math.max(at, -1) + 1) % MUSIC_STEPS.length];
-    };
-    const show = (v: number) => (v === 0 ? "tắt" : `${v}%`);
 
     const x = GAME_W / 2;
     const body = this.add.container(0, 0);
@@ -261,22 +258,28 @@ export class MenuScene extends Phaser.Scene {
     body.add(bg);
     const top = Math.round(70 / textScale());
     const st = new Stack(top + 22, 10);
-    body.add(st.place(label(this, x, 0, "Âm thanh", 26, UI.ink, "700"), 6));
-    body.add(st.place(label(this, x, 0, "năm kênh, chỉnh riêng từng kênh", 13, UI.muted), 14));
+    body.add(st.place(label(this, x, 0, "Âm thanh", 26, UI.ink, "700"), 14));
 
     const tg = (name: string, get: () => string, fn: () => void, hint?: string) =>
       body.add(st.button(toggle(this, x, 0, name, get, fn, 340, hint)));
-    const chan = (name: string, key: "musicVolume" | "streetVolume" | "voiceVolume" | "foleyVolume" | "uiVolume" | "crowdVolume", hint: string, after?: () => void) =>
-      tg(name, () => show(s[key]), () => { put({ [key]: nextStep(s[key]) } as Partial<Settings>); after?.(); }, hint);
+    type Chan = "masterVolume" | "musicVolume" | "streetVolume" | "voiceVolume" | "foleyVolume" | "uiVolume" | "crowdVolume";
+    const chan = (name: string, key: Chan, hint: string, onRelease?: () => void) => {
+      const o = slider(this, x, 0, name, () => s[key], (v) => put({ [key]: v } as Partial<Settings>),
+        { width: 340, hint, onRelease });
+      o.setY(st.y + sliderHeight() / 2);
+      st.skip(sliderHeight() + 10);
+      body.add(o);
+    };
 
-    chan("Nhạc", "musicVolume", "nhạc nền theo giờ trong ngày",
-      // Từ 0 lên thì track đã bị thả, phải mồi lại.
-      () => music.play(this, "menu", 400));
+    // Từ 0 lên thì track đã bị thả, phải mồi lại.
+    const wake = () => music.play(this, "menu", 400);
+    chan("Âm lượng tổng", "masterVolume", "nhân vào mọi kênh bên dưới", wake);
+    chan("Nhạc nền", "musicVolume", "nhạc theo giờ trong ngày", wake);
     chan("Tiếng đường phố", "streetVolume", "hẻm, xe máy, còi, mưa, chó, chim");
+    chan("Tiếng người lao xao", "crowdVolume", "nằm trong tiếng đường phố, chỉnh riêng được");
     chan("Giọng người", "voiceVolume", "tiếng khách — kênh duy nhất không bị gì đè lên");
     chan("Tiếng thao tác", "foleyVolume", "dao, vỏ bánh, gói giấy, tiền lẻ");
     chan("Âm báo", "uiVolume", "click, chốt đơn, chuyển ngày");
-    chan("Tiếng người lao xao", "crowdVolume", "nằm trong tiếng đường phố, tắt riêng được");
 
     st.skip(6);
     body.add(st.place(label(this, x, 0, "trợ năng", 13, UI.muted), 8));
@@ -307,7 +310,7 @@ export class MenuScene extends Phaser.Scene {
       if (body.active) body.y = clamp(body.y - dy * 0.6);
     });
     this.input.on("pointermove", (p: Phaser.Input.Pointer) => {
-      if (body.active && p.isDown) body.y = clamp(body.y + (p.y - p.prevPosition.y));
+      if (body.active && p.isDown && !sliderDragging()) body.y = clamp(body.y + (p.y - p.prevPosition.y));
     });
   }
 

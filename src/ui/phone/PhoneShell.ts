@@ -79,7 +79,7 @@ export class PhoneShell {
     right.innerHTML = `${SIGNAL}${WIFI}${BATTERY}`;
     this.status.append(right);
     const frame = el("img", "ph-frame");
-    frame.src = "art/phone.png";
+    frame.src = "art/phone.webp";
     frame.alt = "";
     frame.draggable = false;
     this.screen.append(this.status);
@@ -120,6 +120,7 @@ export class PhoneShell {
 
   /** Thay ruột màn hình; thanh vuốt về nhà luôn ở đáy. */
   show(content: HTMLElement, dir: Dir = "") {
+    const keep = dir ? [] : this.scrollPos();
     this.view?.remove();
     const v = el("div", "ph-view");
     v.style.fontSize = `${Math.round(15 * Math.min(this.opts.textScale, 1.4))}px`;
@@ -134,7 +135,14 @@ export class PhoneShell {
       this.screen.insertBefore(v, bar);
     }
     this.view = v;
+    v.querySelectorAll<HTMLElement>(".ph-scroll, .ph-chips").forEach((n, i) => {
+      if (keep[i]) { n.scrollTop = keep[i][0]; n.scrollLeft = keep[i][1]; }
+    });
     return v;
+  }
+
+  private scrollPos(): [number, number][] {
+    return [...(this.view?.querySelectorAll<HTMLElement>(".ph-scroll, .ph-chips") ?? [])].map((n) => [n.scrollTop, n.scrollLeft]);
   }
 
   close() {

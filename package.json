@@ -13,6 +13,8 @@
     "test": "node --import tsx --test \"tests/**/*.test.ts\"",
     "gates": "tsx tools/check-gates.ts",
     "icons": "tsx tools/make-icons.ts",
+    "optimize:art": "python3 tools/optimize-art.py",
+    "recode:music": "python3 tools/audio/recode-music.py",
     "validate:rules": "tsx tools/validate-rules.ts",
     "lint:lines": "tsx tools/lint-lines.ts",
     "content:stats": "tsx tools/content-stats.ts",
@@ -30,7 +32,11 @@
     "probe:offer": "tsx tools/probe-offer.ts",
     "probe:tuition": "tsx tools/probe-tuition.ts",
     "probe:supply": "tsx tools/probe-supply.ts",
-    "probe:price": "tsx tools/probe-price.ts"
+    "probe:price": "tsx tools/probe-price.ts",
+    "probe:review": "tsx tools/probe-review.ts",
+    "probe:life": "tsx tools/probe-life.ts",
+    "dump:reviews": "tsx tools/dump-reviews.ts",
+    "probe:topics": "tsx tools/probe-topics.ts"
   },
   "dependencies": {
     "phaser": "^3.90.0"

@@ -1,5 +1,5 @@
 {
-  "_note": "Cây thiết bị. Ba luật: TB-1 mỗi món NHÌN THẤY trên xe (hoặc trên vỉa hè) + đổi cảm giác một thao tác · TB-2 không món nào BỎ một thao tác bắt buộc của người chơi (chỉ rút ngắn / nới cửa sổ / giảm rủi ro) · TB-4 xe có sức chứa hữu hạn, nhưng rộng tay: 12 ô nền + giá treo = 14, mà mua hết thì cần 16 — thiếu đúng một hai món, không phải một bài toán. Giá gốc (nghìn đồng) — code nhân ECON.scale.",
+  "_note": "Cây thiết bị. Ba luật: TB-1 mỗi món NHÌN THẤY trên xe (hoặc trên vỉa hè) + đổi cảm giác một thao tác · TB-2 không món nào BỎ một thao tác bắt buộc của người chơi (chỉ rút ngắn / nới cửa sổ / giảm rủi ro) · TB-4 xe có sức chứa hữu hạn, nhưng rộng tay: 12 ô nền + giá treo = 14, mà mua hết thì cần 15 — thiếu đúng một hai món, không phải một bài toán. Giá gốc (nghìn đồng) — code nhân ECON.scale.",
   "_viet": "MỖI MÓN: `feel` một câu người bán kể (KHÔNG phải tờ quảng cáo), rồi `gain` là LỢI ÍCH QUY RA SỐ. Mỗi dòng `gain` một con số đọc ra ngay (+20% khách ghé · chờ thêm 20 giây · để được 6 ngày thay vì 2). Không có `drawbacks`: tiền mua và tiền mỗi ngày là cái giá, hiện sẵn trên thẻ.",
   "_do": "SỐ TRÊN THẺ LÀ SỐ ĐO, KHÔNG PHẢI SỐ KHAI. Lưới TB-5 chỉ so chữ với HẰNG SỐ, không so với HÀNH VI. Chạy `npx tsx tools/audit-gain.ts` để đo lại: nó bật/tắt từng món trong sim thật rồi đếm. Sửa hằng số thì chạy lại và chép số mới vào đây.",
   "_so": "CON SỐ Ở ĐÂY PHẢI KHỚP MÃ. `gain` là hợp đồng với người chơi, không phải chữ trang trí — đổi `walkInMul` / `dirtMul` / `equipPatienceMul` trong `sim/equipment.ts`, `rateMul`+`burnAt` trong `StallScene`, `shelfDays` trong `sim/econ.ts`, `TEA_PATIENCE_SEC` + `SIT_PATIENCE_MUL` trong `sim/customer.ts` thì sửa luôn dòng chữ tương ứng. `tests/p3-equipment.test.ts` canh phần canh được.",
@@ -80,17 +80,6 @@
         "Chứa được 20 phần đồ lạnh thay vì 8"
       ]
     },
-    "NOI_U": {
-      "name": "Nồi ủ xíu mại",
-      "group": "BAO_QUAN",
-      "price_k": 450,
-      "slots": 1,
-      "daily_k": 6,
-      "feel": "Mở nắp ra còn bốc khói.",
-      "gain": [
-        "Xíu mại để được 2 ngày thay vì 1 — khỏi bỏ hàng dư"
-      ]
-    },
     "LONG_BAN": {
       "name": "Lồng bàn / tủ kính",
       "group": "BAO_QUAN",
@@ -163,7 +152,7 @@
       "name": "Bảng hiệu đứng trước xe",
       "group": "VAN_HANH",
       "price_k": 650,
-      "slots": 1,
+      "slots": 2,
       "daily_k": 0,
       "feel": "Tấm bảng gỗ chữ A dựng ra mép vỉa hè. Đứng đầu hẻm ngó xuống là đọc được chữ.",
       "gain": [

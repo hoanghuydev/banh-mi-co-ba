@@ -78,7 +78,7 @@ test("khoá riêng: lỗi trong ổ của khách A không thành 'đã thấy' l
   assert.equal(a, "ORDER_DEFECT:BA_BAY#0:MISSING:pate");
 });
 
-test("Bà Bảy không bao giờ bấm điện thoại (phoneBudget 0) — qua 500 lần chuyển ánh nhìn", () => {
+test("Dì Nguyệt không bao giờ bấm điện thoại (phoneBudget 0) — qua 500 lần chuyển ánh nhìn", () => {
   const g = new GazeMachine({ tickets: [9, 4, 5, 0, 2, 0], phoneBudget: 0 }, "BA_BAY#0", new Rng(1));
   const anh = new GazeMachine({ tickets: [2, 1, 4, 11, 0, 2], phoneBudget: 4 }, "ANH_BAO#0", new Rng(1));
   const seen = new Set<string>();

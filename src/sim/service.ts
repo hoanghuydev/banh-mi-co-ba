@@ -13,8 +13,9 @@ import { Customer, DEFAULT_PATIENCE_SEC, LEAVE_AT, PATIENCE_BONUS_SEC, TEA, teaS
 import {
   INGREDIENTS, diffDish, extraPortions, generosityOf, labelOf, levelsOf, mkDefect,
   sayOrder,
-  type Defect, type Ingredient, type OrderSpec,
+  type Defect, type DefectKind, type Ingredient, type OrderSpec,
 } from "./order";
+import type { ServeRecord } from "./reviews";
 import {
   MAX_LIVE_STIMULI, SALIENCE, STIM_SPEC, observe, peakOf, peakOfKey, rank, stateOf,
   type ActiveStim, type ObsState, type Occluder, type Zone,
@@ -35,11 +36,12 @@ import {
   type TalkOpenBy, type Deed, type ForSec,
   type Talk, type TalkAct, type TalkCtx, type TalkEffect, type TalkGate, type TalkMood, type TalkTone,
 } from "./talk";
-import { CAL, PRICE_FX, crowdMul, dishPriceVnd, dongVi, isRain, pickOf, tasteThreshold, weatherOf, type PricePicks } from "./econ";
+import { PRICE_FX, dishPriceVnd, dongVi, isRain, pickOf, tasteThreshold, weatherOf, type PricePicks } from "./econ";
 import { nhanOf, type MenuItemId } from "./menu";
+import { isOpen } from "./unlock";
 import { easeBalk } from "./ease";
 import { peakCap } from "./ease";
-import { has, walkInMul as equipWalkIn, type EquipId, type EquipState } from "./equipment";
+import { has, type EquipId, type EquipState } from "./equipment";
 import { makeChange } from "./till";
 import { moodBaseFace, moodPatienceMul, rollMood } from "./mood";
 import { faceHoldSec, intensityMul, isSilentGrudge, reactionDelay } from "./personality";
@@ -77,7 +79,7 @@ const PASSER_TALKS_MAX = 2;
 
 const DIRT_ON_CAMERA = 0.35;
 
-/** Khác cái gánh bà Sáu: gánh chắn LỐI (đo được bằng `balkChance`), xe thì ăn bớt khách LẠ đi ngang. */
+/** Khác cái gánh dì Liên: gánh chắn LỐI (đo được bằng `balkChance`), xe thì ăn bớt khách LẠ đi ngang. */
 const KIET_STEAL = 0.18;
 
 /** Phần người đi ngang ngoái lại khi nghe rao — chỉ bật `t.glanced`, người chơi vẫn phải mời. */
@@ -145,7 +147,7 @@ const PROMISE_KEPT = 45;
 const PROMISE_SWAPPED = 55;
 const PROMISE_BROKEN = 85;
 
-/** Tính SAU `intensityMul`: ông Hải nổ ở `anger` 40, thầy Phúc phải 80. */
+/** Tính SAU `intensityMul`: chú Thịnh nổ ở `anger` 40, thầy Khải phải 80. */
 const STORM_OFF_ANGER = 55;
 
 export const PRICE_BANH = 25_000;
@@ -288,7 +290,7 @@ export type ServiceDeps = {
   /** Reload giữa buổi: bỏ qua mọi lượt khách hẹn tới trước mốc này. */
   resumeAt?: number;
   /** Trỏ thẳng vào `world.progress.today`; vắng thì Service tự đếm trong bộ nhớ. */
-  todayCounters?: { talksDeep?: number; talkOffers?: number; strangers?: number; sick?: number; praise?: number; overpriced?: number; priceLost?: number };
+  todayCounters?: { talksDeep?: number; talkOffers?: number; strangers?: number; sick?: number; priceLost?: number };
   /** Mốc giá đang chọn theo món; trỏ thẳng vào save nên đổi giữa buổi có hiệu lực ngay. */
   prices?: PricePicks;
   readMul?: number;
@@ -296,6 +298,8 @@ export type ServiceDeps = {
   patienceMul?: number;
   /** Giây cộng thêm vào kiên nhẫn mọi khách. */
   patienceBonusSec?: number;
+  /** Số lượt khách của buổi bán (`sim/demand.guestsOf`), gồm cả khách quen. */
+  guests?: number;
   /** Số khách lạ thêm trong ngày. */
   extraGuests?: number;
   gazeMul?: number;
@@ -305,9 +309,37 @@ export type ServiceDeps = {
   noTimePressure?: boolean;
   /** Cờ thoại (`TalkEffect.flag`) — lưu ngày đặt; trỏ vào `SaveFile.flags`. */
   flags?: Record<string, string | number | boolean>;
+  /** Mỗi lượt phục vụ xong; bên ngoài lăn thành đánh giá. */
+  onServed?: (rec: ServeRecord) => void;
+  /** Vừa lắp đồ nghề mới trong vài ngày gần đây. */
+  freshGear?: boolean;
 };
 
 type Visit = { at: number; npc: NpcDef | null; seq: number; defer?: number };
+
+/** Trần phần khách quen trong một buổi — còn lại phải để cho khách lạ. */
+const NPC_MAX_SHARE = 0.6;
+
+/** Phần khách lạ của ba khung: mới dọn hàng · cao điểm · vãn. */
+const ARRIVAL_SHARE = [0.1, 0.6, 0.3];
+
+/** Chia đều trong từng khung rồi lắc nhẹ — không để cao điểm có lỗ trống hai mươi phút. */
+function planArrivals(n: number, rng: Rng): number[] {
+  const bands = [
+    [DAY_START_MIN + 8, PEAK_START_MIN],
+    [PEAK_START_MIN, PEAK_END_MIN],
+    [PEAK_END_MIN, DAY_END_MIN - 10],
+  ];
+  const out: number[] = [];
+  let left = n;
+  bands.forEach(([from, to], i) => {
+    const k = i === bands.length - 1 ? left : Math.min(left, Math.round(n * ARRIVAL_SHARE[i]));
+    left -= k;
+    for (let j = 0; j < k; j++) out.push(from + ((j + rng.next()) * (to - from)) / k);
+  });
+  return out;
+}
+
 /** ⚠️ Toạ độ thế giới DUY NHẤT không nằm trong `world/map.ts` — `assertWalkable()` không soi tới. */
 const PASS_SPOT = { x: 16.5, y: 8.4 };
 type Pending = {
@@ -449,7 +481,7 @@ export class Service {
   seatFree = false;
   /** `"NGOAI"` chiếm một chỗ mặt tiền cho tới khi được mời dời vô. */
   ganh: "NGOAI" | "TRONG" | null = null;
-  /** Xe chú Kiệt; tới là `"LAN"` (lấn mặt tiền) mặc định, `null` là vắng. */
+  /** Xe chú Đạt; tới là `"LAN"` (lấn mặt tiền) mặc định, `null` là vắng. */
   cart: "LAN" | "XA" | "CHUNG" | null = null;
   /** Giây THẬT. */
   raoUntil = -1;
@@ -513,17 +545,11 @@ export class Service {
       if (t === null) continue;
       list.push({ at: Math.max(DAY_START_MIN + 2, Math.min(DAY_END_MIN - 12, t)), npc });
     }
-    let t = DAY_START_MIN + 8;
-    while (t < DAY_END_MIN - 10) {
-      const peak = t >= PEAK_START_MIN && t < PEAK_END_MIN;
-      t += peak ? 6 + rng.next() * 7 : 15 + rng.next() * 16;
-      if (t >= DAY_END_MIN - 10) break;
-      const wx = weatherOf(this.deps.day);
-      const gear = equipWalkIn(this.deps.equip, isRain(wx), wx === "NANG_GAT", this.deps.loaOn ?? true);
-      const keep = Math.min(1, 0.65 * CAL.weatherInfo[wx].walkIn * crowdMul(this.deps.day) * gear);
-      if (rng.next() >= keep) continue;
-      list.push({ at: t, npc: null });
-    }
+    // Khách quen tính vào số khách của ngày, nhưng không được chiếm hết chỗ của khách lạ.
+    const guests = this.deps.guests ?? 0;
+    const maxNpc = Math.max(1, Math.round(guests * NPC_MAX_SHARE));
+    while (list.length > maxNpc) list.splice(Math.floor(rng.next() * list.length), 1);
+    for (const at of planArrivals(Math.max(0, guests - list.length), rng)) list.push({ at, npc: null });
     for (let i = 0; i < (this.deps.extraGuests ?? 0); i++) {
       list.push({ at: DAY_START_MIN + 12 + rng.next() * (DAY_END_MIN - DAY_START_MIN - 30), npc: null });
     }
@@ -537,6 +563,12 @@ export class Service {
 
   private mem(id: string): NpcState {
     return (this.deps.npcs[id] ??= newNpcState());
+  }
+
+  /** Người đang đứng chờ lúc này, tính như lúc sinh lượt ghé; gánh để ngoài là thêm một người. */
+  private aheadNow(except: Customer) {
+    return this.customers.filter((x) => x !== except && x.phase !== "leaving" && !x.pass && !x.balking).length
+      + (this.ganh === "NGOAI" ? 1 : 0);
   }
 
   private patienceOf(npc: NpcDef | null, at: number, ahead: number) {
@@ -577,7 +609,8 @@ export class Service {
     // ⚠️ Dòng số riêng `kiet:` — rút ké là dịch chuỗi số của cả lượt ghé.
     const kietLay = this.cart === "LAN" && !npc
       && this.deps.hub.derive(`kiet:${v.seq}`).next() < KIET_STEAL;
-    if (kietLay) this.out.push({ kind: "log", text: "một người ghé xe chú Kiệt thay vì xe mình." });
+    if (kietLay) this.out.push({ kind: "log", text: "một người ghé xe chú Đạt thay vì xe mình." });
+
 
     const balking = kietLay || (!this.deps.noTimePressure
       && this.deps.hub.derive(`balk:${v.seq}`).next() < easeBalk(this.deps.day) * balkChance({
@@ -592,6 +625,7 @@ export class Service {
       { ...GATE }, this.patienceOf(npc, nowMin, ahead) * moodPatienceMul(mood), rng,
     );
     c.balking = balking;
+    c.lured = kietLay;
     // Không `await`: họ còn đi bộ mấy giây, và `openTalk()` đã có đường lui nếu chưa kịp.
     void this.talks.ensure(npc ? npc.id : "WALKIN");
     c.dayMood = mood;
@@ -627,6 +661,7 @@ export class Service {
     this.customers.splice(i, 1);
     this.customers.splice(j, 0, c);
     c.cutLine = true;
+    victim.wasCut = true;
     this.assignSlots();
     this.out.push({ kind: "log", text: `${this.label(c)} chen lên trước ${this.label(victim)}.` });
   }
@@ -902,6 +937,12 @@ export class Service {
     if (c.balking && c.phase !== "leaving") {
       walk(c, BALK_LOOK, dt);
       if (!near(c, BALK_LOOK, 0.25)) return;
+      // Chốt lúc ĐỨNG NHÌN, không phải lúc sinh ra: hàng vãn giữa đường thì họ vào thật.
+      if (!c.priceWalk && !c.lured && this.aheadNow(c) < balkFrom(SLOTS.length)) {
+        c.balking = false;
+        c.visitCount = ++this.mem(c.memKey).visits;
+        return;
+      }
       c.balkAt = c.now;
       this.leave(c, "balked");
       return;
@@ -1012,7 +1053,24 @@ export class Service {
     this.soldOutCount++;
     this.speakConcept(c, "FAREWELL", { leaveReason: "SOLD_OUT" }, 80, true);
     this.react(c, "MADE_THEM_WAIT", 2);
+    this.reportTurnedAway(c);
     this.leave(c, "soldout");
+  }
+
+  /** Về không thì cũng đánh giá được — không có ổ nào để chấm, chỉ chấm cái sự hết hàng. */
+  private reportTurnedAway(c: Customer) {
+    if (!this.deps.onServed) return;
+    this.deps.onServed({
+      mon: c.order?.intent.mon ?? "opla",
+      who: this.label(c),
+      silentScore: 0,
+      sat: 0.6,
+      pricePick: 1,
+      waitStage: c.waitStage,
+      sick: false,
+      defect: "het-banh",
+      anon: !c.npc,
+    });
   }
 
   /** Không phải ai cũng chào, không thì thành tiếng chuông cửa. */
@@ -1027,13 +1085,30 @@ export class Service {
   }
 
   /** Ghi sổ khách khen hoặc chê giá sau khi trả tiền. */
-  private rollPriceVerdict(c: Customer) {
-    const t = this.deps.todayCounters;
-    if (!t || !c.order) return;
-    const pick = pickOf(this.deps.prices, c.order.intent.mon);
-    const rng = this.deps.hub.derive(`verdict:${this.deps.day}:${c.id}`);
-    if (rng.next() < PRICE_FX.praise[pick]) t.praise = (t.praise ?? 0) + 1;
-    if (rng.next() < PRICE_FX.overpriced[pick]) t.overpriced = (t.overpriced ?? 0) + 1;
+  private reportServed(c: Customer, o: {
+    silentScore: number; sat: number; sick: boolean; topic: string | null; gaveExtra: boolean; quality?: number;
+  }) {
+    if (!this.deps.onServed || !c.order) return;
+    const saw = (id: string) => [...c.observations.values()].some((x) => x.peak === "CONFIRMED" && x.id === id);
+    this.deps.onServed({
+      mon: c.order.intent.mon,
+      who: this.label(c),
+      silentScore: o.silentScore,
+      sat: o.sat,
+      quality: o.quality,
+      pricePick: pickOf(this.deps.prices, c.order.intent.mon),
+      waitStage: c.waitStage,
+      sick: o.sick,
+      defect: o.topic,
+      dirtyHands: saw("DIRTY_HANDS"),
+      gaveExtra: o.gaveExtra,
+      gaveTea: c.visit.gaveTea,
+      wasCut: c.wasCut,
+      rain: isRain(weatherOf(this.deps.day)),
+      loaOn: !!this.deps.loaOn,
+      freshGear: !!this.deps.freshGear,
+      anon: !c.npc,
+    });
   }
 
   private priceOf(intent: { mon: MenuItemId; nhieu?: string }) {
@@ -1075,12 +1150,15 @@ export class Service {
       this.out.push({ kind: "log", text: `${this.label(c)} xem giá rồi quay đi — đắt quá.` });
     } else if (reason === "balked") {
       this.balkedCount++;
-      this.speakConcept(c, "FAREWELL", { leaveReason: "BALKED" }, 80);
-      this.out.push({ kind: "log", text: `${this.label(c)} nhìn hàng rồi quay về — đông quá.` });
+      if (!c.lured) {
+        this.speakConcept(c, "FAREWELL", { leaveReason: "BALKED" }, 80);
+        this.out.push({ kind: "log", text: `${this.label(c)} nhìn hàng rồi quay về — đông quá.` });
+      }
     }
     this.talks.release(this.talkKey(c));
     this.speaker.sync(this.nowSec);
-    this.deps.bus.emit("npc:left", { npcId: c.memKey, visitId: c.id, reason: LEAVE_REASON[reason] });
+    const busReason = reason === "balked" && c.priceWalk ? "PRICE_WALK" : LEAVE_REASON[reason];
+    this.deps.bus.emit("npc:left", { npcId: c.memKey, visitId: c.id, reason: busReason });
   }
 
   /** ⚠️ Sự thật thế giới chỉ ghi ở đây, mỗi frame, một chỗ — ghi nhiều chỗ là sớm muộn lệch. */
@@ -1130,7 +1208,7 @@ export class Service {
         this.say(c, `${DEED_LABEL[d.deed.what] ?? "Cái hồi nãy"}… sao rồi {you}?`, 2, true, 70);
         if (step) this.applyTalkOption(c, step);
       } else if (stage === 1) {
-        this.say(c, "Thôi khỏi. Nói vậy chớ có làm đâu.", 2, true, 85);
+        this.say(c, "Thôi khỏi. Nói vậy chứ có làm đâu.", 2, true, 85);
         this.applyTalkOption(c, step ?? { anger: 25 });
       } else {
         if (step) this.applyTalkOption(c, step);
@@ -1419,11 +1497,16 @@ export class Service {
     if (c.personality.soi >= 0.7 && c.personality.nongTinh <= 0.3 && (sawHygiene || (isSilentGrudge(c.personality) && defects.length > 0))) {
       c.binDetour = true;
     }
-    if ((opts.sick ?? 0) > 0 && this.deps.hub.derive(`sick:${this.deps.day}:${c.id}`).next() < opts.sick!) {
+    const sick = (opts.sick ?? 0) > 0
+      && this.deps.hub.derive(`sick:${this.deps.day}:${c.id}`).next() < opts.sick!;
+    if (sick) {
       const t = this.deps.todayCounters;
       if (t) t.sick = (t.sick ?? 0) + 1;
     }
-    this.rollPriceVerdict(c);
+    this.reportServed(c, {
+      silentScore, sat, sick, gaveExtra, quality: opts.quality,
+      topic: reviewTopic(spoken, { grit, crustLow, crustSinged }),
+    });
     this.leave(c, "served");
     return { ok: true, playerSay };
   }
@@ -1643,6 +1726,7 @@ export class Service {
       queue: this.audience.length,
       shadeFree: this.shadeFree,
       seatFree: this.seatFree,
+      menuDayDu: isOpen("daydu", this.deps.day),
       ganhOut: this.ganh === "NGOAI",
       cartLan: this.cart === "LAN",
       cartChung: this.cart === "CHUNG",
@@ -2557,7 +2641,7 @@ export class Service {
     return { npc: c.memKey, facts: q.dump(), ranking: this.speaker.db.explain(concept, q, this.speaker.st, this.nowSec) };
   }
 
-  /** Giá theo thực đơn (không bao giờ trừ tiền bánh). Thiếu lẻ thì làm tròn xuống hoặc chạy qua cô Mai. */
+  /** Giá theo thực đơn (không bao giờ trừ tiền bánh). Thiếu lẻ thì làm tròn xuống hoặc chạy qua cô Thuý. */
   private settlePayment(c: Customer, price: number) {
     const r = this.deps.hub.derive(`cash:${c.id}`);
     const qr = has(this.deps.equip, "BANG_QR");
@@ -2570,7 +2654,7 @@ export class Service {
           amount -= ch.roundedDown;
           this.out.push({ kind: "log", text: `hết tiền lẻ — bớt cho khách ${ch.roundedDown.toLocaleString("vi-VN")}₫` });
         } else {
-          this.out.push({ kind: "log", text: "hết tiền lẻ — chạy qua cô Mai đổi" });
+          this.out.push({ kind: "log", text: "hết tiền lẻ — chạy qua cô Thuý đổi" });
         }
       }
     }
@@ -2661,3 +2745,23 @@ function walk(c: Customer, to: { x: number; y: number }, dt: number, mul = 1) {
   if (!hitsWall(c.x, ny, 0.22)) c.y = ny;
 }
 
+
+const DEFECT_TOPIC: Record<DefectKind, string> = {
+  MISSING: "thieu-nhan",
+  UNWANTED: "sai-mon",
+  WRONG_RATIO: "it-nhan",
+  WRONG_TEMP: "nguoi",
+  STUFFED: "nhoi-nhet",
+  TASTE_OFF: "do-cu",
+};
+
+/** Lỗi nặng nhất khách mang về, đổi sang chủ đề để chọn câu đánh giá. */
+function reviewTopic(
+  spoken: DiffedDefect | null,
+  f: { grit: boolean; crustLow: boolean; crustSinged: boolean },
+): string | null {
+  if (f.grit) return "co-san";
+  if (f.crustLow) return "banh-song";
+  if (f.crustSinged) return "banh-khet";
+  return spoken ? DEFECT_TOPIC[spoken.kind] ?? null : null;
+}

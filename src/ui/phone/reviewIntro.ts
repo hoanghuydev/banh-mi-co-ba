@@ -4,7 +4,7 @@ import { el, starRow } from "./dom";
 export function reviewIntro(shopName: string): HTMLElement[] {
   const hero = el("div", "ph-rev-hero");
   hero.append(el("div", "shop", shopName), el("div", "sub", "Quán bánh mì"));
-  hero.append(el("div", "ph-score", "0.0"));
+  hero.append(el("div", "ph-score", "0,0"));
   const stars = el("div", "ph-stars");
   stars.setAttribute("aria-label", "Chưa có sao");
   stars.innerHTML = starRow(0, 30);

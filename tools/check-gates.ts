@@ -1,5 +1,5 @@
 /** npm run gates [-- --dist] — cổng kỹ thuật cứng, trượt là exit 1; `--dist` quét thêm bản build. */
-import { existsSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { ROOT, read, rel, walk } from "./lib";
 
@@ -74,6 +74,19 @@ if (process.argv.includes("--dist")) {
       }
     }
     gates.push({ name: "bản build không chứa code overlay dev", hits });
+
+    const MB = 1024 * 1024;
+    const BUDGET: [dir: string, maxMB: number][] = [["art", 6], ["audio/music", 8], ["audio/sfx", 7]];
+    const over = BUDGET.flatMap(([d, max]) => {
+      const total = walk(join(dist, d), [""]).reduce((n, f) => n + statSync(f).size, 0);
+      return total > max * MB ? [`dist/${d} ${(total / MB).toFixed(1)} MB > ${max} MB`] : [];
+    });
+    gates.push({ name: "dung lượng art/nhạc/sfx trong ngân sách", hits: over });
+
+    const heavy = walk(join(dist, "art"), [".webp", ".png"])
+      .filter((f) => f.endsWith(".png") || statSync(f).size > 1.2 * MB)
+      .map((f) => `${rel(f)} ${f.endsWith(".png") ? "còn là PNG — chạy tools/optimize-art.py" : "quá 1,2 MB"}`);
+    gates.push({ name: "ảnh trong dist/art là WebP và không file nào quá 1,2 MB", hits: heavy });
   }
 }
 

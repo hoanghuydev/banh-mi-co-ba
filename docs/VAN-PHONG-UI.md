@@ -105,7 +105,39 @@ Bên trái **chỉ được** xuất hiện trong thoại. Bên phải là chữ
 
 ---
 
-## 6. Cách kiểm
+## 6. Giao diện **hiện** cái đó, không **kể** cái đó
+
+> **Luật V6 — màn hình nào cũng trông như đúng thứ nó đang là, và không giải thích chính nó.**
+> App ghi chú trông như app ghi chú. Trang đánh giá trông như trang đánh giá. Người chơi nhìn là hiểu — không cần một dòng chữ dắt tay.
+
+Ba thứ **cấm** viết ra:
+
+| Cấm | Vì sao | Thay bằng |
+|---|---|---|
+| **Dắt tay** — `Hãy note vào đây`, `Hãy bán hàng để có đánh giá`, `Nhấn vào để xem` | App thật không ai viết vậy. Ô nhập trống + con trỏ nháy là đủ | Để trống, hoặc placeholder một từ |
+| **Tự thuật** — `Chủ quán đã phản hồi`, `Đã gửi phản hồi thành công` | Phản hồi hiện ra ngay dưới comment khách là đã thấy rồi. Dán nhãn lên nó là thừa | Hiện đúng hình dạng quen: comment khách → comment mình, như app social |
+| **Kể cơ chế người chơi thấy được** — `Giá đắt nên 15% khách bỏ đi`, `Chờ lâu nên khách chấm sao thấp` | Khách **diễn ra trước mắt**: họ bỏ đi, họ chê giá, họ chấm sao. Viết thêm là nói lại cái vừa xảy ra | Để khách diễn. Bảng chỉ hiện dữ liệu |
+
+**⚠️ Hiệu ứng ngầm thì PHẢI ghi.** Thay đổi nhỏ, chậm, cộng dồn — thứ người chơi **không đo nổi bằng mắt** — thì nói rõ, kèm mức hiện tại:
+`Nhan sắc +1 (cấp 3/12). Kiên nhẫn của khách +1 giây, vĩnh viễn, cộng dồn. Hiện tại: +3 giây.`
+Giấu mấy con số này đi thì phần thưởng thành vô nghĩa — người chơi không biết mình vừa được gì.
+
+**Phép thử — một người chơi ngồi xuống có tự thấy điều này không?**
+
+| Thấy được | Không thấy được |
+|---|---|
+| Khách bỏ đi vì giá · khách chê · số sao tụt · giỏ hàng cộng tiền · danh sách trống | +1 giây kiên nhẫn · buff cộng dồn · thời hạn hiệu lực · xác suất ẩn · điều kiện mở khoá |
+| → **đừng viết** | → **phải viết, kèm con số** |
+
+Giữa hai cột là **hướng dẫn nhẹ**: một câu ngắn ở đúng chỗ cần, không phải đoạn văn dạy dỗ.
+
+**Trống thì trông như trống.** Danh sách chưa có gì thì để khung rỗng của chính nó (trang đánh giá: tên quán, chỗ chấm sao chưa có số, 0 đánh giá). Không viết câu an ủi, không viết hướng dẫn, không viết lý do.
+
+**Ngoại lệ duy nhất:** hướng dẫn ngày đầu — chỗ đó *được phép* dạy thao tác, theo khuôn V3 (`<phím>` + `để` + việc). Dạy **bấm gì**, vẫn không kể **cơ chế bên dưới**.
+
+---
+
+## 7. Cách kiểm
 
 | Chỗ | Làm gì |
 |---|---|
@@ -113,13 +145,13 @@ Bên trái **chỉ được** xuất hiện trong thoại. Bên phải là chữ
 | `npm run lint:lines` | chỉ quét `content/lines` + `content/rules`. **Chưa** quét `src/ui/**` — cần thêm một kiểm tra mới quét chuỗi hiện màn hình theo §4. |
 | Review tay | mở bảng ở §4, tìm từ bên cột trái trong `src/ui/**`, `src/scenes/**`, `sim/gearHint.ts`. |
 
-**Lời kể sự kiện là chữ của game.** Dòng log không có ai phát ra: nó là game thuật lại chuyện vừa xảy ra, nên nó viết phổ thông — `bà Sáu bước vào chỗ mát đứng`, `khách thấy ổ đó rơi rồi`. Giọng Nam chỉ còn ở phần **trong ngoặc kép** của chính dòng đó: `Cô Mai (chạy qua): "Cần tiền lẻ hôn? Cô có nè."` giữ nguyên, vì đó là người nói.
+**Lời kể sự kiện là chữ của game.** Dòng log không có ai phát ra: nó là game thuật lại chuyện vừa xảy ra, nên nó viết phổ thông — `dì Liên bước vào chỗ mát đứng`, `khách thấy ổ đó rơi rồi`. Giọng Nam chỉ còn ở phần **trong ngoặc kép** của chính dòng đó: `Cô Thuý (chạy qua): "Cần tiền lẻ hôn? Cô có nè."` giữ nguyên, vì đó là người nói.
 
 **Một chuỗi dùng ở hai kênh thì theo kênh UI.** `DEED_LABEL` vừa vào nhãn lời hứa vừa vào một câu thoại, nên nó về phổ thông (`bưng giúp cái gánh`) — một người Sài Gòn nói "giúp" vẫn tự nhiên, còn cái nhãn thì không được "giùm". Ngoại lệ duy nhất đi ngược chiều: `sim/recall.ts`, vì mọi mảnh ở đó chỉ tồn tại bên trong câu NPC nói.
 
 ---
 
-## 7. Đã sửa
+## 8. Đã sửa
 
 **Đợt 1 — UI, 11 file.** `src/ui/**`, `src/scenes/**`, `sim/gearHint.ts`, `sim/day.ts`:
 

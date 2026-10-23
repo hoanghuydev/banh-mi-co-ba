@@ -5,11 +5,15 @@ import {
 } from "./econ";
 import { defaultOffer, offerPrice } from "./suppliers";
 import { easePatience } from "./ease";
+import { guestsOf } from "./demand";
 import { eveningCount, morningRent, newEconState, newToday } from "./obligations";
 import { CAL, fixedCostVnd, isRain } from "./econ";
 import { extraGuests, feeWaivedToday, patienceBonusSec } from "./system";
 import { equipPatienceMul, extraDailyVnd, has, newEquipState } from "./equipment";
 import { goodOpen } from "./unlock";
+import { dailyNoise, flushQueue } from "./reviews";
+import { pruneOrders } from "./shop";
+import { DAY_END_MIN, DAY_START_MIN } from "../core/clock";
 
 const DAWN = "dawnDay";
 
@@ -27,12 +31,13 @@ export function dawn(w: SaveFile) {
   w.progress.weather = weatherOf(day);
   w.equipment ??= newEquipState();
   w.inventory.storage = has(w.equipment, "TU_MAT") ? "tu_mat" : "thung_xop";
-  w.inventory.noiU = has(w.equipment, "NOI_U");
   if (isRain(w.progress.weather)) w.flags.rainyDaySeen = true;
   w.econ.today = newToday(day);
+  pruneOrders(w);
   const wasted = expire(w.inventory, day);
   w.econ.today.wasted = wasted.map((x) => `${fmtUnits(x.units)} ${GOODS[x.good].unit} ${GOODS[x.good].label}`);
   w.econ.float = w.econ.floatLeft = 100_000;
+  dailyNoise(w, DAY_START_MIN + 30, DAY_END_MIN);
   const rent = morningRent(w.econ, w.money);
   return { wasted, rent };
 }
@@ -85,12 +90,12 @@ export function eveningCounting(w: SaveFile) {
   const e = w.econ.today, t = w.progress.today;
   const cost = e.market + e.rent + e.fixed + e.tools + e.talk + e.family;
   const row = { day, revenue: t.revenue, cost, served: t.served, lost: t.lost, sick: t.sick ?? 0 };
-  if (w.flags.sickDay !== day) { w.flags.sickDay = day; w.flags.sickTotal = Number(w.flags.sickTotal ?? 0) + (t.sick ?? 0); }
+  flushQueue(w);
   const i = w.ledger.findIndex((r) => r.day === day);
   if (i >= 0) w.ledger[i] = row; else w.ledger.push(row);
 }
 
-/** Loa rao làm hàng xóm khó chịu dần (ẩn số): 7 cô Mai nhắc · 12 khách than · 18 tắt loa 5 ngày. */
+/** Loa rao làm hàng xóm khó chịu dần (ẩn số): 7 cô Thuý nhắc · 12 khách than · 18 tắt loa 5 ngày. */
 export function neighborTick(w: SaveFile) {
   const e = w.econ, day = w.progress.dayIndex;
   if (w.flags.neighborDay === day) return [];
@@ -99,7 +104,7 @@ export function neighborTick(w: SaveFile) {
   const before = e.neighborAnnoyance ?? 0;
   e.neighborAnnoyance = Math.max(0, before + (loaOn ? 1 : 0) - 0.5);
   const lines: string[] = [];
-  if (before < 7 && e.neighborAnnoyance >= 7) lines.push('Cô Mai: "Con mở nhỏ nhỏ chút nghen, bà Tư nhà trên ngủ trưa."');
+  if (before < 7 && e.neighborAnnoyance >= 7) lines.push('Cô Thuý: "Con mở nhỏ nhỏ chút nha, bà Tư nhà trên ngủ trưa."');
   if (before < 12 && e.neighborAnnoyance >= 12) lines.push('Khách: "Ồn quá con."');
   if (e.neighborAnnoyance >= 18) {
     e.loaOffUntil = day + 5;
@@ -115,8 +120,13 @@ export function dayDeps(w: SaveFile) {
   return {
     patienceMul: equipPatienceMul(w.equipment) * easePatience(day),
     patienceBonusSec: patienceBonusSec(w),
+    guests: guestsOf(w),
     extraGuests: extraGuests(w),
     gazeMul: CAL.weatherInfo[weatherOf(day)].gazeMul,
     prices: w.menu.price,
+    freshGear: w.shop.gearOrders.some((o) => o.delivered && day - o.day <= FRESH_GEAR_DAYS),
   };
 }
+
+/** Đồ nghề lắp trong chừng này ngày thì khách còn nhận ra. */
+const FRESH_GEAR_DAYS = 3;

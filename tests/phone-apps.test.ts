@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 import { newGame } from "../src/core/save";
 import { DAY_START_MIN } from "../src/core/clock";
 import { stockOf } from "../src/sim/econ";
-import { PRE_OPEN_ARRIVE_MIN, deliverDue, placeOrder, quote } from "../src/sim/shop";
+import {
+  EXPRESS_FEE, EXPRESS_MIN, NO_SHIPPER_PCT, PRE_OPEN_ARRIVE_MIN, deliverDue, placeOrder, quote, shipperAt,
+} from "../src/sim/shop";
 import {
   BEAUTY_MAX, DANH_TIENG_GUESTS, REWARDS, SLOTS, accept, canSpin, cleanHandsToday, extraGuests, feeWaivedToday, patienceBonusSec,
   refuse, spin, spinIndex, swiftToday, wheelOf,
@@ -44,17 +46,78 @@ test("không đủ tiền hoặc giỏ trống thì không đặt được", () 
   assert.equal(w.money.cash, 1000);
 });
 
-test("thẻ giảm giá −10% và hoả tốc chỉ dùng khi có thẻ", () => {
+test("thẻ giảm giá −10%", () => {
   const w = newGame("x", "sh-4");
   const plain = quote(w, { BANH: 10 }, 360, { coupon: false, express: false, beforeOpen: true });
-  assert.equal(placeOrder(w, { BANH: 10 }, 360, { coupon: true, express: true, beforeOpen: true })!.express, false);
   w.system.discount = 1;
-  w.system.express = 1;
-  const o = placeOrder(w, { BANH: 10 }, 400, { coupon: true, express: true, beforeOpen: true })!;
+  const o = placeOrder(w, { BANH: 10 }, 360, { coupon: true, express: false, beforeOpen: true })!;
   assert.ok(o.total < plain.total);
-  assert.equal(o.deliverMin, 460);
   assert.equal(w.system.discount, 0);
+});
+
+/** Ngày + giờ có shipper, để mấy ca hoả tốc không rơi trúng ô 10% kia. */
+function hourWithShipper(w: ReturnType<typeof newGame>) {
+  for (let day = 1; day <= 40; day++) {
+    w.progress.dayIndex = day;
+    for (let h = 6; h <= 9; h++) if (shipperAt(w, h * 60)) return h * 60;
+  }
+  throw new Error("không có giờ nào có shipper — hỏng bảng băm");
+}
+
+test("hoả tốc: trả phí ship, tới sau một giờ", () => {
+  const w = newGame("x", "sh-ex");
+  const at = hourWithShipper(w);
+  const plain = quote(w, { BANH: 10 }, at, { coupon: false, express: false, beforeOpen: false });
+  const fast = quote(w, { BANH: 10 }, at, { coupon: false, express: true, beforeOpen: false });
+  assert.equal(fast.fee, EXPRESS_FEE);
+  assert.equal(fast.total, plain.total + EXPRESS_FEE);
+  assert.equal(plain.deliverDay, w.progress.dayIndex + 1, "đơn thường để sáng mai");
+
+  const cash = w.money.cash;
+  const o = placeOrder(w, { BANH: 10 }, at, { coupon: false, express: true, beforeOpen: false })!;
+  assert.equal(o.express, true);
+  assert.equal(o.deliverDay, w.progress.dayIndex);
+  assert.equal(o.deliverMin, at + EXPRESS_MIN);
+  assert.equal(w.money.cash, cash - o.total);
+});
+
+test("Thần Hành Phù: hoả tốc miễn phí ship, dùng một lần", () => {
+  const w = newGame("x", "sh-ex2");
+  const at = hourWithShipper(w);
+  w.system.express = 1;
+  const q = quote(w, { BANH: 10 }, at, { coupon: false, express: true, beforeOpen: false });
+  assert.equal(q.fee, 0);
+  const o = placeOrder(w, { BANH: 10 }, at, { coupon: false, express: true, beforeOpen: false })!;
+  assert.equal(o.total, q.total);
   assert.equal(w.system.express, 0);
+  assert.equal(quote(w, { BANH: 10 }, at, { coupon: false, express: true, beforeOpen: false }).fee, EXPRESS_FEE);
+});
+
+test("mỗi khung giờ có lúc không ai nhận cuốc — chặn đặt, và cùng giờ thì không đổi ý", () => {
+  const w = newGame("x", "sh-ex3");
+  let none = 0, total = 0;
+  for (let day = 1; day <= 200; day++) {
+    w.progress.dayIndex = day;
+    for (let h = 6; h <= 10; h++) {
+      total++;
+      if (!shipperAt(w, h * 60)) none++;
+      assert.equal(shipperAt(w, h * 60), shipperAt(w, h * 60 + 59), "trong một giờ phải cùng một câu trả lời");
+    }
+  }
+  const pct = (none / total) * 100;
+  assert.ok(Math.abs(pct - NO_SHIPPER_PCT) < 4, `tỉ lệ không có shipper ${pct.toFixed(1)}%`);
+
+  const hit = (() => {
+    for (let day = 1; day <= 200; day++) {
+      w.progress.dayIndex = day;
+      for (let h = 6; h <= 10; h++) if (!shipperAt(w, h * 60)) return h * 60;
+    }
+    throw new Error("không tìm ra giờ vắng shipper");
+  })();
+  assert.equal(quote(w, { BANH: 10 }, hit, { coupon: false, express: true, beforeOpen: false }).blocked, "shipper");
+  assert.equal(placeOrder(w, { BANH: 10 }, hit, { coupon: false, express: true, beforeOpen: false }), null);
+  assert.equal(quote(w, { BANH: 10 }, hit, { coupon: false, express: false, beforeOpen: false }).blocked, null,
+    "đơn thường vẫn đặt được");
 });
 
 test("vòng quay: 8 ô, ít nhất 2 ô may mắn, cùng ngày cùng kết quả", () => {
@@ -163,7 +226,7 @@ test("đồ nghề: giỏ vượt tiền hoặc vượt chỗ trên xe thì khô
   assert.equal(orderGear(w), null);
   w.money.cash = 99_000_000;
   w.shop.gearCart = [];
-  for (const g of ["GHE_BAN", "DU_CHE", "QUAT_DIEN", "LOA_RAO", "BANG_HIEU", "NOI_U", "LONG_BAN"] as const) toggleGear(w, g);
+  for (const g of ["GHE_BAN", "DU_CHE", "QUAT_DIEN", "LOA_RAO", "BANG_HIEU", "LONG_BAN"] as const) toggleGear(w, g);
   w.shop.gearCart.push("TU_MAT", "LO_DIEN");
   assert.equal(gearQuote(w).blocked, "slots");
 });

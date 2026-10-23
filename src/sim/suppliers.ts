@@ -27,9 +27,9 @@ export function marketPriceK(g: GoodId, day: number): number {
   return base * (1 + r * NOISE);
 }
 
-/** Nghìn đồng, làm tròn 0,5. */
+/** Nghìn đồng, làm tròn 10đ. */
 export function offerPriceK(o: Offer, day: number): number {
-  return Math.max(0.5, Math.round(marketPriceK(o.good, day) * QUALITIES[o.tier].price * o.mul * 2) / 2);
+  return Math.max(0.01, Math.round(marketPriceK(o.good, day) * QUALITIES[o.tier].price * o.mul * 100) / 100);
 }
 
 export const offerPrice = (o: Offer, day: number) => vnd(offerPriceK(o, day));

@@ -1,14 +1,14 @@
 {
-  "_note": "Cô Mai — chủ tạp hoá đối diện, LÀM ĂN ĐƯỢC (§19.5: cái hẻm mà ai cũng nghèo là cái hẻm giả). Nhắc nhẹ, dạy nghề, dạy kinh tế. Phản ứng xấu với FREE_EXTRA vì lý do KINH DOANH.",
+  "_note": "Cô Thuý — chủ tạp hoá đối diện, LÀM ĂN ĐƯỢC (§19.5: cái hẻm mà ai cũng nghèo là cái hẻm giả). Nhắc nhẹ, dạy nghề, dạy kinh tế. Phản ứng xấu với FREE_EXTRA vì lý do KINH DOANH.",
   "rules": [
-    {"id": "mai.dropped_food", "concept": "NOTICE_EVENT", "when": {"npcId": "CO_MAI", "eventId": "DROPPED_FOOD", "obsState": ">=NOTICED", "ctxBarkT1_DROP": "absent"}, "applycontext": {"ctxBarkT1_DROP": {"value": 1, "duration": 90}}, "say": ["Bỏ nghen con. Một ổ bánh rẻ hơn một cái tiếng đồn nhiều."]},
+    {"id": "mai.dropped_food", "concept": "NOTICE_EVENT", "when": {"npcId": "CO_MAI", "eventId": "DROPPED_FOOD", "obsState": ">=NOTICED", "ctxBarkT1_DROP": "absent"}, "applycontext": {"ctxBarkT1_DROP": {"value": 1, "duration": 90}}, "say": ["Bỏ nha con. Một ổ bánh rẻ hơn một cái tiếng đồn nhiều."]},
     {"id": "mai.dirty_hands", "concept": "NOTICE_EVENT", "when": {"npcId": "CO_MAI", "eventId": "DIRTY_HANDS", "obsState": ">=NOTICED", "ctxBarkT1_TAY": "absent"}, "applycontext": {"ctxBarkT1_TAY": {"value": 1, "duration": 90}}, "say": ["Để cô kêu con nhỏ nhà cô đem qua cho con chai nước rửa tay. Bán hàng phải sạch."]},
     {"id": "mai.burnt_or_cold", "concept": "NOTICE_EVENT", "when": {"npcId": "CO_MAI", "eventId": "BURNT_OR_COLD", "eventBurnt": true, "obsState": ">=NOTICED", "ctxBarkT1_KHET": "absent"}, "applycontext": {"ctxBarkT1_KHET": {"value": 1, "duration": 90}}, "say": ["Lò con nóng quá rồi đó. Hạ lửa xuống, không thì ngày nào cũng cháy."]},
-    {"id": "mai.cold", "concept": "NOTICE_EVENT", "when": {"npcId": "CO_MAI", "eventId": "BURNT_OR_COLD", "eventBurnt": false, "obsState": ">=NOTICED", "ctxBarkT1_NGUOI": "absent"}, "applycontext": {"ctxBarkT1_NGUOI": {"value": 1, "duration": 90}}, "say": ["Ổ này ra lò lâu rồi phải hông con? Để nguội là uổng bánh lắm."]},
+    {"id": "mai.cold", "concept": "NOTICE_EVENT", "when": {"npcId": "CO_MAI", "eventId": "BURNT_OR_COLD", "eventBurnt": false, "obsState": ">=NOTICED", "ctxBarkT1_NGUOI": "absent"}, "applycontext": {"ctxBarkT1_NGUOI": {"value": 1, "duration": 90}}, "say": ["Ổ này ra lò lâu rồi phải không con? Để nguội là uổng bánh lắm."]},
     {"id": "mai.flourish", "concept": "NOTICE_EVENT", "when": {"npcId": "CO_MAI", "eventId": "FLOURISH", "obsState": ">=NOTICED"}, "say": ["Nhanh hơn hồi tuần trước rồi đó."], "cooldown": 300},
-    {"id": "mai.wait.confirmed", "concept": "NOTICE_EVENT", "when": {"npcId": "CO_MAI", "eventId": "MADE_THEM_WAIT", "obsState": "CONFIRMED"}, "say": ["Đông quá hen. Để cô chạy về coi tiệm cái, chút cô qua lấy."]},
-    {"id": "mai.del.seen", "concept": "DELIVERY", "when": {"npcId": "CO_MAI", "defectCount": ">=1", "defectWasSeen": true}, "say": ["Con bỏ nhầm rồi kìa. Lần sau để ý {mon} nghen."]},
-    {"id": "mai.del.found", "concept": "DELIVERY", "when": {"npcId": "CO_MAI", "defectCount": ">=1", "defectWasSeen": false}, "say": ["Thôi được rồi, lần sau nhớ nghen."]},
+    {"id": "mai.wait.confirmed", "concept": "NOTICE_EVENT", "when": {"npcId": "CO_MAI", "eventId": "MADE_THEM_WAIT", "obsState": "CONFIRMED"}, "say": ["Đông quá ha. Để cô chạy về coi tiệm cái, chút cô qua lấy."]},
+    {"id": "mai.del.seen", "concept": "DELIVERY", "when": {"npcId": "CO_MAI", "defectCount": ">=1", "defectWasSeen": true}, "say": ["Con bỏ nhầm rồi kìa. Lần sau để ý {mon} nha."]},
+    {"id": "mai.del.found", "concept": "DELIVERY", "when": {"npcId": "CO_MAI", "defectCount": ">=1", "defectWasSeen": false}, "say": ["Thôi được rồi, lần sau nhớ nha."]},
     {"id": "mai.del.toomuch", "concept": "DELIVERY", "when": {"npcId": "CO_MAI", "defectCount": 0, "freeExtraTooMuch": true}, "say": ["Cho nhiều vậy lời đâu con? Cô nói thiệt đó, tính lại đi."]},
     {"id": "mai.lohang", "concept": "SMALLTALK", "when": {"npcId": "CO_MAI", "queueLength": "<=2"}, "say": ["Lô nước ngọt cô mới nhập, bán hết trong hai ngày. Cô tính nhập thêm."], "norepeat": true, "odds": 60}
   ]

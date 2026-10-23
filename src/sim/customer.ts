@@ -100,11 +100,15 @@ export class Customer implements Observer {
   balking = false;
   /** Bỏ đi vì giá chứ không phải vì đông. */
   priceWalk = false;
+  /** Ghé xe chú Đạt thay vì xe mình — không phải chê hàng đông. */
+  lured = false;
   inviteRefused = false;
   /** Bật cả lúc trượt roll, không thì bị xét lại mỗi frame. */
   greeted = false;
   greetUntil = 0;
   cutLine = false;
+  /** Bị người khác chen lên trước mình. */
+  wasCut = false;
   /** Không dùng được thứ tự mảng `customers` vì `stepAside` splice trong chính mảng đó. */
   arrivedSeq = 0;
   /** Người nép không được cấp chỗ (`assignSlots` bỏ qua) nên cả hàng sau dồn lên thật. */
@@ -156,7 +160,7 @@ export class Customer implements Observer {
     readonly personality: Personality,
     readonly body: BodyStyle,
     readonly npc: NpcDef | null,
-    readonly visitCount: number,
+    public visitCount: number,
     spawn: { x: number; y: number },
     patienceSec: number,
     private rng: Rng,

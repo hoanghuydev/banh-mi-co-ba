@@ -11,7 +11,7 @@ Năm bus của `CANON §15.4` giờ đã đủ cả năm:
 
 | Bus | Mặc định | Trần | Nguồn hiện tại | Code |
 |---|---|---|---|---|
-| Nhạc | 55 | −6 dB | 5 bản CC BY của Kevin MacLeod | `src/audio/music.ts` |
+| Nhạc | 55 | −6 dB | 5 bản CC BY của Kevin MacLeod, nén VBR ~64 kbps bằng `tools/audio/recode-music.py` | `src/audio/music.ts` |
 | Tiếng đường phố | 70 | −3 dB | field recording CC0, phần lớn thu tại Việt Nam | `src/audio/sfx.ts` |
 | Giọng NPC | 100 | 0 dB | tiếng người phi lời CC0 | `src/audio/sfx.ts` |
 | Tiếng thao tác | 85 | −2 dB | foley CC0 | `src/audio/sfx.ts` |

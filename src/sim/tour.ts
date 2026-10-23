@@ -1,5 +1,5 @@
 import type { SaveFile } from "../core/save";
-import { BY_ID, type Ingredient } from "./order";
+import { INGREDIENTS, portionsOf, type Ingredient } from "./order";
 import { GOODS, type GoodId } from "./econ";
 import { itemsOf } from "./shop";
 
@@ -45,26 +45,48 @@ export function tourDone(w: SaveFile, step: TourStep): number {
   return of - at + 1;
 }
 
-/** Phần còn thiếu theo khung pate → nhân mặn → rau, chỉ để dẫn; chấm điểm là việc của `diffDish`. */
-export type FillGap = "PATE" | "MAN" | "RAU" | null;
+/** Lượng từng phần nhân, để câu dẫn gọi đúng tên thứ đang kẹp. */
+const PORTION_WORD: Record<Ingredient, string> = {
+  pate: "lớp pate", thit: "lát thịt nguội", chalua: "khoanh chả lụa", xiumai: "viên xíu mại",
+  opla: "trứng ốp la", dochua: "phần đồ chua", dualeo: "lát dưa leo", hanhngo: "nhúm hành ngò",
+  ot: "lát ớt", tuongot: "phần tương ớt",
+};
 
-export function fillGap(stack: readonly Ingredient[]): FillGap {
-  if (!stack.includes("pate")) return "PATE";
-  if (!stack.some((id) => id !== "pate" && BY_ID.get(id)?.kind === "nhan")) return "MAN";
-  if (!stack.some((id) => BY_ID.get(id)?.kind === "rau")) return "RAU";
-  return null;
+export type DishGap = { id: Ingredient; left: number; placed: boolean };
+
+/** Thứ còn thiếu so với đơn, theo thứ tự xếp lớp; hết mảng là ổ đã đúng đơn. */
+export function dishGaps(
+  levels: Partial<Record<Ingredient, number>>, stack: readonly Ingredient[],
+): DishGap[] {
+  const got = portionsOf(stack);
+  const out: DishGap[] = [];
+  for (const ing of INGREDIENTS) {
+    const want = levels[ing.id] ?? 0;
+    const have = got.get(ing.id) ?? 0;
+    if (have < want) out.push({ id: ing.id, left: want - have, placed: have > 0 });
+  }
+  return out;
 }
 
-/** Hàng tối thiểu để bán ngày đầu: đủ bánh, pate, một nhân mặn, rau. Tour dắt đặt từng món ở Fresh24. */
+export const gapText = (g: DishGap) =>
+  g.placed ? `Thêm ${g.left} ${PORTION_WORD[g.id]} nữa.` : `Thêm ${g.left} ${PORTION_WORD[g.id]}.`;
+
+/**
+ * Hàng ngày đầu: đủ cho 25 ổ, nhiều hơn 21 khách của ngày 1 một quãng (`tools/sim.ts`).
+ * Số lượng chia chẵn theo `step` của từng món nên mỗi bước là mấy cú bấm +.
+ */
 export const TOUR_SUPPLIER = "FRESH24";
 export const TOUR_ORDER: readonly { good: GoodId; units: number; label: string }[] = [
-  { good: "BANH", units: 10, label: "bánh mì" },
-  { good: "PATE", units: 1, label: "pate" },
-  { good: "TRUNG", units: 1, label: "trứng" },
-  { good: "RAU", units: 1, label: "rau (dưa leo, hành ngò)" },
-  { good: "OT", units: 1, label: "ớt" },
-  { good: "SOT", units: 1, label: "tương ớt" },
+  { good: "BANH", units: 25, label: "bánh mì" },
+  { good: "TRUNG", units: 30, label: "trứng" },
+  { good: "DO_CHUA_SAN", units: 40, label: "đồ chua làm sẵn" },
+  { good: "RAU", units: 30, label: "rau (dưa leo, hành ngò)" },
+  { good: "OT", units: 40, label: "ớt" },
+  { good: "SOT", units: 30, label: "tương ớt" },
 ];
+
+/** Đơn ngày 1 đã đặt xong chưa — bước CHO còn phải chỉ giờ hàng về. */
+export const tourOrdered = (w: SaveFile) => w.shop.orders.length > 0;
 
 export type OrderStep = { good: GoodId; label: string; clicks: number; done: number; offerId: string };
 

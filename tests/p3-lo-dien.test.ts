@@ -102,7 +102,7 @@ test("LG-9 mua lò điện thì ô lò ĐỔI ẢNH — không dán thêm một 
 });
 
 test("LG-10 ảnh lò điện có thật trong `public/art`, và `photo.ts` có khai nó", () => {
-  assert.ok(existsSync(join(ROOT, "public/art/prop_e-oven.png")), "thiếu file ảnh — ô lò sẽ lùi về lò than");
+  assert.ok(existsSync(join(ROOT, "public/art/prop_e-oven.webp")), "thiếu file ảnh — ô lò sẽ lùi về lò than");
   assert.match(readFileSync(join(ROOT, "src/art/photo.ts"), "utf8"), /\[PROP\.ovenE\]: \["prop_e-oven"/,
     "`photo.ts` chưa nạp ảnh lò điện — texture `oven_e` sẽ không bao giờ tồn tại");
 });

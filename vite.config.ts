@@ -24,5 +24,6 @@ export default defineConfig(({ mode }) => ({
     __DEV_TOOLS__: JSON.stringify(mode === "development"),
     __PLAYTEST__: JSON.stringify(mode === "playtest"),
     __BUILD_ID__: JSON.stringify(gitSha()),
+    __BUILD_TIME__: JSON.stringify(String(Date.now())),
   },
 }));

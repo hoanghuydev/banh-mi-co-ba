@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  CAL, dishQuality, isRain, dishPriceVnd, lotQuality, newInventory, priceOf, stockOf, take, tasteThreshold, weatherOf, buy,
+  CAL, GOODS, dishQuality, isRain, dishPriceVnd, lotQuality, newInventory, priceOf, stockOf, take, tasteThreshold, weatherOf, buy,
 } from "../src/sim/econ";
 import { eveningCount, morningRent, newEconState, rentVnd } from "../src/sim/obligations";
 import { newGame } from "../src/core/save";
@@ -24,20 +24,21 @@ test("giá chợ: thứ Hai đắt, thứ Năm rẻ; dịch heo ngày 19–23; b
   assert.ok(priceOf("THIT_NGUOI", 1) > priceOf("THIT_NGUOI", 4));
   assert.ok(priceOf("PATE", 22) > priceOf("PATE", 15) * 1.3); // 22 và 15 đều thứ Hai
   for (let d = 1; d <= 40; d++) assert.equal(priceOf("BANH", d), d >= 28 && d <= 30 ? 4.2 : 3.5);
-  // pate gốc 24k: thứ Hai ×1,12; ngày 22 = thứ Hai × dịch heo 1,4 × rằm 0,95
-  assert.ok(Math.abs(priceOf("PATE", 1) / 24 - 1.12) <= 0.03);
-  assert.ok(Math.abs(priceOf("PATE", 22) / 24 - 1.12 * 1.4 * 0.95) <= 0.04);
+  // thứ Hai ×1,12; ngày 22 = thứ Hai × dịch heo 1,4 × rằm 0,95
+  const pate0 = GOODS.PATE.base_k;
+  assert.ok(Math.abs(priceOf("PATE", 1) / pate0 - 1.12) <= 0.03);
+  assert.ok(Math.abs(priceOf("PATE", 22) / pate0 - 1.12 * 1.4 * 0.95) <= 0.04);
 });
 
 test("kho: lô cũ nhất trước; pate trong thùng xốp chỉ sống 1 ngày; hàng hư là KHOÁ", () => {
   const inv = newInventory();
-  buy(inv, "PATE", 1, 1);
+  buy(inv, "PATE", 20, 1);
   // hạn 1 ngày = dùng tới hết ngày sau ngày mua
   assert.equal(stockOf(inv, "PATE", 2), 20);
   assert.equal(stockOf(inv, "PATE", 3), 0);
   const inv2 = newInventory();
-  buy(inv2, "THIT_NGUOI", 1, 1);
-  buy(inv2, "THIT_NGUOI", 1, 2);
+  buy(inv2, "THIT_NGUOI", 12, 1);
+  buy(inv2, "THIT_NGUOI", 12, 2);
   const q = take(inv2, "thit", 3, 2);
   assert.equal(q.length, 3);
   assert.equal(inv2.lots.find((l) => l.day === 1)!.left, 12 - 3);
@@ -51,7 +52,7 @@ test("đồ chua đạt đỉnh ngày 3, ngày 7 còn 0,60 (khoá cứng P3-03)"
   assert.equal(jar(10), null);
 });
 
-test("chất lượng ổ: pate rẻ một mình KHÔNG vượt ngưỡng chị Lan; pate rẻ + rau cũ + đồ chua ngày 7 thì vượt", () => {
+test("chất lượng ổ: pate rẻ một mình KHÔNG vượt ngưỡng chị Trâm; pate rẻ + rau cũ + đồ chua ngày 7 thì vượt", () => {
   const lan = tasteThreshold(0.9);
   const cheap = dishQuality(1, [{ ing: "pate", q: 0.82 }, { ing: "pate", q: 0.82 }]);
   assert.ok(1 - cheap < lan);

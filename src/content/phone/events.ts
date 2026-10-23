@@ -1,4 +1,7 @@
 import type { SaveFile } from "../../core/save";
+import { sickWindow } from "../../sim/reviews";
+import { recentStars } from "../../sim/demand";
+import { WIN_VND } from "../../sim/win";
 
 export type Reply = { me: string; answer?: string };
 export type Vars = Record<string, string | number>;
@@ -43,7 +46,8 @@ export const PENDING_SIM = {
   lossStreakDeep: 6,
   huyEnvyAfterDays: 1,
   huyFiredAfterDays: 4,
-  sickWarn: 4,
+  sickWarn: 6,
+  sickAlarm: 10,
   lowCashVnd: 150_000,
   recordMinDay: 3,
 } as const;
@@ -53,6 +57,24 @@ const firedFor = (w: SaveFile, id: string) =>
 
 /** Từ số ổ này của ngày đầu trở lên thì Linh khen. */
 const SOLD_GOOD = 6;
+
+/** Số đánh giá tối thiểu để một mốc sao đáng nhắc. */
+const STAR_NOTE_MIN = 20;
+const STAR_PRAISE_MIN = 50;
+const REVIEW_MILESTONE = 100;
+
+/** Gần mốc thắng tới mức này thì mẹ nhắn. */
+const WIN_NEAR = 0.8;
+
+const BAD_FREE_DAYS = 7;
+
+/** Bảy ngày liền có đánh giá mà không cái nào 1–2★. */
+function cleanWeek(w: SaveFile): boolean {
+  const from = w.progress.dayIndex - BAD_FREE_DAYS;
+  if (w.progress.dayIndex <= BAD_FREE_DAYS) return false;
+  const recent = w.reviews.list.filter((r) => r.day > from);
+  return recent.length > 0 && recent.every((r) => r.stars > 2);
+}
 
 const profit = (r: { revenue: number; cost: number }) => r.revenue - r.cost;
 const today = (w: SaveFile) => w.ledger.find((r) => r.day === w.progress.dayIndex);
@@ -177,13 +199,67 @@ export const EVENTS: PhoneEvent[] = [
     when: (w) => firedFor(w, "huy-bi-duoi-tin") >= 1,
   },
   {
+    id: "sao-bon-linh", from: "linh",
+    text: "ê quán bà 4 sao rồi á. tui vừa coi trên map 🔥",
+    replies: [
+      { me: "tui cũng mới thấy. mừng xỉu", answer: "giữ cho tui nha, đừng tụt" },
+      { me: "nhờ bà rủ người ghé đó", answer: "công tui một phần thôi. bánh bà ngon mà" },
+    ],
+    when: (w) => w.reviews.list.length >= STAR_NOTE_MIN && (recentStars(w) ?? 0) >= 4,
+  },
+  {
+    id: "tram-danh-gia-huy", from: "huy",
+    text: "quán bà trăm cái đánh giá rồi hả. chắc nhờ mấy cái 1 sao thôi 🙄",
+    replies: [
+      { me: "ông vô đếm thử rồi tính lại", answer: "tui đâu rảnh. tui chỉ tình cờ thấy" },
+      { me: "ừa, cảm ơn người đóng góp một cái", answer: "...tui có đánh giá gì đâu 😶" },
+    ],
+    when: (w) => w.reviews.list.length >= REVIEW_MILESTONE,
+  },
+  {
+    id: "sao-bon-rem-sep", from: "sep",
+    text: "anh thấy quán em trên map, 4,5 sao luôn. em làm bên ngoài cũng giỏi quá ta 😊 cần người bán giúp thì gọi anh nha",
+    replies: [
+      { me: "dạ cảm ơn anh. quán em một người lo được", answer: "ừ, anh nói thật mà. bên này cũng còn chỗ cho em" },
+      { me: "anh ghé mua ổ đi, em tính giá khách quen", answer: "haha được, hôm nào anh ghé" },
+    ],
+    when: (w) => w.reviews.list.length >= STAR_PRAISE_MIN && (recentStars(w) ?? 0) >= 4.5,
+  },
+  {
+    id: "sao-tut-huy", from: "huy",
+    text: "sao quán bà xuống dưới 3 rồi kìa. tui đoán trước mà 😏",
+    replies: [
+      { me: "tui sửa được. ông coi tuần sau", answer: "ờ, để coi 😏" },
+      { me: "ông theo dõi quán tui kỹ quá nha", answer: "tui bận lắm nha!! chỉ là map tự hiện lên thôi" },
+    ],
+    when: (w) => w.reviews.list.length >= STAR_NOTE_MIN && (recentStars(w) ?? 5) < 3,
+  },
+  {
+    id: "gan-moc-me", from: "mom",
+    text: "con ơi chú Tâm nói gần quán con có chỗ sang lại. con để dành được nhiêu rồi",
+    replies: [
+      { me: "con gần đủ rồi mẹ, còn chút nữa", answer: "ừ. đủ thì nói mẹ, mẹ coi chỗ giùm con" },
+      { me: "mẹ đừng hỏi, con sợ hớ", answer: "haha ừ. mẹ không hỏi nữa" },
+    ],
+    when: (w) => w.money.cash >= WIN_VND * WIN_NEAR,
+  },
+  {
+    id: "tuan-sach-linh", from: "linh",
+    text: "cả tuần không có cái đánh giá xấu nào luôn. bà làm gì mà đỉnh vậy",
+    replies: [
+      { me: "tui đổi hàng với rửa tay đàng hoàng thôi", answer: "nghe đơn giản mà mấy quán khác làm không nổi á" },
+      { me: "tui cũng không biết nữa, cứ làm thôi", answer: "giữ nhịp đó nha" },
+    ],
+    when: cleanWeek,
+  },
+  {
     id: "dau-bung-linh", from: "linh",
     text: "ê bà. tui nghe có người kêu ăn quán bà xong bị đau bụng đó. coi lại hàng đi",
     replies: [
       { me: "cảm ơn bà, tui kiểm tra lại liền", answer: "ừa. đừng mua hàng rẻ quá nha" },
       { me: "tin đồn thôi. bà nghe ai nói", answer: "tui nghe Huy nói á. ổng khoe cả group" },
     ],
-    when: (w) => Number(w.flags.sickTotal ?? 0) >= 1,
+    when: (w) => sickWindow(w) >= 1,
   },
   {
     id: "dau-bung-me", from: "mom",
@@ -192,6 +268,15 @@ export const EVENTS: PhoneEvent[] = [
       { me: "dạ con biết rồi mẹ, con đổi hàng liền", answer: "ừ. tiền bạc từ từ, sức khoẻ khách quan trọng hơn" },
       { me: "mẹ yên tâm, con lo được", answer: "ừ. mẹ lo thôi chứ không ép con" },
     ],
-    when: (w) => Number(w.flags.sickTotal ?? 0) >= PENDING_SIM.sickWarn,
+    when: (w) => sickWindow(w) >= PENDING_SIM.sickWarn,
+  },
+  {
+    id: "dau-bung-phuong", from: "linh",
+    text: "bà ơi tui thấy trên group khu mình người ta đang réo tên quán bà quá trời. coi chừng phường xuống kiểm tra đó",
+    replies: [
+      { me: "tui bỏ hết hàng dỏm rồi, mai nhập lại", answer: "ừa làm liền đi. để lâu là mệt đó" },
+      { me: "kệ đi, ai nói gì mặc ai", answer: "ờ... thôi bà liệu mà lo nha" },
+    ],
+    when: (w) => sickWindow(w) >= PENDING_SIM.sickAlarm,
   },
 ];

@@ -47,5 +47,7 @@ Code chạy đúng ≠ nhìn đúng. Kết luận "xong" chỉ sau khi **đã xe
 ## 5. Văn phong
 
 - UI: tiếng phổ thông (`docs/VAN-PHONG-UI.md`).
+- **UI hiện cái đó, không kể cái đó** (`VAN-PHONG-UI.md` §6). Không dắt tay ("hãy note vào đây"), không tự thuật ("chủ quán đã phản hồi"), không kể lại thứ khách vừa diễn ra trước mắt ("giá đắt nên 15% khách bỏ đi"). Trống thì để trống.
+  **Nhưng hiệu ứng ngầm thì PHẢI ghi kèm số** — buff cộng dồn, +1 giây kiên nhẫn, thời hạn, điều kiện mở khoá: người chơi không đo nổi bằng mắt thì giấu đi là phần thưởng thành vô nghĩa. Phép thử: người chơi ngồi xuống có tự thấy không?
 - Thoại, review, comment trong game: **phải research giọng thật trước** → dùng skill `research-giong-viet`.
 - Lời của Hệ thống (app Hệ thống, hướng dẫn, thưởng): dùng skill `giong-he-thong`.

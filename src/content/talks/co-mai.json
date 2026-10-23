@@ -1,5 +1,5 @@
 {
-  "_note": "Cô Mai — chủ tạp hoá đối diện, thanThien 0,8. CÁI LOA CỦA CẢ HẺM: chuyện gì cô cũng biết, và cô kể. Gọi người chơi 'con', tự xưng 'cô'. Cô cố tình ghé 8h10 sau giờ cao điểm. Chạy bộ 5 km sáng thứ Hai, sưu tầm lan. Drama của cô là drama HẺM — nhà ai, con ai, nợ ai. Cô kể mà không ác ý.",
+  "_note": "Cô Thuý — chủ tạp hoá đối diện, thanThien 0,8. CÁI LOA CỦA CẢ HẺM: chuyện gì cô cũng biết, và cô kể. Gọi người chơi 'con', tự xưng 'cô'. Cô cố tình ghé 8h10 sau giờ cao điểm. Chạy bộ 5 km sáng thứ Hai, sưu tầm lan. Drama của cô là drama HẺM — nhà ai, con ai, nợ ai. Cô kể mà không ác ý.",
   "talks": [
     {
       "id": "mai.tieutam",
@@ -7,11 +7,11 @@
       "topic": "tieutam",
       "source": "NPC_ONLY",
       "depth": "FULL",
-      "opener": "Con biết vụ nhà số 14 chưa? Cô nói nhỏ con nghe thôi nghen.",
+      "opener": "Con biết vụ nhà số 14 chưa? Cô nói nhỏ con nghe thôi nha.",
       "initiates": 0.3,
       "weight": 14,
       "ignore": {
-        "reply": "Ờ… thôi cô hổng kể nữa. Con lo bán đi.",
+        "reply": "Ờ… thôi cô không kể nữa. Con lo bán đi.",
         "mood": "LANH"
       },
       "shared": {
@@ -24,7 +24,7 @@
           {
             "say": "Cô kể nữa đi cô, con nghe nè.",
             "tone": "DUA",
-            "reply": "Cha, con này cũng ưa hóng dữ ha. Để bữa khác cô kể tiếp.",
+            "reply": "Trời, con này cũng ưa hóng dữ ha. Để bữa khác cô kể tiếp.",
             "mood": "CUOI_TUOI"
           },
           {
@@ -54,7 +54,7 @@
                       "say": "Hay mình qua coi chị đó sao cô?",
                       "tone": "AM",
                       "flag": "maiQuaNha14",
-                      "reply": "Con nói đúng. Chiều cô xách qua chục trứng. Con đi với cô nghen.",
+                      "reply": "Con nói đúng. Chiều cô xách qua chục trứng. Con đi với cô nha.",
                       "mood": "THUONG"
                     },
                     {
@@ -79,19 +79,19 @@
                   "mood": "CUOI"
                 },
                 {
-                  "say": "Thằng đó mất dạy thiệt chớ.",
+                  "say": "Thằng đó mất dạy thiệt chứ.",
                   "tone": "CHUI",
                   "reply": "Ờ! Cô cũng nói vậy đó. Đồ không ra gì."
                 },
                 {
-                  "say": "Chuyện nhà người ta cô ơi, mình xía vô chi.",
+                  "say": "Chuyện nhà người ta cô ơi, mình xía vô gì.",
                   "tone": "THANG",
                   "reply": "Ừ… con nói cũng phải. Mà cô tức quá cô nói."
                 },
                 {
                   "say": "Cô kể cho ai nữa chưa cô?",
                   "tone": "THUONG",
-                  "reply": "Mới có con với bà Bảy à. Mà bà Bảy thì… thôi coi như cả hẻm.",
+                  "reply": "Mới có con với dì Nguyệt à. Mà dì Nguyệt thì… thôi coi như cả hẻm.",
                   "ref": "ket"
                 }
               ]
@@ -99,13 +99,13 @@
             {
               "say": "Cô thấy tận mắt hả cô?",
               "tone": "THANG",
-              "reply": "Thấy chớ. Tiệm cô ngay đối diện mà con. Hai lần rồi.",
+              "reply": "Thấy chứ. Tiệm cô ngay đối diện mà con. Hai lần rồi.",
               "ref": "ket"
             },
             {
-              "say": "Con hổng dám nghe đâu cô. Lỡ miệng chết.",
+              "say": "Con không dám nghe đâu cô. Lỡ miệng chết.",
               "tone": "THUONG",
-              "reply": "Ừ, con khôn đó. Cô già rồi cô hổng khôn nổi nữa."
+              "reply": "Ừ, con khôn đó. Cô già rồi cô không khôn nổi nữa."
             },
             {
               "say": "Cô ơi, con đang bán mà.",
@@ -115,14 +115,14 @@
           ]
         },
         {
-          "say": "Thôi cô, con hổng muốn nghe chuyện nhà người ta.",
+          "say": "Thôi cô, con không muốn nghe chuyện nhà người ta.",
           "tone": "LANH",
           "reply": "Ờ… con này nghiêm ghê.",
           "then": [
             {
               "say": "Cô kể chuyện lan của cô đi, con nghe cái đó.",
               "tone": "DUA",
-              "reply": "Cha! Cái đó thì cô kể ba ngày hổng hết đó con.",
+              "reply": "Trời! Cái đó thì cô kể ba ngày không hết đó con.",
               "mood": "CUOI"
             },
             {
@@ -135,7 +135,7 @@
         {
           "say": "Cô mà nói nhỏ thì cả hẻm nghe rồi cô ơi.",
           "tone": "DUA",
-          "reply": "Cha, con này! Nói cô vậy mà cô hổng giận mới lạ.",
+          "reply": "Trời, con này! Nói cô vậy mà cô không giận mới lạ.",
           "then": [
             {
               "say": "Tại con thương cô con mới dám nói.",
@@ -144,7 +144,7 @@
               "mood": "CUOI"
             },
             {
-              "say": "Con nói thiệt chớ con hổng giỡn cô.",
+              "say": "Con nói thiệt chứ con không giỡn cô.",
               "tone": "THANG",
               "reply": "…Ừ. Cô nghe rồi."
             },
@@ -186,7 +186,7 @@
       "topic": "lan",
       "source": "NPC_ONLY",
       "depth": "SHORT",
-      "opener": "Con biết cái chậu cô mua bốn triệu hông? Nó chết queo rồi con.",
+      "opener": "Con biết cái chậu cô mua bốn triệu không? Nó chết queo rồi con.",
       "weight": 10,
       "tree": [
         {
@@ -197,17 +197,17 @@
             {
               "say": "Ai nói với cô vậy cô?",
               "tone": "THANG",
-              "reply": "Thằng cha bán lan ngoài chợ Thủ Đức. Giờ gọi nó hổng bắt máy nữa.",
+              "reply": "Thằng cha bán lan ngoài chợ Thủ Đức. Giờ gọi nó không bắt máy nữa.",
               "then": [
                 {
                   "say": "Vậy là cô bị gạt rồi cô.",
                   "tone": "THANG",
-                  "reply": "…Ừ. Cô biết. Mà cô hổng dám nói với chồng cô."
+                  "reply": "…Ừ. Cô biết. Mà cô không dám nói với chồng cô."
                 },
                 {
                   "say": "Cô kể con nghe nè, con giữ giùm cho.",
                   "tone": "AM",
-                  "reply": "Ừ… con đừng nói với ai nghen con. Cô quê lắm.",
+                  "reply": "Ừ… con đừng nói với ai nha con. Cô quê lắm.",
                   "mood": "THUONG"
                 },
                 {
@@ -232,7 +232,7 @@
             {
               "say": "Chắc nó nhớ nhà nó quá nó đi cô ơi.",
               "tone": "DUA",
-              "reply": "Cha con này. Cô đang tiếc tiền mà con giỡn được.",
+              "reply": "Trời con này. Cô đang tiếc tiền mà con giỡn được.",
               "mood": "CUOI"
             },
             {
@@ -245,37 +245,37 @@
         {
           "say": "Trời ơi cô. Tiếc quá cô ha.",
           "tone": "AM",
-          "reply": "Tiếc chớ sao hổng tiếc. Bốn triệu là cô bán bao nhiêu thùng mì con biết hông.",
+          "reply": "Tiếc chứ sao không tiếc. Bốn triệu là cô bán bao nhiêu thùng mì con biết không.",
           "then": [
             {
-              "say": "Cô còn cây nào sống hông cô?",
+              "say": "Cô còn cây nào sống không cô?",
               "tone": "AM",
-              "reply": "Còn mấy cây thường. Mà mấy cây đó nó lì, nó hổng chết."
+              "reply": "Còn mấy cây thường. Mà mấy cây đó nó lì, nó không chết."
             },
             {
-              "say": "Thôi cô trồng trầu bà đi cô, nó hổng chết đâu.",
+              "say": "Thôi cô trồng trầu bà đi cô, nó không chết đâu.",
               "tone": "DUA",
               "reply": "Ờ! Để cô ngắt cho con một nhánh. Cái đó thì bảo đảm.",
               "mood": "CUOI"
             },
             {
-              "say": "Cô mua chi cho mắc vậy cô.",
+              "say": "Cô mua gì cho mắc vậy cô.",
               "tone": "THANG",
-              "reply": "Thì lúc đó cô ham. Ai mà hổng có lúc ham hả con."
+              "reply": "Thì lúc đó cô ham. Ai mà không có lúc ham hả con."
             }
           ]
         },
         {
-          "say": "Cô ơi, quanh đây có ai cho mướn phòng nhỏ hông cô?",
+          "say": "Cô ơi, quanh đây có ai cho mướn phòng nhỏ không cô?",
           "tone": "THANG",
           "need": "lanHoiPhong",
-          "reply": "Có. Nhà bà Chín lầu hai, hai triệu. Mà con hỏi cho ai… thôi, cô hổng hỏi.",
+          "reply": "Có. Nhà bà Chín lầu hai, hai triệu. Mà con hỏi cho ai… thôi, cô không hỏi.",
           "mood": "NGHI"
         },
         {
-          "say": "Dạ con hổng rành cây cối đâu cô.",
+          "say": "Dạ con không rành cây cối đâu cô.",
           "tone": "LANH",
-          "reply": "Ừ. Thôi cô hổng nói nữa."
+          "reply": "Ừ. Thôi cô không nói nữa."
         }
       ],
       "openMood": "BUON",
@@ -293,16 +293,16 @@
       "topic": "nono",
       "source": "NPC_ONLY",
       "depth": "SHORT",
-      "opener": "Con có ghi sổ hông con? Ai mua chịu là ghi liền đi nghen.",
+      "opener": "Con có ghi sổ không con? Ai mua chịu là ghi liền đi nha.",
       "weight": 11,
       "tree": [
         {
-          "say": "Dạ con có ghi cô. Mà con hay quên.",
+          "say": "Con có ghi cô. Mà con hay quên.",
           "tone": "THUONG",
           "reply": "Quên là mất tiền đó con. Cô bán hai chục năm cô biết.",
           "then": [
             {
-              "say": "Cô bị quỵt nhiều hông cô?",
+              "say": "Cô bị quỵt nhiều không cô?",
               "tone": "AM",
               "reply": "Nhiều. Mà đau nhất là người quen. Người lạ quỵt thì cô còn chửi được.",
               "then": [
@@ -333,11 +333,11 @@
               "say": "Cô chỉ con ghi sao cho gọn đi cô.",
               "tone": "AM",
               "flag": "maiDayGhiSo",
-              "reply": "Ngày, tên, số tiền. Ba cái thôi. Đừng ghi dài, ghi dài là hổng ghi nữa.",
+              "reply": "Ngày, tên, số tiền. Ba cái thôi. Đừng ghi dài, ghi dài là không ghi nữa.",
               "mood": "CUOI"
             },
             {
-              "say": "Dạ con nhớ trong đầu được mà cô.",
+              "say": "Con nhớ trong đầu được mà cô.",
               "tone": "DUA",
               "reply": "Ờ. Rồi tháng sau con nhớ cho cô coi."
             }
@@ -407,18 +407,18 @@
             {
               "say": "Ủa con có thấy đâu cô?",
               "tone": "THUONG",
-              "reply": "Nó treo sau đống mì gói. Hổng ai thấy. Cô treo cho cô coi thôi."
+              "reply": "Nó treo sau đống mì gói. Không ai thấy. Cô treo cho cô coi thôi."
             },
             {
               "say": "Cô dạy con chạy với đi cô.",
               "tone": "AM",
-              "reply": "Thiệt hả? Vậy thứ Hai sau con dậy sớm nghen. Bốn rưỡi.",
+              "reply": "Thiệt hả? Vậy thứ Hai sau con dậy sớm nha. Bốn rưỡi.",
               "mood": "NGAC_NHIEN"
             },
             {
-              "say": "Chạy chi cho mệt vậy cô.",
+              "say": "Chạy gì cho mệt vậy cô.",
               "tone": "THANG",
-              "reply": "Mệt mà sướng con. Mỗi tuần có một buổi cô hổng nghĩ tới tiền."
+              "reply": "Mệt mà sướng con. Mỗi tuần có một buổi cô không nghĩ tới tiền."
             }
           ],
           "mood": "CUOI"
@@ -426,17 +426,17 @@
         {
           "say": "Rồi cô chạy xong cô ăn bánh mì hả cô?",
           "tone": "DUA",
-          "reply": "Ờ đó! Chạy xong ăn mới ngon. Con cho cô hai ổ nghen.",
+          "reply": "Ờ đó! Chạy xong ăn mới ngon. Con cho cô hai ổ nha.",
           "then": [
             {
-              "say": "Vậy chạy chi nữa cô.",
+              "say": "Vậy chạy gì nữa cô.",
               "tone": "DUA",
-              "reply": "Thì chạy cho đáng cái ổ bánh chớ con!"
+              "reply": "Thì chạy cho đáng cái ổ bánh chứ con!"
             },
             {
-              "say": "Dạ hai ổ liền cô.",
+              "say": "Hai ổ liền cô.",
               "tone": "THUONG",
-              "reply": "Ừ. Ổ thứ hai hổng hành nghen con."
+              "reply": "Ừ. Ổ thứ hai không hành nha con."
             }
           ]
         },
@@ -474,28 +474,28 @@
       "weight": 12,
       "initiates": 0.25,
       "ignore": {
-        "reply": "Ờ. Thôi cô hổng nói nữa. Con làm đi.",
+        "reply": "Ờ. Thôi cô không nói nữa. Con làm đi.",
         "mood": "LANH"
       },
       "opener": "Con nhỏ bảy giờ năm đó. Cái cô sơ mi trắng, chả lụa không ớt đó.",
       "shared": {
         "ket": [
           {
-            "say": "Dạ cô ăn đi cô, nguội mất.",
+            "say": "Cô ăn đi cô, nguội mất.",
             "tone": "THUONG",
             "reply": "Ờ. Cô ăn."
           },
           {
-            "say": "Dạ cô đừng kể ai nữa nghen cô.",
+            "say": "Dạ cô đừng kể ai nữa nha cô.",
             "tone": "AM",
             "reply": "…Ờ. Con nói vậy thì cô im. Cô nói nhiều thiệt.",
             "mood": "THUONG"
           },
           {
-            "say": "Chị nhà số 14 bữa đó bả có đỡ hông cô?",
+            "say": "Chị nhà số 14 bữa đó bả có đỡ không cô?",
             "tone": "AM",
             "need": "maiQuaNha14",
-            "reply": "Đỡ. Bả cầm chục trứng bả hổng nói gì hết, mà bả nắm tay cô.",
+            "reply": "Đỡ. Bả cầm chục trứng bả không nói gì hết, mà bả nắm tay cô.",
             "mood": "RUNG_RUNG"
           },
           {
@@ -507,13 +507,13 @@
       },
       "tree": [
         {
-          "say": "Dạ chị Lan. Chị ấy sao hả cô?",
+          "say": "Chị Trâm. Chị ấy sao hả cô?",
           "tone": "THANG",
           "flag": "maiKeLan",
           "reply": "Nó ở trọ một mình trên lầu ba nhà bà Tám. Tháng rồi nó xin khất tiền nhà. Bà Tám kể cô.",
           "then": [
             {
-              "say": "Dạ cô ơi, chuyện của chị ấy mà.",
+              "say": "Cô ơi, chuyện của chị ấy mà.",
               "tone": "THANG",
               "reply": "…Ờ. Cô biết. Mà cô kể tại cô lo. Nó ốm nhom à con.",
               "then": [
@@ -527,7 +527,7 @@
                   "say": "Dạ con biết rồi cô. Con để ý chị ấy giùm cô.",
                   "tone": "AM",
                   "flag": "maiNhoLan",
-                  "reply": "Ờ. Nó ghé con mỗi sáng mà. Con để ý giùm cô nghen.",
+                  "reply": "Ờ. Nó ghé con mỗi sáng mà. Con để ý giùm cô nha.",
                   "mood": "THUONG"
                 },
                 {
@@ -540,9 +540,9 @@
               ]
             },
             {
-              "say": "Cô biết hết trơn ha cô. Cô mà đi dò la thì hổng ai giấu nổi.",
+              "say": "Cô biết hết trơn ha cô. Cô mà đi dò la thì không ai giấu nổi.",
               "tone": "DUA",
-              "reply": "Cha. Cô bán tạp hoá hai chục năm. Người ta mua gì cô biết nhà người ta ra sao.",
+              "reply": "Trời. Cô bán tạp hoá hai chục năm. Người ta mua gì cô biết nhà người ta ra sao.",
               "ref": "ket",
               "mood": "CUOI_TUOI"
             },
@@ -550,18 +550,18 @@
               "say": "Rồi còn gì nữa cô? Cô kể tiếp đi cô.",
               "tone": "CHUI",
               "flag": "maiKeTiep",
-              "reply": "…Ờ, con cũng thích nghe hả. Để cô kể. Mà con đừng nói ai nghen.",
+              "reply": "…Ờ, con cũng thích nghe hả. Để cô kể. Mà con đừng nói ai nha.",
               "mood": "LANH"
             }
           ]
         },
         {
-          "say": "Dạ con hổng muốn nghe chuyện riêng của khách cô.",
+          "say": "Con không muốn nghe chuyện riêng của khách cô.",
           "tone": "LANH",
           "reply": "…Ờ. Ờ cô hiểu. Con bán hàng con phải vậy.",
           "then": [
             {
-              "say": "Dạ cô kể chuyện khác đi cô. Chuyện lan của cô nè.",
+              "say": "Cô kể chuyện khác đi cô. Chuyện lan của cô nè.",
               "tone": "DUA",
               "reply": "Ờ! Nói chuyện lan cô nói tới trưa luôn. Cô mới mua một giò nữa đó con.",
               "mood": "CUOI"
@@ -577,15 +577,15 @@
         {
           "say": "Cô kể cô nhỏ nhỏ giùm con. Chị ấy sắp tới rồi đó cô.",
           "tone": "THANG",
-          "reply": "Hả? Mấy giờ rồi? …Thôi chết. Cô đi cô đi. Cô hổng có kể gì hết nghen con.",
+          "reply": "Hả? Mấy giờ rồi? …Thôi chết. Cô đi cô đi. Cô không có kể gì hết nha con.",
           "then": [
             {
-              "say": "Dạ cô đi lẹ đi cô.",
+              "say": "Cô đi lẹ đi cô.",
               "tone": "DUA",
               "reply": "Ờ ờ. Cô xách giỏ cô dọt."
             },
             {
-              "say": "Dạ cô cầm ổ bánh rồi hẵng đi cô.",
+              "say": "Cô cầm ổ bánh rồi hẵng đi cô.",
               "tone": "AM",
               "reply": "Ờ ha. Suýt nữa cô bỏ của chạy lấy người.",
               "mood": "CUOI"
@@ -599,7 +599,7 @@
           "mood": "NGAC_NHIEN"
         },
         {
-          "say": "Cô đừng kể chuyện khách của con nghen cô.",
+          "say": "Cô đừng kể chuyện khách của con nha cô.",
           "tone": "GAT",
           "anger": 30,
           "reply": "…Ừ. Cô im. Cô mua ổ bánh rồi cô về.",
@@ -621,7 +621,7 @@
       "source": "NPC_ONLY",
       "depth": "FULL",
       "weight": 11,
-      "opener": "Con có cuốn sổ ghi nợ chưa? Cô có một trang hổng dám xé.",
+      "opener": "Con có cuốn sổ ghi nợ chưa? Cô có một trang không dám xé.",
       "shared": {
         "ket": [
           {
@@ -632,7 +632,7 @@
           {
             "say": "Cô tốt thiệt đó cô.",
             "tone": "AM",
-            "reply": "Tốt gì. Cô cũng tính tới tính lui chớ bộ.",
+            "reply": "Tốt gì. Cô cũng tính tới tính lui chứ bộ.",
             "mood": "THUONG"
           },
           {
@@ -649,50 +649,50 @@
           "reply": "…Của người hay bán vé số ở đây nè. Bốn tháng rồi. Gạo, nước mắm, dầu gió.",
           "then": [
             {
-              "say": "Sao cô hổng đòi hả cô?",
+              "say": "Sao cô không đòi hả cô?",
               "tone": "THANG",
-              "reply": "Đòi sao con. Đòi rồi bả hổng dám ghé nữa. Mất tiền còn đỡ, mất người mua mới mệt.",
+              "reply": "Đòi sao con. Đòi rồi bả không dám ghé nữa. Mất tiền còn đỡ, mất người mua mới mệt.",
               "then": [
                 {
-                  "say": "Cô nói vậy mà cô nói cô hổng tốt.",
+                  "say": "Cô nói vậy mà cô nói cô không tốt.",
                   "tone": "AM",
-                  "reply": "…Thôi con. Cô nói ra rồi cô mắc cỡ. Đừng kể ai nghen.",
+                  "reply": "…Thôi con. Cô nói ra rồi cô mắc cỡ. Đừng kể ai nha.",
                   "mood": "NGUONG"
                 },
                 {
                   "say": "Cô ghi vô rồi cô để đó hoài hả cô?",
                   "tone": "THUONG",
-                  "reply": "Ờ. Cô ghi cho cô nhớ, hổng phải cho bả nhớ. Hai cái đó khác nhau con à."
+                  "reply": "Ờ. Cô ghi cho cô nhớ, không phải cho bả nhớ. Hai cái đó khác nhau con à."
                 },
                 {
-                  "say": "Vậy con trả giùm cô một phần nghen cô.",
+                  "say": "Vậy con trả giùm cô một phần nha cô.",
                   "tone": "AM",
                   "flag": "maiTraGiumBay",
                   "act": {
                     "kind": "PAY",
                     "vnd": 50000,
-                    "note": "trả bớt sổ nợ của bà Bảy ở tiệm cô Mai"
+                    "note": "trả bớt sổ nợ của dì Nguyệt ở tiệm cô Thuý"
                   },
                   "needCash": 50000,
-                  "reply": "…Trời đất. Con làm cô muốn khóc nè. Mà con đừng nói với bả nghen, bả quê chết.",
+                  "reply": "…Trời đất. Con làm cô muốn khóc nè. Mà con đừng nói với bả nha, bả quê chết.",
                   "mood": "NGAC_NHIEN"
                 },
                 {
                   "say": "Bả quỵt cô đó cô. Cô hiền quá bị người ta ăn hiếp.",
                   "tone": "CHUI",
-                  "reply": "Ê. Đừng nói vậy. Bả đi bộ từ bốn giờ rưỡi sáng chớ bả có ngồi không đâu.",
+                  "reply": "Ê. Đừng nói vậy. Bả đi bộ từ bốn giờ rưỡi sáng chứ bả có ngồi không đâu.",
                   "mood": "BUON"
                 }
               ]
             },
             {
-              "say": "Dạ con cũng có mấy người mua chịu cô.",
+              "say": "Con cũng có mấy người mua chịu cô.",
               "tone": "THUONG",
               "reply": "Ờ. Thì con ghi. Ghi rồi đừng nhắc. Tới lúc người ta có người ta tự đưa.",
               "ref": "ket"
             },
             {
-              "say": "Dạ cô kể con nghe chi, con biết rồi con kỳ lắm cô.",
+              "say": "Cô kể con nghe gì, con biết rồi con kỳ lắm cô.",
               "tone": "THANG",
               "reply": "…Ờ ha. Cô nói hớ rồi. Thôi con quên giùm cô đi.",
               "ref": "ket",
@@ -701,20 +701,20 @@
           ]
         },
         {
-          "say": "Dạ con chưa có cô. Con nhớ trong đầu thôi.",
+          "say": "Con chưa có cô. Con nhớ trong đầu thôi.",
           "tone": "THUONG",
-          "reply": "Trong đầu là mất. Cô nói thiệt. Ba tháng sau con nhớ mặt mà con hổng nhớ số.",
+          "reply": "Trong đầu là mất. Cô nói thiệt. Ba tháng sau con nhớ mặt mà con không nhớ số.",
           "then": [
             {
-              "say": "Dạ chiều nay con ra mua cuốn sổ nghen cô.",
+              "say": "Chiều nay con ra mua cuốn sổ nha cô.",
               "tone": "AM",
               "flag": "maiSoNo",
-              "reply": "Qua tiệm cô. Cô lấy giá gốc cho con. Mà nhớ ghi ngày nữa nghen.",
+              "reply": "Qua tiệm cô. Cô lấy giá gốc cho con. Mà nhớ ghi ngày nữa nha.",
               "then": [
                 {
-                  "say": "Dạ cô chỉ con ghi sao cho đúng đi cô.",
+                  "say": "Cô chỉ con ghi sao cho đúng đi cô.",
                   "tone": "AM",
-                  "reply": "Tên, ngày, món, số tiền. Bốn cột. Đừng ghi cảm nghĩ vô đó nghen con.",
+                  "reply": "Tên, ngày, món, số tiền. Bốn cột. Đừng ghi cảm nghĩ vô đó nha con.",
                   "mood": "CUOI"
                 },
                 {
@@ -731,7 +731,7 @@
               "mood": "THUONG"
             },
             {
-              "say": "Dạ con nhớ dai lắm cô. Con hổng cần sổ đâu.",
+              "say": "Con nhớ dai lắm cô. Con không cần sổ đâu.",
               "tone": "DUA",
               "reply": "Ờ. Cô hồi hai mươi lăm tuổi cô cũng nói y câu đó.",
               "ref": "ket"
@@ -769,9 +769,9 @@
       "openMood": "NGAC_NHIEN",
       "tree": [
         {
-          "say": "Sáng giờ hẻm mình có gì mới hông cô?",
+          "say": "Sáng giờ hẻm mình có gì mới không cô?",
           "tone": "DUA",
-          "reply": "Cha! Con hỏi trúng tủ cô rồi đó. Để cô kể.",
+          "reply": "Trời! Con hỏi trúng tủ cô rồi đó. Để cô kể.",
           "mood": "CUOI_TUOI",
           "then": [
             {
@@ -781,13 +781,13 @@
               "mood": "CUOI_TUOI"
             },
             {
-              "say": "Cô kể mà cô đừng nêu tên người ta nghen cô.",
+              "say": "Cô kể mà cô đừng nêu tên người ta nha cô.",
               "tone": "THANG",
               "reply": "…Ừ. Con nói vậy cũng phải. Thôi cô kể trỏng trỏng vậy.",
               "mood": "NGUONG"
             },
             {
-              "say": "Thôi cô. Con hổng muốn nghe chuyện người ta.",
+              "say": "Thôi cô. Con không muốn nghe chuyện người ta.",
               "tone": "LANH",
               "reply": "…Ừ. Cô im.",
               "mood": "LANH"
@@ -795,7 +795,7 @@
           ]
         },
         {
-          "say": "Hàng họ cô sao rồi cô? Có thiếu món gì hông?",
+          "say": "Hàng họ cô sao rồi cô? Có thiếu món gì không?",
           "tone": "THANG",
           "reply": "Thiếu nước mắm. Mối nó giao trễ ba bữa rồi con.",
           "mood": "NGHIEM",
@@ -803,13 +803,13 @@
             {
               "say": "Thiếu ba bữa rồi mà cô chưa đổi mối hả cô?",
               "tone": "THANG",
-              "reply": "Mối đó cô lấy hai chục năm. Người ta kẹt chớ hổng phải người ta ẩu.",
+              "reply": "Mối đó cô lấy hai chục năm. Người ta kẹt chứ không phải người ta ẩu.",
               "mood": "NGHIEM"
             },
             {
               "say": "Cô uống miếng trà đá rồi tính tiếp cô.",
               "tone": "AM",
-              "reply": "Ờ. Cô khát thiệt. Cảm ơn con nghen.",
+              "reply": "Ờ. Cô khát thiệt. Cảm ơn con nha.",
               "mood": "THUONG",
               "act": {
                 "kind": "OFFER_TEA",
@@ -852,7 +852,7 @@
       "source": "PLAYER_ONLY",
       "depth": "SHORT",
       "weight": 20,
-      "opener": "Ủa. Chi vậy con.",
+      "opener": "Ủa. Gì vậy con.",
       "openMood": "NGAC_NHIEN",
       "tree": [
         {
@@ -864,7 +864,7 @@
             {
               "say": "Cô chạy vòng nào vậy cô?",
               "tone": "AM",
-              "reply": "Vòng công viên. Ba vòng là hai cây số. Cô đi bộ chớ chạy gì nổi con.",
+              "reply": "Vòng công viên. Ba vòng là hai cây số. Cô đi bộ chứ chạy gì nổi con.",
               "mood": "CUOI"
             },
             {
@@ -874,33 +874,33 @@
               "mood": "MET"
             },
             {
-              "say": "Mai cô rủ con đi với cô nghen cô.",
+              "say": "Mai cô rủ con đi với cô nha cô.",
               "tone": "DUA",
-              "reply": "Rủ chớ! Mà con dậy nổi hông đó. Cô đợi năm phút thôi à.",
+              "reply": "Rủ chứ! Mà con dậy nổi không đó. Cô đợi năm phút thôi à.",
               "mood": "CUOI_TUOI"
             }
           ]
         },
         {
-          "say": "Cuốn sổ nợ của cô còn trang nào chưa xoá hông cô?",
+          "say": "Cuốn sổ nợ của cô còn trang nào chưa xoá không cô?",
           "tone": "THANG",
-          "reply": "…Còn. Một trang. Cô hổng dám xé con à.",
+          "reply": "…Còn. Một trang. Cô không dám xé con à.",
           "mood": "BUON",
           "then": [
             {
               "say": "Trang đó của ai vậy cô?",
               "tone": "THANG",
-              "reply": "…Cô hổng nói. Người ta còn đi ngang đây mỗi ngày mà con.",
+              "reply": "…Cô không nói. Người ta còn đi ngang đây mỗi ngày mà con.",
               "mood": "NGHIEM"
             },
             {
-              "say": "Sao cô hổng xé đi cô?",
+              "say": "Sao cô không xé đi cô?",
               "tone": "AM",
-              "reply": "Xé rồi thì coi như cô cho. Mà cô hổng muốn người ta mang tiếng được cho.",
+              "reply": "Xé rồi thì coi như cô cho. Mà cô không muốn người ta mang tiếng được cho.",
               "mood": "NGHIEM"
             },
             {
-              "say": "Dạ. Cô giữ vậy cũng phải cô.",
+              "say": "Cô giữ vậy cũng phải cô.",
               "tone": "THUONG",
               "reply": "Ờ. Con hiểu là cô mừng. Mấy đứa khác nó nói cô keo.",
               "mood": "THUONG"
@@ -930,7 +930,7 @@
       "depth": "SHORT",
       "weight": 16,
       "initiates": 0.3,
-      "opener": "Con ơi. Con có bịch nilông nào dư hông? Cô hết sạch mà mối chưa giao.",
+      "opener": "Con ơi. Con có bịch nilông nào dư không? Cô hết sạch mà mối chưa giao.",
       "openMood": "NGAC_NHIEN",
       "practice": [
         "GOI_MON",
@@ -951,17 +951,17 @@
             {
               "say": "Thôi cô khỏi trả cô.",
               "tone": "AM",
-              "reply": "Hổng được. Cô ghi vô sổ rồi. Cô mà quỵt là cô mất uy tín cả hẻm.",
+              "reply": "Không được. Cô ghi vô sổ rồi. Cô mà quỵt là cô mất uy tín cả hẻm.",
               "mood": "NGHIEM"
             },
             {
               "say": "Mối cô trễ hoài vậy cô?",
               "tone": "THANG",
-              "reply": "Ba bữa rồi. Mà cô hổng đổi. Người ta kẹt chớ hổng phải người ta ẩu.",
+              "reply": "Ba bữa rồi. Mà cô không đổi. Người ta kẹt chứ không phải người ta ẩu.",
               "mood": "NGHIEM"
             },
             {
-              "say": "Dạ cô cầm đi cô.",
+              "say": "Cô cầm đi cô.",
               "tone": "THUONG",
               "reply": "Ờ. Cảm ơn con. Cô dọt về coi tiệm đây.",
               "mood": "CUOI"
@@ -977,7 +977,7 @@
             {
               "say": "Cô lấy đỡ mấy cái cũng được cô.",
               "tone": "AM",
-              "reply": "Ờ! Mấy cái thôi cũng đỡ. Cô gói đồ cho khách chớ đâu có gì.",
+              "reply": "Ờ! Mấy cái thôi cũng đỡ. Cô gói đồ cho khách chứ đâu có gì.",
               "mood": "CUOI"
             },
             {
@@ -987,7 +987,7 @@
               "mood": "NGHIEM"
             },
             {
-              "say": "Dạ cô ra chợ đi cô.",
+              "say": "Cô ra chợ đi cô.",
               "tone": "LANH",
               "reply": "…Ừ. Cô đi.",
               "mood": "LANH"

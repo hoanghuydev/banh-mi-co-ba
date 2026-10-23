@@ -1,5 +1,5 @@
 {
-  "_note": "TẦNG THOẠI DÙNG CHUNG — P2-06 §3, FR-06. Đây là kho DUY NHẤT `source: PLAYER_ONLY`, và là chỗ phím bắt chuyện rút: các kho khác hầu hết là `NPC_ONLY` (chuyện của chính họ, người chơi không moi ra được). Khi người chơi chủ động bước tới một người trong khoảng vắng, họ rút ở đây. Vì vậy kho này KHÔNG BAO GIỜ CẠN: `eligible()` bỏ qua `usedBefore` cho `npc: ANY`, chỉ còn `usedToday` theo chủ đề. 'Hết chuyện để nói' không phải một trạng thái có thật của hệ thống. RÀNG BUỘC: mọi câu ở đây phải đọc được với CẢ 14 vai (12 người có tên + khách lạ + người qua đường), nên (a) chỉ dùng chỗ trống {call} {me} {self} {you}, không viết cứng một đại từ nào; (b) KHÔNG đụng chuyện người lớn — bé Su cũng rút kho này (lưới L-8); (c) không nhắc một sự kiện, một món đồ, một cái tên nào của riêng ai. Nội dung ở đây là cái bắt tay, không phải câu chuyện. BA LUẬT VIẾT RIÊNG CỦA KHO NÀY: (1) KHÔNG để {you} và {self} trong cùng một câu — chị Lan có self = you = 'em', ra 'Em kêu em hả?'; cứ một câu một chỗ trống. (2) KHÔNG mở lời người chơi bằng 'Dạ' — 'dạ' là tiếng nói LÊN người lớn hơn mình, mà với bé Su thì {me} = 'cô' và với chú Kiệt thì {me} = 'tui'; một câu phải đọc được ở cả 14 vai thì nó không được mang sẵn vai vế. (3) Câu ĐÁP của NPC viết thành MẢNH CỤT, tránh 'ờ/ừ/dạ' ở đầu — đầu câu là chỗ lộ vai vế rõ nhất, mà cùng một dòng này bà cụ bảy mươi tư và con bé cấp hai đều phải nói được. CHÍNH TẢ ĐÃ CHỐT: viết \"giựt\" (giựt mình) theo âm Nam Bộ, file khác theo chuẩn này. KHÔNG viết phiên âm lệch kiểu \"dzậy\": giọng Nam đến từ TỪ VỰNG và TIỂU TỪ chứ không từ cách viết.",
+  "_note": "TẦNG THOẠI DÙNG CHUNG — P2-06 §3, FR-06. Đây là kho DUY NHẤT `source: PLAYER_ONLY`, và là chỗ phím bắt chuyện rút: các kho khác hầu hết là `NPC_ONLY` (chuyện của chính họ, người chơi không moi ra được). Khi người chơi chủ động bước tới một người trong khoảng vắng, họ rút ở đây. Vì vậy kho này KHÔNG BAO GIỜ CẠN: `eligible()` bỏ qua `usedBefore` cho `npc: ANY`, chỉ còn `usedToday` theo chủ đề. 'Hết chuyện để nói' không phải một trạng thái có thật của hệ thống. RÀNG BUỘC: mọi câu ở đây phải đọc được với CẢ 14 vai (12 người có tên + khách lạ + người qua đường), nên (a) chỉ dùng chỗ trống {call} {me} {self} {you}, không viết cứng một đại từ nào; (b) KHÔNG đụng chuyện người lớn — bé Hân cũng rút kho này (lưới L-8); (c) không nhắc một sự kiện, một món đồ, một cái tên nào của riêng ai. Nội dung ở đây là cái bắt tay, không phải câu chuyện. BA LUẬT VIẾT RIÊNG CỦA KHO NÀY: (1) KHÔNG để {you} và {self} trong cùng một câu — chị Trâm có self = you = 'em', ra 'Em kêu em hả?'; cứ một câu một chỗ trống. (2) KHÔNG mở lời người chơi bằng 'Dạ' — 'dạ' là tiếng nói LÊN người lớn hơn mình, mà với bé Hân thì {me} = 'cô' và với chú Đạt thì {me} = 'tui'; một câu phải đọc được ở cả 14 vai thì nó không được mang sẵn vai vế. (3) Câu ĐÁP của NPC viết thành MẢNH CỤT, tránh 'ờ/ừ/dạ' ở đầu — đầu câu là chỗ lộ vai vế rõ nhất, mà cùng một dòng này bà cụ bảy mươi tư và con bé cấp hai đều phải nói được. CHÍNH TẢ ĐÃ CHỐT: viết \"giựt\" (giựt mình) theo âm Nam Bộ, file khác theo chuẩn này. KHÔNG viết phiên âm lệch kiểu \"dzậy\": giọng Nam đến từ TỪ VỰNG và TIỂU TỪ chứ không từ cách viết.",
   "talks": [
     {
       "id": "any.chao",
@@ -7,7 +7,7 @@
       "topic": "chao",
       "source": "PLAYER_ONLY",
       "depth": "SHORT",
-      "opener": "Ơ. Kêu hả. Chi đó {you}?",
+      "opener": "Ơ. Kêu hả. Gì đó {you}?",
       "openMood": "NGAC_NHIEN",
       "tree": [
         {
@@ -25,7 +25,7 @@
             {
               "say": "{call} đứng đây cho mát cái đã.",
               "tone": "AM",
-              "reply": "Đứng chút thôi nghen. Còn đi nữa.",
+              "reply": "Đứng chút thôi nha. Còn đi nữa.",
               "mood": "CUOI",
               "act": {
                 "kind": "STAND_IN_SHADE",
@@ -65,9 +65,9 @@
           "mood": "CUOI",
           "then": [
             {
-              "say": "{call} còn đi ngang đây mỗi sáng hông?",
+              "say": "{call} còn đi ngang đây mỗi sáng không?",
               "tone": "THUONG",
-              "reply": "Còn chớ. Đường này {self} đi mười mấy năm rồi.",
+              "reply": "Còn chứ. Đường này {self} đi mười mấy năm rồi.",
               "mood": "CUOI"
             },
             {
@@ -85,7 +85,7 @@
           ]
         },
         {
-          "say": "Thôi. Hổng có gì.",
+          "say": "Thôi. Không có gì.",
           "tone": "LANH",
           "reply": "…Ủa. Vậy thôi hả.",
           "mood": "NGAC_NHIEN"
@@ -148,7 +148,7 @@
           ]
         },
         {
-          "say": "Thôi. Hổng có gì {call}.",
+          "say": "Thôi. Không có gì {call}.",
           "tone": "LANH",
           "reply": "…Kỳ ghê.",
           "mood": "NGAC_NHIEN"
@@ -193,9 +193,9 @@
               ]
             },
             {
-              "say": "{call} thấy mùi thơm hông?",
+              "say": "{call} thấy mùi thơm không?",
               "tone": "DUA",
-              "reply": "Thơm chớ. Đi ngang là biết liền.",
+              "reply": "Thơm chứ. Đi ngang là biết liền.",
               "mood": "CUOI"
             },
             {
@@ -210,7 +210,7 @@
           ]
         },
         {
-          "say": "{call} coi cái xe {me} dọn vầy được hông.",
+          "say": "{call} coi cái xe {me} dọn vậy được không.",
           "tone": "THUONG",
           "reply": "Được mà. Gọn gàng.",
           "mood": "CUOI",
@@ -219,13 +219,13 @@
           ]
         },
         {
-          "say": "Bữa nay {me} làm được mẻ ngon lắm {call}.",
+          "say": "Hôm nay {me} làm được mẻ ngon lắm {call}.",
           "tone": "AM",
           "reply": "Vậy hả. Để coi.",
           "mood": "CUOI",
           "then": [
             {
-              "say": "Pate bữa nay {me} lấy của bà Tám, béo hơn mọi bữa.",
+              "say": "Pate hôm nay {me} lấy của bà Tám, béo hơn mọi bữa.",
               "tone": "AM",
               "reply": "Bà Tám đầu hẻm hả? Ờ, pate bả {self} ăn quen rồi.",
               "mood": "CUOI"
@@ -254,7 +254,7 @@
               ]
             },
             {
-              "say": "Dạ. {me} nói vậy thôi.",
+              "say": "{me} nói vậy thôi.",
               "tone": "LANH",
               "reply": "…Ờ.",
               "mood": "LANH"
@@ -277,7 +277,7 @@
           "!p.soldOut"
         ]
       },
-      "_note": "Cả cuộc nói về Ổ BÁNH — hết sạch thì không có gì để nói. Khoá tầng cuộc chứ không khoá từng nút: khoá từng nút thì cuộc vẫn rút ra rồi chỉ còn mỗi câu 'coi cái xe {me} dọn vầy được hông' — một câu hỏi ý kiến bày biện hàng, nói với một người đang đi ngang.",
+      "_note": "Cả cuộc nói về Ổ BÁNH — hết sạch thì không có gì để nói. Khoá tầng cuộc chứ không khoá từng nút: khoá từng nút thì cuộc vẫn rút ra rồi chỉ còn mỗi câu 'coi cái xe {me} dọn vậy được không' — một câu hỏi ý kiến bày biện hàng, nói với một người đang đi ngang.",
       "drives": {
         "DUOC_HOI": 10,
         "VIEC_RIENG": -6
@@ -289,17 +289,17 @@
       "topic": "hem",
       "source": "PLAYER_ONLY",
       "depth": "SHORT",
-      "opener": "Ủa. Tưởng ai. Chi hông {you}?",
+      "opener": "Ủa. Tưởng ai. Gì không {you}?",
       "openMood": "MET",
       "tree": [
         {
           "say": "Sáng nay hẻm đông ha {call}.",
           "tone": "THUONG",
-          "reply": "Bữa nay người ta ra sớm.",
+          "reply": "Hôm nay người ta ra sớm.",
           "mood": "CUOI",
           "then": [
             {
-              "say": "Đông vầy {me} mừng chớ sao {call}.",
+              "say": "Đông vậy {me} mừng chứ sao {call}.",
               "tone": "AM",
               "reply": "Buôn bán mà. Đông là vui.",
               "mood": "CUOI_TUOI",
@@ -308,7 +308,7 @@
               ]
             },
             {
-              "say": "Mà đông quá làm hổng kịp {call} à.",
+              "say": "Mà đông quá làm không kịp {call} à.",
               "tone": "THANG",
               "reply": "Từ từ. Ai cũng phải chờ hết.",
               "mood": "NGHIEM",
@@ -343,7 +343,7 @@
               "mood": "THUONG"
             },
             {
-              "say": "Yên vầy mà {me} bán cũng đủ sống {call} ơi.",
+              "say": "Yên vậy mà {me} bán cũng đủ sống {call} ơi.",
               "tone": "THANG",
               "reply": "Hẻm yên mà người đi ngang đông. Đó mới là cái hay của chỗ này.",
               "mood": "NGHIEM"
@@ -351,7 +351,7 @@
           ]
         },
         {
-          "say": "Thôi. Hổng có gì {call}.",
+          "say": "Thôi. Không có gì {call}.",
           "tone": "LANH",
           "reply": "…Nói nửa chừng rồi bỏ.",
           "mood": "BUC"
@@ -392,7 +392,7 @@
         {
           "say": "{call} xích qua chút giùm {me} cái.",
           "tone": "THANG",
-          "reply": "…Xin lỗi nghen. Đứng choán đường.",
+          "reply": "…Xin lỗi nha. Đứng choán đường.",
           "mood": "NGUONG",
           "act": {
             "kind": "STEP_ASIDE",
@@ -427,17 +427,17 @@
         {
           "say": "Sáng nay mát ha {call}.",
           "tone": "AM",
-          "reply": "Ừ. Trời vầy dễ chịu thiệt.",
+          "reply": "Ừ. Trời vậy dễ chịu thiệt.",
           "mood": "CUOI",
           "then": [
             {
-              "say": "Mát vầy đứng bán cũng đỡ {call} à.",
+              "say": "Mát vậy đứng bán cũng đỡ {call} à.",
               "tone": "THUONG",
               "reply": "Ờ. Nắng vô là cực lắm.",
               "mood": "CUOI"
             },
             {
-              "say": "Trời vầy đi đâu cũng khoẻ {call} ha.",
+              "say": "Trời vậy đi đâu cũng khoẻ {call} ha.",
               "tone": "AM",
               "reply": "Ừ. Đi bộ một vòng cũng được.",
               "mood": "CUOI"
@@ -493,7 +493,7 @@
           "mood": "MET",
           "then": [
             {
-              "say": "{call} có đem theo nón hông đó.",
+              "say": "{call} có đem theo nón không đó.",
               "tone": "AM",
               "reply": "Có. Mà nón cũng không ăn thua.",
               "mood": "CUOI_KHAN"
@@ -515,7 +515,7 @@
           ]
         },
         {
-          "say": "Trời vầy {call} đi đứng cẩn thận nghen.",
+          "say": "Trời vậy {call} đi đứng cẩn thận nha.",
           "tone": "AM",
           "reply": "Ờ. Cảm ơn {you}.",
           "mood": "CUOI"
@@ -527,9 +527,9 @@
           "mood": "LANH"
         },
         {
-          "say": "Nóng vầy {call} uống miếng trà đá cái đã.",
+          "say": "Nóng vậy {call} uống miếng trà đá cái đã.",
           "tone": "AM",
-          "reply": "Ờ. Mát ruột. Cảm ơn {you} nghen.",
+          "reply": "Ờ. Mát ruột. Cảm ơn {you} nha.",
           "mood": "THUONG",
           "act": {
             "kind": "OFFER_TEA",

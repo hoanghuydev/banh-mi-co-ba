@@ -1,6 +1,6 @@
 import { MENU_ITEMS, type MenuItem, type MenuItemId } from "./menu";
 import { GOOD_IDS, goodsFor, type GoodId } from "./econ";
-import type { Ingredient } from "./order";
+import { INGREDIENTS, type Ingredient, type IngredientInfo } from "./order";
 
 export const LAST_UNLOCK_DAY = Math.max(...MENU_ITEMS.map((i) => i.unlockDay));
 
@@ -27,3 +27,7 @@ export function goodOpen(g: GoodId, day: number) {
   const ings = ING_OF.get(g)!;
   return !ings.length || ings.some((i) => ingredientOpen(i, day));
 }
+
+/** Nhân đã mở theo món trên bảng; rau, sốt luôn có. */
+export const openIngredients = (day: number): IngredientInfo[] =>
+  INGREDIENTS.filter((i) => i.kind !== "nhan" || ingredientOpen(i.id, day));

@@ -1,6 +1,7 @@
 import type { SaveFile } from "../../core/save";
 import { REWIND_ASK } from "../../content/system";
 import { brokeReport } from "../../sim/broke";
+import { SICK_WINDOW_DAYS, attpCheck, average, starText } from "../../sim/reviews";
 import { linked } from "../../sim/system";
 
 const STYLE = `
@@ -55,17 +56,25 @@ export class BrokeView {
     this.root.style.fontSize = `${Math.round(15 * Math.min(opts.textScale, 1.4))}px`;
     this.root.addEventListener("keydown", (e) => e.stopPropagation(), true);
 
-    const r = brokeReport(w);
+    const attp = !!w.flags.shutdown;
     const page = el("div", "bk-page");
     const card = el("div", "bk-card");
-    card.append(
-      el("h1", "bk-h", `Quán ${w.shopName} đóng cửa sau ${w.progress.dayIndex} ngày`),
-      el("div", "bk-why", `Tiền quán còn ${money(r.cash + r.resale)}, không đủ nhập hàng cho ngày mai (cần ${money(r.need)}).`),
-    );
+    card.append(el("h1", "bk-h", `Quán ${w.shopName} đóng cửa sau ${w.progress.dayIndex} ngày`));
+    if (attp) {
+      const a = attpCheck(w);
+      card.append(el("div", "bk-why",
+        `Bị đình chỉ vì an toàn thực phẩm: ${a.n} đánh giá đau bụng trong ${SICK_WINDOW_DAYS} ngày, sao trung bình ${starText(average(w))}.`));
+    } else {
+      const r = brokeReport(w);
+      card.append(el("div", "bk-why",
+        `Tiền quán còn ${money(r.cash + r.resale)}, không đủ nhập hàng cho ngày mai (cần ${money(r.need)}).`));
+    }
     page.append(
       card,
       note("Sếp Tùng", "#5b6b7a", "T", "công ty vẫn đang tuyển đó em"),
-      note("Hoàng Huy", "#4f6fb3", "H", "tui nói rồi mà 🤷 tui sắp lên trưởng nhóm đó nha"),
+      note("Hoàng Huy", "#4f6fb3", "H", attp
+        ? "quán bị đóng cửa hả 🤣 ăn bẩn thì phải chịu thôi"
+        : "tui nói rồi mà 🤷 tui sắp lên trưởng nhóm đó nha"),
     );
 
     const isLinked = linked(w);

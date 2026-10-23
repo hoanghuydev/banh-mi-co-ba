@@ -5,6 +5,7 @@ import {
 } from "../../../sim/resell";
 import { navBar, page, scroller, type AppCtx } from "../ctx";
 import { ICON, btn, el, money } from "../dom";
+import { sfx } from "../../../audio/sfx";
 
 let chosen: Tier = "THUONG";
 
@@ -109,6 +110,7 @@ function postPage(ctx: AppCtx, key: string) {
   const dock = el("div", "ph-compose");
   const go = btn("ph-primary", `Đăng tin · nhận ${money(askFor(cost, chosen))}`, () => {
     if (!post(w, kind, ref, chosen, units)) return;
+    sfx.ui("ph_dang_tin");
     ctx.host.onSave();
     ctx.go({ app: "sell" }, "l");
   });

@@ -50,10 +50,10 @@ test("HA-4 `OVERHEARD_BY` chỉ ăn khi người bị nói đứng gần", () =>
 
   nghe();
   svc.applyTalkOption(noi, { act });
-  assert.equal(nghe(), 0, "bà Sáu không có mặt mà vẫn nghe thấy");
+  assert.equal(nghe(), 0, "dì Liên không có mặt mà vẫn nghe thấy");
 
   const sau = { ...noi, memKey: "BA_SAU", phase: "queueing", x: noi.x, y: noi.y, personality: noi.personality };
   svc.customers.push(sau);
   svc.applyTalkOption(noi, { act });
-  assert.equal(nghe(), 1, "bà Sáu đứng ngay đó mà không có gì xảy ra");
+  assert.equal(nghe(), 1, "dì Liên đứng ngay đó mà không có gì xảy ra");
 });

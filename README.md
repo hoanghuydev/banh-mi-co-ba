@@ -11,7 +11,8 @@ Game kinh doanh 2.5D, Phaser 3 + Vite + TypeScript. Client-only, offline, save �
 | R0 | Sửa CANON, đánh dấu doc chết | ✅ |
 | R0.1 | Dọn code chết | ✅ |
 | R0.5 | Cốt truyện Phương Anh, màn vào game, điện thoại 3 app | ⏳ |
-| R1–R6 | Map gọn · topping + giá · nhà cung cấp · review sao · số khách · thoại gen Z | chưa |
+| R1–R5 | Map gọn · topping + giá · nhà cung cấp · review sao · số khách | chưa |
+| R6 | Tên riêng 12 NPC, bỏ giọng Nam cổ trong thoại | 🚧 mới xong tên + thay chữ cổ; còn viết lại thoại từng nhân vật |
 
 ## Chạy
 

@@ -9,7 +9,7 @@ import { EVERY_DAY, WEEKDAYS_WORK, type ScheduleRule } from "../sim/schedule";
  * KHÔNG được tự đổi. Mỗi người khác người kế bên ít nhất HAI dấu hiệu BÓNG HÌNH
  * (nón, tóc, kính, giỏ, tạp dề, dáng) — ở 64 px màu áo gần như vô dụng.
  *
- * Ba người đầu dạy ba luật (P1): bà Bảy soi nhưng dễ tha · chú Tư dạy LỊCH · anh Dũng
+ * Ba người đầu dạy ba luật (P1): dì Nguyệt soi nhưng dễ tha · chú Quang dạy LỊCH · anh Quân
  * dạy MADE_THEM_WAIT. Chín người sau thêm ở P2-02 — mỗi người một ô trong bảng 16 tổ
  * hợp tính cách (P2-02 §2.3), và mỗi người có MỘT thứ không liên quan tới gameplay.
  *
@@ -48,7 +48,7 @@ const at = (h: number, m = 0) => h * 60 + m;
 
 export const NPCS: NpcDef[] = [
   {
-    id: "BA_BAY", name: "Bà Bảy", role: "bán vé số",
+    id: "BA_BAY", name: "Dì Nguyệt", role: "bán vé số",
     personality: { soi: 0.9, nongTinh: 0.6, deTha: 0.8, thanThien: 0.7 },
     // tóc búi bạc + kính lão + lưng còng: ba tín hiệu tuổi tác, đọc được ở 62 px
     body: {
@@ -63,7 +63,7 @@ export const NPCS: NpcDef[] = [
     poses: { DROPPED_FOOD: "LEAN_IN", DIRTY_HANDS: "PEEK_OVER", MADE_THEM_WAIT: "SETTLE_IN", BURNT_OR_COLD: "LEAN_IN" },
   },
   {
-    id: "CHU_TU", name: "Chú Tư", role: "bảo vệ công ty",
+    id: "CHU_TU", name: "Chú Quang", role: "bảo vệ công ty",
     personality: { soi: 0.3, nongTinh: 0.3, deTha: 0.9, thanThien: 0.6 },
     body: {
       skin: 0xd9a97e, hair: 0x2b2420, shirt: 0x41628c, trousers: 0x2f3a49,
@@ -77,27 +77,27 @@ export const NPCS: NpcDef[] = [
     poses: { DROPPED_FOOD: "SHRUG", MADE_THEM_WAIT: "CHECK_TIME", BURNT_OR_COLD: "SHRUG" },
   },
   {
-    id: "ANH_DUNG", name: "Anh Dũng", role: "tài xế công nghệ",
+    id: "ANH_DUNG", name: "Minh Quân", role: "tài xế công nghệ",
     personality: { soi: 0.2, nongTinh: 0.5, deTha: 0.7, thanThien: 0.5 },
     body: {
       skin: 0xe0b085, hair: 0x241e1b, shirt: 0x2f7d52, trousers: 0x2a3138,
       hat: "helmet", hairStyle: "short",
     },
-    // 7h20 ± 12 MỌI ngày kể cả T7/CN — không cố định, đối lập chú Tư
+    // 7h20 ± 12 MỌI ngày kể cả T7/CN — không cố định, đối lập chú Quang
     schedule: [{ days: EVERY_DAY, arriveMin: at(7, 20), jitterMin: 12, probability: 0.8 }],
     patience: 28,                                      // luôn vội — đây là chỗ đau
     gaze: { tickets: [2, 3, 5, 4, 0, 6], phoneBudget: 2 },
     poses: { DROPPED_FOOD: "SHRUG", MADE_THEM_WAIT: "SHIFT_WEIGHT" },
   },
   {
-    id: "CHI_LAN", name: "Chị Lan", role: "nhân viên văn phòng",
+    id: "CHI_LAN", name: "Ngọc Trâm", role: "nhân viên văn phòng",
     personality: { soi: 0.9, nongTinh: 0.1, deTha: 0.2, thanThien: 0.3 },
     // tóc ngắn ngang vai + túi xách tối + áo sơ mi sáng: đồ đi làm, đọc ra từ xa
     body: {
       skin: 0xebbe96, hair: 0x1c1816, shirt: 0xdfe6ec, trousers: 0x2c3442,
       hairStyle: "bob", bag: 0x3a3440,
     },
-    // 7h05 ± 2 — còn đúng giờ hơn chú Tư · T7 ~9h30 thỉnh thoảng, mặc đồ thường
+    // 7h05 ± 2 — còn đúng giờ hơn chú Quang · T7 ~9h30 thỉnh thoảng, mặc đồ thường
     schedule: [
       { days: WEEKDAYS_WORK, arriveMin: at(7, 5), jitterMin: 2, probability: 0.96 },
       { days: ["SAT"], arriveMin: at(9, 30), jitterMin: 15, probability: 0.35 },
@@ -108,7 +108,7 @@ export const NPCS: NpcDef[] = [
     poses: { DROPPED_FOOD: "STEP_BACK_HALF", DIRTY_HANDS: "LEAN_BACK", MADE_THEM_WAIT: "CHECK_TIME", BURNT_OR_COLD: "LEAN_BACK" },
   },
   {
-    id: "BE_SU", name: "Bé Su", role: "học sinh cấp 2",
+    id: "BE_SU", name: "Khả Hân", role: "học sinh cấp 2",
     personality: { soi: 0.4, nongTinh: 0.4, deTha: 0.9, thanThien: 1.0 },
     // đồng phục áo trắng quần xanh + tóc cột: học sinh, không lẫn với ai
     body: {
@@ -124,7 +124,7 @@ export const NPCS: NpcDef[] = [
     poses: { DROPPED_FOOD: "LEAN_IN", MADE_THEM_WAIT: "PHONE_DOWN" },
   },
   {
-    id: "ONG_HAI", name: "Ông Hải", role: "khách hay nhậu",
+    id: "ONG_HAI", name: "Chú Thịnh", role: "khách hay nhậu",
     personality: { soi: 0.5, nongTinh: 0.9, deTha: 0.5, thanThien: 0.6 },
     // người to, tóc muối tiêu, áo nâu: đứng chiếm chỗ
     body: {
@@ -143,9 +143,9 @@ export const NPCS: NpcDef[] = [
     poses: { DROPPED_FOOD: "LEAN_IN", MADE_THEM_WAIT: "LEAN_IN" },
   },
   {
-    id: "CO_MAI", name: "Cô Mai", role: "chủ tạp hoá đối diện",
+    id: "CO_MAI", name: "Cô Thuý", role: "chủ tạp hoá đối diện",
     personality: { soi: 0.6, nongTinh: 0.4, deTha: 0.6, thanThien: 0.8 },
-    // tóc búi đen + áo hoa hồng + dáng tròn: bà chủ tiệm, KHÔNG còng (khác bà Bảy)
+    // tóc búi đen + áo hoa hồng + dáng tròn: bà chủ tiệm, KHÔNG còng (khác dì Nguyệt)
     body: {
       skin: 0xe6b58c, hair: 0x231c18, shirt: 0xc9577a, trousers: 0x3b3c4a,
       hairStyle: "bun", build: "round",
@@ -157,7 +157,7 @@ export const NPCS: NpcDef[] = [
     poses: { DROPPED_FOOD: "TILT_HEAD", MADE_THEM_WAIT: "PEEK_OVER", BURNT_OR_COLD: "TILT_HEAD" },
   },
   {
-    id: "THAY_PHUC", name: "Thầy Phúc", role: "giáo viên hưu trí",
+    id: "THAY_PHUC", name: "Thầy Khải", role: "giáo viên hưu trí",
     personality: { soi: 0.8, nongTinh: 0.2, deTha: 0.7, thanThien: 0.5 },
     // tóc bạc trắng + kính + áo sơ mi kem + lưng hơi còng
     body: {
@@ -174,14 +174,14 @@ export const NPCS: NpcDef[] = [
     poses: { DROPPED_FOOD: "NOD", DIRTY_HANDS: "TILT_HEAD", MADE_THEM_WAIT: "IDLE" },
   },
   {
-    id: "CHI_HANH", name: "Chị Hạnh", role: "người Bắc mới vô Sài Gòn",
+    id: "CHI_HANH", name: "Thu Hà", role: "người Bắc mới vô Sài Gòn",
     personality: { soi: 0.5, nongTinh: 0.3, deTha: 0.6, thanThien: 0.4 },
     // tóc cột + giỏ nâu + áo xanh nhạt
     body: {
       skin: 0xf2caa5, hair: 0x2e231d, shirt: 0x6a8fb5, trousers: 0x363a44,
       hairStyle: "ponytail", bag: 0x8a5a44,
     },
-    // 7h15 ± 6, ngay sau chị Lan · T7 ~10h mang máy ảnh đi chụp hẻm · CN không
+    // 7h15 ± 6, ngay sau chị Trâm · T7 ~10h mang máy ảnh đi chụp hẻm · CN không
     schedule: [
       { days: WEEKDAYS_WORK, arriveMin: at(7, 15), jitterMin: 6, probability: 0.88 },
       { days: ["SAT"], arriveMin: at(10), jitterMin: 15, probability: 0.6 },
@@ -191,7 +191,7 @@ export const NPCS: NpcDef[] = [
     poses: { DROPPED_FOOD: "LEAN_BACK", MADE_THEM_WAIT: "SHIFT_WEIGHT" },
   },
   {
-    id: "ANH_BAO", name: "Anh Bảo", role: "sinh viên",
+    id: "ANH_BAO", name: "Gia Bảo", role: "sinh viên",
     personality: { soi: 0.3, nongTinh: 0.2, deTha: 0.8, thanThien: 0.4 },
     // nón kết + áo khoác tối: cắm mặt điện thoại — gaze thấp nhất hẻm
     body: {
@@ -204,7 +204,7 @@ export const NPCS: NpcDef[] = [
     poses: { DROPPED_FOOD: "PHONE_DOWN", MADE_THEM_WAIT: "PHONE_DOWN" },
   },
   {
-    id: "BA_SAU", name: "Bà Sáu", role: "gánh tàu hũ",
+    id: "BA_SAU", name: "Dì Liên", role: "gánh tàu hũ",
     personality: { soi: 0.4, nongTinh: 0.3, deTha: 0.8, thanThien: 0.9 },
     // nón lá + áo bà ba xanh + lưng còng: người bán rong đi ngang hẻm
     body: {
@@ -218,7 +218,7 @@ export const NPCS: NpcDef[] = [
     poses: { MADE_THEM_WAIT: "SETTLE_IN" },
   },
   {
-    id: "CHU_KIET", name: "Chú Kiệt", role: "xe bánh mì bên kia hẻm",
+    id: "CHU_KIET", name: "Chú Đạt", role: "xe bánh mì bên kia hẻm",
     personality: { soi: 0.7, nongTinh: 0.6, deTha: 0.3, thanThien: 0.4 },
     // TẠP DỀ — người bán duy nhất đứng phía khách: nhìn là biết đồng nghiệp
     body: {

@@ -20,7 +20,7 @@ function baBay(q = new Query()) {
     .set("queueLength", 1).set("stallCleanliness", 90).set("playerHandsDirty", false);
 }
 
-test("rule cụ thể hơn thắng: bà Bảy có dòng riêng, khách khác rơi về generic", () => {
+test("rule cụ thể hơn thắng: dì Nguyệt có dòng riêng, khách khác rơi về generic", () => {
   const db = ruleDb();
   const q = baBay().set("eventId", "DROPPED_FOOD").set("obsState", "NOTICED");
   assert.equal(db.select("NOTICE_EVENT", q, st(), 0, new Rng(1))?.idName, "bay.drop.t1.lan1");
@@ -156,7 +156,7 @@ test("ổ NGUỘI không bao giờ lôi ra được một câu 'khét' — event
   }
 });
 
-test("rule im lặng của Anh Bảo vẫn hơn điểm rule generic ở CẢ hai nhánh cháy/nguội", () => {
+test("rule im lặng của Bảo vẫn hơn điểm rule generic ở CẢ hai nhánh cháy/nguội", () => {
   const db = ruleDb();
   for (const burnt of [true, false]) {
     const q = new Query().set("npcId", "ANH_BAO").set("eventId", "BURNT_OR_COLD").set("eventBurnt", burnt).set("obsState", "NOTICED");

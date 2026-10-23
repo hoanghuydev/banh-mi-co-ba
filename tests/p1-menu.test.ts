@@ -35,10 +35,12 @@ test("làm đúng công thức trên bảng là 0 lỗi — với MỌI món, m�
   }
 });
 
-test("ổ nào cũng quết pate trước — trừ bánh mì không", () => {
+test("ổ nào cũng quết pate trước — trừ ốp la và bánh mì không", () => {
   for (const mon of MENU_IDS) {
     const lv = levelsOf({ mon, rau: "day-du", ot: 1, tuong: 1 });
     if (isBare(mon)) { assert.equal(lv.pate, 0, `${mon} là ổ trơn`); continue; }
+    // Ổ ốp la chỉ có trứng; ngày 4 mở bánh mì pate mới có pate trên xe.
+    if (mon === "opla") { assert.equal(lv.pate, 0); assert.equal(lv.opla, 1); continue; }
     assert.equal(lv.pate, 1, `${mon}: thiếu pate`);
   }
   const xm = specOf({ mon: "xiumai", rau: "day-du", ot: 1, tuong: 1 });
@@ -130,6 +132,6 @@ test("món ẩn khỏi bảng vẫn gọi được, vẫn có giá, vẫn chấm
     assert.deepEqual(diffDish(spec, dishFor(spec)), [], `${it.id}: ẩn khỏi bảng mà chấm điểm sai`);
     assert.ok(dishPriceVnd(spec.intent) > 0, `${it.id}: ẩn khỏi bảng mà mất giá`);
   }
-  assert.ok(MENU_IDS.includes("khong"), "bánh mì không PHẢI còn trong dữ liệu — xem bé Su / bà Sáu");
+  assert.ok(MENU_IDS.includes("khong"), "bánh mì không PHẢI còn trong dữ liệu — xem bé Hân / dì Liên");
 });
 

@@ -37,8 +37,8 @@ export const POOLS: Record<LinePool, PoolDef> = Object.fromEntries(
 ) as Record<LinePool, PoolDef>;
 
 /**
- * Rút thoại. Bag là PER-NPC (P0-02 §2.4): dùng chung thì bà Bảy "dùng hết" biến thể
- * của chú Tư. Trạng thái bag nằm thẳng trong save (`bags`) nên sống qua ngày và qua
+ * Rút thoại. Bag là PER-NPC (P0-02 §2.4): dùng chung thì dì Nguyệt "dùng hết" biến thể
+ * của chú Quang. Trạng thái bag nằm thẳng trong save (`bags`) nên sống qua ngày và qua
  * reload — nếu reset mỗi sáng thì sáng nào cũng nghe lại đúng các dòng quen.
  * Mọi số ngẫu nhiên lấy từ stream `dialog-shufflebag`, không đụng hệ khác.
  */
@@ -61,7 +61,7 @@ export class Barks {
     /*
      * Chỗ trống KHÔNG có trong `vars` được GIỮ NGUYÊN, không xoá. Túi `extraOffer` là lời của
      * mình: nó mang `{me}` / `{call}`, và chỉ `Service.fill` mới biết điền ai vào đó (và viết hoa
-     * nếu đứng đầu câu). Xoá sạch ở đây thì câu ra màn hình thành " ơi,  bỏ thêm ớt nghen."
+     * nếu đứng đầu câu). Xoá sạch ở đây thì câu ra màn hình thành " ơi,  bỏ thêm ớt nha."
      * Mọi túi khác đều được truyền đủ biến nên không đổi gì với chúng.
      */
     return def.variants[i].replace(/\{(\w+)\}/g, (m, k) => vars[k] ?? m);

@@ -11,7 +11,7 @@ import { needKeys, walkNodes, type TalkNode } from "../src/sim/talk";
 
 test("G-1 ngồi thì kiên nhẫn trôi CHẬM hơn — nhưng vẫn trôi", () => {
   const ai = (id: string) => new Customer(
-    id, "CHU_TU", "Chú Tư", P.CHU_TU, NPCS[1].body, null,
+    id, "CHU_TU", "Chú Quang", P.CHU_TU, NPCS[1].body, null,
     0, { x: 0, y: 0 }, 100, new Rng(2),
   );
   const dung = ai("a"), ngoi = ai("b");

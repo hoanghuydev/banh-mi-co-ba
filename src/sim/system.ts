@@ -1,4 +1,5 @@
 import type { SaveFile } from "../core/save";
+import { guestsOf } from "./demand";
 import { fnv1a, Rng, splitmix32 } from "../core/rng";
 import { CAL, buy, weatherOf } from "./econ";
 import { GEAR_COUPON_PCT, giftGear } from "./gear";
@@ -31,6 +32,9 @@ export const THIEN_DINH_SEC = 3;
 export const DANH_TIENG_GUESTS = 2;
 export const SWIFT_MUL = 0.8;
 const GIFT_LOAVES = 6;
+const GIFT_PATE = 20;
+const GIFT_RAU = 12;
+const GIFT_TRUNG = 10;
 
 /** Cấp trung: thưởng kỳ vọng ≤ 2,5% doanh thu/ngày (`tests/phone-apps.test.ts`). */
 export const REWARDS: Reward[] = [
@@ -48,7 +52,7 @@ export const REWARDS: Reward[] = [
   { id: "TAI_CHUYEN", name: "Thiên Mệnh Tái Chuyển", tier: "Hiếm", win: 3, draw: 5, value: none, effect: "Được quay thêm một lần.", desc: "Số mệnh không phải một lần." },
   { id: "PHONG_HANH", name: "Phong Hành Chi Thủ", tier: "Sơ cấp", win: 6, draw: 10, value: none, effect: "Thao tác làm bánh nhanh hơn 20%.", term: "hôm nay", desc: "Tay nhanh hơn mắt." },
   { id: "THIEN_CO", name: "Thiên Cơ Dự Báo", tier: "Sơ cấp", win: 5, draw: 8, value: none, effect: "Xem trước thời tiết và lượng khách ngày mai.", desc: "Biết trước một ngày, đỡ lo một ngày." },
-  { id: "NHAN_LIEU", name: "Thiên Giáng Nhân Liệu", tier: "Phổ thông", win: 3, draw: 8, value: () => FILLING_VALUE, effect: "Nhận ngay 1 lạng pate thường, 1 bó rau, 1 chục trứng.", desc: "Của trời cho, không lấy phí." },
+  { id: "NHAN_LIEU", name: "Thiên Giáng Nhân Liệu", tier: "Phổ thông", win: 3, draw: 8, value: () => FILLING_VALUE, effect: `Nhận ngay ${GIFT_PATE} phần pate thường, ${GIFT_RAU} phần rau, ${GIFT_TRUNG} quả trứng.`, desc: "Của trời cho, không lấy phí." },
   { id: "THE_DO_NGHE", name: "Thẻ giảm giá đồ nghề", tier: "", win: 3, draw: 8, value: () => GEAR_COUPON_VALUE, effect: `−${GEAR_COUPON_PCT * 100}% một đơn Đồ nghề.` },
   { id: "BAO_KHI", name: "Thiên Giáng Bảo Khí", tier: "Cực hiếm", win: 1, draw: 3, value: () => GEAR_GIFT_VALUE, effect: "Nhận một món đồ nghề nhỏ, giao và lắp sáng mai.", desc: "Trời cho mà không lấy là có tội." },
   { id: "HOI_TAM", name: "Hồi Tâm Chuyển Ý", tier: "Cực hiếm", win: 2, draw: 4, value: none, effect: "Sửa số sao và lời của một đánh giá.", desc: "Quay đầu là bờ." },
@@ -114,11 +118,16 @@ export const newSystem = (): SystemState => ({
   discount: 0, gearCoupon: 0, express: 0, fix: 0, exp: 0, help: false, log: [],
 });
 
+/** Thông báo cũ hơn chừng này ngày thì bỏ, khỏi phình save sau trăm ngày. */
+export const LOG_KEEP_DAYS = 15;
+
 export const linked = (w: SaveFile) => w.system.stage === "linked";
 
 export function say(w: SaveFile, text: string) {
-  w.system.log.push({ day: w.progress.dayIndex, text });
-  if (w.system.log.length > 60) w.system.log.splice(0, w.system.log.length - 60);
+  const log = w.system.log;
+  log.push({ day: w.progress.dayIndex, text });
+  const from = w.progress.dayIndex - LOG_KEEP_DAYS + 1;
+  if (log[0].day < from) w.system.log = log.filter((e) => e.day >= from);
 }
 
 export function refuse(w: SaveFile): "again" | "gone" {
@@ -272,15 +281,15 @@ export function spin(w: SaveFile): SpinResult | null {
       const wx = CAL.weatherInfo[weatherOf(day + 1)];
       lines = [
         `Keng! Chúc mừng ký chủ thu được 【${r.name}】(${r.tier}).`,
-        `Hiệu quả: ngày mai ${wx.label}, ${wx.walkIn >= 1 ? "khách đông" : "khách thưa"}.`,
+        `Hiệu quả: ngày mai ${wx.label}, khách chừng ${guestsOf(w, day + 1)} người.`,
         `Mô tả: ${r.desc}`,
       ];
       break;
     }
     case "NHAN_LIEU":
-      buy(w.inventory, "PATE", 1, day);
-      buy(w.inventory, "RAU", 1, day);
-      buy(w.inventory, "TRUNG", 1, day);
+      buy(w.inventory, "PATE", GIFT_PATE, day);
+      buy(w.inventory, "RAU", GIFT_RAU, day);
+      buy(w.inventory, "TRUNG", GIFT_TRUNG, day);
       lines = [`Keng! Chúc mừng ký chủ thu được 【${r.name}】×1.`, `Hiệu quả: ${r.effect}`, `Mô tả: ${r.desc}`];
       break;
     case "THE_DO_NGHE":

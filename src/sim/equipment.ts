@@ -3,7 +3,7 @@ import EQUIP_JSON from "../content/econ/equipment.json";
 import { ECON } from "./econ";
 import type { EconBook } from "./obligations";
 
-export type EquipId = "LO_THAN" | "THUNG_XOP" | "LO_DIEN" | "KEP_GAP" | "TU_MAT" | "NOI_U" | "LONG_BAN"
+export type EquipId = "LO_THAN" | "THUNG_XOP" | "LO_DIEN" | "KEP_GAP" | "TU_MAT" | "LONG_BAN"
   | "GHE_BAN" | "DU_CHE" | "BINH_TRA" | "QUAT_DIEN" | "LOA_RAO" | "BANG_HIEU" | "BANG_QR" | "GIA_TREO";
 
 export type EquipDef = {

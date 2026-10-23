@@ -30,7 +30,7 @@ test("12 NPC có tên, đúng id và đúng bốn chỉ số của CANON §9", (
   }
 });
 
-test("ô 'im lặng biến mất' chỉ cấp cho ĐÚNG MỘT người — chị Lan (CANON §4 ràng buộc 2)", () => {
+test("ô 'im lặng biến mất' chỉ cấp cho ĐÚNG MỘT người — chị Trâm (CANON §4 ràng buộc 2)", () => {
   assert.deepEqual(NPCS.filter((n) => isSilentGrudge(n.personality)).map((n) => n.id), ["CHI_LAN"]);
 });
 
@@ -39,7 +39,7 @@ test("hệ số suy ra khớp bảng P2-02 §2.1", () => {
   assert.equal(intensityMul(P.ONG_HAI).toFixed(2), "1.40");
   assert.equal(intensityMul(P.CHI_LAN).toFixed(2), "0.60");
   assert.equal(dominant(P.CHI_LAN), "soi");
-  // ông Hải (nóng) quay đầu TRƯỚC thầy Phúc (điềm đạm) — cùng jitter
+  // chú Thịnh (nóng) quay đầu TRƯỚC thầy Khải (điềm đạm) — cùng jitter
   assert.ok(reactionDelay(P.ONG_HAI, 0.5) < reactionDelay(P.THAY_PHUC, 0.5));
 });
 
@@ -78,7 +78,7 @@ test("mood: tất định theo seed, hai ngày đầu thế giới đứng yên,
   assert.equal(seen.size, 7, `chỉ thấy ${[...seen]}`);
 });
 
-test("lịch: ngày 1 là thứ Hai; chú Tư không bao giờ ghé cuối tuần; không ai ghé 100% số ngày", () => {
+test("lịch: ngày 1 là thứ Hai; chú Quang không bao giờ ghé cuối tuần; không ai ghé 100% số ngày", () => {
   assert.equal(weekdayOf(1), "MON");
   assert.equal(weekdayOf(12), "FRI");
   const tu = NPCS.find((n) => n.id === "CHU_TU")!;
@@ -103,7 +103,7 @@ function q(npc: string, facts: Record<string, string | number | boolean>) {
   return out;
 }
 
-test("chị Lan: rớt bánh trước mặt → KHÔNG MỘT CHỮ (luật tính cách, không phải 35% may rủi)", () => {
+test("chị Trâm: rớt bánh trước mặt → KHÔNG MỘT CHỮ (luật tính cách, không phải 35% may rủi)", () => {
   const db = ruleDb();
   const r = db.select("NOTICE_EVENT", q("CHI_LAN", { eventId: "DROPPED_FOOD", obsState: "CONFIRMED" }), st(), 0, new Rng(1));
   assert.ok(r?.silent, `chọn ${r?.idName}`);
@@ -111,7 +111,7 @@ test("chị Lan: rớt bánh trước mặt → KHÔNG MỘT CHỮ (luật tính
   assert.ok(d?.silent);
 });
 
-test("chú Kiệt (M3): giao bánh HOÀN HẢO vẫn có một câu xóc — 0 lượt 'không có gì để nói'", () => {
+test("chú Đạt (M3): giao bánh HOÀN HẢO vẫn có một câu xóc — 0 lượt 'không có gì để nói'", () => {
   const db = ruleDb();
   for (let s = 0; s < 30; s++) {
     const r = db.select("DELIVERY", q("CHU_KIET", { defectCount: 0 }), st(), 0, new Rng(s));
@@ -119,7 +119,7 @@ test("chú Kiệt (M3): giao bánh HOÀN HẢO vẫn có một câu xóc — 0 l
   }
 });
 
-test("hai ông Hải: cùng sự kiện, trước 10h và sau 10h là hai người khác nhau", () => {
+test("hai chú Thịnh: cùng sự kiện, trước 10h và sau 10h là hai người khác nhau", () => {
   const db = ruleDb();
   const am = db.select("NOTICE_EVENT", q("ONG_HAI", { eventId: "MADE_THEM_WAIT", obsState: "CONFIRMED", hour: 830 }), st(), 0, new Rng(1));
   const pm = db.select("NOTICE_EVENT", q("ONG_HAI", { eventId: "MADE_THEM_WAIT", obsState: "CONFIRMED", hour: 1015 }), st(), 0, new Rng(1));
@@ -130,7 +130,7 @@ test("hai ông Hải: cùng sự kiện, trước 10h và sau 10h là hai ngư�
 test("mỗi NPC có ≥ 1 nội dung không liên quan tới vai trò gameplay (P2-02 T-11)", () => {
   const db = ruleDb();
   for (const n of NPCS) {
-    if (n.id === "CHI_LAN") continue;                    // chị Lan: miễn
+    if (n.id === "CHI_LAN") continue;                    // chị Trâm: miễn
     const has = db.all.some((r) => r.concept === "SMALLTALK" && r.criteria.length > 0 && r.idName.split(".")[0] !== "gen"
       && r.idName.startsWith(({ BA_BAY: "bay", CHU_TU: "tu", ANH_DUNG: "dung", BE_SU: "su", ONG_HAI: "hai", CO_MAI: "mai",
         THAY_PHUC: "phuc", CHI_HANH: "hanh", ANH_BAO: "bao", BA_SAU: "sau", CHU_KIET: "kiet" } as Record<string, string>)[n.id]));

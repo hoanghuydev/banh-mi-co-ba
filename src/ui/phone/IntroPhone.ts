@@ -3,6 +3,7 @@ import { ME, MEMBERS, contactOf } from "../../content/phone/contacts";
 import type { Chapter } from "../../content/phone/intro";
 import { beatToMsg, newPhone, type PhoneState } from "../../sim/phone";
 import { bubbleNodes, typingDots } from "./chat";
+import { sfx } from "../../audio/sfx";
 import { btn, el } from "./dom";
 import { PhoneShell } from "./PhoneShell";
 import { reviewIntro } from "./reviewIntro";
@@ -130,7 +131,7 @@ export class IntroPhone {
       if (i < fromIdx) for (const n of nodes) n.querySelector(".ph-b")?.setAttribute("style", "animation:none");
       body.append(...nodes);
     });
-    if (typing) body.append(typingDots(true));
+    if (typing) { body.append(typingDots(true)); sfx.ui("ph_soan_tin"); }
     sc.append(body);
 
     const dock = el("div", "ph-compose");

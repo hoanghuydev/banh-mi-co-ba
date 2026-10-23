@@ -26,6 +26,6 @@ test("đơn điệu không giảm — xếp sau không bao giờ THIỆT hơn x�
 });
 
 test("hệ số chỉ NHÂN, nên người vội vẫn vội hơn người điềm đạm", () => {
-  // chú Kiệt 28 s xếp cuối vẫn phải sốt ruột sớm hơn bà Sáu 90 s đứng đầu hàng.
+  // chú Đạt 28 s xếp cuối vẫn phải sốt ruột sớm hơn dì Liên 90 s đứng đầu hàng.
   assert.ok(28 * queuePatienceMul(4) < 90 * queuePatienceMul(0));
 });

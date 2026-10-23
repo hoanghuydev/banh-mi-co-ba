@@ -256,6 +256,9 @@ PROPS = [
     ("prop_sink", "wall_hung_sink" + R, 384),
     ("prop_stool", "red_round_stool" + R, 320),
     ("prop_table", "plastic_table_and_stools" + R, 384),
+    ("prop_order", "order_counter-Photoroom.png", 384),
+    ("prop_prep", "board_table-Photoroom.png", 384),
+    ("prop_bench", "topping_bench-Photoroom.png", 448),
     ("prop_bike", "vintage_motorbike" + R, 384),
     ("prop_scooter", "vespa_scooter" + R, 384),
     ("prop_pothos", "potted_plant" + R, 320),
@@ -293,7 +296,7 @@ INGREDIENTS = [
 # Vật không đứng trên lưới ô; phải cắt sát mép vì `photo.ts` suy bề cao từ tỉ lệ ảnh.
 SMALL = [
     ("fly", "fly.png", 192),
-    ("cutting_board", "cutting_board.png", 384),
+    ("cutting_board", "cutting_board-Photoroom.png", 384),
     ("ro_banh_mi", "ro-banh-mi.png", 384),
 ]
 

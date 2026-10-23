@@ -36,7 +36,6 @@ export const CUES: Record<CueId, Cue> = {
   },
 };
 
-export const MUSIC_STEPS = [0, 25, 55, 80, 100] as const;
 
 const BUS_CEILING = 0.5;
 
@@ -73,7 +72,8 @@ class MusicDirector {
   }
 
   applySettings(s: Settings) {
-    this.volume = Math.max(0, Math.min(100, s.musicVolume)) / 100;
+    const pct = (v: number) => Math.max(0, Math.min(100, v)) / 100;
+    this.volume = pct(s.musicVolume) * pct(s.masterVolume);
     this.refreshGains();
     if (this.volume === 0) this.stop(0);
   }

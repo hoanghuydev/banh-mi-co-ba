@@ -1,5 +1,5 @@
 {
-  "_note": "Bà Sáu — gánh tàu hũ đi ngang hẻm. ĐỒNG NGHIỆP, ngang hàng, không phải người để thương hại.",
+  "_note": "Dì Liên — gánh tàu hũ đi ngang hẻm. ĐỒNG NGHIỆP, ngang hàng, không phải người để thương hại.",
   "rules": [
     {"id": "sau.dropped_food", "concept": "NOTICE_EVENT", "when": {"npcId": "BA_SAU", "eventId": "DROPPED_FOOD", "obsState": ">=NOTICED", "ctxBarkT1_DROP": "absent"}, "applycontext": {"ctxBarkT1_DROP": {"value": 1, "duration": 90}}, "say": ["Rớt rồi bây ơi. Thôi bỏ, bán đồ ăn mà."]},
     {"id": "sau.dirty_hands", "concept": "NOTICE_EVENT", "when": {"npcId": "BA_SAU", "eventId": "DIRTY_HANDS", "obsState": ">=NOTICED", "ctxBarkT1_TAY": "absent"}, "applycontext": {"ctxBarkT1_TAY": {"value": 1, "duration": 90}}, "say": ["Tui bán tàu hũ tui cũng vậy à. Mà thôi, lau cái đi bây."]},

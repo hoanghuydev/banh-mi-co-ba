@@ -3,13 +3,15 @@
   "scale": 0.4,
   "_scaleNote": "Hiệu chỉnh bằng `npm run sim`. ⚠️ Cần đo bằng telemetry người thật.",
   "startCash_k": 3500,
+  "win_k": 30000,
+  "_winNote": "Mốc tiền thắng, tính nghìn đồng và KHÔNG nhân `scale` — doanh thu từng ổ cũng không nhân. Chốt bằng `npm run probe:life`.",
   "fixedCost_k": {
     "base": 100,
     "fromDay": 33,
     "raised": 115,
     "_breakdown": "than/gas 25 · đá 15 · túi 20 · xăng 15 · gửi xe/rác/điện 15 · khấu hao 10"
   },
-  "rent_k": 42,
+  "rent_k": 21,
   "storage": {
     "thung_xop": {
       "coldSlots": 8,
@@ -30,17 +32,7 @@
         0.05,
         0.15
       ],
-      "praise": [
-        0.2,
-        0.05,
-        0
-      ],
-      "overpriced": [
-        0,
-        0,
-        0.12
-      ],
-      "_note": "Theo mốc giá [rẻ, thường, đắt]: xác suất khách bỏ đi vì giá · thêm khả năng khen 4–5★ · bị chê giá 1–2★."
+      "_note": "Theo mốc giá [rẻ, thường, đắt]: xác suất khách xem giá rồi bỏ đi. Mốc giá ảnh hưởng số sao qua `PRICE_STAR` trong `sim/reviews.ts`."
     }
   }
 }

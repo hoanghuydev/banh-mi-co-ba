@@ -1,12 +1,12 @@
 {
-  "_note": "Chị Lan — ô số 8 (CANON §4): soi cao, điềm đạm, để bụng, khép kín. NGƯỜI IM LẶNG BIẾN MẤT. Im lặng cài bằng rule `silent` — không phải 35% may rủi mà là luật tính cách (P2-02 §4.6).",
+  "_note": "Chị Trâm — ô số 8 (CANON §4): soi cao, điềm đạm, để bụng, khép kín. NGƯỜI IM LẶNG BIẾN MẤT. Im lặng cài bằng rule `silent` — không phải 35% may rủi mà là luật tính cách (P2-02 §4.6).",
   "rules": [
     {"id": "lan.im.notice", "concept": "NOTICE_EVENT", "when": {"npcSoi": ">=70", "npcNongTinh": "<=30", "npcThanThien": "<=40", "obsState": ">=GLIMPSED"}, "silent": true, "say": []},
     {"id": "lan.im.delivery", "concept": "DELIVERY", "when": {"npcSoi": ">=70", "npcNongTinh": "<=30", "npcThanThien": "<=40", "defectCount": ">=1"}, "silent": true, "say": []},
     {"id": "lan.im.farewell", "concept": "FAREWELL", "when": {"npcSoi": ">=70", "npcNongTinh": "<=30", "npcThanThien": "<=40"}, "silent": true, "say": []},
     {"id": "lan.del.ok", "concept": "DELIVERY", "when": {"npcId": "CHI_LAN", "defectCount": 0}, "silent": true, "say": []},
     {"id": "lan.del.toomuch", "concept": "DELIVERY", "when": {"npcId": "CHI_LAN", "defectCount": 0, "freeExtraTooMuch": true}, "say": ["Em không cần làm vậy đâu."]},
-    {"id": "lan.tea", "concept": "INTERACT", "when": {"npcId": "CHI_LAN", "interaction": "TEA"}, "say": ["Dạ, cảm ơn em."]},
-    {"id": "lan.tea.suspect", "concept": "INTERACT", "when": {"npcId": "CHI_LAN", "interaction": "TEA_SUSPECT"}, "say": ["…Sao bữa nay em tử tế dữ vậy?"]}
+    {"id": "lan.tea", "concept": "INTERACT", "when": {"npcId": "CHI_LAN", "interaction": "TEA"}, "say": ["Cảm ơn em."]},
+    {"id": "lan.tea.suspect", "concept": "INTERACT", "when": {"npcId": "CHI_LAN", "interaction": "TEA_SUSPECT"}, "say": ["…Sao hôm nay em tử tế dữ vậy?"]}
   ]
 }

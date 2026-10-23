@@ -28,7 +28,26 @@ Mục tiêu: câu trong game nghe như **người thật đang gõ comment hôm 
    - Tìm thêm trên Hugging Face / GitHub với từ khoá `vietnamese review`, `vietnamese comment`, `vietnamese social media`.
 4. Bài viết phân tích ngôn ngữ mạng, teencode, trend từ lóng năm hiện tại.
 
-Công cụ: WebSearch/WebFetch cho trang công khai. Trang cần đăng nhập (Facebook, TikTok, Insta) → dùng Chrome (skill `claude-in-chrome`), mở post, mở/cuộn comment, đọc.
+Công cụ: WebSearch/WebFetch cho trang công khai. Trang cần đăng nhập hoặc chạy JS (Facebook, TikTok, Threads, Instagram, Google Maps) → dùng Chrome (skill `claude-in-chrome`), mở post, mở/cuộn comment, đọc.
+
+**Bắt buộc có đủ 3 nền tảng: Google Maps + Threads + Facebook** (TikTok là bổ sung). Mỗi tình huống ≥ 30 mẫu, mỗi nền tảng ≥ 10.
+
+### 2b. Cách đọc từng nền tảng bằng Chrome
+
+Dùng `browser_batch` (navigate → wait → thao tác → `javascript_tool` lấy chữ). Không bấm like/follow/bình luận/gửi gì cả — chỉ đọc. Chỉ lấy chữ, bỏ tên và avatar.
+
+| Nền tảng | Cách | Lưu ý |
+|---|---|---|
+| TikTok | Tìm `tiktok.com/search?q=…` → lấy link `a[href*="/video/"]` → mở video → bấm tab **Comments** (toạ độ ~(1260,95)) → cuộn `[class*="DivCommentListContainer"]` → đọc `[data-e2e^="comment-level"]` | Không cần đăng nhập. Mặc định mở tab "You may like". Nhiều video chỉ hiện ~10 comment; chọn video nhiều comment |
+| Google Maps | `google.com/maps/search/<quán>` → mở quán → bấm tab **Bài đánh giá** → cuộn khung `div.m6QErb` có `scrollHeight` lớn nhất ~14 lần → bấm `button.w8nwRe` (Thêm) → đọc `div.jftiEf`: sao `[role=img][aria-label*="sao"]`, chữ `.MyEned .wiI7pd`, chủ quán trả lời `.CDe7pd .wiI7pd` | Không cần đăng nhập. Chọn nhầm khung cuộn chỉ ra 10 review. Chuỗi lớn trả lời theo khuôn công ty → không lấy làm giọng chủ quán nhỏ. Chọn quán 100–7.000 đánh giá, lấy cả 1–2★ lẫn 5★ |
+| Threads | `threads.com/search?q=<từ khoá>&serp_type=default` → cuộn 10–12 lần (`scrollBy 1400`, chờ 1,1s) → đọc `[data-pressable-container="true"]`, bỏ dòng ngắn < 25 ký tự (tên, ngày, số) | Đăng nhập sẵn thì đọc được cả bài, rất hợp giọng người trẻ tự viết. Có chửi thề (`đm`, `vcl`) → ghi nhận, **không dùng**. Từ khoá tình huống ("sinh viên cuối tháng hết tiền") ra nhiều hơn từ khoá nghề |
+| Facebook | `facebook.com/search/posts?q=<từ khoá>` → cuộn → bấm biểu tượng bình luận dưới bài (chọn bài có ≥ 50 bình luận) → hộp thoại → cuộn khung cuộn ~12 lần → đọc `[role="article"][aria-label^="Bình luận"]`, bỏ dòng đầu (tên) và dòng `·`, giờ, `Trả lời`, `Thích`, `Chia sẻ` | Cần đăng nhập. Kết quả tìm kiếm lẫn quảng cáo; từ khoá dài hoặc sai chính tả ra 0 kết quả. **Không mở trang cá nhân** (có thể dính thông tin riêng): vào Trang/Nhóm công khai. Bài hoài niệm (cải lương, Sài Gòn xưa) cho giọng người lớn tuổi |
+| YouTube | Comment nằm dưới video, cần cuộn tới `ytd-comments` | Phiên trước ra trang trắng; thử lại |
+
+Một lần `javascript_tool` không được chạy xuyên qua lúc trang chuyển (lỗi "Inspected target navigated"): `navigate` → `wait` 4 giây → rồi mới chạy JS.
+Máy chủ localhost không nhận POST từ trang (CSP chặn) → trả dữ liệu về qua kết quả tool, rồi ghi file bằng Bash.
+Kết quả `javascript_tool` bị cắt khoảng 1.500 ký tự → lưu mảng vào `window.__p`, rồi gọi nhiều lần, mỗi lần lấy một lát ≤ 1.350 ký tự (đưa vào cùng một `browser_batch`).
+Không thu nội dung nhạy cảm (tình dục, bạo lực với trẻ vị thành niên) dù nó xuất hiện trong kết quả tìm kiếm.
 
 ## 3. Quy trình
 

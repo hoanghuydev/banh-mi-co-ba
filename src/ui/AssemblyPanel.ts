@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import { fitPhoto } from "../art/photo";
 import { GAME_H } from "../core/config";
 import { FOOD, buildFood } from "../art/food";
-import { CAPACITY, INGREDIENTS, labelOf, portionsOf, type Ingredient } from "../sim/order";
+import { CAPACITY, INGREDIENTS, labelOf, portionsOf, type Ingredient, type IngredientInfo } from "../sim/order";
 import { FONT, UI, button, buttonHeight, panel, textScale } from "./theme";
 import { Steam } from "./stall/Steam";
 
@@ -12,7 +12,6 @@ const PANEL_LEFT = 8;
 const PANEL_TOP = 96;
 const TILE_H = 44;
 const TRAY_COLS = 3;
-const TRAY_ROWS = Math.ceil(INGREDIENTS.length / TRAY_COLS);
 const LOAF_H = FOOD.LOAF_H;
 /** Khung thiết kế chỉ cao 576 px và bảng phải nằm gọn dưới dải HUD. */
 const MAX_SCALE = 1.45;
@@ -39,10 +38,13 @@ export class AssemblyPanel {
   private presetUsed: number | null = null;
   private presetArm: number | null = null;
   private tiles = new Map<Ingredient, () => void>();
+  private tileSpot = new Map<Ingredient, { x: number; y: number }>();
   wrapSnapMs = WRAP_SNAP_MS;
   addCooldownMs = 0;
   private lastAddAt = -1e9;
   private open = false;
+  private trayRows = 0;
+  private actRow = 0;
 
   private s = 1;
   private sw = 1;
@@ -69,6 +71,7 @@ export class AssemblyPanel {
     private canAdd: (id: Ingredient, stack: readonly Ingredient[]) => string | null = () => null,
     private allowEmptyLoaf: () => boolean = () => false,
     private onPresetConsumed: (i: number) => void = () => {},
+    private ingredients: readonly IngredientInfo[] = INGREDIENTS,
   ) {
     buildFood(scene);
     this.layout();
@@ -91,7 +94,6 @@ export class AssemblyPanel {
 
     this.buildLoaf(cx, top + this.yLoaf);
     this.buildTray(cx, top + this.yTray);
-    // Hàng cuối khay chỉ có một ô (10 món / 3 cột), hai nút nằm vào hai cột trống.
     this.buildActions(cx, top + this.yAct);
   }
 
@@ -109,8 +111,11 @@ export class AssemblyPanel {
     this.yPreset = y + bh / 2; y += bh + 6;
     this.yLoaf = y + LOAF_H / 2; y += LOAF_H;
     this.yHint = y + Math.round(7 * this.s); y += Math.round(18 * this.s);
-    this.yTray = y + this.th / 2; y += TRAY_ROWS * this.rowStep;
-    this.yAct = this.yTray + (TRAY_ROWS - 1) * this.rowStep;
+    const n = this.ingredients.length;
+    this.trayRows = Math.ceil(n / TRAY_COLS);
+    this.actRow = n % TRAY_COLS === 1 ? this.trayRows - 1 : this.trayRows;
+    this.yTray = y + this.th / 2;
+    this.yAct = this.yTray + this.actRow * this.rowStep;
     this.ph = Math.round(this.yAct + Math.max(this.th, bh) / 2 + 8);
   }
 
@@ -147,7 +152,7 @@ export class AssemblyPanel {
     const w = TRAY_COLS * this.tw + (TRAY_COLS - 1) * 8;
     return {
       x: this.cx - w / 2, y: PANEL_TOP + this.yTray - this.th / 2 + this.root.y,
-      w, h: (TRAY_ROWS - 1) * this.rowStep + this.th,
+      w, h: (this.trayRows - 1) * this.rowStep + this.th,
     };
   }
 
@@ -165,15 +170,23 @@ export class AssemblyPanel {
   }
 
   private buildTray(x: number, y: number) {
-    INGREDIENTS.forEach((ing, i) => {
+    this.ingredients.forEach((ing, i) => {
       const col = i % TRAY_COLS, row = (i / TRAY_COLS) | 0;
       const tx = x + (col - (TRAY_COLS - 1) / 2) * (this.tw + 8);
       const ty = y + row * this.rowStep;
-      this.root.add(this.makeTile(ing.id, ing.key, ing.label, tx, ty));
+      this.tileSpot.set(ing.id, { x: tx, y: ty });
+      this.root.add(this.makeTile(ing.id, ing.label, tx, ty));
     });
   }
 
-  private makeTile(id: Ingredient, key: number, label: string, x: number, y: number) {
+  /** Khung một ô nhân theo toạ độ thiết kế; `null` nếu món chưa mở. */
+  tileBounds(id: Ingredient) {
+    const p = this.tileSpot.get(id);
+    if (!p) return null;
+    return { x: p.x - this.tw / 2, y: p.y - this.th / 2 + this.root.y, w: this.tw, h: this.th };
+  }
+
+  private makeTile(id: Ingredient, label: string, x: number, y: number) {
     const c = this.scene.add.container(x, y).setScrollFactor(0);
     const TW = this.tw, TH = this.th;
 
@@ -195,10 +208,6 @@ export class AssemblyPanel {
       fontFamily: FONT, fontSize: `${Math.round(13 * this.s)}px`, fontStyle: "500", color: UI.ink,
       wordWrap: { width: TW / 2 - 8 - nameX, useAdvancedWrap: true },
     }).setOrigin(0, 0.5).setScrollFactor(0);
-    const num = this.scene.add.text(TW / 2 - 10, -TH / 2 + 6, String(key), {
-      fontFamily: FONT, fontSize: `${Math.round(10 * this.s)}px`, color: "#9aa4ac",
-    }).setOrigin(1, 0).setScrollFactor(0);
-
     // Huy hiệu "×n" ở góc ảnh, vì bên phải là chỗ của tên.
     const r = Math.round(10 * Math.min(this.s, 1.3));
     const bx = iconX - Math.round(FOOD.ICON * si / 2) + Math.round(r * 0.5);
@@ -218,7 +227,7 @@ export class AssemblyPanel {
       }
     });
 
-    c.add([bg, icon, name, num, badgeBg, badge]);
+    c.add([bg, icon, name, badgeBg, badge]);
     c.setSize(TW, TH);
     c.setInteractive(new Phaser.Geom.Rectangle(0, 0, TW, TH), Phaser.Geom.Rectangle.Contains);
     this.scene.input.setDraggable(c);
@@ -251,7 +260,7 @@ export class AssemblyPanel {
   }
 
   private maxOf(id: Ingredient) {
-    return INGREDIENTS.find((i) => i.id === id)!.max;
+    return this.ingredients.find((i) => i.id === id)!.max;
   }
 
   private buildActions(cx: number, y: number) {
@@ -424,12 +433,6 @@ export class AssemblyPanel {
   handleKey(code: string): boolean {
     if (!this.open) return false;
 
-    const num = /^(?:Digit|Numpad)([0-9])$/.exec(code);
-    if (num) {
-      const ing = INGREDIENTS.find((i) => i.key === Number(num[1]));
-      if (ing) this.add(ing.id);
-      return true;
-    }
     if (code === "Backspace") { this.undo(); return true; }
     if (code === "Escape") { this.park(); return true; }
     if (code === "KeyE" || code === "Space" || code === "Enter") { this.confirm(); return true; }

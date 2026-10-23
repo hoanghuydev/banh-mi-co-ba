@@ -67,7 +67,7 @@ test("F-2 cờ đọc mà không ai đặt = một nhánh nội dung không bao 
 test("F-3 phải có đủ cầu BẮC NGANG giữa hai người — đó là thứ đáng đi tìm", () => {
   /**
    * Cờ mà người đặt và người đọc là HAI NPC khác nhau mới là thứ làm cái hẻm đáng lục
-   * lọi: chuyện mình kể cho cô Mai tới tai chị Lan. Cờ đặt rồi chính người đó đọc lại
+   * lọi: chuyện mình kể cho cô Thuý tới tai chị Trâm. Cờ đặt rồi chính người đó đọc lại
    * vẫn tốt, nhưng không phải khám phá.
    */
   const npcOf = new Map(TALKS.map((t) => [t.id, t.npc]));

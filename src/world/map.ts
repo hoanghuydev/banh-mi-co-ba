@@ -1,11 +1,11 @@
 // Camera nhìn từ (−x, −y): y càng lớn càng gần; chèn hàng thì sửa cả `STATION_ROW_Y` / `COUNTER_Y`.
 export const MAP = [
-  "NN###D##########NN",  // y0  tường sau, cửa x=5
-  "###XK.O.V.T.W..###",  // y1  bình chữa cháy · kệ · lò · thùng rác · trà đá · bồn rửa
-  "###F...........###",
+  "NN##D###########NN",  // y0  tường sau, cửa x=4
+  "###..K.O.T.WX..###",  // y1  kệ · lò · trà đá · bồn rửa · bình chữa cháy
+  "###F...........###",  // y2  kho (thùng xốp / tủ mát) x=3
   "###............###",
-  "###............##N",
-  "###.Q.Q.Q......###",  // y5  ba bàn: thớt x=4, chỗ để bánh x=6, order x=8
+  "###R...........##N",  // y4  bàn topping x=3, nối liền thớt ở y5
+  "###Q..Q...Q..V.###",  // y5  ba bàn: thớt x=3, chỗ để bánh x=6, quầy gọi món x=10 · thùng rác x=13
   "..............A...",  // y6  hàng khách · bảng chữ A x=14
   "..................",  // y7  lối khách đi
   "..................",
@@ -23,7 +23,7 @@ export const WORLD_H = MAP.length;
 
 export type TileCode =
   | "." | "#" | "N" | "D" | "Q" | "O" | "T" | "K" | "s" | "b" | "M" | "P"
-  | "C" | "V" | "W" | "A" | "X" | "F";
+  | "C" | "V" | "W" | "A" | "X" | "F" | "R";
 
 export function tileAt(tx: number, ty: number): TileCode {
   if (tx < 0 || ty < 0 || tx >= WORLD_W || ty >= WORLD_H) return "#";
@@ -84,11 +84,15 @@ export function setPole(p: { x: number; y: number } | null) {
   pole = p;
 }
 
-export function hitsWall(x: number, y: number, r = BODY_RADIUS) {
-  if (pole && Math.hypot(x - pole.x, y - pole.y) < POLE_R + r) return true;
+/** Vùng chặn của vật dịch theo +x thế giới, về phía dưới/phải màn hình: trái/trên bớt chặn thừa, dưới/phải khỏi chồng. */
+export const BLOCK_SHIFT_X = 0.18;
+
+export function hitsWall(x: number, y: number, r = BODY_RADIUS, blockShiftX = 0) {
+  const cx = x - blockShiftX;
+  if (pole && Math.hypot(cx - pole.x, y - pole.y) < POLE_R + r) return true;
   for (const ox of [-r, r])
     for (const oy of [-r, r])
-      if (isBlocked(Math.floor(x + ox), Math.floor(y + oy))) return true;
+      if (isBlocked(Math.floor(cx + ox), Math.floor(y + oy))) return true;
   return false;
 }
 
@@ -102,32 +106,32 @@ export const STREET_BIN = { x: 4.5, y: 8.45 };
 
 /** Hàng ngang, không chéo, vì `depthOf` vẽ theo (x+y) sẽ cho người sau đè người đang gọi món. */
 export const QUEUE_SLOTS = [
-  { x: 8.5, y: 6.6, zone: "FRONT_CENTER" },
-  { x: 7.0, y: 6.6, zone: "FRONT_SIDE" },
-  { x: 5.5, y: 6.6, zone: "QUEUE_2" },
-  { x: 4.0, y: 6.6, zone: "QUEUE_3" },
-  { x: 2.5, y: 6.6, zone: "SEATED_FAR" },
-  { x: 1.0, y: 6.6, zone: "SEATED_FAR" },
+  { x: 10.5, y: 6.6, zone: "FRONT_CENTER" },
+  { x: 9.0, y: 6.6, zone: "FRONT_SIDE" },
+  { x: 7.5, y: 6.6, zone: "QUEUE_2" },
+  { x: 6.0, y: 6.6, zone: "QUEUE_3" },
+  { x: 4.5, y: 6.6, zone: "SEATED_FAR" },
+  { x: 3.0, y: 6.6, zone: "SEATED_FAR" },
 ] as const;
 
 /** Lùi ra ngoài hàng chờ, để không trông như hai người đổi chỗ trong hàng. */
-export const ASIDE_SPOT = { x: 9.9, y: 7.5 };
+export const ASIDE_SPOT = { x: 11.6, y: 7.6 };
 
 /** Tách khỏi `ASIDE_SPOT` và xe ở 16,1 để mỗi việc đọc ra một chỗ riêng. */
-export const SHADE_SPOT = { x: 11.0, y: 7.3 };
+export const SHADE_SPOT = { x: 14.0, y: 7.6 };
 
 export const SEAT_SPOT = { x: 12.6, y: 9.4 };
 
 /** Khớp `slots` của `GHE_BAN` trong `equipment.json`. */
 export const SEAT_CAPACITY = 2;
 
-// OUT: bà Sáu hạ gánh ngay mặt tiền; IN: mình bưng vô sát vách giùm.
-export const GANH_OUT = { x: 10.6, y: 6.4 };
+// OUT: dì Liên hạ gánh ngay mặt tiền; IN: mình bưng vô sát vách giùm.
+export const GANH_OUT = { x: 11.9, y: 6.4 };
 export const GANH_IN = { x: 8.0, y: 8.6 };
 
-// Xe chú Kiệt: lấn mặt tiền / về bên kia hẻm / chung mái lúc mưa; CART_LAN phải nằm trong `SHOPFRONT_X` mà không đè `GANH_OUT`.
-export const CART_LAN = { x: 12.4, y: 6.5 };
-export const CART_XA = { x: 15.8, y: 6.6 };
+// Xe chú Đạt: lấn mặt tiền / về bên kia hẻm / chung mái lúc mưa; CART_LAN phải nằm trong `SHOPFRONT_X` mà không đè `GANH_OUT`.
+export const CART_LAN = { x: 13.5, y: 6.5 };
+export const CART_XA = { x: 16.6, y: 6.6 };
 export const CART_CHUNG = { x: 10.2, y: 8.2 };
 
 export const SHADE_CAPACITY = 1;
@@ -227,8 +231,11 @@ export const SHOPFRONT_X = (() => {
 /** Hàng đầu tiên ngoài mái hiên, dùng chung cho cả nắng (`isSunlit`) lẫn mưa (`world/rain.ts`). */
 export const SKY_FROM_Y = SHOP_LAST_Y + 1;
 
+/** Dải nắng theo trục d = tx − ty. */
+export const SUN_BAND = { lo: -2, hi: 7 } as const;
+
 export function isSunlit(tx: number, ty: number) {
   if (ty < SKY_FROM_Y) return false;
   const d = tx - ty;
-  return d >= -2 && d <= 7;
+  return d >= SUN_BAND.lo && d <= SUN_BAND.hi;
 }

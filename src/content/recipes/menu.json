@@ -21,16 +21,15 @@
         25
       ],
       "nhan": {
-        "pate": 1,
         "opla": 1
       },
-      "note": ""
+      "note": "Chỉ trứng ốp la."
     },
     {
       "id": "pate",
       "name": "bánh mì pate",
       "call": "pate",
-      "unlockDay": 2,
+      "unlockDay": 4,
       "k": [
         18,
         22,
@@ -45,7 +44,7 @@
       "id": "xiumai",
       "name": "bánh mì xíu mại",
       "call": "xíu mại",
-      "unlockDay": 4,
+      "unlockDay": 7,
       "k": [
         20,
         25,
@@ -61,7 +60,7 @@
       "id": "chalua",
       "name": "bánh mì chả lụa",
       "call": "chả lụa",
-      "unlockDay": 6,
+      "unlockDay": 10,
       "k": [
         22,
         27,
@@ -77,7 +76,7 @@
       "id": "thit",
       "name": "bánh mì thịt nguội",
       "call": "thịt nguội",
-      "unlockDay": 8,
+      "unlockDay": 13,
       "k": [
         23,
         29,
@@ -93,7 +92,7 @@
       "id": "daydu",
       "name": "bánh mì đầy đủ",
       "call": "đầy đủ",
-      "unlockDay": 10,
+      "unlockDay": 16,
       "k": [
         27,
         34,
@@ -111,7 +110,7 @@
       "id": "khong",
       "name": "bánh mì không",
       "call": "bánh mì không",
-      "unlockDay": 10,
+      "unlockDay": 16,
       "k": [
         8,
         10,
@@ -126,27 +125,27 @@
     "_note": "TỪ VỰNG GỌI MÓN (CANON §14). Đây là nửa thứ hai của cái bảng: tên món nói ổ có GÌ, mấy câu này nói khách SỬA được gì.",
     "rows": [
       {
-        "say": "cho nhiều ___",
-        "means": "x2 món đó"
+        "say": "cho nhiều pate",
+        "means": "thứ đó gấp đôi"
       },
       {
         "say": "cho ít rau",
-        "means": "giảm một nửa"
+        "means": "rau còn một nửa"
       },
       {
-        "say": "không ớt/hành/ngò/tương ớt",
-        "means": "không cho món đó vào bánh mì"
+        "say": "không hành ngò",
+        "means": "bỏ hẳn thứ đó"
       },
       {
         "say": "không rau",
-        "means": "chỉ cho nhân bánh mì"
+        "means": "chỉ còn nhân"
       }
     ]
   },
   "nuoc": [
     {
       "name": "trà đá",
-      "price": "rót giùm, hổng tính tiền",
+      "price": "miễn phí",
       "note": "Phải có bình nước trà mới rót được."
     }
   ]

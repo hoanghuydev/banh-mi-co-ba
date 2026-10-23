@@ -42,6 +42,8 @@ const CROWD_DUCK = 0.282;
 const NEGATIVE_CUES: Partial<Record<SfxId, SfxId | null>> = {
   ui_khong_hop_le: "ui_click_go",
   ui_ngay_am_tien: null,
+  sys_canh_bao: "ui_click_go",
+  wheel_truot: null,
 };
 
 const COOLDOWN_SEC: Partial<Record<SfxId, number>> = {
@@ -126,7 +128,8 @@ class SfxDirector {
   }
 
   applySettings(s: Settings) {
-    const pct = (v: number) => Math.max(0, Math.min(100, v)) / 100;
+    const master = Math.max(0, Math.min(100, s.masterVolume)) / 100;
+    const pct = (v: number) => (Math.max(0, Math.min(100, v)) / 100) * master;
     this.vol = {
       duongPho: pct(s.streetVolume),
       giongNPC: pct(s.voiceVolume),
@@ -203,6 +206,12 @@ class SfxDirector {
 
     this.lastPlayed.set(resolved, this.now);
     return true;
+  }
+
+  /** Cho UI HTML không có scene trong tay; phát qua scene đang chạy. */
+  ui(id: SfxId, o: Opts = {}): boolean {
+    const scene = this.game?.scene.getScenes(true)[0];
+    return scene ? this.play(scene, id, o) : false;
   }
 
   /** Như `play` nhưng bật ducking cho các bus khác. */

@@ -590,23 +590,28 @@
       "type": "bool",
       "_note": "Người này đang QUAY PHIM cái xe — act `FILM`. Trong lúc đó, quầy dơ / rớt bánh / gắt một câu đều vào clip."
     },
+    "worldMenuDayDu": {
+      "scope": "World",
+      "type": "bool",
+      "_note": "Ổ đầy đủ đã lên bảng menu chưa (`menu.json: unlockDay`). Chưa lên thì không mời khách đổi sang ổ đó được."
+    },
     "worldGanhOut": {
       "scope": "World",
       "type": "bool",
-      "_note": "Cái gánh của bà Sáu đang để ngoài mặt tiền. Khách nhìn vô thấy chật ⇒ quay đầu nhiều hơn (`balkChance` +1 `ahead`)."
+      "_note": "Cái gánh của dì Liên đang để ngoài mặt tiền. Khách nhìn vô thấy chật ⇒ quay đầu nhiều hơn (`balkChance` +1 `ahead`)."
     },
     "worldCartLan": {
       "scope": "World",
       "type": "bool",
-      "_note": "Xe bánh mì chú Kiệt đang lấn qua mặt tiền mình: chắn lối VÀ ăn bớt khách lạ (`KIET_STEAL`)."
+      "_note": "Xe bánh mì chú Đạt đang lấn qua mặt tiền mình: chắn lối VÀ ăn bớt khách lạ (`KIET_STEAL`)."
     },
     "worldCartChung": {
       "scope": "World",
       "type": "bool",
-      "_note": "Hai xe đang đứng chung một mái (lúc mưa). Mình mất một khoảng mặt tiền, chú Kiệt khỏi ướt."
+      "_note": "Hai xe đang đứng chung một mái (lúc mưa). Mình mất một khoảng mặt tiền, chú Đạt khỏi ướt."
     }
   },
-  "_note_aliases": "P2-09 §2.2 — MẶT TIỀN CHO NGƯỜI VIẾT. Một alias là một mảnh `when` đặt tên: `p.holdsBread` biên dịch thành criterion trên `playerHolding`, không phải một nhánh switch thứ hai. Dấu `!` ở đầu = phủ định. Dạng `khoá(tham số)` = alias có tham số, khai bằng `$` trong giá trị. Cú pháp cố ý NGHÈO: không biểu thức lồng nhau — cần logic phức tạp hơn thì thêm MỘT alias có tên đọc được.",
+  "_note_aliases": "P2-09 §2.2 — MẶT TIỀN CHO NGƯỜI VIẾT. Một alias là một mảnh `when` đặt tên: `p.holdsBread` biên dịch thành criterion trên `playerHolding`, không phải một nhánh switch thứ hai. Dấu `!` ở đầu = phủ định. Dạng `khoá(tham số)` = alias có tham số, khai bằng `$` trong giá trị. Cú pháp cố ý NGHÈO: không kêu thức lồng nhau — cần logic phức tạp hơn thì thêm MỘT alias có tên đọc được.",
   "aliases": {
     "p.handsEmpty": {
       "playerHolding": "empty"
@@ -780,6 +785,9 @@
     },
     "t.filming": {
       "npcFilming": true
+    },
+    "w.menuDayDu": {
+      "worldMenuDayDu": true
     },
     "w.ganhOut": {
       "worldGanhOut": true

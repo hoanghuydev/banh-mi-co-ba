@@ -53,6 +53,7 @@ export type EventMap = {
   "stall:closed":             { reason: StallCloseReason; served: number; revenue: number; lost: number };
   "evening:done":             { dayIndex: number };
   "broke:done":               { dayIndex: number; restart?: boolean };
+  "win:done":                 { dayIndex: number; restart?: boolean };
 };
 
 export type EventKey = keyof EventMap;

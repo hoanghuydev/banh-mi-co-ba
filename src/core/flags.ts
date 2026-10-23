@@ -3,12 +3,14 @@ import { platform } from "./platform";
 declare const __DEV_TOOLS__: boolean;
 declare const __PLAYTEST__: boolean;
 declare const __BUILD_ID__: string;
+declare const __BUILD_TIME__: string;
 
 /** Code overlay nằm sau `if (DEV_TOOLS)` để tree-shake sạch khỏi bản phát hành. */
 export const DEV_TOOLS: boolean = typeof __DEV_TOOLS__ !== "undefined" ? __DEV_TOOLS__ : false;
 /** Build chơi thử: tự pause ở `perception:confirmed`. */
 export const PLAYTEST: boolean = typeof __PLAYTEST__ !== "undefined" ? __PLAYTEST__ : false;
 export const BUILD_ID: string = typeof __BUILD_ID__ !== "undefined" ? __BUILD_ID__ : "dev";
+export const BUILD_TIME: string = typeof __BUILD_TIME__ !== "undefined" ? __BUILD_TIME__ : "dev";
 
 export type Settings = {
   textScale: 1 | 1.25 | 1.5 | 2;
@@ -16,7 +18,8 @@ export type Settings = {
   reducedMotion: boolean;
   /** Kiên nhẫn không tụt, `MADE_THEM_WAIT` tắt, đồng hồ chậm một nửa — khách chỉ bỏ đi vì làm sai. */
   noTimePressure: boolean;
-  /** Âm lượng 0–100, mỗi bus một công tắc riêng, cố ý không gộp. */
+  /** Âm lượng 0–100. Tổng nhân vào mọi kênh; mỗi kênh vẫn chỉnh riêng được. */
+  masterVolume: number;
   musicVolume: number;
   /** Bus `duongPho`. */
   streetVolume: number;
@@ -43,6 +46,7 @@ export const DEFAULT_SETTINGS: Settings = {
   textScale: 1,
   reducedMotion: false,
   noTimePressure: false,
+  masterVolume: 100,
   musicVolume: 55,
   streetVolume: 70,
   voiceVolume: 100,

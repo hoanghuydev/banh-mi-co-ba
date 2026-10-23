@@ -4,7 +4,7 @@
  * Vì sao không `import` thẳng hết như `dialog/speaker.ts` làm với rule DB: rule DB là
  * vài trăm dòng phẳng, còn ở đây mỗi NPC có nhiều chục cuộc, mỗi cuộc là một CÂY sâu
  * bốn tầng. Nhét cả hẻm vào bundle đầu tiên thì màn Boot gánh một cục JSON mà 90% số
- * đó hôm nay không ai nói tới — hôm nay thứ Ba thì chú Kiệt còn chưa mở xe.
+ * đó hôm nay không ai nói tới — hôm nay thứ Ba thì chú Đạt còn chưa mở xe.
  *
  * Cách làm: mỗi NPC một file, nạp bằng `import()` ĐỘNG. Vite tự tách thành chunk riêng
  * và chỉ tải khi gọi; Node/tsx (test, `npm run sim`) chạy đúng cú pháp đó không cần
@@ -43,7 +43,7 @@ const LOADERS: Record<string, () => Promise<{ default: unknown }>> = {
 export const SHARED_POOL = "ANY";
 
 /**
- * Giữ lại bao nhiêu người gần nhất sau khi họ đi. Chú Tư đi lúc 6h50 rồi bà Sáu tới
+ * Giữ lại bao nhiêu người gần nhất sau khi họ đi. Chú Quang đi lúc 6h50 rồi dì Liên tới
  * 8h50 — nhưng khách vãng lai thì ra vào liên tục, thả ngay là tải lại mỗi lượt.
  */
 const KEEP_RECENT = 4;

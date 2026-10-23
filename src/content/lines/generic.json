@@ -9,8 +9,8 @@
       ],
       "_note": "người chơi HỨA bỏ thêm {mon} và đã bỏ thật. Nhẹ thôi: giữ lời chỉ là làm đúng điều mình nói, không phải ân huệ.",
       "variants": [
-        "Ờ, có bỏ thiệt nghen. Cảm ơn con.",
-        "Con nói sao làm vậy. Hiếm à nghen.",
+        "Ờ, có bỏ thiệt nha. Cảm ơn con.",
+        "Con nói sao làm vậy. Hiếm à nha.",
         "Có {mon} nè. Ờ.",
         "Vậy mới nói chuyện được."
       ]
@@ -52,14 +52,14 @@
         "Đi đâu đó?",
         "Ăn gì chưa đó?",
         "Nắng dữ ha.",
-        "Lâu quá hổng thấy mặt.",
+        "Lâu quá không thấy mặt.",
         "Đi chợ hả?",
-        "Ủa. Đi lối này chi vậy?",
-        "Khoẻ hông?",
+        "Ủa. Đi lối này gì vậy?",
+        "Khoẻ không?",
         "Nay rảnh dữ ta.",
         "Về sớm dữ.",
         "Trời này đi đứng cực thấy mồ.",
-        "Chút ghé chơi nghen.",
+        "Chút ghé chơi nha.",
         "Chèn ơi. Lâu quá."
       ]
     },
@@ -77,7 +77,7 @@
         "Bận quá trời.",
         "Thường thôi hà.",
         "Cũng vậy hà.",
-        "Ừa. Thôi đi nghen.",
+        "Ừa. Thôi đi nha.",
         "Chút nữa ghé."
       ]
     },
@@ -115,11 +115,11 @@
       ],
       "_note": "Vế ĐẦU của câu giao bánh khi ổ CÓ LỖI mà người chơi vẫn cho thêm (sim/service.ts: speakConcept `wrap.pre`). Người trong hẻm cảm ơn trước rồi mới nói cái thiếu — bỏ vế này thì cho thêm trên một ổ trật nghe như không ai thấy. ⚠️ PHẢI rất ngắn (≤ 25 ký tự): nó là vế thứ ba chen vào một bong bóng cao ba dòng, và `WRAP_SOFT_MAX` sẽ CẮT BỎ chính nó khi câu ghép dài quá — viết dài là tự xoá mình. ⚠️ Đừng mở đầu bằng {you}: túi này không đi qua `fill` nên không có ai viết hoa giùm.",
       "variants": [
-        "Ờ, cảm ơn {you} nghen.",
+        "Ờ, cảm ơn {you} nha.",
         "Cảm ơn {you}.",
         "Ừ, {you} có lòng.",
         "Chà, có thêm. Cảm ơn.",
-        "Thôi được, cảm ơn nghen.",
+        "Thôi được, cảm ơn nha.",
         "Biết {you} thương."
       ],
       "en": [
@@ -142,10 +142,10 @@
       "variants": [
         "Với lại ổ {mon} rồi nè {you}.",
         "Mà ổ bánh {mon} nữa đó.",
-        "Với lại cái vỏ {mon} nghen.",
-        "Ổ này {mon} nữa nghen.",
+        "Với lại cái vỏ {mon} nha.",
+        "Ổ này {mon} nữa nha.",
         "Mà {mon} nữa nè {you}.",
-        "Với lại bữa nay ổ {mon} à."
+        "Với lại hôm nay ổ {mon} à."
       ],
       "en": [
         "And the loaf's off, too.",

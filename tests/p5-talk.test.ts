@@ -35,7 +35,7 @@ const ctx = (over: Partial<TalkCtx> = {}): TalkCtx => ({
 const byId = (id: string) => TALKS.find((t) => t.id === id)!;
 
 const mkCustomer = (id: string) =>
-  new Customer(id, "CHU_TU", "Chú Tư", P.CHU_TU, NPCS[1].body, null,
+  new Customer(id, "CHU_TU", "Chú Quang", P.CHU_TU, NPCS[1].body, null,
     0, { x: 0, y: 0 }, 50, new Rng(2));
 
 // ────────────────────────────────────────────────────────────── T — máy chạy
@@ -238,9 +238,9 @@ test("L-5 không có `reply` thì phải khai `silent` — phân biệt im CÓ �
 
 test("L-6 DANH XƯNG: không ai tự xưng bằng từ của người khác", () => {
   /**
-   * "bà Bảy", "cô Mai", "chú Tư" là GỌI TÊN người khác, không phải tự xưng — nên bỏ qua
-   * khi ngay sau từ đó là một tên riêng (chữ hoa). Thiếu cái cửa này thì cô Mai không
-   * được phép nhắc tới bà Bảy, mà cô Mai là cái loa của cả hẻm.
+   * "dì Nguyệt", "cô Thuý", "chú Quang" là GỌI TÊN người khác, không phải tự xưng — nên bỏ qua
+   * khi ngay sau từ đó là một tên riêng (chữ hoa). Thiếu cái cửa này thì cô Thuý không
+   * được phép nhắc tới dì Nguyệt, mà cô Thuý là cái loa của cả hẻm.
    */
   const usedAsPronoun = (line: string, w: string) =>
     new RegExp(`(^|[^\\p{L}])${w}(?!\\s+\\p{Lu})([^\\p{L}]|$)`, "iu").test(line);
@@ -270,7 +270,7 @@ test("L-7 DANH XƯNG: lời người chơi gọi khách đúng vai, ít nhất m
   }
 });
 
-test("L-8 bé Su không bị hỏi chuyện người lớn", () => {
+test("L-8 bé Hân không bị hỏi chuyện người lớn", () => {
   const adult = ["đi làm", "công việc", "lương", "chồng", "vợ", "nhậu", "con cái", "làm ăn", "bồ bịch"];
   const su = TALKS.filter((t) => t.npc === "BE_SU");
   assert.ok(su.length > 0);

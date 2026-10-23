@@ -1,13 +1,66 @@
 {
   "_note": "Lằn ranh đỏ CANON §14.1 cho linter L010. ⚠️ DANH SÁCH NÀY PHẢI DO NGƯỜI VIỆT VIẾT VĂN HOÁ (có quyền phủ quyết, xem 00-TONG-QUAN §7.1 B1) DUYỆT — bản hiện tại chỉ chép đúng các từ doc P0-03 §2.3 nêu tên, KHÔNG tự sinh thêm. Linter là lưới THỨ HAI, không phải lưới duy nhất.",
   "reviewedBy": null,
-  "war": ["lính", "bộ đội", "giải phóng", "nón cối", "B52"],
-  "demeaning": ["chỉ là bán bánh mì", "thoát khỏi", "đổi đời"],
+  "war": [
+    "lính",
+    "bộ đội",
+    "giải phóng",
+    "nón cối",
+    "B52"
+  ],
+  "demeaning": [
+    "chỉ là bán bánh mì",
+    "thoát khỏi",
+    "đổi đời"
+  ],
   "northern": {
     "_note": "L008 — từ giọng Bắc trong pool giọng Nam. CHI_HANH được miễn: 'người Bắc mới vô Sài Gòn, gọi món bằng từ Bắc' (CANON §9) là đặc điểm nhân vật.",
-    "allowNpcs": ["CHI_HANH"],
-    "words": { "bát": "chén", "mũ": "nón", "bố": "ba", "mẹ": "má", "ngô": "bắp", "vào": "vô", "lạc": "đậu phộng", "dứa": "thơm" }
+    "allowNpcs": [
+      "CHI_HANH"
+    ],
+    "words": {
+      "bát": "chén",
+      "mũ": "nón",
+      "bố": "ba",
+      "mẹ": "má",
+      "ngô": "bắp",
+      "vào": "vô",
+      "lạc": "đậu phộng",
+      "dứa": "thơm"
+    }
   },
-  "unaccentedRisk": ["banh mi", "do chua", "cha lua", "thit nguoi", "khong", "duoc", "roi"],
-  "enPronounLeaks": ["aunt", "auntie", "uncle", "older sister", "older brother", "little sister", "little brother", "grandma", "granny"]
+  "unaccentedRisk": [
+    "banh mi",
+    "do chua",
+    "cha lua",
+    "thit nguoi",
+    "khong",
+    "duoc",
+    "roi"
+  ],
+  "enPronounLeaks": [
+    "aunt",
+    "auntie",
+    "uncle",
+    "older sister",
+    "older brother",
+    "little sister",
+    "little brother",
+    "grandma",
+    "granny"
+  ],
+  "archaic": {
+    "nghen": "nha",
+    "hổng": "không",
+    "hông": "không",
+    "chớ": "chứ",
+    "biểu": "kêu",
+    "mần": "làm",
+    "đặng": "để",
+    "hổm rày": "mấy hôm nay",
+    "bữa nay": "hôm nay",
+    "thiệt tình": "thiệt",
+    "mạnh giỏi": "cẩn thận",
+    "dzậy": "vậy"
+  }
 }

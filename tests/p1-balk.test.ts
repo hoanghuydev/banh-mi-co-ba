@@ -100,6 +100,17 @@ function play(day: number, watch?: (h: HeadlessStall) => void): Run {
   return { h, balked, queued, left, arrived };
 }
 
+/** Lịch khách đổi theo cân bằng từng phase, nên dò ngày dựng được tình huống thay vì neo vào một ngày. */
+function findDay(want: (r: Run) => boolean, from = 11, to = 22): Run {
+  for (let d = from; d <= to; d++) {
+    const r = play(d);
+    if (want(r)) return r;
+  }
+  throw new Error(`không ngày nào trong ${from}–${to} dựng được tình huống`);
+}
+
+const impatientOf = (r: Run) => [...r.left.values()].filter((x) => x === "IMPATIENT").length;
+
 test("chạy thật: có người quay đầu, mà cái hàng đó vẫn có người chịu xếp vào", () => {
   const r = play(13);
   assert.ok(r.balked.length >= 2, `ngày 13 phải có người quay đầu, đang có ${r.balked.length}`);
@@ -141,9 +152,8 @@ test("khách quay đầu phải ĐI BỘ ra cho người chơi thấy, không b�
 });
 
 test("quay đầu KHÔNG tính vào `lost` của ngày", () => {
-  const r = play(13);
-  const impatient = [...r.left.values()].filter((x) => x === "IMPATIENT").length;
-  assert.ok(r.balked.length > 0 && impatient > 0, "ngày này phải có cả hai kiểu để so");
+  const r = findDay((x) => x.balked.length > 0 && impatientOf(x) > 0);
+  const impatient = impatientOf(r);
   assert.equal(r.h.ctx.world.progress.today.lost, impatient,
     "`lost` là 'người chơi để mất khách' — hàng dài là hệ quả của bán được, không đếm vào đó");
   assert.equal(r.h.service.balkedCount, r.balked.length);
@@ -151,7 +161,7 @@ test("quay đầu KHÔNG tính vào `lost` của ngày", () => {
 });
 
 test("quay đầu không phải một lượt ghé: không nhích `visits`", () => {
-  const r = play(13);
+  const r = findDay((x) => x.balked.some((id) => !id.startsWith("walkin")));
   const named = new Set(Object.keys(r.h.ctx.world.npcs));
   // người đi ngang có `npc:arrived` mà không có `npc:left` nên lọc ra
   const real = r.arrived.filter((id) => r.left.has(id));
@@ -167,7 +177,7 @@ test("quay đầu không phải một lượt ghé: không nhích `visits`", () 
 });
 
 test("tất định: cùng seed, cùng người quay đầu, cùng thứ tự", () => {
-  for (const day of [12, 13]) {
+  for (const day of [13, 17]) {
     const a = play(day), b = play(day);
     assert.deepEqual(b.balked, a.balked);
     assert.ok(a.balked.length > 0);

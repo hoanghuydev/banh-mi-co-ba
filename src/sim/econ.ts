@@ -18,9 +18,9 @@ export type GoodDef = {
 };
 
 export const ECON = ECON_JSON as unknown as {
-  scale: number; startCash_k: number;
+  scale: number; startCash_k: number; win_k: number;
   fixedCost_k: { base: number; fromDay: number; raised: number };
-  menu: { extra_k: number; price: { walkAway: number[]; praise: number[]; overpriced: number[] } };
+  menu: { extra_k: number; price: { walkAway: number[] } };
   rent_k: number;
   storage: { thung_xop: { coldSlots: number; coldShelfLifeDelta: Partial<Record<GoodId, number>> } };
 };
@@ -83,7 +83,7 @@ export function priceOf(g: GoodId, day: number): number {
   if (g === "BANH") return eventsOn(day).find((e) => e.breadPrice_k)?.breadPrice_k ?? d.base_k;
   let p = d.base_k * CAL.weekdayIndex[d.weekday][weekdayIdx(day)];
   for (const e of eventsOn(day)) p *= e.priceMul?.[d.weekday] ?? 1;
-  return Math.round(p * 2) / 2;
+  return Math.round(p * 100) / 100;
 }
 
 export function q0Of(g: GoodId, day: number): number {
@@ -96,27 +96,26 @@ export const fixedCostVnd = (day: number) => scaledVnd(day >= ECON.fixedCost_k.f
 /** Lô cũ không có `tier` thì tính là hàng thường. */
 export type Lot = { good: GoodId; day: number; left: number; q0: number; tier?: Quality };
 export type Storage = "thung_xop" | "tu_mat";
-export type InventoryState = { lots: Lot[]; lastBasket: Partial<Record<GoodId, number>>; storage?: Storage; noiU?: boolean };
+export type InventoryState = { lots: Lot[]; lastBasket: Partial<Record<GoodId, number>>; storage?: Storage };
 export const newInventory = (): InventoryState => ({ lots: [], lastBasket: {}, storage: "thung_xop" });
 
-/** Tủ mát nhân đôi hạn đồ lạnh; nồi ủ giữ xíu mại qua đêm. */
-export function shelfDays(g: GoodId, storage: Storage = "thung_xop", noiU = false, tier: Quality = "THUONG"): number {
+/** Tủ mát nhân đôi hạn đồ lạnh. */
+export function shelfDays(g: GoodId, storage: Storage = "thung_xop", tier: Quality = "THUONG"): number {
   const d = GOODS[g];
   const tierDelta = QUALITIES[tier].shelf;
-  if (g === "XIU_MAI" && noiU) return Math.max(1, 2 + tierDelta);
   if (d.storage === "COLD" && storage === "tu_mat") return Math.max(1, d.curve.length * 2 + tierDelta);
   const delta = d.storage === "COLD" ? ECON.storage.thung_xop.coldShelfLifeDelta[g] ?? 0 : 0;
   return Math.max(1, d.curve.length + delta + tierDelta);
 }
 
-export function lotQuality(l: Lot, day: number, storage: Storage = "thung_xop", noiU = false): number | null {
+export function lotQuality(l: Lot, day: number, storage: Storage = "thung_xop"): number | null {
   const age = day - l.day;
-  if (age < 0 || age >= shelfDays(l.good, storage, noiU, l.tier)) return null;
+  if (age < 0 || age >= shelfDays(l.good, storage, l.tier)) return null;
   const c = GOODS[l.good].curve;
   const idx = GOODS[l.good].storage === "COLD" && storage === "tu_mat" ? Math.floor(age / 2) : age;
-  return l.q0 * (c[Math.min(idx, c.length - 1)] ?? (l.good === "XIU_MAI" ? 0.85 : c[c.length - 1]));
+  return l.q0 * c[Math.min(idx, c.length - 1)];
 }
-const lq = (inv: InventoryState, l: Lot, day: number) => lotQuality(l, day, inv.storage ?? "thung_xop", !!inv.noiU);
+const lq = (inv: InventoryState, l: Lot, day: number) => lotQuality(l, day, inv.storage ?? "thung_xop");
 
 export function stockOf(inv: InventoryState, g: GoodId, day: number) {
   return inv.lots.reduce((a, l) => a + (l.good === g && lq(inv, l, day) !== null ? l.left : 0), 0);

@@ -1,5 +1,7 @@
+import { sfx } from "../../audio/sfx";
 import type { SaveFile } from "../../core/save";
 import { WEEKDAY_VI, weekdayIdx } from "../../sim/econ";
+import { average, starText } from "../../sim/reviews";
 
 const STYLE = `
 .ev-root{position:fixed;inset:0;z-index:8990;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;background:rgba(14,18,22,.45);font-family:"Be Vietnam Pro",system-ui,sans-serif;color:#2b2f31}
@@ -39,6 +41,7 @@ export class EveningView {
     this.root.style.fontSize = `${Math.round(14 * opts.textScale)}px`;
     this.root.addEventListener("keydown", (e) => e.stopPropagation(), true);
     document.body.appendChild(this.root);
+    sfx.ui("ui_mo_so_tay");
     this.render();
   }
 
@@ -77,12 +80,16 @@ export class EveningView {
     L.append(cash);
 
     const says = this.el("div", "ev-says");
-    if (e.rentOwed) says.append(this.el("div", "ev-say", `Chủ nhà: "Tiền chỗ mấy bữa nay con tính sao?"`));
+    if (e.rentOwed) says.append(this.el("div", "ev-say", `Chủ nhà: "Tiền chỗ mấy hôm nay con tính sao?"`));
     for (const l of this.opts.lines ?? []) says.append(this.el("div", "ev-say", l));
     if (t.lost) says.append(this.el("div", "ev-note", "có người đợi không nổi rồi về"));
     if (t.priceLost) says.append(this.el("div", "ev-note", `${t.priceLost} khách xem giá rồi bỏ đi`));
-    if (t.overpriced) says.append(this.el("div", "ev-note", `${t.overpriced} khách chê giá đắt`));
     if (t.sick) says.append(this.el("div", "ev-note", `${t.sick} khách đau bụng sau khi ăn`));
+    const today = w.reviews.list.filter((r) => r.day === w.progress.dayIndex);
+    if (today.length) {
+      says.append(this.el("div", "ev-note",
+        `${today.length} đánh giá mới — sao trung bình ${starText(average(w))}`));
+    }
     if (et.soldOut) says.append(this.el("div", "ev-note", "có người tới mà hết bánh"));
     if (et.wasted.length) says.append(this.el("div", "ev-note", `sáng nay bỏ (hư): ${et.wasted.join(", ")}`));
     if (says.childElementCount) L.append(says);

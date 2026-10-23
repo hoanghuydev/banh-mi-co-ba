@@ -1,5 +1,5 @@
 {
-  "_note": "Thầy Phúc — giáo viên hưu, điềm đạm + soi → dạy người chơi ĐỌC HỆ THỐNG bằng cách chỉ ra cái họ chưa thấy, không bằng thưởng. Không phát quest.",
+  "_note": "Thầy Khải — giáo viên hưu, điềm đạm + soi → dạy người chơi ĐỌC HỆ THỐNG bằng cách chỉ ra cái họ chưa thấy, không bằng thưởng. Không phát quest.",
   "rules": [
     {"id": "phuc.dropped_food", "concept": "NOTICE_EVENT", "when": {"npcId": "THAY_PHUC", "eventId": "DROPPED_FOOD", "obsState": ">=NOTICED", "ctxBarkT1_DROP": "absent"}, "applycontext": {"ctxBarkT1_DROP": {"value": 1, "duration": 90}}, "say": ["Thầy thấy rồi. Con làm ổ khác đi."], "odds": 45},
     {"id": "phuc.dirty_hands", "concept": "NOTICE_EVENT", "when": {"npcId": "THAY_PHUC", "eventId": "DIRTY_HANDS", "obsState": ">=NOTICED", "ctxBarkT1_TAY": "absent"}, "applycontext": {"ctxBarkT1_TAY": {"value": 1, "duration": 90}}, "say": ["Tiền là thứ qua tay nhiều người nhất trên đời này con à."]},
@@ -7,7 +7,7 @@
     {"id": "phuc.burnt", "concept": "NOTICE_EVENT", "when": {"npcId": "THAY_PHUC", "eventId": "BURNT_OR_COLD", "eventBurnt": true, "obsState": ">=NOTICED", "ctxBarkT1_KHET": "absent"}, "applycontext": {"ctxBarkT1_KHET": {"value": 1, "duration": 90}}, "say": ["Than nó âm ỉ chứ không báo trước đâu con. Quay lưng một cái là mất ổ bánh."]},
     {"id": "phuc.flourish", "concept": "NOTICE_EVENT", "when": {"npcId": "THAY_PHUC", "eventId": "FLOURISH", "obsState": ">=NOTICED"}, "say": ["Một đường dao. Hồi đầu con rạch ba lần lận."], "cooldown": 600},
     {"id": "phuc.wait.confirmed", "concept": "NOTICE_EVENT", "when": {"npcId": "THAY_PHUC", "eventId": "MADE_THEM_WAIT", "obsState": "CONFIRMED"}, "say": ["Con cứ làm đi. Thầy về hưu rồi, thầy nhiều thời gian lắm."]},
-    {"id": "phuc.del.seen", "concept": "DELIVERY", "when": {"npcId": "THAY_PHUC", "defectCount": ">=1", "defectWasSeen": true}, "say": ["Thầy thấy con lấy nhầm hũ. Để ý chỗ {mon} nghen con."]},
+    {"id": "phuc.del.seen", "concept": "DELIVERY", "when": {"npcId": "THAY_PHUC", "defectCount": ">=1", "defectWasSeen": true}, "say": ["Thầy thấy con lấy nhầm hũ. Để ý chỗ {mon} nha con."]},
     {"id": "phuc.del.found", "concept": "DELIVERY", "when": {"npcId": "THAY_PHUC", "defectCount": ">=1", "defectWasSeen": false}, "say": ["Ừ, thiếu chút. Không sao con."]},
     {"id": "phuc.del.toomuch", "concept": "DELIVERY", "when": {"npcId": "THAY_PHUC", "defectCount": 0, "freeExtraTooMuch": true}, "say": ["Con cho thầy thì thầy nhận. Nhưng đừng cho ai cũng vậy."]},
     {"id": "phuc.tea", "concept": "INTERACT", "when": {"npcId": "THAY_PHUC", "interaction": "TEA"}, "say": ["Cảm ơn con. Thầy ngồi một chút rồi thầy về."]},

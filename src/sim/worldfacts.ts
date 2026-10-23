@@ -61,6 +61,8 @@ export type WorldSnapshot = {
   shadeFree: boolean;
   seatFree: boolean;
   ganhOut: boolean;
+  /** Ổ đầy đủ đã lên bảng menu. */
+  menuDayDu: boolean;
   cartLan: boolean;
   cartChung: boolean;
   ovenHot: boolean;
@@ -121,6 +123,7 @@ export function queryOf(w: WorldSnapshot, q = new Query()): Query {
   q.set("worldBand", w.band);
   q.set("worldShadeFree", w.shadeFree);
   q.set("worldSeatFree", w.seatFree);
+  q.set("worldMenuDayDu", w.menuDayDu);
   q.set("worldGanhOut", w.ganhOut);
   q.set("worldCartLan", w.cartLan);
   q.set("worldCartChung", w.cartChung);

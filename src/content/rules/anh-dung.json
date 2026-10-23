@@ -1,5 +1,5 @@
 {
-  "_note": "Anh Dũng — tài xế Grab (trước là xe ôm), luôn vội → dạy MADE_THEM_WAIT. Cáu vặt, quên nhanh.",
+  "_note": "Anh Quân — tài xế Grab (trước là xe ôm), luôn vội → dạy MADE_THEM_WAIT. Cáu vặt, quên nhanh.",
   "rules": [
     {"id": "dung.dropped_food", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_DUNG", "eventId": "DROPPED_FOOD", "obsState": ">=NOTICED"}, "silent": true, "say": []},
     {"id": "dung.dirty_hands", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_DUNG", "eventId": "DIRTY_HANDS", "obsState": ">=NOTICED"}, "silent": true, "say": []},

@@ -1,5 +1,6 @@
 import { MEMBERS, contactOf } from "../../../content/phone/contacts";
 import { markRead, pendingEvent, reply, sortedThreads, unreadOf, type Thread } from "../../../sim/phone";
+import { sfx } from "../../../audio/sfx";
 import { avatar, bubbleNodes } from "../chat";
 import { navBar, page, scroller, type AppCtx } from "../ctx";
 import { btn, el } from "../dom";
@@ -53,7 +54,7 @@ export function chatPage(ctx: AppCtx, id: string): HTMLElement {
     const box = el("div", "ph-compose");
     pe.options.forEach((o, i) => {
       const chip = btn(`ph-chip${i ? " alt" : ""}`, `${i ? "😏" : "🙂"}  ${o.me}`, () => {
-        if (reply(w, id, i)) { ctx.host.onSave(); ctx.go({ app: "chat", id }, ""); }
+        if (reply(w, id, i)) { sfx.ui("ph_tin_di"); ctx.host.onSave(); ctx.go({ app: "chat", id }, ""); }
       });
       box.append(chip);
     });

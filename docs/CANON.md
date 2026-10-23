@@ -144,15 +144,15 @@ type Personality = {
 }
 ```
 
-**Công thức chuẩn (P1-02, chốt):** `traitMul = 0.65 + 0.70 · soi` — chọn hằng số để `soi = 0.5` cho đúng `1.000`, nhờ đó "khách chuẩn" trong mọi bảng hiệu chỉnh là một NPC có thật (Ông Hải / Chị Hạnh).
+**Công thức chuẩn (P1-02, chốt):** `traitMul = 0.65 + 0.70 · soi` — chọn hằng số để `soi = 0.5` cho đúng `1.000`, nhờ đó "khách chuẩn" trong mọi bảng hiệu chỉnh là một NPC có thật (Chú Thịnh / Chị Hà).
 
 **Quy tắc suy ra hành vi (không có chiều "nói thẳng" riêng):**
 `nói thẳng ra miệng` ≈ `nongTinh` cao **hoặc** `thanThien` cao.
 `im lặng rồi biến mất` ≈ `soi` cao **và** `nongTinh` thấp **và** `thanThien` thấp.
 
 **Hai ràng buộc kỹ thuật (đừng "tối ưu" đi trong một lần refactor):**
-1. 🔁 *(Lý do cũ dựa trên đồn thổi — đã chết. Ràng buộc vẫn giữ: hai chiều độc lập cho ra persona "dễ tính nhưng hay viết" và "khó tính nhưng chỉ chấm sao".)* **`deTha` và `thanThien` phải giữ ĐỘC LẬP.** 6/12 NPC rơi vào ô *"dễ tha nhưng nói nhiều"* — gồm **cả hai nút khuếch đại** (bà Sáu, bé Su). Đây chính là cơ chế bịt lỗ hổng ăn gian §8b (phân tầng khách), và nó hoạt động **mà không cần một dòng code nào**: người dễ tha không giận, nhưng vẫn vô tư kể lại cho người soi. Gộp hai chiều này = mở lại §8b.
-2. **Ô "im lặng biến mất" (`soi+ / nongTinh− / deTha− / thanThien−`) chỉ được cấp cho ĐÚNG MỘT người** — chị Lan. Ba người im lặng biến mất = người chơi không học được luật nào, chỉ thấy khách rụng dần.
+1. 🔁 *(Lý do cũ dựa trên đồn thổi — đã chết. Ràng buộc vẫn giữ: hai chiều độc lập cho ra persona "dễ tính nhưng hay viết" và "khó tính nhưng chỉ chấm sao".)* **`deTha` và `thanThien` phải giữ ĐỘC LẬP.** 6/12 NPC rơi vào ô *"dễ tha nhưng nói nhiều"* — gồm **cả hai nút khuếch đại** (dì Liên, bé Hân). Đây chính là cơ chế bịt lỗ hổng ăn gian §8b (phân tầng khách), và nó hoạt động **mà không cần một dòng code nào**: người dễ tha không giận, nhưng vẫn vô tư kể lại cho người soi. Gộp hai chiều này = mở lại §8b.
+2. **Ô "im lặng biến mất" (`soi+ / nongTinh− / deTha− / thanThien−`) chỉ được cấp cho ĐÚNG MỘT người** — chị Trâm. Ba người im lặng biến mất = người chơi không học được luật nào, chỉ thấy khách rụng dần.
 
 ☠️ **Ba bucket quan hệ, bất đối xứng** (theo RimWorld, không làm 7 bậc):
 `Rival` → `Acquaintance` → `Friend`.
@@ -233,7 +233,7 @@ silentScore = sum(all defects)               // các lỗi còn lại vẫn ản
    → Hệ quả: **không có nút "nhặt lên dùng tiếp"**. Ý tưởng gốc ở Phần II đã bị bác bỏ.
 3. **Người phán xét vệ sinh LUÔN LUÔN là người Việt.** Không bao giờ để nhân vật nước ngoài nhăn mặt chê vệ sinh.
 4. ~~**Người dạy là cô Ba, không phải hệ thống phạt.** Cô buồn chứ không la: "Bánh đó con để cô ăn."~~ 🔁 Cô Ba bị bỏ (R0.5). Người "dạy" giờ là **review** — chê thẳng nhưng không phải hình phạt từ hệ thống.
-5. **Kẻ gian dối vệ sinh là NPC đối thủ (chú Kiệt), không phải người chơi.** 🔁 Đối thủ đồng thời là nguồn **review ác ý** (đề bài ~5% ⏳ Phase 4). Tên đổi ở Phase 6.
+5. **Kẻ gian dối vệ sinh là NPC đối thủ (chú Đạt), không phải người chơi.** 🔁 Đối thủ đồng thời là nguồn **review ác ý** (đề bài ~5% ⏳ Phase 4). Tên đổi ở Phase 6.
    > 🔁 **Lưu ý revamp:** nhà cung cấp có **hàng bẩn/bỏ thuốc** (Phase 3) — người chơi *được chọn* nhập hàng kém. Không mâu thuẫn mục 2: game **không thưởng**, hệ quả là đau bụng → review xấu → có thể **thua ATTP**. Rủi ro hiện rõ trước khi mua (T5).
 6. **Không đưa cảnh nhặt bánh vào trailer.** Trailer dẫn đầu bằng `DIRTY_HANDS`.
 
@@ -279,27 +279,27 @@ silentScore = sum(all defects)               // các lỗi còn lại vẫn ản
 ## 9. Dàn nhân vật — 12 NPC có tên (cố định, mọi doc dùng đúng tên này)
 
 > 🔁 **Revamp:**
-> - ⏳ **Tên đổi hết ở R6** (tên riêng dễ nhớ kiểu Hoàng Huy, Văn Thái…, bỏ kiểu "chú/bà + thứ"; **Phương Anh dành cho nhân vật chính**). Tới lúc đó giữ tên cũ để code và doc cũ truy vết.
-> - 🔁 **Xưng hô theo tuổi NPC** (R0.5): người lớn gọi Phương Anh `con/em/bé`, người trẻ gọi `chị`. Anh Bảo đã đổi sang `chị`.
-> - ☠️ Mọi chi tiết **đời cô Ba** trong thoại (bất hoà với bà Bảy, "gần xe bánh mì cô Ba"…) — bỏ ở R6/R0.5.
-> - ☠️ Mọi **arc theo ngày** (chú Tư dời đi ~ngày 30, anh Dũng đổi ca giữa mùa, chị Lan biến mất ngày 24, mốc tiến trình của bà Sáu, bất hoà 15 năm của bà Bảy) — chết theo mùa 40 ngày.
-> - 🔁 Chức năng mới: chị Lan → *khách chỉ chấm sao, không chữ* · bé Su → *review TikTok, lan rộng* · chú Kiệt → *review ác ý của đối thủ* · anh Bảo → *sandbox perception* (giữ) · thầy Phúc → *review dài, phân tích* (gợi ý, chốt Phase 4).
-> - Thoại cả dàn đổi sang **giọng Nam gen Z** (Phase 6).
+> - ✅ **Tên đã đổi ở R6** (bỏ kiểu "chú/bà + thứ"; `id` code giữ nguyên để save và test cũ chạy; cột Tên ghi `id` và tên cũ). Người trẻ dùng tên đầy đủ trong giao diện (Minh Quân, Ngọc Trâm, Khả Hân, Thu Hà, Gia Bảo); trong lời thoại gọi `anh Quân`, `chị Trâm`, `bé Hân`, `chị Hà`, `Bảo`. **Phương Anh dành cho nhân vật chính.**
+> - 🔁 **Xưng hô theo tuổi NPC** (R0.5): người lớn gọi Phương Anh `con/em/bé`, người trẻ gọi `chị`. Bảo đã đổi sang `chị`.
+> - ☠️ Mọi chi tiết **đời cô Ba** trong thoại (bất hoà với dì Nguyệt, "gần xe bánh mì cô Ba"…) — bỏ ở R6/R0.5.
+> - ☠️ Mọi **arc theo ngày** (chú Quang dời đi ~ngày 30, anh Quân đổi ca giữa mùa, chị Trâm biến mất ngày 24, mốc tiến trình của dì Liên, bất hoà 15 năm của dì Nguyệt) — chết theo mùa 40 ngày.
+> - 🔁 Chức năng mới: chị Trâm → *khách chỉ chấm sao, không chữ* · bé Hân → *review TikTok, lan rộng* · chú Đạt → *review ác ý của đối thủ* · Bảo → *sandbox perception* (giữ) · thầy Khải → *review dài, phân tích* (gợi ý, chốt Phase 4).
+> - 🚧 Thoại đã bỏ chữ Nam cổ (R6, linter `L014`) nhưng **chưa viết lại từng nhân vật**, R6 chưa xong; người lớn tuổi vẫn nói đúng tuổi, không ép gen Z. Dì Nguyệt, Dì Liên: người chơi gọi `dì`.
 
 | # | Tên | Vai | soi / nongTinh / deTha / thanThien | Chức năng thiết kế |
 |---|---|---|---|---|
-| 1 | **Bà Bảy** | Bán vé số | 0.9 / 0.6 / 0.8 / 0.7 | Người soi nhất hẻm nhưng dễ tha — an toàn để học luật. **Mê cải lương**; có mối bất hoà 15 năm với cô Ba không ai chịu nhắc (§19.5: không được tồn tại để bị thương hại) |
-| 2 | **Chú Tư** | Bảo vệ công ty, khách 6h45 T2–T6 | 0.3 / 0.3 / 0.9 / 0.6 | Dạy người chơi **lịch sinh hoạt**. Arc: công ty dời chỗ → **biến mất ~ngày 30, có báo trước 3–4 ngày** |
-| 3 | **Anh Dũng** | Tài xế Grab (trước là xe ôm truyền thống) | 0.2 / 0.5 / 0.7 / 0.5 | Luôn vội → dạy `MADE_THEM_WAIT`. Arc: đổi ca đêm giữa mùa |
-| 4 | **Chị Lan** | Nhân viên văn phòng | 0.9 / 0.1 / 0.2 / 0.3 | **Người im lặng biến mất.** Đồng thời là nút lan tin đồn mạnh nhất |
-| 5 | **Bé Su** | Học sinh cấp 2, quay TikTok | 0.4 / 0.4 / 0.9 / 1.0 | Bộ khuếch đại danh tiếng: chuyện tốt lẫn xấu đều lan qua bé |
-| 6 | **Ông Hải** | Khách buổi chiều, hay nhậu | 0.5 / 0.9 / 0.5 / 0.6 | **Trước 10 giờ sáng rất tử tế** — đó mới là cái đau. Không phải comic relief |
-| 7 | **Cô Mai** | Chủ tạp hoá đối diện — **làm ăn được** | 0.6 / 0.4 / 0.6 / 0.8 | §19.5: "cái hẻm mà ai cũng nghèo là cái hẻm giả". Nguồn đổi tiền lẻ + sổ nợ |
-| 8 | **Thầy Phúc** | Giáo viên hưu trí | 0.8 / 0.2 / 0.7 / 0.5 | Điềm đạm + soi → NPC **dạy người chơi đọc hệ thống** mà không phạt nặng |
-| 9 | **Chị Hạnh** | Người Bắc mới vô Sài Gòn | 0.5 / 0.3 / 0.6 / 0.4 | Gọi món bằng từ Bắc; bị chọc giọng. Arc hoà nhập |
-| 10 | **Anh Bảo** | Sinh viên, cắm mặt điện thoại | 0.3 / 0.2 / 0.8 / 0.4 | `gazeFactor` thấp nhất — **sandbox để người chơi học hệ perception** |
-| 11 | **Bà Sáu** | Gánh tàu hũ đi ngang hẻm | 0.4 / 0.3 / 0.8 / 0.9 | Đồng nghiệp + nút gossip. Mốc tiến trình: *"nhà tui gần chỗ bán tàu hũ"* → đổi thành *"gần xe bánh mì cô Ba"* |
-| 12 | **Chú Kiệt** | **Xe bánh mì đối thủ bên kia hẻm** | 0.7 / 0.6 / 0.3 / 0.4 | Người gian dối vệ sinh (XĐ1.5). Vừa là đối thủ vừa là người duy nhất hiểu nghề của bạn |
+| 1 | **Dì Nguyệt** (`BA_BAY`, cũ: Bà Bảy) | Bán vé số | 0.9 / 0.6 / 0.8 / 0.7 | Người soi nhất hẻm nhưng dễ tha — an toàn để học luật. **Mê cải lương**; có mối bất hoà 15 năm với cô Ba không ai chịu nhắc (§19.5: không được tồn tại để bị thương hại) |
+| 2 | **Chú Quang** (`CHU_TU`, cũ: Chú Tư) | Bảo vệ công ty, khách 6h45 T2–T6 | 0.3 / 0.3 / 0.9 / 0.6 | Dạy người chơi **lịch sinh hoạt**. Arc: công ty dời chỗ → **biến mất ~ngày 30, có báo trước 3–4 ngày** |
+| 3 | **Minh Quân** (`ANH_DUNG`, cũ: Anh Dũng) | Tài xế Grab (trước là xe ôm truyền thống) | 0.2 / 0.5 / 0.7 / 0.5 | Luôn vội → dạy `MADE_THEM_WAIT`. Arc: đổi ca đêm giữa mùa |
+| 4 | **Ngọc Trâm** (`CHI_LAN`, cũ: Chị Lan) | Nhân viên văn phòng | 0.9 / 0.1 / 0.2 / 0.3 | **Người im lặng biến mất.** Đồng thời là nút lan tin đồn mạnh nhất |
+| 5 | **Khả Hân** (`BE_SU`, cũ: Bé Su) | Học sinh cấp 2, quay TikTok | 0.4 / 0.4 / 0.9 / 1.0 | Bộ khuếch đại danh tiếng: chuyện tốt lẫn xấu đều lan qua bé |
+| 6 | **Chú Thịnh** (`ONG_HAI`, cũ: Ông Hải) | Khách buổi chiều, hay nhậu | 0.5 / 0.9 / 0.5 / 0.6 | **Trước 10 giờ sáng rất tử tế** — đó mới là cái đau. Không phải comic relief |
+| 7 | **Cô Thuý** (`CO_MAI`, cũ: Cô Mai) | Chủ tạp hoá đối diện — **làm ăn được** | 0.6 / 0.4 / 0.6 / 0.8 | §19.5: "cái hẻm mà ai cũng nghèo là cái hẻm giả". Nguồn đổi tiền lẻ + sổ nợ |
+| 8 | **Thầy Khải** (`THAY_PHUC`, cũ: Thầy Phúc) | Giáo viên hưu trí | 0.8 / 0.2 / 0.7 / 0.5 | Điềm đạm + soi → NPC **dạy người chơi đọc hệ thống** mà không phạt nặng |
+| 9 | **Thu Hà** (`CHI_HANH`, cũ: Chị Hạnh) | Người Bắc mới vô Sài Gòn | 0.5 / 0.3 / 0.6 / 0.4 | Gọi món bằng từ Bắc; bị chọc giọng. Arc hoà nhập |
+| 10 | **Gia Bảo** (`ANH_BAO`, cũ: Anh Bảo) | Sinh viên, cắm mặt điện thoại | 0.3 / 0.2 / 0.8 / 0.4 | `gazeFactor` thấp nhất — **sandbox để người chơi học hệ perception** |
+| 11 | **Dì Liên** (`BA_SAU`, cũ: Bà Sáu) | Gánh tàu hũ đi ngang hẻm | 0.4 / 0.3 / 0.8 / 0.9 | Đồng nghiệp + nút gossip. Mốc tiến trình: *"nhà tui gần chỗ bán tàu hũ"* → đổi thành *"gần xe bánh mì cô Ba"* |
+| 12 | **Chú Đạt** (`CHU_KIET`, cũ: Chú Kiệt) | **Xe bánh mì đối thủ bên kia hẻm** | 0.7 / 0.6 / 0.3 / 0.4 | Người gian dối vệ sinh (XĐ1.5). Vừa là đối thủ vừa là người duy nhất hiểu nghề của bạn |
 
 **Ngoài danh sách:** ~~**Cô Ba** (mentor, §7.4)~~ ☠️ và **khách vãng lai vô danh** (dùng pool thoại generic).
 
@@ -313,7 +313,7 @@ silentScore = sum(all defects)               // các lỗi còn lại vẫn ản
 | **Mẹ** | Lo nhưng vẫn chuyển khoản thêm | Chỉ qua điện thoại (màn giới thiệu) |
 
 **Luật:** không thêm nhân vật truyện tới quán. Mốc truyện kích theo **thành tích** (số review, sao, tiền), **không theo ngày** — ⏳ mốc cụ thể chốt bằng mô phỏng.
-**Quán hủ tiếu kế bên** (tên na ná → review nhầm) và **xe bánh mì đối thủ bên kia hẻm** (chú Kiệt, review ác ý) là hai nguồn thử thách có sẵn trong truyện.
+**Quán hủ tiếu kế bên** (tên na ná → review nhầm) và **xe bánh mì đối thủ bên kia hẻm** (chú Đạt, review ác ý) là hai nguồn thử thách có sẵn trong truyện.
 
 ---
 
@@ -407,7 +407,7 @@ Rule {
 **Đồn thổi — 6 ràng buộc BẮT BUỘC:**
 1. `mutation_rate` **per-kind, không global**.
 2. **Cap 2–3 hop.**
-3. Mỗi hop `confidence *= 0.7–0.85`; **nguồn phải truy vết được** (*"chị Lan bảo tôi…"*).
+3. Mỗi hop `confidence *= 0.7–0.85`; **nguồn phải truy vết được** (*"chị Trâm bảo tôi…"*).
 4. **Người chơi phải NGHE LỎM được** hai khách nói chuyện ở góc hẻm. Không có nghe lỏm thì **bỏ luôn cả nhớ nhầm lẫn đồn thổi**.
 5. **Tin tốt có hệ số lan truyền CAO HƠN tin xấu.**
 6. **Mốc bắt đầu tính theo NGÀY, không theo giờ chơi.** Có **công tắc tắt**.
@@ -459,7 +459,7 @@ REMEMBERED_USUAL--0.20--> "ngon nhất khu này"           # tin tốt cũng ph�
 |---|---|---|
 | **Rút về nhà** | **150k/ngày** (bắt buộc — xe bánh mì nuôi một cái nhà; tiền không nằm hết trong két). 🔁 R0.5: thành **sinh hoạt phí của Phương Anh** | ~~6.000k~~ |
 | **Thuê chỗ** | **theo NGÀY**, không theo kỳ. ~~`L1` 42k · `L2` 55k · `L3` 85k · `L4` 95k · `L5` 12k~~. Cọc = 3 ngày tiền thuê. 🔁 R0.5: xe → **một mặt bằng thuê** (đã ký hợp đồng trước game), 5 chỗ đứng ☠️; giá/ngày ⏳ mô phỏng | ~~1.680k~~ |
-| ~~**Hụi**~~ | ☠️ ~~500k × 8 kỳ (mỗi 5 ngày), chủ hụi là cô Mai~~ | ~~4.000k~~ |
+| ~~**Hụi**~~ | ☠️ ~~500k × 8 kỳ (mỗi 5 ngày), chủ hụi là cô Thuý~~ | ~~4.000k~~ |
 | ~~**Tiền học**~~ | ☠️ ~~1.200k × 2 — ngày 18 và ngày 38~~ | ~~2.400k~~ |
 
 **Nền đơn vị đi kèm (ba doc P3 đều đã khớp):** 28,0k/ổ · 15,4k giá vốn · **12,6k lãi gộp** · 51,7–54 ổ/ngày · ổ bánh 3,5k (lò bà Tám).
@@ -517,7 +517,7 @@ Nhân: thịt / heo quay / pate / xíu mại / chả lụa / cá / gà / ốp la
 
 ## 16. Ba thứ ĐỪNG làm
 
-**Đừng-1: mô phỏng sâu đời sống NPC ngoài quầy.** (Radiant AI: mỗi lần cải thiện lại làm nó **ít được nhận ra hơn**.) Thay bằng nguyên tắc Jeff Orkin (F.E.A.R.): *"Vocalizing intentions can sometimes even be enough, without any actual implementation."* → **Đừng mô phỏng cái xe thủng lốp của chú Tư. Cho chú NÓI RA + một prop hình ảnh (tay băng, áo ướt).** Chỉ mô phỏng sâu hơn cái người chơi nhìn thấy **đúng một tầng**.
+**Đừng-1: mô phỏng sâu đời sống NPC ngoài quầy.** (Radiant AI: mỗi lần cải thiện lại làm nó **ít được nhận ra hơn**.) Thay bằng nguyên tắc Jeff Orkin (F.E.A.R.): *"Vocalizing intentions can sometimes even be enough, without any actual implementation."* → **Đừng mô phỏng cái xe thủng lốp của chú Quang. Cho chú NÓI RA + một prop hình ảnh (tay băng, áo ướt).** Chỉ mô phỏng sâu hơn cái người chơi nhìn thấy **đúng một tầng**.
 
 **Đừng-2: roll xác suất mỗi frame + mô phỏng tầm nhìn chính xác.** *"Player perception should win over simulation accuracy."*
 
@@ -546,7 +546,7 @@ Nhân: thịt / heo quay / pate / xíu mại / chả lụa / cá / gà / ốp la
 > **Cập nhật 2026-10-09 — mở cho NPC, vì con số cũ đo sai.** Bản đầu ghi "mở cho cả 3 NPC
 > nữa là ~10 MB, không duyệt". Con số đó nhân thẳng 2,6 MB của người chơi cho mỗi NPC, mà
 > 2,6 MB ấy gồm **hai** chu kỳ: `walk` và `carry`. Khách **không bưng gì**, nên chỉ cần `walk`.
-> Đo thật sau khi làm: anh Bảo 1,27 MB, bà Bảy 1,27 MB. Ba NPC là ~3,8 MB chứ không phải 10.
+> Đo thật sau khi làm: Bảo 1,27 MB, dì Nguyệt 1,27 MB. Ba NPC là ~3,8 MB chứ không phải 10.
 >
 > Đổi lại, **cắt được 1,4 MB** bảng tám hướng rời của người chơi + hai NPC đó: từ lúc có
 > atlas thì ảnh ĐỨNG YÊN cũng lấy từ chính atlas, nên tám file PNG kia tải về mà không
@@ -595,6 +595,7 @@ Nhân: thịt / heo quay / pate / xíu mại / chả lụa / cá / gà / ốp la
 | **R4** | Review | Nội dung app Đánh giá (khung dựng ở R0.5): review đa yếu tố, phản hồi, game over ATTP |
 | **R5** | Vòng đời & số khách | Bỏ trần ngày, mốc tiền thắng (mô phỏng chọn), `Y(x)` theo sao |
 | **R6** | Nhân vật & văn phong | Tên riêng, thoại Nam gen Z |
+| **R7** ✅ | Kho đồ lạnh | Nhấn E ở thùng xốp / tủ mát mở kho dạng lưới, thanh độ tươi · bỏ nồi ủ xíu mại (`revamp/00-YEU-CAU.md` §7a) |
 
 > **"Phase 3 / R3" ở mọi chỗ trong file này = R0.7.**
 > Trong doc mới, gọi phase revamp là **R0–R6 (+R0.1, R0.5, R0.7)** để khỏi lẫn với P0–P6 cũ. Đề bài ghi "Phase N" = RN; "Phase 0.5" = R0.5 (trước tên R7).

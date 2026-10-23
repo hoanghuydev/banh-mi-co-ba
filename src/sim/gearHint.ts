@@ -34,11 +34,9 @@ export function gearEvidence(id: EquipId, w: SaveFile): string | null {
       return d.lost >= 2 && w.progress.weather === "NANG_GAT" ? "Trưa nay nắng, mấy người đứng chờ cứ lấy mũ quạt." : null;
     case "BINH_TRA":
       return d.lost >= 3 ? `Hôm nay ${dem(d.lost, "người")} chờ gần tới lượt rồi mới bỏ đi.` : null;
-    case "TU_MAT": case "NOI_U": {
-      // `wasted` đã là chữ người đọc được; nồi ủ chỉ đụng tới xíu mại.
-      const bo = e.wasted.filter((x) => id === "TU_MAT" || /xíu mại/i.test(x));
-      if (bo.length) return `Sáng nay bỏ ${bo.join(", ")} vì hư.`;
-      return id === "TU_MAT" && e.soldOut ? "Hôm nay có người tới mà hết bánh." : null;
+    case "TU_MAT": {
+      if (e.wasted.length) return `Sáng nay bỏ ${e.wasted.join(", ")} vì hư.`;
+      return e.soldOut ? "Hôm nay có người tới mà hết bánh." : null;
     }
     case "LOA_RAO":
       return d.served <= QUIET_DAY ? `Hôm nay bán được ${dem(d.served, "ổ")}. Cả buổi im ắng.` : null;

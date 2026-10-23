@@ -62,6 +62,45 @@
    "audio/sfx/amb_toi_nha.0.mp3"
   ]
  },
+ "ph_dang_tin": {
+  "bus": "amBao",
+  "desc": "dang tin rao ban — tieng chup anh",
+  "files": [
+   "audio/sfx/ph_dang_tin.0.mp3"
+  ]
+ },
+ "ph_mo_may": {
+  "bus": "amBao",
+  "desc": "mo dien thoai",
+  "files": [
+   "audio/sfx/ph_mo_may.0.mp3"
+  ]
+ },
+ "ph_soan_tin": {
+  "bus": "amBao",
+  "desc": "dang soan tin — bong bong kieu messenger",
+  "files": [
+   "audio/sfx/ph_soan_tin.0.mp3",
+   "audio/sfx/ph_soan_tin.1.mp3",
+   "audio/sfx/ph_soan_tin.2.mp3"
+  ]
+ },
+ "ph_tin_den": {
+  "bus": "amBao",
+  "desc": "tin nhan den / banner tin moi",
+  "files": [
+   "audio/sfx/ph_tin_den.0.mp3",
+   "audio/sfx/ph_tin_den.1.mp3",
+   "audio/sfx/ph_tin_den.2.mp3"
+  ]
+ },
+ "ph_tin_di": {
+  "bus": "amBao",
+  "desc": "gui tin nhan di",
+  "files": [
+   "audio/sfx/ph_tin_di.0.mp3"
+  ]
+ },
  "sfx_bich_nilon": {
   "bus": "thaoTac",
   "desc": "mo / sot soat bich nilon",
@@ -376,6 +415,34 @@
    "audio/sfx/sfx_xu.2.mp3"
   ]
  },
+ "sys_canh_bao": {
+  "bus": "amBao",
+  "desc": "He thong tu choi / canh bao",
+  "files": [
+   "audio/sfx/sys_canh_bao.0.mp3"
+  ]
+ },
+ "sys_khoi_dong": {
+  "bus": "amBao",
+  "desc": "He thong thuc tinh — may tinh khoi dong",
+  "files": [
+   "audio/sfx/sys_khoi_dong.0.mp3"
+  ]
+ },
+ "sys_nhiem_vu_xong": {
+  "bus": "amBao",
+  "desc": "nhiem vu hoan thanh — chip len tong",
+  "files": [
+   "audio/sfx/sys_nhiem_vu_xong.0.mp3"
+  ]
+ },
+ "sys_thong_bao": {
+  "bus": "amBao",
+  "desc": "Keng! thong bao He thong",
+  "files": [
+   "audio/sfx/sys_thong_bao.0.mp3"
+  ]
+ },
  "ui_autosave": {
   "bus": "amBao",
   "desc": "autosave — rat nhe",
@@ -450,6 +517,13 @@
   "desc": "mo menu",
   "files": [
    "audio/sfx/ui_mo_menu.0.mp3"
+  ]
+ },
+ "ui_mo_so_tay": {
+  "bus": "amBao",
+  "desc": "mo so tay",
+  "files": [
+   "audio/sfx/ui_mo_so_tay.0.mp3"
   ]
  },
  "ui_ngay_am_tien": {
@@ -542,6 +616,34 @@
    "audio/sfx/vox_tho_dai.1.mp3",
    "audio/sfx/vox_tho_dai.2.mp3",
    "audio/sfx/vox_tho_dai.3.mp3"
+  ]
+ },
+ "wheel_quay": {
+  "bus": "amBao",
+  "desc": "vong quay chay — nac thua dan san trong ban thu",
+  "files": [
+   "audio/sfx/wheel_quay.0.mp3"
+  ]
+ },
+ "wheel_trung": {
+  "bus": "amBao",
+  "desc": "trung thuong thuong",
+  "files": [
+   "audio/sfx/wheel_trung.0.mp3"
+  ]
+ },
+ "wheel_trung_lon": {
+  "bus": "amBao",
+  "desc": "trung thuong lon",
+  "files": [
+   "audio/sfx/wheel_trung_lon.0.mp3"
+  ]
+ },
+ "wheel_truot": {
+  "bus": "amBao",
+  "desc": "quay truot",
+  "files": [
+   "audio/sfx/wheel_truot.0.mp3"
   ]
  }
 }

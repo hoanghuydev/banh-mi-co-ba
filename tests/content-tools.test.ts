@@ -43,19 +43,19 @@ test("validator bắt rule chết, mâu thuẫn, fact mồ côi, response thiế
   }
 });
 
-test("linter bắt NFD, mất dấu, từ Bắc trong pool Nam, đại từ bị dịch", () => {
+test("linter bắt NFD, mất dấu, từ Bắc trong pool Nam, giọng Nam cổ, đại từ bị dịch", () => {
   const nfd = "Con ơi, cái ổ đó rớt rồi đó nghen.".normalize("NFD");
   const dir = sandbox([], [
     { id: "a", tier: 1, vars: [], variants: [nfd, "Cho co mot o banh mi do chua nha con", "Con ăn cái bát này đi."],
       en: ["…", "…", "Here you go, auntie."] },
   ]);
   const r = lintLines(dir);
-  for (const code of ["L004", "L006", "L008", "L009"]) {
+  for (const code of ["L004", "L006", "L008", "L009", "L014"]) {
     assert.ok(r.has(code), `phải bắt ${code}; có: ${r.diags.map((d) => d.code).join(",")}`);
   }
 });
 
-test("dương tính giả: chị Hạnh dùng từ Bắc là ĐẶC ĐIỂM NHÂN VẬT, không phải lỗi", () => {
+test("dương tính giả: chị Hà dùng từ Bắc là ĐẶC ĐIỂM NHÂN VẬT, không phải lỗi", () => {
   const dir = sandbox([], [
     { id: "hanh", npc: "CHI_HANH", tier: 1, vars: [], variants: ["Cho chị một bát nước, em ơi."] },
   ]);

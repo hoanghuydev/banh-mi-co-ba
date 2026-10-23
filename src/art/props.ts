@@ -6,7 +6,9 @@ import { blob, diamond, heightFor, prop, shade, slab, standing, type Pen } from 
 /** Vật chỉ có ảnh thật thì không có hàm vẽ ở đây: thiếu ảnh là bỏ qua hẳn. */
 export const PROP = {
   oven: "oven", tea: "tea", shelf: "shelf",
-  stool: "stool", table: "table", bike: "bike", pothos: "pothos",
+  stool: "stool", table: "table", order: "order", prep: "prep",
+  // Bàn dài hai ô cắt đôi: nửa ngoài đặt thớt, nửa trong là khay topping.
+  benchNear: "bench_near", benchFar: "bench_far", bike: "bike", pothos: "pothos",
   crate: "crate", bin: "bin", sink: "sink",
   // Chỉ có ảnh thật; `ovenE` thiếu ảnh thì `StallScene.placeProps` phải lùi về `oven`.
   scooter: "scooter", sign: "sign", fire: "fire", ovenE: "oven_e",
@@ -398,7 +400,7 @@ function sink(scene: Phaser.Scene) {
   });
 }
 
-/** Gánh tàu hũ bà Sáu, đã hạ xuống đất: đòn tre gác ngang trên hai vành nồi. */
+/** Gánh tàu hũ dì Liên, đã hạ xuống đất: đòn tre gác ngang trên hai vành nồi. */
 function ganh(scene: Phaser.Scene) {
   const POT = 14;
   prop(scene, PROP.ganh, heightFor(POT + 16), (g, cx, cy) => {
@@ -432,7 +434,7 @@ function ganh(scene: Phaser.Scene) {
   }, TW + 38);
 }
 
-/** Xe chú Kiệt: thùng thấp, ô xanh, không bảng hiệu — liếc là phân biệt với xe của mình. */
+/** Xe chú Đạt: thùng thấp, ô xanh, không bảng hiệu — liếc là phân biệt với xe của mình. */
 function cart(scene: Phaser.Scene) {
   const BODY = 20, CASE = 13, POLE = 30;
   prop(scene, PROP.cart, heightFor(BODY + CASE + POLE), (g, cx, cy) => {

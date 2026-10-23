@@ -11,7 +11,6 @@ export type Ingredient =
 
 export type IngredientInfo = {
   id: Ingredient;
-  key: number;
   label: string;
   kind: "nhan" | "rau" | "sot";
   /** Một phần là mặc định, hai phần là "cho nhiều". */
@@ -20,16 +19,16 @@ export type IngredientInfo = {
 
 /** Thứ tự xếp lớp trong ổ, từ dưới lên. */
 export const INGREDIENTS: IngredientInfo[] = [
-  { id: "pate",    key: 1, label: "pate",         kind: "nhan", max: 2 },
-  { id: "thit",    key: 2, label: "thịt nguội",   kind: "nhan", max: 2 },
-  { id: "chalua",  key: 3, label: "chả lụa",      kind: "nhan", max: 2 },
-  { id: "xiumai",  key: 4, label: "xíu mại",      kind: "nhan", max: 2 },
-  { id: "opla",    key: 5, label: "trứng ốp la",  kind: "nhan", max: 2 },
-  { id: "dochua",  key: 6, label: "đồ chua",      kind: "rau",  max: 2 },
-  { id: "dualeo",  key: 7, label: "dưa leo",      kind: "rau",  max: 2 },
-  { id: "hanhngo", key: 8, label: "hành ngò",     kind: "rau",  max: 2 },
-  { id: "ot",      key: 9, label: "ớt",           kind: "rau",  max: 2 },
-  { id: "tuongot", key: 0, label: "tương ớt",     kind: "sot",  max: 2 },
+  { id: "pate",    label: "pate",         kind: "nhan", max: 2 },
+  { id: "thit",    label: "thịt nguội",   kind: "nhan", max: 2 },
+  { id: "chalua",  label: "chả lụa",      kind: "nhan", max: 2 },
+  { id: "xiumai",  label: "xíu mại",      kind: "nhan", max: 2 },
+  { id: "opla",    label: "trứng ốp la",  kind: "nhan", max: 2 },
+  { id: "dochua",  label: "đồ chua",      kind: "rau",  max: 2 },
+  { id: "dualeo",  label: "dưa leo",      kind: "rau",  max: 2 },
+  { id: "hanhngo", label: "hành ngò",     kind: "rau",  max: 2 },
+  { id: "ot",      label: "ớt",           kind: "rau",  max: 2 },
+  { id: "tuongot", label: "tương ớt",     kind: "sot",  max: 2 },
 ];
 
 export const BY_ID = new Map(INGREDIENTS.map((i) => [i.id, i]));

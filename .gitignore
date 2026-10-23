@@ -15,7 +15,7 @@ art-raw/render/
 # Mixamo lấy T-pose làm gốc nên animation Mixamo không dùng thẳng được cho model này
 # (xem phần "Vì sao KHÔNG dùng Mixamo" trong doc trên). Không file nào trong game đụng tới.
 art-raw/mixamo/
-
+art-raw/_png/
 # Model gốc 9,7 MB: KHÔNG commit, tải lại từ Tripo khi cần render lại.
 #   https://studio.tripo3d.ai/3d-model/...-245d949d-5426-4a82-84ba-016078533d3d
 # Mở trang đó, dán `tripo-download/tripo_sniffer.js` vào Console, lấy file

@@ -217,7 +217,7 @@ Nguồn review:
 
 **T4.3 — Phản hồi review.** Người chơi tự nhập trả lời, chỉ cần hiển thị ra.
 
-**T4.4 — Game over an toàn thực phẩm.** Tổng sao xuống **≤3★** *và* có **>10 review 1–2★ do đau bụng** → bị điều tra ATTP, đóng cửa, thua. Hoặc tổng review đau bụng trên 15, bất kể tổng số sao cũng sẽ thua do ATTP
+**T4.4 — Game over an toàn thực phẩm.** Tổng sao xuống **≤3★** *và* có **>10 review 1–2★ do đau bụng** → bị điều tra ATTP, đóng cửa, thua. Hoặc tổng review đau bụng trên 12 (chốt 2026-10-23, trước là 15), bất kể tổng số sao cũng sẽ thua do ATTP
 > ✅ Chốt 2026-10-21 (xem `R0.7-PLAN.md` §9): đếm review đau bụng trong **cửa sổ trượt 14 ngày**; giả định ~**40%** khách đau bụng chịu viết review. Chỉnh lại bằng mô phỏng ở R4.
 
 ---
@@ -265,6 +265,8 @@ Văn phong lấy từ research (Lưu ý 2). Giữ nguyên luật cũ: UI viết 
 
 ## 7a. Phase 7 — Kho đồ lạnh (thùng xốp / tủ mát)
 
+> ✅ Xong 2026-10-23. Chốt: kho dạng lưới ô như game (icon · số lượng · thanh độ tươi xanh → vàng → đỏ, ô cuối hạn có dấu `!`), mỗi ô = một món + một mức chất lượng + một ngày nhập; panel bên phải hiện chi tiết. Code: `sim/stock.ts`, `ui/stall/StorageView.ts`, trạm `kho` ở `world/stations.ts`. Bỏ `NOI_U` nên xe còn thiếu 1 ô ròng; `BANG_HIEU` tăng lên 2 ô để TB-4 vẫn đúng.
+>
 > Phase bổ sung. Ô kho ở góc trong cùng quán (x=3, y=2) **luôn chặn đường**: lúc đầu là thùng xốp (`prop_cooler`, thấp hơn tủ), mua `TU_MAT` thì đổi thành tủ mát.
 
 **T7.1 — Nhấn E vào kho để xem đồ.** Đứng sát thùng xốp / tủ mát, nhấn **E** → mở danh sách toàn bộ đồ đang có, **gộp chung một kho** (trứng, bánh mì, pate, thịt nguội, chả lụa, xíu mại, rau…). Mỗi dòng: tên · số lượng.
@@ -286,6 +288,135 @@ Văn phong lấy từ research (Lưu ý 2). Giữ nguyên luật cũ: UI viết 
 - **Quy tắc UI** — chữ đọc được trên mobile, tương phản, màu không là tín hiệu duy nhất (tình trạng hư cần icon + chữ), thao tác một tay.
 
 Ra **báo cáo research + vài phương án mock** trước, chủ dự án chọn rồi mới code.
+
+---
+
+## 7b. Phase 8 — Danh hiệu
+
+> Phase cuối. Làm sau R7. Không đụng cân bằng kinh tế: danh hiệu **chỉ để trưng**.
+> (Mã R7 đã thuộc Kho đồ lạnh ở §7a, nên phase này là **R8**.)
+
+**Mục tiêu.** Chạm sự kiện hoặc làm được việc gì đó thì được một danh hiệu; app **Danh hiệu** trong điện thoại bày thành lưới ô để sưu tập.
+Vui ở chỗ **không ai nói trước** — ô xám trong lưới là lời mời thử, và vài cái chỉ lộ ra khi đã đạt.
+
+### T8.1 — Bảng danh hiệu (26 cái)
+
+Điều kiện chỉ đọc dữ liệu **đang có**. Cột nguồn ghi chỗ đọc.
+
+| # | Tên danh hiệu | Điều kiện · nguồn dữ liệu | Hiếm | Huy hiệu (SVG/CSS) |
+|---|---|---|---|---|
+| 1 | Mở hàng | Bán được ổ đầu tiên — `progress.today.served` 0 → 1 | Thường | Ổ bánh mì vàng nghiêng, nền cam `#e5532b` |
+| 2 | Hệ thống nhận ký chủ | `system.stage === "linked"` | Thường | Khối vuông xanh neon `#19e3ff` trên nền đen (lấy `ICON.sys`) |
+| 3 | Vào nghề | `tourStep(w) === "XONG"` (`sim/tour.ts`) | Thường | Dấu tick trong vòng tròn, xanh lá `#2f9e57` |
+| 4 | Sao đầu tiên | `reviews.list.length >= 1` | Thường | Một sao vàng `#f5b82e` viền cam |
+| 5 | Năm sao đầu tay | `reviews.list.some(r => r.stars === 5)` | Thường | Năm sao nhỏ xếp vòng cung, vàng |
+| 6 | Trăm ổ qua tay | `sum(ledger[].served) >= 100` | Thường | Ba ổ chồng + số 100, nâu vàng |
+| 7 | Nghìn ổ qua tay | `sum(ledger[].served) >= 1000` | Hiếm | Chồng ổ viền vàng kim `#d9a21b` |
+| 8 | Một tháng không nghỉ | `progress.dayIndex >= 30`, chưa `flags.shutdown`, chưa phá sản | Thường | Tờ lịch số 30, trắng viền xám |
+| 9 | Đủ món | Mở khoá hết 7 `MENU_IDS` (`sim/menu.ts`) | Hiếm | Bảng menu 7 dòng, nền kem |
+| 10 | Bốn rưỡi | `average(w) >= 4.5` và `reviews.list.length >= 50` | Hiếm | Sao vàng khuyết 1/2 cánh + "4,5" |
+| 11 | Sắm đủ đồ nghề | `equipment.owned` có hết `EQUIP` mua được | Hiếm | Kẹp gắp bắt chéo lò điện, xám thép `#55626e` |
+| 12 | Chi nhánh hai | Chạm mốc tiền thắng (T5.1) — `money.cash` | Cực hiếm | Hai biển hiệu nhỏ cạnh nhau, vàng kim |
+| 13 | Khét lẹt | `progress.today.burnt >= 5` trong một ngày | Hiếm | Ổ cháy đen, vệt khói xám |
+| 14 | Mắc quá, thôi | `progress.today.priceLost >= 5` trong một ngày | Thường | Bảng giá + mũi tên quay ra, đỏ `#e03a2c` |
+| 15 | Mắc mà vẫn bán được | Một ngày `menu.price` toàn mốc 2 (đắt) mà `today.lost === 0` và `today.served >= 10` | Hiếm | Túi tiền vàng có ngôi sao nhỏ |
+| 16 | Trà đá miễn phí | Đãi trà đá đủ 20 lượt — đếm `attention:toolUsed` tool `TRA_DA` (hoặc `ServeRecord.gaveTea`) | Thường | Ly trà đá xanh nhạt `#4fc3d9`, viên đá trắng |
+| 17 | Rơi thì bỏ | 10 lượt khách bỏ đi vì ổ rơi — `npc:left` reason `SOILED_FOOD` | Hiếm | Ổ bánh lộn ngược + vệt đất nâu |
+| 18 | Đồ cũ người ta cần | `resell.news` có một dòng "Đã bán" (`sim/resell.ts`) | Thường | Thẻ giá xanh `#2189a8` có lỗ dây |
+| 19 | Nhầm quán rồi | Nhận một đánh giá nhiễu `NHAM_QUAN` (`sim/reviews.ts` → `dailyNoise`) | Hiếm | Tô hủ tiếu + dấu hỏi, nền cam nhạt |
+| 20 | Có qua có lại | `reviews.list.filter(r => r.reply).length >= 10` | Hiếm | Hai bong bóng chat lồng nhau, xanh lá |
+| 21 | Trả hết nợ mặt bằng | `econ.rentOwed > 0` rồi về `0` | Thường | Phong bì đỏ đã mở, rỗng |
+| 22 | *(ẩn)* Không cần hệ thống | `system.stage === "unlinked"` (từ chối hai lần) | Cực hiếm | Khung hệ thống xám, đèn tắt |
+| 23 | *(ẩn)* Nghiêng nước nghiêng thành | `system.beauty >= BEAUTY_MAX` (12) | Cực hiếm | Gương soi sen hồng `#5a1a48` |
+| 24 | *(ẩn)* Trời cho mà không lấy là có tội | Quay trúng `BAO_KHI` (`sim/system.ts`) | Cực hiếm | Rương tím `#6b1f6b` có tia sáng |
+| 25 | *(ẩn)* Hệ thống đã cố gắng | Trúng `LUCK` ba lượt quay liên tiếp — đếm ở `spin()` | Hiếm | Ô vòng quay rỗng, nền đen xanh `#0d2530` |
+| 26 | *(ẩn)* Ế | Một ngày đã mở bán mà dòng `ledger` có `served === 0` | Hiếm | Quầy trống + một con ruồi, xám |
+
+Phân bổ: **Thường 11 · Hiếm 11 · Cực hiếm 4** · ẩn 5 (#22–26).
+Danh hiệu ẩn: lưới che cả tên bằng `?` cho tới khi đạt.
+
+### T8.2 — App Danh hiệu trong điện thoại
+
+Dựng theo mẫu `src/ui/phone/apps/sellApp.ts` (danh sách + trang con theo `route.id`), thẻ chi tiết theo `systemApp.ts`.
+
+| Chỗ nối | Việc |
+|---|---|
+| `src/ui/phone/ctx.ts` | Thêm `"ach"` vào `Route["app"]`; chi tiết dùng `{ app: "ach", id }` |
+| `src/ui/phone/PhoneView.ts` | Thêm dòng vào `APPS`: `key: "ach"`, `label: "Danh hiệu"`, `icon: ICON.medal`, `bg` vàng đồng; `badge` = số danh hiệu đạt chưa xem; thêm `case "ach"` trong `go()` |
+| `src/ui/phone/dom.ts` | Thêm `ICON.medal` (huy chương tròn + dải ruy băng) vào `ICON` |
+| `src/ui/phone/phoneStyle.ts` | Thêm `.ph-ach-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 10px;padding:12px 14px}` và `.ph-ach.off` (xám) |
+| `src/ui/phone/apps/achApp.ts` | **File mới** — lưới + trang chi tiết |
+
+**Lưới (3 cột).**
+
+| Trạng thái | Ô hiện gì |
+|---|---|
+| Đã đạt | Huy hiệu màu + tên đầy đủ |
+| Chưa đạt | Khung xám nét đứt, hình huy hiệu dạng bóng, tên mờ |
+| Chưa đạt + ẩn | Khung xám, dấu `?` to, tên cũng là `?` |
+
+Đầu danh sách một dòng `ph-sec`: `Đã đạt 7/26`.
+
+**Trang chi tiết** (bấm vào một ô): huy hiệu to · tên · mô tả một câu · điều kiện · `Ngày đạt: ngày 14`.
+Ô chưa đạt vẫn bấm được: hiện điều kiện, không có ngày. Ô ẩn chưa đạt: `?` và một dòng `Chưa rõ`.
+
+### T8.3 — Chỗ lưu
+
+`src/sim/ach.ts` (mới) giữ bảng danh hiệu + luật chấm. Trường mới trong `SaveFile` (`src/core/save.ts`):
+
+```ts
+export type AchState = {
+  /** Mã danh hiệu → ngày đạt. */
+  got: Record<string, number>;
+  /** Mã đã xem trong app, để tắt badge. */
+  seen: string[];
+  /** Số đếm cộng dồn cho danh hiệu nhiều lượt (trà đá, ổ rơi, quay trượt liên tiếp). */
+  counters: Record<string, number>;
+};
+```
+
+- `SaveFile` thêm `ach: AchState`; `newGame()` thêm `ach: newAch()`.
+- `normalize()` thêm `s.ach = { ...d.ach, ...s.ach }` — y như `s.system`, `s.reviews`.
+- **Migrate:** save cũ thiếu trường → `normalize()` điền `newAch()` → `got` rỗng = chưa đạt gì. **Không tăng `SCHEMA_VERSION`**, không truy ngược lịch sử ván cũ.
+- Save phình không đáng kể: 26 mã, không có log.
+
+### T8.4 — Lúc đạt thì hiện gì
+
+Hai chỗ, không chặn thao tác, không mở điện thoại giùm:
+
+1. **Toast trong lúc bán** — `Hud.toast` (`src/ui/Hud.ts:203`), tone `good`, một dòng: `Danh hiệu: Khét lẹt`. Nhiều cái cùng lúc thì xếp hàng, mỗi lần một dòng.
+2. **Một dòng trong app Hệ thống** — gọi `say(w, …)` (`sim/system.ts`), chỉ khi `linked(w)`. Badge app Danh hiệu +1.
+
+Mẫu ba dòng, giọng Hệ thống (skill `giong-he-thong`):
+
+```
+Keng! Chúc mừng ký chủ thu được danh hiệu 【Khét Lẹt】(Hiếm).
+Hiệu quả: không có. Danh hiệu chỉ để trưng.
+Mô tả: Năm ổ vào lò, năm ổ thành than.
+```
+
+Tên danh hiệu trong câu Hệ thống viết hoa đầu chữ trong `【】`; trong app Danh hiệu và toast giữ nguyên tên gốc.
+
+### T8.5 — Không được làm gì
+
+| Cấm | Vì |
+|---|---|
+| Thưởng tiền, buff, `exp`, thẻ | Phá cân bằng kinh tế đã mô phỏng ở R5 |
+| Nhiệm vụ, danh sách việc cần làm, dẫn hướng | Danh hiệu là thứ tự nhặt được, không phải việc phải làm |
+| Thanh tiến độ "còn 2 ổ nữa", gợi ý điều kiện chưa đạt của danh hiệu ẩn | Mất phần khám phá |
+| Hộp thoại chặn, dừng game, mở điện thoại giùm | Đang bán thì không được cắt ngang |
+| Câu dắt tay, khen, cổ vũ (`VAN-PHONG-UI` §5, §6) | Toast chỉ nói trạng thái |
+| Chấm ngược cho save cũ | Save cũ không có dữ liệu để chấm đúng |
+
+### T8.6 — Nghiệm thu
+
+- [ ] Ván mới: đạt được #1 · #2 · #3 · #4 trong ngày 1, mỗi cái một toast, không cắt thao tác bán.
+- [ ] App Danh hiệu lên lưới 3 cột đúng: ô đã đạt có màu + tên, ô chưa đạt xám + tên mờ, ô ẩn là `?`.
+- [ ] Bấm ô đã đạt ra chi tiết có đủ tên · mô tả · điều kiện · ngày đạt; bấm ô ẩn chưa đạt chỉ ra `?`.
+- [ ] Mỗi danh hiệu chỉ chấm một lần; thoát ra vào lại không chấm lại, không mất.
+- [ ] Load save cũ (không có `ach`): vào game được, lưới hiện 0/26, không lỗi.
+- [ ] Tiền, buff, `system.exp` **không đổi** trước và sau khi đạt danh hiệu.
+- [ ] Chụp màn hình lưới và trang chi tiết ở cả màn rộng lẫn màn hẹp, soi theo checklist `.claude/CLAUDE.md` §3.2.
 
 ---
 

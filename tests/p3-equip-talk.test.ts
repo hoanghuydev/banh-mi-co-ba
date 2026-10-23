@@ -4,7 +4,7 @@
  * thì nó mọc lại ngay lần viết nội dung sau.
  *
  * Bảng từ vựng CỐ Ý hẹp — chỉ đồ `StallScene` vẽ CÓ ĐIỀU KIỆN. Đã kiểm và LOẠI RA: bảng hiệu (xe
- * có sẵn từ đầu) · loa (trong câu bà Bảy là điện thoại của bà) · ghế "kia" (ghế hàng xóm ở y11).
+ * có sẵn từ đầu) · loa (trong câu dì Nguyệt là điện thoại của bà) · ghế "kia" (ghế hàng xóm ở y11).
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";

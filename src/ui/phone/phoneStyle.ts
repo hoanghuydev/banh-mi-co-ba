@@ -54,6 +54,7 @@ export const PHONE_STYLE = `
 .ph-btn-text:hover{background:rgba(192,57,43,.08)}
 .ph-btn-text:focus-visible{outline:2px solid #b02f22;outline-offset:-2px}
 .ph-btn-text.muted{color:#5b6670}
+.ph-btn-text.ph-more{width:100%;justify-content:center}
 .ph-title-l{padding:10px 20px 8px;font-size:1.9em;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;justify-content:space-between}
 .ph-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
 
@@ -213,17 +214,25 @@ export const PHONE_STYLE = `
 .ph-line-item{display:flex;align-items:center;gap:10px;padding:12px 12px 12px 16px;border-bottom:1px solid #eee9dc}
 .ph-line-item:last-child{border-bottom:0}
 .ph-line-item .info{flex:1;min-width:0}
+.ph-line-item .amt{margin-top:3px;font-weight:700;font-variant-numeric:tabular-nums}
+.ph-order .ls .li{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:6px}
+.ph-order .ls .li:last-child{margin-bottom:0}
+.ph-order .ls .li .nm{display:flex;flex-direction:column;min-width:0}
+.ph-order .ls .li small{color:#78828a;font-size:.86em}
+.ph-order .ls .li b{font-variant-numeric:tabular-nums;white-space:nowrap}
 .ph-card+.ph-card{margin-top:10px}
 .ph-card:first-child{margin-top:12px}
 .ph-switch{display:flex;align-items:center;gap:8px;width:100%;min-height:54px;padding:0 16px;border:0;border-bottom:1px solid #eee9dc;background:none;font:inherit;text-align:left;cursor:pointer;color:inherit}
 .ph-switch:last-child{border-bottom:0}
-.ph-switch .lb{flex:1;font-weight:500}
+.ph-switch .tx{flex:1;min-width:0;padding:8px 0}
+.ph-switch .lb{font-weight:500}
 .ph-switch .ct{font-size:.8em;color:#6b7680}
 .ph-switch .sw{position:relative;width:46px;height:28px;border-radius:14px;background:#cfc9b9;transition:background .15s}
 .ph-switch .sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .15s}
 .ph-switch.on .sw{background:#2f7d57}
 .ph-switch.on .sw::after{transform:translateX(18px)}
 .ph-switch:focus-visible{outline:3px solid #2f7d57;outline-offset:-3px}
+.ph-switch:disabled{opacity:.5;cursor:default}
 .ph-sum .kv{display:flex;justify-content:space-between;gap:10px;padding:11px 16px;border-bottom:1px solid #eee9dc;font-size:.95em}
 .ph-sum .kv:last-child{border-bottom:0}
 .ph-sum .kv b{font-variant-numeric:tabular-nums}
@@ -240,8 +249,8 @@ export const PHONE_STYLE = `
 .ph-st.go{background:#fff0d6;color:#8a5a00}
 .ph-st.ok{background:#e3f3e9;color:#1e5a3d}
 .ph-order .ls{margin:8px 0 4px;font-size:.9em;color:#3a444b;line-height:1.5}
-.ph-order .ft{display:flex;align-items:center;justify-content:space-between;border-top:1px solid #eee9dc;padding-top:2px}
-.ph-order .ft b{font-variant-numeric:tabular-nums}
+.ph-order .ft{display:flex;align-items:center;justify-content:space-between;gap:4px;border-top:1px solid #eee9dc;padding-top:2px}
+.ph-order .ft b{margin-right:auto;font-variant-numeric:tabular-nums}
 
 /* ── Đồ nghề ── */
 .ph-cartcard{padding:12px 16px 14px}
@@ -368,6 +377,22 @@ export const PHONE_STYLE = `
 .ph-stars.sm{gap:1px}
 .ph-rev .tx{margin:8px 0 2px;line-height:1.5}
 .ph-rev .ed{font-size:.78em;color:#6b7680;margin-bottom:2px}
+.ph-dist{margin-top:14px;display:flex;flex-direction:column;gap:3px}
+.ph-distrow{display:flex;align-items:center;gap:8px;width:100%;padding:3px 4px;border:0;border-radius:8px;background:none;font:inherit;color:inherit;cursor:pointer;text-align:left}
+.ph-distrow.on{background:#fff2cf}
+.ph-distrow:focus-visible{outline:2px solid #e8a51c;outline-offset:1px}
+.ph-distrow .s{width:1em;font-size:.84em;color:#5b6670;font-variant-numeric:tabular-nums}
+.ph-distrow .bar{flex:1;height:9px;border-radius:5px;background:#eceadf;overflow:hidden}
+.ph-distrow .bar i{display:block;height:100%;background:#f5b82e}
+.ph-distrow .n{min-width:2.2em;text-align:right;font-size:.8em;color:#5b6670;font-variant-numeric:tabular-nums}
+.ph-revacts{display:flex;flex-wrap:wrap;gap:4px 14px;padding-bottom:4px}
+.ph-rev.bare{padding:10px 14px 2px}
+.ph-rev.bare .ph-revacts{margin-top:2px}
+.ph-reply{margin:8px 0 4px 10px;padding:9px 12px;border-left:3px solid #e6e1d4;background:#f7f5ef;border-radius:0 12px 12px 0}
+.ph-reply .hd{display:flex;align-items:center;gap:7px;font-size:.86em}
+.ph-reply .tx{margin:5px 0 0;line-height:1.5;font-size:.94em}
+.ph-more{padding:0 14px 18px;display:flex}
+.ph-more button{flex:1}
 .ph-fix{padding:16px 18px;display:flex;flex-direction:column;gap:14px}
 .ph-fix .who{font-weight:700}
 .ph-fix textarea{box-sizing:border-box;width:100%;min-height:150px;resize:none;border:1.5px solid #cfc9b9;border-radius:14px;background:#fff;padding:12px 14px;font:inherit;line-height:1.5;color:#1c2329;outline:0}

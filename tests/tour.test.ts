@@ -1,7 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { newGame } from "../src/core/save";
-import { TOUR_TOTAL, fillGap, tourAt, tourDone, tourIndex, tourSkip, tourStep, touring } from "../src/sim/tour";
+import { TOUR_TOTAL, dishGaps, gapText, tourAt, tourDone, tourIndex, tourSkip, tourStep, touring } from "../src/sim/tour";
+import { levelsOf } from "../src/sim/order";
 
 test("dẫn bữa đầu chạy đủ mười việc, theo thứ tự", () => {
   const w = newGame("x", "tour-1");
@@ -60,13 +61,18 @@ test("save cũ không có cờ nào vẫn vào được bước đầu", () => {
   assert.equal(tourStep(w), "CHO");
 });
 
-test("fillGap dạy ổ bánh bằng BA PHẦN, theo đúng thứ tự pate → nhân mặn → rau", () => {
-  assert.equal(fillGap([]), "PATE");
-  assert.equal(fillGap(["dochua", "hanhngo"]), "PATE", "có rau mà chưa pate thì vẫn thiếu pate");
-  assert.equal(fillGap(["pate"]), "MAN");
-  assert.equal(fillGap(["pate", "pate"]), "MAN", "pate x2 không thay được nhân mặn");
-  assert.equal(fillGap(["pate", "chalua"]), "RAU");
-  assert.equal(fillGap(["pate", "chalua", "dochua"]), null);
-  assert.equal(fillGap(["pate", "opla", "ot"]), null, "ớt cũng là rau");
-  assert.equal(fillGap(["pate", "thit", "tuongot"]), "RAU", "tương ớt là sốt, không phải rau");
+test("dẫn kẹp nhân theo ĐƠN: thiếu món nào chỉ món đó, đủ số phần mới thôi", () => {
+  const lv = levelsOf({ mon: "opla", rau: "day-du", ot: 1, tuong: 1 });
+  const ids = (stack: Parameters<typeof dishGaps>[1]) => dishGaps(lv, stack).map((g) => g.id);
+
+  assert.deepEqual(ids([]), ["opla", "dochua", "dualeo", "hanhngo", "ot", "tuongot"]);
+  assert.deepEqual(ids(["opla"]), ["dochua", "dualeo", "hanhngo", "ot", "tuongot"], "ốp la xong thì tới rau");
+  assert.equal(dishGaps(lv, ["opla", "dochua"])[0].left, 1, "đồ chua hai phần, mới một phần thì còn một");
+  assert.deepEqual(ids(["opla", "dochua", "dochua", "dualeo", "dualeo", "hanhngo", "hanhngo", "ot", "tuongot"]), []);
+  assert.deepEqual(ids(["opla", "pate"]), ["dochua", "dualeo", "hanhngo", "ot", "tuongot"], "pate thừa không phải thiếu");
+});
+
+test("câu dẫn gọi đúng tên phần, và biết mình đang thêm tiếp", () => {
+  assert.equal(gapText({ id: "dualeo", left: 2, placed: false }), "Thêm 2 lát dưa leo.");
+  assert.equal(gapText({ id: "dochua", left: 1, placed: true }), "Thêm 1 phần đồ chua nữa.");
 });

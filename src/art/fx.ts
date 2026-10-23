@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { TW, TH } from "../world/iso";
+import { SKY_FROM_Y } from "../world/map";
 import { SHADOW } from "./palette";
 
 /** Các texture hạt vẽ trắng để emitter `tint`. */
@@ -48,6 +49,7 @@ export const PROP_SHADOW: Record<string, { w: number; a?: number }> = {
   stool: { w: 22 }, pothos: { w: 22 }, bin: { w: 28 }, crate: { w: 30 },
   sign: { w: 26 }, fire: { w: 15 }, fridge: { w: 28 }, cooler: { w: 24 },
   table: { w: 56, a: 0.75 },
+  order: { w: 30 }, prep: { w: 44 }, bench_near: { w: 44 }, bench_far: { w: 44 },
   bike: { w: 58, a: 0.8 }, scooter: { w: 52, a: 0.8 },
   sink: { w: 34, a: 0.6 },
   // khớp bản vẽ dự phòng `fillEllipse(x, y + 2, 76, 26)` trong `StallScene`
@@ -91,6 +93,25 @@ function buildShadow(scene: Phaser.Scene) {
   ctx.restore();
 
   tex.refresh();
+}
+
+/** Dưới mái hiên bóng chỉ dài bằng chừng này so với ngoài nắng. */
+const SHADE_RATIO = 1 / 3;
+
+let cast = { rot: 0, stretch: 1 };
+
+export function setCast(dirX: number, dirY: number, stretch: number) {
+  cast = { rot: Math.atan2(dirY, dirX), stretch };
+}
+
+/** Đặt bóng tại chân vật: đuôi kéo theo hướng nắng, chân bóng giữ ở `(sx, sy)`. */
+export function castShadow(img: Phaser.GameObjects.Image, sx: number, sy: number, scale = 1, alpha = 1) {
+  const wy = (sy / (TH / 2) - sx / (TW / 2)) / 2;
+  const sun = Math.min(1, Math.max(0, (wy - (SKY_FROM_Y - 0.4)) / 0.8));
+  const stretch = 1 + (cast.stretch - 1) * (SHADE_RATIO + (1 - SHADE_RATIO) * sun);
+  const ox = 0.5 - Math.min(0.3, (stretch - 1) * 0.25);
+  return img.setPosition(sx, sy).setOrigin(ox, 0.5).setRotation(cast.rot)
+    .setScale(scale * stretch, scale).setAlpha(alpha);
 }
 
 export function buildFx(scene: Phaser.Scene) {

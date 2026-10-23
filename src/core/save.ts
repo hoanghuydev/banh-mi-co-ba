@@ -1,7 +1,7 @@
 // Chụp trong frame, ghi lúc rảnh; slot A/B để crash giữa lúc ghi không mất save; checksum sai chỉ cảnh báo.
 import { ECON, newInventory, scaledVnd, weatherOf, type InventoryState } from "../sim/econ";
 import { newEconState, type EconState } from "../sim/obligations";
-import { newEquipState } from "../sim/equipment";
+import { EQUIP, newEquipState } from "../sim/equipment";
 import { fnv1a, type BagState, type StreamName } from "./rng";
 import { platform as defaultPlatform, type Platform } from "./platform";
 import { BUILD_ID, DEFAULT_SETTINGS, loadSettings, type Settings } from "./flags";
@@ -55,7 +55,7 @@ export type SaveFile = {
       /** Khách đau bụng hôm nay do hàng dỏm. */
       sick?: number;
       /** Ghi sổ giá: khách khen 4–5★ · chê giá 1–2★ · bỏ đi vì giá. */
-      praise?: number; overpriced?: number; priceLost?: number };
+      priceLost?: number };
   };
 
   rng: { counters: [StreamName, number][] };
@@ -173,6 +173,12 @@ function normalize(s: SaveFile): SaveFile {
   s.shop = { ...d.shop, ...s.shop };
   s.resell = { ...d.resell, ...s.resell };
   s.reviews = { ...d.reviews, ...s.reviews };
+  s.equipment = {
+    ...s.equipment,
+    owned: s.equipment.owned.filter((id) => id in EQUIP),
+    installed: s.equipment.installed.filter((id) => id in EQUIP),
+  };
+  delete (s.inventory as { noiU?: boolean }).noiU;
   for (const [k, n] of Object.entries(s.npcs)) s.npcs[k] = { ...newNpcState(), ...n };
   return s;
 }

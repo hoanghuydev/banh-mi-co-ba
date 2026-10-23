@@ -30,7 +30,7 @@ test("R-1 rao làm người ĐANG ĐI NGANG ngoái lại", async () => {
     ngoai += truoc - con;
   }
   assert.ok(thu > 0, "cả buổi không có lúc nào có người đi thẳng ngang qua");
-  assert.ok(ngoai > 0, `rao ${thu} lần mà không ai ngoái lại — vậy bà Sáu dạy làm gì`);
+  assert.ok(ngoai > 0, `rao ${thu} lần mà không ai ngoái lại — vậy dì Liên dạy làm gì`);
 });
 
 test("R-2 ngoái lại chỉ MỞ CỬA cho câu mời, không tự thành khách", () => {
@@ -53,7 +53,7 @@ test("R-3 câu rao mang act RAO và ĐẶT CỜ bà đã dạy", () => {
       if ((n.act as { kind?: string } | undefined)?.kind !== "RAO") continue;
       co++;
       assert.equal(n.flag, "sauRaoThu",
-        `${t.id}: "${n.say}" — rao mà không đặt cờ, nhánh chú Kiệt không bao giờ mở ra`);
+        `${t.id}: "${n.say}" — rao mà không đặt cờ, nhánh chú Đạt không bao giờ mở ra`);
     }
   }
   assert.ok(co >= 1, "không câu nào mang act RAO — cả cuộc `sau.rao` vẫn chạy không tải");

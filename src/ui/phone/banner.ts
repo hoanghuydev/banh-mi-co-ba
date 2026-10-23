@@ -1,6 +1,7 @@
 import { contactOf } from "../../content/phone/contacts";
 import { avatar } from "./chat";
 import { el } from "./dom";
+import { sfx } from "../../audio/sfx";
 
 const STYLE = `
 .ph-banner{position:fixed;top:14px;right:14px;z-index:8994;width:min(340px,calc(100vw - 28px));display:flex;gap:11px;align-items:center;text-align:left;
@@ -27,6 +28,7 @@ export function showBanner(msgs: { from: string; text: string }[], onOpen: (thre
     st.textContent = STYLE;
     document.head.appendChild(st);
   }
+  sfx.ui("ph_tin_den");
   const first = msgs[0];
   const b = el("button", "ph-banner");
   b.type = "button";

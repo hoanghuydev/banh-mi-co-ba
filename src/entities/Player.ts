@@ -1,8 +1,9 @@
 import Phaser from "phaser";
 import { artScale, fitPhoto, walkLift, holdAnchorAt } from "../art/photo";
 import { TH, depthOf, toScreen, facingOf8, type Facing8 } from "../world/iso";
-import { hitsWall, SPAWN } from "../world/map";
+import { BODY_RADIUS, BLOCK_SHIFT_X, hitsWall, SPAWN } from "../world/map";
 import { BASE, BODY_H, FX, HELD, footY, holdAnchor, textureFor } from "../art";
+import { castShadow } from "../art/fx";
 import { STRIDE, WALK_FRAMES, walkTextureFor } from "../art/character";
 import { heldTexture } from "../art/held";
 import { type Hand } from "../world/stations";
@@ -85,7 +86,8 @@ export class Player {
     wy = (wy / len) * speed * dt;
 
     // Thử riêng từng trục để chạm tường thì trượt dọc tường.
-    const bx = hitsWall(this.x + wx, this.y), by = hitsWall(this.x, this.y + wy);
+    const bx = hitsWall(this.x + wx, this.y, BODY_RADIUS, BLOCK_SHIFT_X);
+    const by = hitsWall(this.x, this.y + wy, BODY_RADIUS, BLOCK_SHIFT_X);
     const x0 = this.x, y0 = this.y;
     if (!bx) this.x += wx;
     if (!by) this.y += wy;
@@ -128,9 +130,7 @@ export class Player {
     // Lúc đi `hop` = 0, nên lấy độ nhấc chân đo từ chính frame đang vẽ.
     const lift = walkTex ? walkLift(walkTex.key) : hop;
     // Hệ số nhỏ cố ý: nhấc tối đa ~2,2 px nên bóng chỉ co ~7%, nhạt ~11%.
-    this.shadow.setPosition(sx + lean, sy).setDepth(depth - 1)
-      .setScale(1 - lift * 0.03)
-      .setAlpha(1 - lift * 0.05);
+    castShadow(this.shadow, sx + lean, sy, 1 - lift * 0.03, 1 - lift * 0.05).setDepth(depth - 1);
 
     this.drawMark(sx + lean, sy, hop, reducedMotion, marker);
 

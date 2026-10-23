@@ -12,7 +12,6 @@ export const COUNTER = {
   end: "counter_end",
   case: (i: number) => `counter_case${i}`,
   CASE_COUNT: 2,
-  work: "counter_work",
   // Px từ đáy sprite lên mặt quầy (`prop()` đặt mặt đất ở `height − 1 − BASE − TH/2`, `body()` cộng `BODY`); đặt vật lên quầy phải dùng hằng này.
   TOP_ABOVE_FOOT: 1 + BASE + TH / 2 + BODY,
 } as const;
@@ -115,34 +114,7 @@ function counterCase(scene: Phaser.Scene, variant: number) {
   });
 }
 
-// Giữa thớt cố ý để trống cho khách thấy tay mình làm.
-function counterWork(scene: Phaser.Scene) {
-  prop(scene, COUNTER.work, heightFor(BODY + 22), (g, cx, cy) => {
-    body(g, cx, cy);
-    const top = cy - BODY;
-
-    slab(g, cx - 24, top - 13, 15, 9, 2, 0xe9e4d6, 2);
-    g.fillStyle(PAL.pickle, 0.9);
-    g.fillEllipse(cx - 16.5, top - 13, 10, 4);
-
-    slab(g, cx - 6, top - 16, 15, 10, 2, 0xd8cdb4, 2);
-    g.fillStyle(PAL.pate, 1);
-    g.fillEllipse(cx + 1.5, top - 16, 10, 4);
-
-    g.fillStyle(0xf2efe6, 1);
-    g.fillEllipse(cx + 14, top - 10, 13, 6);
-    g.fillStyle(PAL.chilli, 1);
-    g.fillEllipse(cx + 14, top - 10.5, 8, 3.5);
-
-    g.lineStyle(2.4, PAL.chrome, 1);
-    g.lineBetween(cx + 4, top + 6, cx + 22, top - 1);
-    g.lineStyle(2.4, PAL.doorWoodDark, 1);
-    g.lineBetween(cx - 2, top + 8, cx + 5, top + 5.5);
-  });
-}
-
 export function buildCounter(scene: Phaser.Scene) {
   counterEnd(scene);
   for (let i = 0; i < COUNTER.CASE_COUNT; i++) counterCase(scene, i);
-  counterWork(scene);
 }

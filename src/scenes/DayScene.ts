@@ -2,6 +2,8 @@ import Phaser from "phaser";
 import { fitDesignFrame } from "../core/render";
 import { dawn } from "../sim/day";
 import { markBroke } from "../sim/broke";
+import { markShutdown } from "../sim/reviews";
+import { markWin } from "../sim/win";
 import { bus, type EventKey, type EventMap } from "../core/eventbus";
 import { GameContext } from "../core/context";
 import { DAY_START_MIN } from "../core/clock";
@@ -22,7 +24,7 @@ import { sfx } from "../audio/sfx";
 /** Scene thường trực sở hữu `GameContext`, không bao giờ restart; scene con nhận ctx lúc launch và chỉ phát event. */
 export type DayStart = { mode: "new"; shopName?: string; phone?: PhoneState } | { mode: "continue" };
 
-const CHILDREN = ["stall", "evening", "broke"] as const;
+const CHILDREN = ["stall", "evening", "broke", "win"] as const;
 type Child = typeof CHILDREN[number];
 
 const MONEY_SAVE_THRESHOLD = 20_000;
@@ -90,11 +92,15 @@ export class DayScene extends Phaser.Scene {
     const p = ctx.world.progress;
     ctx.rng.fromJSON(ctx.world.saveId, p.dayIndex, ctx.world.rng.counters);
     ctx.clock.reset(p.gameMinutes);
+    if (ctx.world.flags.won) {
+      this.open("win");
+      return;
+    }
     if (ctx.world.flags.broke) {
       this.open("broke");
       return;
     }
-    const at: Record<string, Child> = { Stall: "stall", Evening: "evening", Broke: "broke" };
+    const at: Record<string, Child> = { Stall: "stall", Evening: "evening", Broke: "broke", Win: "win" };
     this.open(at[p.scene] ?? "stall", { resume: true });
   }
 
@@ -122,7 +128,7 @@ export class DayScene extends Phaser.Scene {
 
   private open(child: Child, extra: Record<string, unknown> = {}) {
     this.closeChildren();
-    const key = ({ stall: "Stall", evening: "Evening", broke: "Broke" } as const)[child];
+    const key = ({ stall: "Stall", evening: "Evening", broke: "Broke", win: "Win" } as const)[child];
     this.ctx.setScene(key);
     this.scene.launch(child, { ctx: this.ctx, day: this, ...extra });
   }
@@ -147,8 +153,13 @@ export class DayScene extends Phaser.Scene {
     on("day:ended", (p) => { if (p.summary.revenue < 0) sfx.play(this, "ui_ngay_am_tien"); });
     on("evening:done", () => {
       const w = ctx.world;
-      // Chốt phá sản sau cảnh tối, khi mọi khoản tiêu trong đêm đã đủ mặt.
-      if (markBroke(w)) {
+      // Chốt sau cảnh tối, khi mọi khoản tiêu trong đêm đã đủ mặt.
+      if (markWin(w)) {
+        ctx.save.flushNow("SCENE_CHANGE");
+        this.open("win");
+        return;
+      }
+      if (markShutdown(w) || markBroke(w)) {
         ctx.save.flushNow("SCENE_CHANGE");
         this.open("broke");
         return;
@@ -160,6 +171,12 @@ export class DayScene extends Phaser.Scene {
 
     on("broke:done", (p) => {
       if (p.restart && linked(ctx.world)) addRewind();
+      ctx.save.clear();
+      this.closeChildren();
+      this.scene.start(p.restart ? "intro" : "menu");
+    });
+
+    on("win:done", (p) => {
       ctx.save.clear();
       this.closeChildren();
       this.scene.start(p.restart ? "intro" : "menu");

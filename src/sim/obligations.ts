@@ -31,7 +31,7 @@ export type EconBook = { today: EconToday };
 export type EconState = {
   rentOwed: number;
   today: EconToday;
-  /** Tiền lẻ đổi ở cô Mai sáng nay (đồng) và còn lại bao nhiêu. */
+  /** Tiền lẻ đổi ở cô Thuý sáng nay (đồng) và còn lại bao nhiêu. */
   float: number;
   floatLeft: number;
   neighborAnnoyance: number;

@@ -16,9 +16,15 @@ import { runFrame } from "./frame";
 import { diffDish, dishFor, type Ingredient } from "./order";
 import { orderDefectKey } from "../core/stimid";
 import { openTilesFor, setOpenTiles } from "../world/map";
+import { enqueue, rollReview } from "./reviews";
+import { guestsOf } from "./demand";
+
+/** Bot nhập dư chừng này so với số khách dự kiến. */
+const BOT_BUY_MARGIN = 1.05;
 
 export type Policy = {
   name: string;
+  /** Số ổ bot nhập; vắng thì nhập theo số khách dự kiến. */
   buyLoaves?: number;
   /** Mức hàng bot mua, mặc định hàng thường. */
   tier?: Quality;
@@ -41,17 +47,17 @@ export const BUILD_XA_GIAO: [number, EquipId][] = [
 ];
 
 export const BUILD_VE_SINH: [number, EquipId][] = [
-  [2, "KEP_GAP"], [6, "LONG_BAN"], [8, "NOI_U"], [14, "BANG_QR"],
+  [2, "KEP_GAP"], [6, "LONG_BAN"], [14, "BANG_QR"],
   [19, "GIA_TREO"], [22, "TU_MAT"], [29, "GHE_BAN"], [33, "BINH_TRA"],
 ];
 
 export const POLICIES: Record<string, Policy> = {
-  greedy: { name: "greedy", workSec: [7, 10], dropRate: 0, defectRate: 0, teaRate: 0, build: BUILD_VE_SINH, buyLoaves: 20 },
+  greedy: { name: "greedy", workSec: [7, 10], dropRate: 0, defectRate: 0, teaRate: 0, build: BUILD_VE_SINH },
   newbie: { name: "newbie", workSec: [12, 20], dropRate: 0.08, defectRate: 0.15, teaRate: 0.1 },
   tea: { name: "tea", workSec: [9, 13], dropRate: 0.04, defectRate: 0.05, teaRate: 0.6 },
   social: {
     name: "social", workSec: [9, 13], dropRate: 0, defectRate: 0, teaRate: 0.25,
-    build: BUILD_XA_GIAO, buyLoaves: 20,
+    build: BUILD_XA_GIAO,
     socialRate: 0.85, socialActs: [],
   },
 };
@@ -109,7 +115,8 @@ export class HeadlessStall {
     if (policy.price !== undefined) for (const id of MENU_IDS) w.menu.price[id] = policy.price;
     if (!opts.resume) {
       dawn(w);
-      buyBasket(w, basketFor(w.inventory, policy.buyLoaves ?? 16, w.progress.dayIndex), policy.tier ?? "THUONG");
+      const loaves = policy.buyLoaves ?? Math.ceil(guestsOf(w) * BOT_BUY_MARGIN);
+      buyBasket(w, basketFor(w.inventory, loaves, w.progress.dayIndex), policy.tier ?? "THUONG");
     }
     const lateOpen = !opts.resume && w.flags.lateOpenDay === w.progress.dayIndex;
     if (lateOpen) this.ctx.clock.reset(8 * 60);
@@ -118,8 +125,12 @@ export class HeadlessStall {
       npcs: w.npcs, bags: w.shuffleBags, dialog: w.dialogState,
       ...dayDeps(w),
       till: w.econ, flags: w.flags,
-      equip: w.equipment, loaOn: (w.econ?.loaOffUntil ?? 0) < w.progress.dayIndex,
+      equip: w.equipment, loaOn: has(w.equipment, "LOA_RAO") && (w.econ?.loaOffUntil ?? 0) < w.progress.dayIndex,
       todayCounters: w.progress.today,
+      onServed: (rec) => {
+        const p = rollReview(w, rec, this.ctx.clock.minutes);
+        if (p) enqueue(w, p);
+      },
       resumeAt: opts.resume || lateOpen ? this.ctx.clock.minutes : undefined,
     });
     bus.on("npc:left", (p) => { if (p.reason === "IMPATIENT" || p.reason === "SOILED_FOOD") w.progress.today.lost++; });

@@ -7,8 +7,8 @@ import { resaleVnd, resellable } from "./equipment";
  * Hỏi "bán hết có đủ không", không hỏi "còn món nào bán được không" — không thì kẹt vòng lặp vô tận.
  */
 
-/** Rổ nhỏ nhất còn mở hàng được: mười ổ bánh với một lạng pate thường. Dưới mức này thì sáng mai không có gì để bán. */
-export const MIN_BASKET = { BANH: 10, PATE: 1 } as const;
+/** Rổ nhỏ nhất còn mở hàng được: mười ổ bánh với pate cho mười ổ. Dưới mức này thì sáng mai không có gì để bán. */
+export const MIN_BASKET = { BANH: 10, PATE: 10 } as const;
 
 export function minBasketVnd(day: number): number {
   return (Object.entries(MIN_BASKET) as [keyof typeof MIN_BASKET, number][])

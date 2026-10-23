@@ -9,7 +9,6 @@ import { BASE, diamond, heightFor, isoBox, prop, type Pen } from "./canvas";
 export const TILE = {
   floor: (kind: Floor, i: number) => `f_${kind}${i}`,
   VARIANTS: 4,
-  sun: "sun",
   wet: "wet",
 } as const;
 
@@ -60,15 +59,7 @@ function joints(g: Pen, cx: number, cy: number, color: number) {
   ], true);
 }
 
-/** Vạt nắng gắt trắng — dán chồng lên sàn với blend ADD. */
-function sun(scene: Phaser.Scene) {
-  prop(scene, TILE.sun, heightFor(0), (g, cx, cy) => {
-    g.fillStyle(PAL.sun, 0.3);
-    diamond(g, cx, cy, TW - 1, TH - 1);
-  });
-}
-
-/** Mặt đường ướt ngày mưa, thay chỗ vạt nắng; nướng sẵn vì thời tiết chốt từ `dawn()`. */
+/** Mặt đường ướt ngày mưa, nướng sẵn vì thời tiết chốt từ `dawn()`. */
 function wet(scene: Phaser.Scene) {
   prop(scene, TILE.wet, heightFor(0), (g, cx, cy) => {
     g.fillStyle(PAL.rain.wetRoad, 0.3);
@@ -83,6 +74,5 @@ export function buildTiles(scene: Phaser.Scene) {
       floorTile(scene, TILE.floor(kind, i), spec, spec.colors[i % spec.colors.length], i);
     }
   });
-  sun(scene);
   wet(scene);
 }

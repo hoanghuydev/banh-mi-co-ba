@@ -15,26 +15,29 @@ import { cool, isWarm } from "../sim/loaf";
 import { Steam } from "../ui/stall/Steam";
 import { WipePuff } from "../ui/stall/WipePuff";
 import { Rain } from "../ui/stall/Rain";
+import { Daylight } from "../ui/stall/Daylight";
 import { BubblePool } from "../ui/stall/BubblePool";
 import { TalkPanel } from "../ui/stall/TalkPanel";
 import { MoneyPops } from "../ui/stall/MoneyPops";
 import { MenuBoardView } from "../ui/menu/MenuBoardView";
+import { StorageView } from "../ui/stall/StorageView";
 import { sfx } from "../audio/sfx";
 import { PhoneView } from "../ui/phone/PhoneView";
 import { totalUnread } from "../sim/phone";
 import { chorePin } from "../ui/chorePin";
-import { TOUR_TOTAL, fillGap, tourAt, tourDone, tourIndex, tourSkip, tourStep, touring, type TourStep } from "../sim/tour";
+import { TOUR_TOTAL, dishGaps, gapText, tourAt, tourDone, tourIndex, tourOrdered, tourSkip, tourStep, touring, type TourStep } from "../sim/tour";
 import { deliverDue } from "../sim/shop";
-import { openMenu, openedOn } from "../sim/unlock";
+import { dueReviews, enqueue, rollReview, unseen } from "../sim/reviews";
+import { openIngredients, openedOn } from "../sim/unlock";
 import { SWIFT_MUL, canSpin, cleanHandsToday, finishRookie, linked, questDone, swiftToday } from "../sim/system";
 import { QUEST_DONE, QUEST_TEXT, ROOKIE_DONE } from "../content/system";
 import { TourCoach } from "../ui/tour/TourCoach";
 import { dishQuality, isRain, portionsFor, putBack, sickChance, stockOf, take, takeFull, goodsFor, type Portion } from "../sim/econ";
-import { dirtMul, has, type EquipId } from "../sim/equipment";
+import { EQUIP, dirtMul, has, type EquipId } from "../sim/equipment";
 import { labelOf } from "../sim/order";
 import { dev } from "../dev/registry";
 import type { DayScene } from "./DayScene";
-import { INGREDIENTS, diffDish, type Ingredient } from "../sim/order";
+import { diffDish, specOf, type Ingredient } from "../sim/order";
 import { isBare } from "../sim/menu";
 import { CRUST, OVEN_SLOTS, Oven, bandOfCrust, ovenFor, type CrustBand } from "../sim/oven";
 import { Grip, RUN_TEMPO, WALK_TEMPO } from "../sim/grip";
@@ -47,15 +50,15 @@ import { TH, TW, depthOf, toScreen } from "../world/iso";
 import { COUNTER_Y } from "../world/map";
 import { RENDER_SCALE } from "../core/render";
 import { StallCamera, ZOOM } from "../world/camera";
-import { artScale, fitPhoto, BOARD_TEX, BOARD_W, BASKET_TEX, BASKET_W } from "../art/photo";
-import { PROP_SHADOW, SHADOW_CORE } from "../art/fx";
-import { BUYABLE_TILES, CART_CHUNG, CART_LAN, CART_XA, GANH_IN, GANH_OUT, MENU_DEPTH_AT, MENU_REACH, MENU_SPOT, MENU_TILE, SEAT_SPOT, SHADE_SPOT, SIGN_TILE, SKY_FROM_Y, WORLD_H, WORLD_W, assertWalkable, floorAt, isSunlit, openTilesFor, setOpenTiles, setPole, tileAt, type TileCode } from "../world/map";
+import { SUNK, TABLE_DROP, artScale, fitPhoto, BOARD_TEX, BOARD_W, BASKET_TEX, BASKET_W } from "../art/photo";
+import { PROP_SHADOW, SHADOW_CORE, castShadow } from "../art/fx";
+import { BUYABLE_TILES, CART_CHUNG, CART_LAN, CART_XA, GANH_IN, GANH_OUT, MENU_DEPTH_AT, MENU_REACH, MENU_SPOT, MENU_TILE, SEAT_SPOT, SHADE_SPOT, SIGN_TILE, SKY_FROM_Y, WORLD_H, WORLD_W, assertWalkable, floorAt, openTilesFor, setOpenTiles, setPole, tileAt, type TileCode } from "../world/map";
 import {
   HAND_LABEL, STATIONS, assertMenuSpotFree, assertStationsOnCounter, blockedReason, stationAtTile, stationNear, type Hand, type Station,
 } from "../world/stations";
 import {
   BASE, COUNTER, FX, HELD, PROP, TILE, buildTextures, createMenuBoard, createSign, floorTextureAt, footY, heldFootPad,
-  heldTexture, preloadArt, spriteEdges, textureForTile,
+  heldTexture, paintNpcPhotos, preloadArt, spriteEdges, textureForTile,
 } from "../art";
 import { Player } from "../entities/Player";
 import { Hud, type Watch } from "../ui/Hud";
@@ -90,6 +93,10 @@ const CHORE_EDGE = 8;
 /** Không mượn `HUD_BAND_PX`: số đó cho tiền bay lên, còn cái lò nằm ngay hàng trên cùng. */
 const CHORE_TOP = 58;
 const CHORE_LIFT = 26;
+/** Px từ đáy sprite lên mặt bàn. */
+const topAbove = (img: Phaser.GameObjects.Image) =>
+  COUNTER.TOP_ABOVE_FOOT - (SUNK.has(img.texture.key) ? TABLE_DROP : 0);
+
 const WIPE_DIRT = 0.15;
 const RAW_COL = 0xe8e2d4, CRISP_COL = 0xd9a441, SINGE_COL = 0xa0582c, BURNT_COL = 0x3a2a22;
 /** Không viết `1 − FLY_DIRT_MIN`: phép trừ ra 0,35000000000000003, nhỉnh hơn ngưỡng. */
@@ -128,6 +135,7 @@ export class StallScene extends Phaser.Scene {
   private bubbles!: BubblePool;
   private audio!: StallAudio;
   private menuBoard: MenuBoardView | null = null;
+  private storageView: StorageView | null = null;
   private phoneView: PhoneView | null = null;
   private coach: TourCoach | null = null;
   /** Theo từng ổ, không dùng chung, kẻo gác ổ A nướng ổ B thì A bị chấm bằng số của B. */
@@ -150,6 +158,8 @@ export class StallScene extends Phaser.Scene {
   private boardSteam!: Steam;
   private wipePuff!: WipePuff;
   private rain: Rain | null = null;
+  private daylight!: Daylight;
+  private propShadows: { img: Phaser.GameObjects.Image; sx: number; sy: number; scale: number; alpha: number }[] = [];
   /** Chỗ đặt tạm cho rảnh tay, nhặt lại giữ nguyên thông số. */
   private floor: { x: number; y: number; hand: Hand; warmth: number; crust: number; q: number; dish: Ingredient[] }[] = [];
   /** Đi theo ổ bánh chứ không theo bàn tay; chỉ bỏ ổ mới tẩy được. */
@@ -195,6 +205,7 @@ export class StallScene extends Phaser.Scene {
   private dirtyEpisode = 0;
   private lastFlourish = new Map<string, number>();
   private lastMinutes = 0;
+  /** Số thứ tự lượt phục vụ trong ngày, để seed đánh giá. */
   private elapsed = 0;
   private busy: { st: Station; ms: number } | null = null;
   /** Chỉ áp ở bước craft của frame để mọi thao tác qua đúng một cửa. */
@@ -273,7 +284,7 @@ export class StallScene extends Phaser.Scene {
   private get raining() { return isRain(this.world.progress.weather); }
 
   preload() {
-    preloadArt(this);
+    preloadArt(this, true);
     StallAudio.preload(this);
   }
 
@@ -285,9 +296,11 @@ export class StallScene extends Phaser.Scene {
     setPole(has(this.world.equipment, "DU_CHE") ? { x: SHADE_SPOT.x - UMBRELLA_BACK, y: SHADE_SPOT.y - UMBRELLA_BACK } : null);
 
     buildTextures(this);
+    paintNpcPhotos(this);
 
     const ground = this.bakeGround();
     // Dọn TRƯỚC `placeProps` — chính nó gọi `addStationLabel` để nạp lại.
+    this.propShadows = [];
     this.labelY.clear();
     this.choreAt.clear();
     this.tourSpot.clear();
@@ -297,6 +310,7 @@ export class StallScene extends Phaser.Scene {
     // Chỉ `backgroundColor` vẽ ra ngoài hình bao cảnh.
     this.cameras.main.setBackgroundColor(this.raining ? "#5f686c" : "#6f838d");
     this.rain = Rain.for(this, this.world.progress.weather, this.settings.reducedMotion);
+    this.daylight = new Daylight(this, ground, this.raining);
 
     this.ring = this.add.image(0, 0, FX.ring).setOrigin(0.5, 0.5).setVisible(false);
 
@@ -304,7 +318,7 @@ export class StallScene extends Phaser.Scene {
     this.player.reset();
 
     this.hud = new Hud(this, this.settings, () => (this.paused ? this.resume() : this.pause()), () => this.openPhone());
-    this.hud.setUnread(totalUnread(this.world.phone));
+    this.hud.setUnread(totalUnread(this.world.phone) + unseen(this.world));
     this.talkRing = this.add.graphics();
     this.pendingDots = this.add.graphics();
     this.talk = new TalkPanel(this, (i) => this.pickTalk(i), () => this.endTalk(),
@@ -337,18 +351,21 @@ export class StallScene extends Phaser.Scene {
       npcs: w.npcs, bags: w.shuffleBags, dialog: w.dialogState,
       ...dayDeps(w),
       till: w.econ, flags: w.flags,
-      equip: w.equipment, loaOn: (w.econ?.loaOffUntil ?? 0) < w.progress.dayIndex,
+      equip: w.equipment, loaOn: has(w.equipment, "LOA_RAO") && (w.econ?.loaOffUntil ?? 0) < w.progress.dayIndex,
       noTimePressure: this.settings.noTimePressure,
       todayCounters: w.progress.today,
+      onServed: (rec) => {
+        const p = rollReview(w, rec, this.clock.minutes);
+        if (p) enqueue(w, p);
+      },
       readMul: (this.settings.textScale > 1 ? 1.25 : 1) * (this.settings.noTimePressure ? 1.5 : 1),
       resumeAt: this.resumed || w.flags.lateOpenDay === w.progress.dayIndex ? this.clock.minutes : undefined,
     });
     this.assembly = new AssemblyPanel(this,
       (dish, even) => this.intents.push(() => this.finishDish(dish, even)),
       (dish) => { this.boardLoaf = dish; },
-      // Bước "bỏ nhân" xong khi ổ đủ ba phần (pate · nhân mặn · rau), không phải sau miếng đầu.
       (id) => this.intents.push(() => {
-        if (!fillGap(this.assembly.dish)) this.quest("NHAN");
+        if (!this.dishGaps().length) this.quest("NHAN");
         this.onPlace(id);
       }),
       (i) => this.usePreset(i),
@@ -360,6 +377,7 @@ export class StallScene extends Phaser.Scene {
       },
       () => this.orderIsEmptyLoaf(),
       (i) => this.consumePreset(i),
+      openIngredients(this.world.progress.dayIndex),
     );
     this.drawEquipment();
     this.bindInput();
@@ -446,6 +464,7 @@ export class StallScene extends Phaser.Scene {
       this.wipePuff.destroy();
       this.rain?.destroy();
       this.rain = null;
+      this.daylight.destroy();
       // Listener trên `window`, không gỡ thì Esc màn sau chạy vào thẻ đã chết.
       this.talk.destroy();
       this.cam.destroy();
@@ -504,8 +523,7 @@ export class StallScene extends Phaser.Scene {
       for (let tx = 0; tx < WORLD_W; tx++) put(floorTextureAt(floorAt(tx, ty), tx, ty), tx, ty);
     for (let ty = 0; ty < WORLD_H; ty++) {
       for (let tx = 0; tx < WORLD_W; tx++) {
-        if (!this.raining) { if (isSunlit(tx, ty)) put(TILE.sun, tx, ty); continue; }
-        if (ty < SKY_FROM_Y) continue;
+        if (!this.raining || ty < SKY_FROM_Y) continue;
         put(TILE.wet, tx, ty);
       }
     }
@@ -528,18 +546,20 @@ export class StallScene extends Phaser.Scene {
         const eOven = has(this.world.equipment, "LO_DIEN");
         let key = textureForTile(code, tx, ty, {
           isCounterEnd: code === "Q" && (tileAt(tx - 1, ty) !== "Q" || tileAt(tx + 1, ty) !== "Q"),
-          isStation: stationAtTile(tx, ty) !== null,
+          stationId: stationAtTile(tx, ty)?.id ?? null,
           eOven,
         });
         // `ovenE` chỉ có ảnh thật; tải hỏng thì lùi về lò than còn hơn để trống.
         if (key === PROP.ovenE && !this.textures.exists(key)) key = PROP.oven;
         if (!key || !this.textures.exists(key)) continue;
 
-        const img = this.addAt(key, tx, ty);
+        // Nửa xa của bàn dài cùng khung ảnh với nửa gần nên neo theo ô gần.
+        const img = this.addAt(key, tx, ty, key === PROP.benchFar ? ty + 1 : ty);
         placed.push(img);
         const st = stationAtTile(tx, ty);
-        if (st) this.addStationLabel(st, img);
-        if (st?.id === "board") this.addBoard(img, tx, ty);
+        const primary = st?.tx === tx && st.ty === ty;
+        if (st && primary) this.addStationLabel(st, img);
+        if (st?.id === "board" && primary) this.addBoard(img, tx, ty);
         if (st?.id === "basket") this.addBasket(img, tx, ty);
         if (key === COUNTER.end) this.addOnCounter(img, tx, ty, BASKET_TEX, BASKET_W);
       }
@@ -565,17 +585,17 @@ export class StallScene extends Phaser.Scene {
   private addPropShadow(key: string, sx: number, sy: number, depth: number) {
     const cfg = PROP_SHADOW[key];
     if (!cfg) return;
-    this.add.image(sx, sy, FX.shadow)
-      .setOrigin(0.5, 0.5)
-      .setScale(cfg.w / SHADOW_CORE)
-      .setAlpha(cfg.a ?? 1)
-      .setDepth(depth - 1);
+    const img = this.add.image(0, 0, FX.shadow).setDepth(depth - 1);
+    const cast = { img, sx, sy, scale: cfg.w / SHADOW_CORE, alpha: cfg.a ?? 1 };
+    castShadow(img, sx, sy, cast.scale, cast.alpha);
+    this.propShadows.push(cast);
   }
 
-  private addAt(key: string, tx: number, ty: number) {
+  private addAt(key: string, tx: number, ty: number, anchorTy = ty) {
     const { sx, sy } = toScreen(tx + 0.5, ty + 0.5);
     this.addPropShadow(key, sx, sy, depthOf(tx + 0.5, ty + 0.5));
-    return this.add.image(sx, footY(sy), key)
+    const at = toScreen(tx + 0.5, anchorTy + 0.5);
+    return this.add.image(at.sx, footY(at.sy), key)
       .setOrigin(0.5, 1)
       .setScale(1 / artScale(key))
       .setDepth(depthOf(tx + 0.5, ty + 0.5));
@@ -584,7 +604,7 @@ export class StallScene extends Phaser.Scene {
   /** Neo vào mặt quầy chứ không mặt đất; origin (0,5 · 1) là mép trước ê-líp đáy. */
   private addOnCounter(img: Phaser.GameObjects.Image, tx: number, ty: number, key: string, w: number) {
     if (!this.textures.exists(key)) return null;
-    const topY = img.y - COUNTER.TOP_ABOVE_FOOT;
+    const topY = img.y - topAbove(img);
     const sprite = fitPhoto(this.add.image(img.x, topY + w / 4, key))
       .setOrigin(0.5, 1)
       .setDepth(depthOf(tx + 0.5, ty + 0.5) + 1);
@@ -594,7 +614,7 @@ export class StallScene extends Phaser.Scene {
   /** Không vẽ cái rổ: ổ nằm thẳng trên mặt quầy. */
   private addBasket(img: Phaser.GameObjects.Image, tx: number, ty: number) {
     this.basketX = img.x;
-    this.basketTopY = img.y - COUNTER.TOP_ABOVE_FOOT;
+    this.basketTopY = img.y - topAbove(img);
     this.basketDepth = depthOf(tx + 0.5, ty + 0.5) + 0.5;
     // Không có vật nên neo theo mặt quầy.
     this.choreAt.set("basket", { x: this.basketX, y: this.basketTopY - 5 });
@@ -612,10 +632,8 @@ export class StallScene extends Phaser.Scene {
     this.boardTopY = made.topY - (made.sprite.displayHeight - BOARD_W / 2);
     const e = spriteEdges(this, made.sprite);
     this.choreAt.set("board", { x: e.cx, y: e.top - 5 });
-    this.tourSpot.set("board", {
-      x: e.cx, y: (e.top + e.bottom) / 2,
-      r: Math.max(e.right - e.left, e.bottom - e.top) / 2 + 5,
-    });
+    // Khớp tâm trạm: giữa hai bàn, tức lệch nửa ô về phía bàn topping so với thớt.
+    this.tourSpot.set("board", { x: made.sprite.x + TW / 4, y: made.topY - TH / 4, r: TW * 0.8 });
     // `boardLoafImg` chưa dựng, ghi depth rồi áp sau.
     this.boardDepth = made.sprite.depth + 0.5;
   }
@@ -740,6 +758,12 @@ export class StallScene extends Phaser.Scene {
           this.hud.toast(`Đơn #${o.id} đã giao`, "good", this.popClock);
           sfx.play(this, "ui_dat_thanh_cong");
         }
+        const fresh = dueReviews(this.world, this.clock.minutes);
+        for (const r of fresh) {
+          this.hud.toast(`${r.who} — ${r.stars}★`, r.stars >= 4 ? "good" : "bad", this.popClock);
+          sfx.play(this, "ui_dat_thanh_cong");
+        }
+        if (fresh.length) this.hud.setUnread(totalUnread(this.world.phone) + unseen(this.world));
         this.service.tickNpcs(dt, {
           minutes: this.clock.minutes,
           pressure: !this.settings.noTimePressure,
@@ -786,6 +810,9 @@ export class StallScene extends Phaser.Scene {
     this.drawFloorItems();
     this.drawCover();
     this.rain?.draw(this.cam.world.worldView, dt, this.time.now, this.settings.reducedMotion);
+    if (this.daylight.update(this.clock.minutes, this.cam.world.worldView)) {
+      for (const p of this.propShadows) castShadow(p.img, p.sx, p.sy, p.scale, p.alpha);
+    }
     const ticket = this.frontTicket();
     this.hud.dockFeed(this.assembly.isOpen);
     this.hud.update({
@@ -851,6 +878,7 @@ export class StallScene extends Phaser.Scene {
     }
     if (this.near?.id === "oven") return this.ovenPrompt();
     if (this.near?.id === "basket") return this.basketPrompt();
+    if (this.near?.id === "kho") return `${this.storageName()} — bấm E xem đồ`;
     if (this.near?.id === "bin") {
       return this.player.hand === "empty"
         ? "thùng rác — tay không có gì để bỏ"
@@ -1014,6 +1042,7 @@ export class StallScene extends Phaser.Scene {
     if (this.handsBusy) return;
     if (this.nearMenuBoard()) { this.openMenuBoard(); return; }
     const st = this.near;
+    if (st?.id === "kho") { this.openStorage(); return; }
     if (st?.id === "oven") { this.pressOven(); return; }
     if (st?.id === "basket") { this.pressBasket(); return; }
     if (st?.id === "board" && this.player.hand === "empty") {
@@ -1687,7 +1716,7 @@ export class StallScene extends Phaser.Scene {
 
   /** Đòi hỏi của T5: phạt vì quên một chuyện game không nhắc là phạt TRÍ NHỚ, không phải LỰA CHỌN. */
   /**
-   * BA VẬT ĐỘNG — cái gánh, xe chú Kiệt, bộ ghế nhựa.
+   * BA VẬT ĐỘNG — cái gánh, xe chú Đạt, bộ ghế nhựa.
    *
    * Khác mọi đạo cụ khác ở chỗ chúng KHÔNG nằm trong lưới ô: chỗ của chúng là một nước
    * đi của người chơi (`CARRY_GANH`, `MOVE_CART`), hoặc một món đã mua (`GHE_BAN`). Nên
@@ -1834,7 +1863,7 @@ export class StallScene extends Phaser.Scene {
     const c = this.coach;
     if (!c) return;
     const w = this.world;
-    if (!touring(w) || w.system.stage === "new" || this.paused || this.closed || this.menuBoard?.open || this.phoneView?.open) {
+    if (!touring(w) || w.system.stage === "new" || this.paused || this.closed || this.menuBoard?.open || this.storageView?.open || this.phoneView?.open) {
       c.hide();
       return;
     }
@@ -1881,7 +1910,10 @@ export class StallScene extends Phaser.Scene {
     if (tourAt(w, "THOT")) return ring("board", say("THOT", "Gác ổ lên thớt — bấm E."));
     if (tourAt(w, "NHAN")) {
       if (!this.assembly.isOpen) return ring("board", "Mở ổ ra: tới thớt bấm E.");
-      return { ...this.assembly.trayBounds(), shape: "rect", text: this.fillText() };
+      const gap = this.dishGaps()[0];
+      const tile = gap ? this.assembly.tileBounds(gap.id) : null;
+      if (!gap || !tile) return { ...this.assembly.wrapBounds(), shape: "rect", text: "Ổ đúng đơn rồi — bấm Gói lại." };
+      return { ...tile, shape: "rect", text: gapText(gap) };
     }
     if (tourAt(w, "TAY")) return ring("sink", say("TAY", "Rửa tay ở bồn — bấm E."));
     if (tourAt(w, "DT")) {
@@ -1981,20 +2013,10 @@ export class StallScene extends Phaser.Scene {
     return { x: cx - halfW, y: cy - halfH, w: halfW * 2, h: halfH * 2, shape: "rect" as const, text };
   }
 
-  private openFillings(): string {
-    const ids = new Set(openMenu(this.world.progress.dayIndex).flatMap((i) => Object.keys(i.nhan) as Ingredient[]));
-    return INGREDIENTS.filter((i) => i.kind === "nhan" && i.id !== "pate" && ids.has(i.id)).map((i) => i.label).join(", ");
-  }
-
-  /** Thiếu phần nào nói phần đó — ổ bánh học bằng BA PHẦN, không học bằng con số (`sim/tour.fillGap`). */
-  private fillText(): string {
-    switch (fillGap(this.assembly.dish)) {
-      case "PATE": return this.assembly.dish.length
-        ? "Thiếu pate — quết một lớp trước."
-        : "Ổ nào cũng ba phần: pate, một thứ nhân mặn, rồi rau. Bấm vào miếng nhân để bỏ vào ổ.";
-      case "MAN": return `Giờ tới nhân mặn — ${this.openFillings()}.`;
-      default: return "Còn rau nữa: đồ chua, dưa leo, hành ngò.";
-    }
+  /** Ổ đang kẹp còn thiếu gì so với đơn của khách đứng quầy; không có khách thì theo ổ mặc định. */
+  private dishGaps() {
+    const spec = this.service.front?.order ?? specOf({ mon: "opla", rau: "day-du", ot: 1, tuong: 1 });
+    return dishGaps(spec.levels, this.assembly.dish);
   }
 
   /** ĐI TỚI ĐÂY, BẤM MỘT CÁI, HẾT — chỉ mọc trên trạm giải quyết được bằng một thao tác có thật. KHÔNG phải danh sách nhiệm vụ. */
@@ -2179,7 +2201,7 @@ export class StallScene extends Phaser.Scene {
     const pulse = this.settings.reducedMotion ? 0.1 : Math.sin(this.time.now / 260) * 0.1;
     this.ring.setVisible(true)
       .setPosition(sx, sy)
-      .setDepth(depthOf(this.near.tx + 0.5, this.near.ty + 0.5) - 2)
+      .setDepth(depthOf(this.near.tx + 0.5, this.near.ty + 0.5) - 120)
       .setAlpha(0.88 + pulse);
   }
 
@@ -2290,7 +2312,7 @@ export class StallScene extends Phaser.Scene {
     if (has(e, "LONG_BAN")) draw(8.5, 4.3, (x, y, gg) => { gg.fillStyle(0xdfe8ec, 0.55).fillEllipse(x, y - 52, 44, 18); gg.lineStyle(1.5, 0x8a979f, 0.9).strokeEllipse(x, y - 52, 44, 18); });
     if (has(e, "DU_CHE")) this.addUmbrella();
     /*
-     * BÌNH NƯỚC TRÀ không vẽ ở đây: nó là đạo cụ `T` thật trên bản đồ (13,1), và `propHidden` mở
+     * BÌNH NƯỚC TRÀ không vẽ ở đây: nó là đạo cụ `T` thật trên bản đồ, và `propHidden` mở
      * ô đó ra lúc mua. Vẽ thêm một cái bình nhỏ cạnh cái thùng là hai cái bình cho một món đồ.
      * BẢNG HIỆU cũng vậy — `createSign` dựng tấm bảng thật trên vách.
      */
@@ -2308,9 +2330,8 @@ export class StallScene extends Phaser.Scene {
       gg.fillStyle(0x2f6fb3, 1).fillRect(x - 10, y - 12, 20, 4).fillRect(x - 9, y - 8, 3, 8).fillRect(x + 6, y - 8, 3, 8);
     });
     if (has(e, "GIA_TREO")) draw(8.5, 4.0, (x, y, gg) => { gg.lineStyle(2, 0x8a7a60, 1).lineBetween(x - 60, y - 86, x + 60, y - 86); });
-    if (has(e, "KEP_GAP")) draw(4.8, 4.5, (x, y, gg) => { gg.lineStyle(1.5, 0xbfc7cc, 1).lineBetween(x - 5, y - 49, x + 6, y - 46).lineBetween(x - 5, y - 47, x + 6, y - 46); });
+    if (has(e, "KEP_GAP")) draw(3.8, 4.5, (x, y, gg) => { gg.lineStyle(1.5, 0xbfc7cc, 1).lineBetween(x - 5, y - 49, x + 6, y - 46).lineBetween(x - 5, y - 47, x + 6, y - 46); });
     this.addStorage(has(e, "TU_MAT"));
-    if (has(e, "NOI_U")) draw(9.4, 1.6, (x, y, gg) => { gg.fillStyle(0xb8bec3, 1).fillEllipse(x, y - 34, 18, 10).fillStyle(0x8a9095, 1).fillRect(x - 9, y - 34, 18, 8); });
   }
 
   /**
@@ -2332,7 +2353,7 @@ export class StallScene extends Phaser.Scene {
     });
   }
 
-  /** Ô `F` luôn chặn: thùng xốp lúc đầu, mua tủ mát thì thay bằng tủ (x=2 là tường nên đứng cột 3 cho lưng sát vách). */
+  /** Ô `F` luôn chặn: thùng xốp lúc đầu, mua tủ mát thì thay bằng tủ. */
   private addStorage(fridge: boolean) {
     this.addPhotoProp(fridge ? PROP.fridge : PROP.cooler, 3.5, 2.4, (x, y, gg) => {
       const h = fridge ? 40 : 20;
@@ -2387,7 +2408,19 @@ export class StallScene extends Phaser.Scene {
    * cái bảng sinh ra chính là để họ thuộc bài.
    */
   private openMenuBoard() {
-    if (this.overlay || this.closed || this.menuBoard?.open) return;
+    if (this.overlay || this.closed || this.menuBoard?.open || this.storageView?.open) return;
+    this.freezeForView();
+    this.quest("MENU");
+    this.menuBoard = new MenuBoardView(this.game, {
+      textScale: this.settings.textScale,
+      day: this.world.progress.dayIndex,
+      prices: this.world.menu.price,
+      shopName: this.world.shopName,
+      onClose: () => { this.menuBoard = null; this.resume(); },
+    });
+  }
+
+  private freezeForView() {
     if (this.assembly.isOpen) this.assembly.park();
     this.paused = true;
     this.clock.paused = true;
@@ -2397,13 +2430,22 @@ export class StallScene extends Phaser.Scene {
     this.intents = [];
     this.tweens.pauseAll();
     bus.emit("ui:pauseToggled", { paused: true, source: "PLAYER" });
-    this.quest("MENU");
-    this.menuBoard = new MenuBoardView(this.game, {
+  }
+
+  private storageName() {
+    return EQUIP[has(this.world.equipment, "TU_MAT") ? "TU_MAT" : "THUNG_XOP"].name;
+  }
+
+  private openStorage() {
+    if (this.overlay || this.closed || this.menuBoard?.open || this.storageView?.open || this.phoneView?.open) return;
+    this.freezeForView();
+    this.storageView = new StorageView(this.game, {
       textScale: this.settings.textScale,
       day: this.world.progress.dayIndex,
-      prices: this.world.menu.price,
-      shopName: this.world.shopName,
-      onClose: () => { this.menuBoard = null; this.resume(); },
+      inventory: this.world.inventory,
+      title: this.storageName(),
+      fridge: has(this.world.equipment, "TU_MAT"),
+      onClose: () => { this.storageView = null; this.resume(); },
     });
   }
 
@@ -2441,7 +2483,7 @@ export class StallScene extends Phaser.Scene {
   }
 
   private openPhone(route?: { app: "sys" }) {
-    if (this.overlay || this.closed || this.menuBoard?.open || this.phoneView?.open) return;
+    if (this.overlay || this.closed || this.menuBoard?.open || this.storageView?.open || this.phoneView?.open) return;
     if (this.assembly.isOpen) this.assembly.park();
     this.paused = true;
     this.clock.paused = true;
@@ -2459,7 +2501,8 @@ export class StallScene extends Phaser.Scene {
       route: route ?? (rookieEnd ? { app: "sys" } : undefined),
       onClose: () => {
         this.phoneView = null;
-        this.hud.setUnread(totalUnread(this.world.phone));
+        if (tourOrdered(this.world)) this.quest("CHO", true);
+        this.hud.setUnread(totalUnread(this.world.phone) + unseen(this.world));
         if (!this.closed) this.resume();
       },
     });
@@ -2469,6 +2512,8 @@ export class StallScene extends Phaser.Scene {
     this.overlay?.destroy(true);
     this.overlay = null;
     this.overlayBack = null;
+    // Lớp che nuốt keyup nên phím đang giữ vẫn `isDown` sau khi đóng — nhân vật tự đi.
+    this.input.keyboard?.resetKeys();
     this.paused = false;
     this.clock.paused = false;
     this.wipePuff.setPaused(false);

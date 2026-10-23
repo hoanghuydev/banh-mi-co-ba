@@ -48,9 +48,9 @@ export type DoiDon = "dayDu" | "themNhan" | "itRau" | "khongOt";
 export type TalkAct =
   | { kind: "PAY"; vnd: number; note: string }
   /**
-   * TIỀN ĐI VÀO KÉT — chiều ngược của `PAY`, năm nút đòi (bé Su, thầy Phúc).
+   * TIỀN ĐI VÀO KÉT — chiều ngược của `PAY`, năm nút đòi (bé Hân, thầy Khải).
    *
-   * *"Ừ. Cô cầm lại."* — bé Su thối dư hai ngàn, mình cầm lại, và **két không nhích một
+   * *"Ừ. Cô cầm lại."* — bé Hân thối dư hai ngàn, mình cầm lại, và **két không nhích một
    * đồng**. Một lời thoại nói về tiền mà không đụng tới tiền thì nó là lời thoại suông:
    * cùng họ với "làm đầy đủ" mà đơn không đổi.
    *
@@ -83,7 +83,7 @@ export type TalkAct =
   /** `XA` chú về bên kia hẻm (mặt tiền thông, mà mình vừa đuổi ông ta) · `CHUNG` hai xe chung một mái (mình mất một khúc). */
   | { kind: "MOVE_CART"; toi: "XA" | "CHUNG" }
   /**
-   * CẤT TIẾNG RAO (`sau.rao`) — kéo người đi ngang quay đầu lại; ngược với xe chú Kiệt lấn.
+   * CẤT TIẾNG RAO (`sau.rao`) — kéo người đi ngang quay đầu lại; ngược với xe chú Đạt lấn.
    */
   | { kind: "RAO"; forSec: ForSec }
   /**
@@ -97,7 +97,7 @@ export type TalkAct =
       no: string;
       /**
        * AI MỞ MIỆNG XIN. `"MINH"` (mặc định) là mình đề nghị — họ có cửa từ chối, và câu
-       * `no` dùng tới. `"HO"` là CHÍNH HỌ xin đổi (anh Bảo nói lắp cuối cùng cũng gọi
+       * `no` dùng tới. `"HO"` là CHÍNH HỌ xin đổi (Bảo nói lắp cuối cùng cũng gọi
        * được món): roll từ chối ở đây là vô lý, không ai xin rồi tự từ chối mình.
        */
       aiXin?: "MINH" | "HO";
@@ -301,7 +301,7 @@ export const ANON_TALK_POOLS = ["WALKIN", "QUA_DUONG"] as const;
 export const EXTRA_TALK_POOLS = [...ANON_TALK_POOLS, "ANY"] as const;
 
 export const ADDRESS: Record<string, Address> = {
-  BA_BAY:    { self: "bà",   you: "con", call: "bà",   me: "con" },
+  BA_BAY:    { self: "dì",   you: "con", call: "dì",   me: "con" },
   CHU_TU:    { self: "chú",  you: "con", call: "chú",  me: "con" },
   ANH_DUNG:  { self: "anh",  you: "em",  call: "anh",  me: "em" },
   CHI_LAN:   { self: "em",   you: "em",  call: "chị",  me: "em" },
@@ -311,7 +311,7 @@ export const ADDRESS: Record<string, Address> = {
   THAY_PHUC: { self: "thầy", you: "con", call: "thầy", me: "con" },
   CHI_HANH:  { self: "chị",  you: "em",  call: "chị",  me: "em" },
   ANH_BAO:   { self: "em",   you: "chị", call: "em",   me: "chị" },
-  BA_SAU:    { self: "tui",  you: "con", call: "bà",   me: "con" },
+  BA_SAU:    { self: "tui",  you: "con", call: "dì",   me: "con" },
   CHU_KIET:  { self: "tao",  you: "mày", call: "chú",  me: "con" },
   WALKIN:    { self: "tui",  you: "em",  call: "anh",  me: "em" },
   QUA_DUONG: { self: "tui",  you: "em",  call: "anh",  me: "em" },
@@ -332,17 +332,17 @@ export const WALKIN_ADDRESS: readonly Address[] = [
 /** Người lạ không có MỘT vai cố định, nên lưới chỉ đòi gọi bằng một trong mấy vai này. */
 export const WALKIN_CALLS = ["anh", "chị", "cô", "chú", "bà", "ông", "em"];
 
-/** Không suy ra được từ `ADDRESS`: chiều ngược lại mới là chỗ sai hay gặp (bé Su gọi người chơi là "em"). */
+/** Không suy ra được từ `ADDRESS`: chiều ngược lại mới là chỗ sai hay gặp (bé Hân gọi người chơi là "em"). */
 export const FORBIDDEN_SELF: Record<string, string[]> = {
-  BE_SU: ["chị", "con", "tui", "tao"],
+  BE_SU: ["con", "cô", "tui", "tao"],
   ANH_BAO: ["anh", "tui", "tao", "chú"],
   CHI_LAN: ["tui", "tao"],
   THAY_PHUC: ["tao", "tui", "chú", "anh"],
-  BA_BAY: ["tao", "chị", "em"],
+  BA_BAY: ["tao", "chị", "em", "bà", "cô"],
   CHU_TU: ["tao", "anh", "ông"],
-  CO_MAI: ["tao", "chị", "bà"],
+  CO_MAI: ["tao", "chị", "bà", "dì"],
   ONG_HAI: ["cô", "chị", "em"],
-  BA_SAU: ["tao", "cô", "chị"],
+  BA_SAU: ["tao", "cô", "chị", "dì"],
   ANH_DUNG: ["tao", "chú", "tui"],
   CHI_HANH: ["tui", "tao", "cô"],
 };

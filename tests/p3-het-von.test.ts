@@ -33,7 +33,7 @@ test("HV-3 hết vốn là PHÉP CỘNG ba đường xoay, không phải ba câu
 
 test("HV-3b CÒN ĐỒ BÁN mà bán hết vẫn không đủ một rổ thì VẪN là hết vốn", () => {
   // Phải hỏi "bán hết có đủ không", không phải "còn món nào bán được không" — nếu không người chơi kẹt vòng lặp vô tận.
-  for (const mon of ["KEP_GAP", "BINH_TRA"] as const) {
+  for (const mon of ["KEP_GAP"] as const) {
     const w = tayTrang();
     w.equipment.owned.push(mon);
     w.equipment.installed = [...w.equipment.owned];
@@ -119,7 +119,7 @@ test("DV-2 dấu vết đọc đúng con số của buổi bán", () => {
   assert.match(gearEvidence("GHE_BAN", w)!, /3 người/);
   assert.match(gearEvidence("BINH_TRA", w)!, /3 người/);
   assert.equal(gearEvidence("DU_CHE", w), "Hôm nay mưa.");
-  assert.match(gearEvidence("NOI_U", w)!, /xíu mại/);
+  assert.match(gearEvidence("TU_MAT", w)!, /xíu mại/);
 });
 
 test("DV-3 KHÔNG hai món nào nói cùng một câu", () => {

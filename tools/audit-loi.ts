@@ -61,7 +61,7 @@ for (const k of ["M1", "M2", "M3", "M4"]) {
 console.log(`\nquét ${nodes} nút / ${files.length} kho.`);
 console.log(
   "\nCòn sót thì đọc kỹ trước khi sửa — mấy chỗ này đã soi và CHO QUA:\n"
-  + "  · \"mai ghé nữa\" của người ngày nào cũng tới (chị Hạnh giao hàng, chú Tư) —\n"
+  + "  · \"mai ghé nữa\" của người ngày nào cũng tới (chị Hà giao hàng, chú Quang) —\n"
   + "    game giữ được lời đó mà không cần ghi gì.\n"
   + "  · người lạ hẹn hôm sau: tám dáng `walkin<dáng>` dùng chung cả ván,\n"
   + "    nên cái dáng đó CÓ quay lại thật.\n"

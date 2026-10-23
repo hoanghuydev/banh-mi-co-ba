@@ -9,6 +9,8 @@ RMS_VOX = -18.0
 
 ONESHOT = {"trim": True, "fade_in": 3, "fade_out": 25, "rms": RMS_FOLEY, "mono": True, "bitrate": 96}
 UI = {"trim": True, "fade_in": 2, "fade_out": 15, "rms": RMS_UI, "mono": True, "bitrate": 80}
+# Bản nghe thử thường rất nhỏ, `trim` theo ngưỡng tuyệt đối sẽ gặm mất thân tiếng -> cắt tay bằng start/dur.
+UIX = {**UI, "trim": False}
 VOX = {"trim": True, "fade_in": 5, "fade_out": 40, "rms": RMS_VOX, "mono": True, "bitrate": 96}
 # Ambience giữ stereo để còn pan theo bề ngang hẻm.
 AMB = {"rms": RMS_AMB, "mono": False, "bitrate": 96, "loop_xfade": 2.5, "fade_in": 0, "fade_out": 0}
@@ -388,5 +390,84 @@ SFX: dict[str, dict] = {
             {"fs": 585036, "start": "auto", "dur": 0.17},
             {"fs": 339838, "start": "auto", "dur": 0.17},
         ],
+    },
+
+    # ── Điện thoại, Hệ thống, vòng quay ──
+
+    "ph_tin_den": {
+        "bus": "amBao", "desc": "tin nhan den / banner tin moi",
+        "proc": {**UIX, "max_dur": 0.6},
+        "sources": [
+            {"fs": 750609, "start": 0.0, "dur": 0.35},
+            {"fs": 702806, "start": 0.0, "dur": 0.49},
+            {"fs": 235911, "start": 0.0, "dur": 0.48},
+        ],
+    },
+    "ph_tin_di": {
+        "bus": "amBao", "desc": "gui tin nhan di",
+        "proc": {**UIX, "max_dur": 0.3},
+        "sources": [{"fs": 760370, "start": 0.0, "dur": 0.23}],
+    },
+    "ph_soan_tin": {
+        "bus": "amBao", "desc": "dang soan tin — bong bong kieu messenger",
+        "proc": {**UIX, "max_dur": 0.2},
+        "sources": [
+            {"fs": 328119, "start": 0.0, "dur": 0.15},
+            {"fs": 439186, "start": 0.04, "dur": 0.13},
+            {"fs": 789793, "start": 0.0, "dur": 0.13},
+        ],
+    },
+    "ph_mo_may": {
+        "bus": "amBao", "desc": "mo dien thoai",
+        "proc": {**UIX, "max_dur": 0.3},
+        "sources": [{"fs": 391699, "start": 0.0, "dur": 0.22}],
+    },
+    "ph_dang_tin": {
+        "bus": "amBao", "desc": "dang tin rao ban — tieng chup anh",
+        "proc": {**UIX, "max_dur": 0.3},
+        "sources": [{"fs": 579883, "start": 0.06, "dur": 0.21}],
+    },
+
+    # Hệ thống: chip điện tử, mỗi cue MỘT file để lần nào cũng nhận ra ngay.
+    "sys_thong_bao": {
+        "bus": "amBao", "desc": "Keng! thong bao He thong",
+        "proc": {**UIX, "max_dur": 0.25},
+        "sources": [{"fs": 404151, "start": 0.0, "dur": 0.15}],
+    },
+    "sys_nhiem_vu_xong": {
+        "bus": "amBao", "desc": "nhiem vu hoan thanh — chip len tong",
+        "proc": {**UIX, "max_dur": 0.6},
+        "sources": [{"fs": 431329, "start": 0.0, "dur": 0.52}],
+    },
+    "sys_canh_bao": {
+        "bus": "amBao", "desc": "He thong tu choi / canh bao",
+        "proc": {**UIX, "max_dur": 0.35},
+        "sources": [{"fs": 249300, "start": 0.0, "dur": 0.26}],
+    },
+    "sys_khoi_dong": {
+        "bus": "amBao", "desc": "He thong thuc tinh — may tinh khoi dong",
+        "proc": {**UIX, "max_dur": 1.9},
+        "sources": [{"fs": 395798, "start": 0.0, "dur": 1.82}],
+    },
+
+    "wheel_quay": {
+        "bus": "amBao", "desc": "vong quay chay — nac thua dan san trong ban thu",
+        "proc": {**UIX, "max_dur": 3.2},
+        "sources": [{"fs": 792466, "start": 0.08, "dur": 3.17}],
+    },
+    "wheel_trung": {
+        "bus": "amBao", "desc": "trung thuong thuong",
+        "proc": {**UIX, "max_dur": 0.55},
+        "sources": [{"fs": 842513, "start": 0.0, "dur": 0.48}],
+    },
+    "wheel_trung_lon": {
+        "bus": "amBao", "desc": "trung thuong lon",
+        "proc": {**UIX, "max_dur": 1.45},
+        "sources": [{"fs": 165313, "start": 0.0, "dur": 1.37}],
+    },
+    "wheel_truot": {
+        "bus": "amBao", "desc": "quay truot",
+        "proc": {**UIX, "max_dur": 0.35},
+        "sources": [{"fs": 583554, "start": 0.0, "dur": 0.27}],
     },
 }

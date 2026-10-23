@@ -1,5 +1,5 @@
 {
-  "_note": "Anh Bảo — sinh viên cắm mặt điện thoại: gaze thấp nhất hẻm, sandbox để người chơi học hệ perception. Ô trống '—' ở bảng §4 là CỐ Ý IM LẶNG — đó là dữ liệu.",
+  "_note": "Bảo — sinh viên cắm mặt điện thoại: gaze thấp nhất hẻm, sandbox để người chơi học hệ perception. Ô trống '—' ở bảng §4 là CỐ Ý IM LẶNG — đó là dữ liệu.",
   "rules": [
     {"id": "bao.dropped_food", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_BAO", "eventId": "DROPPED_FOOD", "obsState": ">=NOTICED"}, "silent": true, "say": []},
     {"id": "bao.dirty_hands", "concept": "NOTICE_EVENT", "when": {"npcId": "ANH_BAO", "eventId": "DIRTY_HANDS", "obsState": ">=NOTICED"}, "silent": true, "say": []},
@@ -11,8 +11,8 @@
     {"id": "bao.del.seen", "concept": "DELIVERY", "when": {"npcId": "ANH_BAO", "defectCount": ">=1", "defectWasSeen": true}, "silent": true, "say": []},
     {"id": "bao.del.found", "concept": "DELIVERY", "when": {"npcId": "ANH_BAO", "defectCount": ">=1", "defectWasSeen": false}, "say": ["À… không sao đâu chị."]},
     {"id": "bao.del.toomuch", "concept": "DELIVERY", "when": {"npcId": "ANH_BAO", "defectCount": 0, "freeExtraTooMuch": true}, "say": ["Dạ."]},
-    {"id": "bao.bye.served", "concept": "FAREWELL", "when": {"npcId": "ANH_BAO", "leaveReason": "SERVED", "serveOutcome": ["CLEAN", "DEFECT", "WAITED"]}, "silent": true, "say": [], "_note": "Kể cả bữa đó ra sao: cầm ổ, cắm mặt điện thoại, đi thẳng. Khai đủ giá trị serveOutcome để rule nào cũng 3 criterion — nếu chỉ hai thì nó hoà điểm với mấy dòng chào generic và anh Bảo thành ra lúc nói lúc không, mà cái im của anh là CỐ Ý (xem ghi chú đầu file). CỐ Ý BỎ GRIT ra khỏi danh sách: cắn phải sạn là đúng một thứ làm anh rời mắt khỏi điện thoại, nên lượt đó anh rớt xuống dòng generic và NÓI. Anh im vì không để ý, không phải vì không có miệng."},
-    {"id": "bao.tea", "concept": "INTERACT", "when": {"npcId": "ANH_BAO", "interaction": "TEA"}, "say": ["Dạ… em cảm ơn chị."]},
+    {"id": "bao.bye.served", "concept": "FAREWELL", "when": {"npcId": "ANH_BAO", "leaveReason": "SERVED", "serveOutcome": ["CLEAN", "DEFECT", "WAITED"]}, "silent": true, "say": [], "_note": "Kể cả bữa đó ra sao: cầm ổ, cắm mặt điện thoại, đi thẳng. Khai đủ giá trị serveOutcome để rule nào cũng 3 criterion — nếu chỉ hai thì nó hoà điểm với mấy dòng chào generic và Bảo thành ra lúc nói lúc không, mà cái im của anh là CỐ Ý (xem ghi chú đầu file). CỐ Ý BỎ GRIT ra khỏi danh sách: cắn phải sạn là đúng một thứ làm anh rời mắt khỏi điện thoại, nên lượt đó anh rớt xuống dòng generic và NÓI. Anh im vì không để ý, không phải vì không có miệng."},
+    {"id": "bao.tea", "concept": "INTERACT", "when": {"npcId": "ANH_BAO", "interaction": "TEA"}, "say": ["Em cảm ơn chị."]},
     {"id": "bao.thi", "concept": "SMALLTALK", "when": {"npcId": "ANH_BAO", "queueLength": "<=2", "npcVisitCount": ">=4"}, "say": ["Tuần sau em thi rồi chị…"], "norepeat": true, "odds": 40}
   ]
 }

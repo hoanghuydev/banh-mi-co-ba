@@ -131,8 +131,8 @@ test("mở ổ ra thì kho nhận lại đúng số phần đã trừ lúc gói"
   const w = newGame("t", "unwrap");
   const day = w.progress.dayIndex;
   const inv = w.inventory;
-  buy(inv, "CHA_LUA", 1, day);
-  buy(inv, "OT", 1, day);
+  buy(inv, "CHA_LUA", 10, day);
+  buy(inv, "OT", 10, day);
   const before = { cha: portionsFor(inv, "chalua", day), ot: portionsFor(inv, "ot", day) };
   assert.ok(before.cha > 0 && before.ot > 0, "có hàng để thử");
 

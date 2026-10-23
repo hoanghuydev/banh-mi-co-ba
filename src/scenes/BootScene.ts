@@ -15,6 +15,8 @@ export class BootScene extends Phaser.Scene {
     sfx.preload(this, sfx.idsOfBus("amBao"));
     // `DayScene` thường trực không có `preload` riêng.
     sfx.preload(this, ["sfx_cua_cuon"]);
+    // Điện thoại gọi hai tiếng này từ HTML, không qua `preload` của cảnh quán.
+    sfx.preload(this, ["sfx_tien_le", "sfx_ngan_keo"]);
   }
 
   async create() {

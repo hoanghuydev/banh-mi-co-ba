@@ -1,0 +1,697 @@
+{
+  "_note": "Mảnh câu cho app Đánh giá. Viết theo pattern ở `docs/research/giong-noi/review-quan-an.md` — câu cụt, bổ ngữ mức độ, khen ngắn chê dài, không teencode cute. `loi` = câu lõi theo chủ đề × giọng; `them` = vế phụ nối bằng dấu phẩy; `ket` = lời kết; `persona` = dấu riêng chèn cuối. Thiếu giọng nào thì `reviewText` lùi về `chanthat`.",
+  "loi": {
+    "ngon": {
+      "chanthat": [
+        "bánh nóng giòn, pate thơm, ăn no tới trưa",
+        "ổ chắc tay, nhân đầy đặn, rau tươi",
+        "pate béo vừa, không bị ngấy",
+        "bánh giòn vỏ mềm ruột, đúng kiểu mình thích",
+        "ăn sáng ở đây mấy hôm rồi, hôm nào cũng đều tay"
+      ],
+      "vuitinh": [
+        "ngon xỉu nha mọi người, 10 điểm",
+        "ổ này đỉnh thật sự, cắn phát là biết liền",
+        "trời ơi thơm quá trời, ăn hết sạch luôn",
+        "hơi bị ngon á nha, chấm 10 điểm không có nhưng",
+        "ngon quá nên mua luôn hai ổ, chốt đơn"
+      ],
+      "haihuoc": [
+        "ăn xong đứng dậy thấy đời dễ thở hẳn",
+        "định ăn một ổ, kết cục đứng ăn luôn ổ thứ hai",
+        "cắn miếng đầu là biết hôm nay ngày đẹp trời",
+        "ổ bánh này cứu cả buổi sáng deadline của tôi",
+        "mua cho bạn một ổ rồi ăn mất, bạn tự hiểu"
+      ],
+      "nhat": [
+        "ngon",
+        "ổn",
+        "được",
+        "ngon, sạch",
+        "ăn được"
+      ],
+      "ham": []
+    },
+    "nhat-nheo": {
+      "chanthat": [
+        "ăn tạm được, không có gì đặc biệt",
+        "bình thường, giống mấy xe khác thôi",
+        "cũng được nhưng chưa thấy có gì để nhớ",
+        "ổn, không chê mà cũng không khen nổi"
+      ],
+      "nhat": [
+        "bình thường",
+        "cũng được",
+        "tạm",
+        "được của nó",
+        "ok"
+      ],
+      "haihuoc": [
+        "ăn xong quên mất mình vừa ăn gì",
+        "không dở, mà kể lại cho bạn cũng không biết kể gì"
+      ],
+      "vuitinh": [],
+      "ham": []
+    },
+    "gia-dat": {
+      "chanthat": [
+        "ăn được nhưng giá hơi chát so với quanh đây",
+        "ngon thật mà mắc, ổ này chừng đó là quá tay",
+        "chất lượng ổn, mỗi tội giá cao hơn mặt bằng chung",
+        "ổ bình thường mà tính giá như ổ đặc biệt"
+      ],
+      "haihuoc": [
+        "nhìn giá xong tưởng mình gọi nhầm món hải sản",
+        "ăn thì ngon, trả tiền thì hơi rát tay",
+        "giá này chắc pate dát vàng"
+      ],
+      "ham": [
+        "chặt chém vừa thôi, ổ bánh mì chứ có gì đâu",
+        "giá kiểu này thì mọi người cân nhắc, quanh đây thiếu gì chỗ",
+        "mắc mà chẳng hơn ai, phí tiền"
+      ],
+      "nhat": [
+        "đắt",
+        "mắc quá",
+        "giá chát"
+      ],
+      "vuitinh": []
+    },
+    "gia-re": {
+      "chanthat": [
+        "giá mềm mà nhân vẫn đầy, hiếm đó",
+        "rẻ hơn mấy chỗ gần đây mà ăn không thua",
+        "giá sinh viên, no tới chiều"
+      ],
+      "vuitinh": [
+        "ngon bổ rẻ, còn đòi gì nữa trời",
+        "giá này mà chất lượng này thì ủng hộ dài dài nha",
+        "rẻ muốn xỉu mà ăn ngon thiệt"
+      ],
+      "haihuoc": [
+        "giá này thì tôi ăn cả tuần không chớp mắt"
+      ],
+      "nhat": [
+        "rẻ, ngon",
+        "giá ổn"
+      ],
+      "ham": []
+    },
+    "cho-lau": {
+      "chanthat": [
+        "bánh ngon mà chờ hơi lâu",
+        "đứng chờ muốn trễ làm, mọi thứ còn lại thì ổn",
+        "ngon nhưng mỗi tội đợi"
+      ],
+      "haihuoc": [
+        "chờ lâu tới mức kịp đọc hết một chương truyện",
+        "gọi xong chờ miết, tưởng quán đi xay bột luôn"
+      ],
+      "ham": [
+        "chờ gần chết mới có ổ bánh, làm ăn kiểu gì vậy",
+        "một ổ bánh mì mà để khách đứng như vậy thì thôi"
+      ],
+      "nhat": [
+        "lâu",
+        "chờ lâu"
+      ],
+      "vuitinh": []
+    },
+    "thieu-nhan": {
+      "chanthat": [
+        "gọi có nhân mà mở ra thiếu, phải quay lại nói",
+        "thiếu mất một thứ, dặn rõ ràng rồi mà",
+        "mở ổ ra hụt hẫng, không đúng cái mình gọi"
+      ],
+      "ham": [
+        "làm thiếu đồ cho khách, dặn cũng không thèm nghe",
+        "thiếu nhân mà vẫn tính đủ tiền, hay thật"
+      ],
+      "haihuoc": [
+        "mở ra tưởng đang chơi trò tìm điểm khác nhau"
+      ],
+      "nhat": [
+        "thiếu nhân"
+      ],
+      "vuitinh": []
+    },
+    "sai-mon": {
+      "chanthat": [
+        "gọi một đằng đưa một nẻo",
+        "không phải ổ mình gọi, chắc lộn với khách khác",
+        "bỏ thêm thứ mình đã dặn bỏ ra"
+      ],
+      "ham": [
+        "làm sai món, nói lại thì tỉnh bơ",
+        "nghe khách gọi mà làm cho đúng cũng không xong"
+      ],
+      "haihuoc": [
+        "cắn miếng đầu là biết ổ này không dành cho mình"
+      ],
+      "nhat": [
+        "sai món"
+      ],
+      "vuitinh": []
+    },
+    "it-nhan": {
+      "chanthat": [
+        "nhân lèo tèo, chủ yếu là bánh",
+        "ít nhân quá, cắn ba miếng mới gặp thịt",
+        "so với lần trước thì nhân mỏng hẳn"
+      ],
+      "ham": [
+        "nhân có tí teo mà giá vẫn vậy, bớt lại từ từ ai cũng thấy",
+        "ăn bánh không chứ nhân đâu"
+      ],
+      "haihuoc": [
+        "pate mỏng tới mức phải soi đèn mới thấy"
+      ],
+      "nhat": [
+        "ít nhân"
+      ],
+      "vuitinh": []
+    },
+    "nguoi": {
+      "chanthat": [
+        "bánh nguội ngắt, ăn mất ngon",
+        "ổ lạnh như để sẵn từ sớm",
+        "giá mà nóng thì ngon hơn nhiều"
+      ],
+      "ham": [
+        "bán bánh nguội cho khách, chán"
+      ],
+      "haihuoc": [
+        "cầm ổ bánh mà tưởng cầm cục đá, ấm tay chút nữa thôi mà"
+      ],
+      "nhat": [
+        "nguội"
+      ],
+      "vuitinh": []
+    },
+    "banh-song": {
+      "chanthat": [
+        "vỏ chưa tới, cắn vào mềm oặt",
+        "bánh nướng chưa đủ, ruột còn ỉu"
+      ],
+      "ham": [
+        "bánh sống nhăn vậy mà cũng bán"
+      ],
+      "haihuoc": [
+        "vỏ bánh mềm tới mức nghi ngờ cái lò có bật không"
+      ],
+      "nhat": [
+        "bánh chưa chín"
+      ],
+      "vuitinh": []
+    },
+    "banh-khet": {
+      "chanthat": [
+        "vỏ cháy sém, ăn đắng miệng",
+        "bánh khét một bên, phải gỡ bỏ"
+      ],
+      "ham": [
+        "bánh khét thui mà vẫn gói cho khách"
+      ],
+      "haihuoc": [
+        "ổ bánh này chắc vừa đi qua một mùa hè khắc nghiệt"
+      ],
+      "nhat": [
+        "bánh khét"
+      ],
+      "vuitinh": []
+    },
+    "nhoi-nhet": {
+      "chanthat": [
+        "nhồi nhiều quá, cắn cái rớt hết ra ngoài",
+        "đầy tới mức không gói nổi, ăn tèm lem"
+      ],
+      "haihuoc": [
+        "nhân nhiều tới mức ăn xong phải lau bàn phím"
+      ],
+      "nhat": [
+        "nhiều quá"
+      ],
+      "vuitinh": [],
+      "ham": []
+    },
+    "do-cu": {
+      "_note": "`TASTE_OFF` nghĩa là khách thấy nhân KÉM TƯƠI, không phải ôi thiu — viết đúng mức đó. Độ nặng để `silentScore` quyết, không chặn trần sao.",
+      "chanthat": [
+        "nhân không được tươi lắm",
+        "pate nhạt hơn mấy lần trước",
+        "rau hơi héo, chắc để từ sáng",
+        "vị không bằng hôm trước"
+      ],
+      "ham": [
+        "đồ để lâu rồi mà vẫn bán, chán",
+        "nhân cũ thấy rõ, quán làm ăn kiểu gì"
+      ],
+      "haihuoc": [
+        "nhân này chắc cũng có tuổi rồi"
+      ],
+      "nhat": [
+        "nhân không tươi"
+      ],
+      "vuitinh": []
+    },
+    "co-san": {
+      "chanthat": [
+        "cắn phải sạn, phải bỏ nửa ổ",
+        "trong ổ có gì đó cứng cứng, ghê"
+      ],
+      "ham": [
+        "ăn phải sạn, vệ sinh kiểu gì vậy",
+        "đồ rơi xuống đất rồi vẫn gói cho khách thì thôi, mọi người tránh ra"
+      ],
+      "haihuoc": [],
+      "nhat": [],
+      "vuitinh": []
+    },
+    "tay-ban": {
+      "chanthat": [
+        "thấy chủ quán bốc đồ mà chưa rửa tay, ăn không yên tâm",
+        "đứng chờ nhìn thấy tay chưa rửa đã cầm bánh luôn",
+        "mong quán rửa tay trước khi bốc nhân"
+      ],
+      "ham": [
+        "bốc đồ bằng tay trần vậy ai dám ăn",
+        "vệ sinh kiểu này sớm muộn cũng có chuyện, mọi người tự cân nhắc"
+      ],
+      "haihuoc": [
+        "nhìn chủ quán bốc nhân xong tôi thấy mình vừa tập thể dục cho hệ miễn dịch"
+      ],
+      "nhat": [
+        "không rửa tay"
+      ],
+      "vuitinh": []
+    },
+    "chen-hang": {
+      "chanthat": [
+        "có người tới sau mà được lấy bánh trước, hơi kì",
+        "đứng xếp hàng đàng hoàng mà bị chen, quán cũng không nói gì"
+      ],
+      "ham": [
+        "ai chen cũng cho lấy trước, vậy xếp hàng gì",
+        "quán nên để ý ai tới trước ai tới sau"
+      ],
+      "haihuoc": [
+        "đứng xếp hàng ở đây cần thêm kỹ năng giữ chỗ"
+      ],
+      "nhat": [
+        "bị chen hàng"
+      ],
+      "vuitinh": []
+    },
+    "loa-on": {
+      "chanthat": [
+        "bánh ổn mà cái loa rao to quá, đứng chờ nhức đầu",
+        "loa mở lớn từ sáng, nhà bên chắc cũng mệt"
+      ],
+      "ham": [
+        "mở loa inh ỏi cả xóm, bán buôn gì kì vậy"
+      ],
+      "haihuoc": [
+        "cái loa rao thuộc bài hơn tôi thuộc bảng cửu chương"
+      ],
+      "nhat": [
+        "loa ồn"
+      ],
+      "vuitinh": []
+    },
+    "cho-them": {
+      "chanthat": [
+        "được cho thêm miếng nhân mà không tính tiền, quý",
+        "xin thêm chút nhân chủ quán cho liền, không khó chịu gì"
+      ],
+      "vuitinh": [
+        "được cho thêm nhân nha mọi người, ưng cái bụng",
+        "chủ quán hào phóng ghê, cho thêm mà cười tươi nữa"
+      ],
+      "haihuoc": [
+        "xin thêm nhân mà được cho thiệt, hôm nay chắc trúng số"
+      ],
+      "nhat": [
+        "được cho thêm nhân"
+      ],
+      "ham": []
+    },
+    "tra-da": {
+      "chanthat": [
+        "có trà đá miễn phí, đứng chờ đỡ khát",
+        "uống ly trà đá trong lúc chờ, nhỏ mà dễ chịu"
+      ],
+      "vuitinh": [
+        "có trà đá free nữa chứ, ưng quá",
+        "vừa ăn vừa làm ly trà đá, đúng bài"
+      ],
+      "haihuoc": [
+        "ly trà đá miễn phí làm tôi thấy mình quan trọng hẳn"
+      ],
+      "nhat": [
+        "có trà đá"
+      ],
+      "ham": []
+    },
+    "troi-mua": {
+      "chanthat": [
+        "mưa vậy mà quán vẫn mở, mua được ổ nóng là mừng",
+        "trời mưa ghé đại, không ngờ bánh vẫn nóng giòn"
+      ],
+      "vuitinh": [
+        "mưa gió mà vẫn đứng bán, thương quá trời",
+        "ngày mưa có ổ bánh nóng là hết sầu"
+      ],
+      "haihuoc": [
+        "đội mưa đi mua bánh, về tới nhà bánh còn khô hơn tôi"
+      ],
+      "nhat": [
+        "mưa vẫn bán"
+      ],
+      "ham": []
+    },
+    "do-nghe-moi": {
+      "chanthat": [
+        "quán mới sắm đồ, bánh ra giòn hơn hồi trước",
+        "thấy quán thay đồ nghề mới, nhìn sạch sẽ hẳn"
+      ],
+      "vuitinh": [
+        "quán nâng cấp rồi nha mọi người, ăn khác hẳn"
+      ],
+      "haihuoc": [
+        "quán sắm đồ mới, ổ bánh cũng ra dáng hẳn"
+      ],
+      "nhat": [
+        "quán có đồ mới"
+      ],
+      "ham": []
+    },
+    "het-banh": {
+      "chanthat": [
+        "tới nơi thì hết bánh, tiếc",
+        "đi một đoạn tới nơi hết sạch, lần sau phải đi sớm",
+        "hết bánh sớm quá, chưa kịp mua"
+      ],
+      "haihuoc": [
+        "tới nơi thấy tấm bảng hết bánh, đứng hình mất mấy giây",
+        "hết bánh rồi, về ăn mì gói, cũng là một loại trải nghiệm"
+      ],
+      "ham": [
+        "bán có nhiêu đó rồi nghỉ, khách đi xa tới thì sao"
+      ],
+      "nhat": [
+        "hết bánh"
+      ],
+      "vuitinh": []
+    },
+    "dau-bung": {
+      "chanthat": [
+        "ăn sáng xong trưa ôm bụng, phải xin nghỉ nửa buổi",
+        "về nhà là đau bụng, chắc chắn do ổ bánh này",
+        "cả nhà ăn, cả nhà đau bụng"
+      ],
+      "ham": [
+        "ăn xong nằm cả ngày, mọi người đừng ghé",
+        "đồ không đảm bảo, tôi đi viện vì ổ bánh này",
+        "bán đồ kiểu này là hại người, phải có ai xuống kiểm tra",
+        "ôm bụng từ trưa tới tối, không bao giờ quay lại"
+      ],
+      "haihuoc": [
+        "ổ bánh 20k, tiền thuốc 200k, lời to"
+      ],
+      "nhat": [
+        "ăn xong đau bụng"
+      ],
+      "vuitinh": []
+    }
+  },
+  "ve": {
+    "_note": "Vế TRÁI CHIỀU — dạng rút gọn của chủ đề, ghép sau câu lõi bằng một từ nối ở `noi`. Dùng khi một lượt phục vụ có cả điểm cộng lẫn điểm trừ.",
+    "ngon": [
+      "bánh thì ngon",
+      "ăn thì được",
+      "vị thì ổn"
+    ],
+    "gia-re": [
+      "giá thì mềm",
+      "được cái rẻ"
+    ],
+    "cho-them": [
+      "được cho thêm nhân",
+      "chủ quán cho thêm nhân"
+    ],
+    "tra-da": [
+      "có trà đá free",
+      "được rót ly trà đá"
+    ],
+    "troi-mua": [
+      "mưa vậy mà vẫn mở",
+      "ngày mưa còn có chỗ mua"
+    ],
+    "do-nghe-moi": [
+      "quán mới sắm đồ",
+      "đồ nghề nhìn mới"
+    ],
+    "gia-dat": [
+      "giá hơi chát",
+      "mắc hơn quanh đây"
+    ],
+    "cho-lau": [
+      "chờ hơi lâu",
+      "đợi muốn trễ giờ"
+    ],
+    "thieu-nhan": [
+      "thiếu mất một thứ",
+      "hụt mất món đã dặn"
+    ],
+    "sai-mon": [
+      "làm sai món",
+      "không đúng ổ mình gọi"
+    ],
+    "it-nhan": [
+      "nhân hơi ít",
+      "nhân mỏng"
+    ],
+    "nguoi": [
+      "ổ hơi nguội",
+      "bánh nguội"
+    ],
+    "banh-song": [
+      "vỏ chưa tới",
+      "bánh nướng chưa đủ"
+    ],
+    "banh-khet": [
+      "vỏ hơi khét",
+      "bánh sém một bên"
+    ],
+    "nhoi-nhet": [
+      "nhồi hơi nhiều",
+      "kẹp đầy quá rớt ra ngoài"
+    ],
+    "do-cu": [
+      "nhân không tươi lắm",
+      "vị không bằng hôm trước"
+    ],
+    "tay-ban": [
+      "thấy không rửa tay",
+      "cái vụ tay chưa rửa thì chịu"
+    ],
+    "chen-hang": [
+      "bị chen hàng",
+      "người tới sau lấy trước"
+    ],
+    "loa-on": [
+      "cái loa ồn quá",
+      "loa rao nhức đầu"
+    ],
+    "het-banh": [
+      "hết bánh sớm",
+      "tới nơi là hết"
+    ]
+  },
+  "noi": {
+    "_note": "Từ nối hai vế trái chiều. `totXau` = câu lõi khen rồi bẻ sang chê; `xauTot` = chê rồi vớt lại.",
+    "totXau": [
+      "mỗi tội",
+      "có điều",
+      "nhưng",
+      "mà"
+    ],
+    "xauTot": [
+      "được cái",
+      "bù lại",
+      "mà"
+    ]
+  },
+  "khongTuongPhan": {
+    "_note": "Chuyện nặng tới mức nhắc điểm cộng là vô duyên — review chỉ một vế.",
+    "ids": [
+      "dau-bung",
+      "co-san"
+    ]
+  },
+  "them": {
+    "tot": [
+      "rau giòn",
+      "đồ chua vừa miệng",
+      "chủ quán vui vẻ",
+      "gói kỹ, cầm đi đường không rớt",
+      "chỗ đứng chờ sạch sẽ",
+      "ra bánh nhanh",
+      "tương ớt đậm đà"
+    ],
+    "xau": [
+      "chờ hơi lâu",
+      "chỗ đứng chật",
+      "gói sơ sài",
+      "không có chỗ để xe",
+      "rau hơi ít",
+      "giá nhỉnh hơn quanh đây"
+    ]
+  },
+  "ket": {
+    "tot": [
+      "sẽ quay lại",
+      "ủng hộ quán dài dài",
+      "recommend nha mọi người",
+      "mai ghé nữa",
+      "ai gần đây thì thử đi"
+    ],
+    "vua": [
+      "chắc có dịp ghé lại",
+      "mong quán làm đều tay hơn",
+      "lần sau thử món khác xem sao"
+    ],
+    "xau": [
+      "không quay lại nữa",
+      "mọi người cân nhắc",
+      "thất vọng",
+      "lần sau chắc đi chỗ khác",
+      "mong quán xem lại"
+    ]
+  },
+  "dan": [
+    "ăn {mon}",
+    "gọi {mon}",
+    "mua {mon}",
+    "{mon} ở đây"
+  ],
+  "nghiem": [
+    "dau-bung",
+    "co-san",
+    "do-cu",
+    "tay-ban",
+    "het-banh"
+  ],
+  "khongDan": {
+    "_note": "Chủ đề mà nhắc tên món là vô lý — khách có cầm được ổ nào đâu.",
+    "ids": [
+      "het-banh"
+    ]
+  },
+  "ky": {
+    "_note": "Vế phụ chứa cụm này thì bỏ, khỏi lặp lại đúng cái câu lõi vừa nói.",
+    "cho-lau": "chờ",
+    "gia-dat": "giá",
+    "gia-re": "giá",
+    "it-nhan": "rau hơi ít",
+    "nhoi-nhet": "gói"
+  },
+  "persona": {
+    "sinhvien": [
+      "hợp túi tiền sinh viên",
+      "sáng nào đi học cũng ghé",
+      "rẻ là mua"
+    ],
+    "vanphong": [
+      "mua mang lên công ty",
+      "ăn vội trước giờ họp",
+      "cả phòng đặt một lượt"
+    ],
+    "colon": [
+      "bác bán hàng nhanh nhẹn",
+      "người lớn tuổi ăn thấy vừa miệng",
+      "giá vậy là được"
+    ],
+    "reviewer": [
+      "chấm 8/10",
+      "điểm cộng cho phần nhân",
+      "điểm trừ nhỏ thôi",
+      "mình ăn qua kha khá quán bánh mì rồi"
+    ],
+    "khachquen": [
+      "khách quen mấy tháng nay",
+      "tuần nào cũng ghé",
+      "ăn từ hồi quán mới mở"
+    ]
+  },
+  "nhamQuan": [
+    "hủ tiếu nước lạt, tô nhỏ mà tính giá cao",
+    "tô hủ tiếu ít thịt quá, nước dùng nhạt",
+    "quán hủ tiếu này dọn chậm, ngồi chờ muốn xỉu",
+    "ăn hủ tiếu ở đây thấy bình thường, không bằng chỗ cũ",
+    "gọi tô đặc biệt mà có mấy lát thịt"
+  ],
+  "doiThu": [
+    "dở, mọi người đừng ăn",
+    "không ra gì, tránh ra",
+    "quán này không nên tồn tại",
+    "ăn một lần là tởn tới già",
+    "tệ nhất khu này"
+  ],
+  "spam": [
+    "tốt",
+    "đẹp",
+    "được",
+    "hay",
+    "ok",
+    "👍",
+    "ai cần đổ mực máy in liên hệ mình nha",
+    "cho mình hỏi quán mấy giờ đóng cửa ạ",
+    "quán có tuyển người phụ không",
+    "ad ơi inbox mình cái"
+  ],
+  "ten": [
+    "Ngọc Hân",
+    "Trần Minh Quân",
+    "Thu Hà",
+    "Phạm Tuấn",
+    "Linh Nhi",
+    "Bảo Trân",
+    "Nguyễn Văn Đức",
+    "Mỹ Duyên",
+    "Hoàng Nam",
+    "Thanh Tùng",
+    "Kim Gì",
+    "Lê Quốc Thịnh",
+    "Hà Vy",
+    "Trọng Nghĩa",
+    "Phương Uyên",
+    "Đặng Hải",
+    "Tú Anh",
+    "Vũ Khánh Linh",
+    "bé Mít",
+    "Tâm Như",
+    "Quang Huy",
+    "Diễm My",
+    "chú Quang",
+    "cô Lan",
+    "Thắng Nguyễn",
+    "Ngân Giang",
+    "Huỳnh Phát",
+    "Trúc Quỳnh",
+    "Đỗ Gia Bảo",
+    "Mai Anh",
+    "hungnguyen2k",
+    "minhthu.ng",
+    "Tèo Sài Gòn",
+    "Ăn Gì Hôm Nay",
+    "Review Dạo"
+  ],
+  "hiem": [
+    "đang ăn thì gặp lại bạn cấp ba cũng đang đứng mua, tự nhiên thấy vui",
+    "ông chú trước mặt mua giùm luôn ổ của mình rồi đi mất, chưa kịp cảm ơn",
+    "mua ổ bánh mà được nghe hết một bản bolero từ loa nhà bên, trọn vẹn",
+    "con mèo quán bên cứ ngồi nhìn mình ăn, áy náy ghê",
+    "trời mưa, đứng trú chờ bánh, thấy cũng đáng"
+  ]
+}

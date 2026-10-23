@@ -16,7 +16,7 @@ export type Host = {
   minutes: () => number;
   /** Có đang trước giờ bán không (đơn đặt lúc này giao ngay lúc mở cửa). */
   beforeOpen: () => boolean;
-  /** Đơn đã đặt xong, cảnh quán cần biết (tour, thông báo). */
+  /** Đặt hàng xong và đã xem giờ hàng về — hết việc đầu của phần dẫn. */
   onOrdered?: () => void;
   onSave: () => void;
 };

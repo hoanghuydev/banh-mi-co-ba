@@ -62,7 +62,7 @@ test("N-5 ĐỔI HÀNG tốn một ổ thật — không tiền, mà cũng khôn
     + `"Đổi hôn con? Chén tàu hũ lấy ổ bánh không." là cả cuộc \`sau.doi\` dựng quanh`);
 });
 
-test("N-4 bà Sáu có cả hai nước đi: mình bưng giùm, và bảo bà tự dời", async () => {
+test("N-4 dì Liên có cả hai nước đi: mình bưng giùm, và bảo bà tự dời", async () => {
   const talks = await TalkStore.loadAll();
   let bung = 0, doi = 0;
   for (const t of talks) {

@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { makeChange } from "../src/sim/till";
 
-test("tiền lẻ: đủ thì thối; thiếu ≤ 5k thì bớt cho khách; thiếu nhiều thì chạy qua cô Mai", () => {
+test("tiền lẻ: đủ thì thối; thiếu ≤ 5k thì bớt cho khách; thiếu nhiều thì chạy qua cô Thuý", () => {
   const f = { floatLeft: 30_000 };
   assert.ok(makeChange(25_000, f, 0.5).ok);                           // đưa 30k, thối 5k
   const g = { floatLeft: 2_000 };

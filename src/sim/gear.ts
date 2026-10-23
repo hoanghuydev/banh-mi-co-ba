@@ -1,5 +1,4 @@
 import type { SaveFile } from "../core/save";
-import { ORDER_KEEP } from "./shop";
 import { Rng, fnv1a, splitmix32 } from "../core/rng";
 import { EQUIP, capacity, has, installEquip, priceVnd, used, whyNot, type EquipId, type EquipState } from "./equipment";
 
@@ -65,7 +64,6 @@ export function orderGear(w: SaveFile, coupon = false): number | null {
   w.econ.today.tools += q.total;
   const id = ++w.shop.seq;
   w.shop.gearOrders.unshift({ id, day: w.progress.dayIndex, items: [...w.shop.gearCart], total: q.total, delivered: false });
-  if (w.shop.gearOrders.length > ORDER_KEEP) w.shop.gearOrders.length = ORDER_KEEP;
   w.shop.gearCart = [];
   return id;
 }

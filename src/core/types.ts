@@ -21,7 +21,7 @@ export type Slot = StallZone;
 
 export type CustomerSlot = "FRONT_CENTER" | "FRONT_SIDE" | "QUEUE_2" | "QUEUE_3" | "SEATED_FAR";
 export type ObsState = "UNAWARE" | "GLIMPSED" | "NOTICED" | "CONFIRMED";
-export type SceneKey = "Boot" | "Menu" | "Day" | "Stall" | "Evening" | "Broke";
+export type SceneKey = "Boot" | "Menu" | "Day" | "Stall" | "Evening" | "Broke" | "Win";
 export type AttentionTool = "TRA_DA" | "ASK_QUESTION" | "OCCLUDE_BODY" | "SWITCH_SIDE";
 
 /** Runtime `npcId` là `string` vì khách vãng lai mang khoá theo dáng (`walkin3`); validator nội dung mới ép đúng danh sách này. */
@@ -35,9 +35,9 @@ export type NpcId = string;
 /** Mưa = MUA_RAO | MUA_DAM — xem `isRain`. */
 export type Weather = "NANG_GAT" | "MAT" | "AM_U" | "MUA_RAO" | "MUA_DAM" | "OI";
 
-/** `IMPATIENT` chờ quá sức trong hàng (lỗi người bán) ≠ `BALKED` thấy hàng dài quay đầu (không tính vào `lost`); `SOILED_FOOD` khách thấy bánh rớt đất rồi bị đưa. */
+/** `IMPATIENT` chờ quá sức trong hàng (lỗi người bán) ≠ `BALKED` thấy hàng dài quay đầu ≠ `PRICE_WALK` xem giá rồi quay đi (hai cái sau không tính vào `lost`); `SOILED_FOOD` khách thấy bánh rớt đất rồi bị đưa. */
 export type LeaveReason =
-  | "SERVED" | "IMPATIENT" | "SILENT_EXIT" | "SOLD_OUT" | "REFUSED" | "CLOSED" | "BALKED" | "SOILED_FOOD";
+  | "SERVED" | "IMPATIENT" | "SILENT_EXIT" | "SOLD_OUT" | "REFUSED" | "CLOSED" | "BALKED" | "PRICE_WALK" | "SOILED_FOOD";
 export type StallCloseReason = "CLOCK" | "SOLD_OUT" | "PLAYER";
 export type AutosaveReason = "CUSTOMER_DONE" | "EVENT" | "SCENE_CHANGE" | "QUIT";
 

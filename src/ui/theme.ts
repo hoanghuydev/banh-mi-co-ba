@@ -134,6 +134,84 @@ export function button(
   return c;
 }
 
+let dragging = 0;
+
+/** Đang kéo một thanh — trang cuộn theo chuột phải nhường lúc đó. */
+export const sliderDragging = () => dragging > 0;
+
+export type SliderOpts = { width?: number; hint?: string; step?: number; onRelease?: () => void };
+
+/** Thanh kéo 0–100: nhãn trái, số phải, rãnh dưới. Bấm hoặc kéo đều đặt được giá trị. */
+export function slider(
+  scene: Phaser.Scene, x: number, y: number, text: string,
+  get: () => number, set: (v: number) => void, opts: SliderOpts = {},
+) {
+  const w = opts.width ?? 340;
+  const step = opts.step ?? 5;
+  const h = sliderHeight();
+  const k = Math.min(textScale(), 1.25) / textScale();
+  const padX = 16;
+  const trackW = w - padX * 2;
+  const trackY = Math.round(h * 0.3);
+
+  const c = scene.add.container(x, y);
+  const bg = scene.add.graphics();
+  const name = label(scene, -w / 2 + padX, -Math.round(h * 0.3), text, 15 * k, UI.ink, "500").setOrigin(0, 0.5);
+  const val = label(scene, w / 2 - padX, -Math.round(h * 0.3), "", 14 * k, UI.muted, "500").setOrigin(1, 0.5);
+  const hint = opts.hint
+    ? label(scene, -w / 2 + padX, -Math.round(h * 0.02), opts.hint, 11 * k, UI.muted, "400").setOrigin(0, 0.5)
+    : null;
+
+  const paint = () => {
+    const v = Math.max(0, Math.min(100, get()));
+    val.setText(v === 0 ? "tắt" : `${v}%`);
+    bg.clear();
+    bg.fillStyle(0x0d1216, 0.18);
+    bg.fillRoundedRect(-w / 2 + 1, -h / 2 + 4, w, h, 12);
+    bg.fillStyle(UI.paper, 1);
+    bg.fillRoundedRect(-w / 2, -h / 2, w, h, 12);
+    bg.lineStyle(1.5, UI.line, 1);
+    bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 12);
+    bg.fillStyle(UI.line, 1);
+    bg.fillRoundedRect(-trackW / 2, trackY - 3, trackW, 6, 3);
+    bg.fillStyle(UI.accent, 1);
+    bg.fillRoundedRect(-trackW / 2, trackY - 3, (trackW * v) / 100, 6, 3);
+    bg.fillStyle(UI.accent, 1);
+    bg.fillCircle(-trackW / 2 + (trackW * v) / 100, trackY, 9);
+    bg.fillStyle(0xffffff, 1);
+    bg.fillCircle(-trackW / 2 + (trackW * v) / 100, trackY, 4);
+  };
+  paint();
+
+  c.add([bg, name, val, ...(hint ? [hint] : [])]);
+  c.setSize(w, h);
+  c.setInteractive(new Phaser.Geom.Rectangle(0, 0, w, h), Phaser.Geom.Rectangle.Contains);
+
+  const at = (px: number) => {
+    const raw = ((px - (c.x - trackW / 2)) / trackW) * 100;
+    const v = Math.round(Math.max(0, Math.min(100, raw)) / step) * step;
+    if (v !== get()) { set(v); paint(); }
+  };
+  let held = false;
+  c.on("pointerdown", (p: Phaser.Input.Pointer) => { held = true; dragging++; at(p.worldX); });
+  c.on("pointermove", (p: Phaser.Input.Pointer) => { if (held) at(p.worldX); });
+  const release = () => {
+    if (!held) return;
+    held = false;
+    dragging = Math.max(0, dragging - 1);
+    sfx.play(scene, "ui_click");
+    opts.onRelease?.();
+  };
+  scene.input.on("pointerup", release);
+  c.once(Phaser.GameObjects.Events.DESTROY, () => {
+    scene.input.off("pointerup", release);
+    if (held) dragging = Math.max(0, dragging - 1);
+  });
+  return c;
+}
+
+export const sliderHeight = () => Math.round(72 * Math.min(textScale(), 1.25));
+
 /** `onClick` có thể dựng lại cả trang và huỷ nút này, nên kiểm `txt.scene` trước khi đổi nhãn. */
 export function toggle(
   scene: Phaser.Scene, x: number, y: number, text: string,
