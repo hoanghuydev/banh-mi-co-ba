@@ -3,8 +3,15 @@ import { fitPhoto } from "../art/photo";
 import { GAME_H } from "../core/config";
 import { FOOD, buildFood } from "../art/food";
 import { CAPACITY, INGREDIENTS, labelOf, portionsOf, type Ingredient, type IngredientInfo } from "../sim/order";
-import { FONT, UI, button, buttonHeight, panel, textScale } from "./theme";
+import { FONT, UI, hintedButtonHeight, platedKit, textScale, tray, well } from "./theme";
 import { Steam } from "./stall/Steam";
+
+const { button } = platedKit;
+
+/** Chữ phụ và báo lỗi trên khay tối. */
+const HINT = "#d8cfba";
+const HINT_ERR = "#ffb4a6";
+const HINT_OK = "#a6e3bd";
 
 /** Bên trái, dưới phiếu đơn của HUD, để không che hàng khách. */
 const PANEL_W = 470;
@@ -79,7 +86,7 @@ export class AssemblyPanel {
     const cx = this.cx = PANEL_LEFT + this.pw / 2, cy = PANEL_TOP + this.ph / 2;
     const top = PANEL_TOP;
     this.root = scene.add.container(0, 0).setDepth(9_400_000).setScrollFactor(0).setVisible(false);
-    this.root.add(panel(scene, cx, cy, this.pw, this.ph, UI.paper, 1).setScrollFactor(0));
+    this.root.add(tray(scene, cx, cy, this.pw, this.ph, 22, 0.72).setScrollFactor(0));
     const pw = Math.round(100 * this.sw), pgap = Math.round(108 * this.sw);
     for (let i = 0; i < 3; i++) {
       const b = button(scene, cx - this.pw / 2 + Math.round(62 * this.sw) + i * pgap, top + this.yPreset,
@@ -106,7 +113,7 @@ export class AssemblyPanel {
     this.th = Math.round(TILE_H - 18 + 18 * this.s);
     this.rowStep = this.th + 6;
 
-    const bh = buttonHeight(MAX_SCALE_BTN);
+    const bh = hintedButtonHeight(MAX_SCALE_BTN);
     let y = 6;
     this.yPreset = y + bh / 2; y += bh + 6;
     this.yLoaf = y + LOAF_H / 2; y += LOAF_H;
@@ -123,12 +130,13 @@ export class AssemblyPanel {
     this.loafImg = fitPhoto(this.scene.add.image(x, y, FOOD.loaf)).setScrollFactor(0);
     this.fillLayer = this.scene.add.container(0, 0).setScrollFactor(0);
     this.steam = new Steam(this.scene, true);
-    this.root.add([this.loafImg, this.fillLayer, this.steam.graphics]);
+    const slot = well(this.scene, x, y - 2, this.pw - 36, LOAF_H - 8, 14).setScrollFactor(0);
+    this.root.add([slot, this.loafImg, this.fillLayer, this.steam.graphics]);
 
     // Không được chạm hàng nút phía trên, nhả tay trúng nút là bấm nút.
     this.dropZone = new Phaser.Geom.Rectangle(
       x - FOOD.LOAF_W / 2 + 10, y - LOAF_H / 2 + 6, FOOD.LOAF_W - 20, LOAF_H - 12);
-    this.hint = this.text(x, PANEL_TOP + this.yHint, "kéo miếng nhân thả vào đây", 11, UI.muted, "400");
+    this.hint = this.text(x, PANEL_TOP + this.yHint, "kéo miếng nhân thả vào đây", 11, HINT, "400");
     this.root.add(this.hint);
   }
 
@@ -157,7 +165,7 @@ export class AssemblyPanel {
   }
 
   wrapBounds() {
-    const h = buttonHeight(MAX_SCALE_BTN);
+    const h = hintedButtonHeight(MAX_SCALE_BTN);
     return {
       x: this.cx + (this.tw + 8) - this.tw / 2, y: PANEL_TOP + this.yAct - h / 2 + this.root.y,
       w: this.tw, h,
@@ -193,10 +201,10 @@ export class AssemblyPanel {
     const bg = this.scene.add.graphics().setScrollFactor(0);
     const paint = (hot: boolean) => {
       bg.clear();
-      bg.fillStyle(hot ? 0xe9e2d2 : 0xfaf8f1, 1);
-      bg.fillRoundedRect(-TW / 2, -TH / 2, TW, TH, 10);
-      bg.lineStyle(1.4, hot ? UI.accent : UI.line, 1);
-      bg.strokeRoundedRect(-TW / 2, -TH / 2, TW, TH, 10);
+      bg.fillStyle(0xffffff, 0.7).fillRoundedRect(-TW / 2, -TH / 2 + 2, TW, TH, 10);
+      bg.fillStyle(hot ? 0xdcd3bb : 0xcfc6ae, 1).fillRoundedRect(-TW / 2, -TH / 2, TW, TH, 10);
+      bg.fillStyle(0x8d8570, 0.45).fillRoundedRect(-TW / 2 + 1, -TH / 2, TW - 2, 5, { tl: 10, tr: 10, bl: 2, br: 2 });
+      if (hot) bg.lineStyle(1.4, UI.accent, 1).strokeRoundedRect(-TW / 2, -TH / 2, TW, TH, 10);
     };
     paint(false);
 
@@ -205,7 +213,7 @@ export class AssemblyPanel {
     const icon = fitPhoto(this.scene.add.image(iconX, 0, FOOD.icon(id)), si).setScrollFactor(0);
     const nameX = -TW / 2 + Math.round(30 + 24 * si);
     const name = this.scene.add.text(nameX, 0, label, {
-      fontFamily: FONT, fontSize: `${Math.round(13 * this.s)}px`, fontStyle: "500", color: UI.ink,
+      fontFamily: FONT, fontSize: `${Math.round(13 * this.s)}px`, fontStyle: "500", color: "#2a2420",
       wordWrap: { width: TW / 2 - 8 - nameX, useAdvancedWrap: true },
     }).setOrigin(0, 0.5).setScrollFactor(0);
     // Huy hiệu "×n" ở góc ảnh, vì bên phải là chỗ của tên.
@@ -245,13 +253,13 @@ export class AssemblyPanel {
     c.on("drag", (p: Phaser.Input.Pointer) => {
       this.ghost?.setPosition(p.x, p.y);
       const over = this.dropZone.contains(p.x, p.y);
-      this.hint.setColor(over ? UI.goodCss : UI.muted);
+      this.hint.setColor(over ? HINT_OK : HINT);
     });
     c.on("dragend", (p: Phaser.Input.Pointer) => {
       const dropped = this.dropZone.contains(p.x, p.y);
       this.ghost?.destroy();
       this.ghost = null;
-      this.hint.setColor(UI.muted);
+      this.hint.setColor(HINT);
       paint(false);
       if (dropped && this.open) this.add(id);
     });
@@ -305,7 +313,7 @@ export class AssemblyPanel {
   }
 
   private flash(msg: string) {
-    this.hint.setText(msg).setColor(UI.accentCss);
+    this.hint.setText(msg).setColor(HINT_ERR);
     this.scene.time.delayedCall(2500, () => { if (this.open) this.repaint(); });
   }
 
@@ -367,7 +375,7 @@ export class AssemblyPanel {
 
   private repaint() {
     this.fillLayer.removeAll(true);
-    this.hint.setColor(UI.muted);
+    this.hint.setColor(HINT);
 
     if (this.stack.length === 0) {
       this.hint.setText("kéo miếng nhân thả vào đây");

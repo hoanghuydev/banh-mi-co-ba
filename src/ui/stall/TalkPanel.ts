@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { GAME_H, GAME_W } from "../../core/config";
-import { FONT, UI, label, panel, textScale } from "../theme";
+import { FONT, UI, label, textScale } from "../theme";
 import type { TalkTone } from "../../sim/talk";
 import { CARD_EDGE, placeTalkCard } from "./talkCardLayout";
 
@@ -41,7 +41,7 @@ export type TalkPanelView = {
 
 export class TalkPanel {
   private root: Phaser.GameObjects.Container | null = null;
-  private rows: { bg: Phaser.GameObjects.Graphics; w: number; h: number }[] = [];
+  private rows: { bg: Phaser.GameObjects.Graphics; row: Phaser.GameObjects.Container; y: number; w: number; h: number }[] = [];
   private cursor = 0;
   private count = 0;
   private off: (() => void)[] = [];
@@ -100,7 +100,7 @@ export class TalkPanel {
     const { cx, cy } = this.place(v.anchor, w, h);
     const top = cy - h / 2;
 
-    c.add(panel(this.scene, cx, cy, w, h, UI.paper, 0.97));
+    c.add(this.card(cx, cy, w, h));
     c.add(label(this.scene, cx - w / 2 + PAD, top + PAD + nameH / 2, `nói với ${v.name}`, 12, UI.muted, "700").setOrigin(0, 0.5));
 
     if (lineTxt) {
@@ -139,6 +139,17 @@ export class TalkPanel {
   }
 
 
+  /** Thẻ giấy phẳng: viền mảnh, hai lớp bóng mềm. */
+  private card(cx: number, cy: number, w: number, h: number) {
+    const g = this.scene.add.graphics();
+    const x = cx - w / 2, y = cy - h / 2;
+    g.fillStyle(0x3c1c0a, 0.1).fillRoundedRect(x - 4, y + 3, w + 8, h + 10, 18);
+    g.fillStyle(0x3c1c0a, 0.2).fillRoundedRect(x - 1, y + 3, w + 2, h + 3, 14);
+    g.fillStyle(0xf7f1e2, 1).fillRoundedRect(x, y, w, h, 12);
+    g.lineStyle(1.5, UI.line, 1).strokeRoundedRect(x, y, w, h, 12);
+    return g;
+  }
+
   private makeRow(x: number, y: number, w: number, h: number, i: number, txt: Phaser.GameObjects.Text, tone: TalkTone, sz: number) {
     const row = this.scene.add.container(x, y);
     const bg = this.scene.add.graphics();
@@ -153,7 +164,7 @@ export class TalkPanel {
     row.on("pointerover", () => { this.cursor = i; this.paint(); });
     row.on("pointerup", () => this.pick(i));
 
-    this.rows.push({ bg, w, h });
+    this.rows.push({ bg, row, y, w, h });
     (bg as any).__tone = tone;
     void sz;
     return row;
@@ -163,12 +174,13 @@ export class TalkPanel {
     this.rows.forEach((r, i) => {
       const on = i === this.cursor;
       const tone = (r.bg as any).__tone as TalkTone;
+      r.row.setY(r.y - (on ? 1.5 : 0));
       r.bg.clear();
-      r.bg.fillStyle(on ? 0xe9e4d6 : 0xf7f5ee, 1);
+      if (on) r.bg.fillStyle(0x3c1c0a, 0.16).fillRoundedRect(-r.w / 2 + 1, -r.h / 2 + 3, r.w - 2, r.h, 8);
+      r.bg.fillStyle(on ? 0xffffff : 0xfbf8ef, 1);
       r.bg.fillRoundedRect(-r.w / 2, -r.h / 2, r.w, r.h, 8);
       r.bg.lineStyle(1.5, on ? UI.accent : UI.line, 1);
       r.bg.strokeRoundedRect(-r.w / 2, -r.h / 2, r.w, r.h, 8);
-      // mép trái theo giọng — đủ để thấy "cái này gắt" mà không thành một con số
       r.bg.fillStyle(TONE_TINT[tone], on ? 1 : 0.75);
       r.bg.fillRoundedRect(-r.w / 2, -r.h / 2 + 5, 3, r.h - 10, 2);
     });

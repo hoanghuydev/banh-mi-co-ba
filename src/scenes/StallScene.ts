@@ -67,7 +67,7 @@ import {
 } from "../art";
 import { Player } from "../entities/Player";
 import { Hud, type Watch } from "../ui/Hud";
-import { UI, button, buttonHeight, label, panel, textScale } from "../ui/theme";
+import { UI, label, platedButtonHeight, platedKit, textScale, tray } from "../ui/theme";
 import { music, type CueId } from "../audio/music";
 import { StallAudio } from "../audio/stallAudio";
 
@@ -811,7 +811,7 @@ export class StallScene extends Phaser.Scene {
           const t = this.world.progress.today;
           t.burnt = (t.burnt ?? 0) + 1;
           bus.emit("stim:emitted", { stimId: "BURNT_OR_COLD", zone: "OVEN", salience: SALIENCE.BURNT_OR_COLD, at: this.elapsed, smell: true });
-          this.hud.toast("khét rồi", "bad", this.popClock);
+          this.hud.toast("khét rồi", "bad", this.popClock, { icon: "flame" });
         }
         this.tickGrip(dt);
         this.addDirt(0.0015 * Math.max(0, this.clock.minutes - this.lastMinutes));
@@ -843,12 +843,12 @@ export class StallScene extends Phaser.Scene {
       },
       npc: (dt) => {
         for (const o of deliverDue(this.world, this.clock.minutes)) {
-          this.hud.toast(`Đơn #${o.id} đã giao`, "good", this.popClock);
+          this.hud.toast(`Đơn #${o.id} đã giao`, "good", this.popClock, { icon: "box", title: "Đơn hàng" });
           sfx.play(this, "ui_dat_thanh_cong");
         }
         const fresh = dueReviews(this.world, this.clock.minutes);
         for (const r of fresh) {
-          this.hud.toast(`${r.who} — ${r.stars}★`, r.stars >= 4 ? "good" : "bad", this.popClock);
+          this.hud.toast(`${r.who} — ${r.stars}★`, r.stars >= 4 ? "good" : "bad", this.popClock, { icon: "star", title: "Đánh giá mới" });
           sfx.play(this, "ui_dat_thanh_cong");
         }
         if (fresh.length) this.hud.setUnread(totalUnread(this.world.phone) + unseen(this.world));
@@ -1436,7 +1436,7 @@ export class StallScene extends Phaser.Scene {
     if (wasDish) {
       if (!cleanHandsToday(this.world) && ++this.soldSinceWash >= WASH_EVERY && this.hands === "CLEAN") {
         this.hands = "MONEY";
-        this.hud.toast("tay dơ rồi, rửa ngay", "info", this.popClock);
+        this.hud.toast("tay dơ rồi, rửa ngay", "info", this.popClock, { icon: "alert" });
       }
       this.audio.money();
       this.beBusy(this.workSeconds(TAKE_MONEY_SEC), "đang nhận tiền", "quick");
@@ -2534,7 +2534,7 @@ export class StallScene extends Phaser.Scene {
     if (!n) return;
     if (linked(w)) {
       for (let i = 0; i < n; i++) questDone(w);
-      this.hud.toast(QUEST_DONE, "good", this.popClock);
+      this.hud.toast(QUEST_DONE, "good", this.popClock, { title: "Hệ thống" });
       if (tourStep(w) === "XONG") finishRookie(w, ROOKIE_DONE);
     }
   }
@@ -2616,20 +2616,24 @@ export class StallScene extends Phaser.Scene {
 
   private modal(title: string, actions: [string, () => void][], sub?: string) {
     const c = this.add.container(0, 0).setDepth(9_500_000).setScrollFactor(0);
-    const step = buttonHeight() + 12;
     const sz = textScale();
-    const h = Math.min(GAME_H - 16, 90 + 40 * sz + actions.length * step + (sub ? 44 * sz : 0));
+    const step = platedButtonHeight() + 16;
+    const pad = 24;
+    const ttl = label(this, GAME_W / 2, 0, title, 22, "#f7f1e2", "700");
+    const note = sub ? label(this, GAME_W / 2, 0, sub, 13, "#d8cfba", "400").setWordWrapWidth(420).setOrigin(0.5, 0) : null;
+    const noteTop = pad + ttl.height + 10;
+    const btnTop = note ? noteTop + note.height + 20 : pad + ttl.height + 20;
+    const h = Math.min(GAME_H - 16, btnTop + actions.length * step - 16 + pad + 6 * sz);
     const top = GAME_H / 2 - h / 2;
+    ttl.setY(top + pad + ttl.height / 2);
+    note?.setY(top + noteTop);
     c.add(this.add.rectangle(GAME_W / 2, GAME_H / 2, GAME_W, GAME_H, 0x0d1216, 0.55));
-    c.add(panel(this, GAME_W / 2, GAME_H / 2, 470, h, UI.paper, 0.98));
-    c.add(label(this, GAME_W / 2, top + 20 + 20 * sz, title, 22, UI.ink, "700"));
-    if (sub) c.add(label(this, GAME_W / 2, top + 44 + 44 * sz, sub, 13, UI.muted, "400").setWordWrapWidth(440));
-
-    const first = top + 50 + 40 * sz + (sub ? 44 * sz : 0) + step / 2;
+    c.add(tray(this, GAME_W / 2, GAME_H / 2, 470, h, 22, 0.78));
+    c.add(note ? [ttl, note] : [ttl]);
     actions.forEach(([text, fn], i) =>
       // scrollFactor(0) cho TỪNG nút: camera quán đang cuộn, nút không đặt thì vùng bấm
       // lệch khỏi chỗ vẽ đúng bằng độ cuộn — bấm vào nút mà không ăn.
-      c.add(button(this, GAME_W / 2, first + i * step, text, fn, { width: 280, primary: i === 0 }).setScrollFactor(0)));
+      c.add(platedKit.button(this, GAME_W / 2, top + btnTop + platedButtonHeight() / 2 + i * step, text, fn, { width: 280, primary: i === 0 }).setScrollFactor(0)));
     return c;
   }
 }

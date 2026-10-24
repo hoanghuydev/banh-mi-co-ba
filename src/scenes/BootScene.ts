@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { buildTextures, preloadArt } from "../art";
 import { sfx } from "../audio/sfx";
+import { preloadBackdrop } from "../ui/backdrop";
 import { fadeOut, paintTick, setLoading, setStep } from "../ui/bootScreen";
 
 /** Ảnh phải tải xong trước `buildTextures` vì `art/photo.ts` đè lên texture vẽ code trong đó. */
@@ -11,6 +12,7 @@ export class BootScene extends Phaser.Scene {
     setLoading(0);
     this.load.on("progress", setLoading);
     preloadArt(this);
+    preloadBackdrop(this);
     // Sảnh không có `preload` riêng mà nút nào cũng kêu.
     sfx.preload(this, sfx.idsOfBus("amBao"));
     // `DayScene` thường trực không có `preload` riêng.

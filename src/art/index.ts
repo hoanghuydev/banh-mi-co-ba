@@ -23,22 +23,28 @@ export { createMenuBoard } from "./menuboard";
 export { FX } from "./fx";
 export { TILE, BUILD, COUNTER, PROP };
 
-// SVG nướng gấp đôi cỡ hiển thị để không nhoè khi FIT phóng lên full-HD.
-export const ICON = { eyeInk: "icon:eye-ink", eyeRed: "icon:eye-red" } as const;
-const SVGS: Record<string, { file: string; w: number; h: number }> = {
-  [ICON.eyeInk]: { file: "art/eye-ink.svg", w: 144, h: 88 },
-  [ICON.eyeRed]: { file: "art/eye-red.svg", w: 144, h: 88 },
+export const ICON = {
+  handClean: "icon:hand-clean", handMoney: "icon:hand-money",
+  eyeGlance: "icon:eye-glance", eyeClose: "icon:eye-close",
+} as const;
+const ICON_FILE: Record<string, string> = {
+  [ICON.handClean]: "art/hud_hand_clean.webp", [ICON.handMoney]: "art/hud_hand_money.webp",
+  [ICON.eyeGlance]: "art/hud_eye_glance.webp", [ICON.eyeClose]: "art/hud_eye_close.webp",
 };
-const askedSvg = new Set<string>();
+export const NTF = ["phone", "star", "chat", "alert", "box", "check", "info", "flame"] as const;
+export type NtfIcon = typeof NTF[number];
+export const ntfKey = (n: NtfIcon) => `icon:ntf-${n}`;
+for (const n of NTF) ICON_FILE[ntfKey(n)] = `art/ntf_${n}.webp`;
+const askedIcon = new Set<string>();
 
 export function preloadArt(scene: Phaser.Scene, withNpc = false) {
   preloadPhotos(scene);
   if (withNpc) preloadNpcPhotos(scene);
   // Lúc đang tải `textures.exists` vẫn false, nên phải nhớ key đã xin kẻo Phaser báo trùng.
-  for (const [key, svg] of Object.entries(SVGS)) {
-    if (askedSvg.has(key) || scene.textures.exists(key)) continue;
-    askedSvg.add(key);
-    scene.load.svg(key, svg.file, { width: svg.w, height: svg.h });
+  for (const [key, file] of Object.entries(ICON_FILE)) {
+    if (askedIcon.has(key) || scene.textures.exists(key)) continue;
+    askedIcon.add(key);
+    scene.load.image(key, file);
   }
 }
 

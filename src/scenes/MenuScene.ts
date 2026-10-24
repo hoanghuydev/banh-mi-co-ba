@@ -1,6 +1,10 @@
 import Phaser from "phaser";
 import { fitDesignFrame } from "../core/render";
-import { Stack, button, buttonHeight, label, panel, slider, sliderDragging, sliderHeight, textScale, toggle, UI } from "../ui/theme";
+import { Stack, buttonHeight, label, platedKit, sliderDragging, sliderHeight, textScale, UI } from "../ui/theme";
+
+const { button, panel, slider, toggle } = platedKit;
+
+const TRAY_INK = "#f7f1e2";
 import { drawAlleyBackdrop } from "../ui/backdrop";
 import { GAME_TITLE, cleanName } from "../content/shop";
 import {
@@ -58,6 +62,14 @@ export class MenuScene extends Phaser.Scene {
   }
 
 
+  /** Khay phẳng tối để nút 3D nổi lên, không chồng khối 3D lên khối 3D. */
+  private tray(x: number, top: number, w: number, h: number) {
+    const g = this.add.graphics();
+    g.fillStyle(0x2a2018, 0.62).fillRoundedRect(x - w / 2, top, w, h, 22);
+    g.lineStyle(2, 0xf7f1e2, 0.2).strokeRoundedRect(x - w / 2 + 1, top + 1, w - 2, h - 2, 21);
+    return g;
+  }
+
   private peekSave(): { save: SaveFile | null } {
     return { save: new SaveService(bus, () => { throw new Error("peek"); }).load() };
   }
@@ -75,7 +87,7 @@ export class MenuScene extends Phaser.Scene {
     this.page.add(body);
 
     const top = Math.round(88 / textScale());
-    const st = new Stack(top, 10);
+    const st = new Stack(top, 12);
     const title = st.place(label(this, x, 0, GAME_TITLE, 40, UI.ink, "700"), 10);
     const sub = st.place(label(this, x, 0, "Một quán nhỏ đầu hẻm, Sài Gòn", 15, UI.muted, "400"), 0);
     body.add([title, sub]);
@@ -98,7 +110,7 @@ export class MenuScene extends Phaser.Scene {
     body.add(st.button(button(this, x, 0, "Giới thiệu", () => this.show("about"), { width: 300 }), 14));
 
     // Trang dài hơn khung hình thì chân trang đi theo nội dung để khỏi đè nút cuối.
-    const foot = label(this, x, GAME_H - 26,
+    const foot = label(this, x, GAME_H - 12,
       `bản dựng thử v0.2${PLAYTEST ? " · chơi thử" : ""}`, 11, "#cfdae0", "400");
     if (st.y > GAME_H - 48) {
       st.skip(10);
@@ -131,7 +143,7 @@ export class MenuScene extends Phaser.Scene {
     this.page.add(body);
 
     const top = Math.round(120 / textScale());
-    const st = new Stack(top, 10);
+    const st = new Stack(top, 12);
     const title = st.place(label(this, x, 0, "Xoá ván đang chơi?", 24, UI.ink, "700"), 18);
     const what = st.place(label(this, x, 0, save
       ? `Đang chơi dở: ngày ${save.progress.dayIndex} · ${save.money.cash.toLocaleString("vi-VN")}₫`
@@ -169,7 +181,7 @@ export class MenuScene extends Phaser.Scene {
     this.page.add(body);
 
     const top = Math.round(120 / textScale());
-    const st = new Stack(top, 10);
+    const st = new Stack(top, 12);
     const title = st.place(label(this, x, 0, "Ghi số liệu chơi thử?", 22, UI.ink, "700"), 20);
     const text = st.place(label(this, x, 0,
       "Game ghi vài con số vào máy này: một ngày dài bao lâu, khách nào bỏ đi.\n"
@@ -204,15 +216,13 @@ export class MenuScene extends Phaser.Scene {
     const x = GAME_W / 2;
     const body = this.add.container(0, 0);
     this.page.add(body);
-    const bg = this.add.graphics();
-    body.add(bg);
     const top = Math.round(70 / textScale());
-    const st = new Stack(top + 22, 10);
-    body.add(st.place(label(this, x, 0, "Cài đặt", 26, UI.ink, "700"), 16));
+    const st = new Stack(top + 22, 12);
+    body.add(st.place(label(this, x, 0, "Cài đặt", 26, TRAY_INK, "700"), 16));
 
     const sizes: Settings["textScale"][] = [1, 1.25, 1.5, 2];
     const tg = (name: string, get: () => string, fn: () => void, hint?: string) =>
-      body.add(st.button(toggle(this, x, 0, name, get, fn, 340, hint)));
+      body.add(st.button(toggle(this, x, 0, name, get, fn, 400, hint)));
 
     tg("Cỡ chữ", () => `${Math.round(s.textScale * 100)}%`,
       () => { put({ textScale: sizes[(sizes.indexOf(s.textScale) + 1) % sizes.length] }); this.show("settings"); });
@@ -230,7 +240,7 @@ export class MenuScene extends Phaser.Scene {
       "nằm trong máy này, không tự gửi đi đâu");
     st.skip(12);
 
-    bg.fillStyle(0xf7f4ec, 0.96).fillRoundedRect(x - 270, top, 540, st.y - top, 16);
+    body.addAt(this.tray(x, top, 540, st.y - top), 0);
 
     // Ghim đáy vì danh sách công tắc có thể cao hơn khung hình.
     const barTop = GAME_H - buttonHeight() - 28;
@@ -254,18 +264,16 @@ export class MenuScene extends Phaser.Scene {
     const x = GAME_W / 2;
     const body = this.add.container(0, 0);
     this.page.add(body);
-    const bg = this.add.graphics();
-    body.add(bg);
     const top = Math.round(70 / textScale());
-    const st = new Stack(top + 22, 10);
-    body.add(st.place(label(this, x, 0, "Âm thanh", 26, UI.ink, "700"), 14));
+    const st = new Stack(top + 22, 12);
+    body.add(st.place(label(this, x, 0, "Âm thanh", 26, TRAY_INK, "700"), 14));
 
     const tg = (name: string, get: () => string, fn: () => void, hint?: string) =>
-      body.add(st.button(toggle(this, x, 0, name, get, fn, 340, hint)));
+      body.add(st.button(toggle(this, x, 0, name, get, fn, 400, hint)));
     type Chan = "masterVolume" | "musicVolume" | "streetVolume" | "voiceVolume" | "foleyVolume" | "uiVolume" | "crowdVolume";
     const chan = (name: string, key: Chan, hint: string, onRelease?: () => void) => {
       const o = slider(this, x, 0, name, () => s[key], (v) => put({ [key]: v } as Partial<Settings>),
-        { width: 340, hint, onRelease });
+        { width: 400, hint, onRelease });
       o.setY(st.y + sliderHeight() / 2);
       st.skip(sliderHeight() + 10);
       body.add(o);
@@ -294,7 +302,7 @@ export class MenuScene extends Phaser.Scene {
       "bỏ trái–phải, dồn hết vào giữa");
 
     st.skip(12);
-    bg.fillStyle(0xf7f4ec, 0.96).fillRoundedRect(x - 270, top, 540, st.y - top, 16);
+    body.addAt(this.tray(x, top, 540, st.y - top), 0);
 
     const barTop = GAME_H - buttonHeight() - 28;
     this.page.add(this.add.graphics().fillStyle(0x121820, 0.92).fillRect(0, barTop, GAME_W, GAME_H - barTop));
@@ -321,7 +329,7 @@ export class MenuScene extends Phaser.Scene {
     this.page.add(body);
 
     const top = Math.round(104 / textScale());
-    const st = new Stack(top, 10);
+    const st = new Stack(top, 12);
     const title = st.place(label(this, x, 0, "Giới thiệu", 26, UI.ink, "700"), 22);
 
     const what = st.place(label(this, x, 0, [
