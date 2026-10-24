@@ -62,7 +62,7 @@
       "topic": "mui",
       "source": "BOTH",
       "depth": "FULL",
-      "opener": "Thơm dữ ta. Bánh mì hả {you}?",
+      "opener": "Thơm ghê. Bánh mì hả {you}?",
       "openMood": "NGAC_NHIEN",
       "tree": [
         {
@@ -87,7 +87,7 @@
             {
               "say": "{call} đi đường cẩn thận nha.",
               "tone": "AM",
-              "reply": "Ừ. Bán đắt nha con.",
+              "reply": "Ừ. Bán đắt nha {you}.",
               "mood": "CUOI",
               "act": {
                 "kind": "WALK_ON"
@@ -204,7 +204,7 @@
             "act": {
               "kind": "INVITE",
               "yes": "Ừ. Một ổ. Mở hàng cho con.",
-              "no": "Bữa khác nha. Tui đang vội."
+              "no": "Hôm khác nha. Tui đang vội."
             },
             "need": [
               "!p.soldOut"
@@ -302,7 +302,7 @@
         {
           "say": "{call} đứng vô trong cho khỏi ướt.",
           "tone": "AM",
-          "reply": "Cảm ơn con. Mưa vậy đi không nổi.",
+          "reply": "Cảm ơn {you}. Mưa vậy đi không nổi.",
           "then": [
             {
               "say": "{call} đi đâu mà gặp mưa vậy?",
@@ -310,7 +310,7 @@
               "reply": "Đi có chút chuyện. Mưa gió gì cũng phải đi."
             },
             {
-              "say": "Mưa này chút là tạnh hà {call}.",
+              "say": "Mưa này chút nữa là tạnh {call}.",
               "tone": "AM",
               "reply": "Mong vậy. Tui còn phải ghé chỗ làm.",
               "need": [
@@ -392,7 +392,7 @@
             {
               "say": "Trễ dữ hả {call}?",
               "tone": "DUA",
-              "reply": "con này nói chuyện ngang à nha.",
+              "reply": "Con này nói chuyện ngang à nha.",
               "mood": "BUC"
             },
             {
@@ -438,7 +438,7 @@
         {
           "say": "{me} cũng mới ra đây bán thôi {call}.",
           "tone": "AM",
-          "reply": "Vậy hả. Bán được không con?",
+          "reply": "Vậy hả. Bán được không {you}?",
           "then": [
             {
               "say": "Cũng đắp đổi. {call} làm một ổ nha?",
@@ -446,7 +446,7 @@
               "act": {
                 "kind": "INVITE",
                 "yes": "Ờ. Cho tui một ổ, ủng hộ hàng xóm mới.",
-                "no": "Bữa khác nha. Tui ăn rồi."
+                "no": "Hôm khác nha. Tui ăn rồi."
               },
               "need": [
                 "p.holdsBread",
@@ -507,7 +507,7 @@
             {
               "say": "Cũng thường thôi {call}.",
               "tone": "LANH",
-              "reply": "Ừ. Bữa đực bữa cái mà."
+              "reply": "Ừ. Hôm bán hôm ế mà."
             },
             {
               "say": "Sáng bán hết rồi, đây là mẻ sau {call}.",
@@ -524,12 +524,12 @@
               "mood": "MET"
             },
             {
-              "say": "{call} ăn giùm {me} ổ cuối nha.",
+              "say": "{call} ăn giúp {me} ổ cuối nha.",
               "tone": "DUA",
               "act": {
                 "kind": "INVITE",
                 "yes": "Ha. Thôi được, ổ cuối thì tui lấy.",
-                "no": "Để bữa khác nha con."
+                "no": "Để hôm khác nha con."
               },
               "need": [
                 "!p.soldOut",
@@ -553,7 +553,7 @@
           "mood": "CUOI"
         },
         {
-          "say": "Còn mấy ổ cuối hà {call}. Lấy giùm {me} đi.",
+          "say": "Còn mấy ổ cuối thôi {call}. Lấy giúp {me} đi.",
           "tone": "AM",
           "need": [
             "c.openedBy(PLAYER)",
@@ -562,7 +562,7 @@
           ],
           "act": {
             "kind": "INVITE",
-            "yes": "Ờ, vậy cho tui một ổ. Mua giùm cho con dọn sớm.",
+            "yes": "Ờ, vậy cho tui một ổ. Mua cho con dọn sớm.",
             "no": "Thôi con ơi, tui ăn trưa rồi."
           }
         },
@@ -594,7 +594,7 @@
         {
           "say": "Dạ hết rồi {call} ơi.",
           "tone": "THANG",
-          "reply": "Tiếc dữ. Thôi, bữa nào đi ngang tui ngó.",
+          "reply": "Tiếc dữ. Thôi, hôm nào đi ngang tui ngó.",
           "need": [
             "c.openedBy(NPC)",
             "p.soldOut"
@@ -625,7 +625,7 @@
         {
           "say": "{call} cứ ngó thoải mái.",
           "tone": "AM",
-          "reply": "con này dễ thương ghê. Bên kia người ta đuổi tui.",
+          "reply": "Con này dễ thương ghê. Bên kia người ta đuổi tui.",
           "mood": "CUOI",
           "then": [
             {
@@ -634,7 +634,7 @@
               "act": {
                 "kind": "INVITE",
                 "yes": "Ờ thôi, cho tui một ổ.",
-                "no": "Để bữa khác nha con."
+                "no": "Để hôm khác nha con."
               },
               "need": [
                 "!p.soldOut"
@@ -646,7 +646,7 @@
               "act": {
                 "kind": "INVITE",
                 "yes": "Trời. Nói vậy ai mà đi nổi.",
-                "no": "Ha. con khéo miệng ghê. Mà thôi."
+                "no": "Ha. Con khéo miệng ghê. Mà thôi."
               },
               "need": [
                 "!p.soldOut"
@@ -694,7 +694,7 @@
               "act": {
                 "kind": "INVITE",
                 "yes": "Ờ thôi, cho tui một ổ.",
-                "no": "Để bữa khác nha con."
+                "no": "Để hôm khác nha con."
               }
             },
             {
@@ -706,7 +706,7 @@
               "act": {
                 "kind": "INVITE",
                 "yes": "Trời. Nói vậy ai mà đi nổi.",
-                "no": "Ha. con khéo miệng ghê. Mà thôi."
+                "no": "Ha. Con khéo miệng ghê. Mà thôi."
               }
             },
             {
@@ -795,7 +795,7 @@
           "mood": "MET"
         },
         {
-          "say": "Thấy {call} vui ha. Có chuyện gì hay vậy {call}?",
+          "say": "Thấy {call} vui ha. Có chuyện gì hay vậy?",
           "tone": "DUA",
           "need": [
             "t.state(VUI)"
@@ -809,7 +809,7 @@
           "need": [
             "t.state(LO)"
           ],
-          "reply": "…Không có gì đâu. Chuyện nhà, nói ra cũng vậy hà.",
+          "reply": "…Không có gì đâu. Chuyện nhà, nói ra cũng vậy thôi.",
           "mood": "BUON"
         },
         {
@@ -827,7 +827,7 @@
           "need": [
             "t.purpose(DI_CHO)"
           ],
-          "reply": "Ừ. Ra chợ Vườn Chuối. Hôm nay {self} đi trễ hơn mọi bữa.",
+          "reply": "Ừ. Ra chợ Vườn Chuối. Hôm nay {self} đi trễ hơn mọi hôm.",
           "mood": "THUONG",
           "then": [
             {
@@ -837,7 +837,7 @@
               "mood": "MET"
             },
             {
-              "say": "{call} mua giùm {me} bó rau được không?",
+              "say": "{call} mua cho {me} bó rau được không?",
               "tone": "DUA",
               "reply": "Ha. Được chứ. Mà {self} quên thì đừng có trách nha.",
               "mood": "CUOI"
@@ -880,7 +880,7 @@
           ]
         },
         {
-          "say": "{call} đi làm hả? Mới {gio} hà.",
+          "say": "{call} đi làm hả? Mới {gio} mà.",
           "tone": "THUONG",
           "need": [
             "t.purpose(DI_LAM)"
@@ -1007,7 +1007,7 @@
             {
               "say": "{call} đi được mấy năm rồi?",
               "tone": "AM",
-              "reply": "Hai năm. Từ hồi bác sĩ nói mỡ máu. Giờ bỏ một bữa là {self} thấy khó chịu.",
+              "reply": "Hai năm. Từ hồi bác sĩ nói mỡ máu. Giờ bỏ một hôm là {self} thấy khó chịu.",
               "mood": "CUOI"
             },
             {
@@ -1038,7 +1038,7 @@
               "tone": "AM",
               "act": {
                 "kind": "INVITE",
-                "yes": "Ờ hay! Vậy làm giùm {self} bốn ổ. Một ổ không ớt, một ổ nhiều pate.",
+                "yes": "Ờ hay! Vậy làm cho {self} bốn ổ. Một ổ không ớt, một ổ nhiều pate.",
                 "no": "Thôi con ơi. Tụi nó dặn mua chỗ quen rồi."
               },
               "need": [
@@ -1048,7 +1048,7 @@
             {
               "say": "Nhà {call} khó chiều ha.",
               "tone": "DUA",
-              "reply": "Khó thấy mồ. Mà không mua là tụi nó nhịn luôn, {self} chịu sao nổi.",
+              "reply": "Khó ghê. Mà không mua là tụi nó nhịn luôn, {self} chịu sao nổi.",
               "mood": "CUOI"
             },
             {
@@ -1082,7 +1082,7 @@
               ],
               "act": {
                 "kind": "INVITE",
-                "yes": "Ờ. Gói lẹ giùm {self}, {self} vừa chạy vừa ăn quen rồi.",
+                "yes": "Ờ. Gói lẹ cho {self}, {self} vừa chạy vừa ăn quen rồi.",
                 "no": "Thôi con. Giao trễ một đơn là {self} bị trừ tiền."
               }
             },
@@ -1142,7 +1142,7 @@
           "mood": "CUOI",
           "then": [
             {
-              "say": "Nửa năm lận hả {call}. Chắc {call} mong dữ.",
+              "say": "Nửa năm lận hả {call}. Chắc mong dữ.",
               "tone": "THUONG",
               "reply": "Mong chứ. {self} dậy từ bốn giờ, dọn phòng nó ba lần rồi.",
               "mood": "RUNG_RUNG"
@@ -1183,7 +1183,7 @@
               "mood": "NGHIEM"
             },
             {
-              "say": "Bữa nào {me} ra lấy rau của {call} nha.",
+              "say": "Hôm nào {me} ra lấy rau của {call} nha.",
               "tone": "AM",
               "reply": "Ờ! Nói tên {self} là tụi nó chỉ. {self} để rau ngon cho.",
               "mood": "CUOI"
@@ -1199,7 +1199,7 @@
         {
           "say": "{call} đi đâu đó?",
           "tone": "THUONG",
-          "reply": "Đi có chút chuyện hà.",
+          "reply": "Đi có chút chuyện thôi.",
           "mood": "THUONG",
           "then": [
             {
@@ -1211,7 +1211,7 @@
             {
               "say": "Chút chuyện mà {call} đi từ sớm vậy?",
               "tone": "DUA",
-              "reply": "Ha. {call} này. Chuyện nhà thôi, nói ra cũng dài.",
+              "reply": "Ha. {you} này. Chuyện nhà thôi, nói ra cũng dài.",
               "mood": "CUOI_KHAN"
             },
             {
@@ -1304,7 +1304,7 @@
               "act": {
                 "kind": "INVITE",
                 "yes": "Ha. Thôi được, cho tui một ổ. Coi như ăn mừng.",
-                "no": "Để bữa nào con nhỏ về, tui dắt nó qua đây ăn."
+                "no": "Để hôm nào con nhỏ về, tui dắt nó qua đây ăn."
               },
               "need": [
                 "!p.soldOut"
@@ -1316,7 +1316,7 @@
               "act": {
                 "kind": "WALK_ON"
               },
-              "reply": "Ừ. Bữa nào tui kể con nghe tiếp.",
+              "reply": "Ừ. Hôm nào tui kể {you} nghe tiếp.",
               "mood": "CUOI"
             },
             {
@@ -1344,7 +1344,7 @@
               "act": {
                 "kind": "INVITE",
                 "yes": "Ừ. Lâu rồi tui chưa ăn bánh mì đầu hẻm.",
-                "no": "Thôi, tui đi tiếp. Bữa khác nha con."
+                "no": "Thôi, tui đi tiếp. Hôm khác nha con."
               },
               "need": [
                 "!p.soldOut"
@@ -1375,7 +1375,7 @@
           "need": [
             "t.state(LO)"
           ],
-          "reply": "…Không có gì đâu. Chuyện nhà, nói ra cũng vậy hà.",
+          "reply": "…Không có gì đâu. Chuyện nhà, nói ra cũng vậy thôi.",
           "mood": "BUON",
           "then": [
             {
@@ -1396,7 +1396,7 @@
               "act": {
                 "kind": "WALK_ON"
               },
-              "reply": "…Ừ. Cảm ơn con hỏi.",
+              "reply": "…Ừ. Cảm ơn {you} hỏi.",
               "mood": "CUOI"
             },
             {
@@ -1504,7 +1504,7 @@
               "act": {
                 "kind": "INVITE",
                 "yes": "Ừ, cho tui hai ổ. Thằng nhỏ nhà tui ăn một mình một ổ.",
-                "no": "Thôi, tui mua xôi rồi. Bữa khác nha."
+                "no": "Thôi, tui mua xôi rồi. Hôm khác nha."
               },
               "need": [
                 "!p.soldOut"
@@ -1570,7 +1570,7 @@
           ]
         },
         {
-          "say": "{call} đi gấp hả? Thôi {call} đi đi.",
+          "say": "{call} đi gấp hả? Thôi đi đi.",
           "tone": "AM",
           "need": [
             "t.state(CUONG)"
@@ -1578,7 +1578,7 @@
           "act": {
             "kind": "WALK_ON"
           },
-          "reply": "…Tui phải ghé nhà thuốc trước bảy giờ. Cảm ơn con nha.",
+          "reply": "…Tui phải ghé nhà thuốc trước bảy giờ. Cảm ơn {you} nha.",
           "mood": "NGAC_NHIEN"
         },
         {
@@ -1594,7 +1594,7 @@
           "mood": "CUOI_KHAN"
         },
         {
-          "say": "{call} ghé làm một ổ đi {call}.",
+          "say": "{call} ghé làm một ổ đi.",
           "tone": "AM",
           "act": {
             "kind": "INVITE",

@@ -218,7 +218,7 @@ export const EVENTS: PhoneEvent[] = [
   },
   {
     id: "sao-bon-rem-sep", from: "sep",
-    text: "anh thấy quán em trên map, 4,5 sao luôn. em làm bên ngoài cũng giỏi quá ta 😊 cần người bán giúp thì gọi anh nha",
+    text: "anh thấy quán em trên map, 4,5 sao luôn. em làm bên ngoài cũng giỏi quá 😊 cần người bán giúp thì gọi anh nha",
     replies: [
       { me: "dạ cảm ơn anh. quán em một người lo được", answer: "ừ, anh nói thật mà. bên này cũng còn chỗ cho em" },
       { me: "anh ghé mua ổ đi, em tính giá khách quen", answer: "haha được, hôm nào anh ghé" },
@@ -238,7 +238,7 @@ export const EVENTS: PhoneEvent[] = [
     id: "gan-moc-me", from: "mom",
     text: "con ơi chú Tâm nói gần quán con có chỗ sang lại. con để dành được nhiêu rồi",
     replies: [
-      { me: "con gần đủ rồi mẹ, còn chút nữa", answer: "ừ. đủ thì nói mẹ, mẹ coi chỗ giùm con" },
+      { me: "con gần đủ rồi mẹ, còn chút nữa", answer: "ừ. đủ thì nói mẹ, mẹ coi chỗ cho con" },
       { me: "mẹ đừng hỏi, con sợ hớ", answer: "haha ừ. mẹ không hỏi nữa" },
     ],
     when: (w) => w.money.cash >= WIN_VND * WIN_NEAR,

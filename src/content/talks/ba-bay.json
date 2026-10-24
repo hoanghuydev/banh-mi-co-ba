@@ -17,12 +17,12 @@
       "shared": {
         "tiep": [
           {
-            "say": "Dạ dì về cẩn thận nha dì.",
+            "say": "Dạ dì về cẩn thận nha.",
             "tone": "THUONG",
             "reply": "Ờ. Mai dì ghé."
           },
           {
-            "say": "Mai dì kể con nghe cái tuồng dì đang coi đi dì.",
+            "say": "Mai dì kể con nghe cái tuồng đang coi đi.",
             "tone": "DUA",
             "flag": "bayCaiLuongTalk",
             "reply": "Trời. Con cũng biết nghe hả? Để dì kể cho.",
@@ -42,7 +42,7 @@
           "reply": "Ờ, con mua là dì về sớm được chút.",
           "then": [
             {
-              "say": "Dì còn nhiêu tờ nữa dì? Con lấy hết cho.",
+              "say": "Dì còn nhiêu tờ nữa? Con lấy hết cho.",
               "tone": "AM",
               "reply": "Thôi thôi. Dì bán hết thì mai dì lấy gì đi.",
               "ref": "tiep",
@@ -62,7 +62,7 @@
               "mood": "CUOI"
             },
             {
-              "say": "Dì bán từ mấy giờ sáng vậy dì?",
+              "say": "Dì bán từ mấy giờ sáng vậy?",
               "tone": "THANG",
               "reply": "Bốn rưỡi. Dì lấy vé ở đại lý đường Nguyễn Thiện Thuật.",
               "ref": "tiep"
@@ -105,12 +105,12 @@
               "ref": "tiep"
             },
             {
-              "say": "Dì bán vậy một ngày lời nhiêu dì?",
+              "say": "Một ngày dì lời nhiêu?",
               "tone": "THANG",
               "reply": "Mỗi tờ dì được một ngàn mốt. Bán hết trăm tờ là dì mừng rồi.",
               "then": [
                 {
-                  "say": "Trăm tờ… dì đi bộ bao xa mới hết vậy dì?",
+                  "say": "Trăm tờ… dì đi bộ bao xa mới hết vậy?",
                   "tone": "AM",
                   "reply": "Từ đây xuống chợ, vòng qua bến xe. Dì đi quen rồi con.",
                   "mood": "THUONG"
@@ -121,12 +121,12 @@
                   "reply": "Ờ. Đủ ăn. Dì có một mình mà."
                 },
                 {
-                  "say": "Ít quá dì ơi. Dì kiếm việc khác đi.",
+                  "say": "Ít quá dì ơi. Kiếm việc khác đi.",
                   "tone": "THANG",
                   "reply": "Bảy mươi tư tuổi rồi con. Việc nào nó lấy dì."
                 },
                 {
-                  "say": "Dì kể chuyện tiền nong gì hoài vậy dì.",
+                  "say": "Dì kể chuyện tiền nong hoài vậy?",
                   "tone": "GAT",
                   "anger": 25,
                   "reply": "…Ừ. Dì hỏi gì đâu mà con nói vậy.",
@@ -142,12 +142,12 @@
           ]
         },
         {
-          "say": "Dì bán vé số mà dì trúng bao giờ chưa dì?",
+          "say": "Dì bán vé số, dì trúng bao giờ chưa?",
           "tone": "DUA",
           "reply": "Trúng gì. Trúng rồi dì còn đứng đây hả con.",
           "then": [
             {
-              "say": "Trúng rồi dì tính làm gì hả dì?",
+              "say": "Trúng rồi dì tính làm gì?",
               "tone": "AM",
               "reply": "Dì đi coi hát. Coi cho đã đời rồi tính tiếp.",
               "then": [
@@ -176,13 +176,13 @@
               ]
             },
             {
-              "say": "Dì bán mà dì không tin hả dì?",
+              "say": "Dì bán mà dì không tin hả?",
               "tone": "THANG",
               "reply": "Tin chứ. Tin mới bán được chứ con.",
               "ref": "tiep"
             },
             {
-              "say": "Vậy dì bán đồ xui cho người ta hả dì?",
+              "say": "Vậy dì bán đồ xui cho người ta hả?",
               "tone": "GAT",
               "anger": 35,
               "reply": "…Dì bán cái hy vọng. Con hiểu được thì hiểu.",
@@ -202,7 +202,7 @@
           "reply": "Ờ. Không chơi thì thôi.",
           "then": [
             {
-              "say": "Mà dì ngồi nghỉ chút đi dì, con rót dì ly trà.",
+              "say": "Dì ngồi nghỉ chút đi, con rót ly trà.",
               "tone": "AM",
               "reply": "Ngồi gì con. Ngồi rồi lười, dì đi tiếp.",
               "calm": 28,
@@ -218,9 +218,9 @@
               }
             },
             {
-              "say": "Bữa khác con mua nha dì.",
+              "say": "Hôm khác con mua nha dì.",
               "tone": "THUONG",
-              "reply": "Ờ. Bữa khác."
+              "reply": "Ờ. Hôm khác."
             },
             {
               "say": "Dì đứng hoài trước xe con khách không vô được.",
@@ -259,7 +259,7 @@
       "shared": {
         "chao": [
           {
-            "say": "Bữa nào dì kể tiếp nha dì.",
+            "say": "Hôm nào dì kể tiếp nha.",
             "tone": "AM",
             "reply": "Ờ. Dì còn nhiều chuyện lắm con."
           },
@@ -269,7 +269,7 @@
             "reply": "Ờ, làm đi con. Dì nói nhiều quá."
           },
           {
-            "say": "Dì nói hoài con rối tay quá dì.",
+            "say": "Dì nói hoài con rối tay quá.",
             "tone": "THANG",
             "reply": "…Ừ. Dì quên con đang bán.",
             "mood": "LANH"
@@ -283,7 +283,7 @@
           "reply": "Hồi xưa người ta ca một câu là nổi da gà con à.",
           "then": [
             {
-              "say": "Dì thích tuồng nào nhất dì?",
+              "say": "Dì thích tuồng nào nhất?",
               "tone": "AM",
               "reply": "Nửa Đời Hương Phấn. Dì coi ba lần, lần nào cũng khóc.",
               "then": [
@@ -294,7 +294,7 @@
                   "mood": "CUOI"
                 },
                 {
-                  "say": "Dì mở loa ngoài con nghe ké với dì.",
+                  "say": "Dì mở loa ngoài cho con nghe ké với.",
                   "tone": "DUA",
                   "reply": "Trời, được. Để dì mở nhỏ thôi, sợ phiền hàng xóm.",
                   "mood": "CUOI_TUOI"
@@ -313,13 +313,13 @@
               "mood": "THUONG"
             },
             {
-              "say": "Dì ca thử một câu coi dì.",
+              "say": "Dì ca thử một câu coi.",
               "tone": "DUA",
               "reply": "Dì ca là con bỏ chạy đó. Hồi xưa dì có ca đó nha.",
               "ref": "chao"
             },
             {
-              "say": "Dì có đi coi hát nữa không dì?",
+              "say": "Dì còn đi coi hát nữa không?",
               "tone": "THANG",
               "reply": "Có chứ. Mà vé mắc quá con, dì đi năm một lần.",
               "ref": "chao"
@@ -341,9 +341,9 @@
           "reply": "Dở gì. Nghe riết rồi quen hà.",
           "then": [
             {
-              "say": "Dì chỉ con nghe đi dì.",
+              "say": "Dì chỉ con nghe đi.",
               "tone": "AM",
-              "reply": "Ờ. Để bữa nào vắng khách dì chỉ. Nghe cái hơi, đừng nghe lời.",
+              "reply": "Ờ. Để hôm nào vắng khách dì chỉ. Nghe cái hơi, đừng nghe lời.",
               "ref": "chao",
               "mood": "CUOI"
             },
@@ -358,26 +358,26 @@
           ]
         },
         {
-          "say": "Dì chê người ta hoài vậy dì.",
+          "say": "Dì chê người ta hoài vậy.",
           "tone": "THANG",
           "reply": "Dì chê là dì còn thương đó con. Hết thương mới hết nói.",
           "then": [
             {
-              "say": "Dì nói nghe thấm ghê dì.",
+              "say": "Dì nói nghe thấm ghê.",
               "tone": "AM",
               "reply": "Dì sống bảy mươi mấy năm chứ ít gì con.",
               "ref": "chao",
               "mood": "CUOI"
             },
             {
-              "say": "Vậy dì soi con hoài là dì thương con hả dì?",
+              "say": "Vậy dì soi con hoài là thương con hả?",
               "tone": "DUA",
               "reply": "Ờ đó. Con hiểu được là dì mừng rồi.",
               "ref": "chao",
               "mood": "CUOI"
             },
             {
-              "say": "Dì già rồi khó tính thôi dì.",
+              "say": "Dì già rồi khó tính thôi.",
               "tone": "GAT",
               "anger": 25,
               "silent": true,
@@ -389,7 +389,7 @@
           ]
         },
         {
-          "say": "Dì nay có tuồng nào hay không dì?",
+          "say": "Dạo này dì có tuồng nào hay không?",
           "tone": "AM",
           "need": [
             "c.openedBy(PLAYER)"
@@ -404,7 +404,7 @@
               "mood": "RUNG_RUNG"
             },
             {
-              "say": "Dì chê hoài vậy ai dám ca nữa dì.",
+              "say": "Dì chê hoài vậy ai dám ca nữa.",
               "tone": "DUA",
               "reply": "Ha. Dì chê là dì còn thương đó con.",
               "mood": "CUOI"
@@ -417,16 +417,16 @@
           ]
         },
         {
-          "say": "Dì mở radio nghe cho đỡ buồn đi dì.",
+          "say": "Dì mở đài nghe cho đỡ buồn đi.",
           "tone": "AM",
           "need": [
             "c.openedBy(PLAYER)"
           ],
-          "reply": "Dì có cái radio cũ xì. Nghe rè lắm con.",
+          "reply": "Dì có cái đài cũ xì. Nghe rè lắm con.",
           "mood": "CUOI_KHAN"
         },
         {
-          "say": "Con đang làm dì, dì nói chuyện khác đi.",
+          "say": "Con đang làm, dì nói chuyện khác đi.",
           "tone": "LANH",
           "reply": "Ờ. Dì quên con đang bán.",
           "need": [
@@ -434,7 +434,7 @@
           ]
         },
         {
-          "say": "Dì ngồi kể cho con nghe, con rót dì ly trà.",
+          "say": "Dì ngồi kể con nghe, con rót ly trà.",
           "tone": "AM",
           "reply": "Ờ! Vậy dì kể. Tuồng đó dì thuộc từ đầu tới cuối lận con.",
           "mood": "CUOI_TUOI",
@@ -478,7 +478,7 @@
           "reply": "Ờ. Dì nói chứ dì không có ý gì đâu con.",
           "then": [
             {
-              "say": "Dì còn thấy gì nữa không dì? Dì nói con sửa.",
+              "say": "Dì còn thấy gì nữa không? Dì nói con sửa.",
               "tone": "AM",
               "reply": "Cái khăn con vắt vai đó. Lau tay thì xài khăn riêng con.",
               "then": [
@@ -490,7 +490,7 @@
                   "mood": "CUOI"
                 },
                 {
-                  "say": "Dì soi kỹ hơn thanh tra nữa dì.",
+                  "say": "Dì soi kỹ hơn thanh tra nữa.",
                   "tone": "DUA",
                   "reply": "Thanh tra ăn lương. Dì soi không công nè con."
                 },
@@ -535,18 +535,18 @@
           ]
         },
         {
-          "say": "Dì soi dữ ha dì.",
+          "say": "Dì soi dữ ha.",
           "tone": "DUA",
           "reply": "Dì già rồi, dì không soi thì dì làm gì cho hết buổi.",
           "then": [
             {
-              "say": "Vậy dì soi tiếp đi dì, con nghe.",
+              "say": "Vậy dì soi tiếp đi, con nghe.",
               "tone": "AM",
               "reply": "Trời, con này. Thôi dì không nói nữa, dì đi bán.",
               "mood": "CUOI_TUOI"
             },
             {
-              "say": "Dì làm quản lý luôn đi dì.",
+              "say": "Dì làm quản lý luôn đi.",
               "tone": "DUA",
               "reply": "Dì làm quản lý thì ai đi bán vé số cho con mua."
             },
@@ -558,7 +558,7 @@
           ]
         },
         {
-          "say": "Dì lo chuyện dì đi được không dì.",
+          "say": "Dì lo chuyện dì đi được không?",
           "tone": "GAT",
           "anger": 45,
           "reply": "…Ừ. Dì lo chuyện dì.",
@@ -589,11 +589,11 @@
           {
             "say": "Dì kể nữa đi dì, con nghe được mà.",
             "tone": "AM",
-            "reply": "Thôi. Dì kể hoài con không làm được gì.",
+            "reply": "Thôi. Dì kể hoài con cũng đâu làm được gì.",
             "mood": "CUOI"
           },
           {
-            "say": "Ổ của dì đây dì.",
+            "say": "Ổ của dì đây.",
             "tone": "THUONG",
             "reply": "Ờ. Cảm ơn con nha.",
             "mood": "CUOI"
@@ -607,7 +607,7 @@
       },
       "tree": [
         {
-          "say": "Cái pano đó hả dì? Dì đứng vô bóng xe kể con nghe đi dì.",
+          "say": "Cái pano đó hả dì? Dì đứng vô bóng xe kể con nghe đi.",
           "tone": "AM",
           "reply": "…Hả? Chú Thịnh nào? Ông hay ngồi uống ở đầu hẻm đó hả con?",
           "then": [
@@ -615,17 +615,17 @@
               "say": "Đúng chú đó dì. Chú vẽ cái bảng hiệu xe con luôn.",
               "tone": "AM",
               "need": "haiBietBay",
-              "reply": "Trời đất. Vậy là dì đứng coi hình ổng vẽ mấy chục năm mà dì không biết.",
+              "reply": "Trời đất. Dì đứng coi hình ông ấy vẽ mấy chục năm mà không biết.",
               "then": [
                 {
-                  "say": "Bữa nào dì qua nói với chú một tiếng đi dì.",
+                  "say": "Hôm nào dì qua nói với chú một tiếng đi.",
                   "tone": "AM",
                   "flag": "bayHaiGap",
-                  "reply": "…Ờ. Mà nói gì giờ. Dì với ổng có quen đâu.",
+                  "reply": "…Ờ. Mà nói gì giờ. Dì với ông ấy có quen đâu.",
                   "mood": "THUONG"
                 },
                 {
-                  "say": "Dì qua khen chú một câu coi, chú nở mũi liền dì.",
+                  "say": "Dì qua khen chú một câu coi, chú nở mũi liền.",
                   "tone": "DUA",
                   "reply": "Trời. Con này. …Mà ờ, để dì coi.",
                   "mood": "CUOI_TUOI"
@@ -645,13 +645,13 @@
               "mood": "NGAC_NHIEN"
             },
             {
-              "say": "Dì còn giữ tấm vé nào không dì?",
+              "say": "Dì còn giữ tấm vé nào không?",
               "tone": "DUA",
               "reply": "Giữ gì con. Hồi đó ai mà biết sau này mình ngồi nhớ.",
               "ref": "ket"
             },
             {
-              "say": "Dạ con cũng mới nghe chú nói hôm bữa thôi dì.",
+              "say": "Dạ con cũng mới nghe chú nói hôm trước thôi.",
               "tone": "THANG",
               "reply": "Ờ. Thì giờ dì cũng mới biết nè. Hai dì cháu cùng mới biết.",
               "ref": "ket"
@@ -672,7 +672,7 @@
           "reply": "Cao hơn cái mái nhà con. Vẽ cô đào mặc áo đỏ, tay cầm cây quạt.",
           "then": [
             {
-              "say": "Dì nhớ kỹ ghê dì.",
+              "say": "Dì nhớ kỹ ghê.",
               "tone": "AM",
               "reply": "Nhớ chứ. Hồi đó dì mười chín. Đi coi với con bạn, hai đứa nhịn ăn sáng ba bữa.",
               "then": [
@@ -683,12 +683,12 @@
                   "mood": "CUOI"
                 },
                 {
-                  "say": "Con bạn dì giờ sao rồi dì?",
+                  "say": "Con bạn dì giờ sao rồi?",
                   "tone": "AM",
                   "reply": "…Nó mất năm kia rồi con. Thôi bỏ đi, dì không kể cái đó."
                 },
                 {
-                  "say": "Dì hồi đó chắc đẹp lắm ha dì.",
+                  "say": "Hồi đó dì chắc đẹp lắm ha.",
                   "tone": "DUA",
                   "reply": "Trời đất. Nịnh dì gì vậy. …Mà ờ, dì có duyên lắm chứ bộ.",
                   "mood": "CUOI_TUOI"
@@ -708,7 +708,7 @@
               "ref": "ket"
             },
             {
-              "say": "Dì kể cái gì cũng quay về hát hò hết trơn dì.",
+              "say": "Dì kể gì cũng quay về hát hò hết trơn.",
               "tone": "DUA",
               "reply": "Thì dì có bao nhiêu chuyện đâu con. Có nhiêu đó dì xài hoài.",
               "ref": "ket"
@@ -727,7 +727,7 @@
               "mood": "CUOI"
             },
             {
-              "say": "Dạ dì kể ngắn ngắn giùm con nha dì.",
+              "say": "Dạ dì kể ngắn ngắn giùm con nha.",
               "tone": "THANG",
               "reply": "…Ờ. Ngắn.",
               "mood": "LANH"
@@ -735,7 +735,7 @@
           ]
         },
         {
-          "say": "Dì ơi con đang đông khách quá dì.",
+          "say": "Dì ơi con đang đông khách quá.",
           "tone": "LANH",
           "reply": "Ờ. Dì đứng đây hoài cũng kỳ. Dì đi."
         }
@@ -765,13 +765,13 @@
       "shared": {
         "ket": [
           {
-            "say": "Mai dì đem ra con chỉ cho dì nha.",
+            "say": "Mai dì đem ra con chỉ cho nha.",
             "tone": "AM",
             "reply": "…Thiệt hả con. Ờ. Mai dì đem.",
             "mood": "NGAC_NHIEN"
           },
           {
-            "say": "Dì hỏi con gái dì đi dì, nó chỉ cho.",
+            "say": "Dì hỏi con gái dì đi, nó chỉ cho.",
             "tone": "THUONG",
             "reply": "Hỏi rồi. Nó nói qua điện thoại. Dì nghe không kịp."
           },
@@ -784,23 +784,23 @@
       },
       "tree": [
         {
-          "say": "Sao dì không xài dì?",
+          "say": "Sao dì không xài?",
           "tone": "AM",
           "reply": "Dì sợ bấm trúng cái gì nó hư. Nó mắc lắm con, mấy triệu đó.",
           "then": [
             {
-              "say": "Không hư đâu dì. Con bấm thử cho dì coi.",
+              "say": "Không hư đâu. Con bấm thử cho dì coi.",
               "tone": "AM",
-              "reply": "…Ờ. Mà con đang bán mà. Thôi để bữa khác.",
+              "reply": "…Ờ. Mà con đang bán mà. Thôi để hôm khác.",
               "then": [
                 {
-                  "say": "Bữa khác thiệt nha dì. Con nhớ đó.",
+                  "say": "Hôm khác thiệt nha dì. Con nhớ đó.",
                   "tone": "AM",
                   "reply": "Ờ. Con nhớ thì dì đem. Dì không dám hẹn ai lâu.",
                   "mood": "CUOI"
                 },
                 {
-                  "say": "Dì sợ hư máy hay dì sợ thấy mặt con gái dì hả dì?",
+                  "say": "Dì sợ hư máy hay sợ thấy mặt con gái dì?",
                   "tone": "THANG",
                   "reply": "…Con này. Hỏi trúng chóc.",
                   "then": [
@@ -811,13 +811,13 @@
                       "mood": "CUOI"
                     },
                     {
-                      "say": "Thấy mặt rồi dì lại nhớ, phải không dì.",
+                      "say": "Thấy mặt rồi lại nhớ, phải không dì.",
                       "tone": "AM",
                       "reply": "Ờ. Nghe tiếng thì dì chịu được. Thấy mặt là dì chịu không nổi.",
                       "mood": "THUONG"
                     },
                     {
-                      "say": "Vậy thôi dì cứ để trong tủ đi dì.",
+                      "say": "Vậy thôi dì cứ để trong tủ đi.",
                       "tone": "LANH",
                       "reply": "…Ờ. Để trong tủ.",
                       "mood": "LANH"
@@ -825,7 +825,7 @@
                   ]
                 },
                 {
-                  "say": "Con mở lò rồi dì. Chút nữa nha dì.",
+                  "say": "Con mở lò rồi dì. Chút nữa nha.",
                   "tone": "THUONG",
                   "reply": "Ờ. Chút nữa.",
                   "ref": "ket"
@@ -834,13 +834,13 @@
               "mood": "THUONG"
             },
             {
-              "say": "Mấy triệu mà dì để trong tủ, uổng thiệt dì.",
+              "say": "Mấy triệu mà để trong tủ, uổng thiệt dì.",
               "tone": "THANG",
               "reply": "Thì dì biết là uổng. Biết mà dì vẫn không dám rớ.",
               "ref": "ket"
             },
             {
-              "say": "Dì đem bán lại mua vé số bán cho rồi dì.",
+              "say": "Dì đem bán lại, lấy tiền mua vé số bán cho rồi.",
               "tone": "DUA",
               "reply": "Trời. Nói nghe được đó. Mà con gái dì nó biết nó khóc.",
               "ref": "ket",
@@ -854,18 +854,18 @@
           "reply": "Bình Dương. Nó làm ca đêm. Tháng nó về một lần, có tháng không về.",
           "then": [
             {
-              "say": "Vậy dì ở nhà một mình hả dì?",
+              "say": "Vậy dì ở nhà một mình hả?",
               "tone": "AM",
               "reply": "Ờ. Mà dì đi suốt. Về nhà dì ngủ chứ dì có ở nhà đâu.",
               "then": [
                 {
-                  "say": "Vậy dì ghé con mỗi sáng là đúng rồi dì.",
+                  "say": "Vậy dì ghé con mỗi sáng là đúng rồi.",
                   "tone": "AM",
-                  "reply": "…Ờ. Dì ghé riết thành quen. Bữa nào không ghé dì thấy thiếu.",
+                  "reply": "…Ờ. Dì ghé riết thành quen. Hôm nào không ghé dì thấy thiếu.",
                   "mood": "RUNG_RUNG"
                 },
                 {
-                  "say": "Dì kêu nó về ở với dì đi dì.",
+                  "say": "Dì kêu nó về ở với dì đi.",
                   "tone": "THUONG",
                   "reply": "Về đây nó lấy gì sống con. Thôi để nó đi."
                 },
@@ -873,7 +873,7 @@
                   "say": "Nó cũng tệ ghê, để dì vậy.",
                   "tone": "CHUI",
                   "anger": 20,
-                  "reply": "Ê. Con đừng nói con gái dì. Nó cực lắm con.",
+                  "reply": "Ê. Đừng nói con gái dì vậy. Nó cực lắm con.",
                   "mood": "BUC"
                 }
               ],
@@ -899,12 +899,12 @@
           "reply": "Dì đâu có đem. Dì nói vậy thôi chứ dì có dám đem ra đường đâu.",
           "then": [
             {
-              "say": "Dì cất kỹ cũng phải dì.",
+              "say": "Dì cất kỹ cũng phải.",
               "tone": "AM",
               "reply": "Ờ. Cất kỹ quá rồi thành không xài."
             },
             {
-              "say": "Vậy dì kể con nghe gì dì.",
+              "say": "Vậy dì kể gì cho con nghe đi.",
               "tone": "THANG",
               "reply": "…Ờ. Dì kể lãng. Dì xin lỗi con.",
               "mood": "LANH"
@@ -939,7 +939,7 @@
       "shared": {
         "ket": [
           {
-            "say": "Tạnh rồi dì đi nha dì. Đừng đi lúc còn mưa.",
+            "say": "Tạnh rồi dì đi nha. Đừng đi lúc còn mưa.",
             "tone": "AM",
             "reply": "Ờ. Dì đợi tạnh.",
             "calm": 22,
@@ -952,7 +952,7 @@
             ]
           },
           {
-            "say": "Dạ dì cứ đứng đó dì.",
+            "say": "Dạ dì cứ đứng đó.",
             "tone": "THUONG",
             "reply": "Ờ. Cảm ơn con.",
             "mood": "CUOI"
@@ -966,25 +966,25 @@
       },
       "tree": [
         {
-          "say": "Dì đứng đi dì. Vô sát trong này cho khỏi tạt.",
+          "say": "Dì đứng đi. Vô sát trong này cho khỏi tạt.",
           "tone": "AM",
           "calm": 25,
           "reply": "Ờ… Ủa mà cái mái con dột chỗ kia kìa. Nước nhỏ ngay thùng đá đó con.",
           "then": [
             {
-              "say": "Trời ơi dì. Mưa mà dì còn soi nữa dì.",
+              "say": "Trời ơi dì. Mưa mà còn soi nữa.",
               "tone": "DUA",
               "reply": "Dì không soi thì dì đứng đây ngó cái gì con.",
               "then": [
                 {
-                  "say": "Thôi dì soi tiếp đi dì, con dời cái thùng.",
+                  "say": "Thôi dì soi tiếp đi, con dời cái thùng.",
                   "tone": "AM",
                   "need": "bayKhanRieng",
                   "reply": "Ờ, dời qua trái chút. Nữa. Ờ, vậy đó.",
                   "mood": "THUONG"
                 },
                 {
-                  "say": "Dì làm giám sát công trình được luôn đó dì.",
+                  "say": "Dì làm giám sát công trình được luôn đó.",
                   "tone": "DUA",
                   "reply": "Giám sát mà đứng trú mưa. Coi cũng không ra gì."
                 },
@@ -1004,7 +1004,7 @@
               "mood": "CUOI"
             },
             {
-              "say": "Dì đứng trú nhờ mà dì chê con hả dì.",
+              "say": "Dì đứng trú nhờ mà chê con hả dì?",
               "tone": "GAT",
               "anger": 35,
               "reply": "…Ừ. Dì nói lố. Dì đứng ngoài kia cũng được.",
@@ -1021,7 +1021,7 @@
           ]
         },
         {
-          "say": "Xấp vé của dì ướt hết rồi kìa dì.",
+          "say": "Xấp vé của dì ướt hết rồi kìa.",
           "tone": "AM",
           "reply": "Ướt mép thôi. Mà ướt mép là người ta chê, không ai lấy.",
           "then": [
@@ -1042,14 +1042,14 @@
                   "reply": "Ờ. Mà người ta không nghĩ vậy. Người ta mua cái hên mà."
                 },
                 {
-                  "say": "Dì về sớm đi dì. Mai bán tiếp.",
+                  "say": "Dì về sớm đi. Mai bán tiếp.",
                   "tone": "AM",
-                  "reply": "Ờ… Ờ, dì về. Hôm nay dì đi nổi nhiêu đó thôi.",
+                  "reply": "Ờ… dì về. Hôm nay dì đi nổi nhiêu đó thôi.",
                   "calm": 20,
                   "mood": "THUONG"
                 },
                 {
-                  "say": "Dạ dì cất cho kỹ nha dì.",
+                  "say": "Dạ dì cất cho kỹ nha.",
                   "tone": "THUONG",
                   "reply": "Ờ. Dì có bịch ni lông nè."
                 }
@@ -1057,13 +1057,13 @@
               "mood": "RUNG_RUNG"
             },
             {
-              "say": "Dì bọc bịch lại đi dì.",
+              "say": "Dì bọc bịch lại đi.",
               "tone": "THUONG",
               "reply": "Bọc rồi. Mà gió nó tạt ngang, bọc gì cho lại.",
               "ref": "ket"
             },
             {
-              "say": "Trời mưa mà dì còn đi gì cho cực vậy dì.",
+              "say": "Trời mưa mà dì còn đi gì cho cực vậy.",
               "tone": "THANG",
               "reply": "Không đi thì hôm nay dì không có đồng nào con.",
               "ref": "ket"
@@ -1071,31 +1071,31 @@
           ]
         },
         {
-          "say": "Dì ngồi cái ghế này đi dì, con lau rồi.",
+          "say": "Dì ngồi cái ghế này đi, con lau rồi.",
           "tone": "AM",
           "calm": 28,
           "reply": "…Thôi con. Ngồi rồi lười, dì đứng.",
           "then": [
             {
-              "say": "Dì ngồi đi dì. Con không có khách đâu.",
+              "say": "Dì ngồi đi. Con không có khách đâu.",
               "tone": "AM",
               "reply": "…Ờ. Vậy dì ngồi chút. Chút thôi nha.",
               "mood": "CUOI"
             },
             {
-              "say": "Dì đứng hoài chân dì hư đó dì.",
+              "say": "Dì đứng hoài chân hư đó dì.",
               "tone": "THANG",
               "reply": "Hư lâu rồi con. Bác sĩ nói từ hồi nào lận."
             },
             {
-              "say": "Dì còn ghé tiệm cô Thuý mua gạo nữa không dì?",
+              "say": "Dì còn ghé tiệm cô Thuý mua gạo không?",
               "tone": "AM",
               "need": "maiTraGiumBay",
-              "reply": "Còn chứ. Mà kỳ lắm con, bữa rồi cổ nói dì bớt nợ. Dì có trả đồng nào đâu.",
+              "reply": "Còn chứ. Mà kỳ lắm con, hôm rồi cô ấy nói dì bớt nợ. Dì có trả đồng nào đâu.",
               "mood": "NGAC_NHIEN"
             },
             {
-              "say": "Dì muốn đứng thì dì đứng.",
+              "say": "Dì muốn đứng thì cứ đứng.",
               "tone": "LANH",
               "silent": true
             }
@@ -1133,17 +1133,17 @@
       "source": "PLAYER_ONLY",
       "depth": "SHORT",
       "weight": 25,
-      "opener": "Ơ. Con kêu dì hả con.",
+      "opener": "Ơ. Con kêu dì hả?",
       "openMood": "NGAC_NHIEN",
       "tree": [
         {
-          "say": "Hôm nay dì ế không dì?",
+          "say": "Hôm nay dì ế không?",
           "tone": "AM",
           "reply": "Ế. Sáng giờ dì bán được mười hai tờ hà con.",
           "mood": "MET",
           "then": [
             {
-              "say": "Dì ngồi cái ghế này nghỉ chút đi dì.",
+              "say": "Dì ngồi cái ghế này nghỉ chút đi.",
               "tone": "AM",
               "calm": 10,
               "reply": "…Ờ. Vậy dì ngồi chút. Chút thôi nha.",
@@ -1158,13 +1158,13 @@
               ]
             },
             {
-              "say": "Cái chân dì đi nổi tới chiều không dì?",
+              "say": "Chân dì đi nổi tới chiều không?",
               "tone": "THANG",
               "reply": "Nổi. Dì đi bảy chục năm chứ ít gì con.",
               "mood": "NGHIEM"
             },
             {
-              "say": "Dì đứng ké bóng cái xe cho đỡ nắng dì.",
+              "say": "Dì đứng ké bóng xe cho đỡ nắng.",
               "tone": "AM",
               "calm": 10,
               "reply": "…Ờ. Dì dời qua đó chút vậy.",
@@ -1180,19 +1180,19 @@
             {
               "say": "Thôi dì. Con làm tiếp đây.",
               "tone": "LANH",
-              "reply": "Ờ. Bữa khác.",
+              "reply": "Ờ. Hôm khác.",
               "mood": "LANH"
             }
           ]
         },
         {
-          "say": "Dì đi hết mấy vòng rồi dì?",
+          "say": "Dì đi hết mấy vòng rồi?",
           "tone": "DUA",
           "reply": "Vòng ba. Từ đây xuống chợ, vòng qua bến xe rồi dì quay lại.",
           "mood": "MET"
         },
         {
-          "say": "Dì soi gì nữa dì. Con sửa hết rồi nè.",
+          "say": "Dì soi gì nữa. Con sửa hết rồi nè.",
           "tone": "GAT",
           "anger": 20,
           "reply": "…Ừ. Dì nói một lần thôi mà.",
@@ -1217,7 +1217,7 @@
       "openMood": "NGAC_NHIEN",
       "tree": [
         {
-          "say": "Cái tuồng bữa trước dì coi tới đâu rồi dì?",
+          "say": "Cái tuồng hôm trước dì coi tới đâu rồi?",
           "tone": "AM",
           "reply": "Tới khúc con Hương nó về mà nó không dám gõ cửa. Dì khóc nữa con ơi.",
           "mood": "RUNG_RUNG",
@@ -1230,13 +1230,13 @@
               "mood": "RUNG_RUNG"
             },
             {
-              "say": "Dì coi ở đâu vậy dì? Dì có tivi hả?",
+              "say": "Dì coi ở đâu vậy? Dì có tivi hả?",
               "tone": "THUONG",
-              "reply": "Không có. Dì coi ké nhà bà Chín kế bên. Bả để cửa cho dì vô.",
+              "reply": "Không có. Dì coi ké nhà bà Chín kế bên. Bà ấy để cửa cho dì vô.",
               "mood": "THUONG"
             },
             {
-              "say": "Bữa khác dì kể tiếp con nghe nha dì.",
+              "say": "Hôm khác dì kể tiếp con nghe nha.",
               "tone": "LANH",
               "reply": "Ờ. Dì kể.",
               "mood": "LANH"
@@ -1244,25 +1244,25 @@
           ]
         },
         {
-          "say": "Bữa qua có tờ nào trúng không dì?",
+          "say": "Hôm qua có tờ nào trúng không dì?",
           "tone": "DUA",
           "reply": "Có một tờ trúng số cuối. Mười ngàn. Dì mừng quá trời.",
           "mood": "CUOI",
           "then": [
             {
-              "say": "Mười ngàn dì làm gì rồi dì?",
+              "say": "Mười ngàn dì làm gì rồi?",
               "tone": "DUA",
               "reply": "Dì mua gói xôi. Ăn xong dì còn dư hai ngàn, dì để dành.",
               "mood": "CUOI"
             },
             {
-              "say": "Người ta trúng thì dì có được gì không dì?",
+              "say": "Người ta trúng thì dì có được gì không?",
               "tone": "THANG",
               "reply": "Không có gì. Dì bán công thôi con. Mà dì mừng giùm người ta.",
               "mood": "THUONG"
             },
             {
-              "say": "Bữa nào dì để con một tờ nha dì.",
+              "say": "Hôm nào dì để con một tờ nha.",
               "tone": "AM",
               "reply": "Ờ! Để dì lựa tờ đẹp. Số đuôi bảy, dì thấy nó hên.",
               "mood": "CUOI_TUOI"
@@ -1291,7 +1291,7 @@
       "depth": "SHORT",
       "weight": 16,
       "initiates": 0.3,
-      "opener": "Con ơi… chân dì hôm nay nó nhức quá con.",
+      "opener": "Con ơi… hôm nay chân dì nhức quá.",
       "openMood": "MET",
       "practice": [
         "GOI_MON",
@@ -1300,7 +1300,7 @@
       ],
       "tree": [
         {
-          "say": "Dì ngồi xuống đây nghỉ chút đi dì.",
+          "say": "Dì ngồi xuống đây nghỉ chút đi.",
           "tone": "AM",
           "calm": 12,
           "reply": "…Ờ. Dì ngồi chút. Dì đi từ sáu giờ sáng tới giờ chưa ngồi lần nào.",
@@ -1308,19 +1308,19 @@
           "needEquip": "GHE_BAN",
           "then": [
             {
-              "say": "Chân dì nhức vậy lâu chưa dì?",
+              "say": "Chân dì nhức vậy lâu chưa?",
               "tone": "THUONG",
               "reply": "Mấy tháng rồi. Dì đi khám, người ta nói khớp. Thuốc mắc quá dì không mua.",
               "mood": "MET"
             },
             {
-              "say": "Dì bớt đi một vòng được không dì?",
+              "say": "Dì bớt đi một vòng được không?",
               "tone": "THANG",
               "reply": "Bớt vòng là bớt tờ. Dì còn gửi tiền về cho con dì ngoài quê.",
               "mood": "NGHIEM"
             },
             {
-              "say": "Dì uống miếng trà đá cho mát rồi hẵng đi dì.",
+              "say": "Dì uống miếng trà đá cho mát rồi hẵng đi.",
               "tone": "AM",
               "act": {
                 "kind": "OFFER_TEA",
@@ -1343,7 +1343,7 @@
           ]
         },
         {
-          "say": "Dì đứng vô bóng xe cho đỡ nắng cái đã dì.",
+          "say": "Dì đứng vô bóng xe cho đỡ nắng cái đã.",
           "tone": "AM",
           "act": {
             "kind": "STAND_IN_SHADE",
@@ -1356,19 +1356,19 @@
           "mood": "THUONG",
           "then": [
             {
-              "say": "Dì đứng bao lâu cũng được dì.",
+              "say": "Dì đứng bao lâu cũng được.",
               "tone": "AM",
               "reply": "Không dám đâu con. Dì đứng lâu người ta tưởng dì xin.",
               "mood": "NGUONG"
             },
             {
-              "say": "Dì bán tới mấy giờ mới nghỉ dì?",
+              "say": "Dì bán tới mấy giờ mới nghỉ?",
               "tone": "THUONG",
               "reply": "Tới chiều. Hết xấp dì mới về. Còn ba chục tờ nữa lận con.",
               "mood": "MET"
             },
             {
-              "say": "Dì đứng đi dì.",
+              "say": "Dì đứng đi.",
               "tone": "LANH",
               "reply": "Ờ.",
               "mood": "LANH"

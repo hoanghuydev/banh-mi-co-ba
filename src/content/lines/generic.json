@@ -58,7 +58,7 @@
         "Khoẻ không?",
         "Nay rảnh dữ ta.",
         "Về sớm dữ.",
-        "Trời này đi đứng cực thấy mồ.",
+        "Trời này đi đứng cực quá.",
         "Chút ghé chơi nha.",
         "Chèn ơi. Lâu quá."
       ]
@@ -69,14 +69,14 @@
       "vars": [],
       "_note": "P2-06 §2.11(A) — câu đáp, nói sau câu chào ~1,2 giây. Ngắn hơn câu chào: ngoài đời người ta đáp gọn rồi ai đi đường nấy. ⚠️ HAI TÚI RÚT ĐỘC LẬP (`greetPassers` lấy `chaoNhau` cho người này, `chaoDap` cho người kia, không ghép cặp). Nên MỌI câu đáp phải theo được BẤT KỲ câu chào nào — đừng viết câu chỉ trả lời đúng một câu hỏi. Tránh kiểu \"Khoẻ. Còn đằng đó?\": nó trả lời một câu hỏi sức khoẻ có thể chưa ai hỏi.",
       "variants": [
-        "Đi chút hà.",
+        "Đi chút thôi.",
         "Rồi rồi.",
         "Nắng muốn xỉu.",
-        "Ờ hen.",
+        "Ờ nhỉ.",
         "Có chút chuyện.",
         "Bận quá trời.",
-        "Thường thôi hà.",
-        "Cũng vậy hà.",
+        "Thường thôi.",
+        "Cũng vậy thôi.",
         "Ừa. Thôi đi nha.",
         "Chút nữa ghé."
       ]

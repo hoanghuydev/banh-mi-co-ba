@@ -5,8 +5,8 @@
     {"id": "lan.im.delivery", "concept": "DELIVERY", "when": {"npcSoi": ">=70", "npcNongTinh": "<=30", "npcThanThien": "<=40", "defectCount": ">=1"}, "silent": true, "say": []},
     {"id": "lan.im.farewell", "concept": "FAREWELL", "when": {"npcSoi": ">=70", "npcNongTinh": "<=30", "npcThanThien": "<=40"}, "silent": true, "say": []},
     {"id": "lan.del.ok", "concept": "DELIVERY", "when": {"npcId": "CHI_LAN", "defectCount": 0}, "silent": true, "say": []},
-    {"id": "lan.del.toomuch", "concept": "DELIVERY", "when": {"npcId": "CHI_LAN", "defectCount": 0, "freeExtraTooMuch": true}, "say": ["Em không cần làm vậy đâu."]},
-    {"id": "lan.tea", "concept": "INTERACT", "when": {"npcId": "CHI_LAN", "interaction": "TEA"}, "say": ["Cảm ơn em."]},
-    {"id": "lan.tea.suspect", "concept": "INTERACT", "when": {"npcId": "CHI_LAN", "interaction": "TEA_SUSPECT"}, "say": ["…Sao hôm nay em tử tế dữ vậy?"]}
+    {"id": "lan.del.toomuch", "concept": "DELIVERY", "when": {"npcId": "CHI_LAN", "defectCount": 0, "freeExtraTooMuch": true}, "say": ["Chị không cần làm vậy đâu."]},
+    {"id": "lan.tea", "concept": "INTERACT", "when": {"npcId": "CHI_LAN", "interaction": "TEA"}, "say": ["Cảm ơn chị."]},
+    {"id": "lan.tea.suspect", "concept": "INTERACT", "when": {"npcId": "CHI_LAN", "interaction": "TEA_SUSPECT"}, "say": ["…Sao hôm nay chị tử tế vậy?"]}
   ]
 }

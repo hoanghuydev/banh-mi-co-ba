@@ -19,7 +19,7 @@
             "mood": "THUONG"
           },
           {
-            "say": "Anh chạy cẩn thận nha anh.",
+            "say": "Anh chạy cẩn thận nha.",
             "tone": "AM",
             "reply": "Ừ… ít ai nói anh câu đó lắm.",
             "mood": "CUOI"
@@ -33,23 +33,23 @@
           "reply": "Ừ. Cuốc năm chục nó ăn mười sáu. Xăng anh chịu, xe anh chịu, té anh chịu.",
           "then": [
             {
-              "say": "Vậy anh còn lại nhiêu một ngày anh?",
+              "say": "Vậy một ngày anh còn lại nhiêu?",
               "tone": "THANG",
               "reply": "Chạy mười hai tiếng được ba trăm mấy. Trừ xăng còn hai trăm rưỡi.",
               "then": [
                 {
-                  "say": "Mười hai tiếng lận anh. Anh ngủ lúc nào?",
+                  "say": "Mười hai tiếng lận. Anh ngủ lúc nào?",
                   "tone": "AM",
                   "reply": "Ngủ trưa trong hẻm, gục trên xe. Quen rồi em.",
                   "mood": "THUONG"
                 },
                 {
-                  "say": "Sao anh không chuyển qua app khác anh?",
+                  "say": "Sao anh không qua app khác?",
                   "tone": "THANG",
-                  "reply": "App nào cũng vậy hết em ơi. Tụi nó giống nhau cả."
+                  "reply": "App nào cũng vậy em ơi. Giống nhau hết."
                 },
                 {
-                  "say": "Tụi nó ăn dày thiệt chứ.",
+                  "say": "Tụi nó ăn dày thiệt.",
                   "tone": "CHUI",
                   "reply": "Dày! Mà mình chửi thì chửi, mai vẫn mở app."
                 },
@@ -63,20 +63,20 @@
               ]
             },
             {
-              "say": "Anh làm bao lâu rồi anh?",
+              "say": "Anh chạy bao lâu rồi?",
               "tone": "AM",
               "reply": "Bốn năm. Hồi đầu chiết khấu có mười lăm. Hồi đó sống được.",
               "ref": "ket"
             },
             {
-              "say": "Đâu có ai bắt anh làm đâu anh.",
+              "say": "Đâu ai bắt anh chạy đâu.",
               "tone": "THANG",
               "reply": "Ừ. Không ai bắt. Anh tự nguyện khổ."
             }
           ]
         },
         {
-          "say": "Em bán bánh mì em cũng đâu có khá gì anh.",
+          "say": "Em bán bánh mì cũng đâu khá gì anh.",
           "tone": "THUONG",
           "reply": "Ừ ha. Ít ra em bán là tiền em cầm. Anh thì nó trừ trước rồi mới tới anh.",
           "then": [
@@ -88,7 +88,7 @@
               "mood": "CUOI_TUOI"
             },
             {
-              "say": "Anh ráng nha anh.",
+              "say": "Anh ráng nha.",
               "tone": "AM",
               "reply": "Ừ. Em cũng ráng.",
               "ref": "ket",
@@ -130,30 +130,30 @@
           "reply": "Cá lia thia. Anh nuôi mười bốn hũ. Hũ bảy là anh tự lai đó em.",
           "then": [
             {
-              "say": "Anh tự lai được luôn hả anh?",
+              "say": "Anh tự lai được luôn hả?",
               "tone": "AM",
               "reply": "Ừ. Con mái anh lựa kỹ lắm. Ba lứa mới ra được một con coi được.",
               "then": [
                 {
-                  "say": "Anh nói chuyện cá mà giọng anh khác hẳn luôn anh.",
+                  "say": "Nói chuyện cá là giọng anh khác hẳn luôn.",
                   "tone": "AM",
                   "reply": "…Ừ ha. Chắc tại đó là thứ duy nhất trong ngày không ai hối anh.",
                   "mood": "THUONG"
                 },
                 {
-                  "say": "Anh bán được nhiêu một con anh?",
+                  "say": "Một con anh bán được nhiêu?",
                   "tone": "THANG",
                   "reply": "Anh không bán. Anh nuôi chơi. Bán rồi còn gì nữa em."
                 },
                 {
-                  "say": "Bữa nào anh cho em coi với anh.",
+                  "say": "Hôm nào anh cho em coi với.",
                   "tone": "AM",
-                  "reply": "Được! Mai anh chụp hình anh đưa em coi.",
+                  "reply": "Được! Mai anh chụp hình đưa em coi.",
                   "mood": "CUOI",
                   "flag": "dungHuaAnhCa"
                 },
                 {
-                  "say": "Nuôi cá gì cho mất thời gian anh.",
+                  "say": "Nuôi cá gì cho mất thời gian.",
                   "tone": "GAT",
                   "anger": 30,
                   "silent": true,
@@ -163,7 +163,7 @@
               "mood": "THUONG"
             },
             {
-              "say": "Mười bốn hũ để đâu cho hết anh?",
+              "say": "Mười bốn hũ để đâu cho hết?",
               "tone": "DUA",
               "reply": "Xếp dọc hành lang. Bà chủ trọ cằn nhằn hoài mà anh kệ."
             },
@@ -180,13 +180,13 @@
           "reply": "Đẹp chứ! Lên màu đó là phải đủ nắng đủ nước. Cực lắm em.",
           "then": [
             {
-              "say": "Anh chăm dữ ha anh.",
+              "say": "Anh chăm dữ ha.",
               "tone": "AM",
               "reply": "Ừ. Cái gì anh thương anh chăm kỹ.",
               "mood": "CUOI"
             },
             {
-              "say": "Anh chăm cá kỹ hơn chăm anh đó anh.",
+              "say": "Anh chăm cá kỹ hơn chăm mình đó.",
               "tone": "DUA",
               "reply": "…Ừ ha. Em nói trúng rồi đó."
             },
@@ -231,7 +231,7 @@
             "reply": "Ừ. Anh biết. Mà tức."
           },
           {
-            "say": "Anh ăn đi rồi chạy tiếp anh.",
+            "say": "Anh ăn rồi chạy tiếp đi anh.",
             "tone": "AM",
             "reply": "Ừ. Cảm ơn em.",
             "calm": 15,
@@ -246,7 +246,7 @@
           "reply": "Nó đặt hai trăm tiền đồ ăn. Anh ứng tiền mua. Tới nơi nó tắt máy.",
           "then": [
             {
-              "say": "Vậy hai trăm đó anh chịu hả anh?",
+              "say": "Vậy hai trăm đó anh chịu hả?",
               "tone": "AM",
               "reply": "Ừ. App nói anh tự chịu rủi ro. Rồi nó còn cho anh một sao nữa.",
               "then": [
@@ -262,12 +262,12 @@
                   "reply": "Ừ! Mà thôi. Chửi nó cũng không lấy lại được hai trăm."
                 },
                 {
-                  "say": "Anh khiếu nại đi anh, có bằng chứng mà.",
+                  "say": "Anh khiếu nại đi, có bằng chứng mà.",
                   "tone": "THANG",
                   "reply": "Khiếu rồi. Chờ bảy ngày. Bảy ngày anh chạy được bao nhiêu cuốc rồi em."
                 },
                 {
-                  "say": "Anh không kiểm tra trước là anh dở rồi anh.",
+                  "say": "Không kiểm tra trước là dở rồi anh.",
                   "tone": "GAT",
                   "anger": 40,
                   "silent": true,
@@ -276,13 +276,13 @@
               ]
             },
             {
-              "say": "Đồ ăn đó giờ anh để đâu anh?",
+              "say": "Đồ ăn đó giờ anh để đâu?",
               "tone": "THUONG",
               "reply": "Anh cho mấy đứa nhỏ dưới chân cầu. Chứ anh ăn sao hết hai trăm.",
               "ref": "ket"
             },
             {
-              "say": "Hai trăm là anh chạy mấy cuốc hả anh?",
+              "say": "Hai trăm là mấy cuốc hả anh?",
               "tone": "THANG",
               "reply": "Sáu cuốc. Nguyên buổi sáng của anh đó em.",
               "ref": "ket"
@@ -290,9 +290,9 @@
           ]
         },
         {
-          "say": "Ngày nào anh cũng có chuyện hết anh ha.",
+          "say": "Ngày nào anh cũng có chuyện hết ha.",
           "tone": "THANG",
-          "reply": "Ừ. Mà hôm nay nặng hơn mọi bữa.",
+          "reply": "Ừ. Mà hôm nay nặng hơn mọi hôm.",
           "then": [
             {
               "say": "Em xin lỗi anh. Em nói hơi vô duyên.",
@@ -314,7 +314,7 @@
           "reply": "Ừ. Anh biết."
         },
         {
-          "say": "Anh uống miếng trà đá cho nguôi đi anh.",
+          "say": "Anh uống miếng trà đá cho nguôi đi.",
           "tone": "AM",
           "reply": "…Ờ. Uống xong anh chạy tiếp. Một sao thôi mà, có chết ai.",
           "mood": "MET",
@@ -350,13 +350,13 @@
       "shared": {
         "ket": [
           {
-            "say": "Anh chạy từ từ nha anh.",
+            "say": "Anh chạy từ từ nha.",
             "tone": "AM",
             "reply": "Ờ. Anh biết rồi. Em nói nghe được.",
             "mood": "THUONG"
           },
           {
-            "say": "Ổ của anh đây anh.",
+            "say": "Ổ của anh đây.",
             "tone": "THUONG",
             "reply": "Ờ, cảm ơn em.",
             "mood": "CUOI"
@@ -370,17 +370,17 @@
       },
       "tree": [
         {
-          "say": "Bà nói anh ôm cua gắt quá đó anh.",
+          "say": "Bà nói anh ôm cua gắt quá đó.",
           "tone": "THANG",
           "reply": "Trời. Bả gánh tàu hũ mà bả rành lái xe hả em?",
           "then": [
             {
               "say": "Bà chạy xe tải ba năm đó anh. Tuyến Mỹ Tho.",
               "tone": "AM",
-              "reply": "…Thiệt hả. Bà đó hả? Trời đất ơi.",
+              "reply": "…Thiệt hả. Bà đó hả? Trời.",
               "then": [
                 {
-                  "say": "Bữa nào anh hỏi bà một câu đi anh. Bà chỉ cho.",
+                  "say": "Hôm nào anh hỏi bà một câu đi. Bà chỉ cho.",
                   "tone": "AM",
                   "flag": "dungHoiSau",
                   "reply": "…Ờ. Để anh hỏi. Người ta chạy hàng nặng thì người ta biết thiệt.",
@@ -413,7 +413,7 @@
               "mood": "NGAC_NHIEN"
             },
             {
-              "say": "Anh ôm cua gắt thiệt mà anh. Em đứng đây em thấy.",
+              "say": "Anh ôm cua gắt thiệt mà. Em đứng đây thấy luôn.",
               "tone": "THANG",
               "reply": "…Ờ. Chạy riết nó thành phản xạ. Anh không để ý.",
               "ref": "ket"
@@ -432,7 +432,7 @@
           "reply": "…Ờ. Vậy chắc anh nhìn lộn.",
           "then": [
             {
-              "say": "Mà anh chạy chậm lại chút cũng được đó anh.",
+              "say": "Mà anh chạy chậm lại chút cũng được đó.",
               "tone": "AM",
               "reply": "…Ủa. Vậy là bả có nói hả em. Thôi kệ, em nói đúng là được.",
               "mood": "NGAC_NHIEN"
@@ -446,7 +446,7 @@
           "mood": "LANH"
         },
         {
-          "say": "Chuyện của bà với anh, anh hỏi bà đi anh.",
+          "say": "Chuyện của bà với anh thì anh hỏi bà đi.",
           "tone": "THANG",
           "reply": "Ờ cũng phải. Mà anh ngại. Bả lớn tuổi quá.",
           "then": [
@@ -458,21 +458,21 @@
               "mood": "CUOI"
             },
             {
-              "say": "Bà dặn em nói lại với anh: thắng trước khi vô cua nha anh.",
+              "say": "Bà dặn em nói lại: thắng trước khi vô cua nha anh.",
               "tone": "AM",
               "need": "sauNhoNoi",
               "reply": "…Bả dặn em thiệt hả. Vậy là bả ngó anh thiệt chứ không phải ngó chơi.",
               "mood": "NGAC_NHIEN"
             },
             {
-              "say": "Ngại thì thôi anh, chạy tiếp đi anh.",
+              "say": "Ngại thì thôi, anh chạy tiếp đi.",
               "tone": "LANH",
               "reply": "Ờ. Anh đi."
             }
           ]
         },
         {
-          "say": "Anh hỏi gì mấy cái đó, em đang bán nè anh.",
+          "say": "Anh hỏi gì mấy cái đó, em đang bán nè.",
           "tone": "GAT",
           "anger": 40,
           "silent": true,
@@ -497,13 +497,13 @@
       "shared": {
         "ket": [
           {
-            "say": "Anh đi nha anh. Chạy cẩn thận.",
+            "say": "Anh đi nha. Chạy cẩn thận.",
             "tone": "AM",
             "reply": "Ờ. Cảm ơn em.",
             "mood": "CUOI"
           },
           {
-            "say": "Ổ của anh đây anh.",
+            "say": "Ổ của anh đây.",
             "tone": "THUONG",
             "reply": "Ờ."
           },
@@ -516,7 +516,7 @@
       },
       "tree": [
         {
-          "say": "Bé nhà anh mấy tuổi rồi anh?",
+          "say": "Bé nhà anh mấy tuổi rồi?",
           "tone": "AM",
           "reply": "Sáu. Nó hát trật hết trơn mà nó hát bự lắm em.",
           "then": [
@@ -526,19 +526,19 @@
               "reply": "Bài gì trong phim hoạt hình đó. Anh nghe một tháng rồi anh thuộc luôn.",
               "then": [
                 {
-                  "say": "Anh hát thử một câu coi anh.",
+                  "say": "Anh hát thử một câu coi.",
                   "tone": "DUA",
                   "reply": "Thôi thôi. Anh hát là em dẹp quán. …Mà ờ, ngộ cái là anh thuộc thiệt.",
                   "mood": "CUOI"
                 },
                 {
-                  "say": "Vậy là anh chở nó đi mỗi sáng hả anh?",
+                  "say": "Vậy là mỗi sáng anh chở nó đi hả?",
                   "tone": "AM",
                   "reply": "Ờ. Cuốc đầu tiên trong ngày là nó. Cuốc đó anh không tính tiền.",
                   "mood": "THUONG"
                 },
                 {
-                  "say": "Chở nó xong rồi anh mới chạy hả anh? Cực ghê.",
+                  "say": "Chở nó xong anh mới chạy hả? Cực ghê.",
                   "tone": "THUONG",
                   "reply": "Cực gì. Mười lăm phút đó là phần sướng nhất ngày của anh."
                 },
@@ -560,11 +560,11 @@
             {
               "say": "Sáu tuổi là quậy dữ lắm đó anh.",
               "tone": "DUA",
-              "reply": "Quậy thấy mồ. Mà nó ngồi sau xe nó ôm anh chặt lắm.",
+              "reply": "Quậy dữ lắm. Mà ngồi sau xe nó ôm anh chặt lắm.",
               "ref": "ket"
             },
             {
-              "say": "Để em bỏ thêm miếng chả cho con nhỏ nha anh.",
+              "say": "Để em bỏ thêm miếng chả cho bé nha anh.",
               "tone": "AM",
               "reply": "Ê, được đó! Nó mê chả lắm. Vậy chiều anh ghé nữa.",
               "mood": "CUOI_TUOI",
@@ -583,12 +583,12 @@
           ]
         },
         {
-          "say": "Nghe anh kể em thấy anh khác hẳn mọi bữa đó anh.",
+          "say": "Nghe anh kể, em thấy anh khác hẳn mọi hôm.",
           "tone": "AM",
           "reply": "…Khác gì em?",
           "then": [
             {
-              "say": "Mọi bữa anh gấp lắm. Hôm nay anh nói chậm.",
+              "say": "Mọi hôm anh gấp lắm. Hôm nay anh nói chậm.",
               "tone": "AM",
               "reply": "…Ờ ha. Em để ý ghê. Chắc tại sáng nay nó hát.",
               "calm": 25,
@@ -609,12 +609,12 @@
           "mood": "CUOI"
         },
         {
-          "say": "Anh đợi chút nha anh, em làm liền.",
+          "say": "Anh đợi chút nha, em làm liền.",
           "tone": "THUONG",
           "reply": "Ờ. Anh còn mười phút. Anh đợi được.",
           "then": [
             {
-              "say": "Anh ngồi ghế đợi đi anh.",
+              "say": "Anh ngồi ghế đợi đi.",
               "tone": "AM",
               "reply": "Thôi anh đứng. Ngồi rồi lười, anh biết anh mà.",
               "calm": 20,
@@ -631,10 +631,10 @@
             {
               "say": "Anh gấp thì em làm trước cho anh.",
               "tone": "THUONG",
-              "reply": "Khỏi. Để người ta trước. Anh đứng đây anh ngó phố chút."
+              "reply": "Khỏi. Để người ta trước. Anh đứng đây ngó phố chút."
             },
             {
-              "say": "Anh nhích vô trong cho đỡ nắng đi anh.",
+              "say": "Anh nhích vô trong cho đỡ nắng đi.",
               "tone": "AM",
               "calm": 18,
               "reply": "Ờ. Đứng trong này mát hơn thiệt.",
@@ -650,7 +650,7 @@
           ]
         },
         {
-          "say": "Anh kể chuyện nhà anh hoài em rối tay quá anh.",
+          "say": "Anh kể chuyện nhà hoài em rối tay quá.",
           "tone": "GAT",
           "anger": 45,
           "silent": true,
@@ -680,14 +680,14 @@
       "shared": {
         "ket": [
           {
-            "say": "Anh chạy cẩn thận nha anh. Đường trơn lắm.",
+            "say": "Anh chạy cẩn thận nha. Đường trơn lắm.",
             "tone": "AM",
             "reply": "Ờ. Anh biết. Cảm ơn em nha.",
             "calm": 18,
             "mood": "THUONG"
           },
           {
-            "say": "Ổ của anh đây anh.",
+            "say": "Ổ của anh đây.",
             "tone": "THUONG",
             "reply": "Ờ."
           }
@@ -695,13 +695,13 @@
       },
       "tree": [
         {
-          "say": "Anh đứng đụt chút cho ráo rồi hẵng chạy anh.",
+          "say": "Anh đứng đụt chút cho ráo rồi hẵng chạy.",
           "tone": "AM",
           "calm": 26,
           "reply": "Không được em. Mưa vậy nó nổ đơn quá trời, anh chạy mới có tiền.",
           "then": [
             {
-              "say": "Tiền thì ngày nào cũng có. Anh đứng năm phút đi anh.",
+              "say": "Tiền thì ngày nào cũng có. Anh đứng năm phút đi.",
               "tone": "AM",
               "reply": "…Ờ. Năm phút. Em đếm giùm anh nha, anh không tự đứng nổi.",
               "then": [
@@ -722,7 +722,7 @@
                   "mood": "CUOI_TUOI"
                 },
                 {
-                  "say": "Anh tự lo đi anh, em không rảnh đếm.",
+                  "say": "Anh tự lo đi, em không rảnh đếm.",
                   "tone": "LANH",
                   "reply": "…Ờ. Thôi anh chạy.",
                   "mood": "LANH"
@@ -745,7 +745,7 @@
           "mood": "THUONG"
         },
         {
-          "say": "Anh đợi chút, bánh còn trong lò anh.",
+          "say": "Anh đợi chút, bánh còn trong lò.",
           "tone": "THUONG",
           "anger": 10,
           "reply": "Trời ơi. Thôi em làm lẹ giùm anh, anh ướt hết rồi nè.",
@@ -753,17 +753,17 @@
             {
               "say": "Em xin lỗi anh. Em lấy ra liền nè.",
               "tone": "AM",
-              "reply": "…Ờ. Anh cũng gắt. Mưa anh quạu.",
+              "reply": "…Ờ. Anh cũng gắt. Mưa là anh quạu.",
               "calm": 22,
               "mood": "MET"
             },
             {
-              "say": "Bánh sống anh ăn không nổi đâu anh.",
+              "say": "Bánh sống anh ăn không nổi đâu.",
               "tone": "THANG",
               "reply": "Ờ. Thôi anh đợi. Em nói cũng phải."
             },
             {
-              "say": "Anh gấp thì anh khỏi mua cũng được anh.",
+              "say": "Anh gấp thì khỏi mua cũng được anh.",
               "tone": "GAT",
               "anger": 55,
               "silent": true,
@@ -804,7 +804,7 @@
       "openMood": "NGAC_NHIEN",
       "tree": [
         {
-          "say": "Hôm nay cái app nó cho anh sống không anh?",
+          "say": "Hôm nay app nó cho anh sống không?",
           "tone": "AM",
           "reply": "Lai rai em. Bốn cuốc, cuốc nào cũng ngắn xịt.",
           "mood": "MET",
@@ -812,11 +812,11 @@
             {
               "say": "Hũ số bảy lên màu tới đâu rồi anh?",
               "tone": "DUA",
-              "reply": "Lên rồi! Chiều anh chụp anh đưa em coi.",
+              "reply": "Lên rồi! Chiều anh chụp đưa em coi.",
               "mood": "CUOI_TUOI"
             },
             {
-              "say": "Sáng nay con nhỏ có hát trên xe không anh?",
+              "say": "Sáng nay bé có hát trên xe không anh?",
               "tone": "AM",
               "reply": "Hát. Hát trật lất mà hát bự lắm em.",
               "mood": "CUOI"
@@ -836,7 +836,7 @@
           "mood": "CUOI_KHAN"
         },
         {
-          "say": "Anh dựng xe sát quầy em quá. Lùi ra coi anh.",
+          "say": "Anh dựng xe sát quầy em quá. Lùi ra xíu anh.",
           "tone": "GAT",
           "anger": 15,
           "reply": "…Ờ. Anh lùi. Anh không để ý.",
@@ -861,7 +861,7 @@
       "openMood": "MET",
       "tree": [
         {
-          "say": "Trưa nay anh ăn gì chưa anh?",
+          "say": "Trưa nay anh ăn gì chưa?",
           "tone": "AM",
           "reply": "Chưa. Chạy một lèo từ sáng tới giờ. Lát anh ăn.",
           "mood": "MET",
@@ -873,7 +873,7 @@
               "mood": "MET"
             },
             {
-              "say": "Em gói sẵn ổ, anh nhét cốp lát đói anh ăn.",
+              "say": "Em gói sẵn ổ, anh nhét cốp, lát đói ăn.",
               "tone": "AM",
               "reply": "Ê, hay đó! Vậy anh khỏi tấp vô đâu hết. Gói giùm anh đi em.",
               "mood": "CUOI_TUOI",
@@ -886,7 +886,7 @@
               ]
             },
             {
-              "say": "Chạy một lèo vậy anh được mấy cuốc rồi anh?",
+              "say": "Chạy một lèo vậy được mấy cuốc rồi anh?",
               "tone": "DUA",
               "reply": "Mười một cuốc. Sáng nay trúng mánh, mưa nên người ta đặt xe quá trời.",
               "mood": "CUOI"
@@ -894,26 +894,26 @@
           ]
         },
         {
-          "say": "Anh ngồi trên xe mà mắt anh sụp xuống rồi kìa anh.",
+          "say": "Anh ngồi trên xe mà mắt sụp xuống rồi kìa.",
           "tone": "DUA",
           "reply": "Ha. Anh có ngủ đâu. …Ờ, chắc anh có.",
           "mood": "CUOI_KHAN",
           "then": [
             {
-              "say": "Anh tấp vô đâu chợp mắt mười lăm phút đi anh.",
+              "say": "Anh tấp vô đâu chợp mắt mười lăm phút đi.",
               "tone": "AM",
               "calm": 12,
               "reply": "…Ờ. Có cái ghế đá công viên gần đây. Chắc anh ra đó.",
               "mood": "MET"
             },
             {
-              "say": "Anh chạy từ mấy giờ vậy anh?",
+              "say": "Anh chạy từ mấy giờ vậy?",
               "tone": "THANG",
               "reply": "Năm giờ sáng. Giờ là chín tiếng rồi. Anh tính chạy tới chiều.",
               "mood": "MET"
             },
             {
-              "say": "Buồn ngủ mà chạy là anh hại người ta đó anh.",
+              "say": "Buồn ngủ mà chạy là hại người ta đó anh.",
               "tone": "THANG",
               "reply": "…Em nói nặng mà em nói đúng. Thôi anh nghỉ một lát.",
               "mood": "NGHIEM"
@@ -921,7 +921,7 @@
           ]
         },
         {
-          "say": "Thôi. Em hỏi cho có hà.",
+          "say": "Thôi. Em hỏi cho có thôi.",
           "tone": "LANH",
           "reply": "Ờ. Vậy anh đi.",
           "mood": "LANH"
@@ -951,25 +951,25 @@
       ],
       "tree": [
         {
-          "say": "Anh đứng đi anh. Chờ cuốc mới cũng được mà.",
+          "say": "Anh đứng đi. Chờ cuốc mới cũng được mà.",
           "tone": "AM",
           "reply": "Ờ. Cảm ơn em. Chạy từ năm giờ sáng tới giờ anh chưa nghỉ phút nào.",
           "mood": "MET",
           "then": [
             {
-              "say": "Khách huỷ vậy anh có được gì không anh?",
+              "say": "Khách huỷ vậy anh có được gì không?",
               "tone": "THANG",
               "reply": "Không được gì hết. Chạy tới nơi rồi nó huỷ. Mất năm cây số xăng.",
               "mood": "MET"
             },
             {
-              "say": "Anh đứng chờ cuốc mới lâu không anh?",
+              "say": "Chờ cuốc mới có lâu không anh?",
               "tone": "THUONG",
               "reply": "Hên xui. Giờ này đông tài xế quá, có khi đứng nửa tiếng.",
               "mood": "MET"
             },
             {
-              "say": "Anh làm ổ ăn đỡ trong lúc chờ đi anh.",
+              "say": "Anh ăn ổ cho đỡ trong lúc chờ đi anh.",
               "tone": "AM",
               "reply": "Ờ, cho anh một ổ. Đằng nào cũng đứng đây.",
               "mood": "CUOI",
@@ -978,7 +978,7 @@
               ]
             },
             {
-              "say": "Anh uống miếng trà đá cho mát anh.",
+              "say": "Anh uống miếng trà đá cho mát.",
               "tone": "AM",
               "act": {
                 "kind": "OFFER_TEA",
@@ -994,7 +994,7 @@
           ]
         },
         {
-          "say": "Anh đứng nhích vô chút giùm em nha anh.",
+          "say": "Anh đứng nhích vô chút giùm em nha.",
           "tone": "THANG",
           "act": {
             "kind": "STEP_ASIDE",
@@ -1034,7 +1034,7 @@
       ],
       "tree": [
         {
-          "say": "Anh nhớ hả anh. Em tưởng anh quên rồi.",
+          "say": "Anh nhớ hả. Em tưởng anh quên rồi.",
           "tone": "DUA",
           "reply": "Quên sao được. Anh để điện thoại ngay chỗ hũ, chụp xong anh mới đi chạy.",
           "mood": "CUOI",
@@ -1046,7 +1046,7 @@
               "mood": "CUOI_TUOI"
             },
             {
-              "say": "Anh chụp hồi mấy giờ mà sáng dữ vậy anh?",
+              "say": "Anh chụp hồi mấy giờ mà sáng dữ vậy?",
               "tone": "THUONG",
               "reply": "Năm giờ rưỡi. Anh dậy sớm hơn bình thường nửa tiếng để chụp cho đủ sáng.",
               "mood": "THUONG"
@@ -1054,25 +1054,25 @@
             {
               "say": "Anh để em coi chút, em làm bánh cái đã nha.",
               "tone": "THANG",
-              "reply": "Ờ ờ. Em làm đi. Anh đứng đây anh chờ.",
+              "reply": "Ờ ờ. Em làm đi. Anh đứng đây chờ.",
               "mood": "NGUONG"
             }
           ]
         },
         {
-          "say": "Anh đưa em coi. Em làm xong ổ này em coi liền.",
+          "say": "Anh đưa em coi. Làm xong ổ này em coi liền.",
           "tone": "THUONG",
           "reply": "Ờ. Không gấp. Em cứ làm.",
           "mood": "THUONG",
           "then": [
             {
-              "say": "Con cá này anh thương hơn cái xe ha anh.",
+              "say": "Con cá này anh thương hơn cái xe ha.",
               "tone": "DUA",
               "reply": "Cái xe hư anh sửa. Con cá chết là thôi. Khác nhau chứ em.",
               "mood": "NGHIEM"
             },
             {
-              "say": "Bữa nào anh đem nó ra em coi thiệt đi anh.",
+              "say": "Hôm nào anh đem nó ra cho em coi thiệt đi.",
               "tone": "AM",
               "reply": "Hũ nước mà đem ra đường hả em. Thôi. Anh chụp thêm cho.",
               "mood": "CUOI"
@@ -1086,7 +1086,7 @@
           ]
         },
         {
-          "say": "Anh ơi em đang đông. Để bữa khác nha anh.",
+          "say": "Anh ơi em đang đông. Để hôm khác nha.",
           "tone": "LANH",
           "reply": "…Ờ. Ờ, em bán đi. Anh cất.",
           "mood": "BUON"
@@ -1104,13 +1104,13 @@
       "shared": {
         "ket": [
           {
-            "say": "Anh cầm ổ bánh đi cho nóng anh.",
+            "say": "Anh cầm ổ bánh đi cho nóng.",
             "tone": "AM",
             "reply": "Ờ. Cảm ơn em. Mai anh chạy ngang nữa.",
             "mood": "CUOI"
           },
           {
-            "say": "Ổ anh đây anh.",
+            "say": "Ổ anh đây.",
             "tone": "THUONG",
             "reply": "Ờ."
           }
@@ -1129,13 +1129,13 @@
               "ref": "ket"
             },
             {
-              "say": "Vậy anh có thấy đáng không anh?",
+              "say": "Vậy anh có thấy đáng không?",
               "tone": "THUONG",
               "reply": "…Không biết. Mà không chạy thì lấy gì ăn em.",
               "mood": "THUONG"
             },
             {
-              "say": "Anh tắt app nghỉ chút đi anh.",
+              "say": "Anh tắt app nghỉ chút đi.",
               "tone": "THANG",
               "reply": "Tắt rồi mở lại hoài. Nghỉ là mất đơn em.",
               "ref": "ket"
@@ -1143,13 +1143,13 @@
           ]
         },
         {
-          "say": "Anh ăn gì chưa anh? Em làm ổ cho anh.",
+          "say": "Anh ăn gì chưa? Em làm ổ cho anh.",
           "tone": "AM",
           "reply": "Ờ. Làm cho anh một ổ. Trả tiền đàng hoàng nha.",
           "mood": "CUOI"
         },
         {
-          "say": "Anh uống miếng trà đá cho đỡ nóng anh.",
+          "say": "Anh uống miếng trà đá cho đỡ nóng.",
           "tone": "AM",
           "reply": "…Ờ. Cảm ơn em. Uống xong anh chạy tiếp.",
           "mood": "MET",

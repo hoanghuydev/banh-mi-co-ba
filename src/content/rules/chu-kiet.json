@@ -1,17 +1,17 @@
 {
   "_note": "Chú Đạt — xe bánh mì đối thủ bên kia hẻm. M3 'không bao giờ hài lòng' (P2-02 §5.1): DELIVERY không lỗi vẫn có một câu xóc — 0 lượt 'không có gì để nói'. Vừa gian dối vệ sinh vừa là người DUY NHẤT hiểu nghề của bạn.",
   "rules": [
-    {"id": "kiet.dropped_food", "concept": "NOTICE_EVENT", "when": {"npcId": "CHU_KIET", "eventId": "DROPPED_FOOD", "obsState": ">=NOTICED", "ctxBarkT1_DROP": "absent"}, "applycontext": {"ctxBarkT1_DROP": {"value": 1, "duration": 90}}, "say": ["Thấy chưa. Rớt là bỏ nha mày. Tao nói trước cho khỏi nói tao không nhắc."]},
+    {"id": "kiet.dropped_food", "concept": "NOTICE_EVENT", "when": {"npcId": "CHU_KIET", "eventId": "DROPPED_FOOD", "obsState": ">=NOTICED", "ctxBarkT1_DROP": "absent"}, "applycontext": {"ctxBarkT1_DROP": {"value": 1, "duration": 90}}, "say": ["Thấy chưa. Rớt là bỏ nha mày. Tao nói trước rồi đó."]},
     {"id": "kiet.dirty_hands", "concept": "NOTICE_EVENT", "when": {"npcId": "CHU_KIET", "eventId": "DIRTY_HANDS", "obsState": ">=NOTICED", "ctxBarkT1_TAY": "absent"}, "applycontext": {"ctxBarkT1_TAY": {"value": 1, "duration": 90}}, "say": ["Ê, khách nó nhìn kìa."]},
-    {"id": "kiet.burnt_or_cold", "concept": "NOTICE_EVENT", "when": {"npcId": "CHU_KIET", "eventId": "BURNT_OR_COLD", "eventBurnt": true, "obsState": ">=NOTICED", "ctxBarkT1_KHET": "absent"}, "applycontext": {"ctxBarkT1_KHET": {"value": 1, "duration": 90}}, "say": ["Lò cũ nó vậy đó. Hồi xưa tao cũng cháy hoài, tới hồi đổi lò mới hết."]},
-    {"id": "kiet.cold", "concept": "NOTICE_EVENT", "when": {"npcId": "CHU_KIET", "eventId": "BURNT_OR_COLD", "eventBurnt": false, "obsState": ">=NOTICED", "ctxBarkT1_NGUOI": "absent"}, "applycontext": {"ctxBarkT1_NGUOI": {"value": 1, "duration": 90}}, "say": ["Bánh nguội khách biết liền à. Bên tao ra lò là phải đẩy đi cho lẹ."]},
+    {"id": "kiet.burnt_or_cold", "concept": "NOTICE_EVENT", "when": {"npcId": "CHU_KIET", "eventId": "BURNT_OR_COLD", "eventBurnt": true, "obsState": ">=NOTICED", "ctxBarkT1_KHET": "absent"}, "applycontext": {"ctxBarkT1_KHET": {"value": 1, "duration": 90}}, "say": ["Lò cũ vậy đó. Hồi xưa tao cũng cháy hoài, tới khi đổi lò mới hết."]},
+    {"id": "kiet.cold", "concept": "NOTICE_EVENT", "when": {"npcId": "CHU_KIET", "eventId": "BURNT_OR_COLD", "eventBurnt": false, "obsState": ">=NOTICED", "ctxBarkT1_NGUOI": "absent"}, "applycontext": {"ctxBarkT1_NGUOI": {"value": 1, "duration": 90}}, "say": ["Bánh nguội khách biết liền. Bên tao ra lò là đẩy đi cho lẹ."]},
     {"id": "kiet.flourish", "concept": "NOTICE_EVENT", "when": {"npcId": "CHU_KIET", "eventId": "FLOURISH", "obsState": ">=NOTICED"}, "say": ["…Ai dạy mày rạch kiểu đó?"], "speakonce": true},
-    {"id": "kiet.wait.confirmed", "concept": "NOTICE_EVENT", "when": {"npcId": "CHU_KIET", "eventId": "MADE_THEM_WAIT", "obsState": "CONFIRMED"}, "say": ["Một lò mà ôm gì lắm khách vậy mày. Bên tao hai lò."]},
-    {"id": "kiet.del.seen", "concept": "DELIVERY", "when": {"npcId": "CHU_KIET", "defectCount": ">=1", "defectWasSeen": true}, "say": ["Tỉ lệ {mon} mày bỏ lệch quá. Khách nó biết đó, đừng tưởng nó không biết."]},
-    {"id": "kiet.del.found", "concept": "DELIVERY", "when": {"npcId": "CHU_KIET", "defectCount": ">=1", "defectWasSeen": false}, "say": ["Nhạt. Mậy tiết kiệm {mon} hả?"]},
+    {"id": "kiet.wait.confirmed", "concept": "NOTICE_EVENT", "when": {"npcId": "CHU_KIET", "eventId": "MADE_THEM_WAIT", "obsState": "CONFIRMED"}, "say": ["Một lò mà ôm lắm khách vậy mày. Bên tao hai lò."]},
+    {"id": "kiet.del.seen", "concept": "DELIVERY", "when": {"npcId": "CHU_KIET", "defectCount": ">=1", "defectWasSeen": true}, "say": ["Tỉ lệ {mon} mày bỏ lệch quá. Khách biết đó, đừng tưởng không."]},
+    {"id": "kiet.del.found", "concept": "DELIVERY", "when": {"npcId": "CHU_KIET", "defectCount": ">=1", "defectWasSeen": false}, "say": ["Nhạt. Mày tiết kiệm {mon} hả?"]},
     {"id": "kiet.del.ok", "concept": "DELIVERY", "when": {"npcId": "CHU_KIET", "defectCount": 0}, "say": ["Được. Mà pate mày mua chỗ nào vậy? Nghe đồn chỗ đó trộn.", "Ăn được. Bên tao bánh giòn hơn.", "Cũng được. Mà đồ chua mày ngâm hơi non."]},
-    {"id": "kiet.del.toomuch", "concept": "DELIVERY", "when": {"npcId": "CHU_KIET", "defectCount": 0, "freeExtraTooMuch": true}, "say": ["Cho thêm hoài rồi ế thì sao mày. Cái chiêu đó tao xài năm ngoái, lỗ chỏng gọng."]},
+    {"id": "kiet.del.toomuch", "concept": "DELIVERY", "when": {"npcId": "CHU_KIET", "defectCount": 0, "freeExtraTooMuch": true}, "say": ["Cho thêm hoài rồi ế sao mày. Chiêu đó tao xài năm ngoái, lỗ chỏng gọng."]},
     {"id": "kiet.tea", "concept": "INTERACT", "when": {"npcId": "CHU_KIET", "interaction": "TEA"}, "say": ["…Thôi khỏi. Tao có nước rồi."]},
-    {"id": "kiet.nghe", "concept": "SMALLTALK", "when": {"npcId": "CHU_KIET", "queueLength": "<=2"}, "say": ["Bột bên tao lấy ở lò Tân Định. Mậy lấy ở đâu?", "Sáng nay bên tao bán được trăm ổ. Mậy nhiêu?"], "odds": 70}
+    {"id": "kiet.nghe", "concept": "SMALLTALK", "when": {"npcId": "CHU_KIET", "queueLength": "<=2"}, "say": ["Bột bên tao lấy ở lò Tân Định. Mày lấy ở đâu?", "Sáng nay bên tao bán trăm ổ. Mày nhiêu?"], "odds": 70}
   ]
 }
