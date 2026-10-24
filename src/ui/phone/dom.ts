@@ -36,6 +36,7 @@ export const ICON = {
   cartBig: svg('<path d="M3 4h3l2 11h10l2-8H7" stroke="#9aa3aa" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="19" r="1.4" fill="#9aa3aa"/><circle cx="17" cy="19" r="1.4" fill="#9aa3aa"/>', 64),
   boxBig: svg('<path d="M3 7l9-4 9 4v10l-9 4-9-4z M3 7l9 4 9-4 M12 11v10" stroke="#9aa3aa" stroke-width="1.5" stroke-linejoin="round"/>', 64),
   tool: svg('<path d="M14.5 4a4.5 4.5 0 00-4.2 6.1L4 16.4 7.6 20l6.3-6.3A4.5 4.5 0 0020 9.5l-3 3-2.5-.5-.5-2.5 3-3A4.5 4.5 0 0014.5 4z" fill="#fff"/>', 36),
+  medal: svg('<path d="M7 2.5h4l2.2 6.5h-4zM17 2.5h-4l-2.2 6.5h4z" fill="#fff" opacity=".85"/><circle cx="12" cy="15" r="7" fill="#fff"/><circle cx="12" cy="15" r="4.6" fill="none" stroke="#b9722a" stroke-width="1.6"/><path d="M12 12.2l1 2 2.2.3-1.6 1.5.4 2.2-2-1.1-2 1.1.4-2.2-1.6-1.5 2.2-.3z" fill="#b9722a"/>', 40),
   file: svg('<path d="M6 3h8l4 4v14H6z" fill="#fff"/>', 20),
 };
 

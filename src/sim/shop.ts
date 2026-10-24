@@ -136,6 +136,10 @@ export function placeOrder(w: SaveFile, b: Basket, nowMin: number, o: { coupon: 
     deliverDay: q.deliverDay, deliverMin: q.deliverMin, express, delivered: false,
   };
   w.shop.orders.unshift(order);
+  for (const l of itemsOf(b)) {
+    const sup = l.offer?.supplier;
+    if (sup && !w.ach.sup.includes(sup)) w.ach.sup.push(sup);
+  }
   pruneOrders(w);
   return order;
 }

@@ -29,6 +29,7 @@ import { chorePin } from "../ui/chorePin";
 import { TOUR_TOTAL, dishGaps, gapText, tourAt, tourDone, tourIndex, tourOrdered, tourSkip, tourStep, touring, type TourStep } from "../sim/tour";
 import { deliverDue } from "../sim/shop";
 import { dueReviews, enqueue, rollReview, unseen } from "../sim/reviews";
+import { achTick, takeAch } from "../sim/ach";
 import { openIngredients, openedOn } from "../sim/unlock";
 import { SWIFT_MUL, canSpin, cleanHandsToday, finishRookie, linked, questDone, swiftToday } from "../sim/system";
 import { QUEST_DONE, QUEST_TEXT, ROOKIE_DONE } from "../content/system";
@@ -70,6 +71,7 @@ import { Hud, type Watch } from "../ui/Hud";
 import { UI, label, platedButtonHeight, platedKit, textScale, tray } from "../ui/theme";
 import { music, type CueId } from "../audio/music";
 import { StallAudio } from "../audio/stallAudio";
+import { reveal } from "../ui/transition";
 
 const WIPE_LABEL = "đang lau thớt";
 const LABEL_DEPTH = 8_000_000;
@@ -101,6 +103,7 @@ const GROUND_SS = Math.min(3, ZOOM * RENDER_SCALE);
 const LIGHT_SS = 2;
 
 const FLY_MAX = 5;
+const ACH_TOAST_GAP_MS = 2800;
 const FLY_TILT = 0.6;
 const FLY_DIRT_MIN = 0.35;
 // Dải trên cùng bị HUD che (px màn hình game).
@@ -258,6 +261,7 @@ export class StallScene extends Phaser.Scene {
   private playerSay: { text: string; until: number } | null = null;
   private moneyPops!: MoneyPops;
   private popClock = 0;
+  private achToastAt = 0;
   private popLastNow = 0;
   private closed = false;
   private resumed = false;
@@ -528,6 +532,7 @@ export class StallScene extends Phaser.Scene {
       this.actors.clear();
       if (DEV_TOOLS && dev.stall?.service === this.service) dev.stall = null;
     });
+    reveal(this);
   }
 
   private listen<K extends EventKey>(k: K, fn: (p: EventMap[K]) => void) {
@@ -852,6 +857,14 @@ export class StallScene extends Phaser.Scene {
           sfx.play(this, "ui_dat_thanh_cong");
         }
         if (fresh.length) this.hud.setUnread(totalUnread(this.world.phone) + unseen(this.world));
+        achTick(this.world, dt);
+        if (this.popClock >= this.achToastAt) {
+          const got = takeAch();
+          if (got) {
+            this.hud.toast(`Danh hiệu: ${got.name}`, "good", this.popClock, { icon: `medal_${got.tier}` });
+            this.achToastAt = this.popClock + ACH_TOAST_GAP_MS;
+          }
+        }
         this.service.tickNpcs(dt, {
           minutes: this.clock.minutes,
           pressure: !this.settings.noTimePressure,

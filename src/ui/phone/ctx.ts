@@ -2,7 +2,7 @@ import type { SaveFile } from "../../core/save";
 import { ICON, btn, el } from "./dom";
 
 export type Route = {
-  app: "home" | "msg" | "chat" | "members" | "note" | "edit" | "day" | "rev" | "sys" | "shop" | "gear" | "sell";
+  app: "home" | "msg" | "chat" | "members" | "note" | "edit" | "day" | "rev" | "sys" | "shop" | "gear" | "sell" | "ach";
   id?: string;
   day?: number;
   tab?: string;

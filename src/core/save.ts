@@ -13,6 +13,7 @@ import { newSystem, type SystemState } from "../sim/system";
 import { newShop, type ShopState } from "../sim/shop";
 import { newResell, type ResellState } from "../sim/resell";
 import { newReviews, type ReviewState } from "../sim/reviews";
+import { newAch, type AchState } from "../sim/ach";
 
 export { loadSettings, saveSettings, DEFAULT_SETTINGS, type Settings } from "./flags";
 
@@ -104,6 +105,7 @@ export type SaveFile = {
   shop: ShopState;
   resell: ResellState;
   reviews: ReviewState;
+  ach: AchState;
   /** Mốc giá đang chọn theo mã món: 0 rẻ · 1 thường · 2 đắt; thiếu = thường. */
   menu: { price: Record<string, number> };
 
@@ -154,6 +156,7 @@ export function newGame(name: string, saveId = uuid()): SaveFile {
     shop: newShop(),
     resell: newResell(),
     reviews: newReviews(),
+    ach: newAch(),
     menu: { price: {} },
     a11y: { ...DEFAULT_SETTINGS, ...loadSettings() },
     telemetry: { optedIn: false, sessionCount: 0 },
@@ -173,6 +176,7 @@ function normalize(s: SaveFile): SaveFile {
   s.shop = { ...d.shop, ...s.shop };
   s.resell = { ...d.resell, ...s.resell };
   s.reviews = { ...d.reviews, ...s.reviews };
+  s.ach = { ...d.ach, ...s.ach };
   s.equipment = {
     ...s.equipment,
     owned: s.equipment.owned.filter((id) => id in EQUIP),

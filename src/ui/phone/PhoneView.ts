@@ -10,6 +10,8 @@ import { inTransit } from "../../sim/shop";
 import { chatPage, membersPage, messageList } from "./apps/messageApp";
 import { dayNote, noteEditor, noteList } from "./apps/noteApp";
 import { reviewPage } from "./apps/reviewApp";
+import { achUnseen } from "../../sim/ach";
+import { achApp } from "./apps/achApp";
 import { sellApp } from "./apps/sellApp";
 import { gearApp } from "./apps/gearApp";
 import { shopApp } from "./apps/shopApp";
@@ -44,6 +46,7 @@ const APPS: AppDef[] = [
   { key: "sys", label: "Hệ thống", icon: ICON.sys, bg: "radial-gradient(circle at 30% 20%,#14485a,#04090d)", show: linked, badge: (w) => (canSpin(w) ? 1 : 0) },
   { key: "shop", label: "Thực phẩm", icon: ICON.bag, bg: "linear-gradient(160deg,#ff8a5c,#e5532b)", badge: (w) => inTransit(w).length },
   { key: "gear", label: "Đồ nghề", icon: ICON.tool, bg: "linear-gradient(160deg,#8d9aa6,#55626e)", badge: (w) => w.shop.gearOrders.filter((o) => !o.delivered).length },
+  { key: "ach", label: "Danh hiệu", icon: ICON.medal, bg: "linear-gradient(160deg,#f0b04a,#b9722a)", badge: () => achUnseen() },
   { key: "sell", label: "Rao bán", icon: ICON.tag, bg: "linear-gradient(160deg,#4fc3d9,#2189a8)" },
 ];
 
@@ -113,6 +116,7 @@ export class PhoneView {
         case "shop": return shopApp(c);
         case "gear": return gearApp(c);
         case "sell": return sellApp(c);
+        case "ach": return achApp(c);
       }
     };
     let body: HTMLElement;

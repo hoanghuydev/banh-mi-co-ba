@@ -17,6 +17,8 @@ export type Review = {
   edited: boolean;
   /** Lời chủ quán trả lời dưới đánh giá. */
   reply?: string;
+  /** Đánh giá không đến từ khách thật. */
+  noise?: "nham" | "doi_thu" | "spam" | "hiem";
 };
 
 /** Đánh giá đã hẹn giờ nhưng chưa hiện lên app. */
@@ -290,15 +292,15 @@ export function dailyNoise(w: SaveFile, from: number, to: number): void {
   const day = w.progress.dayIndex;
   const rng = new Rng(splitmix32(fnv1a(`${w.saveId}|noise|${day}`)));
   const n = expected(w);
-  const put = (text: string, stars: number, who: string) =>
-    enqueue(w, { at: rng.int(from, to), r: { day, who, stars, text, food: false } });
+  const put = (noise: NonNullable<Review["noise"]>, text: string, stars: number, who: string) =>
+    enqueue(w, { at: rng.int(from, to), r: { day, who, stars, text, food: false, noise } });
 
-  if (rng.next() < NOISE_SHARE.nham * n) put(rng.pick(NHAM_QUAN), rng.int(1, 4), rng.pick(NAMES));
+  if (rng.next() < NOISE_SHARE.nham * n) put("nham", rng.pick(NHAM_QUAN), rng.int(1, 4), rng.pick(NAMES));
   if (w.reviews.list.length >= DOI_THU_FROM && rng.next() < NOISE_SHARE.doiThu * n) {
-    put(rng.pick(DOI_THU), rng.int(1, 3), rng.pick(NAMES));
+    put("doi_thu", rng.pick(DOI_THU), rng.int(1, 3), rng.pick(NAMES));
   }
-  if (rng.next() < NOISE_SHARE.spam * n) put(rng.pick(SPAM), rng.int(1, 6), rng.pick(NAMES));
-  if (rng.next() < NOISE_SHARE.hiem * n) put(rng.pick(HIEM), rng.int(4, 6), rng.pick(NAMES));
+  if (rng.next() < NOISE_SHARE.spam * n) put("spam", rng.pick(SPAM), rng.int(1, 6), rng.pick(NAMES));
+  if (rng.next() < NOISE_SHARE.hiem * n) put("hiem", rng.pick(HIEM), rng.int(4, 6), rng.pick(NAMES));
 }
 
 /** Đánh giá tới giờ thì lên app; trả về những cái vừa hiện để báo. */

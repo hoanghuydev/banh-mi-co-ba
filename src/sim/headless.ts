@@ -18,6 +18,7 @@ import { orderDefectKey } from "../core/stimid";
 import { openTilesFor, setOpenTiles } from "../world/map";
 import { enqueue, rollReview } from "./reviews";
 import { guestsOf } from "./demand";
+import { wireAch } from "./ach";
 
 /** Bot nhập dư chừng này so với số khách dự kiến. */
 const BOT_BUY_MARGIN = 1.05;
@@ -35,6 +36,8 @@ export type Policy = {
   dropRate: number;
   defectRate: number;
   teaRate: number;
+  /** Xác suất mỗi ổ bị cháy trong lò. */
+  burnRate?: number;
   /** Xác suất thử mở lời mỗi lần có cơ hội. */
   socialRate?: number;
   /** Rỗng = nhận act đầu tiên gặp (act hiếm không tới lượt); có danh sách thì mỗi cuộc săn một act xoay vòng. */
@@ -86,6 +89,7 @@ export class HeadlessStall {
   private pressure: boolean;
   private work: { left: number; forVisit: string; dropped: boolean; dish: Ingredient[]; wrapped: boolean } | null = null;
   private refused = new Set<string>();
+  private offAch: () => void;
   private talkBeats = 0;
   private hunt = 0;
 
@@ -133,6 +137,7 @@ export class HeadlessStall {
       },
       resumeAt: opts.resume || lateOpen ? this.ctx.clock.minutes : undefined,
     });
+    this.offAch = wireAch(bus, () => w);
     bus.on("npc:left", (p) => { if (p.reason === "IMPATIENT" || p.reason === "SOILED_FOOD") w.progress.today.lost++; });
     bus.on("perception:confirmed", (p) => { if (p.stimId === "DIRTY_HANDS") w.flags.dirtyHandsConfirmed = true; });
   }
@@ -206,6 +211,11 @@ export class HeadlessStall {
     const inv = this.ctx.world.inventory, day = this.ctx.world.progress.dayIndex;
     if (!this.work || this.work.forVisit !== c.id) {
       if (this.bot.next() < p.teaRate) s.serveTea();
+      if (p.burnRate && this.bot.next() < p.burnRate) {
+        const t = this.ctx.world.progress.today;
+        t.burnt = (t.burnt ?? 0) + 1;
+        this.emit("BURNT_OR_COLD", "OVEN");
+      }
       const bread = take(inv, "bread", 1, day);
       if (!bread.length) { s.soldOut = true; this.work = null; return; }
       this.breadQ = bread[0];
@@ -242,7 +252,7 @@ export class HeadlessStall {
       const got = takeFull(inv, ing, 1, day);
       if (got.length) { parts.push({ ing, q: got[0].q }); taken.push(got[0]); served.push(ing); }
     }
-    const res = s.serveDish(served, { quality: dishQuality(this.breadQ, parts), sick: sickChance(taken) });
+    const res = s.serveDish(served, { quality: dishQuality(this.breadQ, parts), sick: sickChance(taken), soiled: w.dropped });
     this.work = null;
     s.playerHand = "empty";
     if (!res.ok) this.refused.add(c.id);
@@ -307,6 +317,7 @@ export class HeadlessStall {
     const i = w.ledger.findIndex((r) => r.day === row.day);
     if (i >= 0) w.ledger[i] = row; else w.ledger.push(row);
     this.service.dispose();
+    this.offAch();
   }
 
   run(opts: { inject?: Inject; until?: (h: HeadlessStall) => boolean; maxFrames?: number } = {}) {

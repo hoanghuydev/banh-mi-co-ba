@@ -34,6 +34,7 @@
     "probe:price": "tsx tools/probe-price.ts",
     "probe:review": "tsx tools/probe-review.ts",
     "probe:life": "tsx tools/probe-life.ts",
+    "probe:ach": "tsx tools/probe-ach.ts",
     "dump:reviews": "tsx tools/dump-reviews.ts",
     "probe:topics": "tsx tools/probe-topics.ts"
   },

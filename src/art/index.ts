@@ -31,7 +31,7 @@ const ICON_FILE: Record<string, string> = {
   [ICON.handClean]: "art/hud_hand_clean.webp", [ICON.handMoney]: "art/hud_hand_money.webp",
   [ICON.eyeGlance]: "art/hud_eye_glance.webp", [ICON.eyeClose]: "art/hud_eye_close.webp",
 };
-export const NTF = ["phone", "star", "chat", "alert", "box", "check", "info", "flame"] as const;
+export const NTF = ["phone", "star", "chat", "alert", "box", "check", "info", "flame", "medal_dong", "medal_bac", "medal_vang", "medal_kc"] as const;
 export type NtfIcon = typeof NTF[number];
 export const ntfKey = (n: NtfIcon) => `icon:ntf-${n}`;
 for (const n of NTF) ICON_FILE[ntfKey(n)] = `art/ntf_${n}.webp`;
