@@ -53,6 +53,16 @@ function canopyAt(f: CanopyField, c: Canopy, wx: number, wy: number): number {
   return s * edge * (c.alpha ?? 1);
 }
 
+/** Độ che lá 0–1 tại điểm thế giới (ô): hợp các mảng. */
+export function leafCover(canopies: Canopy[]): (wx: number, wy: number) => number {
+  const fields = canopies.map(canopyField);
+  return (wx, wy) => {
+    let lf = 0;
+    for (let k = 0; k < fields.length; k++) lf = 1 - (1 - lf) * (1 - canopyAt(fields[k], canopies[k], wx, wy));
+    return lf;
+  };
+}
+
 const fitCache = new WeakMap<Img, Map<number, Img>>();
 
 function fitOf(img: Img, f: number): Img {

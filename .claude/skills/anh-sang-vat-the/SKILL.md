@@ -58,6 +58,13 @@ Cấu hình ở `canopiesOf()` trong `src/world/lightLayers.ts`; mỗi mảng l�
 - Thêm mảng mới: gen ảnh (xem mục 8), `tools/prep-art.py` mục `CANOPIES`, `photo.ts` (`LEAF_*_KEY` và danh sách tải), `canopiesOf()`. Chỉnh dài/ngắn bằng `h` (giữ mép dưới bằng cách đổi `y`).
 - Bóng toà nhà không đều: nhiều hình đồ vật, độ nét vừa (nét ở ảnh, mềm ở `soft`).
 
+### Bóng lá lên mặt không nằm trên sàn (nóc tường)
+
+- Dùng đúng đường của sàn: `leafCover(canopies)` đọc ảnh xám nguyên giá trị, không nhoè thêm; nóc lấy mẫu tại điểm sàn ngay dưới nó (`worldAt`), nên tường liền nhau cùng một trường bóng, không lệch ở mối nối.
+- Màu bóng = `SHADOW_RGB` (nhân), chỗ nắng = lớp SCREEN ấm theo `1 − lá`. Không tự gõ hệ số tối riêng: tông nâu ấm của bóng sàn đến từ đây.
+- Ảnh bóng riêng cho nóc (`wallCanopies()` trong `lightLayers.ts`) đặt **đúng tỉ lệ ảnh**: `w/h` của mảng = rộng/cao ảnh, không kéo giãn một chiều. Kéo giãn làm lá thành vệt nhoè, đây từng là lỗi "bóng mềm".
+- Chỉ nóc; thân tường không nhận bóng lá.
+
 ## 4. Bóng đổ đạo cụ, AO, phản chiếu
 
 - Đường chạm đất = bao lõm trên của các điểm đục thấp nhất mỗi cột; bỏ đoạn dốc > 0,9 (mái nhô), kéo dài theo độ dốc ở rìa. Vật treo một điểm chạm: nón dốc 0,5.

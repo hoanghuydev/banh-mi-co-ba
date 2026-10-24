@@ -294,7 +294,8 @@ def shop_cells():
             for r, c in ((0, 0), (0, 1), (1, 0), (1, 1))]
 
 
-CANOPIES = {"leaf_a": "_duyet/tan_la_v2/A-treo.png", "leaf_c": "_duyet/tan_la_v2/C-la-to.png", "leaf_b": "_duyet/tan_la_v2/B-giua.png", "leaf_eave": "_duyet/tan_la_v2/D3-bong-do-vat.png"}
+CANOPIES = {"leaf_a": "_duyet/tan_la_v2/A-treo.png", "leaf_c": "_duyet/tan_la_v2/C-la-to.png", "leaf_b": "_duyet/tan_la_v2/B-giua.png", "leaf_eave": "_duyet/tan_la_v2/D3-bong-do-vat.png",
+           "leaf_wall_a": "_duyet/bong_cay_noc_tuong/chatgpt-3.png", "leaf_wall_b": "_duyet/bong_cay_noc_tuong/chatgpt-1.png"}
 
 
 def canopy(src):

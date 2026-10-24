@@ -1,13 +1,13 @@
 import Phaser from "phaser";
-import { LEAF_A_KEY, LEAF_B_KEY, LEAF_C_KEY, LEAF_EAVE_KEY, artScale } from "../art/photo";
+import { LEAF_A_KEY, LEAF_B_KEY, LEAF_C_KEY, LEAF_EAVE_KEY, LEAF_WALL_A_KEY, LEAF_WALL_B_KEY, artScale } from "../art/photo";
 import { INDOOR_SHADOW as INDOOR, LIGHT_DEPTH, type LightEnv } from "../art/light/env";
 import type { Canopy, Gray, Img, LitObject } from "../art/light/types";
-import { LIGHT, composeFloorLight, dappleOverlay, materialOf } from "../art/light";
+import { LIGHT, composeFloorLight, dappleOverlay, leafCover, materialOf } from "../art/light";
 import { SKY_FROM_Y, WORLD_H, WORLD_W, tileAt } from "./map";
 import { floorAtScreen, lightSpecOf, worldAt } from "./lightParams";
 import { BASE } from "../art/canvas";
 import { TH, toScreen } from "./iso";
-import { buildCornerAo, buildTintLayers, roadWeight, wallOverlays } from "./lightTint";
+import { buildCornerAo, buildTintLayers, roadWeight, wallOverlays, wallTopOverlays } from "./lightTint";
 
 const DAPPLE_DEPTH = 0.2;
 
@@ -49,6 +49,19 @@ function canopiesOf(scene: Phaser.Scene): Canopy[] {
     { img: grayOf(scene, LEAF_C_KEY), x: -1, y: 4.1, w: 8.1, h: 11.9, flipY: true },
     { img: grayOf(scene, LEAF_B_KEY), x: 2, y: 4.45, w: 8, h: 11.55, flipY: true },
     { img: grayOf(scene, LEAF_A_KEY), x: 6, y: 2.8, w: 12, h: 13.2, flipY: true },
+  ];
+}
+
+/** Bóng cây trên nóc tường, ô thế giới: phủ khung tường sau, trái và phải. */
+function wallCanopies(scene: Phaser.Scene): Canopy[] {
+  const a = grayOf(scene, LEAF_WALL_A_KEY);
+  const b = grayOf(scene, LEAF_WALL_B_KEY);
+  const w = 15, h = 5;
+  return [
+    { img: a, x: -1, y: -1.2, w, h },
+    { img: b, x: 7.5, y: -1.2, w, h, flipX: true },
+    { img: b, x: -1, y: 3, w, h },
+    { img: a, x: 7.5, y: 3, w, h, flipX: true },
   ];
 }
 
@@ -180,21 +193,33 @@ export class SceneLight {
   }
 
   private buildWalls() {
+    const leafAt = leafCover(wallCanopies(this.scene));
     const made = new Map<string, { shade: string; light: string; scale: number }>();
     for (const img of this.walls) {
       const key = img.texture.key;
+      const src = this.cache.get(key) ?? readImg(this.scene, key);
+      if (!src) continue;
+      const imgScale = artScale(key);
       let m = made.get(key);
       if (!m) {
-        const src = this.cache.get(key) ?? readImg(this.scene, key);
-        if (!src) continue;
-        const o = wallOverlays(src, artScale(key));
+        const o = wallOverlays(src, imgScale);
         m = { shade: this.paint(o.shade), light: this.paint(o.light), scale: img.scaleX };
         made.set(key, m);
       }
+      const groundY = img.y - TH / 2 - BASE;
+      const top = wallTopOverlays(src, imgScale, (dx, dy) => {
+        const { wx, wy } = worldAt(img.x + dx, groundY + dy);
+        return leafAt(wx, wy);
+      });
+      const topY = img.y - img.displayHeight;
       this.objects.push(
         this.scene.add.image(img.x, img.y, m.shade).setOrigin(0.5, 1).setScale(m.scale)
           .setDepth(img.depth + 0.1).setBlendMode(Phaser.BlendModes.MULTIPLY),
         this.scene.add.image(img.x, img.y, m.light).setOrigin(0.5, 1).setScale(m.scale)
+          .setDepth(img.depth + 0.1).setBlendMode(Phaser.BlendModes.SCREEN),
+        this.scene.add.image(img.x, topY, this.paint(top.shade)).setOrigin(0.5, 0).setScale(m.scale)
+          .setDepth(img.depth + 0.1).setBlendMode(Phaser.BlendModes.MULTIPLY),
+        this.scene.add.image(img.x, topY, this.paint(top.light)).setOrigin(0.5, 0).setScale(m.scale)
           .setDepth(img.depth + 0.1).setBlendMode(Phaser.BlendModes.SCREEN),
       );
     }

@@ -65,6 +65,8 @@ export const LEAF_A_KEY = SRC + "leaf_a";
 export const LEAF_C_KEY = SRC + "leaf_c";
 export const LEAF_B_KEY = SRC + "leaf_b";
 export const LEAF_EAVE_KEY = SRC + "leaf_eave";
+export const LEAF_WALL_A_KEY = SRC + "leaf_wall_a";
+export const LEAF_WALL_B_KEY = SRC + "leaf_wall_b";
 
 type Standing = {
   h: number;
@@ -176,6 +178,8 @@ export function preloadPhotos(scene: Phaser.Scene) {
     "leaf_c",
     "leaf_b",
     "leaf_eave",
+    "leaf_wall_a",
+    "leaf_wall_b",
     ...OPEN_LOAF,
     FLY,
     BOARD,

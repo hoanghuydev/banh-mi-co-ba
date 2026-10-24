@@ -1,6 +1,7 @@
 import type { Img } from "../art/light/types";
 import { TH, TW } from "./iso";
 import { SKY_FROM_Y, WORLD_H, WORLD_W, floorAt, tileAt } from "./map";
+import { SHADOW_RGB } from "../art/light/actor";
 import { worldAt } from "./lightParams";
 
 const EDGE = 0.25;
@@ -226,10 +227,12 @@ const WALL_SHADE = [100, 120, 138] as const;
 const WALL_SHADE_A = 0.09;
 const WALL_LIGHT = [255, 224, 172] as const;
 const WALL_LIGHT_A = 0.15;
+const WALL_TOP_LIGHT_A = 0.3;
+const WALL_TOP_SHADE_A = 0.3;
 /** Bề rộng (px thiết kế) chỗ chuyển tông quanh cạnh đứng giữa; mỗi mặt đều một tông nên hai ô kề nhau không lệch ở mép. */
 const WALL_RIDGE = 2;
 
-/** Hai ảnh phủ cùng khung sprite tường: nửa trái tối lạnh (MULTIPLY), nửa phải và mặt trên sáng ấm (SCREEN). */
+/** Hai ảnh phủ cùng khung sprite tường, chỉ phần thân: nửa trái tối lạnh (MULTIPLY), nửa phải sáng ấm (SCREEN). */
 export function wallOverlays(src: Img, imgScale: number): { shade: Img; light: Img } {
   const { w, h, data } = src;
   const shade = new Uint8ClampedArray(w * h * 4);
@@ -240,18 +243,45 @@ export function wallOverlays(src: Img, imgScale: number): { shade: Img; light: I
       const alpha = data[i + 3] / 255;
       if (alpha === 0) continue;
       const dx = (x - w / 2) / imgScale, dy = y / imgScale;
-      const top = Math.abs(dx) * (TH / TW) + Math.abs(dy - TH / 2) <= TH / 2;
+      if (isTop(dx, dy)) continue;
       const side = smooth(dx / WALL_RIDGE + 0.5);
-      const l = top ? 1 : side;
-      const s = top ? 0 : 1 - side;
       shade[i] = WALL_SHADE[0];
       shade[i + 1] = WALL_SHADE[1];
       shade[i + 2] = WALL_SHADE[2];
-      shade[i + 3] = alpha * s * WALL_SHADE_A * 255;
+      shade[i + 3] = alpha * (1 - side) * WALL_SHADE_A * 255;
       light[i] = WALL_LIGHT[0];
       light[i + 1] = WALL_LIGHT[1];
       light[i + 2] = WALL_LIGHT[2];
-      light[i + 3] = alpha * l * WALL_LIGHT_A * 255;
+      light[i + 3] = alpha * side * WALL_LIGHT_A * 255;
+    }
+  }
+  return { shade: { w, h, data: shade }, light: { w, h, data: light } };
+}
+
+const isTop = (dx: number, dy: number) => Math.abs(dx) * (TH / TW) + Math.abs(dy - TH / 2) <= TH / 2;
+
+/** Bóng lá lên nóc: chỗ lá nhân `SHADOW_RGB` như sàn (MULTIPLY), chỗ nắng sáng ấm (SCREEN); `leafAt(dx, dy)` nhận px thiết kế tính từ tâm nóc. */
+export function wallTopOverlays(src: Img, imgScale: number, leafAt: (dx: number, dy: number) => number): { shade: Img; light: Img } {
+  const { w, data } = src;
+  const h = Math.ceil(TH * imgScale) + 2;
+  const shade = new Uint8ClampedArray(w * h * 4);
+  const light = new Uint8ClampedArray(w * h * 4);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const alpha = data[i + 3] / 255;
+      if (alpha === 0) continue;
+      const dx = (x - w / 2) / imgScale, dy = y / imgScale;
+      if (!isTop(dx, dy)) continue;
+      const leaf = leafAt(dx, dy - TH / 2);
+      shade[i] = SHADOW_RGB[0];
+      shade[i + 1] = SHADOW_RGB[1];
+      shade[i + 2] = SHADOW_RGB[2];
+      shade[i + 3] = alpha * leaf * WALL_TOP_SHADE_A * 255;
+      light[i] = WALL_LIGHT[0];
+      light[i + 1] = WALL_LIGHT[1];
+      light[i + 2] = WALL_LIGHT[2];
+      light[i + 3] = alpha * (1 - leaf) * WALL_TOP_LIGHT_A * 255;
     }
   }
   return { shade: { w, h, data: shade }, light: { w, h, data: light } };
