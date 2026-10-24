@@ -5,6 +5,8 @@
  *   node tools/screenshot.mjs --out /tmp/b.png --eval "dev.day.skipTo('07:00')"
  *   node tools/screenshot.mjs --out /tmp/c.png --click 683,509 --storage
  *   node tools/screenshot.mjs --out /tmp/d.png --size 390,844
+ *   node tools/screenshot.mjs --out /tmp/e.png --size 844,390 --touch --dpr 3   (giả lập điện thoại: chạm, pointer coarse)
+ *   --hold x,y,ms   giữ ngón ở (x,y) ms mili giây (joystick, giữ nút)
  *
  * Cần `npm run dev` đang chạy (cổng 5174). Save được nạp thẳng vào localStorage
  * rồi vào cảnh quán, khỏi bấm qua menu và intro.
@@ -24,9 +26,11 @@ const save = arg("save", "");
 const wait = Number(arg("wait", "3500"));
 const after = Number(arg("after", "0"));
 /** `--eval`, `--click x,y`, `--drag x1,y1,x2,y2`, `--shot <png>`, `--wait-ms <n>` chạy ĐÚNG THỨ TỰ gõ. */
-const STEP_FLAGS = { "--eval": "eval", "--click": "drag", "--drag": "drag", "--shot": "shot", "--wait-ms": "sleep" };
+const STEP_FLAGS = { "--eval": "eval", "--click": "drag", "--drag": "drag", "--hold": "hold", "--shot": "shot", "--wait-ms": "sleep" };
 const steps = process.argv.flatMap((x, i) => (STEP_FLAGS[x] ? [{ kind: STEP_FLAGS[x], arg: process.argv[i + 1] }] : []));
 const storage = process.argv.includes("--storage");
+const touch = process.argv.includes("--touch");
+const dpr = Number(arg("dpr", "1"));
 const port = 9333 + (Date.now() % 200);
 
 const chrome = spawn("google-chrome", [
@@ -76,7 +80,11 @@ const js = (expr) => cmd("Runtime.evaluate", {
 await cmd("Page.enable");
 await cmd("Runtime.enable");
 const [vw, vh] = arg("size", "1366,768").split(",").map(Number);
-await cmd("Emulation.setDeviceMetricsOverride", { width: vw, height: vh, deviceScaleFactor: 1, mobile: vw < 500 });
+await cmd("Emulation.setDeviceMetricsOverride", { width: vw, height: vh, deviceScaleFactor: dpr, mobile: touch || vw < 500 });
+if (touch) {
+  await cmd("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 5 });
+  await cmd("Emulation.setEmulatedMedia", { features: [{ name: "pointer", value: "coarse" }, { name: "hover", value: "none" }] });
+}
 
 await cmd("Page.navigate", { url });
 await sleep(1200);
@@ -88,9 +96,10 @@ if (save) {
   await sleep(1500);
   await js(`window.__game.scene.start("day", { mode: "continue" })`);
 }
-const mouse = (type, x, y) => cmd("Input.dispatchMouseEvent", {
-  type, x, y, button: "left", buttons: type === "mouseReleased" ? 0 : 1, clickCount: 1,
-});
+const TOUCH_TYPE = { mousePressed: "touchStart", mouseMoved: "touchMove", mouseReleased: "touchEnd" };
+const mouse = (type, x, y) => touch
+  ? cmd("Input.dispatchTouchEvent", { type: TOUCH_TYPE[type], touchPoints: type === "mouseReleased" ? [] : [{ x, y, id: 1 }] })
+  : cmd("Input.dispatchMouseEvent", { type, x, y, button: "left", buttons: type === "mouseReleased" ? 0 : 1, clickCount: 1 });
 
 await sleep(wait);
 for (const st of steps) {
@@ -105,6 +114,14 @@ for (const st of steps) {
     const s = await cmd("Page.captureScreenshot", { format: "png" });
     writeFileSync(st.arg, Buffer.from(s.data, "base64"));
     console.log("ảnh:", st.arg);
+    continue;
+  }
+  if (st.kind === "hold") {
+    const [hx, hy, ms] = st.arg.split(",").map(Number);
+    await mouse("mousePressed", hx, hy);
+    await sleep(ms);
+    await mouse("mouseReleased", hx, hy);
+    await sleep(400);
     continue;
   }
   const [x1, y1, x2 = x1, y2 = y1] = st.arg.split(",").map(Number);
