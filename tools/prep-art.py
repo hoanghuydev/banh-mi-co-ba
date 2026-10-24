@@ -9,6 +9,8 @@ try:
 except ImportError:
     sys.exit("cần Pillow: python3 -m pip install --user Pillow")
 
+from wall_block import normalise, recolor
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "art-raw")
 OUT = os.path.join(ROOT, "public", "art")
@@ -324,6 +326,11 @@ ROAD_INSET = 0.10
 # Đồ có chân, không ép bằng `ep-iso.py` được: co dọc cho cạnh đáy dốc 0,5.
 ISO_FIX: set[str] = {"prop_crate"}
 
+# Khối tường 1 ô: chuẩn hoá về đúng 60 × 86 px và cắt gờ vát để các ô liền nhau; không qua `clean`/`fit` vì trục khối phải nằm giữa khung.
+BLOCKS = {"prop_wall_plain", "prop_wall_meter", "prop_wall_window", "prop_wall_poster", "prop_door",
+          "prop_shop_shutter_half", "prop_shop_window_clothes", "prop_shop_shutter_closed", "prop_shop_window_ac"}
+RECOLOR = {"prop_shop_window_clothes"}
+
 # Cạnh dài ≥ 3,2 × cỡ thiết kế (màn 27" QHD); `photo.ts` thu nhỏ bằng nhiều nhịp chia đôi.
 PROPS = [
     ("prop_oven", "lo_nuong-Photoroom.png", 640),
@@ -517,7 +524,12 @@ def main():
     if any(want(k) for k, _, _ in PROPS):
         print("đạo cụ")
     for key, src, longest in PROPS:
-        if want(key):
+        if want(key) and key in BLOCKS:
+            im = normalise(Image.open(os.path.join(SRC, src)))
+            if key in RECOLOR:
+                im = recolor(im, normalise(Image.open(os.path.join(SRC, "wall_plain-Photoroom.png"))))
+            save(key, im)
+        elif want(key):
             im = clean(src)
             save(key, fit(iso2(im) if key in ISO_FIX else im, longest))
 

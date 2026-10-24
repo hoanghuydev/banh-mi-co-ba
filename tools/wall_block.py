@@ -77,10 +77,24 @@ def _mask(poly, size):
     return np.array(m) > 0
 
 
+def _fill_down(px, inside):
+    """Chỗ trống ở đáy khối (ảnh nguồn dốc hơn 0,5 nên đáy cao hơn chuẩn) kéo dài màu từ phía trên xuống, giữ dải chân tường đều."""
+    for x in range(px.shape[1]):
+        solid = np.where(inside[:, x] & (px[:, x, 3] >= 250))[0]
+        if not len(solid):
+            continue
+        last = solid.max()
+        rows = np.where(inside[:, x] & (np.arange(px.shape[0]) > last))[0]
+        if len(rows):
+            px[rows, x, :3] = px[max(last - 3, 0), x, :3]
+            px[rows, x, 3] = 255
+    return px
+
+
 def _fill_gaps(rgba, inside):
     """Điểm trong khối mà ảnh còn trong suốt (góc bo) lấy màu lân cận, rồi đặt đục hẳn."""
     px = rgba.astype(float)
-    for _ in range(10):
+    for _ in range(40):
         gap = inside & (px[..., 3] < 128)
         if not gap.any():
             break
@@ -98,7 +112,7 @@ def _fill_gaps(rgba, inside):
     return px
 
 
-def _cut_rim(px, size):
+def _cut_rim(px, size, inside):
     """Gờ vát và góc gạch quấn ở hai cạnh đứng ngoài và hai cạnh sau của mặt trên được thay bằng ảnh lấy từ bên trong dọc theo chính mặt phẳng đó, để mặt chạy thẳng tới mép ô."""
     h, w = size[1], size[0]
     cx = AXIS_X * K
@@ -110,7 +124,9 @@ def _cut_rim(px, size):
         off = 2 * strip[sel] - 2 * depth[sel]
         sy = np.clip(np.round(yy[sel] + dy * off).astype(int), 0, h - 1)
         sx = np.clip(np.round(xx[sel] + dx * off).astype(int), 0, w - 1)
-        px[sel] = src[sy, sx]
+        ok = inside[sy, sx]
+        ys, xs = np.where(sel)
+        px[ys[ok], xs[ok]] = src[sy[ok], sx[ok]]
 
     slope = TH / TW
     y_side0 = (TOP_Y + TH / 2) * K
@@ -142,7 +158,32 @@ def normalise(im):
     size = out.size
     top, lf, rf = _polys(OVERLAP)
     inside = _mask(top, size) | _mask(lf, size) | _mask(rf, size)
-    px = _fill_gaps(np.array(out), inside)
-    px = _cut_rim(px, size)
+    px = _fill_gaps(_fill_down(np.array(out).astype(float), inside), inside)
+    px = _cut_rim(px, size, inside)
     px = _fill_gaps(px, inside)
+    return Image.fromarray(np.clip(px, 0, 255).astype(np.uint8), "RGBA")
+
+
+def _plaster(px):
+    """Màu vữa trung vị ở ba vùng ít chi tiết: nắp, dải sát mép trái, dải sát mép phải."""
+    cx = int(AXIS_X * K)
+    xr = cx + int(TW / 2 * K)
+    return [np.median(px[130:190, cx - 20:cx + 20, :3].reshape(-1, 3), 0),
+            np.median(px[160:420, 62:70, :3].reshape(-1, 3), 0),
+            np.median(px[160:420, xr - 9:xr - 1, :3].reshape(-1, 3), 0)]
+
+
+def recolor(im, ref):
+    """Đưa màu vữa của `im` về màu vữa của `ref`; chỉ điểm ảnh gần màu vữa mới đổi nên kính, áo, khung cửa giữ nguyên."""
+    px = np.array(im).astype(float)
+    src, dst = _plaster(px), _plaster(np.array(ref).astype(float))
+    top, lf, rf = _polys()
+    size = im.size
+    for poly, s, d, reach in zip((top, lf, rf), src, dst, (58, 40, 52)):
+        near = np.linalg.norm(px[..., :3] - s, axis=2)
+        wgt = np.clip((reach - near) / (reach * 0.55), 0, 1)
+        warm = np.clip((px[..., 0] - px[..., 2] - 2) / 8, 0, 1)      # gạch men ngả xanh thì giữ
+        wgt = wgt * wgt * (3 - 2 * wgt) * warm * _mask(poly, size)
+        gain = d / s
+        px[..., :3] = px[..., :3] * (1 + (gain - 1) * wgt[..., None])
     return Image.fromarray(np.clip(px, 0, 255).astype(np.uint8), "RGBA")

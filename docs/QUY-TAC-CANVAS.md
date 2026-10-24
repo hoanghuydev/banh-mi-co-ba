@@ -52,6 +52,25 @@
 - **Soi các trạng thái đổi hình** (đã/chưa mua đồ, ngày/mưa) và màn hẹp.
 - Bỏ phần code chỉ phục vụ thứ vừa bỏ.
 
+- **Khối nhiều ô ghép hàng (tường, nhà xóm, cửa)**: ảnh AI từng ảnh đạt vẫn không đủ, vì mỗi ảnh một độ cao, một độ cao dải gạch, một gờ vát. Chạy qua `tools/wall_block.py` (`BLOCKS` trong `tools/prep-art.py`): đưa về đúng 60 × 86 px, căn mép trên dải gạch, cắt gờ vát và gạch quấn góc, nới mép đứng 1 px để ô sau gối lên ô trước. Trước khi cài, ghép 5 ô thành một hàng ở 6,4 px/px thiết kế và nhìn.
+- **Mặt phẳng nằm trong khối**: chi tiết dán trên mặt tường (cửa sổ, công tơ, poster, dây phơi) tồn tại cùng mặt phẳng với vữa, nên mọi phép lấy mẫu để sửa mép phải đi dọc theo mặt phẳng đó (mặt trái dốc xuống phải, mặt phải dốc lên phải), không đi ngang màn hình.
+
 ## Báo cáo
 
 Kèm đường dẫn ảnh chụp tuyệt đối và ảnh phóng. Nói rõ mục nào chưa kiểm.
+
+## Lịch sử sai
+
+Mỗi mục là một lần báo xong mà user phải bắt lỗi. Đọc trước khi động vào canvas.
+
+### 2026-10-24, thay 9 ảnh tường bằng ảnh AI
+
+| Đã làm sai | Hậu quả | Làm đúng |
+|---|---|---|
+| Làm việc canvas mà chưa đọc hết file này (chỉ grep vài dòng) | Rơi đúng vào dòng "Hai vật kề nhau mỗi cái một mép" và "Soi chỗ nối" | Mở và đọc cả file trước khi gen, ghi lại mục nào áp cho task |
+| Cài nguyên 9 ảnh AI, chấm từng ảnh riêng thấy "đạt" | Cao lệch 1–3 px, dải gạch mỗi ảnh một độ cao, gờ vát sáng chạy dọc mối nối, khe 1 px lộ mặt sáng của ô trước: tường nhấp nhô, lỏm nhỏm | Chấm cả hàng ghép liền, không chấm từng ảnh; chuẩn hoá chung như mục "Khối nhiều ô ghép hàng" |
+| Có chụp game, thấy bậc và đường kẻ ở mối nối nhưng gọi là "bước hình học thường thấy", "đường kẻ mảnh", báo "mối nối ổn" | User phải tự chỉ ra | Thấy bậc, đường tối/sáng, khe ở chỗ nối là lỗi. Không biện hộ. Phóng 4–5× ở độ phân giải gốc (màn 2732 px) rồi mới báo |
+| Chụp ở 1366 px, hộp thoại hướng dẫn che một phần cảnh, tin ảnh đó | Soi chưa đủ nét | Tắt hộp thoại rồi mới chụp; ảnh tối do lớp phủ thì chụp lại |
+| Ép màu từng nhà xóm khác nhau (xanh xám, hồng be) để "phân biệt" | Nhà xanh xám chen giữa tường kem và sàn men trắng trông lạc | Đồ cùng một bộ giữ cùng tông; muốn khác màu thì hỏi user duyệt trong cảnh trước |
+| Đặt `h`, `dx`, `dy` riêng cho từng ảnh trong `photo.ts` | Mỗi ảnh một cỡ, cộng dồn ra bậc | Chuẩn hoá ảnh để cả 9 ảnh dùng chung một bộ số (`WALL_PHOTO`) |
+

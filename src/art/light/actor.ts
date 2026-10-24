@@ -1,17 +1,18 @@
 import type Phaser from "phaser";
+import { LIGHT } from "./constants";
 import { INDOOR_SHADOW, LIGHT_DEPTH, LIGHT_ENV_KEY, type LightEnv } from "./env";
 import { toScreen } from "../../world/iso";
 import { WORLD_H, WORLD_W } from "../../world/map";
 
 export type Matrix = readonly [a: number, b: number, c: number, d: number, e: number, f: number];
 
-/** Màu nhân của bóng nắng. */
-export const SHADOW_RGB = [150, 148, 178] as const;
+/** Màu nhân của bóng nắng: đúng màu sàn khi mất nắng, nên chỗ bóng người chạm bóng nhà, bóng lá thì liền một màu. */
+export const SHADOW_RGB = [0, 1, 2].map((c) => Math.round((255 * LIGHT.AMB[c] * (1 - LIGHT.LEAF_DARK[c])) / (LIGHT.AMB[c] + LIGHT.SUN[c]))) as [number, number, number];
 /** Độ đậm bóng nắng khi nắng đầy. */
 export const SHADOW_MAX = 1;
 /** Độ đậm bóng ở đỉnh người và ở chân. */
-export const SHADOW_TOP = 0.67;
-export const SHADOW_FOOT = 0.97;
+export const SHADOW_TOP = 0.8;
+export const SHADOW_FOOT = 1;
 /** Độ đậm phản chiếu ở chân và ở đỉnh khi sàn bóng nhất. */
 export const REFLECT_FOOT = 0.13;
 export const REFLECT_TOP = 0.025;
@@ -100,7 +101,7 @@ export function bakeLayout(w: number, h: number, foot: number, reach: number, si
 
 type Entry = {
   src: unknown; users: number; foot: number;
-  shadow?: string; shadowL?: BakeLayout; shadowIn?: string; shadowInL?: BakeLayout;
+  shadow?: HTMLCanvasElement; shadowL?: BakeLayout; shadowIn?: HTMLCanvasElement; shadowInL?: BakeLayout;
   refl?: string; reflL?: BakeLayout;
 };
 
@@ -199,7 +200,7 @@ function measureFoot(img: CanvasImageSource, cut: Phaser.Textures.Frame, flip: b
 }
 
 function drop(textures: Phaser.Textures.TextureManager, e: Entry) {
-  for (const k of [e.shadow, e.shadowIn, e.refl]) if (k && textures.exists(k)) textures.remove(k);
+  if (e.refl && textures.exists(e.refl)) textures.remove(e.refl);
 }
 
 /** Xoá mục cũ nhất không ai dùng cho tới khi về trần. */
@@ -228,6 +229,8 @@ function aoTexture(scene: Phaser.Scene) {
   ctx.fillRect(-w / 2, -w / 2, w, w);
   tex.refresh();
 }
+
+type Live = { key: string; tex: Phaser.Textures.CanvasTexture; w: number; h: number; src: HTMLCanvasElement | null; x: number; y: number };
 
 type ReflMask = { env: LightEnv; gfx: Phaser.GameObjects.Graphics; mask: Phaser.Display.Masks.GeometryMask; users: number };
 
@@ -283,6 +286,7 @@ export class ActorLight {
   private sun = -1;
   private last = 0;
   private mask: ReflMask | null = null;
+  private lives: { o?: Live; i?: Live } = {};
 
   constructor(private scene: Phaser.Scene, private body: Phaser.GameObjects.Image) {
     aoTexture(scene);
@@ -351,22 +355,18 @@ export class ActorLight {
     if (outA > 0.01) {
       if (!e.shadow) {
         const { out, L } = bakeShadow(src, frame, flip, foot, env.sunK, ss);
-        e.shadow = `actor-sh${serial++}`;
+        e.shadow = out;
         e.shadowL = L;
-        this.scene.textures.addCanvas(e.shadow, out);
       }
-      this.place(this.shadow, e.shadow, e.shadowL!, lift, k);
-      this.shadow.setAlpha(outA).setVisible(true);
+      this.shadow.setVisible(this.live(this.shadow, "o", e.shadow, e.shadowL!, env, lift, k)).setAlpha(outA);
     } else this.shadow.setVisible(false);
     if (inA > 0.01) {
       if (!e.shadowIn) {
         const { out, L } = bakeShadow(src, frame, flip, foot, INDOOR_SHADOW.k, ss, INDOOR_SHADOW.soft);
-        e.shadowIn = `actor-si${serial++}`;
+        e.shadowIn = out;
         e.shadowInL = L;
-        this.scene.textures.addCanvas(e.shadowIn, out);
       }
-      this.place(this.shadowIn, e.shadowIn, e.shadowInL!, lift, k);
-      this.shadowIn.setAlpha(inA).setVisible(true);
+      this.shadowIn.setVisible(this.live(this.shadowIn, "i", e.shadowIn, e.shadowInL!, env, lift, k)).setAlpha(inA);
     } else this.shadowIn.setVisible(false);
 
     const rAlpha = reflectAlpha(env.gloss(p.wx, p.wy), env.overcast) * body.alpha;
@@ -387,6 +387,40 @@ export class ActorLight {
     } else this.refl.setVisible(false);
   }
 
+  /** Bóng bake nhân với ảnh nắng của sàn: chỗ sàn đã có bóng nhà, bóng lá thì bóng người không tối thêm. */
+  private live(img: Phaser.GameObjects.Image, slot: "o" | "i", baked: HTMLCanvasElement, L: BakeLayout, env: LightEnv, lift: number, k: number): boolean {
+    const layer = env.sunLayer;
+    const px = this.body.x, py = this.body.y + lift;
+    let live = this.lives[slot];
+    if (!layer) return false;
+    if (!live || live.w !== baked.width || live.h !== baked.height) {
+      if (live) this.scene.textures.remove(live.key);
+      const key = `actor-live${serial++}`;
+      const tex = this.scene.textures.createCanvas(key, baked.width, baked.height);
+      if (!tex) return false;
+      live = { key, tex, w: baked.width, h: baked.height, src: null, x: NaN, y: NaN };
+      this.lives[slot] = live;
+    }
+    if (live.src !== baked || Math.abs(live.x - px) > 0.25 || Math.abs(live.y - py) > 0.25) {
+      const s = k / BAKE_RES;
+      const ctx = live.tex.getContext();
+      ctx.globalCompositeOperation = "source-over";
+      ctx.clearRect(0, 0, live.w, live.h);
+      ctx.drawImage(baked, 0, 0);
+      ctx.globalCompositeOperation = "destination-in";
+      const dx = px - L.ox * live.w * s, dy = py - L.oy * live.h * s;
+      ctx.drawImage(layer.canvas, (dx - layer.x) * layer.scale, (dy - layer.y) * layer.scale, live.w * s * layer.scale, live.h * s * layer.scale, 0, 0, live.w, live.h);
+      ctx.globalCompositeOperation = "source-over";
+      live.tex.refresh();
+      live.src = baked;
+      live.x = px;
+      live.y = py;
+    }
+    if (img.texture.key !== live.key) img.setTexture(live.key).setOrigin(L.ox, L.oy);
+    img.setPosition(px, py).setScale(k / BAKE_RES);
+    return true;
+  }
+
   private place(img: Phaser.GameObjects.Image, tex: string, L: BakeLayout, lift: number, k: number) {
     if (img.texture.key !== tex) img.setTexture(tex).setOrigin(L.ox, L.oy);
     img.setPosition(this.body.x, this.body.y + lift).setScale(k / BAKE_RES);
@@ -403,6 +437,8 @@ export class ActorLight {
   }
 
   destroy() {
+    for (const l of [this.lives.o, this.lives.i]) if (l && this.scene.textures.exists(l.key)) this.scene.textures.remove(l.key);
+    this.lives = {};
     this.release();
     this.shadow.destroy();
     this.shadowIn.destroy();

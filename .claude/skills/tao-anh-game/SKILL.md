@@ -29,7 +29,7 @@ Mục tiêu: ra ảnh **đúng style, đúng góc, đúng hình khối** của g
 
 7b. **Kiểm độ phân giải trước khi duyệt**: cạnh ảnh phải ≥ cạnh thiết kế × 3,2 (màn 27" QHD; mục tiêu ×4,8 cho 4K). Bảng ở `docs/QUY-TAC-CANVAS.md` mục "Độ phân giải tối thiểu". Thấp hơn thì gen lại, không phóng to.
 
-8. **Đặt vào game rồi mới báo xong**: đọc `docs/QUY-TAC-CANVAS.md` (các mẫu lỗi chung), chụp phóng 4–5× mối nối và chân đồ ở chỗ đặt thật rồi nhìn. Ảnh AI lệch hình học nhiều thì gen lại với khối xám, đừng cố kéo.
+8. **Đặt vào game rồi mới báo xong**: đọc **cả** `docs/QUY-TAC-CANVAS.md` (gồm mục "Lịch sử sai"), chụp phóng 4–5× mối nối và chân đồ ở chỗ đặt thật rồi nhìn. Ảnh AI lệch hình học nhiều thì gen lại với khối xám, đừng cố kéo. Khối 1 ô ghép hàng (tường, cửa, nhà xóm) thêm vào `BLOCKS` của `tools/prep-art.py` để `tools/wall_block.py` chuẩn hoá và cắt gờ; cả bộ cùng một tông, cùng một bộ `h`/`dy`.
 
 ## Hạn mức lượt gen (chống đốt tiền)
 
@@ -65,3 +65,4 @@ Dùng khi ảnh đạo cụ mềm, thiếu highlight, hoặc cần phản chiế
 7. **Cài vào game**: copy thành `art-raw/<tên>-Photoroom.png`, sửa dòng trong `PROPS` của `tools/prep-art.py` (cạnh dài 640, dù/vật lớn 768; không đặt vào `ISO_FIX`, ảnh gen ra từ ảnh đã ép iso nên đã đúng góc), chạy `python3 tools/prep-art.py <key>` rồi `npm run optimize:art`, dựng game và soi ở chỗ đặt thật.
 8. **Đồ cắt ghép theo toạ độ** (bàn thớt, bàn bench, bàn dài, quầy order, `prepFromLong`, `bench()`): KHÔNG gen lại bằng quy trình này, ranh cắt đã chỉnh theo ảnh cũ.
 9. **Sàn**: ảnh top-down, lưới 4×4 ô phủ kín khung, khe vữa đều, albedo phẳng (không highlight, không bóng, không gradient), `prep-art.py` cắt ô và dựng khung 248×152 (`FLOOR_SS` 4); gạch đỏ xếp so le thì dùng cả ảnh làm một ô và lật/xoay 180° để có 4 biến thể.
+10. **Ảnh bóng (tán lá, mặt tiền)**: không qua quy trình này; theo mục 8 của skill `anh-sang-vat-the` (xám trên nền trắng, độ nét vừa, đặt theo ô thế giới).

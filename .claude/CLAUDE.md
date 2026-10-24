@@ -9,6 +9,7 @@ Phase revamp gọi là **R0–R6 (+R0.1, R0.5, R0.7)** — R0.7 = nhà cung cấ
 - **Hai yêu cầu xung đột → hỏi user chọn** (AskUserQuestion), không tự quyết.
 - **Không chắc → truy nguồn (code, doc, ảnh chụp) lấy bằng chứng rồi mới làm.** Cấm suy luận suông.
 - **Ví dụ user đưa ra là mẫu, không phải toàn bộ phạm vi.** Mơ hồ "chỉ mấy chỗ này hay tất cả" → hỏi.
+- **Một mảng việc phải được người dùng dẫn lại từ hai vòng trở lên mới đúng → ghi nhật ký vào `.claude/learning-loop/<chủ-đề>-nhat-ky.md`** (agent làm sai gì, người dùng dẫn bằng gì, gốc lỗi tư duy), rồi cập nhật skill liên quan.
 - **Hai việc không chạm file/dữ liệu của nhau → ưu tiên tạo sub agent làm song song** (Agent tool), tự làm phần còn lại. Giao rõ file được sửa và giao diện chung; việc phụ thuộc nhau thì làm tuần tự.
 
 ## 1. Viết plan
@@ -45,6 +46,7 @@ Code chạy đúng ≠ nhìn đúng. Kết luận "xong" chỉ sau khi **đã xe
 ### 3.3. Canvas game
 Mọi việc đụng canvas (đạo cụ, sàn, tường, biển, chữ vẽ trong cảnh, độ sâu, bản đồ ô): đọc `docs/QUY-TAC-CANVAS.md` (các mẫu lỗi chung và vì sao) rồi tự suy ra chỗ cần soi; chụp phóng to ở chỗ đặt thật trước khi báo xong.
 Thêm hoặc dời đạo cụ, đổi chất liệu sàn, hoặc đụng nắng/bóng/phản chiếu: đọc skill `anh-sang-vat-the`.
+Ánh sáng và bóng: dựng demo ghép đơn giản nhất bằng ảnh nguồn trước; không ép ngưỡng, không nhoè mất chi tiết, một hiệu ứng một nguồn dữ liệu; ảnh đích thật của người dùng thắng lời mô tả. Lỗi lặp lại thì đọc `.claude/learning-loop/anh-sang-nhat-ky.md`.
 
 ## 4. Code
 

@@ -79,6 +79,9 @@ const SIT = 10;
 export const TABLE_DROP = 6;
 export const SUNK = new Set<string>([PROP.prep, PROP.benchNear]);
 
+/** Ảnh khối tường kín cả khung texture `heightFor(WALL_H)` = 118, đáy ảnh là đáy cạnh đứng trước. */
+const WALL_PHOTO: Standing = { h: 118, dy: 22 };
+
 /** `h` tính theo người cao `BODY_H` = 64. */
 const STANDING: Record<string, [src: string, o: Standing]> = {
   [PROP.oven]: ["prop_oven", { h: 66 }],
@@ -104,15 +107,15 @@ const STANDING: Record<string, [src: string, o: Standing]> = {
   [PROP.fridge]: ["prop_fridge", { h: 57 }],
   [PROP.cooler]: ["prop_cooler", { h: 29 }],
   [PROP.crate]: ["prop_crate", { h: 44, dy: SIT + 5 }],
-  [BUILD.wall(0)]: ["prop_wall_plain", { h: 119.1, dx: 0.5, dy: 23.1 }],
-  [BUILD.wall(1)]: ["prop_wall_meter", { h: 120.8, dx: 0.5, dy: 24.8 }],
-  [BUILD.wall(2)]: ["prop_wall_window", { h: 118.3, dx: 0.2, dy: 22.3 }],
-  [BUILD.wall(3)]: ["prop_wall_poster", { h: 120.1, dx: 0.2, dy: 24.1 }],
-  [BUILD.door]: ["prop_door", { h: 116.6, dx: -0.6, dy: 20.6 }],
-  [BUILD.neighbour(0)]: ["prop_shop_shutter_half", { h: 118.6, dx: 1.7, dy: 22.6 }],
-  [BUILD.neighbour(1)]: ["prop_shop_window_clothes", { h: 121.0, dx: 0.3, dy: 25.0 }],
-  [BUILD.neighbour(2)]: ["prop_shop_shutter_closed", { h: 118.7, dx: 2.7, dy: 22.7 }],
-  [BUILD.neighbour(3)]: ["prop_shop_window_ac", { h: 120.2, dx: 0.6, dy: 24.2 }],
+  [BUILD.wall(0)]: ["prop_wall_plain", WALL_PHOTO],
+  [BUILD.wall(1)]: ["prop_wall_meter", WALL_PHOTO],
+  [BUILD.wall(2)]: ["prop_wall_window", WALL_PHOTO],
+  [BUILD.wall(3)]: ["prop_wall_poster", WALL_PHOTO],
+  [BUILD.door]: ["prop_door", WALL_PHOTO],
+  [BUILD.neighbour(0)]: ["prop_shop_shutter_half", WALL_PHOTO],
+  [BUILD.neighbour(1)]: ["prop_shop_window_clothes", WALL_PHOTO],
+  [BUILD.neighbour(2)]: ["prop_shop_shutter_closed", WALL_PHOTO],
+  [BUILD.neighbour(3)]: ["prop_shop_window_ac", WALL_PHOTO],
 };
 
 /** Bàn 1 × 2 ô; `foot` là vị trí ngang của đỉnh dưới trong ảnh (0–1), `body` là bề cao thân bàn theo px thiết kế. */

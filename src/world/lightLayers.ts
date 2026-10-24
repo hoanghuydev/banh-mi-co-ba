@@ -135,6 +135,18 @@ export class SceneLight {
     this.layer("reflection", out.reflection, LIGHT_DEPTH.reflection, false);
 
     const sun = out.sun;
+    const sunCanvas = document.createElement("canvas");
+    sunCanvas.width = sun.w;
+    sunCanvas.height = sun.h;
+    const sunCtx = sunCanvas.getContext("2d")!;
+    const sunPixels = sunCtx.createImageData(sun.w, sun.h);
+    for (let i = 0; i < sun.data.length; i++) {
+      const o = i * 4;
+      sunPixels.data[o] = sunPixels.data[o + 1] = sunPixels.data[o + 2] = 255;
+      sunPixels.data[o + 3] = Math.round(Math.min(1, Math.max(0, sun.data[i])) * 255);
+    }
+    sunCtx.putImageData(sunPixels, 0, 0);
+    env.sunLayer = { canvas: sunCanvas, x: ground.x, y: ground.y, scale };
     env.sun = (sx, sy) => {
       const ix = Math.floor((sx - ground.x) * scale), iy = Math.floor((sy - ground.y) * scale);
       if (ix < 0 || iy < 0 || ix >= sun.w || iy >= sun.h) return 1;
