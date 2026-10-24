@@ -5,7 +5,7 @@ type FsDoc = Document & { webkitFullscreenElement?: Element | null; webkitFullsc
 type FsEl = HTMLElement & { webkitRequestFullscreen?: () => Promise<void> | void };
 
 const CSS = `
-#rotate-prompt{position:fixed;inset:0;z-index:30;display:none;flex-direction:column;align-items:center;justify-content:center;gap:1.4rem;
+#rotate-prompt{position:fixed;inset:0;z-index:9600;display:none;flex-direction:column;align-items:center;justify-content:center;gap:1.4rem;
   padding:var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);background:#1d232b;color:#e8eef3;text-align:center;touch-action:none}
 #rotate-prompt.on{display:flex}
 #rotate-prompt .rp-phone{width:3.4rem;height:6rem;border:.3rem solid #f0c419;border-radius:.8rem;position:relative;animation:rp-turn 2.4s ease-in-out infinite}

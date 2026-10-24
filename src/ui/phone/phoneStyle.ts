@@ -137,7 +137,7 @@ export const PHONE_STYLE = `
 @media (hover:hover){.ph-primary:hover{background:#a93226}}
 .ph-primary:active{transform:scale(.985)}
 .ph-primary:focus-visible{outline:3px solid #1c2329;outline-offset:2px}
-.ph-tap{display:flex;justify-content:center;color:#6b7680;padding:8px 0 4px;animation:ph-bob 1.4s ease-in-out infinite}
+.ph-tap{display:flex;justify-content:center;align-items:center;min-height:var(--tmin);cursor:pointer;color:#6b7680;padding:0;animation:ph-bob 1.4s ease-in-out infinite}
 @keyframes ph-bob{50%{transform:translateY(5px);opacity:.5}}
 @keyframes ph-blink{50%{opacity:.45}}
 

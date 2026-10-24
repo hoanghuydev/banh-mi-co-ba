@@ -18,7 +18,7 @@ const STYLE = `
 .sv-meter.nang i{background:var(--aging)}
 .sv-meter.day i{background:var(--last)}
 .sv-body{display:flex;gap:16px;align-items:stretch;min-height:0;flex:1}
-.sv-grid{flex:1 1 auto;min-width:0;overflow:auto;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;align-content:start;padding:10px;border-radius:10px;background:rgba(0,0,0,.28);box-shadow:inset 0 2px 6px rgba(0,0,0,.45)}
+.sv-grid{flex:1 1 auto;min-width:0;overflow:auto;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;align-content:start;grid-auto-rows:max-content;padding:10px;border-radius:10px;background:rgba(0,0,0,.28);box-shadow:inset 0 2px 6px rgba(0,0,0,.45)}
 .sv-cell{position:relative;aspect-ratio:1;padding:0;min-height:0;border-radius:.8em;overflow:visible;
   box-shadow:0 4px 0 #b9a47a,0 6px 4px -2px rgba(60,28,10,.45),inset 0 2px 1px rgba(255,255,255,.9),inset 0 -4px 6px rgba(0,0,0,.1)}
 .sv-cell::before{left:.35em;right:.35em;top:.18em;height:30%;border-radius:.6em .6em 1em 1em}

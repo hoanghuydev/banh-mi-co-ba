@@ -419,6 +419,7 @@ export class AssemblyPanel {
       const [main, hint] = this.presetBtns[i] ?? [];
       main?.setText(`${p.id} · ${p.prepped}`);
       hint?.setText(p.name);
+      if (hint) hint.setScale(Math.min(1, (this.g.presets[i].w - 14) / Math.max(1, hint.width)));
     });
   }
 

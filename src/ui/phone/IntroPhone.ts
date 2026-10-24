@@ -144,6 +144,7 @@ export class IntroPhone {
       const hint = el("div", "ph-tap");
       hint.innerHTML = '<svg width="22" height="14" viewBox="0 0 22 14" aria-hidden="true"><path d="M3 3l8 8 8-8" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
       hint.setAttribute("aria-label", "Chạm để đọc tiếp");
+      hint.onclick = () => this.step();
       dock.append(hint);
     }
 
