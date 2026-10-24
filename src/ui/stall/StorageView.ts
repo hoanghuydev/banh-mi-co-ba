@@ -5,8 +5,8 @@ import { coldUsage, freshnessOf, stacksOf, type Freshness, type Stack } from "..
 import { CLAY_CSS } from "../clayCss";
 
 const STYLE = `
-.sv-root{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(12,15,18,.74);font-family:"Be Vietnam Pro",system-ui,sans-serif;color:#f7f1e2}
-.sv-card{--fresh:#4fbf73;--aging:#ecb93a;--last:#e2563f;display:flex;flex-direction:column;gap:14px;width:min(820px,100%);max-height:100%;min-height:0;padding:16px 18px 18px;background:rgba(42,32,24,.92);box-shadow:0 16px 44px rgba(0,0,0,.5)}
+.sv-root{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;padding:max(18px,var(--safe-top)) max(18px,var(--safe-right)) max(18px,var(--safe-bottom)) max(18px,var(--safe-left));box-sizing:border-box;background:rgba(12,15,18,.74);font-family:"Be Vietnam Pro",system-ui,sans-serif;color:#f7f1e2}
+.sv-card{box-sizing:border-box;--fresh:#4fbf73;--aging:#ecb93a;--last:#e2563f;display:flex;flex-direction:column;gap:14px;width:min(820px,100%);max-height:100%;min-height:0;padding:16px 18px 18px;background:rgba(42,32,24,.92);box-shadow:0 16px 44px rgba(0,0,0,.5)}
 .sv-card.tu{background:rgba(30,40,48,.92);border-color:rgba(190,220,235,.25)}
 .sv-head{display:flex;align-items:center;gap:14px}
 .sv-head img{height:52px;width:auto;flex:none;filter:drop-shadow(0 3px 3px rgba(0,0,0,.4))}
@@ -22,28 +22,28 @@ const STYLE = `
 .sv-cell{position:relative;aspect-ratio:1;padding:0;min-height:0;border-radius:.8em;overflow:visible;
   box-shadow:0 4px 0 #b9a47a,0 6px 4px -2px rgba(60,28,10,.45),inset 0 2px 1px rgba(255,255,255,.9),inset 0 -4px 6px rgba(0,0,0,.1)}
 .sv-cell::before{left:.35em;right:.35em;top:.18em;height:30%;border-radius:.6em .6em 1em 1em}
-.sv-cell:hover{transform:translateY(-1px)}
+@media (hover:hover){.sv-cell:hover{transform:translateY(-1px)}}
 .sv-cell.on{transform:none;box-shadow:0 0 0 3px #ffd96a,0 4px 0 #b9a47a,0 6px 8px rgba(255,217,106,.4),inset 0 2px 1px rgba(255,255,255,.9),inset 0 -4px 6px rgba(0,0,0,.1)}
 .sv-cell:active{transform:translateY(3px);box-shadow:0 1px 0 #b9a47a,inset 0 3px 6px rgba(0,0,0,.22)}
 .sv-cell.rong{border:0;background:rgba(0,0,0,.22);box-shadow:inset 0 2px 4px rgba(0,0,0,.5),0 1px 0 rgba(255,255,255,.06);cursor:default}
 .sv-cell.rong::before{display:none}
 .sv-cell:focus-visible{outline:2px solid #fff2c6;outline-offset:3px}
 .sv-cell .ic{position:absolute;inset:8% 8% 26% 8%;width:84%;height:66%;object-fit:contain;filter:drop-shadow(0 2px 2px rgba(60,30,10,.4))}
-.sv-cell .n{position:absolute;right:6px;bottom:13px;font-weight:800;font-size:.82em;font-variant-numeric:tabular-nums;color:#2a2420;text-shadow:0 1px 0 #fff,0 0 3px #fffaf0}
+.sv-cell .n{position:absolute;right:6px;bottom:13px;font-weight:800;font-size:max(14px,.82em);font-variant-numeric:tabular-nums;color:#2a2420;text-shadow:0 1px 0 #fff,0 0 3px #fffaf0}
 .sv-cell .bar{position:absolute;left:7px;right:7px;bottom:6px;height:6px;border-radius:3px;background:rgba(80,55,25,.4);overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.35)}
 .sv-cell .bar i,.sv-det .bar i{display:block;height:100%;border-radius:3px;background:var(--fresh)}
 .sv-cell .bar.aging i,.sv-det .bar.aging i{background:var(--aging)}
 .sv-cell .bar.last i,.sv-det .bar.last i{background:var(--last)}
-.sv-cell .tag{position:absolute;left:4px;top:3px;font-size:.78em;font-weight:700;line-height:1;color:#c98a00;text-shadow:0 1px 0 #fff}
+.sv-cell .tag{position:absolute;left:4px;top:3px;font-size:max(14px,.78em);font-weight:700;line-height:1;color:#c98a00;text-shadow:0 1px 0 #fff}
 .sv-cell .tag.bad{color:#c0392b}
-.sv-cell .alert{position:absolute;right:4px;top:4px;width:17px;height:17px;border-radius:50%;background:var(--last);color:#fff;font-weight:700;font-size:.72em;line-height:17px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.6)}
+.sv-cell .alert{position:absolute;right:4px;top:4px;width:20px;height:20px;border-radius:50%;background:var(--last);color:#fff;font-weight:700;font-size:14px;line-height:20px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.6)}
 
 .sv-det{flex:0 0 230px;display:flex;flex-direction:column;gap:11px;padding:14px;border-radius:10px;background:rgba(0,0,0,.28);box-shadow:inset 0 2px 6px rgba(0,0,0,.45)}
 .sv-det .pic{align-self:center;display:flex;align-items:center;justify-content:center;width:110px;height:110px;border-radius:10px;background:#cfc6ae;box-shadow:inset 0 3px 5px rgba(60,50,30,.45),0 2px 0 rgba(255,255,255,.12)}
 .sv-det .pic img,.sv-det .pic svg{width:84%;height:84%;object-fit:contain}
 .sv-det .nm{font-weight:700;font-size:1.12em;line-height:1.25;text-align:center}
 .sv-det .chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
-.sv-det .chip{padding:2px 10px;border-radius:12px;font-size:.82em;font-weight:600;background:rgba(255,255,255,.12)}
+.sv-det .chip{padding:2px 10px;border-radius:12px;font-size:max(14px,.82em);font-weight:600;background:rgba(255,255,255,.12)}
 .sv-det .chip.ngon{background:rgba(255,217,106,.22);color:#ffe9a6}
 .sv-det .chip.ban{background:rgba(226,86,63,.25);color:#ffb4a8}
 .sv-det .row{display:flex;justify-content:space-between;gap:8px;font-size:.92em;font-variant-numeric:tabular-nums}
@@ -55,7 +55,7 @@ const STYLE = `
 .sv-det .han.last{color:var(--last)}
 
 .sv-foot{display:flex;justify-content:flex-end}
-.sv-btn{font-size:1em;min-width:7em}
+.sv-btn{font-size:1em;min-width:7em;min-height:max(44px,2.6em)}
 .sv-btn:focus-visible{outline:2px solid #fff2c6;outline-offset:3px}
 
 @media (max-width:700px){
@@ -68,9 +68,18 @@ const STYLE = `
   .sv-cold{flex:1 1 100%}
 }
 @media (max-height:600px){
-  .sv-root{padding:8px}
-  .sv-card{gap:9px;padding:10px 12px 12px}
+  .sv-root{padding:max(8px,var(--safe-top)) max(8px,var(--safe-right)) max(8px,var(--safe-bottom)) max(8px,var(--safe-left))}
+  .sv-card{gap:8px;padding:10px 12px 12px}
   .sv-head img{height:38px}
+}
+@media (max-height:500px){
+  .sv-card{height:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"head foot" "body body";grid-template-rows:auto minmax(0,1fr);gap:8px 12px}
+  .sv-head{grid-area:head}
+  .sv-foot{grid-area:foot;align-self:center}
+  .sv-body{grid-area:body;min-height:0;overflow:hidden}
+  .sv-grid{grid-template-columns:repeat(6,minmax(0,1fr));padding:8px;gap:6px}
+  .sv-det{flex:0 0 200px;gap:6px;padding:10px;overflow:auto}
+  .sv-det .pic{width:56px;height:56px}
 }
 `;
 

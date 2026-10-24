@@ -4,11 +4,12 @@ import { ECON, dishPriceVnd, pickOf, vnd, type PricePick } from "../../sim/econ"
 import { isOpen } from "../../sim/unlock";
 import { INGREDIENTS, levelsOf, type IngredientInfo } from "../../sim/order";
 import { shopName } from "../../content/shop";
+import { isTouch } from "../../core/device";
 
 // Mọi tên món và con số đọc từ `sim/menu` + `sim/econ`, để bảng dạy đúng cái `diffDish` chấm.
 
 const STYLE = `
-.mb-root{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(12,15,18,.74);font-family:"Be Vietnam Pro",system-ui,sans-serif;color:#2b2f31}
+.mb-root{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;padding:max(18px,var(--safe-top)) max(18px,var(--safe-right)) max(18px,var(--safe-bottom)) max(18px,var(--safe-left));box-sizing:border-box;background:rgba(12,15,18,.74);font-family:"Be Vietnam Pro",system-ui,sans-serif;color:#2b2f31}
 .mb-card{display:flex;flex-direction:column;gap:12px;width:min(940px,100%);max-height:100%;min-height:0}
 .mb-cols{display:flex;gap:16px;align-items:stretch;flex:1;min-height:0}
 
@@ -16,49 +17,56 @@ const STYLE = `
 .mb-board-in{display:flex;flex-direction:column;flex:1;min-height:0;overflow:auto;padding:4px 6px 2px}
 .mb-day{position:absolute;left:50%;bottom:calc(100% + 31px);width:min(280px,76%);aspect-ratio:399/83;transform:translateX(-50%);background:url(art/menu_day.webp) center/100% 100% no-repeat;pointer-events:none}
 .mb-ten{font-weight:700;font-size:1.4em;letter-spacing:.05em;line-height:1.2;text-shadow:0 1px 0 rgba(0,0,0,.35)}
-.mb-gio{font-size:.88em;font-weight:500;letter-spacing:.1em;color:#ffe3a3;margin-top:3px}
+.mb-gio{font-size:max(14px,.88em);font-weight:500;letter-spacing:.1em;color:#ffe3a3;margin-top:3px}
 .mb-ke{height:2px;background:#f8d978;opacity:.7;margin:10px 0 6px}
-.mb-cot{display:flex;justify-content:space-between;font-size:.82em;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#edbe62;padding-bottom:6px}
+.mb-cot{display:flex;justify-content:space-between;font-size:max(14px,.82em);font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#edbe62;padding-bottom:6px}
 .mb-row{padding:6px 0}
 .mb-row .top{display:flex;align-items:baseline;gap:6px}
 .mb-row .n{font-weight:700;white-space:nowrap}
 .mb-row .d{flex:1;border-bottom:1px dotted rgba(248,217,120,.5);transform:translateY(-3px)}
 .mb-row .g{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
 .mb-pk{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:6px}
-.mb-pk button{font:inherit;font-size:.88em;padding:5px 2px;min-height:34px;border-radius:5px;border:1px solid rgba(248,217,120,.6);background:transparent;color:#f8d978;cursor:pointer;font-variant-numeric:tabular-nums;line-height:1.3}
+.mb-pk button{font:inherit;font-size:max(14px,.88em);padding:5px 2px;min-height:44px;border-radius:5px;border:1px solid rgba(248,217,120,.6);background:transparent;color:#f8d978;cursor:pointer;font-variant-numeric:tabular-nums;line-height:1.3}
 .mb-pk button[aria-pressed=true]{background:#f8d978;color:#6b1d15;font-weight:700;border-color:#f8d978}
 .mb-pk button:focus-visible{outline:2px solid #fff2c6;outline-offset:2px}
-.mb-chan{margin-top:auto;padding-top:14px;border-top:1px solid rgba(248,217,120,.3);font-size:.88em;line-height:1.6}
+.mb-chan{margin-top:auto;padding-top:14px;border-top:1px solid rgba(248,217,120,.3);font-size:max(14px,.88em);line-height:1.6}
 .mb-chan b{color:#fff2c6}
 
 .mb-giay{position:relative;display:flex;flex-direction:column;flex:1 1 auto;min-width:0;border:solid transparent;border-width:16px;border-image:url(art/menu_giay.webp) 22 fill/16px stretch;filter:drop-shadow(0 10px 18px rgba(0,0,0,.4))}
 .mb-giay-in{flex:1;min-height:0;overflow:auto;margin-top:40px;padding:4px 8px 6px 46px}
 .mb-bang{position:absolute;top:-52px;left:-36px;width:124px;height:98px;background:url(art/menu_bang_dan.webp) center/100% 100% no-repeat;pointer-events:none;z-index:1}
 .mb-h{font-weight:700;font-size:1.25em;margin:0 0 12px;padding-bottom:7px;border-bottom:2px solid #2b2f31}
-.mb-h2{font-size:.82em;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#8e2a20;margin:18px 0 6px}
+.mb-h2{font-size:max(14px,.82em);font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#8e2a20;margin:18px 0 6px}
 .mb-h2.dau{margin-top:0}
 .mb-mon{padding:9px 0;border-bottom:1px dashed #d6c9a8}
 .mb-mon:last-of-type{border-bottom:none}
 .mb-mon .n{font-weight:700}
 .mb-ing{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-.mb-ing>span{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:14px;border:1px solid #cdbf9f;background:rgba(255,255,255,.6);font-size:.88em;line-height:1.5}
+.mb-ing>span{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:14px;border:1px solid #cdbf9f;background:rgba(255,255,255,.6);font-size:max(14px,.88em);line-height:1.5}
 .mb-ing>span.nhan{border-color:#b0342a;background:rgba(176,52,42,.09);font-weight:600}
 .mb-ing i{font-style:normal;font-weight:700;color:#8e2a20;font-variant-numeric:tabular-nums}
-.mb-mon .note{font-size:.88em;color:#5f5542;line-height:1.5;margin-top:6px}
-.mb-mon .trong{font-size:.88em;color:#5f5542;margin-top:6px}
-.mb-tip{display:flex;align-items:baseline;gap:8px;padding:5px 0;font-size:.88em;line-height:1.5}
+.mb-mon .note{font-size:max(14px,.88em);color:#5f5542;line-height:1.5;margin-top:6px}
+.mb-mon .trong{font-size:max(14px,.88em);color:#5f5542;margin-top:6px}
+.mb-tip{display:flex;align-items:baseline;gap:8px;padding:5px 0;font-size:max(14px,.88em);line-height:1.5}
 .mb-tip .s{font-weight:700;color:#8e2a20;white-space:nowrap}
 .mb-tip .d{flex:1;border-bottom:1px dotted #c3b696;transform:translateY(-3px)}
 
-.mb-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:.88em;color:#ded5c6}
-.mb-btn{font:inherit;font-size:1em;padding:7px 16px;border-radius:6px;border:1px solid #b8ab8e;background:#fbf7ec;color:#2b2f31;cursor:pointer;min-height:34px}
+.mb-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:max(14px,.88em);color:#ded5c6}
+.mb-bar:has(.mb-btn:only-child){justify-content:flex-end}
+.mb-btn{font:inherit;font-size:1em;padding:7px 18px;border-radius:6px;border:1px solid #b8ab8e;background:#fbf7ec;color:#2b2f31;cursor:pointer;min-height:44px;min-width:88px}
 .mb-btn:focus-visible{outline:2px solid #fff2c6;outline-offset:2px}
 
 @media (max-height:640px){
-  .mb-root{padding:10px}
+  .mb-root{padding:max(10px,var(--safe-top)) max(10px,var(--safe-right)) max(10px,var(--safe-bottom)) max(10px,var(--safe-left))}
   .mb-row{padding:4px 0}
-  .mb-pk button{min-height:30px}
   .mb-mon{padding:7px 0}
+}
+@media (max-height:520px){
+  .mb-card{gap:8px}
+  .mb-board{margin-top:34px;border-width:22px;border-image-width:22px}
+  .mb-day{bottom:calc(100% + 19px);width:min(220px,76%)}
+  .mb-giay-in{margin-top:28px;padding-left:34px}
+  .mb-bang{top:-40px;left:-26px;width:92px;height:73px}
 }
 @media (max-width:760px){
   .mb-cols{flex-direction:column;overflow:auto;gap:34px}
@@ -249,7 +257,7 @@ export class MenuBoardView {
     card.appendChild(cols);
 
     const bar = this.el("div", "mb-bar");
-    bar.appendChild(this.el("span", "", "Esc hoặc E — đóng"));
+    if (!isTouch()) bar.appendChild(this.el("span", "", "Esc hoặc E — đóng"));
     const btn = this.el("button", "mb-btn", "Đóng");
     btn.onclick = () => this.close();
     bar.appendChild(btn);

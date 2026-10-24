@@ -1,6 +1,8 @@
 import Phaser from "phaser";
 import { loadSettings } from "../core/save";
 import { sfx } from "../audio/sfx";
+import { MIN_FONT, MIN_TOUCH, designFor, fitScale, isTouch } from "../core/device";
+import { ZOOM } from "../world/camera";
 import { CLAY, clayButton, clayCard, clayFaceDy, clayImage, type ClayState } from "./clay";
 
 export const FONT = '"Be Vietnam Pro", ui-sans-serif, "Segoe UI", system-ui, sans-serif';
@@ -38,17 +40,32 @@ export class Stack {
   skip(dy: number) { this.y += dy; }
 }
 
+/** Cạnh thiết kế nhỏ nhất để một vùng chạm đạt `css` px thật trên cảm ứng; chuột giữ `base`. */
+export function touchSize(base: number, css = MIN_TOUCH) {
+  return isTouch() ? Math.max(base, Math.ceil(designFor(css))) : base;
+}
+
+/** Cỡ chữ thiết kế nhỏ nhất để chữ đạt `css` px thật trên cảm ứng; chuột giữ `base`. */
+export function touchFont(base: number, css = MIN_FONT) {
+  return isTouch() ? Math.max(base, Math.ceil(designFor(css))) : base;
+}
+
+/** Cỡ chữ trong thế giới (camera zoom) để chữ đạt `css` px thật trên cảm ứng; chuột giữ `base`. */
+export function worldFont(base: number, css = MIN_FONT) {
+  return isTouch() ? Math.max(base, Math.ceil(css / (fitScale() * ZOOM))) : base;
+}
+
 export function buttonHeight(maxScale = 1.5) {
-  return Math.round(46 * Math.min(textScale(), maxScale));
+  return touchSize(Math.round(46 * Math.min(textScale(), maxScale)));
 }
 
 export function platedButtonHeight(maxScale = 1.5) {
-  return Math.round(40 * Math.min(textScale(), maxScale));
+  return touchSize(Math.round(40 * Math.min(textScale(), maxScale)));
 }
 
 /** Nút ảnh có dòng phụ cần hai tầng chữ nằm gọn trong khung kẻ chỉ. */
 export function hintedButtonHeight(maxScale = 1.5) {
-  return Math.round(54 * Math.min(textScale(), maxScale));
+  return touchSize(Math.round(54 * Math.min(textScale(), maxScale)));
 }
 
 export function textScale() {
@@ -61,7 +78,7 @@ export function label(
 ) {
   return scene.add.text(x, y, text, {
     fontFamily: FONT,
-    fontSize: `${Math.round(size * textScale())}px`,
+    fontSize: `${touchFont(Math.round(size * textScale()))}px`,
     fontStyle: weight,
     color,
     lineSpacing: Math.round(size * 0.5),

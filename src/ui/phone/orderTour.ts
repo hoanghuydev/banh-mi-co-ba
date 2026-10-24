@@ -1,3 +1,4 @@
+import { hint } from "../../core/device";
 import type { SaveFile } from "../../core/save";
 import { QUEST_TEXT } from "../../content/system";
 import { TOUR_ORDER, TOUR_SUPPLIER, TOUR_TOTAL, tourAt, tourIndex, tourOrderReady, tourOrderSteps, tourOrdered, tourSkip } from "../../sim/tour";
@@ -41,7 +42,7 @@ export class OrderTour {
       const at = q(".ph-order .ph-st");
       if (!at) { this.coach.hide(); return; }
       this.armClick(() => { this.onOrdered(); this.destroy(); });
-      point(at, "Đây là giờ hàng về dự kiến. Bấm chuột để tiếp.");
+      point(at, "Đây là giờ hàng về dự kiến. " + hint("Bấm chuột để tiếp.", "Chạm để tiếp."));
       return;
     }
     if (r.app === "home") { point(q('.ph-app[aria-label="Thực phẩm"]'), `${intro}Mở Thực phẩm để đặt hàng.`); return; }
@@ -55,8 +56,8 @@ export class OrderTour {
         ship.scrollIntoView({ block: "center" });
         this.armClick(() => { this.shipNoted = true; });
         point(ship, ship.disabled
-          ? "Hình thức giao: hàng kịp về trước giờ bán, khỏi hoả tốc. Bấm chuột để tiếp."
-          : "Hình thức giao: hoả tốc về sớm hơn nhưng tốn phí. Bấm chuột để tiếp.");
+          ? "Hình thức giao: hàng kịp về trước giờ bán, khỏi hoả tốc. " + hint("Bấm chuột để tiếp.", "Chạm để tiếp.")
+          : "Hình thức giao: hoả tốc về sớm hơn nhưng tốn phí. " + hint("Bấm chuột để tiếp.", "Chạm để tiếp."));
         return;
       }
       point(q(".ph-primary"), "Bấm Đặt hàng.");
@@ -79,7 +80,7 @@ export class OrderTour {
       : `${cap(next.label)}: bấm + một lần.`);
   }
 
-  /** Câu chỉ để đọc: bấm chuột chỗ nào cũng qua bước sau. */
+  /** Câu chỉ để đọc: chạm chỗ nào cũng qua bước sau. */
   private armClick(done: () => void) {
     if (this.waitClick) return;
     this.waitClick = true;

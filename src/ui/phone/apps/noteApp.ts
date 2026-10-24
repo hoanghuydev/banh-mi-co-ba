@@ -1,6 +1,7 @@
 import { WEEKDAY_VI, weekdayIdx } from "../../../sim/econ";
 import { NOTE_MAX, addNote, deleteNote, editNote, type Note } from "../../../sim/phone";
 import type { LedgerRow } from "../../../core/save";
+import { isTouch } from "../../../core/device";
 import { navBar, page, scroller, type AppCtx } from "../ctx";
 import { ICON, btn, el, money } from "../dom";
 
@@ -112,7 +113,7 @@ export function noteEditor(ctx: AppCtx, id?: string) {
 
   const ed = el("div", "ph-editor");
   ed.append(ta);
-  queueMicrotask(() => { if (!cur) ta.focus({ preventScroll: true }); });
+  if (!isTouch()) queueMicrotask(() => { if (!cur) ta.focus({ preventScroll: true }); });
   const nav = navBar(ctx, { back: { label: "Note", to: { app: "note" } }, right });
   (nav.querySelector(".ph-btn-text") as HTMLElement).onclick = leave;
   return page(nav, ed);

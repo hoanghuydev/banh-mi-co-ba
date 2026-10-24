@@ -1,3 +1,5 @@
+import { hint } from "../core/device";
+
 /** Lời của Hệ thống Bán Bánh Mì. */
 export const AWAKEN_LINES = [
   "Keng!",
@@ -63,8 +65,18 @@ export const ROOKIE_DONE = [
   "Hy vọng ký chủ không khiến sếp cũ phải thốt lên: \"Anh đã nói rồi mà\".",
 ];
 
+/** Đọc ra câu theo thiết bị lúc truy cập: phím trên PC, nút cảm ứng trên điện thoại. */
+function byDevice(pc: Record<string, string>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, text] of Object.entries(pc)) {
+    const touch = text.replace(/bấm E/g, "bấm nút phải").replace(/Bấm Tab mở điện thoại/g, "Chạm nút điện thoại để mở").replace(/bấm Tab/g, "chạm nút điện thoại");
+    Object.defineProperty(out, k, { enumerable: true, get: () => hint(text, touch) });
+  }
+  return out;
+}
+
 /** Câu của Hệ thống cho từng bước hướng dẫn; bước không có ở đây thì không giao việc. */
-export const QUEST_TEXT: Record<string, string> = {
+export const QUEST_TEXT: Record<string, string> = byDevice({
   CHO: "Thu thập tài nguyên. Mở điện thoại, vào Thực phẩm, đặt hàng đủ bán hôm nay.",
   MENU: "Tra cứu thực đơn. Tới bảng menu, bấm E.",
   BANH: "Lấy phôi bánh. Tới kệ, bấm E.",
@@ -75,9 +87,9 @@ export const QUEST_TEXT: Record<string, string> = {
   GIAO: "Giao hàng. Đưa cho khách ở quầy gọi món.",
   TAY: "Tay dơ rồi rửa ngay. Tới bồn, bấm E. Cứ 10 ổ bán ra thì rửa tay một lần.",
   DT: "Kiểm tra truyền âm. Có tin nhắn mới, bấm Tab.",
-};
+});
 
-export const QUEST_TEXT_PLAIN: Record<string, string> = {
+export const QUEST_TEXT_PLAIN: Record<string, string> = byDevice({
   CHO: "Mở điện thoại, vào Thực phẩm, đặt hàng đủ bán hôm nay.",
   MENU: "Tới bảng menu, bấm E.",
   BANH: "Tới kệ, bấm E lấy một ổ bánh.",
@@ -88,6 +100,6 @@ export const QUEST_TEXT_PLAIN: Record<string, string> = {
   GIAO: "Đưa ổ cho khách ở quầy gọi món.",
   TAY: "Tay dơ rồi rửa ngay. Tới bồn, bấm E. Cứ 10 ổ bán ra thì rửa tay một lần",
   DT: "Có tin nhắn mới. Bấm Tab mở điện thoại.",
-};
+});
 
 export const LUCK_LINES = ["Hệ thống đã cố gắng.", "Hệ thống không tiếp nhận khiếu nại."];

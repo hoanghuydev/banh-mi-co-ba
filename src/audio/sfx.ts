@@ -125,6 +125,10 @@ class SfxDirector {
     this.game = game;
     this.applySettings(loadSettings());
     game.events.on(Phaser.Core.Events.PRE_STEP, this.step, this);
+    document.addEventListener("visibilitychange", () => {
+      const ctx = (game.sound as { context?: AudioContext }).context;
+      if (document.visibilityState === "visible" && ctx && ctx.state !== "running") ctx.resume().catch(() => {});
+    });
   }
 
   applySettings(s: Settings) {

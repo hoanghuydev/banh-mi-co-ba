@@ -48,3 +48,20 @@ export function memoryPlatform(): Platform {
 }
 
 export const platform: Platform = typeof document !== "undefined" ? webPlatform() : memoryPlatform();
+
+const failListeners = new Set<() => void>();
+
+/** Lần ghi save gần nhất có thất bại không (hết chỗ, chế độ riêng tư). */
+export const saveHealth = { writeFailed: false };
+
+export function reportSaveWrite(ok: boolean) {
+  const was = saveHealth.writeFailed;
+  saveHealth.writeFailed = !ok;
+  if (!ok && !was) for (const cb of [...failListeners]) cb();
+}
+
+/** Chỉ gọi khi chuyển từ ghi được sang ghi lỗi, không lặp mỗi lần thử lại. */
+export function onSaveFailed(cb: () => void): () => void {
+  failListeners.add(cb);
+  return () => { failListeners.delete(cb); };
+}
