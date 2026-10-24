@@ -62,15 +62,12 @@ const onFirstGesture = () => {
 };
 for (const g of GESTURES) window.addEventListener(g, onFirstGesture, { capture: true, passive: true });
 
-// iOS không bắn beforeunload khi vuốt tắt app; cảnh quán lắng nghe beforeunload để lưu.
-window.addEventListener("pagehide", () => window.dispatchEvent(new Event("beforeunload")));
-
 // Mất ngữ cảnh GL thì canvas hỏng không cứu được: lưu rồi tải lại trang.
 game.events.once(Phaser.Core.Events.READY, () => {
   const canvas = game.canvas;
   canvas.addEventListener("webglcontextlost", (e) => e.preventDefault());
   canvas.addEventListener("webglcontextrestored", () => {
-    window.dispatchEvent(new Event("beforeunload"));
+    window.dispatchEvent(new Event("pagehide"));
     location.reload();
   });
 });

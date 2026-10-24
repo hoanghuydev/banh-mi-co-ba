@@ -24,10 +24,10 @@ export class BootScene extends Phaser.Scene {
   }
 
   async create() {
-    // `buildTextures` chặn luồng, phải nhường một nhịp vẽ cho dòng chữ hiện ra.
+    // Nhường một nhịp vẽ cho dòng chữ hiện ra trước khi dựng.
     setStep("đang dựng hình…", 0.9);
     await paintTick();
-    buildTextures(this);
+    await buildTextures(this);
 
     // Không chờ thì chữ có dấu nhảy layout một nhịp; quá hạn thì chạy tiếp với phông dự phòng.
     setStep("đang chờ phông chữ…", 0.96);

@@ -67,7 +67,7 @@ import {
   HAND_LABEL, STATIONS, assertMenuSpotFree, assertStationsOnCounter, blockedReason, stationAtTile, stationNear, type Hand, type Station,
 } from "../world/stations";
 import {
-  BASE, COUNTER, FX, HELD, PROP, TILE, buildTextures, createMenuBoard, createSign, floorTextureAt, footY, heldFootPad,
+  BASE, COUNTER, FX, HELD, PROP, TILE, createMenuBoard, createSign, floorTextureAt, footY, heldFootPad,
   heldTexture, paintNpcPhotos, preloadArt, spriteEdges, textureForTile,
 } from "../art";
 import { Player } from "../entities/Player";
@@ -340,7 +340,6 @@ export class StallScene extends Phaser.Scene {
     setOpenTiles(openTilesFor((id) => has(this.world.equipment, id as EquipId)));
     setPole(has(this.world.equipment, "DU_CHE") ? { x: SHADE_SPOT.x - UMBRELLA_BACK, y: SHADE_SPOT.y - UMBRELLA_BACK } : null);
 
-    buildTextures(this);
     paintNpcPhotos(this);
 
     const env: LightEnv = {
@@ -979,7 +978,7 @@ export class StallScene extends Phaser.Scene {
       ticket: ticket,
       carry: this.player.hand === "loaf_filled" ? this.dish : null,
       hands: this.hands,
-      prompt: this.promptLine(),
+      prompt: this.assembly.isOpen ? null : this.promptLine(),
       watch: this.watchLevel(),
       now: this.popClock,
       // Dùng chung chỗ vẽ với thanh giữ phím ở trạm.
@@ -1048,8 +1047,8 @@ export class StallScene extends Phaser.Scene {
     const who = this.service.talkTargetNow;
     if (who && !this.talk.isOpen) {
       return this.service.talkVerb(who) === "mời"
-        ? `F — mời ${this.service.label(who)} ghé mua`
-        : `F — nói chuyện với ${this.service.label(who)}`;
+        ? hint(`F — mời ${this.service.label(who)} ghé mua`, `mời ${this.service.label(who)} ghé mua`)
+        : hint(`F — nói chuyện với ${this.service.label(who)}`, `nói chuyện với ${this.service.label(who)}`);
     }
     return null;
   }

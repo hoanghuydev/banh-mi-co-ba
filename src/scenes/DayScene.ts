@@ -221,8 +221,10 @@ export class DayScene extends Phaser.Scene {
     const unload = () => ctx.save.flushNow("QUIT");
     document.addEventListener("visibilitychange", hidden);
     window.addEventListener("beforeunload", unload);
+    window.addEventListener("pagehide", unload);
     this.off.push(() => document.removeEventListener("visibilitychange", hidden));
     this.off.push(() => window.removeEventListener("beforeunload", unload));
+    this.off.push(() => window.removeEventListener("pagehide", unload));
   }
 
   private teardown() {

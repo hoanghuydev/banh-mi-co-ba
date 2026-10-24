@@ -137,6 +137,24 @@ Giữa hai cột là **hướng dẫn nhẹ**: một câu ngắn ở đúng ch�
 
 ---
 
+## 6a. Nhãn theo thiết bị
+
+Cùng một việc, PC và cảm ứng nói khác nhau. Chuỗi hiện màn hình có nhắc cách bấm thì viết bằng `hint(pc, touch)` (`core/device.ts`).
+
+| Quy tắc | PC | Cảm ứng |
+|---|---|---|
+| PC nói **phím** | `thùng rác — bấm E bỏ` | — |
+| Cảm ứng **bỏ cụm phím**, chỉ giữ việc (nút ngữ cảnh đã mang nhãn) | — | `thùng rác — bỏ` |
+| Việc có nút riêng thì gọi tên nút | `dưới sàn có đồ, bấm Q nhặt lên` | `dưới sàn có đồ, bấm Nhặt` |
+| Việc chỉ có trên PC thì cảm ứng để trống | `… đang chờ mình trả lời — bấm F` | `… đang chờ mình trả lời` |
+| Cảm ứng không nhắc phím, `chuột`, `hover`, `rê`, `click` | — | `Chạm vào ổ bánh` |
+| Nhãn nút hành động ngắn, **động từ trước** | — | `Nướng` · `Nhặt` · `Gói lại` |
+
+- Nhãn trên nút cảm ứng gồm một cụm 1–2 từ, vừa nút; không câu đầy đủ.
+- Thao tác chỉ có ở một bên (vd. `Tab` mở điện thoại) thì bên kia nói **nút ở đâu**, không nói thiếu.
+
+---
+
 ## 7. Cách kiểm
 
 | Chỗ | Làm gì |

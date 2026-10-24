@@ -8,6 +8,7 @@ import { buildCharacter } from "./character";
 import { buildHeld } from "./held";
 import { buildFood } from "./food";
 import { buildFx } from "./fx";
+import { runSteps } from "./steps";
 import { paintPhotos, preloadNpcPhotos, preloadPhotos } from "./photo";
 
 export { BASE, footY } from "./canvas";
@@ -48,18 +49,20 @@ export function preloadArt(scene: Phaser.Scene, withNpc = false) {
   }
 }
 
-export function buildTextures(scene: Phaser.Scene) {
+export async function buildTextures(scene: Phaser.Scene) {
   if (scene.textures.exists(BUILD.door)) return;
-  buildTiles(scene);
-  buildBuilding(scene);
-  buildCounter(scene);
-  buildProps(scene);
-  buildCharacter(scene);
-  buildHeld(scene);
-  buildFood(scene);
-  buildFx(scene);
-  // Ảnh thật phải đè sau cùng lên texture vẽ bằng code.
-  paintPhotos(scene);
+  await runSteps([
+    () => buildTiles(scene),
+    () => buildBuilding(scene),
+    () => buildCounter(scene),
+    () => buildProps(scene),
+    () => buildCharacter(scene),
+    () => buildHeld(scene),
+    () => buildFood(scene),
+    () => buildFx(scene),
+    // Ảnh thật phải đè sau cùng lên texture vẽ bằng code.
+    () => paintPhotos(scene),
+  ]);
 }
 
 export function floorTextureAt(kind: Floor, tx: number, ty: number) {

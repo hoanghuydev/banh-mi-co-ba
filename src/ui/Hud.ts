@@ -589,12 +589,14 @@ export class Hud {
     if (frozen || (!st && !override)) { this.prompt.setText(""); return; }
 
     const why = override || !st ? null : blockedReason(st, hand);
-    const act = this.m.touch
-      ? (st && st.holdMs === 0 ? st.verb : `giữ để ${st?.verb}`)
-      : `${st && st.holdMs === 0 ? "bấm E" : "giữ E"} để ${st?.verb}`;
+    const hold = !!st && st.holdMs > 0;
+    const key = this.m.touch ? (hold ? "giữ nút" : "") : hold ? "giữ E" : "bấm E";
+    const act = st?.verb === st?.name
+      ? key
+      : key ? `${key} để ${st?.verb}` : `${st?.verb}`;
     this.prompt.setText(override ?? (why
       ? `${st!.name} — ${why}`
-      : `${st!.name} — ${act}`));
+      : act ? `${st!.name} — ${act}` : st!.name));
 
     const cx = (this.m.midL + this.m.midR) / 2;
     const w = this.prompt.width + 34, h = this.prompt.height + 16;
