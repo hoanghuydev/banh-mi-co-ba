@@ -183,6 +183,111 @@ def set_idle_pose(arm):
     bpy.ops.object.mode_set(mode="OBJECT")
 
 
+def work_dirs(kind, t):
+    """Hướng vai->khuỷu và khuỷu->tay cho mỗi bên, hệ model (trước +X, trái +Y), t ∈ [0,1) là một vòng lặp."""
+    th = 2 * math.pi * t
+    c, s = math.cos(th), math.sin(th)
+    if kind == "wipe":
+        # Tay phải xoa vòng trên mặt thớt trước bụng, tay trái tì yên bên cạnh.
+        right = ((0.38 + 0.14 * s, -0.12 - 0.10 * c, -0.90),
+                 (0.80 + 0.30 * s, -0.10 - 0.40 * c, -0.18 + 0.12 * c))
+        left = ((0.28, 0.10, -0.95), (0.84, 0.14, -0.50))
+        return left, right
+    raise ValueError(kind)
+
+
+def reset_pose(arm):
+    for pb in arm.pose.bones:
+        pb.rotation_mode = "QUATERNION"
+        pb.rotation_quaternion = (1.0, 0.0, 0.0, 0.0)
+        pb.location = (0.0, 0.0, 0.0)
+        pb.scale = (1.0, 1.0, 1.0)
+    bpy.context.view_layer.update()
+
+
+def reach_dirs(arm, side, sy, forward, inward, drop):
+    """IK hai đoạn trong hệ armature: bàn tay tới trước vai `forward`, cách đường giữa người `inward`, thấp hơn vai `drop` (đơn vị chiều dài cánh tay), khuỷu chúc xuống."""
+    pb = arm.pose.bones
+    sh = pb[f"mixamorig:{side}Arm"].head.copy()
+    el = pb[f"mixamorig:{side}ForeArm"].head.copy()
+    hd = pb[f"mixamorig:{side}Hand"].head.copy()
+    l1, l2 = (el - sh).length, (hd - el).length
+    target = Vector((sh.x + forward * l1, sy * inward * l1, sh.z - drop * l1))
+    d = target - sh
+    dist = min(d.length, (l1 + l2) * 0.999)
+    u = d.normalized()
+    a = (dist * dist + l1 * l1 - l2 * l2) / (2 * dist)
+    h = math.sqrt(max(l1 * l1 - a * a, 0.0))
+    pole = Vector((0.0, sy * 0.10, -1.0))
+    n = (pole - u * pole.dot(u)).normalized()
+    elbow = sh + u * a + n * h
+    hand = sh + u * dist
+    return (elbow - sh).normalized(), (hand - elbow).normalized()
+
+
+def set_work_pose(arm, kind, t):
+    reset_pose(arm)
+    bpy.context.view_layer.objects.active = arm
+    bpy.ops.object.mode_set(mode="POSE")
+    if kind == "wipe":
+        tilt_bone(arm, "mixamorig:Spine1", "Y", 3.0)
+        tilt_bone(arm, "mixamorig:Spine2", "Y", 2.0)
+    if kind == "wash":
+        # Hai tay trước ngực, sát giữa người; một tay đẩy ra thì tay kia rút về.
+        slide = 0.35 * math.sin(2 * math.pi * t)
+        sides = (("Left", +1, 1.10 + slide), ("Right", -1, 1.10 - slide))
+        for side, sy, fwd in sides:
+            upper, fore = reach_dirs(arm, side, sy, fwd, 0.06, 0.90)
+            aim_bone(arm, f"mixamorig:{side}Arm", upper)
+            aim_bone(arm, f"mixamorig:{side}ForeArm", fore)
+    else:
+        left, right = work_dirs(kind, t)
+        for side, (upper, fore) in (("Left", left), ("Right", right)):
+            aim_bone(arm, f"mixamorig:{side}Arm", upper)
+            aim_bone(arm, f"mixamorig:{side}ForeArm", fore)
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+
+def tilt_bone(arm, name, axis, deg):
+    """Nghiêng quanh trục thế giới, đứng yên tại gốc xương; con cháu đi theo."""
+    from mathutils import Matrix
+    pb = arm.pose.bones.get(name)
+    if not pb:
+        return
+    m = pb.matrix.copy()
+    rot = Matrix.Rotation(math.radians(deg), 3, axis)
+    pb.matrix = Matrix.Translation(m.to_translation()) @ (rot @ m.to_3x3()).to_4x4()
+    bpy.context.view_layer.update()
+
+
+def set_breathe_pose(arm, t):
+    """Ngực phập phồng, vai và đầu nhún nhẹ; tay xuôi lắc theo."""
+    reset_pose(arm)
+    th = 2 * math.pi * t
+    bpy.context.view_layer.objects.active = arm
+    bpy.ops.object.mode_set(mode="POSE")
+    tilt_bone(arm, "mixamorig:Spine", "Y", 2.0 * math.sin(th))
+    tilt_bone(arm, "mixamorig:Spine1", "Y", 3.4 * math.sin(th))
+    tilt_bone(arm, "mixamorig:Spine2", "X", 3.0 * math.sin(th + 1.2))
+    tilt_bone(arm, "mixamorig:Head", "Y", -3.5 * math.sin(th - 0.6))
+    lift = 0.07 * math.sin(th)
+    for side, sy in (("Left", +1), ("Right", -1)):
+        aim_bone(arm, f"mixamorig:{side}Arm",
+                 (IDLE_ARM[0], IDLE_ARM[1] * sy + lift * sy, IDLE_ARM[2]))
+        aim_bone(arm, f"mixamorig:{side}ForeArm",
+                 (IDLE_FORE[0] + lift, IDLE_FORE[1] * sy, IDLE_FORE[2]))
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+
+def pose_arms(arm, kind, t):
+    if kind == "idle":
+        set_idle_pose(arm)
+    elif kind == "breathe":
+        set_breathe_pose(arm, t)
+    else:
+        set_work_pose(arm, kind, t)
+
+
 def body_yaw(arm):
     """Độ trong hệ thế giới (+X = 0°, +Y = 90°), đo từ trục hai vai."""
     pb = arm.pose.bones
@@ -417,6 +522,8 @@ def main():
                     help="bu sang theo stop (EV): am la toi di, duong la sang len")
     ap.add_argument("--carry", action="append", default=[],
                     help="ten tu the duoc dat tay ve kieu BUNG DO (lap lai duoc)")
+    ap.add_argument("--arms", action="append", default=[],
+                    help="ten=idle|breathe|wipe|wash — nan tay theo kieu, chan/than van theo animation (neu co)")
     ap.add_argument("--idle", action="store_true",
                     help="render them tu the NGHI (dung yen) tu chinh model nay")
     ap.add_argument("--keep-root-motion", action="store_true",
@@ -456,8 +563,17 @@ def main():
             sys.exit(f"--anim phai dang ten=duong/dan.fbx, nhan duoc: {spec}")
         nm, path = spec.split("=", 1)
         poses[nm] = os.path.abspath(path)
+    for spec in a.arms:
+        poses.setdefault(spec.split("=", 1)[0], None)
     if not poses:
         poses = {"idle": None}
+
+    arms = {}
+    for spec in a.arms:
+        nm, kind = spec.split("=", 1)
+        if kind not in ("idle", "breathe", "wipe", "wash"):
+            sys.exit(f"--arms kieu khong hop le: {kind}")
+        arms[nm] = kind
 
     align = {"arm": arm, "meshes": [o for o in objs if o.type == "MESH"]} if arm else None
 
@@ -468,6 +584,9 @@ def main():
         if act is None and arm:
             set_idle_pose(arm)
         carrying = pose in a.carry
+        kind = arms.get(pose)
+        if kind and act and arm:
+            freeze_arm_chain(act)
         if carrying and act and arm:
             n_removed = freeze_arm_chain(act)
             print(f"  tu the BUNG DO: go {n_removed} duong cong tay")
@@ -478,8 +597,8 @@ def main():
             print(f"[render] {pose}: action '{act.name}' frame {f0}..{f1} -> lay {nframes}")
         else:
             f0 = f1 = sc.frame_current
-            nframes = 1
-            print(f"[render] {pose}: khong co animation, render 1 frame tinh")
+            nframes = max(1, a.frames) if kind in ("breathe", "wipe", "wash") else 1
+            print(f"[render] {pose}: khong co animation, render {nframes} frame tinh")
 
         for di, d in enumerate(DIRS):
             pivot.rotation_euler = (0, 0, math.radians(a.yaw0 + di * 45))
@@ -488,12 +607,16 @@ def main():
                     sc.frame_set(f0)
                 if carrying:
                     set_carry_pose(arm)
+                if kind:
+                    pose_arms(arm, kind, 0.0)
                 bpy.context.view_layer.update()
                 check_facing(arm, pose)
             for fi in range(nframes):
                 if act and nframes > 1:
                     # Bỏ frame cuối vì trùng frame đầu.
                     sc.frame_set(int(f0 + (f1 - f0) * fi / nframes))
+                if kind and arm:
+                    pose_arms(arm, kind, fi / nframes)
                 if carrying and arm:
                     set_carry_pose(arm)
                     ax, ay = hand_anchor(arm, cam)
