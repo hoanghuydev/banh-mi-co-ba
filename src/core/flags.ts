@@ -40,6 +40,8 @@ export type Settings = {
   telemetry: boolean | null;
   /** Mũi tên trên đầu người chơi — nhân vật duy nhất không có bảng tên. */
   playerMarker: boolean;
+  /** Điều khiển cảm ứng: `auto` theo thiết bị, `on` luôn hiện, `off` luôn ẩn. */
+  touchControls: "auto" | "on" | "off";
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -58,6 +60,7 @@ export const DEFAULT_SETTINGS: Settings = {
   monoAudio: false,
   telemetry: DEV_TOOLS || PLAYTEST ? true : null,
   playerMarker: true,
+  touchControls: "auto",
 };
 
 /** Cài đặt sống độc lập với save. */
