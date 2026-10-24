@@ -15,19 +15,17 @@ GROUT = 3                       # nửa bề dày mạch
 TRIM = 9                        # phần viền sát mép trên dải gạch tính từ mạch trên cùng
 PLASTER_TOP = GRID_V[-1] + GROUT
 SKIRT_TOP = GRID_V[0] - GROUT
-EDGE_FREE = 10                  # sát mép chỉ dùng texture chung
-EDGE_RAMP = 30
-CAP_FREE = 0.04                 # theo ô
-CAP_RAMP = 0.12
 CAP_RES = 384
-GAIN_ROWS = (220, 500)          # hàng v chỉ có vữa, dùng đo tông từng cột
-FACE_EXT = 3                    # px nới mép đứng ra ngoài ô để hai ô kề nhau gối lên nhau, không hở khe khi thu nhỏ
-CAP_EXT = 5                     # như trên cho hai cạnh sau của nắp
+FLAT_REACH = 20                 # nửa bề rộng cửa sổ làm trơn khi san tông
+FACE_EXT = 16                   # px nới mép đứng ra ngoài ô: phần mờ sau khi thu nhỏ phải nằm hẳn trên mặt phẳng ô kề, không chạm gờ giữa của nó
+CAP_EXT = 16                    # như trên cho hai cạnh sau của nắp
 
 # các vùng giữ nguyên ảnh gốc (u0, u1, v0, v1) theo (khoá, mặt)
 DETAIL = {
     ("prop_wall_window", "L"): [(20, 160, 230, 490)],
-    ("prop_wall_poster", "L"): [(28, 168, 240, 495)],
+    ("prop_wall_rent", "L"): [(14, 182, 250, 505)],
+    ("prop_wall_sale", "L"): [(16, 178, 255, 502)],
+    ("prop_wall_notice", "L"): [(22, 176, 262, 502)],
     ("prop_wall_meter", "L"): [(30, 140, 178, 490)],
     ("prop_door", "L"): [(26, 176, 56, 528), (-10, 176, 0, 60)],
     ("prop_shop_shutter_half", "R"): [(20, 178, 0, 540)],
@@ -87,10 +85,16 @@ class Resources:
         self.plaster, self.skirt, self.stamps, self.hlines = {}, {}, {}, {}
         for side, src in (("R", plain), ("L", plain_left)):
             e = to_plane(src, side).astype(float)
-            self.plaster[side] = _periodic(e[..., :3], 1)
+            self.plaster[side] = self._flat_field(_periodic(e[..., :3], 1))
             self.skirt[side] = self._skirt(self.plaster[side])
             self.stamps[side], self.hlines[side] = self._stamps(e[..., :3], side)
         self.cap = self._cap(plain.astype(float))
+
+    @staticmethod
+    def _flat_field(tex):
+        """Bỏ dải sáng tối ngang mặt (rộng hơn ~40 px) của vữa chung, mỗi hàng về tông trung bình của nó: ô nào đứng cạnh ô nào cũng không có vạch ở mối nối."""
+        low = sum(np.roll(tex, s, axis=1) for s in range(-FLAT_REACH, FLAT_REACH + 1)) / (2 * FLAT_REACH + 1)
+        return tex * np.clip(low.mean(axis=1, keepdims=True) / np.maximum(low, 1), 0.8, 1.25)
 
     @staticmethod
     def _skirt(tex):
@@ -217,17 +221,6 @@ def _cover(t, lo, hi):
     return np.clip(t - lo + 0.5, 0, 1) * np.clip(hi - t + 0.5, 0, 1)
 
 
-def _column_gain(a, side, key):
-    """Hệ số theo cột u đưa tông vữa mọi cột về bằng tông giữa mặt, để dải tối sát cạnh giữa của ảnh gốc không thành vạch lặp ở mỗi ô; cột có chi tiết giữ nguyên."""
-    prof = np.median(to_plane(a, side)[GAIN_ROWS[0]:GAIN_ROWS[1], :, :3], axis=0)
-    gain = np.median(prof[40:150], axis=0) / np.maximum(prof, 1)
-    for u0, u1, _, _ in DETAIL.get((key, side), []):
-        gain[max(u0, 0):u1 + 1] = 1
-    kernel = np.ones(9) / 9
-    gain = np.stack([np.convolve(np.pad(gain[:, c], 4, mode="edge"), kernel, "valid") for c in range(3)], axis=1)
-    return np.clip(gain, 0.85, 1.15)
-
-
 def _face_colour(a, side, key, res, rng):
     """Màu mới và độ phủ của một mặt, tính theo từng điểm ảnh của khối để đường chéo giữ khử răng cưa."""
     h, w = a.shape[:2]
@@ -235,10 +228,7 @@ def _face_colour(a, side, key, res, rng):
     u = xx - X0[side] + 0.5
     foot = 749 - 0.5 * u if side == "R" else 749 - 0.5 * (FW - u)
     v = foot - yy
-    a = np.concatenate([a[..., :3] * _column_gain(a, side, key)[np.clip(u.astype(int), 0, FW - 1)], a[..., 3:]], axis=2)
-    edge = np.minimum(u, FW - u)
-    m = _smooth((edge - EDGE_FREE) / EDGE_RAMP)[..., None]
-    plaster = _plane_sample(res.plaster[side], v, u) * (1 - m) + a[..., :3] * m
+    plaster = _plane_sample(res.plaster[side], v, u)
     band = _plane_sample(_band(res, side, rng), v, u)
     skirt = _plane_sample(res.skirt[side], v, u)
     sk = np.clip(SKIRT_TOP - v + 0.5, 0, 1)[..., None]
@@ -261,11 +251,9 @@ def _cap_colour(a, res):
     X = (dx / FW + dy / (FW / 2)) / 2
     Y = (dy / (FW / 2) - dx / FW) / 2
     shared = _sample(res.cap, (X % 1.0) * CAP_RES, (Y % 1.0) * CAP_RES)
-    inner = 0.5 - np.maximum(np.abs(X), np.abs(Y))
-    m = _smooth((inner - CAP_FREE) / CAP_RAMP)[..., None]
     dist = FW * np.minimum.reduce([X + 0.5 + CAP_EXT / FW, 0.5 - X, Y + 0.5 + CAP_EXT / FW, 0.5 - Y])
     cover = np.clip(dist + 0.5, 0, 1)
-    return shared * (1 - m) + a[..., :3] * m, cover
+    return shared, cover
 
 
 def build(sprite, key, res):

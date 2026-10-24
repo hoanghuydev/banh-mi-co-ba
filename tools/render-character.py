@@ -528,6 +528,7 @@ def main():
                     help="render them tu the NGHI (dung yen) tu chinh model nay")
     ap.add_argument("--keep-root-motion", action="store_true",
                     help="giu nguyen phan troi cua xuong goc (mac dinh la ghim tai cho)")
+    ap.add_argument("--dirs", default=",".join(DIRS), help="cac huong can render, cach nhau dau phay")
     ap.add_argument("--samples", type=int, default=64)
     ap.add_argument("--out", default="art-raw/render")
     a = ap.parse_args(argv_after_ddash())
@@ -600,9 +601,13 @@ def main():
             nframes = max(1, a.frames) if kind in ("breathe", "wipe", "wash") else 1
             print(f"[render] {pose}: khong co animation, render {nframes} frame tinh")
 
+        first = True
         for di, d in enumerate(DIRS):
+            if d not in a.dirs.split(","):
+                continue
             pivot.rotation_euler = (0, 0, math.radians(a.yaw0 + di * 45))
-            if di == 0 and arm:
+            if first and arm:
+                first = False
                 if act and nframes > 1:
                     sc.frame_set(f0)
                 if carrying:
@@ -610,7 +615,8 @@ def main():
                 if kind:
                     pose_arms(arm, kind, 0.0)
                 bpy.context.view_layer.update()
-                check_facing(arm, pose)
+                if d == "s":
+                    check_facing(arm, pose)
             for fi in range(nframes):
                 if act and nframes > 1:
                     # Bỏ frame cuối vì trùng frame đầu.

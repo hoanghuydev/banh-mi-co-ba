@@ -264,11 +264,9 @@ def floor_tile(flat, spin, ss=1):
 
     r, g, b = average(top)
     d = ImageDraw.Draw(out)
-    for side, k in (("l", 0.68), ("r", 0.84)):     # trái khuất nắng, phải bắt nắng
-        x = cx - tw / 2 if side == "l" else cx
-        d.polygon([(x, cy), (x + tw / 2, cy + th / 2),
-                   (x + tw / 2, cy + th / 2 + base), (x, cy + base)],
-                  fill=(int(r * k), int(g * k), int(b * k), 255))
+    for k, quad in ((0.68, [(cx - tw / 2, cy), (cx, cy + th / 2), (cx, cy + th / 2 + base), (cx - tw / 2, cy + base)]),
+                    (0.84, [(cx, cy + th / 2), (cx + tw / 2, cy), (cx + tw / 2, cy + base), (cx, cy + th / 2 + base)])):
+        d.polygon(quad, fill=(int(r * k), int(g * k), int(b * k), 255))
     out.alpha_composite(top, (cx - top.width // 2, cy - top.height // 2))
     return out
 
@@ -330,7 +328,7 @@ ROAD_INSET = 0.10
 ISO_FIX: set[str] = {"prop_crate"}
 
 # Khối tường 1 ô: chuẩn hoá về đúng 60 × 86 px và cắt gờ vát để các ô liền nhau; không qua `clean`/`fit` vì trục khối phải nằm giữa khung.
-BLOCKS = {"prop_wall_plain", "prop_wall_meter", "prop_wall_window", "prop_wall_poster", "prop_door",
+BLOCKS = {"prop_wall_plain", "prop_wall_meter", "prop_wall_window", "prop_wall_rent", "prop_wall_sale", "prop_wall_notice", "prop_door",
           "prop_shop_shutter_half", "prop_shop_window_clothes", "prop_shop_shutter_closed", "prop_shop_window_ac"}
 
 # Cạnh dài ≥ 3,2 × cỡ thiết kế (màn 27" QHD); `photo.ts` thu nhỏ bằng nhiều nhịp chia đôi.
@@ -359,7 +357,9 @@ PROPS = [
     ("prop_wall_plain", "wall_plain-Photoroom.png", 768),
     ("prop_wall_meter", "wall_meter-Photoroom.png", 768),
     ("prop_wall_window", "wall_window-Photoroom.png", 768),
-    ("prop_wall_poster", "wall_poster-Photoroom.png", 768),
+    ("prop_wall_rent", "wall_rent-Photoroom.png", 768),
+    ("prop_wall_sale", "wall_sale-Photoroom.png", 768),
+    ("prop_wall_notice", "wall_notice-Photoroom.png", 768),
     ("prop_door", "door-Photoroom.png", 768),
     ("prop_shop_shutter_half", "shop_shutter_half-Photoroom.png", 768),
     ("prop_shop_window_clothes", "shop_window_clothes-Photoroom.png", 768),
