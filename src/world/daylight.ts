@@ -1,11 +1,6 @@
 import { DAY_END_MIN, DAY_START_MIN } from "../core/clock";
 
 export type Sun = {
-  /** Hướng bóng trên màn hình, vector đơn vị. */
-  dirX: number;
-  dirY: number;
-  /** Bóng dài gấp mấy lần bóng giữa trưa; không bao giờ dưới 1. */
-  stretch: number;
   /** Màu nhân (multiply) phủ cả cảnh. */
   tone: number;
   /** Vạt nắng: dịch ngang theo ô, cường độ, màu. */
@@ -15,7 +10,6 @@ export type Sun = {
 };
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-const ease = (t: number) => t * t * (3 - 2 * t);
 
 function mix(a: number, b: number, t: number) {
   const ch = (s: number) => Math.round(lerp((a >> s) & 0xff, (b >> s) & 0xff, t));
@@ -33,19 +27,13 @@ function ramp(stops: readonly (readonly [number, number])[], t: number) {
   return stops[stops.length - 1][1];
 }
 
-const TONE = [[0, 0xe6dcd3], [0.22, 0xf2ece6], [0.5, 0xffffff], [1, 0xfdfcf8]] as const;
+const TONE = [[0, 0xf4ece4], [0.22, 0xf8f3ed], [0.5, 0xffffff], [1, 0xfdfcf8]] as const;
 const PATCH_TINT = [[0, 0xffecd5], [0.3, 0xfff4e6], [0.65, 0xfffcf5], [1, 0xfffefb]] as const;
 
-/** Nắng buổi sáng từ phía đông: càng về trưa bóng càng ngắn và cuộn vào chân vật. */
+/** Nắng buổi sáng từ phía đông, càng về trưa càng trắng. */
 export function sunAt(minutes: number): Sun {
   const day = Math.min(1, Math.max(0, (minutes - DAY_START_MIN) / (DAY_END_MIN - DAY_START_MIN)));
-  const t = ease(day);
-  const ax = lerp(-0.95, -0.55, t), ay = lerp(0.28, 0.62, t);
-  const len = Math.hypot(ax, ay);
   return {
-    dirX: ax / len,
-    dirY: ay / len,
-    stretch: lerp(2.1, 1, t),
     tone: ramp(TONE, day),
     patchShift: lerp(-1.6, 1.4, day),
     patchAlpha: lerp(0.2, 0.3, Math.sin(day * Math.PI * 0.5)),
@@ -53,7 +41,7 @@ export function sunAt(minutes: number): Sun {
   };
 }
 
-/** Trời mưa không có nắng trực tiếp: bóng ngắn, mềm, không hướng. */
+/** Trời mưa không có nắng trực tiếp. */
 export const OVERCAST: Sun = {
-  dirX: 0, dirY: 1, stretch: 1, tone: 0xffffff, patchShift: 0, patchAlpha: 0, patchTint: 0xffffff,
+  tone: 0xffffff, patchShift: 0, patchAlpha: 0, patchTint: 0xffffff,
 };

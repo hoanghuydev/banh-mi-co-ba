@@ -19,7 +19,7 @@ const MUA_VU = /\bmai\b|\bhôm qua\b|bữa trước|bữa nay như|như mọi kh
 const HEN_MAI = /\bmai\b.*(ghé|qua|lấy|đem|trả|đưa)|(ghé|qua|lấy|đem|trả|đưa).*\bmai\b/i;
 
 const ACT_HUA = new Set(["PROMISE", "PROMISE_DEED"]);
-const ACT_DOI_CHO = new Set(["STAND_IN_SHADE", "THEY_SIT", "STEP_ASIDE", "INVITE", "MOVE_GANH", "CARRY_GANH", "MOVE_CART"]);
+const ACT_DOI_CHO = new Set(["STAND_IN_SHADE", "THEY_SIT", "STEP_ASIDE", "INVITE"]);
 
 const hit: Record<string, string[]> = { M1: [], M2: [], M3: [], M4: [] };
 let nodes = 0;

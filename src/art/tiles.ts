@@ -29,13 +29,6 @@ function floorTile(scene: Phaser.Scene, key: string, spec: FloorSpec, top: numbe
     isoBox(g, cx, cy, BASE, top);
     joints(g, cx, cy, spec.joint);
 
-    // Vết loang rất nhạt: đậm hơn thì trên gạch men trắng đọc ra vũng bẩn.
-    g.fillStyle(PAL.floorStain, 0.075);
-    for (let i = 0; i < 3; i++) {
-      const u = (((i * 7 + variant * 3) % 9) / 9 - 0.5) * 0.66;
-      const v = (((i * 5 + variant * 2) % 7) / 7 - 0.5) * 0.66;
-      g.fillEllipse(cx + u * TW, cy + v * TH, 9 + i * 3, 5 + i);
-    }
     if (spec.paint && variant === 1) {                 // vạch sơn đứt quãng giữa đường
       g.fillStyle(PAL.roadPaint, 0.55);
       g.fillPoints([

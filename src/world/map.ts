@@ -1,11 +1,11 @@
 // Camera nhìn từ (−x, −y): y càng lớn càng gần; chèn hàng thì sửa cả `STATION_ROW_Y` / `COUNTER_Y`.
 export const MAP = [
   "NN##D###########NN",  // y0  tường sau, cửa x=4
-  "###..K.O.T.WX..###",  // y1  kệ · lò · trà đá · bồn rửa · bình chữa cháy
-  "###F...........###",  // y2  kho (thùng xốp / tủ mát) x=3
-  "###............###",
-  "###R...........##N",  // y4  bàn topping x=3, nối liền thớt ở y5
-  "###Q..Q...Q..V.###",  // y5  ba bàn: thớt x=3, chỗ để bánh x=6, quầy gọi món x=10 · thùng rác x=13
+  "###..K.O.T.WX....#",  // y1  kệ · lò · trà đá · bồn rửa · bình chữa cháy
+  "###F.............#",  // y2  kho (thùng xốp / tủ mát) x=3
+  "###..............#",
+  "###R.............N",  // y4  bàn topping x=3, nối liền thớt ở y5
+  "###QZZQ...Q..V...#",  // y5  ba bàn: thớt x=3, chỗ để bánh x=6, quầy gọi món x=10 · bàn trơn x=4–5 · thùng rác x=13
   "..............A...",  // y6  hàng khách · bảng chữ A x=14
   "..................",  // y7  lối khách đi
   "..................",
@@ -23,7 +23,7 @@ export const WORLD_H = MAP.length;
 
 export type TileCode =
   | "." | "#" | "N" | "D" | "Q" | "O" | "T" | "K" | "s" | "b" | "M" | "P"
-  | "C" | "V" | "W" | "A" | "X" | "F" | "R";
+  | "C" | "V" | "W" | "A" | "X" | "F" | "R" | "Z";
 
 export function tileAt(tx: number, ty: number): TileCode {
   if (tx < 0 || ty < 0 || tx >= WORLD_W || ty >= WORLD_H) return "#";
@@ -76,7 +76,7 @@ export const ROAD_LANE_Y = 13;
 /** Bán kính va chạm, đơn vị ô. */
 export const BODY_RADIUS = 0.3;
 
-/** Cột dù: cọc tròn nhỏ, không chiếm cả ô vì `SHADE_SPOT` và `GANH_OUT` nằm sát bên. */
+/** Cột dù: cọc tròn nhỏ, không chiếm cả ô vì `SHADE_SPOT` nằm sát bên. */
 const POLE_R = 0.2;
 let pole: { x: number; y: number } | null = null;
 
@@ -125,15 +125,6 @@ export const SEAT_SPOT = { x: 12.6, y: 9.4 };
 /** Khớp `slots` của `GHE_BAN` trong `equipment.json`. */
 export const SEAT_CAPACITY = 2;
 
-// OUT: dì Liên hạ gánh ngay mặt tiền; IN: mình bưng vô sát vách giùm.
-export const GANH_OUT = { x: 11.9, y: 6.4 };
-export const GANH_IN = { x: 8.0, y: 8.6 };
-
-// Xe chú Đạt: lấn mặt tiền / về bên kia hẻm / chung mái lúc mưa; CART_LAN phải nằm trong `SHOPFRONT_X` mà không đè `GANH_OUT`.
-export const CART_LAN = { x: 13.5, y: 6.5 };
-export const CART_XA = { x: 16.6, y: 6.6 };
-export const CART_CHUNG = { x: 10.2, y: 8.2 };
-
 export const SHADE_CAPACITY = 1;
 
 // Lối người qua đường; y10/y11 có đồ đạc nên không dùng được.
@@ -157,16 +148,6 @@ export function assertWalkable() {
   check("ASIDE_SPOT", ASIDE_SPOT);
   check("SHADE_SPOT", SHADE_SPOT);
   check("SEAT_SPOT", SEAT_SPOT);
-  check("GANH_OUT", GANH_OUT);
-  check("GANH_IN", GANH_IN);
-  check("CART_LAN", CART_LAN);
-  check("CART_CHUNG", CART_CHUNG);
-  if (Math.hypot(CART_XA.x - CART_LAN.x, CART_XA.y - CART_LAN.y) < 3) {
-    bad.push("CART_XA quá sát CART_LAN — đẩy đi với lấn chỗ trông như một chỗ");
-  }
-  if (Math.hypot(GANH_IN.x - GANH_OUT.x, GANH_IN.y - GANH_OUT.y) < 1.5) {
-    bad.push("GANH_IN quá sát GANH_OUT — bưng vô với để ngoài trông như một chỗ");
-  }
   if (Math.hypot(SEAT_SPOT.x - SHADE_SPOT.x, SEAT_SPOT.y - SHADE_SPOT.y) < 1) {
     bad.push("SEAT_SPOT nằm chồng lên SHADE_SPOT — ngồi với đứng mát thành một chỗ");
   }
@@ -211,11 +192,8 @@ export function assertWalkable() {
   }
 }
 
-/** Lệch khỏi trục cửa và trạm vì bảng rộng gần 200px dễ đè nhãn trạm. */
-export const SIGN_TILE = { x: 9.2, y: 0.5 };
-
 /** Phủ đúng ba ô tường x=15..17 (bảng 40px) để có một `depth` vừa khít, và chỗ đứng đọc nằm ngoài tầm mọi trạm (gác ở `stations.assertMenuSpotFree()`). */
-export const MENU_TILE = { x: 13.6, y: 0.5 };
+export const MENU_TILE = { x: 13.43, y: 0.5 };
 
 /** Mốc depth ngay sau mép phải bảng: trên ba ô tường nó treo, dưới người đứng đọc và nhà bên. */
 export const MENU_DEPTH_AT = { x: MENU_TILE.x + 1.5, y: MENU_TILE.y };
@@ -225,7 +203,7 @@ export const MENU_REACH = 1.6;
 /** Mép mái hiên, nơi `ui/stall/Rain` nhỏ nước xuống. */
 export const SHOPFRONT_X = (() => {
   const row = MAP[COUNTER_Y];
-  return { lo: row.indexOf("."), hi: row.lastIndexOf(".", row.indexOf("###", 3)) + 1 };
+  return { lo: row.indexOf("."), hi: row.lastIndexOf("#") };
 })();
 
 /** Hàng đầu tiên ngoài mái hiên, dùng chung cho cả nắng (`isSunlit`) lẫn mưa (`world/rain.ts`). */

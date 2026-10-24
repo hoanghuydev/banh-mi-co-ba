@@ -1,0 +1,15 @@
+export const LIGHT = {
+  SUN_K: 0.45,
+  AMB: [0.90, 0.91, 0.96],
+  SUN: [0.10, 0.09, 0.04],
+  SHADOW_COL: [0.6, 0.58, 0.7],
+  AO_COL: [0.32, 0.36, 0.44],
+  CAST_AMB_CUT: 0.40,
+  LEAF_DARK: [0.37, 0.4, 0.43],
+  AO_STRENGTH: 0.95,
+  AO_GROW: 1.4,
+  TILE_W: 60,
+  TILE_H: 30,
+  SHADE: [0.68, 0.72, 0.88],
+  WARM: [1.06, 1.02, 0.94],
+} as const;

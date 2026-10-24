@@ -8,14 +8,12 @@ export const PROP = {
   oven: "oven", tea: "tea", shelf: "shelf",
   stool: "stool", table: "table", order: "order", prep: "prep",
   // Bàn dài hai ô cắt đôi: nửa ngoài đặt thớt, nửa trong là khay topping.
-  benchNear: "bench_near", benchFar: "bench_far", bike: "bike", pothos: "pothos",
+  benchNear: "bench_near", benchFar: "bench_far", tableLong: "table_long", bike: "bike", pothos: "pothos",
   crate: "crate", bin: "bin", sink: "sink",
   // Chỉ có ảnh thật; `ovenE` thiếu ảnh thì `StallScene.placeProps` phải lùi về `oven`.
   scooter: "scooter", sign: "sign", fire: "fire", ovenE: "oven_e",
   // Chỉ có ảnh thật, không nằm trên lưới ô — `StallScene.drawEquipment` dựng khi đã mua.
   umbrella: "umbrella", fridge: "fridge", cooler: "cooler",
-  // Vật động: chỗ của chúng là một nước đi của người chơi.
-  ganh: "ganh", cart: "cart",
 } as const;
 
 function loaf(g: Pen, x: number, y: number, s = 1) {
@@ -400,69 +398,6 @@ function sink(scene: Phaser.Scene) {
   });
 }
 
-/** Gánh tàu hũ dì Liên, đã hạ xuống đất: đòn tre gác ngang trên hai vành nồi. */
-function ganh(scene: Phaser.Scene) {
-  const POT = 14;
-  prop(scene, PROP.ganh, heightFor(POT + 16), (g, cx, cy) => {
-    for (const dx of [-16, 16]) {
-      const s = dx < 0 ? 1 : 0.95;
-      g.fillStyle(0x2b2b2b, 0.22);                     // bóng đổ dưới nồi
-      g.fillEllipse(cx + dx, cy + 1, 26 * s, 9 * s);
-      g.fillStyle(PAL.potDark, 1);
-      g.fillEllipse(cx + dx, cy - 1, 23 * s, 9 * s);
-      standing(g, cx + dx, cy, POT * s, PAL.pot, 22 * s, 10 * s);
-      g.fillStyle(shade(PAL.pot, 26), 1);              // vành nồi
-      g.fillEllipse(cx + dx, cy - POT * s, 23 * s, 9.5 * s);
-      g.fillStyle(shade(PAL.potDark, -16), 0.85);      // miệng nồi sâu xuống
-      g.fillEllipse(cx + dx, cy - POT * s + 1, 16 * s, 6 * s);
-    }
-    const rim = cy - POT - 1;                          // đòn gác trên vành nồi
-    g.fillStyle(shade(PAL.breadDark, -8), 1);
-    for (let i = -20; i <= 20; i++) {
-      const t = i / 20;
-      g.fillRect(cx + i * 0.95 - 1.6, rim - 2 + t * 1.6 + Math.abs(t) * -1.2, 3.2, 4.2);
-    }
-    g.fillStyle(shade(PAL.breadDark, 18), 0.6);        // bắt sáng dọc thân tre
-    for (let i = -20; i <= 20; i++) {
-      const t = i / 20;
-      g.fillRect(cx + i * 0.95 - 1.6, rim - 2 + t * 1.6 + Math.abs(t) * -1.2, 3.2, 1.2);
-    }
-    g.fillStyle(0xe8e3d4, 1);                          // khăn vắt vắt qua đòn
-    g.fillRoundedRect(cx - 5, rim - 2, 10, 13, 2.5);
-    g.fillStyle(shade(0xe8e3d4, -20), 0.75);
-    g.fillRect(cx - 5, rim + 5, 10, 1.8);
-  }, TW + 38);
-}
-
-/** Xe chú Đạt: thùng thấp, ô xanh, không bảng hiệu — liếc là phân biệt với xe của mình. */
-function cart(scene: Phaser.Scene) {
-  const BODY = 20, CASE = 13, POLE = 30;
-  prop(scene, PROP.cart, heightFor(BODY + CASE + POLE), (g, cx, cy) => {
-    g.fillStyle(0x3a3a3a, 1);                          // bánh xe
-    for (const dx of [-13, 13]) g.fillEllipse(cx + dx, cy - 3, 8, 5);
-    standing(g, cx, cy, BODY, 0x9c6b4a, TW - 10, TH - 6);   // thân xe gỗ
-    const top = cy - BODY;
-    g.fillStyle(shade(0x9c6b4a, -30), 0.8);            // hộc dưới
-    g.fillRect(cx - 14, top + 5, 28, 7);
-
-    standing(g, cx, top, CASE, PAL.jarGlass, TW - 16, TH - 10);  // tủ kính
-    g.fillStyle(0xffffff, 0.22);
-    g.fillRect(cx - 12, top - CASE + 3, 24, CASE - 6);
-    for (const dx of [-7, 0, 7]) loaf(g, cx + dx, top - 4, 0.55);  // bánh trong tủ
-
-    const px = cx + 10;                                // cọc ô, lệch về một bên thân xe
-    g.fillStyle(0x6f6f6f, 1);
-    g.fillRect(px - 1.2, top - CASE - POLE, 2.4, POLE);
-    const uy = top - CASE - POLE + 3;                  // ô XANH — khác hẳn dù của mình
-    g.fillStyle(shade(0x3f7d5a, -26), 1);
-    g.fillEllipse(px, uy + 3, 42, 9);
-    g.fillStyle(0x3f7d5a, 1);
-    g.fillEllipse(px, uy, 42, 13);
-    g.fillStyle(shade(0x3f7d5a, 20), 0.55);            // bắt sáng mặt ô
-    g.fillEllipse(px - 6, uy - 2, 20, 6);
-  }, TW + 26);
-}
-
 export function buildProps(scene: Phaser.Scene) {
   sink(scene);
   oven(scene);
@@ -474,6 +409,4 @@ export function buildProps(scene: Phaser.Scene) {
   pothos(scene);
   crate(scene);
   bin(scene);
-  ganh(scene);
-  cart(scene);
 }

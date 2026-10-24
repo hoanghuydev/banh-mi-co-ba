@@ -75,16 +75,9 @@ export type TalkAct =
   /** Clip ra sao phụ thuộc quầy sạch hay dơ lúc máy đang chạy — xem `Service.filmSpoiled`. */
   | { kind: "FILM"; forSec: ForSec }
   | { kind: "STOP_FILM" }
-  /** Khác `MOVE_GANH` ở chỗ AI làm: bưng giùm là một việc mình bỏ công nên mua được thiện cảm; bảo bà tự dời thì không. */
-  | { kind: "CARRY_GANH" }
-  | { kind: "MOVE_GANH" }
   /** Chiều NHẬN một món vào: đưa ổ bánh mà không lấy tiền, và cầm về một thứ. */
   | { kind: "BARTER"; nhan: string }
-  /** `XA` chú về bên kia hẻm (mặt tiền thông, mà mình vừa đuổi ông ta) · `CHUNG` hai xe chung một mái (mình mất một khúc). */
-  | { kind: "MOVE_CART"; toi: "XA" | "CHUNG" }
-  /**
-   * CẤT TIẾNG RAO (`sau.rao`) — kéo người đi ngang quay đầu lại; ngược với xe chú Đạt lấn.
-   */
+  /** CẤT TIẾNG RAO (`sau.rao`) — kéo người đi ngang quay đầu lại. */
   | { kind: "RAO"; forSec: ForSec }
   /**
    * ĐỔI CÁI ĐƠN — đổi thật `order.intent` nên đổi cả giá; `ok`/`no` là câu đáp khi họ chịu / không chịu.

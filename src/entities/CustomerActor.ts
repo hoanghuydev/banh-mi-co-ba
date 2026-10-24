@@ -2,10 +2,10 @@ import Phaser from "phaser";
 import { depthOf, facingOf8, toScreen, type Facing8 } from "../world/iso";
 import { COUNTER_Y, QUEUE_SLOTS } from "../world/map";
 import { pickBubbleSpot, type Box } from "../world/bubbleLayout";
-import { BODY_H, FX, buildBody, footY, textureFor } from "../art";
-import { castShadow } from "../art/fx";
-import { STRIDE, WALK_FRAMES, walkTextureFor } from "../art/character";
-import { artScale, walkLift } from "../art/photo";
+import { BODY_H, buildBody, footY, textureFor } from "../art";
+import { STRIDE, GAIT_FRAMES, walkTextureFor } from "../art/character";
+import { artScale } from "../art/photo";
+import { ActorLight } from "../art/light/actor";
 import type { Customer } from "../sim/customer";
 import { nowState } from "../sim/perception";
 import { FONT } from "../ui/theme";
@@ -102,7 +102,7 @@ const browColor = (hair: number) => {
 
 export class CustomerActor {
   private body: Phaser.GameObjects.Image;
-  private shadow: Phaser.GameObjects.Image;
+  private light: ActorLight;
   private mark: Phaser.GameObjects.Text;
   private tag: Phaser.GameObjects.Text;
   private fx: Phaser.GameObjects.Graphics;
@@ -130,8 +130,8 @@ export class CustomerActor {
     private label: (c: Customer) => string = (x) => x.name) {
     if (!scene.textures.exists(`${c.memKey}_s`)) buildBody(scene, c.memKey, c.body);
 
-    this.shadow = scene.add.image(0, 0, FX.shadow).setOrigin(0.5, 0.5);
     this.body = scene.add.image(0, 0, textureFor("n", c.memKey).key).setOrigin(0.5, 1);
+    this.light = new ActorLight(scene, this.body);
 
     this.tag = scene.add.text(0, 0, label(c), {
       fontFamily: FONT, fontSize: `${Math.round(10 * textScale)}px`, fontStyle: "500", color: "#f2efe6",
@@ -167,7 +167,7 @@ export class CustomerActor {
 
     // `null` khi chưa có atlas đi bộ hoặc đứng yên.
     const walkTex = walking
-      ? walkTextureFor(this.facing, Math.floor((this.gait / STRIDE) * WALK_FRAMES), "walk", c.memKey)
+      ? walkTextureFor(this.facing, Math.floor((this.gait / STRIDE) * GAIT_FRAMES.walk), "walk", c.memKey)
       : null;
 
     // Frame đi đã có nhún sẵn nên tắt cả nhún lẫn squash code, tránh nảy hai tầng.
@@ -213,9 +213,8 @@ export class CustomerActor {
     const k = 1 / artScale(tex.key);
     const sitSquash = 1 - (this.sp.sit.x / SIT_DROP) * SIT_SQUASH;
     this.body.setScale(k, k * (this.sp.sy.x + Math.sin(this.bob * 2) * 0.02 * bodyAmp) * sitSquash);
-    // Lúc đi `hop` đã tắt nên bóng lấy độ nhấc từ chính frame đang vẽ.
-    const lift = walkTex ? walkLift(walkTex.key) : hop;
-    castShadow(this.shadow, sx, sy, 1 - lift * 0.03, fade * (1 - lift * 0.05)).setDepth(depth - 1);
+
+    this.light.update({ wx: c.x, wy: c.y, lift: hop + this.sp.up.x - this.sp.sit.x });
 
     const headX = sx + fidget, headY = footY(sy) - BODY_H + 12 - hop;
     const name = this.label(c);
@@ -423,8 +422,8 @@ export class CustomerActor {
   }
 
   destroy() {
+    this.light.destroy();
     this.body.destroy();
-    this.shadow.destroy();
     this.tag.destroy();
     this.mark.destroy();
     this.fx.destroy();

@@ -82,6 +82,7 @@ export function textureForTile(
     case "K": return PROP.shelf;
     case "s": return PROP.stool;
     case "b": return PROP.table;
+    case "Z": return PROP.tableLong;
     case "M": return tx % 2 === 0 ? PROP.bike : PROP.scooter;
     case "P": return PROP.pothos;
     case "C": return PROP.crate;

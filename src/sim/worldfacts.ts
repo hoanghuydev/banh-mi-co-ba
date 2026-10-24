@@ -60,11 +60,8 @@ export type WorldSnapshot = {
   queue: number;
   shadeFree: boolean;
   seatFree: boolean;
-  ganhOut: boolean;
   /** Ổ đầy đủ đã lên bảng menu. */
   menuDayDu: boolean;
-  cartLan: boolean;
-  cartChung: boolean;
   ovenHot: boolean;
   /** Mẻ vừa ra lò — hẹp hơn `ovenHot` vốn đúng suốt lúc lò đang nhen. */
   meVuaRa: boolean;
@@ -124,9 +121,6 @@ export function queryOf(w: WorldSnapshot, q = new Query()): Query {
   q.set("worldShadeFree", w.shadeFree);
   q.set("worldSeatFree", w.seatFree);
   q.set("worldMenuDayDu", w.menuDayDu);
-  q.set("worldGanhOut", w.ganhOut);
-  q.set("worldCartLan", w.cartLan);
-  q.set("worldCartChung", w.cartChung);
   q.set("worldOvenHot", w.ovenHot);
   q.set("worldMeVuaRa", w.meVuaRa);
   q.set("queueLength", Math.max(0, Math.round(w.queue)));

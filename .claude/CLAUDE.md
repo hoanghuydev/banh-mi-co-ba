@@ -1,7 +1,15 @@
 # Bánh Mì Cô Ba — Luật làm việc cho agent
 
-Đọc trước: `docs/CANON.md`, `docs/VAN-PHONG-UI.md`. Đang revamp → `docs/revamp/00-YEU-CAU.md` thắng khi mâu thuẫn.
+Đọc trước: `docs/CANON.md`, `docs/VAN-PHONG-UI.md`; làm canvas thì thêm `docs/QUY-TAC-CANVAS.md`. Đang revamp → `docs/revamp/00-YEU-CAU.md` thắng khi mâu thuẫn.
 Phase revamp gọi là **R0–R6 (+R0.1, R0.5, R0.7)** — R0.7 = nhà cung cấp (trước là R3) (CANON §17.1). Doc cũ có banner ☠️/⚠️/✅ ở đầu — phần ☠️ không dùng làm căn cứ.
+
+## 0. Nhận task
+
+- **Chưa rõ yêu cầu → hỏi trước khi làm.** Không đoán.
+- **Hai yêu cầu xung đột → hỏi user chọn** (AskUserQuestion), không tự quyết.
+- **Không chắc → truy nguồn (code, doc, ảnh chụp) lấy bằng chứng rồi mới làm.** Cấm suy luận suông.
+- **Ví dụ user đưa ra là mẫu, không phải toàn bộ phạm vi.** Mơ hồ "chỉ mấy chỗ này hay tất cả" → hỏi.
+- **Hai việc không chạm file/dữ liệu của nhau → ưu tiên tạo sub agent làm song song** (Agent tool), tự làm phần còn lại. Giao rõ file được sửa và giao diện chung; việc phụ thuộc nhau thì làm tuần tự.
 
 ## 1. Viết plan
 
@@ -33,6 +41,10 @@ Code chạy đúng ≠ nhìn đúng. Kết luận "xong" chỉ sau khi **đã xe
   - **Tràn/cắt** — chữ bị cắt, tràn khung, xuống dòng xấu?
   - **Kích thước** — xem cả PC và màn hẹp mobile.
 - Báo kết quả kèm đường dẫn ảnh đã chụp.
+
+### 3.3. Canvas game
+Mọi việc đụng canvas (đạo cụ, sàn, tường, biển, chữ vẽ trong cảnh, độ sâu, bản đồ ô): đọc `docs/QUY-TAC-CANVAS.md` (các mẫu lỗi chung và vì sao) rồi tự suy ra chỗ cần soi; chụp phóng to ở chỗ đặt thật trước khi báo xong.
+Thêm hoặc dời đạo cụ, đổi chất liệu sàn, hoặc đụng nắng/bóng/phản chiếu: đọc skill `anh-sang-vat-the`.
 
 ## 4. Code
 

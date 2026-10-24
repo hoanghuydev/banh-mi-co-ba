@@ -100,8 +100,6 @@ export class Customer implements Observer {
   balking = false;
   /** Bỏ đi vì giá chứ không phải vì đông. */
   priceWalk = false;
-  /** Ghé xe chú Đạt thay vì xe mình — không phải chê hàng đông. */
-  lured = false;
   inviteRefused = false;
   /** Bật cả lúc trượt roll, không thì bị xét lại mỗi frame. */
   greeted = false;

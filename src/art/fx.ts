@@ -1,11 +1,9 @@
 import Phaser from "phaser";
 import { TW, TH } from "../world/iso";
-import { SKY_FROM_Y } from "../world/map";
-import { SHADOW } from "./palette";
 
 /** Các texture hạt vẽ trắng để emitter `tint`. */
 export const FX = {
-  shadow: "shadow", ring: "ring", fly: "fly", puff: "puff", you: "you",
+  ring: "ring", fly: "fly", puff: "puff", you: "you",
   drop: "drop", ripple: "ripple",
 } as const;
 
@@ -38,85 +36,7 @@ export const DROP_H = 28;
 export const RIPPLE_W = 32;
 const RIPPLE_H = 16;
 
-/** Rộng hơn bóng nhìn thấy vì phần dư là vùng nhoè. */
-const SHADOW_W = 44, SHADOW_H = 22;
-/** Bằng sải chân; mốc quy đổi bóng đạo cụ: `scale = bề ngang muốn có / SHADOW_CORE`. */
-export const SHADOW_CORE = 24;
-
-/** `w` theo bề ngang vật che nắng (không theo đáy) · `a` < 1 cho vật cao khỏi sàn; không có tên = không có bóng. */
-export const PROP_SHADOW: Record<string, { w: number; a?: number }> = {
-  oven: { w: 40 }, oven_e: { w: 42 }, shelf: { w: 40 }, tea: { w: 30 },
-  stool: { w: 22 }, pothos: { w: 22 }, bin: { w: 28 }, crate: { w: 30 },
-  sign: { w: 26 }, fire: { w: 15 }, fridge: { w: 28 }, cooler: { w: 24 },
-  table: { w: 56, a: 0.75 },
-  order: { w: 30 }, prep: { w: 44 }, bench_near: { w: 44 }, bench_far: { w: 44 },
-  bike: { w: 58, a: 0.8 }, scooter: { w: 52, a: 0.8 },
-  sink: { w: 34, a: 0.6 },
-  // khớp bản vẽ dự phòng `fillEllipse(x, y + 2, 76, 26)` trong `StallScene`
-  umbrella: { w: 76, a: 0.45 },
-};
-
-/** Vẽ bằng canvas vì cần gradient: lớp nhoè rộng + lõi tiếp đất đậm. */
-function buildShadow(scene: Phaser.Scene) {
-  if (scene.textures.exists(FX.shadow)) scene.textures.remove(FX.shadow);
-  const tex = scene.textures.createCanvas(FX.shadow, SHADOW_W, SHADOW_H);
-  if (!tex) return;
-  const ctx = tex.getContext();
-  const cx = SHADOW_W / 2, cy = SHADOW_H / 2;
-  const r = SHADOW.color >> 16 & 0xff, g = SHADOW.color >> 8 & 0xff, b = SHADOW.color & 0xff;
-  const rgba = (a: number) => `rgba(${r},${g},${b},${a})`;
-
-  // Bóp trục Y để gradient tròn thành ê-líp.
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.scale(1, SHADOW_H / SHADOW_W);
-  const soft = ctx.createRadialGradient(0, 0, 0, 0, 0, SHADOW_W / 2);
-  // Mốc dồn vào trong để vầng nhoè thấy được chỉ ~30px.
-  soft.addColorStop(0, rgba(SHADOW.alpha * 0.85));
-  soft.addColorStop(0.3, rgba(SHADOW.alpha * 0.55));
-  soft.addColorStop(0.55, rgba(SHADOW.alpha * 0.22));
-  soft.addColorStop(0.78, rgba(SHADOW.alpha * 0.05));
-  soft.addColorStop(1, rgba(0));
-  ctx.fillStyle = soft;
-  ctx.beginPath();
-  ctx.arc(0, 0, SHADOW_W / 2, 0, Math.PI * 2);
-  ctx.fill();
-
-  const core = ctx.createRadialGradient(0, 0, 0, 0, 0, SHADOW_CORE / 2);
-  core.addColorStop(0, rgba(SHADOW.alpha * 0.75));
-  core.addColorStop(0.6, rgba(SHADOW.alpha * 0.4));
-  core.addColorStop(1, rgba(0));
-  ctx.fillStyle = core;
-  ctx.beginPath();
-  ctx.arc(0, 0, SHADOW_CORE / 2, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-
-  tex.refresh();
-}
-
-/** Dưới mái hiên bóng chỉ dài bằng chừng này so với ngoài nắng. */
-const SHADE_RATIO = 1 / 3;
-
-let cast = { rot: 0, stretch: 1 };
-
-export function setCast(dirX: number, dirY: number, stretch: number) {
-  cast = { rot: Math.atan2(dirY, dirX), stretch };
-}
-
-/** Đặt bóng tại chân vật: đuôi kéo theo hướng nắng, chân bóng giữ ở `(sx, sy)`. */
-export function castShadow(img: Phaser.GameObjects.Image, sx: number, sy: number, scale = 1, alpha = 1) {
-  const wy = (sy / (TH / 2) - sx / (TW / 2)) / 2;
-  const sun = Math.min(1, Math.max(0, (wy - (SKY_FROM_Y - 0.4)) / 0.8));
-  const stretch = 1 + (cast.stretch - 1) * (SHADE_RATIO + (1 - SHADE_RATIO) * sun);
-  const ox = 0.5 - Math.min(0.3, (stretch - 1) * 0.25);
-  return img.setPosition(sx, sy).setOrigin(ox, 0.5).setRotation(cast.rot)
-    .setScale(scale * stretch, scale).setAlpha(alpha);
-}
-
 export function buildFx(scene: Phaser.Scene) {
-  buildShadow(scene);
-
   // Ba nét (mực sậm · hổ phách · lõi sáng) để đọc được trên cả nền gạch trắng lẫn nền sậm.
   const g2 = scene.make.graphics({ x: 0, y: 0 }, false);
   const cx = (TW + RING_PAD * 2) / 2, cy = (TH + RING_PAD * 2) / 2;

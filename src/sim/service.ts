@@ -20,7 +20,7 @@ import {
   MAX_LIVE_STIMULI, SALIENCE, STIM_SPEC, observe, peakOf, peakOfKey, rank, stateOf,
   type ActiveStim, type ObsState, type Occluder, type Zone,
 } from "./perception";
-import { ASIDE_SPOT, CART_CHUNG, CART_LAN, CART_XA, CUSTOMER_GATE, GANH_IN, GANH_OUT, QUEUE_SLOTS, SEAT_CAPACITY, SEAT_SPOT, SHADE_CAPACITY, SHADE_SPOT, STREET_BIN, hitsWall } from "../world/map";
+import { ASIDE_SPOT, CUSTOMER_GATE, QUEUE_SLOTS, SEAT_CAPACITY, SEAT_SPOT, SHADE_CAPACITY, SHADE_SPOT, STREET_BIN, hitsWall } from "../world/map";
 import { PASSERS_MAX, PASSER_NAMES, inviteChance, nextGapSec, planPasser } from "./passersby";
 import { rollVisit } from "./schedule";
 import { SHARED_POOL, TalkStore } from "../content/talks";
@@ -79,9 +79,6 @@ const PASSER_TALKS_MAX = 2;
 
 const DIRT_ON_CAMERA = 0.35;
 
-/** Khác cái gánh dì Liên: gánh chắn LỐI (đo được bằng `balkChance`), xe thì ăn bớt khách LẠ đi ngang. */
-const KIET_STEAL = 0.18;
-
 /** Phần người đi ngang ngoái lại khi nghe rao — chỉ bật `t.glanced`, người chơi vẫn phải mời. */
 const RAO_TURN = 0.45;
 
@@ -123,12 +120,12 @@ const OVEN_SMELL_SEC = 90;
 
 /** ⚠️ Giây THẬT, không phải phút game: đồng hồ tua nhanh khi quầy trống thì mọi lời hứa cùng hết hạn một lượt. */
 const DEED_DUE: Record<string, number> = {
-  ROT_TRA: 25, DUA_BANH: 15, BUNG_GANH: 15, LAY_SO: 40, DOI_DON: 20,
+  ROT_TRA: 25, DUA_BANH: 15, LAY_SO: 40, DOI_DON: 20,
 };
 
 const DEED_LABEL: Record<string, string> = {
   ROT_TRA: "rót cho người ta ly trà", DUA_BANH: "đưa người ta miếng bánh",
-  BUNG_GANH: "bưng giúp cái gánh", LAY_SO: "lấy giúp cuốn sổ", DOI_DON: "sửa lại cái đơn",
+  LAY_SO: "lấy giúp cuốn sổ", DOI_DON: "sửa lại cái đơn",
 };
 
 /** Nhắc → nói nặng → bỏ đi. Nóng tính bỏ nấc một; người lạ bỏ cả ba. */
@@ -479,10 +476,6 @@ export class Service {
   playerOnStreet = false;
   shadeFree = false;
   seatFree = false;
-  /** `"NGOAI"` chiếm một chỗ mặt tiền cho tới khi được mời dời vô. */
-  ganh: "NGOAI" | "TRONG" | null = null;
-  /** Xe chú Đạt; tới là `"LAN"` (lấn mặt tiền) mặc định, `null` là vắng. */
-  cart: "LAN" | "XA" | "CHUNG" | null = null;
   /** Giây THẬT. */
   raoUntil = -1;
   stock = 0;
@@ -565,10 +558,9 @@ export class Service {
     return (this.deps.npcs[id] ??= newNpcState());
   }
 
-  /** Người đang đứng chờ lúc này, tính như lúc sinh lượt ghé; gánh để ngoài là thêm một người. */
+  /** Người đang đứng chờ lúc này, tính như lúc sinh lượt ghé. */
   private aheadNow(except: Customer) {
-    return this.customers.filter((x) => x !== except && x.phase !== "leaving" && !x.pass && !x.balking).length
-      + (this.ganh === "NGOAI" ? 1 : 0);
+    return this.customers.filter((x) => x !== except && x.phase !== "leaving" && !x.pass && !x.balking).length;
   }
 
   private patienceOf(npc: NpcDef | null, at: number, ahead: number) {
@@ -602,17 +594,9 @@ export class Service {
           deTha: 0.5 + rng.next() * 0.4, thanThien: 0.3 + rng.next() * 0.5 };
 
     const mood = rollMood(this.deps.hub.derive(`mood:${v.seq}`), this.deps.day);
-    // Tính một lần lúc xếp vào; gánh để ngoài tính như thêm một người.
-    const ahead = this.customers.filter((x) => x.phase !== "leaving" && !x.pass && !x.balking).length
-      + (this.ganh === "NGOAI" ? 1 : 0);
+    const ahead = this.customers.filter((x) => x.phase !== "leaving" && !x.pass && !x.balking).length;
 
-    // ⚠️ Dòng số riêng `kiet:` — rút ké là dịch chuỗi số của cả lượt ghé.
-    const kietLay = this.cart === "LAN" && !npc
-      && this.deps.hub.derive(`kiet:${v.seq}`).next() < KIET_STEAL;
-    if (kietLay) this.out.push({ kind: "log", text: "một người ghé xe chú Đạt thay vì xe mình." });
-
-
-    const balking = kietLay || (!this.deps.noTimePressure
+    const balking = (!this.deps.noTimePressure
       && this.deps.hub.derive(`balk:${v.seq}`).next() < easeBalk(this.deps.day) * balkChance({
         ahead, slots: SLOTS.length, person, moodPatience: moodPatienceMul(mood),
         rushing: !!npc?.rush && nowMin >= npc.rush[0] && nowMin < npc.rush[1],
@@ -625,7 +609,6 @@ export class Service {
       { ...GATE }, this.patienceOf(npc, nowMin, ahead) * moodPatienceMul(mood), rng,
     );
     c.balking = balking;
-    c.lured = kietLay;
     // Không `await`: họ còn đi bộ mấy giây, và `openTalk()` đã có đường lui nếu chưa kịp.
     void this.talks.ensure(npc ? npc.id : "WALKIN");
     c.dayMood = mood;
@@ -938,7 +921,7 @@ export class Service {
       walk(c, BALK_LOOK, dt);
       if (!near(c, BALK_LOOK, 0.25)) return;
       // Chốt lúc ĐỨNG NHÌN, không phải lúc sinh ra: hàng vãn giữa đường thì họ vào thật.
-      if (!c.priceWalk && !c.lured && this.aheadNow(c) < balkFrom(SLOTS.length)) {
+      if (!c.priceWalk && this.aheadNow(c) < balkFrom(SLOTS.length)) {
         c.balking = false;
         c.visitCount = ++this.mem(c.memKey).visits;
         return;
@@ -1150,10 +1133,8 @@ export class Service {
       this.out.push({ kind: "log", text: `${this.label(c)} xem giá rồi quay đi — đắt quá.` });
     } else if (reason === "balked") {
       this.balkedCount++;
-      if (!c.lured) {
-        this.speakConcept(c, "FAREWELL", { leaveReason: "BALKED" }, 80);
-        this.out.push({ kind: "log", text: `${this.label(c)} nhìn hàng rồi quay về — đông quá.` });
-      }
+      this.speakConcept(c, "FAREWELL", { leaveReason: "BALKED" }, 80);
+      this.out.push({ kind: "log", text: `${this.label(c)} nhìn hàng rồi quay về — đông quá.` });
     }
     this.talks.release(this.talkKey(c));
     this.speaker.sync(this.nowSec);
@@ -1177,8 +1158,6 @@ export class Service {
     for (const c of this.customers) if (!queue.includes(c)) { c.cutLine = false; c.blocking = false; }
 
     this.shadeFree = this.customers.filter((c) => c.inShade).length < SHADE_CAPACITY;
-    if (this.ganh === null && this.customers.some((c) => c.memKey === "BA_SAU")) this.ganh = "NGOAI";
-    if (this.cart === null && this.customers.some((c) => c.memKey === "CHU_KIET")) this.cart = "LAN";
 
     this.seatFree = has(this.deps.equip, "GHE_BAN")
       && this.customers.filter((c) => c.sitting).length < SEAT_CAPACITY;
@@ -1727,9 +1706,6 @@ export class Service {
       shadeFree: this.shadeFree,
       seatFree: this.seatFree,
       menuDayDu: isOpen("daydu", this.deps.day),
-      ganhOut: this.ganh === "NGOAI",
-      cartLan: this.cart === "LAN",
-      cartChung: this.cart === "CHUNG",
       ovenHot: this.ovenHot,
       meVuaRa: this.meVuaRa,
       band: bandOfMinutes(this.nowMin),
@@ -2109,12 +2085,6 @@ export class Service {
       case "STOP_FILM":
         this.stopFilm(c);
         break;
-      case "CARRY_GANH":
-        this.carryGanh(c, true);
-        break;
-      case "MOVE_GANH":
-        this.carryGanh(c, false);
-        break;
       case "LEAVE_SHADE":
         this.leaveShade(c);
         break;
@@ -2135,9 +2105,6 @@ export class Service {
         break;
       case "BARTER":
         this.barter(c, act.nhan);
-        break;
-      case "MOVE_CART":
-        this.moveCart(c, act.toi);
         break;
       case "RAO":
         this.rao(act.forSec);
@@ -2315,34 +2282,12 @@ export class Service {
     this.out.push({ kind: "log", text: `${this.label(c)} quay xong một đoạn ưng ý.` });
   }
 
-  /** `minhBung` phân biệt hai việc: mình bưng giùm (lối thông, và là một việc mình làm) với bảo bà tự dời. */
-  private carryGanh(c: Customer, minhBung: boolean) {
-    if (this.ganh !== "NGOAI") return;
-    this.ganh = "TRONG";
-    void GANH_IN; void GANH_OUT;
-    this.out.push({
-      kind: "log",
-      text: minhBung ? `mình bưng gánh vào trong giúp ${this.label(c)}.` : `${this.label(c)} dời gánh vào sát vách.`,
-    });
-  }
-
   /** Ổ RỜI KHO thật và cầm về một món — không tiền, mà cũng không phải cho không. */
   private barter(c: Customer, nhan: string) {
     if (this.soldOut || c.visit.gaveFood) return;
     this.stock = Math.max(0, this.stock - 1);
     c.visit.gaveFood = true;
     this.out.push({ kind: "log", text: `đổi một ổ lấy ${nhan} của ${this.label(c)}.` });
-  }
-
-  /** `XA` dọn sạch mặt tiền (mà mình vừa đuổi một người đi) · `CHUNG` chung một mái lúc mưa (mình mất một khúc). */
-  private moveCart(c: Customer, toi: "XA" | "CHUNG") {
-    if (this.cart === null || this.cart === toi) return;
-    this.cart = toi;
-    void CART_LAN; void CART_XA; void CART_CHUNG;
-    this.out.push({
-      kind: "log",
-      text: toi === "XA" ? `${this.label(c)} đẩy xe về chỗ cũ.` : `hai cái xe đứng chung một mái.`,
-    });
   }
 
   /**

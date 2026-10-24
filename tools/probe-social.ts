@@ -59,5 +59,5 @@ console.log("\nĐiều kiện ván chơi này CÓ hay KHÔNG — đọc cột tr
 const coMua = [...troi].some((x) => isRain(x as never));
 console.log(`  thời tiết gặp: ${[...troi].join(", ")}${coMua ? "" : "  ← KHÔNG có ngày mưa"}`);
 console.log(`  đồ nghề cuối ván: ${w.equipment.owned.join(", ") || "(không mua được gì)"}`);
-console.log("  act dính một NGƯỜI cụ thể (RAO·MOVE_GANH·BARTER của dì Liên, OVERHEARD_BY của anh Quân)");
+console.log("  act dính một NGƯỜI cụ thể (RAO·BARTER của dì Liên, OVERHEARD_BY của anh Quân)");
 console.log("  chỉ chạy khi đúng người đó có mặt VÀ đúng cuộc đó được rút — số buổi càng ít càng khó gặp.");

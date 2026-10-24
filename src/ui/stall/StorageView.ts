@@ -72,11 +72,10 @@ const COLS = 5;
 const MIN_CELLS = 20;
 
 const SNOW = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 2v20M3.3 7l17.4 10M3.3 17L20.7 7M9 3.5l3 2.5 3-2.5M9 20.5l3-2.5 3 2.5"/></svg>`;
-const BOTTLE = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2" width="6" height="4" rx="1" fill="#e8e2d0"/><path d="M8 7h8l1 4v10a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 7 21V11z" fill="#d0432f"/><rect x="8" y="12" width="8" height="5" fill="#f4ecd8"/></svg>`;
 
-const ICON: Partial<Record<GoodId, string>> = {
-  BANH: "held_loaf_cold", PATE: "ing_pate", THIT_NGUOI: "ing_thit", CHA_LUA: "ing_chalua", XIU_MAI: "ing_xiumai",
-  TRUNG: "ing_opla", RAU: "ing_hanhngo", OT: "ing_ot", DO_CHUA_NL: "ing_dochua", DO_CHUA_SAN: "ing_dochua",
+const ICON: Record<GoodId, string> = {
+  BANH: "held_loaf_cold", PATE: "ing_pate", THIT_NGUOI: "ing_thit", CHA_LUA: "ing_chalua", XIU_MAI: "ing_xiumai", SOT: "kho_tuongot",
+  TRUNG: "ing_opla", RAU: "ing_hanhngo", OT: "kho_ot", DO_CHUA_NL: "ing_dochua", DO_CHUA_SAN: "ing_dochua",
 };
 
 export type StorageViewOpts = {
@@ -216,17 +215,11 @@ export class StorageView {
   }
 
   private icon(good: GoodId, cls: string): HTMLElement {
-    const src = ICON[good];
-    if (src) {
-      const img = this.el("img", cls);
-      img.src = `art/${src}.webp`;
-      img.alt = "";
-      img.draggable = false;
-      return img;
-    }
-    const w = this.el("span", cls);
-    w.innerHTML = BOTTLE;
-    return w;
+    const img = this.el("img", cls);
+    img.src = `art/${ICON[good]}.webp`;
+    img.alt = "";
+    img.draggable = false;
+    return img;
   }
 
   private ageText(age: number) {

@@ -36,20 +36,6 @@
                   "tone": "DUA",
                   "reply": "Ha. Con nhỏ này cũng gan.",
                   "mood": "CUOI_TUOI"
-                },
-                {
-                  "say": "Chú rảnh thì về đẩy xe chú đi.",
-                  "tone": "GAT",
-                  "anger": 40,
-                  "silent": true,
-                  "mood": "GIAN",
-                  "act": {
-                    "kind": "MOVE_CART",
-                    "toi": "XA"
-                  },
-                  "while": [
-                    "w.cartLan"
-                  ]
                 }
               ]
             },
@@ -150,16 +136,9 @@
       "shared": {
         "ket": [
           {
-            "say": "Chú đẩy xe đi chú, trễ rồi.",
+            "say": "Dạ trễ rồi chú, con còn bán.",
             "tone": "THUONG",
-            "reply": "Ờ.",
-            "act": {
-              "kind": "MOVE_CART",
-              "toi": "XA"
-            },
-            "while": [
-              "w.cartLan"
-            ]
+            "reply": "Ờ."
           },
           {
             "say": "Mai gặp chú nha chú.",
@@ -321,16 +300,9 @@
       "shared": {
         "ket": [
           {
-            "say": "Chú đẩy xe đi chú, trễ rồi chú.",
+            "say": "Dạ chú, con còn bán nữa chú.",
             "tone": "THUONG",
-            "reply": "Ờ.",
-            "act": {
-              "kind": "MOVE_CART",
-              "toi": "XA"
-            },
-            "while": [
-              "w.cartLan"
-            ]
+            "reply": "Ờ."
           },
           {
             "say": "Mai gặp chú nha chú.",
@@ -452,18 +424,9 @@
             ]
           },
           {
-            "say": "Chú kéo xe sát vô đây đi chú.",
-            "tone": "AM",
-            "calm": 22,
-            "reply": "Ờ. …Ờ, chỗ này khuất gió thiệt.",
-            "mood": "THUONG",
-            "act": {
-              "kind": "MOVE_CART",
-              "toi": "CHUNG"
-            },
-            "while": [
-              "w.cartLan"
-            ]
+            "say": "Mưa vậy ai cũng ế chú ơi.",
+            "tone": "THUONG",
+            "reply": "Ờ."
           },
           {
             "say": "Dạ.",
@@ -474,75 +437,9 @@
       },
       "tree": [
         {
-          "say": "Chú đẩy xe vô dưới mái này đi chú. Rộng mà chú.",
+          "say": "Mưa vậy chú ráng đứng tạnh rồi bán chú.",
           "tone": "AM",
-          "calm": 24,
-          "reply": "Khỏi. Tao đứng đây tao che tay được rồi.",
-          "then": [
-            {
-              "say": "Chú che tay chứ bánh chú ai che chú.",
-              "tone": "THANG",
-              "reply": "…Ờ. Bánh ướt là tao lỗ nguyên buổi. Mà đứng ké xe mày tao kỳ lắm.",
-              "then": [
-                {
-                  "say": "Kỳ gì chú. Hai cái xe đứng chung một cái mái thôi mà chú.",
-                  "tone": "AM",
-                  "flag": "kietDungChung",
-                  "reply": "…Ờ. Thôi. Tao đẩy vô. Mưa tạnh tao đi liền nha.",
-                  "ref": "diyen",
-                  "mood": "RUNG_RUNG"
-                },
-                {
-                  "say": "Chú sợ người ta nói chú qua xin xỏ tui hả chú?",
-                  "tone": "THANG",
-                  "reply": "Ờ. Đúng đó. Mày nói trúng tao đâm ra khó chịu.",
-                  "then": [
-                    {
-                      "say": "Vậy tui đứng qua xe chú, chú đứng bên này. Huề.",
-                      "tone": "DUA",
-                      "reply": "Ha! …Con nhỏ này. Thôi được. Tao vô.",
-                      "mood": "CUOI_TUOI"
-                    },
-                    {
-                      "say": "Chú muốn ướt thì chú ướt chú.",
-                      "tone": "LANH",
-                      "anger": 20,
-                      "reply": "Ờ. Tao ướt.",
-                      "mood": "BUC"
-                    }
-                  ]
-                },
-                {
-                  "say": "Chú không vô thì thôi chú. Tui mời một lần hà.",
-                  "tone": "LANH",
-                  "anger": 20,
-                  "reply": "…Ờ. Mày cũng cứng. Được.",
-                  "mood": "BUC"
-                }
-              ]
-            },
-            {
-              "say": "Chú lấy cái bạt này che tạm đi chú.",
-              "tone": "AM",
-              "reply": "…Ờ. Mày để tao mượn hả. Chiều tao trả.",
-              "ref": "diyen",
-              "mood": "THUONG"
-            },
-            {
-              "say": "Dạ chú tính sao thì tính chú.",
-              "tone": "THUONG",
-              "reply": "Ờ. Tao đẩy đi.",
-              "ref": "diyen"
-            }
-          ],
-          "mood": "THUONG",
-          "act": {
-            "kind": "MOVE_CART",
-            "toi": "CHUNG"
-          },
-          "while": [
-            "w.cartLan"
-          ]
+          "reply": "Ờ."
         },
         {
           "say": "Mưa vậy chú bán cho ai hả chú?",
@@ -588,19 +485,9 @@
           ]
         },
         {
-          "say": "Chú đứng chắn hết lối rồi chú ơi.",
-          "tone": "GAT",
-          "anger": 40,
-          "act": {
-            "kind": "MOVE_CART",
-            "toi": "XA"
-          },
-          "silent": true,
-          "mood": "GIAN",
-          "while": [
-            "t.blocking",
-            "w.cartLan"
-          ]
+          "say": "Dạ.",
+          "tone": "LANH",
+          "silent": true
         }
       ],
       "openMood": "BUC",
@@ -631,16 +518,9 @@
       "shared": {
         "ket": [
           {
-            "say": "Chú đẩy xe đi chú. Mai gặp chú.",
+            "say": "Dạ chú, con bán tiếp nha chú.",
             "tone": "THUONG",
-            "reply": "Ờ.",
-            "act": {
-              "kind": "MOVE_CART",
-              "toi": "XA"
-            },
-            "while": [
-              "w.cartLan"
-            ]
+            "reply": "Ờ."
           },
           {
             "say": "Chú đừng để bụng nha chú.",
@@ -661,13 +541,6 @@
               "tone": "THANG",
               "reply": "…Tại tao tức. Tao tức mà tao không biết tức ai nên tao nói mày.",
               "then": [
-                {
-                  "say": "Chú nói ra được là đỡ rồi chú. Chú nói đi.",
-                  "tone": "AM",
-                  "need": "kietDungChung",
-                  "reply": "…Mười năm. Nó ăn tao mười năm. Hôm nay nó đi qua xe tao, nó không ngó tao một cái.",
-                  "mood": "RUNG_RUNG"
-                },
                 {
                   "say": "Mai tui nói ảnh ghé chú một bữa nha chú.",
                   "tone": "AM",
@@ -795,16 +668,9 @@
             "mood": "CUOI"
           },
           {
-            "say": "Chú đẩy xe đi chú, trễ rồi.",
+            "say": "Dạ chú, con còn bán.",
             "tone": "THUONG",
-            "reply": "Ờ.",
-            "act": {
-              "kind": "MOVE_CART",
-              "toi": "XA"
-            },
-            "while": [
-              "w.cartLan"
-            ]
+            "reply": "Ờ."
           }
         ]
       },
@@ -1054,18 +920,9 @@
           ]
         },
         {
-          "say": "Chú qua đây gì. Lo xe chú đi chú.",
-          "tone": "GAT",
-          "anger": 20,
-          "reply": "Tao đứng đường tao. Mày la gì dữ vậy.",
-          "mood": "BUC",
-          "act": {
-            "kind": "MOVE_CART",
-            "toi": "XA"
-          },
-          "while": [
-            "w.cartLan"
-          ]
+          "say": "Thôi để bữa khác chú, con còn bán.",
+          "tone": "LANH",
+          "silent": true
         }
       ],
       "practice": [

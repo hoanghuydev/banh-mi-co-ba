@@ -1,12 +1,12 @@
 import Phaser from "phaser";
-import { artScale, fitPhoto, walkLift, holdAnchorAt } from "../art/photo";
+import { artScale, fitPhoto, holdAnchorAt } from "../art/photo";
 import { TH, depthOf, toScreen, facingOf8, type Facing8 } from "../world/iso";
 import { BODY_RADIUS, BLOCK_SHIFT_X, hitsWall, SPAWN } from "../world/map";
 import { BASE, BODY_H, FX, HELD, footY, holdAnchor, textureFor } from "../art";
-import { castShadow } from "../art/fx";
-import { STRIDE, WALK_FRAMES, walkTextureFor } from "../art/character";
+import { GAIT_FRAMES, STRIDE, walkTextureFor } from "../art/character";
 import { heldTexture } from "../art/held";
 import { type Hand } from "../world/stations";
+import { ActorLight } from "../art/light/actor";
 
 /** Ô/giây; chậm cố ý để đi giữa các trạm tốn một quãng. */
 export const SPEED = 2.6;
@@ -24,6 +24,10 @@ const MARK_FADE_SEC = 0.55;
 /** Trên `StallScene.LABEL_DEPTH`, dưới `CustomerActor.OVERLAY_DEPTH`. */
 const MARK_DEPTH = 8_050_000;
 
+const BREATHE_AFTER_SEC = 2;
+const ACTIVITY_FPS = 10;
+const BREATHE_FPS = 3;
+
 /** Sprite nằm thẳng trên display list vì Container của Phaser không depth-sort con. */
 export class Player {
   x = SPAWN.x;
@@ -34,6 +38,9 @@ export class Player {
   /** Chỉ để chọn hình ổ đang cầm; scene gán xuống mỗi khi `hand` đổi. */
   heldCrust = 0;
 
+  /** Scene đặt khi đang lau thớt / rửa tay; `null` là không làm gì. */
+  activity: "wipe" | "wash" | null = null;
+
   moving = false;
   running = false;
   /** Bị chặn cả hai trục trong frame này. */
@@ -43,14 +50,18 @@ export class Player {
   /** Quãng đã đi liên tục (ô), để chọn frame chân. */
   private gait = 0;
   private walked = 0;
+  /** Giây đứng yên liên tục, để biết lúc nào bắt đầu thở. */
+  private stillFor = 0;
+  /** Đồng hồ cho frame tại chỗ; dừng khi dt = 0. */
+  private animT = 0;
   private body: Phaser.GameObjects.Image;
-  private shadow: Phaser.GameObjects.Image;
   private held: Phaser.GameObjects.Image;
   private mark: Phaser.GameObjects.Image;
+  private light: ActorLight;
 
   constructor(private scene: Phaser.Scene) {
-    this.shadow = scene.add.image(0, 0, FX.shadow).setOrigin(0.5, 0.5);
     this.body = scene.add.image(0, 0, textureFor("s").key).setOrigin(0.5, 1);
+    this.light = new ActorLight(scene, this.body);
     this.held = scene.add.image(0, 0, HELD.key("loaf_hot")).setOrigin(0.5, 0.5).setVisible(false);
     this.mark = scene.add.image(0, 0, FX.you).setOrigin(0.5, 1).setDepth(MARK_DEPTH);
   }
@@ -65,6 +76,14 @@ export class Player {
     this.bob = 0;
     this.gait = 0;
     this.walked = 0;
+    this.stillFor = 0;
+    this.animT = 0;
+    this.activity = null;
+  }
+
+  /** Việc khác chen vào (tay bận, đang nói chuyện…) thì đồng hồ đứng yên về 0. */
+  interrupt() {
+    this.stillFor = 0;
   }
 
   /** Input xoay 45° để bấm D là đi sang phải MÀN HÌNH. */
@@ -78,6 +97,8 @@ export class Player {
     this.running = this.moving && !!input.run;
     this.bumped = false;
     this.walked = this.moving ? this.walked + dt : 0;
+    this.stillFor = this.moving ? 0 : this.stillFor + dt;
+    this.animT += dt;
     if (!this.moving) { this.bob = 0; this.gait = 0; return; }
 
     const len = Math.hypot(wx, wy);
@@ -109,11 +130,18 @@ export class Player {
     const walking = this.moving && !reducedMotion;
     // Cầm đồ thì dùng chu kỳ `carry` cả lúc đứng yên (frame 0), không thì neo món giật khi thả phím.
     const cycling = walking || carrying;
-    const walkTex = cycling
-      ? walkTextureFor(this.facing,
-                       walking ? Math.floor((this.gait / STRIDE) * WALK_FRAMES) : 0,
-                       carrying ? "carry" : "walk")
-      : null;
+    const doing = !reducedMotion && !this.moving ? this.activity : null;
+    if (this.activity) this.stillFor = 0;
+    const breathing = !reducedMotion && !this.moving && !doing && !carrying && this.stillFor >= BREATHE_AFTER_SEC;
+    const walkTex = doing
+      ? walkTextureFor(this.facing, Math.floor(this.animT * ACTIVITY_FPS), doing)
+      : breathing
+        ? walkTextureFor(this.facing, Math.floor(this.animT * BREATHE_FPS), "breathe")
+        : cycling
+          ? walkTextureFor(this.facing,
+                           walking ? Math.floor((this.gait / STRIDE) * GAIT_FRAMES.walk) : 0,
+                           carrying ? "carry" : "walk")
+          : null;
     const tex = walkTex ?? textureFor(this.facing, "p", carrying ? "carry" : "idle");
     this.body.setTexture(tex.key).setFlipX(tex.flip);
 
@@ -127,10 +155,7 @@ export class Player {
     const k = 1 / artScale(tex.key);
     this.body.setScale(k * (covering ? 0.92 : 1), k * (1 + Math.sin(this.bob * 2) * 0.022 * bodyAmp));
 
-    // Lúc đi `hop` = 0, nên lấy độ nhấc chân đo từ chính frame đang vẽ.
-    const lift = walkTex ? walkLift(walkTex.key) : hop;
-    // Hệ số nhỏ cố ý: nhấc tối đa ~2,2 px nên bóng chỉ co ~7%, nhạt ~11%.
-    castShadow(this.shadow, sx + lean, sy, 1 - lift * 0.03, 1 - lift * 0.05).setDepth(depth - 1);
+    this.light.update({ wx: this.x, wy: this.y, lift: hop });
 
     this.drawMark(sx + lean, sy, hop, reducedMotion, marker);
 
@@ -166,8 +191,8 @@ export class Player {
   }
 
   destroy() {
+    this.light.destroy();
     this.body.destroy();
-    this.shadow.destroy();
     this.held.destroy();
     this.mark.destroy();
     void this.scene;

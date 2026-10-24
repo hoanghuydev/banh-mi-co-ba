@@ -29,6 +29,7 @@ export class BootScene extends Phaser.Scene {
     setStep("đang chờ phông chữ…", 0.96);
     try {
       await (document as any).fonts?.load?.('700 32px "Be Vietnam Pro"');
+      await (document as any).fonts?.load?.('800 32px "Be Vietnam Pro"');
       await (document as any).fonts?.ready;
     } catch { /* không có Font Loading API */ }
 

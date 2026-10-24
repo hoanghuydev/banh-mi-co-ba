@@ -50,7 +50,6 @@ s_l = slope(range(int(lx + span_l * 0.15), int(bx - span_l * 0.15)))
 s_r = slope(range(int(bx + span_r * 0.15), int(rx - span_r * 0.15)))
 
 S = span_r / (30 * args.d)  # px ảnh gốc trên một px thiết kế
-f_r, f_l = 1.0, 30 * args.w * S / span_l
 
 # Bề cao phần gỗ ở mặt dài bên phải (đo bằng màu: gỗ đỏ hơn lục, mặt bàn teal thì ngược lại).
 rgb = np.array(im.convert("RGB")).astype(int)
@@ -95,28 +94,22 @@ def stretch(extra):
 
 
 def warp(v):
-    """Hai nửa trái/phải của B, mỗi nửa một phép affine; cạnh đứng giữ thẳng."""
-    # y' = v·(y−By) + d·(x−Bx); chọn d để cạnh đáy mỗi bên dốc đúng 0,5 sau khi nhân f.
-    d_r = -v * s_r - 0.5 * f_r
-    d_l = 0.5 * f_l - v * s_l
-    out_w = int(bx * f_l + (W - bx) * f_r) + 4
+    """Một phép affine cho cả ảnh (co ngang f, co dọc v, cắt xiên k) để hai cạnh đáy cùng dốc 0,5 và bề ngang đúng số ô; không chia nửa nên cạnh đứng phía trước không gãy."""
+    sl = abs(s_l)
+    k = 0.5 * f - v * sl
+    out_w = int(W * f) + 4
     out_h = int(H * v * 2) + 40
-    bxo, byo = bx * f_l, out_h - 20
-    canvas = Image.new("RGBA", (out_w, out_h), (0, 0, 0, 0))
-    for side, f, d in (("l", f_l, d_l), ("r", f_r, d_r)):
-        # out → src: x = bx + (xo − bxo)/f ; y = by + ((yo − byo) − d·(x − bx))/v
-        a, c = 1 / f, bx - bxo / f
-        dd, e = -d / (v * f), 1 / v
-        ff = by - byo / v + d * bxo / (v * f)
-        part = im.transform((out_w, out_h), Image.AFFINE, (a, 0, c, dd, e, ff), Image.BICUBIC)
-        px = int(round(bxo))
-        box = (0, 0, px, out_h) if side == "l" else (px, 0, out_w, out_h)
-        canvas.paste(part.crop(box), box[:2])
+    bxo, byo = bx * f, out_h - 20
+    # out -> src: x = bx + (xo - bxo)/f ; y = by + (yo - byo)/v - k·(xo - bxo)/(f·v)
+    canvas = im.transform((out_w, out_h), Image.AFFINE,
+                          (1 / f, 0, bx - bxo / f, -k / (f * v), 1 / v, by - byo / v + k * bxo / (f * v)),
+                          Image.BICUBIC)
     return canvas, bxo, byo
 
 
 # Co dọc vừa đủ để hai cạnh đáy dốc trung bình 0,5; phần dư mỗi bên bù bằng cắt xiên nhỏ.
-v = 0.5 / ((abs(s_l) / f_l + abs(s_r) / f_r) / 2)
+f = 30 * (args.w + args.d) * S / (span_l + span_r)
+v = f / (abs(s_l) + abs(s_r))
 canvas, bxo, byo = warp(v)
 want = (args.body + 15 * (args.w + args.d) + 1) * S
 box = canvas.getbbox()

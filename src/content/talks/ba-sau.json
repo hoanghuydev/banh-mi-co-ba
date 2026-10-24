@@ -435,189 +435,6 @@
       }
     },
     {
-      "id": "sau.ganh",
-      "npc": "BA_SAU",
-      "topic": "ganh",
-      "source": "NPC_ONLY",
-      "depth": "FULL",
-      "weight": 12,
-      "opener": "Con ơi… tui để gánh xuống đây chút nha. Vai tui nó cứng ngắc.",
-      "shared": {
-        "ket": [
-          {
-            "say": "Dì nghỉ đủ rồi hẵng đi nha dì.",
-            "tone": "AM",
-            "calm": 24,
-            "reply": "Ờ. Tui ngồi chút nữa.",
-            "mood": "THUONG"
-          },
-          {
-            "say": "Dì cứ để đó dì.",
-            "tone": "THUONG",
-            "reply": "Ờ. Cảm ơn con.",
-            "mood": "CUOI"
-          },
-          {
-            "say": "Dạ.",
-            "tone": "LANH",
-            "silent": true
-          }
-        ]
-      },
-      "tree": [
-        {
-          "say": "Dì để đó con bưng gánh vô cho dì.",
-          "tone": "AM",
-          "calm": 28,
-          "reply": "Trời. Nặng lắm con, đừng. …Ờ, con khiêng được hả. Con khoẻ ghê.",
-          "then": [
-            {
-              "say": "Nặng thiệt dì ơi. Dì gánh cái này đi cả buổi hả dì?",
-              "tone": "AM",
-              "reply": "Hai mươi mấy ký. Tui đi từ bảy giờ. Vòng hai tui đi lúc mười giờ rưỡi.",
-              "then": [
-                {
-                  "say": "Dì bớt một nồi đi dì. Nhẹ chút cũng được mà.",
-                  "tone": "AM",
-                  "reply": "Bớt nồi là bớt tiền con à. Tui tính rồi, bớt không được.",
-                  "mood": "THUONG"
-                },
-                {
-                  "say": "Vậy dì để một nồi ở đây, chút dì quay lại lấy.",
-                  "tone": "AM",
-                  "flag": "sauGuiNoi",
-                  "reply": "…Ủa. Vậy cũng được hả con. Trời. Mười mấy năm tui không nghĩ ra.",
-                  "mood": "NGAC_NHIEN"
-                },
-                {
-                  "say": "Hai mươi ký mà dì đi được, dì ngon hơn con.",
-                  "tone": "DUA",
-                  "reply": "Ha. Tui gánh quen rồi. Đưa con gánh một vòng là con khóc.",
-                  "mood": "CUOI_TUOI"
-                },
-                {
-                  "say": "Dạ.",
-                  "tone": "LANH",
-                  "silent": true
-                }
-              ],
-              "mood": "CUOI"
-            },
-            {
-              "say": "Dì ngồi đi dì, con rót dì ly trà đá.",
-              "tone": "AM",
-              "calm": 26,
-              "reply": "Ờ… Ờ. Mát ruột. Cảm ơn con nha.",
-              "ref": "ket",
-              "mood": "THUONG",
-              "while": [
-                "p.hasTea"
-              ]
-            },
-            {
-              "say": "Dì ngồi lẹ rồi đi nha dì, con còn bán.",
-              "tone": "THUONG",
-              "reply": "Ờ. Tui đi liền.",
-              "ref": "ket"
-            }
-          ],
-          "mood": "THUONG",
-          "act": {
-            "kind": "CARRY_GANH"
-          },
-          "while": [
-            "w.ganhOut",
-            "w.seatFree"
-          ]
-        },
-        {
-          "say": "Vai dì đau lâu chưa dì?",
-          "tone": "AM",
-          "reply": "Lâu rồi. Hồi tui còn lái xe nó không đau. Gánh mới đau. Gánh nó đè một bên.",
-          "then": [
-            {
-              "say": "Dì đổi vai qua lại đi dì.",
-              "tone": "THUONG",
-              "reply": "Đổi rồi. Mà bên trái tui yếu, gánh được nửa đường là tui đổi về.",
-              "then": [
-                {
-                  "say": "Dì đi khám đi dì. Con thấy dì đi hơi xiêu đó.",
-                  "tone": "AM",
-                  "reply": "…Ờ. Con nói tui mới để ý. Đi khám mất một bữa bán con ơi.",
-                  "mood": "THUONG"
-                },
-                {
-                  "say": "Dì dán miếng dán nóng đi dì, rẻ mà đỡ lắm.",
-                  "tone": "THUONG",
-                  "reply": "Ờ, tui có. Dán riết nó lờn."
-                },
-                {
-                  "say": "Dì ráng đi dì.",
-                  "tone": "LANH",
-                  "silent": true
-                }
-              ]
-            },
-            {
-              "say": "Sao hồi đó dì bỏ lái xe vậy dì?",
-              "tone": "THANG",
-              "reply": "…Người ta không nhận đàn dì nữa. Tui đi xin ba chỗ, ba chỗ đều kêu để coi.",
-              "ref": "ket"
-            },
-            {
-              "say": "Dạ.",
-              "tone": "LANH",
-              "silent": true
-            }
-          ],
-          "mood": "CUOI"
-        },
-        {
-          "say": "Dạ dì để gánh chỗ khác giùm con, khách con không đi qua được dì.",
-          "tone": "LANH",
-          "anger": 20,
-          "act": {
-            "kind": "MOVE_GANH"
-          },
-          "reply": "…Ờ. Tui dời. Tui xin lỗi con.",
-          "mood": "BUC",
-          "while": [
-            "t.blocking",
-            "w.ganhOut"
-          ]
-        },
-        {
-          "say": "Dì để con bưng gánh vô trong cho. Dì đứng nghỉ tay chút.",
-          "tone": "AM",
-          "calm": 24,
-          "reply": "Ờ… Ờ. Nhẹ cả vai. Cảm ơn con nha.",
-          "mood": "THUONG",
-          "act": {
-            "kind": "CARRY_GANH"
-          },
-          "while": [
-            "w.ganhOut"
-          ]
-        }
-      ],
-      "openMood": "MET",
-      "practice": [
-        "QUAY_VANG",
-        "XEP_HANG",
-        "DI_NGANG"
-      ],
-      "initiates": 0.75,
-      "ignore": {
-        "reply": "…Thôi được rồi. Tui gánh đi chỗ khác.",
-        "mood": "BUON"
-      },
-      "drives": {
-        "KE_CHUYEN": 42,
-        "DUOC_HOI": 18,
-        "VIEC_RIENG": -2
-      }
-    },
-    {
       "id": "sau.rao",
       "npc": "BA_SAU",
       "topic": "rao",
@@ -799,13 +616,6 @@
             "mood": "RUNG_RUNG"
           },
           {
-            "say": "Nồi dì gửi bên con, mai dì còn gửi nữa không dì?",
-            "tone": "AM",
-            "need": "sauGuiNoi",
-            "reply": "…Ra ngoài đó tui ngồi một chỗ, không gửi ai nữa. Tui quen gửi con mất rồi.",
-            "mood": "RUNG_RUNG"
-          },
-          {
             "say": "Dì đi rồi tám giờ rưỡi hẻm này im re đó dì.",
             "tone": "AM",
             "need": "sauDongHo",
@@ -902,18 +712,6 @@
           "tone": "LANH",
           "reply": "…Ờ. Ờ con nói phải. Thôi tui đi.",
           "mood": "BUON"
-        },
-        {
-          "say": "Để con bưng gánh vô trong cho dì ngồi nói chuyện dì.",
-          "tone": "AM",
-          "reply": "…Ờ. Con khiêng được hả. Nhẹ cả vai luôn.",
-          "mood": "THUONG",
-          "act": {
-            "kind": "CARRY_GANH"
-          },
-          "while": [
-            "w.ganhOut"
-          ]
         }
       ],
       "openMood": "BUON",
@@ -939,43 +737,6 @@
       "opener": "Ờ. Con kêu tui hả con.",
       "openMood": "NGAC_NHIEN",
       "tree": [
-        {
-          "say": "Gánh nặng không dì? Để con khiêng xuống cho.",
-          "tone": "AM",
-          "calm": 10,
-          "reply": "Trời. …Ờ, con khiêng được hả. Nhẹ cả vai luôn.",
-          "mood": "THUONG",
-          "then": [
-            {
-              "say": "Nồi này dì nấu từ mấy giờ vậy dì?",
-              "tone": "AM",
-              "reply": "Ba giờ. Nhen củi, nấu gừng, lọc đậu. Tới sáu giờ là tui ra đường.",
-              "mood": "NGHIEM"
-            },
-            {
-              "say": "Dì gánh vậy mỗi ngày mấy ký dì?",
-              "tone": "THANG",
-              "reply": "Hai đầu chừng hai chục ký. Vai tui chai một cục bằng đồng xu rồi.",
-              "mood": "MET"
-            },
-            {
-              "say": "Con để xuống đây cho dì nha.",
-              "tone": "THUONG",
-              "reply": "Ờ. Để sát vô trong giùm tui, kẻo xe quẹt.",
-              "mood": "THUONG",
-              "act": {
-                "kind": "PROMISE_DEED",
-                "deed": "BUNG_GANH"
-              }
-            }
-          ],
-          "act": {
-            "kind": "CARRY_GANH"
-          },
-          "while": [
-            "w.ganhOut"
-          ]
-        },
         {
           "say": "Dì nghỉ chưa dì? Nãy giờ con thấy dì đi hoài.",
           "tone": "THANG",

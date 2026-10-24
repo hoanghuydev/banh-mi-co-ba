@@ -27,7 +27,7 @@ export const REFUSE_ONE = [
 
 export const REFUSE_TWO = [
   "Keng! Đang gỡ liên kết… 100%.",
-  "Hệ thống Bán Bánh Mì đã rời khỏi ký chủ. Không có phần thưởng. Không có điểm danh. Không có vòng quay.",
+  "Hệ thống Bán Bánh Mì đã rời khỏi ký chủ.",
   "Chúc ký chủ một mình bình an.",
 ];
 

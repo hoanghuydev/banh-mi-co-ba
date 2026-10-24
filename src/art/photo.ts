@@ -5,11 +5,12 @@ import { BASE } from "./canvas";
 import { RENDER_SCALE } from "../core/render";
 import { TILE } from "./tiles";
 import { PROP } from "./props";
+import { BUILD } from "./building";
 import { HELD, type HeldLook } from "./held";
 import { FOOD } from "./food";
 import { FX, FLY_W, FLY_BOX } from "./fx";
 import {
-  WALK_FRAMES, markEightWay, markGait, textureFor, walkKey,
+  GAIT_FRAMES, markEightWay, markGait, textureFor, walkKey,
   type Gait, type Pose,
 } from "./character";
 import type { Facing8 } from "../world/iso";
@@ -18,6 +19,8 @@ import type { Facing8 } from "../world/iso";
 
 const SRC = "photo/";
 
+/** Atlas ba động tác tại chỗ của người chơi; thiếu thì rơi về ảnh đứng yên. */
+const WORK_FILE = "player_work";
 const walkAtlas = (file: string) => `${SRC}${file}_walk`;
 
 const HOLD_JSON = SRC + "player_hold";
@@ -35,6 +38,7 @@ const BASKET = "ro_banh_mi";
 
 export const BASKET_W = 23;
 
+
 /** Pixel texture trên một pixel thiết kế; trần 3 vì diện tích tăng theo bình phương. */
 export const ART_SS = Math.min(3, Math.max(1, RENDER_SCALE * 1.4));
 
@@ -51,8 +55,16 @@ export function fitPhoto<T extends Phaser.GameObjects.Image>(img: T, extra = 1):
   return img;
 }
 
-/** Không có sàn quán: gạch bông lát kín làm nền rối. */
-const FLOORS = ["walk", "road"] as const;
+const FLOORS = ["shop", "walk", "road"] as const;
+
+/** Mật độ px/px thiết kế của ô sàn nướng sẵn; `prep-art.py` `FLOOR_SS`. */
+const HD_FLOORS: Partial<Record<(typeof FLOORS)[number], number>> = { shop: 4, walk: 4, road: 4 };
+
+/** Ảnh bóng tán lá xám, key texture là `photo/leaf_a`, `photo/leaf_b`, `photo/leaf_c`. */
+export const LEAF_A_KEY = SRC + "leaf_a";
+export const LEAF_C_KEY = SRC + "leaf_c";
+export const LEAF_B_KEY = SRC + "leaf_b";
+export const LEAF_EAVE_KEY = SRC + "leaf_eave";
 
 type Standing = {
   h: number;
@@ -69,16 +81,17 @@ export const SUNK = new Set<string>([PROP.prep, PROP.benchNear]);
 
 /** `h` tính theo người cao `BODY_H` = 64. */
 const STANDING: Record<string, [src: string, o: Standing]> = {
-  [PROP.oven]: ["prop_oven", { h: 70 }],
-  // Cao hơn lò than 4 px mà vẫn hẹp hơn một ô (74 × 0,773 = 57 < TW 60).
-  [PROP.ovenE]: ["prop_e-oven", { h: 74 }],
-  [PROP.shelf]: ["prop_shelf", { h: 86 }],
+  [PROP.oven]: ["prop_oven", { h: 66 }],
+  // Cao hơn lò than 2 px mà vẫn hẹp hơn một ô (72 × 0,828 = 60 ≈ TW).
+  [PROP.ovenE]: ["prop_e-oven", { h: 72 }],
+  [PROP.shelf]: ["prop_shelf", { h: 78, dy: SIT + 4 }],
   [PROP.tea]: ["prop_tea", { h: 68 }],
   [PROP.sink]: ["prop_sink", { h: 58, dx: -2 }],
   [PROP.stool]: ["prop_stool", { h: 38 }],
   [PROP.table]: ["prop_table", { h: 56 }],
   [PROP.order]: ["prop_order", { h: 50, dy: SIT + TABLE_DROP }],
-  [PROP.prep]: ["prop_prep", { h: 59, dy: SIT + TABLE_DROP }],
+  // Bàn 2 × 1 ô: `dx` đưa đỉnh dưới của ảnh (0,682 chiều ngang) về tâm khung.
+  [PROP.tableLong]: ["prop_table_long", { h: 74, dx: -17, dy: SIT + TABLE_DROP }],
   // Ảnh gần vuông, xe nằm chéo nên trông bé hơn `h`.
   [PROP.bike]: ["prop_bike", { h: 82 }],
   [PROP.scooter]: ["prop_scooter", { h: 78 }],
@@ -88,12 +101,22 @@ const STANDING: Record<string, [src: string, o: Standing]> = {
   // Đáy phẳng hẹp, tụt đủ `SIT` là trông lún xuống sàn.
   [PROP.fire]: ["prop_extinguisher", { h: 44, dy: SIT - 5 }],
   [PROP.umbrella]: ["prop_umbrella", { h: 100 }],
-  [PROP.fridge]: ["prop_fridge", { h: 62 }],
-  [PROP.cooler]: ["prop_cooler", { h: 30 }],
+  [PROP.fridge]: ["prop_fridge", { h: 57 }],
+  [PROP.cooler]: ["prop_cooler", { h: 29 }],
+  [PROP.crate]: ["prop_crate", { h: 44, dy: SIT + 5 }],
+  [BUILD.wall(0)]: ["prop_wall_plain", { h: 119.1, dx: 0.5, dy: 23.1 }],
+  [BUILD.wall(1)]: ["prop_wall_meter", { h: 120.8, dx: 0.5, dy: 24.8 }],
+  [BUILD.wall(2)]: ["prop_wall_window", { h: 118.3, dx: 0.2, dy: 22.3 }],
+  [BUILD.wall(3)]: ["prop_wall_poster", { h: 120.1, dx: 0.2, dy: 24.1 }],
+  [BUILD.door]: ["prop_door", { h: 116.6, dx: -0.6, dy: 20.6 }],
+  [BUILD.neighbour(0)]: ["prop_shop_shutter_half", { h: 118.6, dx: 1.7, dy: 22.6 }],
+  [BUILD.neighbour(1)]: ["prop_shop_window_clothes", { h: 121.0, dx: 0.3, dy: 25.0 }],
+  [BUILD.neighbour(2)]: ["prop_shop_shutter_closed", { h: 118.7, dx: 2.7, dy: 22.7 }],
+  [BUILD.neighbour(3)]: ["prop_shop_window_ac", { h: 120.2, dx: 0.6, dy: 24.2 }],
 };
 
 /** Bàn 1 × 2 ô; `foot` là vị trí ngang của đỉnh dưới trong ảnh (0–1), `body` là bề cao thân bàn theo px thiết kế. */
-const BENCH = { src: "prop_bench", h: 74, foot: 0.336, body: 28 };
+const BENCH = { src: "prop_bench", h: 74, foot: 0.292, body: 28 };
 
 /** Tám file cùng khung, đáy là mặt đất, tâm ngang là tâm hai bàn chân. */
 const DIRS8: readonly Facing8[] = ["s", "se", "e", "ne", "n", "nw", "w", "sw"];
@@ -110,9 +133,9 @@ const NPC_PHOTOS: Record<string, { src: (d: Facing8) => string; h: number; walk?
   ANH_BAO: { src: (d) => `npc/anh-bao/${d}`, h: 65, walk: "anh-bao" },
 };
 
-/** `held_loaf_baked` cố ý không có: mượn ảnh ổ nóng thì ổ nguội và ổ nóng giống hệt nhau. */
 const CARRIED: Partial<Record<HeldLook, [src: string, size: Fit]>> = {
   loaf_cold: ["held_loaf_cold", { w: 21 }],
+  loaf_baked: ["held_loaf_baked", { w: 21 }],
   loaf_hot: ["held_loaf_hot", { w: 21 }],
   loaf_burnt: ["held_loaf_burnt", { w: 21 }],
   loaf_filled: ["held_loaf_filled", { w: 24 }],
@@ -143,6 +166,11 @@ export function preloadPhotos(scene: Phaser.Scene) {
     BENCH.src,
     ...Object.values(CARRIED).map(([src]) => src),
     ...Object.values(FILLINGS).map(([src]) => src),
+    "shopfront",
+    "leaf_a",
+    "leaf_c",
+    "leaf_b",
+    "leaf_eave",
     ...OPEN_LOAF,
     FLY,
     BOARD,
@@ -154,6 +182,7 @@ export function preloadPhotos(scene: Phaser.Scene) {
     scene.load.image(SRC + n, `art/${n}.webp`);
   }
   preloadWalk(scene, "player", true);
+  preloadWalk(scene, WORK_FILE);
 }
 
 /** Ai có atlas thì ảnh đứng yên lấy từ atlas, khỏi tải tám file rời. */
@@ -266,7 +295,7 @@ function standing(scene: Phaser.Scene, key: string, src: string, o: Standing) {
   if (!img) return;
   const h = o.h;
   const w = (img.width / img.height) * h;
-  const W = Math.max(TW + 2, Math.ceil(w) + 6);
+  const W = Math.max(TW + 2, Math.ceil(w + 2 * Math.abs(o.dx ?? 0)) + 6);
   const H = Math.ceil(h + BASE + TH / 2 + 1 - (o.dy ?? SIT));
   const made = blank(scene, key, W, H, ART_SS);
   if (!made) return;
@@ -314,6 +343,53 @@ function bench(scene: Phaser.Scene) {
   }
 }
 
+/** Bàn để bánh là lát một ô cắt từ ảnh bàn 2 × 1 (mặt phẳng x = 5), nên cùng màu và mép với bàn kề, chỗ nối liền. */
+function prepFromLong(scene: Phaser.Scene) {
+  const img = source(scene, "prop_table_long");
+  if (!img) return;
+  const { h, dx = 0, dy = SIT } = STANDING[PROP.tableLong][1];
+  const w = (img.width / img.height) * h;
+  const W = 90;
+  const H = Math.ceil(h + BASE + TH / 2 + 1 - dy);
+  const made = blank(scene, PROP.prep, W, H, ART_SS);
+  if (!made) return;
+  const cx = W / 2;
+  // Mép trái-trước của mặt trên lát nằm ở (cx − TW/2, TH), dốc 1/2 lên phải; lùi `over` ô để phủ mép vát đầu bàn dài.
+  const over = 0.3;
+  const left = cx - (1 + over) * (TW / 2) - 0.5, top = TH - over * (TH / 2) - 0.5;
+  made.ctx.save();
+  made.ctx.beginPath();
+  made.ctx.moveTo(left, 2000);
+  made.ctx.lineTo(left, top);
+  made.ctx.lineTo(left + 4000, top - 2000);
+  made.ctx.lineTo(left + 4000, 2000);
+  made.ctx.closePath();
+  made.ctx.clip();
+  made.ctx.drawImage(shrink(img, w * ART_SS, h * ART_SS), Math.round(W / 2 - w / 2 + dx), -0.8, w, h);
+
+  // Mặt bàn dài sáng dần về đầu phải; làm sáng mặt trên lát giảm dần về 0 để màu nối tiếp liên tục.
+  const zt = h - 3 * (TH / 2);
+  const pt = (x: number, y: number) => ({
+    x: cx + (x - 7) * (TW / 2) - (y - 6) * (TW / 2),
+    y: h + (x - 7) * (TH / 2) + (y - 6) * (TH / 2) - zt,
+  });
+  made.ctx.beginPath();
+  [pt(6 - over - 0.05, 6.05), pt(7.05, 6.05), pt(7.05, 4.95), pt(6 - over - 0.05, 4.95)]
+    .forEach((p, i) => (i ? made.ctx.lineTo(p.x, p.y) : made.ctx.moveTo(p.x, p.y)));
+  made.ctx.closePath();
+  made.ctx.clip();
+  const a = pt(6 - over, 5.5);
+  const k = 1 + over;
+  const lift = made.ctx.createLinearGradient(a.x, a.y, a.x + 12 * k, a.y + 24 * k);
+  lift.addColorStop(0, "rgba(125,178,165,0.3)");
+  lift.addColorStop(1, "rgba(125,178,165,0)");
+  made.ctx.globalCompositeOperation = "source-atop";
+  made.ctx.fillStyle = lift;
+  made.ctx.fillRect(0, 0, W, H);
+  made.ctx.restore();
+  made.tex.refresh();
+}
+
 /** Cắt ô ra canvas riêng trước khi `shrink`, không thì màu ô bên cạnh loang sang. */
 function standingFromAtlas(
   scene: Phaser.Scene, key: string, atlas: string, frame: string, o: Standing,
@@ -332,16 +408,13 @@ function standingFromAtlas(
 
   const h = o.h;
   const w = (f.cutWidth / f.cutHeight) * h;
-  const W = Math.max(TW + 2, Math.ceil(w) + 6);
+  const W = Math.max(TW + 2, Math.ceil(w + 2 * Math.abs(o.dx ?? 0)) + 6);
   const H = Math.ceil(h + BASE + TH / 2 + 1 - (o.dy ?? SIT));
   const made = blank(scene, key, W, H, ART_SS);
   if (!made) return false;
   made.ctx.drawImage(shrink(cut, w * ART_SS, h * ART_SS),
     Math.round(W / 2 - w / 2 + (o.dx ?? 0)), 0, w, h);
   made.tex.refresh();
-  const last = lowestOpaque(alphaOfAtlas(atlas, img), f);
-  const row = Math.ceil(((last + 1) * h * ART_SS) / f.cutHeight) - 1;
-  footLift.set(key, (Math.ceil(H * ART_SS) - 1 - row) / ART_SS);
   return true;
 }
 
@@ -358,6 +431,30 @@ function boxed(scene: Phaser.Scene, key: string, src: string, size: number, fit:
   made.tex.refresh();
 }
 
+/** Vẽ vào mặt vách: mọi lệnh `draw` dùng toạ độ phẳng w × h, canvas vuốt theo `slope` nên chữ và ảnh cùng một mặt phẳng. */
+export function bakeWall(
+  scene: Phaser.Scene, key: string, w: number, h: number, slope: number,
+  draw: (ctx: CanvasRenderingContext2D) => void,
+) {
+  const made = blank(scene, key, w, h + w * slope, ART_SS);
+  if (!made) return null;
+  made.ctx.setTransform(ART_SS, ART_SS * slope, 0, ART_SS, 0, 0);
+  draw(made.ctx);
+  made.tex.refresh();
+  return key;
+}
+
+/** Tỉ lệ cao/rộng của ảnh đã nạp, `null` nếu chưa có. */
+export function photoRatio(scene: Phaser.Scene, name: string) {
+  const img = source(scene, name);
+  return img ? img.height / img.width : null;
+}
+
+export function drawPhoto(ctx: CanvasRenderingContext2D, scene: Phaser.Scene, name: string, w: number, h: number) {
+  const img = source(scene, name);
+  if (img) ctx.drawImage(shrink(img, w * ART_SS, h * ART_SS), 0, 0, w, h);
+}
+
 function floors(scene: Phaser.Scene) {
   for (const kind of FLOORS) {
     for (let i = 0; i < TILE.VARIANTS; i++) {
@@ -367,6 +464,8 @@ function floors(scene: Phaser.Scene) {
       const key = TILE.floor(kind, i);
       if (scene.textures.exists(key)) scene.textures.remove(key);
       scene.textures.addImage(key, img);
+      const ss = HD_FLOORS[kind];
+      if (ss) ssOf.set(key, ss); else ssOf.delete(key);
     }
   }
 }
@@ -408,71 +507,28 @@ function eightWayFromAtlas(
 function player(scene: Phaser.Scene) {
   eightWay(scene, "p", PLAYER_SRC, PLAYER_H, ["idle", "carry"], "player");
   paintWalk(scene, "p", "player", PLAYER_H, ["walk", "carry"]);
+  paintWalk(scene, "p", WORK_FILE, PLAYER_H, ["wipe", "wash", "breathe"]);
   readHoldAnchors(scene);
 }
 
-/** Đọc alpha từ canvas CPU: đọc ngược từ texture đã vẽ phải chờ GPU, mỗi lần cả trăm ms. */
-const atlasAlpha = new Map<string, ImageData>();
-
-function alphaOfAtlas(atlas: string, img: HTMLImageElement | HTMLCanvasElement) {
-  let d = atlasAlpha.get(atlas);
-  if (!d) {
-    const cv = document.createElement("canvas");
-    cv.width = img.width;
-    cv.height = img.height;
-    const ctx = cv.getContext("2d", { willReadFrequently: true })!;
-    ctx.drawImage(img, 0, 0);
-    d = ctx.getImageData(0, 0, cv.width, cv.height);
-    atlasAlpha.set(atlas, d);
-  }
-  return d;
-}
-
-/** Hàng thấp nhất còn đục của ô, tính từ đỉnh ô. */
-function lowestOpaque(d: ImageData, f: Phaser.Textures.Frame) {
-  for (let y = f.cutY + f.cutHeight - 1; y >= f.cutY; y--) {
-    for (let x = f.cutX; x < f.cutX + f.cutWidth; x++) {
-      if (d.data[(y * d.width + x) * 4 + 3] > 40) return y - f.cutY;
-    }
-  }
-  return f.cutHeight - 1;
-}
-
-/** Bàn chân cách đất bao nhiêu px thiết kế, đo từ ảnh vì đáy chân không theo sin sạch. */
-const footLift = new Map<string, number>();
-
-const liftOf = new Map<string, number>();
-
-export function walkLift(key: string) {
-  return liftOf.get(key) ?? 0;
-}
-
-/** Chỉ ghi sổ khi đủ 8 hướng × `WALK_FRAMES`, thiếu một ô là Phaser vẽ ô xanh lá. */
+/** Chỉ ghi sổ khi đủ 8 hướng × số ô của gait, thiếu một ô là Phaser vẽ ô xanh lá. */
 function paintWalk(
   scene: Phaser.Scene, who: string, file: string, h: number, gaits: readonly Gait[],
 ) {
   const atlas = walkAtlas(file);
   if (!scene.textures.exists(atlas)) return;
-  const lifts: string[] = [];
   for (const gait of gaits) {
     let n = 0;
     for (const dir of DIRS8) {
-      for (let i = 0; i < WALK_FRAMES; i++) {
+      for (let i = 0; i < GAIT_FRAMES[gait]; i++) {
         const key = walkKey(who, dir, gait, i);
         const frame = `${gait}_${dir}_${String(i).padStart(2, "0")}`;
         if (!standingFromAtlas(scene, key, atlas, frame, { h, dy: 0 })) break;
-        lifts.push(key);
         n++;
       }
     }
-    if (n === DIRS8.length * WALK_FRAMES) markGait(who, gait);
+    if (n === DIRS8.length * GAIT_FRAMES[gait]) markGait(who, gait);
   }
-  atlasAlpha.delete(atlas);
-  if (!lifts.length) return;
-  // Mốc 0 là chân thấp nhất của mọi chu kỳ, không phải đáy khung, để bóng không giật khi đổi chu kỳ.
-  const raw = lifts.map((k) => footLift.get(k) ?? 0);
-  const floor = Math.min(...raw);
-  lifts.forEach((k, i) => liftOf.set(k, raw[i] - floor));
 }
 
 /** File ghi theo tỉ lệ chiều cao ô, quy ra px thiết kế ở đây. */
@@ -539,6 +595,7 @@ export function paintPhotos(scene: Phaser.Scene) {
   onCounter(scene, BASKET_TEX, BASKET, BASKET_W);
   for (const [key, [src, o]] of Object.entries(STANDING)) standing(scene, key, src, o);
   bench(scene);
+  prepFromLong(scene);
   player(scene);
   for (const [hand, [src, fit]] of Object.entries(CARRIED) as [HeldLook, [string, Fit]][]) {
     boxed(scene, HELD.key(hand), src, HELD.W, fit);
