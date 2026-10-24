@@ -1,6 +1,6 @@
 // Một nguồn sự thật cho thiết bị: cảm ứng hay chuột, hướng màn, cỡ khung nhìn thật.
 import { GAME_W, GAME_H } from "./config";
-import { loadSettings } from "./flags";
+import { loadSettings, onSettingsSaved } from "./flags";
 
 export type Orientation = "landscape" | "portrait";
 
@@ -23,17 +23,28 @@ export function orientation(): Orientation {
   return w >= h ? "landscape" : "portrait";
 }
 
+let coarseCache: boolean | null = null;
+let touchCache: boolean | null = null;
+
 function coarsePointer(): boolean {
   if (!hasWindow) return false;
-  return !!window.matchMedia?.("(pointer: coarse)").matches || (navigator.maxTouchPoints ?? 0) > 0 && !window.matchMedia?.("(hover: hover)").matches;
+  coarseCache ??= !!window.matchMedia?.("(pointer: coarse)").matches || (navigator.maxTouchPoints ?? 0) > 0 && !window.matchMedia?.("(hover: hover)").matches;
+  return coarseCache;
 }
+
+function clearTouchCache() {
+  coarseCache = null;
+  touchCache = null;
+}
+
+onSettingsSaved(clearTouchCache);
 
 /** Có hiện điều khiển cảm ứng hay không (theo cài đặt, mặc định theo thiết bị). */
 export function isTouch(): boolean {
+  if (touchCache !== null) return touchCache;
   const t = loadSettings().touchControls;
-  if (t === "on") return true;
-  if (t === "off") return false;
-  return coarsePointer();
+  touchCache = t === "on" ? true : t === "off" ? false : coarsePointer();
+  return touchCache;
 }
 
 /** Hệ số FIT: pixel CSS thật trên một pixel thiết kế của canvas. */
@@ -59,6 +70,7 @@ export function onDeviceChange(cb: () => void): () => void {
 
 /** Gọi khi cài đặt `touchControls` đổi để mọi nơi vẽ lại. */
 export function notifyDeviceChange() {
+  clearTouchCache();
   applyAttrs();
   for (const cb of [...listeners]) cb();
 }

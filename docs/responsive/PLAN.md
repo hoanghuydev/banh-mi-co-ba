@@ -65,3 +65,6 @@ Cần `npm run dev` (cổng 5174).
 - Bàn phím ảo (ô đặt tên quán, ô nhập khác) chưa thử thật; PhoneShell và menu bám `visualViewport` để né.
 - `RENDER_SCALE` tính một lần lúc tải trang theo cỡ khung nhìn lúc đó, trần 2.
 - `markScale` (vòng, dấu hiệu trong cảnh to thêm 1,25 lần) cũng chốt lúc dựng cảnh.
+- Điện thoại ngang thấp (cao ≤ 390): Cài đặt và Âm thanh cuộn trong khay (chỉ thấy khoảng 2 hàng), vì vùng chạm 44px không cho ép vừa hơn.
+- Thẻ hướng dẫn ngày 1 ở 800×360 đè một phần HUD ngày/tiền (đặt ngay dưới nút điện thoại đang được chỉ).
+- `tests/p5-rain.test.ts` ("mặt tiền ngắn bất thường") và cổng `dist/art 7,6 MB > 6 MB` đỏ sẵn từ nhánh gốc, không do phần responsive.

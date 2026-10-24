@@ -1,4 +1,4 @@
-import type Phaser from "phaser";
+import Phaser from "phaser";
 import { isTouch, onDeviceChange, orientation } from "../core/device";
 
 type FsDoc = Document & { webkitFullscreenElement?: Element | null; webkitFullscreenEnabled?: boolean; webkitExitFullscreen?: () => Promise<void> | void };
@@ -66,11 +66,8 @@ export function installRotatePrompt(game: Phaser.Game) {
   document.body.appendChild(el);
 
   let shown = false;
-  let wasInStall = false;
+  let inStall = false;
   const update = () => {
-    const inStall = game.scene.isActive("stall");
-    if (inStall && !wasInStall && isFullscreen()) lockLandscape();
-    wasInStall = inStall;
     const want = inStall && isTouch() && orientation() === "portrait";
     if (want === shown) return;
     shown = want;
@@ -78,6 +75,17 @@ export function installRotatePrompt(game: Phaser.Game) {
     if (want) game.loop.sleep();
     else { game.loop.wake(); game.loop.resetDelta(); }
   };
+  const setStall = (on: boolean) => {
+    if (on && !inStall && isFullscreen()) lockLandscape();
+    inStall = on;
+    update();
+  };
+  const watch = () => {
+    const ev = game.scene.getScene("stall").events;
+    for (const e of ["start", "wake", "resume"]) ev.on(e, () => setStall(true));
+    for (const e of ["shutdown", "sleep", "pause"]) ev.on(e, () => setStall(false));
+  };
   onDeviceChange(update);
-  setInterval(update, 250);
+  if (game.scene.getScene("stall")) watch();
+  else game.events.once(Phaser.Core.Events.READY, watch);
 }

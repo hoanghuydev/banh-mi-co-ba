@@ -1059,7 +1059,8 @@ export class StallScene extends Phaser.Scene {
     if (this.handsBusy) return none;
     const h = this.player.hand, st = this.near;
     const ok = (text: string, hold = false): TouchLabel => ({ text, hold, enabled: true });
-    if (!st) return this.nearMenuBoard() ? ok("Đọc bảng") : none;
+    if (this.nearMenuBoard()) return ok("Đọc bảng");
+    if (!st) return none;
     switch (st.id) {
       case "oven":
         if (h === "loaf_cold") return this.oven.hasRoom ? ok("Bỏ vào lò") : none;

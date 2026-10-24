@@ -78,8 +78,13 @@ export function loadSettings(): Settings {
   }
 }
 
+const savedListeners = new Set<() => void>();
+
+export function onSettingsSaved(cb: () => void) { savedListeners.add(cb); }
+
 export function saveSettings(s: Settings) {
   platform.write(SKEY, JSON.stringify(s));
+  for (const cb of savedListeners) cb();
 }
 
 export const flags = {

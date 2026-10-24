@@ -1,11 +1,12 @@
 import Phaser from "phaser";
 import { PHONE_STYLE } from "./phoneStyle";
-import { onDeviceChange, viewport } from "../../core/device";
+import { isTouch, onDeviceChange, viewport } from "../../core/device";
 import { btn, el, svg } from "./dom";
 
 const FRAME_W = 438;
 const FRAME_H = 835;
-const FRAMED_MIN_K = 0.85;
+const FRAMED_MIN_K_TOUCH = 0.85;
+const FRAMED_MIN_K_PC = 0.5;
 
 export type Dir = "r" | "l" | "up" | "";
 
@@ -108,7 +109,7 @@ export class PhoneShell {
     this.root.style.bottom = "auto";
     this.root.style.height = `${h}px`;
     const fit = Math.min((h - 28) / FRAME_H, (w - 16) / FRAME_W);
-    const framed = fit >= FRAMED_MIN_K;
+    const framed = fit >= (isTouch() ? FRAMED_MIN_K_TOUCH : FRAMED_MIN_K_PC);
     const set = (a: string, on: boolean) => (on ? this.root.setAttribute(a, "") : this.root.removeAttribute(a));
     set("data-compact", !framed);
     set("data-card", !framed && w >= 500);

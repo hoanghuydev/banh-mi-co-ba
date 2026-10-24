@@ -4,7 +4,7 @@ import { SaveService, loadSettings, saveSettings, type SaveFile, type Settings }
 import { bus } from "../../core/eventbus";
 import { PLAYTEST } from "../../core/flags";
 import { telemetry } from "../../core/session";
-import { hint, notifyDeviceChange, onDeviceChange } from "../../core/device";
+import { hint, isTouch, notifyDeviceChange, onDeviceChange, orientation } from "../../core/device";
 import { CUES, music } from "../../audio/music";
 import { sfx } from "../../audio/sfx";
 import { btn, el } from "../phone/dom";
@@ -24,6 +24,8 @@ export class MenuDom {
   private at: Page = "main";
   private prevKbd: boolean | null = null;
   private offDevice: () => void;
+  private save: SaveFile | null | undefined;
+  private shape = this.deviceShape();
 
   constructor(
     private scene: Phaser.Scene,
@@ -40,7 +42,12 @@ export class MenuDom {
     document.body.appendChild(this.root);
     const kb = scene.game.input.keyboard;
     if (kb) { this.prevKbd = kb.enabled; kb.enabled = false; }
-    this.offDevice = onDeviceChange(() => this.render(false));
+    this.offDevice = onDeviceChange(() => {
+      const now = this.deviceShape();
+      if (now === this.shape) return;
+      this.shape = now;
+      this.render(false);
+    });
     this.render(true);
   }
 
@@ -54,6 +61,8 @@ export class MenuDom {
     if (kb && this.prevKbd !== null) kb.enabled = this.prevKbd;
   }
 
+  private deviceShape() { return `${orientation()}${isTouch()}`; }
+
   private onFs = () => this.render(false);
 
   private onKey = (e: KeyboardEvent) => {
@@ -65,6 +74,7 @@ export class MenuDom {
 
   private show(page: Page) {
     this.at = page;
+    this.save = undefined;
     this.render(true);
   }
 
@@ -102,7 +112,13 @@ export class MenuDom {
   }
 
   private page(cls = "") {
-    const p = el("div", `mn-page ${cls}`.trim());
+    return el("div", `mn-page ${cls}`.trim());
+  }
+
+  private fitPage(title: string, tray: HTMLElement, ...foot: HTMLElement[]) {
+    const p = this.page("mn-fit");
+    p.append(this.heading(title), tray, el("div", "mn-foot"));
+    p.lastElementChild!.append(...foot);
     return p;
   }
 
@@ -111,7 +127,8 @@ export class MenuDom {
   }
 
   private pageMain() {
-    const save = peek().load();
+    if (this.save === undefined) this.save = peek().load();
+    const save = this.save;
     const p = this.page("mn-main");
     const hero = el("div", "mn-hero");
     const logo = el("img", "mn-logo");
@@ -223,8 +240,6 @@ export class MenuDom {
 
   private pageSettings(s: Settings) {
     const put = (patch: Partial<Settings>) => { Object.assign(s, patch); saveSettings(s); this.render(false); };
-    const p = this.page();
-    p.append(this.heading("Cài đặt"));
     const tray = el("div", "clay-tray mn-tray");
 
     tray.append(this.seg("Cỡ chữ", [[1, "100%"], [1.25, "125%"], [1.5, "150%"], [2, "200%"]], s.textScale,
@@ -240,7 +255,7 @@ export class MenuDom {
     tray.append(au);
 
     tray.append(this.seg("Điều khiển cảm ứng", [["auto", "Tự động"], ["on", "Bật"], ["off", "Tắt"]], s.touchControls,
-      (v) => { s.touchControls = v; saveSettings(s); notifyDeviceChange(); }));
+      (v) => { s.touchControls = v; saveSettings(s); notifyDeviceChange(); this.render(false); }));
 
     if (fullscreenSupported()) {
       tray.append(this.sw("Toàn màn hình", isFullscreen(),
@@ -256,8 +271,7 @@ export class MenuDom {
       this.sw("Ghi số liệu chơi thử", !!s.telemetry, () => { put({ telemetry: !s.telemetry }); telemetry.enabled = !!s.telemetry; },
         "nằm trong máy này, không tự gửi đi đâu"),
     );
-    p.append(tray, this.button("Xuất số liệu", () => this.exportData(), "ghost"), this.back("main"));
-    return p;
+    return this.fitPage("Cài đặt", tray, this.button("Xuất số liệu", () => this.exportData(), "ghost"), this.back("main"));
   }
 
   private exportData() {
@@ -320,8 +334,6 @@ export class MenuDom {
       sfx.applySettings(s);
       this.render(false);
     };
-    const p = this.page();
-    p.append(this.heading("Âm thanh"));
     const tray = el("div", "clay-tray mn-tray");
     tray.append(
       this.slider(s, "Âm lượng tổng", "masterVolume", "nhân vào mọi kênh bên dưới", true),
@@ -339,8 +351,7 @@ export class MenuDom {
       this.sw("Gộp về một kênh", s.monoAudio, () => put({ monoAudio: !s.monoAudio }),
         "bỏ trái–phải, dồn hết vào giữa"),
     );
-    p.append(tray, this.back("settings"));
-    return p;
+    return this.fitPage("Âm thanh", tray, this.back("settings"));
   }
 
   private pageAbout() {

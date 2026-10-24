@@ -52,7 +52,7 @@ export const platform: Platform = typeof document !== "undefined" ? webPlatform(
 const failListeners = new Set<() => void>();
 
 /** Lần ghi save gần nhất có thất bại không (hết chỗ, chế độ riêng tư). */
-export const saveHealth = { writeFailed: false };
+const saveHealth = { writeFailed: false };
 
 export function reportSaveWrite(ok: boolean) {
   const was = saveHealth.writeFailed;
