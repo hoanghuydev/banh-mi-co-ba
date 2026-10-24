@@ -12,6 +12,7 @@ FRONT_Y = TOP_Y + TH        # đỉnh trước của mặt trên
 FOOT_Y = FRONT_Y + LIFT     # đáy cạnh đứng trước
 RIM = 5.0                   # bề dày gờ vát cần cắt (px ảnh)
 OVERLAP = 1.2              # px ảnh nới ra mỗi bên
+FLAT_SIGMA = 28.0           # px ảnh; đủ rộng để chỉ bỏ dải sáng tối thoai thoải, không ăn vân vữa
 RIM_BAND = 12.0             # gạch ốp chân tường quấn góc nên cắt dày hơn
 
 
@@ -173,17 +174,29 @@ def _plaster(px):
             np.median(px[160:420, xr - 9:xr - 1, :3].reshape(-1, 3), 0)]
 
 
-def recolor(im, ref):
-    """Đưa màu vữa của `im` về màu vữa của `ref`; chỉ điểm ảnh gần màu vữa mới đổi nên kính, áo, khung cửa giữ nguyên."""
+def _blur(a, sigma):
+    r = int(sigma * 3)
+    k = np.exp(-np.arange(-r, r + 1) ** 2 / (2 * sigma ** 2))
+    k /= k.sum()
+    for axis in (0, 1):
+        n = a.shape[axis]
+        pad = np.pad(a, [(r, r) if i == axis else (0, 0) for i in range(2)], mode="edge")
+        a = sum(kv * np.take(pad, range(i, i + n), axis=axis) for i, kv in enumerate(k))
+    return a
+
+
+def flatten(im, ref):
+    """Mỗi mặt: vữa về đúng màu vữa của `ref` và bỏ dải sáng tối thoai thoải, để hai ô kề nhau có cùng màu ở chỗ nối; kính, áo, gạch men giữ nguyên."""
     px = np.array(im).astype(float)
     src, dst = _plaster(px), _plaster(np.array(ref).astype(float))
-    top, lf, rf = _polys()
     size = im.size
-    for poly, s, d, reach in zip((top, lf, rf), src, dst, (58, 40, 52)):
+    for poly, s, d, reach in zip(_polys(), src, dst, (80, 60, 72)):
         near = np.linalg.norm(px[..., :3] - s, axis=2)
-        wgt = np.clip((reach - near) / (reach * 0.55), 0, 1)
-        warm = np.clip((px[..., 0] - px[..., 2] - 2) / 8, 0, 1)      # gạch men ngả xanh thì giữ
-        wgt = wgt * wgt * (3 - 2 * wgt) * warm * _mask(poly, size)
-        gain = d / s
-        px[..., :3] = px[..., :3] * (1 + (gain - 1) * wgt[..., None])
+        w = np.clip((reach - near) / (reach * 0.55), 0, 1)
+        warm = np.clip((px[..., 0] - px[..., 2] - 2) / 8, 0, 1)
+        w = w * w * (3 - 2 * w) * warm * _mask(poly, size)
+        den = _blur(w, FLAT_SIGMA)
+        for c in range(3):
+            low = _blur(px[..., c] * w, FLAT_SIGMA) / np.maximum(den, 1e-3)
+            px[..., c] += w * (d[c] - low)
     return Image.fromarray(np.clip(px, 0, 255).astype(np.uint8), "RGBA")

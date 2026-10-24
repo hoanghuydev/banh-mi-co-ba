@@ -226,6 +226,8 @@ const WALL_SHADE = [100, 120, 138] as const;
 const WALL_SHADE_A = 0.09;
 const WALL_LIGHT = [255, 224, 172] as const;
 const WALL_LIGHT_A = 0.15;
+/** Bề rộng (px thiết kế) chỗ chuyển tông quanh cạnh đứng giữa; mỗi mặt đều một tông nên hai ô kề nhau không lệch ở mép. */
+const WALL_RIDGE = 2;
 
 /** Hai ảnh phủ cùng khung sprite tường: nửa trái tối lạnh (MULTIPLY), nửa phải và mặt trên sáng ấm (SCREEN). */
 export function wallOverlays(src: Img, imgScale: number): { shade: Img; light: Img } {
@@ -239,7 +241,7 @@ export function wallOverlays(src: Img, imgScale: number): { shade: Img; light: I
       if (alpha === 0) continue;
       const dx = (x - w / 2) / imgScale, dy = y / imgScale;
       const top = Math.abs(dx) * (TH / TW) + Math.abs(dy - TH / 2) <= TH / 2;
-      const side = smooth(dx / 14 + 0.5);
+      const side = smooth(dx / WALL_RIDGE + 0.5);
       const l = top ? 1 : side;
       const s = top ? 0 : 1 - side;
       shade[i] = WALL_SHADE[0];

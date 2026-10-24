@@ -52,7 +52,7 @@
 - **Soi các trạng thái đổi hình** (đã/chưa mua đồ, ngày/mưa) và màn hẹp.
 - Bỏ phần code chỉ phục vụ thứ vừa bỏ.
 
-- **Khối nhiều ô ghép hàng (tường, nhà xóm, cửa)**: ảnh AI từng ảnh đạt vẫn không đủ, vì mỗi ảnh một độ cao, một độ cao dải gạch, một gờ vát. Chạy qua `tools/wall_block.py` (`BLOCKS` trong `tools/prep-art.py`): đưa về đúng 60 × 86 px, căn mép trên dải gạch, cắt gờ vát và gạch quấn góc, nới mép đứng 1 px để ô sau gối lên ô trước. Trước khi cài, ghép 5 ô thành một hàng ở 6,4 px/px thiết kế và nhìn.
+- **Khối nhiều ô ghép hàng (tường, nhà xóm, cửa)**: muốn nhìn ra một khối liền thì không thể ghép ảnh từng ô, dù đã cắt gờ và san tông. Mỗi ô được dựng lại bằng `tools/wall_surface.py` (qua `BLOCKS` trong `tools/prep-art.py`): mỗi mặt trải phẳng theo (u dọc hàng tường, v từ chân lên), vữa sát mép và nắp dùng chung một texture tuần hoàn, dải gạch men đứng trên một lưới chung (6 cột × 3 hàng, mạch ngang kẻ thẳng), chi tiết (cửa sổ, cửa cuốn, poster) giữ nguyên ảnh gốc trong một vùng khai ở `DETAIL`. Ô nào đứng cạnh ô nào cũng khớp ở mép. Đường chéo phải lấy mẫu theo điểm ảnh (khử răng cưa), không dịch cột theo số nguyên.
 - **Mặt phẳng nằm trong khối**: chi tiết dán trên mặt tường (cửa sổ, công tơ, poster, dây phơi) tồn tại cùng mặt phẳng với vữa, nên mọi phép lấy mẫu để sửa mép phải đi dọc theo mặt phẳng đó (mặt trái dốc xuống phải, mặt phải dốc lên phải), không đi ngang màn hình.
 
 ## Báo cáo
@@ -74,3 +74,26 @@ Mỗi mục là một lần báo xong mà user phải bắt lỗi. Đọc trư�
 | Ép màu từng nhà xóm khác nhau (xanh xám, hồng be) để "phân biệt" | Nhà xanh xám chen giữa tường kem và sàn men trắng trông lạc | Đồ cùng một bộ giữ cùng tông; muốn khác màu thì hỏi user duyệt trong cảnh trước |
 | Đặt `h`, `dx`, `dy` riêng cho từng ảnh trong `photo.ts` | Mỗi ảnh một cỡ, cộng dồn ra bậc | Chuẩn hoá ảnh để cả 9 ảnh dùng chung một bộ số (`WALL_PHOTO`) |
 
+### 2026-10-24, tường vẫn chia line sau lần sửa đầu
+
+| Đã làm sai | Hậu quả | Làm đúng |
+|---|---|---|
+| Sau khi cắt gờ vát tôi báo xong mà chưa so cột biên của hai ô kề nhau | Mỗi ô còn một tông vữa và một dải sáng tối riêng: nắp lệch tông, vạch sáng đứng giữa hai ô | Mỗi mặt san về cùng màu vữa, cột biên lấy lại màu cột sát trong |
+| Căn dải gạch bằng một cột đo hoặc đo toàn mặt | Cửa sổ, áo xanh, kim loại làm sai số đo, dải gạch gợn sóng | Đo hai đầu mỗi mặt, bỏ giá trị lệch xa, chỉ kéo vùng quanh mép trên dải gạch |
+| Chụp game sau mỗi lần sửa ở một khung | Không phóng 4–5× vào từng mối nối | Ghép hàng thử ở 6,4 px/px, phóng từng mối nối, rồi mới chụp game |
+
+Nhật ký đầy đủ: `.claude/learning-loop/tuong-nhat-ky.md`.
+
+### 2026-10-24, tường vẫn thấy rõ là ghép nhiều khối
+
+| Đã làm sai | Hậu quả | Làm đúng |
+|---|---|---|
+| Vá từng khác biệt giữa hai ô (tông, mép, độ cao dải gạch) | Vá xong chỗ này lộ chỗ khác; người dùng phải khoanh thêm lần nữa | Hỏi "thứ gì làm ô này khác ô kề nó" ở gốc: mỗi ảnh là một bề mặt riêng. Cho cả hàng dùng chung một bề mặt (texture tuần hoàn + lưới gạch chung) |
+| Căn dải gạch bằng một cột đo hay độ dốc khớp đường | Gợn sóng, bậc ở góc | Dựng dải gạch trên lưới chung từ ô lấy trong tường trơn, kẻ mạch ngang thẳng |
+| Dịch cột theo số nguyên để trải phẳng mặt nghiêng | Răng cưa dọc mọi đường chéo | Lấy mẫu song tuyến theo điểm ảnh, độ phủ khử răng cưa ở mép mặt |
+
+### 2026-10-24, ảnh ghép hàng đạt nhưng trong game vẫn thấy vạch
+
+| Đã làm sai | Hậu quả | Làm đúng |
+|---|---|---|
+| Chấm hàng ghép thử rồi báo đạt, chụp game ở khung nhỏ và gọi vạch mờ là "hết" | Trong game còn vạch: các lớp ánh sáng phủ riêng từng sprite (`wallOverlays` trong `lightTint.ts`) có dải sáng tối rộng ±14 px mỗi ô nên lệch ở mỗi mối nối; thu nhỏ texture còn hở khe ở mép | Mọi lớp phủ lên khối ghép hàng phải đều trong từng mặt (chỉ đổi tông ở cạnh giữa); ảnh nới mép ra ngoài ô cho ô kề gối lên; phóng camera trong game (`window.__game`, zoom 6) để soi như người chơi thấy |

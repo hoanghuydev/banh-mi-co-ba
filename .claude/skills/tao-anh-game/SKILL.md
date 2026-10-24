@@ -29,7 +29,7 @@ Mục tiêu: ra ảnh **đúng style, đúng góc, đúng hình khối** của g
 
 7b. **Kiểm độ phân giải trước khi duyệt**: cạnh ảnh phải ≥ cạnh thiết kế × 3,2 (màn 27" QHD; mục tiêu ×4,8 cho 4K). Bảng ở `docs/QUY-TAC-CANVAS.md` mục "Độ phân giải tối thiểu". Thấp hơn thì gen lại, không phóng to.
 
-8. **Đặt vào game rồi mới báo xong**: đọc **cả** `docs/QUY-TAC-CANVAS.md` (gồm mục "Lịch sử sai"), chụp phóng 4–5× mối nối và chân đồ ở chỗ đặt thật rồi nhìn. Ảnh AI lệch hình học nhiều thì gen lại với khối xám, đừng cố kéo. Khối 1 ô ghép hàng (tường, cửa, nhà xóm) thêm vào `BLOCKS` của `tools/prep-art.py` để `tools/wall_block.py` chuẩn hoá và cắt gờ; cả bộ cùng một tông, cùng một bộ `h`/`dy`.
+8. **Đặt vào game rồi mới báo xong**: đọc **cả** `docs/QUY-TAC-CANVAS.md` (gồm mục "Lịch sử sai"), chụp phóng 4–5× mối nối và chân đồ ở chỗ đặt thật rồi nhìn. Ảnh AI lệch hình học nhiều thì gen lại với khối xám, đừng cố kéo. Khối 1 ô ghép hàng (tường, cửa, nhà xóm) thêm vào `BLOCKS` của `tools/prep-art.py` để `tools/wall_block.py` chuẩn hoá rồi `tools/wall_surface.py` dựng bề mặt chung (vữa, gạch men, nắp) và chỉ giữ chi tiết (khai vùng ở `DETAIL`); cả bộ cùng một tông, cùng một bộ `h`/`dy`.
 
 ## Hạn mức lượt gen (chống đốt tiền)
 

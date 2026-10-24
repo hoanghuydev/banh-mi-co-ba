@@ -4,12 +4,15 @@ import math
 import os
 import sys
 
+import numpy as np
+
 try:
     from PIL import Image, ImageDraw, ImageFilter
 except ImportError:
     sys.exit("cần Pillow: python3 -m pip install --user Pillow")
 
-from wall_block import normalise, recolor
+from wall_block import normalise, flatten
+from wall_surface import Resources, build
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "art-raw")
@@ -329,7 +332,6 @@ ISO_FIX: set[str] = {"prop_crate"}
 # Khối tường 1 ô: chuẩn hoá về đúng 60 × 86 px và cắt gờ vát để các ô liền nhau; không qua `clean`/`fit` vì trục khối phải nằm giữa khung.
 BLOCKS = {"prop_wall_plain", "prop_wall_meter", "prop_wall_window", "prop_wall_poster", "prop_door",
           "prop_shop_shutter_half", "prop_shop_window_clothes", "prop_shop_shutter_closed", "prop_shop_window_ac"}
-RECOLOR = {"prop_shop_window_clothes"}
 
 # Cạnh dài ≥ 3,2 × cỡ thiết kế (màn 27" QHD); `photo.ts` thu nhỏ bằng nhiều nhịp chia đôi.
 PROPS = [
@@ -523,12 +525,15 @@ def main():
 
     if any(want(k) for k, _, _ in PROPS):
         print("đạo cụ")
+    wall_res = None
     for key, src, longest in PROPS:
         if want(key) and key in BLOCKS:
-            im = normalise(Image.open(os.path.join(SRC, src)))
-            if key in RECOLOR:
-                im = recolor(im, normalise(Image.open(os.path.join(SRC, "wall_plain-Photoroom.png"))))
-            save(key, im)
+            if wall_res is None:
+                base = normalise(Image.open(os.path.join(SRC, "wall_plain-Photoroom.png")))
+                left = flatten(normalise(Image.open(os.path.join(SRC, "shop_shutter_half-Photoroom.png"))), base)
+                wall_res = Resources(np.array(flatten(base, base)), np.array(left))
+            im = flatten(normalise(Image.open(os.path.join(SRC, src))), base)
+            save(key, Image.fromarray(build(im, key, wall_res), "RGBA"))
         elif want(key):
             im = clean(src)
             save(key, fit(iso2(im) if key in ISO_FIX else im, longest))
