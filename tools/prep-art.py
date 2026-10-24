@@ -448,6 +448,30 @@ def phone_frame():
     return im
 
 
+def menu_ui(scale=0.55):
+    """Bảng menu: khung (co giãn 9 mảnh), dây treo, tờ giấy sạch và băng dính; số đo khớp `ui/menu/MenuBoardView.ts`."""
+    def sized(im):
+        return im.resize((round(im.width * scale), round(im.height * scale)), Image.LANCZOS)
+
+    board = Image.open(os.path.join(SRC, "menu_bang-Photoroom.png")).convert("RGBA")
+    split = 169
+    hanger = board.crop((0, 0, board.width, split))
+    frame = board.crop((0, split, board.width, board.height))
+    hanger = hanger.crop(hanger.getchannel("A").getbbox())
+    frame = frame.crop(frame.getchannel("A").getbbox())
+
+    paper = Image.open(os.path.join(SRC, "menu_giay-Photoroom.png")).convert("RGBA")
+    tape = paper.crop((161, 39, 461, 276))
+    clean = paper.copy()
+    clean.paste(paper.crop((210, 282, 470, 450)), (210, 112))
+    clean = clean.crop((210, 112, 1045, 1182))
+    alpha = clean.getchannel("A")
+    top = alpha.crop((300, 0, 301, 20)).resize((260, 20))
+    alpha.paste(top, (0, 0))
+    clean.putalpha(alpha)
+    return sized(frame), sized(hanger), sized(clean), sized(tape)
+
+
 def lamp_pair(longest=256):
     """Đèn tường bật và tắt cùng khung: tắt = bóng thuỷ tinh sẫm, mất lõi sáng."""
     on = Image.open(os.path.join(SRC, "_duyet", "den_tuong", "final-Photoroom.png")).convert("RGBA")
@@ -485,6 +509,11 @@ def main():
     if want("phone"):
         print("điện thoại")
         save("phone", phone_frame())
+
+    if want("menu_"):
+        print("bảng menu")
+        for key, im in zip(("menu_khung", "menu_day", "menu_giay", "menu_bang_dan"), menu_ui()):
+            save(key, im)
 
     if want("lamp"):
         print("đèn tường")

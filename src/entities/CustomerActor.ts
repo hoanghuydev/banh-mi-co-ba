@@ -1,7 +1,6 @@
 import Phaser from "phaser";
 import { depthOf, facingOf8, toScreen, type Facing8 } from "../world/iso";
 import { COUNTER_Y, QUEUE_SLOTS } from "../world/map";
-import { pickBubbleSpot, type Box } from "../world/bubbleLayout";
 import { BODY_H, buildBody, footY, textureFor } from "../art";
 import { STRIDE, GAIT_FRAMES, walkTextureFor } from "../art/character";
 import { artScale } from "../art/photo";
@@ -43,39 +42,12 @@ const MARK_STROKE = "#2b2f31";
 // Trên nhãn trạm, vì nhãn quầy nằm đúng chỗ đầu người đứng trước quầy.
 export const OVERLAY_DEPTH = 8_100_000;
 const FX_DEPTH = 9_450_000;
+// Trên mặt và vòng kiên nhẫn của người đứng sau, kẻo chúng đè lên chữ.
+export const BUBBLE_DEPTH = FX_DEPTH + 1;
 
 // Đo từ `sy` (điểm chạm đất), không từ `footY(sy)` vốn thấp hơn 21 px.
 const TAG_BELOW_FEET = 14;
 const EDGE = 6;
-// Giây; đi ~96% quãng trong 0,25 s.
-const BUBBLE_GLIDE_TAU = 0.09;
-
-// `Container.getBounds()` bỏ qua Graphics nên chỉ ra ô chữ, phải nới thêm phần nền giấy.
-function bubbleBox(root: Phaser.GameObjects.Container, scale: number): Box {
-  const t = root.getBounds();
-  const w = Math.max(t.width / scale + 22, 60) * scale;
-  const h = (t.height / scale + 14) * scale;
-  return {
-    x0: t.centerX - w / 2, x1: t.centerX + w / 2 + 2 * scale,
-    y0: t.centerY - h / 2, y1: t.centerY + h / 2 + 9 * scale,
-  };
-}
-
-// Sổ bong bóng đã đặt trong frame (reset khi `time` đổi) để người sau né.
-let bubbleStamp = -1;
-const bubbleBoxes: { sy: number; box: Box }[] = [];
-
-// Vùng cấm động, chỉ những thứ đang cần nhìn (vd. vòng độ giòn lúc ổ sắp sém).
-const bubbleKeepOut: Box[] = [];
-
-export function setBubbleKeepOut(boxes: readonly Box[]) {
-  bubbleKeepOut.length = 0;
-  bubbleKeepOut.push(...boxes);
-}
-
-export type BubbleKeepOutBox = Box;
-export { pickBubbleSpot };
-
 
 const K = 120, DAMP = 14;
 
@@ -121,10 +93,6 @@ export class CustomerActor {
   private bob = 0;
   // Quãng đã đi (ô), cộng dồn để bàn chân khớp mặt đất.
   private gait = 0;
-
-  // `pickBubbleSpot` rời rạc nên phải trượt `live` về `want`, không đặt thẳng.
-  private bubbleOff = { live: { dx: 0, dy: 0 }, want: { dx: 0, dy: 0 }, settled: false };
-  private bubbleSaid = "";
 
   constructor(private scene: Phaser.Scene, private c: Customer, private bubbles: BubblePool, textScale = 1,
     private label: (c: Customer) => string = (x) => x.name) {
@@ -258,46 +226,9 @@ export class CustomerActor {
     g.setAlpha(fade);
     this.propFx.setAlpha(fade);
 
-    if (c.say) {
-      const b = this.bubbles.acquire(c.id);
-      b.setText(c.say);
-      const scale = c.slot > 0 ? 0.85 : 1;
-      const depthB = OVERLAY_DEPTH + 2;
-      const homeX = sx, homeY = sy - BODY_H - 46;
-      b.place(homeX, homeY, depthB, scale, reducedMotion);
-
-      if (c.say !== this.bubbleSaid) { this.bubbleSaid = c.say; this.bubbleOff.settled = false; }
-
-      if (time !== bubbleStamp) { bubbleStamp = time; bubbleBoxes.length = 0; }
-      const box0 = bubbleBox(b.root, scale);
-      const v = this.scene.cameras.main.worldView;
-      const w = box0.x1 - box0.x0, h = box0.y1 - box0.y0;
-      const centre0 = { x: (box0.x0 + box0.x1) / 2, y: (box0.y0 + box0.y1) / 2 };
-      const off = this.bubbleOff;
-      const spot = pickBubbleSpot(centre0, { w, h },
-        { left: v.left, right: v.right, top: v.top, bottom: v.bottom },
-        bubbleBoxes.map((o) => o.box), bubbleKeepOut, off.settled ? off.want : null);
-      off.want = { dx: spot.x - centre0.x, dy: spot.y - centre0.y };
-      if (!off.settled) { off.live = { ...off.want }; off.settled = true; }
-      else if (reducedMotion) off.live = { ...off.want };
-      else {
-        // Dùng `dt` ở trên vì `this.lastT` đã bị gán `= time`.
-        const k = 1 - Math.exp(-dt / BUBBLE_GLIDE_TAU);
-        off.live = {
-          dx: off.live.dx + (off.want.dx - off.live.dx) * k,
-          dy: off.live.dy + (off.want.dy - off.live.dy) * k,
-        };
-      }
-      const bx = homeX + off.live.dx, by = homeY + off.live.dy;
-      if (bx !== homeX || by !== homeY) b.place(bx, by, depthB, scale, reducedMotion);
-      // Ghi ô đang vẽ chứ không ghi ô đích, để người sau né cái đang thấy.
-      const cx2 = centre0.x + off.live.dx, cy2 = centre0.y + off.live.dy;
-      bubbleBoxes.push({ sy, box: { x0: cx2 - w / 2, x1: cx2 + w / 2, y0: cy2 - h / 2, y1: cy2 + h / 2 } });
-    } else {
-      this.bubbleSaid = "";
-      this.bubbleOff.settled = false;
-      this.bubbles.release(c.id, reducedMotion);
-    }
+    if (c.say) this.bubbles.acquire(c.id).setText(c.say);
+    else this.bubbles.release(c.id, reducedMotion);
+    this.bubbles.anchor(c.id, sx, sy - BODY_H - 46, BUBBLE_DEPTH, c.slot > 0 ? 0.85 : 1);
   }
 
   private clampInView(t: Phaser.GameObjects.Text) {

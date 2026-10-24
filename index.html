@@ -97,7 +97,7 @@
   /* Chữ số không nhảy chỗ khi đổi từ "9%" sang "10%", và không bao giờ bị xuống dòng. */
   #boot-pct { font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-  /* Chuyển cảnh qua ngày: cửa cuốn kéo xuống rồi kéo lên, màn đêm tối dần. Điều khiển bởi src/ui/transition.ts. */
+  /* Chuyển cảnh qua ngày: cửa cuốn đóng rồi mờ hoặc kéo lên, màn đêm tối dần. Điều khiển bởi src/ui/transition.ts. */
   #shutter {
     position: fixed; inset: 0; z-index: 19; pointer-events: none;
     background: #4a545c url(art/cua_cuon.webp) center / 100% 100% no-repeat;
@@ -105,6 +105,7 @@
     box-shadow: 0 10px 24px rgba(0,0,0,.55);
   }
   #shutter.down { transform: none; pointer-events: auto; }
+  #shutter.fade { opacity: 0; pointer-events: none; transition: opacity .7s ease; }
   #night {
     position: fixed; inset: 0; z-index: 19; display: grid; place-items: center; pointer-events: none;
     background: radial-gradient(ellipse 70% 70% at 50% 45%, #1a2430, #070a0e); opacity: 0; transition: opacity .8s ease;

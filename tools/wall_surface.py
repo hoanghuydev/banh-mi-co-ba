@@ -18,7 +18,7 @@ SKIRT_TOP = GRID_V[0] - GROUT
 CAP_RES = 384
 FLAT_REACH = 20                 # nửa bề rộng cửa sổ làm trơn khi san tông
 FACE_EXT = 16                   # px nới mép đứng ra ngoài ô: phần mờ sau khi thu nhỏ phải nằm hẳn trên mặt phẳng ô kề, không chạm gờ giữa của nó
-CAP_EXT = 16                    # như trên cho hai cạnh sau của nắp
+CAP_EXT = 5                     # nắp chịu lớp bóng lá phủ riêng từng ô: gối nhau rộng thì bóng bị phủ đôi thành lưới vạch
 
 # các vùng giữ nguyên ảnh gốc (u0, u1, v0, v1) theo (khoá, mặt)
 DETAIL = {

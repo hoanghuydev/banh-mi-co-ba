@@ -52,7 +52,7 @@
 - **Soi các trạng thái đổi hình** (đã/chưa mua đồ, ngày/mưa) và màn hẹp.
 - Bỏ phần code chỉ phục vụ thứ vừa bỏ.
 
-- **Khối nhiều ô ghép hàng (tường, nhà xóm, cửa)**: muốn nhìn ra một khối liền thì không thể ghép ảnh từng ô, dù đã cắt gờ và san tông. Mỗi ô được dựng lại bằng `tools/wall_surface.py` (qua `BLOCKS` trong `tools/prep-art.py`): mỗi mặt trải phẳng theo (u dọc hàng tường, v từ chân lên), vữa sát mép và nắp dùng chung một texture tuần hoàn, dải gạch men đứng trên một lưới chung (6 cột × 3 hàng, mạch ngang kẻ thẳng), chi tiết (cửa sổ, cửa cuốn, poster) giữ nguyên ảnh gốc trong một vùng khai ở `DETAIL`. Ô nào đứng cạnh ô nào cũng khớp ở mép. Đường chéo phải lấy mẫu theo điểm ảnh (khử răng cưa), không dịch cột theo số nguyên.
+- **Khối nhiều ô ghép hàng (tường, nhà xóm, cửa)**: muốn nhìn ra một khối liền thì không thể ghép ảnh từng ô, dù đã cắt gờ và san tông. Mỗi ô được dựng lại bằng `tools/wall_surface.py` (qua `BLOCKS` trong `tools/prep-art.py`): mỗi mặt trải phẳng theo (u dọc hàng tường, v từ chân lên), vữa sát mép và nắp dùng chung một texture tuần hoàn, dải gạch men đứng trên một lưới chung (6 cột × 3 hàng, mạch ngang kẻ thẳng), chi tiết (cửa sổ, cửa cuốn, poster) giữ nguyên ảnh gốc trong một vùng khai ở `DETAIL`. Ô nào đứng cạnh ô nào cũng khớp ở mép. Đường chéo phải lấy mẫu theo điểm ảnh (khử răng cưa), không dịch cột theo số nguyên. Quy trình và bẫy chụp game: skill `ghep-khoi-lien-mach`.
 - **Mặt phẳng nằm trong khối**: chi tiết dán trên mặt tường (cửa sổ, công tơ, poster, dây phơi) tồn tại cùng mặt phẳng với vữa, nên mọi phép lấy mẫu để sửa mép phải đi dọc theo mặt phẳng đó (mặt trái dốc xuống phải, mặt phải dốc lên phải), không đi ngang màn hình.
 
 ## Báo cáo
@@ -97,3 +97,12 @@ Nhật ký đầy đủ: `.claude/learning-loop/tuong-nhat-ky.md`.
 | Đã làm sai | Hậu quả | Làm đúng |
 |---|---|---|
 | Chấm hàng ghép thử rồi báo đạt, chụp game ở khung nhỏ và gọi vạch mờ là "hết" | Trong game còn vạch: các lớp ánh sáng phủ riêng từng sprite (`wallOverlays` trong `lightTint.ts`) có dải sáng tối rộng ±14 px mỗi ô nên lệch ở mỗi mối nối; thu nhỏ texture còn hở khe ở mép | Mọi lớp phủ lên khối ghép hàng phải đều trong từng mặt (chỉ đổi tông ở cạnh giữa); ảnh nới mép ra ngoài ô cho ô kề gối lên; phóng camera trong game (`window.__game`, zoom 6) để soi như người chơi thấy |
+
+### 2026-10-25, thêm ba tờ rơi trên tường: vạch dọc ở mọi mối nối trong game
+
+| Đã làm sai | Hậu quả | Làm đúng |
+|---|---|---|
+| Ghép thử liền ở 6,4 px/px rồi coi như xong | Trong game còn vạch sáng dọc ở mọi mối nối mặt đứng: mép ô sau chỉ gối 3 px ảnh, 1–2 texel mờ sau khi thu nhỏ rơi lên gờ giữa của ô trước nên gờ sáng lộ qua (bướu +8 độ sáng) | Gối mép mặt đứng ≥ 16 px ảnh; chụp game 2732 px phóng 2,6× và đo hồ sơ độ sáng ngang mối nối |
+| Nới gối của nắp lên 16 như mặt đứng | Nắp ra lưới vạch và răng cưa: lớp bóng lá phủ riêng từng ô bị phủ đôi ở vùng gối | Nắp giữ gối 5 px |
+| Giữ vữa ảnh gen ở giữa mặt, chỉ san tông cột | Mỗi mối nối còn dải sáng +4 do vữa chung sát mép khác tông phần giữa; vệt xanh chéo trên dải gạch do mép gạch ảnh gen dốc | Ngoài vùng chi tiết chỉ dùng vữa chung đã san tông theo hàng; dải 32 px trên dải gạch lấy hoàn toàn từ vữa chung |
+| Chụp game bằng dev server đang bị người khác sửa file | Trang tự tải lại, ảnh ra màn menu; mất cả buổi tưởng lỗi ở game | Build tĩnh (`vite build --mode development`) rồi chụp |

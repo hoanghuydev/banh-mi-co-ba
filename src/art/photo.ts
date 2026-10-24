@@ -174,6 +174,7 @@ export function preloadPhotos(scene: Phaser.Scene) {
     ...Object.values(CARRIED).map(([src]) => src),
     ...Object.values(FILLINGS).map(([src]) => src),
     "shopfront",
+    "menu_khung",
     "leaf_a",
     "leaf_c",
     "leaf_b",
@@ -462,6 +463,25 @@ export function photoRatio(scene: Phaser.Scene, name: string) {
 export function drawPhoto(ctx: CanvasRenderingContext2D, scene: Phaser.Scene, name: string, w: number, h: number) {
   const img = source(scene, name);
   if (img) ctx.drawImage(shrink(img, w * ART_SS, h * ART_SS), 0, 0, w, h);
+}
+
+/** Vẽ ảnh khung co giãn 9 mảnh: mảnh góc `slice` px ảnh nguồn thành `border` px thiết kế. */
+export function drawFrame(
+  ctx: CanvasRenderingContext2D, scene: Phaser.Scene, name: string,
+  w: number, h: number, slice: number, border: number,
+) {
+  const img = source(scene, name);
+  if (!img) return;
+  ctx.imageSmoothingQuality = "high";
+  const sx = [0, slice, img.width - slice, img.width];
+  const sy = [0, slice, img.height - slice, img.height];
+  const dx = [0, border, w - border, w];
+  const dy = [0, border, h - border, h];
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 3; c++) {
+      ctx.drawImage(img, sx[c], sy[r], sx[c + 1] - sx[c], sy[r + 1] - sy[r], dx[c], dy[r], dx[c + 1] - dx[c], dy[r + 1] - dy[r]);
+    }
+  }
 }
 
 function floors(scene: Phaser.Scene) {

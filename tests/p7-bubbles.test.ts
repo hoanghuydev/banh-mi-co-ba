@@ -5,8 +5,7 @@
  *  2. khách xếp hàng cạnh nhau thì bong bóng chồng lên nhau
  *  3. bong bóng che mất chỗ người chơi đang làm
  *
- * Phần chọn chỗ đặt đã được tách thành hàm THUẦN (`pickBubbleSpot`) đúng để test được
- * mà không cần dựng Phaser — cái bug ở đó là bug thứ tự, và thứ tự thì kiểm bằng số.
+ * Phần chọn chỗ đặt là hàm thuần (`stackBubbles`) để test không cần Phaser.
  */
 import { test } from "node:test";
 import { readFile } from "node:fs/promises";
@@ -15,7 +14,7 @@ import assert from "node:assert/strict";
 import {
   BUBBLE_MAX_SEC, BUBBLE_MIN_SEC, NOTICE_SEC, READ_CPS, bubbleLife, offerBubbleLife,
 } from "../src/sim/service";
-import { pickBubbleSpot } from "../src/world/bubbleLayout";
+import { stackBubbles, TAIL_INSET, type Box, type Slot } from "../src/world/bubbleLayout";
 
 const dir = new URL("../src/content/rules/", import.meta.url);
 const BARKS: string[] = [];
@@ -65,104 +64,76 @@ test("B-4 người đọc chậm được thêm giờ — cỡ chữ lớn / kh�
   assert.ok(offerBubbleLife(line) > bubbleLife(line));
 });
 
-// ────────────────────────────────── C — chồng lấn & che quầy (lỗi #2, #3)
+// ────────────────────────── C — bám đầu, không chồng, không che lò (lỗi #2, #3)
 
-const V = { left: 0, right: 800, top: 0, bottom: 450 };
-const SIZE = { w: 190, h: 54 };
-const boxAt = (x: number, y: number, w = SIZE.w, h = SIZE.h) =>
-  ({ x0: x - w / 2, x1: x + w / 2, y0: y - h / 2, y1: y + h / 2 });
-const hit = (a: ReturnType<typeof boxAt>, b: ReturnType<typeof boxAt>) =>
-  a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
+const V = { left: 0, right: 800, top: 0 };
+const W = 190, H = 54;
+const ask = (x: number, y: number, prev: Slot | null = null) => ({ x, y, w: W, h: H, prev });
+const boxOf = (s: { x: number; y: number }) => ({ x0: s.x - W / 2, x1: s.x + W / 2, y0: s.y - H, y1: s.y });
+const hit = (a: Box, b: Box) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
+/** Thân bong bóng còn che đỉnh đầu và không tụt xuống dưới chỗ gốc. */
+const onHead = (s: { x: number; y: number }, a: { x: number; y: number }) =>
+  Math.abs(s.x - a.x) <= W / 2 - TAIL_INSET + 1e-9 && s.y <= a.y;
 
-test("C-1 hai người đứng cạnh nhau: bong bóng KHÔNG chồng nhau", () => {
-  /**
-   * Hai chỗ đứng cạnh nhau cách nhau đúng 24 px theo chiều dọc màn hình (Δx 1,5 ô ⇒
-   * Δsy = 1,5 × 16), mà một bong bóng hai dòng cao ~54 px. Chồng nhau là HÌNH HỌC,
-   * không phải xui — chờ may là không bao giờ hết.
-   */
-  const first = boxAt(400, 300);
-  const spot = pickBubbleSpot({ x: 448, y: 276 }, SIZE, V, [first]);
-  assert.ok(!hit(boxAt(spot.x, spot.y), first),
-    `vẫn chồng: bong bóng sau ở (${spot.x}, ${spot.y})`);
+test("C-1 hai người đứng cạnh nhau: không chồng, mà ai vẫn trên đầu người nấy", () => {
+  // Hàng chờ cách nhau 48 px ngang, 24 px dọc; bong bóng rộng ~190 px nên chồng là hình học.
+  const a = [ask(400, 300), ask(448, 276)];
+  const [s0, s1] = stackBubbles(a, V);
+  assert.ok(!hit(boxOf(s0), boxOf(s1)), `vẫn chồng: ${JSON.stringify([s0, s1])}`);
+  assert.ok(onHead(s0, a[0]) && onHead(s1, a[1]), `rời đầu: ${JSON.stringify([s0, s1])}`);
 });
 
-test("C-2 chạm MÉP TRÊN khung nhìn vẫn phải né được — đây đúng là chỗ bản cũ gãy", () => {
-  /**
-   * Bản cũ né chồng lấn XONG MỚI kẹp vào mép khung nhìn, nên cú kẹp đẩy ngược cái vừa
-   * được nâng lên xuống lại — đúng vào cái nó vừa tránh. Ở quầy thì bong bóng chạm mép
-   * trên là chuyện thường, nên lỗi này nổ gần như mỗi lần hai người cùng nói.
-   */
-  const first = boxAt(400, 40);
-  const spot = pickBubbleSpot({ x: 420, y: 30 }, SIZE, V, [first]);
-  const got = boxAt(spot.x, spot.y);
-  assert.ok(got.y0 >= V.top, `bong bóng lòi lên trên mép khung nhìn: y0 = ${got.y0}`);
-  assert.ok(!hit(got, first), `kẹp vào mép rồi chồng trở lại: (${spot.x}, ${spot.y})`);
+test("C-2 dù đông tới đâu cũng không bao giờ rời đỉnh đầu hay tụt xuống thân", () => {
+  const crowd = Array.from({ length: 7 }, (_, i) => ask(380 + (i % 3) * 30, 300 - i * 12));
+  stackBubbles(crowd, V).forEach((s, i) => assert.ok(onHead(s, crowd[i]), `người ${i}: ${JSON.stringify(s)}`));
 });
 
-test("C-3 không bao giờ ra khỏi khung nhìn, dù bị đẩy đi đâu", () => {
-  const taken = [boxAt(400, 300), boxAt(400, 240), boxAt(400, 180)];
-  for (const [cx, cy] of [[400, 300], [5, 5], [795, 445], [400, -100]] as const) {
-    const spot = pickBubbleSpot({ x: cx, y: cy }, SIZE, V, taken);
-    const g = boxAt(spot.x, spot.y);
-    assert.ok(g.x0 >= V.left && g.x1 <= V.right && g.y0 >= V.top && g.y1 <= V.bottom,
-      `từ (${cx}, ${cy}) ra ngoài khung: ${JSON.stringify(g)}`);
-  }
+test("C-3 sát mép khung thì dạt vào trong, ra khỏi khung thì đi theo người", () => {
+  const [edge] = stackBubbles([ask(80, 300)], V);
+  assert.ok(edge.x - W / 2 >= V.left, `lòi ra mép trái: ${edge.x}`);
+  assert.ok(onHead(edge, ask(80, 300)));
+  const [gone] = stackBubbles([ask(-300, 300)], V);
+  assert.ok(onHead(gone, ask(-300, 300)), `bị kẹp lại trong khung, bỏ người nói: ${gone.x}`);
 });
 
-test("C-4 tránh chỗ người chơi đang cần nhìn — và tránh nó NẶNG HƠN tránh nhau", () => {
-  /**
-   * Che cái lò lúc trong lò trống chỉ là che một bức hình; che đúng cái vòng độ giòn lúc
-   * ổ sắp sém là lấy mất thứ duy nhất báo nó sắp cháy — CANON T5 nói rủi ro phải đọc
-   * được TRƯỚC khi hỏng.
-   */
-  const oven = boxAt(400, 200, 92, 76);
-  const spot = pickBubbleSpot({ x: 400, y: 200 }, SIZE, V, [], [oven]);
-  assert.ok(!hit(boxAt(spot.x, spot.y), oven), `vẫn đè lên lò: (${spot.x}, ${spot.y})`);
-
-  const other = boxAt(400, 140);
-  const s2 = pickBubbleSpot({ x: 400, y: 200 }, SIZE, V, [other], [oven]);
-  assert.ok(!hit(boxAt(s2.x, s2.y), oven), "ưu tiên sai: che lò để né một bong bóng");
+test("C-4 tránh vòng lò mà vẫn trên đầu", () => {
+  // Che vòng độ giòn lúc ổ sắp sém là mất thứ duy nhất báo nó sắp cháy (CANON T5).
+  const oven = { x0: 354, x1: 446, y0: 214, y1: 290 };
+  const [s] = stackBubbles([ask(400, 300)], V, [oven]);
+  assert.ok(!hit(boxOf(s), oven), `vẫn đè lò: ${JSON.stringify(s)}`);
+  assert.ok(onHead(s, ask(400, 300)));
 });
 
-test("C-6 đã dời đi rồi thì ĐỨNG YÊN — chỗ cũ còn sạch là không được nhảy đi đâu nữa", () => {
-  /**
-   * Lỗi người chơi báo: "npc nói chuyện lúc đứng ở quầy hàng hiển thị hội thoại bay lung
-   * tung hết". `keepOut` là ĐỘNG — nó gồm trạm người chơi đang đứng cạnh, mà người chơi
-   * thì bước dọc quầy. Mỗi lần nó đổi, hàm này lại chọn ra một chỗ sạch KHÁC.
-   *
-   * Nên chỗ frame trước được thử TRƯỚC: còn sạch thì giữ nguyên, bất kể lúc này có chỗ
-   * nào khác cũng sạch.
-   */
-  const blocker = boxAt(400, 300);
-  const lifted = pickBubbleSpot({ x: 400, y: 300 }, SIZE, V, [blocker]);
-  const prev = { dx: lifted.x - 400, dy: lifted.y - 300 };
-  assert.notEqual(prev.dy, 0, "chưa bị đẩy đi đâu thì test này không kiểm được gì");
-
-  const again = pickBubbleSpot({ x: 400, y: 300 }, SIZE, V, [], [], prev);
-  assert.deepEqual(again, lifted, "vật cản vừa hết là bong bóng nhảy ngay về chỗ cũ");
+test("C-5 đã dạt sang một phía thì giữ phía đó, không đổi qua lại theo từng frame", () => {
+  const other = ask(400, 300);
+  const [, moved] = stackBubbles([other, ask(430, 300)], V);
+  assert.notDeepEqual({ side: moved.side, level: moved.level }, { side: 0, level: 0 }, "chưa phải né thì test không kiểm được gì");
+  // Người kia bước sang bên kia: phía cũ vẫn sạch thì giữ.
+  const [, again] = stackBubbles([ask(330, 300), ask(430, 300, moved)], V);
+  assert.deepEqual({ side: again.side, level: again.level }, { side: moved.side, level: moved.level });
 });
 
-test("C-7 nhưng dính KHÔNG phải dán chết: chỗ cũ bị chặn thì vẫn phải dời đi", () => {
-  /**
-   * Nửa còn lại. Dính bằng 0 điểm xấu là dính vĩnh viễn — che mất cái vòng độ giòn lúc ổ
-   * sắp cháy thì không gì gỡ được nữa, mà đó đúng là thứ `keepOut` sinh ra để tránh.
-   */
-  const oven = boxAt(400, 200, 92, 76);
-  const prev = { dx: 0, dy: 0 };
-  const spot = pickBubbleSpot({ x: 400, y: 200 }, SIZE, V, [], [oven], prev);
-  assert.ok(!hit(boxAt(spot.x, spot.y), oven), `dính chết vào chỗ che lò: (${spot.x}, ${spot.y})`);
-
-  const wall = boxAt(400, 140);
-  const s2 = pickBubbleSpot({ x: 400, y: 200 }, SIZE, V, [wall], [oven], { dx: 0, dy: -60 });
-  assert.ok(!hit(boxAt(s2.x, s2.y), oven), "ưu ái chỗ cũ tới mức che mất cái lò");
+test("C-6 chỗ gốc trống lại thì về chỗ gốc", () => {
+  const [s] = stackBubbles([ask(400, 300, { side: 1, level: 1 })], V);
+  assert.deepEqual({ side: s.side, level: s.level }, { side: 0, level: 0 });
 });
 
-test("C-5 không có chỗ nào sạch thì vẫn phải trả về một chỗ TRONG khung, không treo máy", () => {
-  const wall = Array.from({ length: 9 }, (_, i) => boxAt(400, 30 + i * 50));
-  const spot = pickBubbleSpot({ x: 400, y: 300 }, SIZE, V, wall);
-  const g = boxAt(spot.x, spot.y);
-  assert.ok(Number.isFinite(spot.x) && Number.isFinite(spot.y), "trả về toạ độ không hợp lệ");
-  assert.ok(g.x0 >= V.left && g.x1 <= V.right, "chen chúc xong thì văng ra ngoài khung");
+test("C-8 hết chỗ sạch thì đứng yên ở chỗ cũ, không giật qua lại mỗi frame", () => {
+  const wall = [{ x0: 0, x1: 800, y0: 0, y1: 310 }];
+  const prev = { side: 0.5, level: 1 };
+  const [s] = stackBubbles([ask(400, 300, prev)], V, wall);
+  assert.deepEqual({ side: s.side, level: s.level }, prev);
+});
+
+test("C-9 sát mép trên thì không nâng tầng ra khỏi khung", () => {
+  const [, s] = stackBubbles([ask(400, 70), ask(420, 70)], V);
+  assert.ok(s.y - H >= V.top, `lòi khỏi mép trên: ${JSON.stringify(s)}`);
+});
+
+test("C-7 không chỗ nào sạch thì vẫn trả chỗ hợp lệ trên đầu", () => {
+  const wall = Array.from({ length: 9 }, (_, i) => ({ x0: 0, x1: 800, y0: i * 50, y1: i * 50 + 40 }));
+  const [s] = stackBubbles([ask(400, 300)], V, wall);
+  assert.ok(Number.isFinite(s.x) && Number.isFinite(s.y) && onHead(s, ask(400, 300)));
 });
 
 // ──────────────────── D — thẻ trò chuyện không được NHẢY giữa hai nhịp

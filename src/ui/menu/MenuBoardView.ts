@@ -12,10 +12,9 @@ const STYLE = `
 .mb-card{display:flex;flex-direction:column;gap:12px;width:min(940px,100%);max-height:100%;min-height:0}
 .mb-cols{display:flex;gap:16px;align-items:stretch;flex:1;min-height:0}
 
-.mb-board{position:relative;display:flex;flex-direction:column;flex:0 0 clamp(290px,36%,380px);background:#a83226;border:7px solid #6f6256;border-radius:4px;box-shadow:0 14px 40px rgba(0,0,0,.5);color:#f8d978;transform:rotate(-.4deg)}
-.mb-board::after{content:"";position:absolute;inset:4px;border:1px solid rgba(248,217,120,.35);border-radius:2px;pointer-events:none}
-.mb-board-in{display:flex;flex-direction:column;flex:1;min-height:0;overflow:auto;padding:16px 18px 14px}
-.mb-nail{position:absolute;top:-4px;left:50%;width:9px;height:9px;margin-left:-4px;border-radius:50%;background:#d9d2c4;box-shadow:0 1px 2px rgba(0,0,0,.6)}
+.mb-board{position:relative;display:flex;flex-direction:column;flex:0 0 clamp(290px,36%,380px);margin-top:46px;border:solid transparent;border-width:34px;border-image:url(art/menu_khung.webp) 46 fill/34px stretch;color:#f8d978;filter:drop-shadow(0 14px 22px rgba(0,0,0,.5))}
+.mb-board-in{display:flex;flex-direction:column;flex:1;min-height:0;overflow:auto;padding:4px 6px 2px}
+.mb-day{position:absolute;left:50%;bottom:calc(100% + 31px);width:min(280px,76%);aspect-ratio:399/83;transform:translateX(-50%);background:url(art/menu_day.webp) center/100% 100% no-repeat;pointer-events:none}
 .mb-ten{font-weight:700;font-size:1.4em;letter-spacing:.05em;line-height:1.2;text-shadow:0 1px 0 rgba(0,0,0,.35)}
 .mb-gio{font-size:.88em;font-weight:500;letter-spacing:.1em;color:#ffe3a3;margin-top:3px}
 .mb-ke{height:2px;background:#f8d978;opacity:.7;margin:10px 0 6px}
@@ -32,9 +31,9 @@ const STYLE = `
 .mb-chan{margin-top:auto;padding-top:14px;border-top:1px solid rgba(248,217,120,.3);font-size:.88em;line-height:1.6}
 .mb-chan b{color:#fff2c6}
 
-.mb-giay{position:relative;display:flex;flex-direction:column;flex:1 1 auto;min-width:0;background:#f6f0e1;border-radius:3px;box-shadow:0 10px 30px rgba(0,0,0,.4);transform:rotate(.3deg)}
-.mb-giay-in{flex:1;min-height:0;overflow:auto;padding:18px 22px 20px 30px;background-image:linear-gradient(90deg,transparent 16px,rgba(176,52,42,.45) 16px 17px,transparent 17px)}
-.mb-bang{position:absolute;top:-11px;left:30px;width:74px;height:22px;background:rgba(222,210,180,.8);border:1px solid rgba(0,0,0,.08);transform:rotate(-3deg)}
+.mb-giay{position:relative;display:flex;flex-direction:column;flex:1 1 auto;min-width:0;border:solid transparent;border-width:16px;border-image:url(art/menu_giay.webp) 22 fill/16px stretch;filter:drop-shadow(0 10px 18px rgba(0,0,0,.4))}
+.mb-giay-in{flex:1;min-height:0;overflow:auto;margin-top:40px;padding:4px 8px 6px 46px}
+.mb-bang{position:absolute;top:-52px;left:-36px;width:124px;height:98px;background:url(art/menu_bang_dan.webp) center/100% 100% no-repeat;pointer-events:none;z-index:1}
 .mb-h{font-weight:700;font-size:1.25em;margin:0 0 12px;padding-bottom:7px;border-bottom:2px solid #2b2f31}
 .mb-h2{font-size:.82em;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#8e2a20;margin:18px 0 6px}
 .mb-h2.dau{margin-top:0}
@@ -62,8 +61,8 @@ const STYLE = `
   .mb-mon{padding:7px 0}
 }
 @media (max-width:760px){
-  .mb-cols{flex-direction:column;overflow:auto}
-  .mb-board,.mb-giay{flex:0 0 auto;transform:none}
+  .mb-cols{flex-direction:column;overflow:auto;gap:34px}
+  .mb-board,.mb-giay{flex:0 0 auto}
   .mb-board-in,.mb-giay-in{overflow:visible}
 }
 `;
@@ -148,7 +147,7 @@ export class MenuBoardView {
 
   private board(): HTMLElement {
     const b = this.el("div", "mb-board");
-    b.appendChild(this.el("div", "mb-nail"));
+    b.appendChild(this.el("div", "mb-day"));
     const inner = this.el("div", "mb-board-in");
 
     // Phải trùng tên trên biển ngoài vách (`art/sign.ts`).

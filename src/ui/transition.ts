@@ -5,6 +5,8 @@ import type Phaser from "phaser";
 
 const SHUTTER_MS = 900;
 const NIGHT_MS = 800;
+const HOLD_MS = 700;
+const FADE_MS = 700;
 
 const el = (id: string) => document.getElementById(id) as HTMLElement | null;
 const wait = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
@@ -20,6 +22,22 @@ export async function shutterUp(scene: Phaser.Scene) {
   sfx.play(scene, "sfx_cua_cuon");
   el("shutter")?.classList.remove("down");
   await wait(ms(SHUTTER_MS));
+}
+
+/** Cửa đã đóng: giữ một nhịp rồi mờ ra, không kéo lên. */
+export async function shutterHold() {
+  await wait(ms(HOLD_MS));
+}
+
+export async function shutterFade() {
+  const shutter = el("shutter");
+  if (!shutter) return;
+  shutter.classList.add("fade");
+  await wait(ms(FADE_MS));
+  shutter.style.transition = "none";
+  shutter.classList.remove("down", "fade");
+  void shutter.offsetWidth;
+  shutter.style.transition = "";
 }
 
 export async function nightIn(label: string) {

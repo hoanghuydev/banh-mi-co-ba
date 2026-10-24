@@ -46,7 +46,8 @@ import { Grip, RUN_TEMPO, WALK_TEMPO } from "../sim/grip";
 import { orderDefectKey } from "../core/stimid";
 import type { Occluder } from "../sim/perception";
 import { presetDish, type Preset } from "../sim/presets";
-import { CustomerActor, OVERLAY_DEPTH, setBubbleKeepOut, type BubbleKeepOutBox } from "../entities/CustomerActor";
+import { BUBBLE_DEPTH, CustomerActor } from "../entities/CustomerActor";
+import type { Box } from "../world/bubbleLayout";
 import { AssemblyPanel } from "../ui/AssemblyPanel";
 import { TH, TW, depthOf, facingOf8, toScreen } from "../world/iso";
 import { COUNTER_Y } from "../world/map";
@@ -106,8 +107,6 @@ const FLY_MAX = 5;
 const ACH_TOAST_GAP_MS = 2800;
 const FLY_TILT = 0.6;
 const FLY_DIRT_MIN = 0.35;
-// Dải trên cùng bị HUD che (px màn hình game).
-const HUD_BAND_H = 72;
 /** Bằng số ngăn lò: rổ đỡ một mẻ, không phải kho bánh. */
 const BASKET_SLOTS = 3;
 /** Đo dọc mặt quầy chạy chéo, lệch cả hai trục theo tỉ lệ iso 2:1. */
@@ -389,6 +388,9 @@ export class StallScene extends Phaser.Scene {
       telemetry.bubblePoolSteals++;
       bus.emit("telemetry:mark", { key: "bubble.steal", value: 1 });
     });
+    // Xếp bong bóng sau khi camera cuộn xong frame, không thì kẹp theo khung frame trước.
+    this.cam.world.on(Phaser.Cameras.Scene2D.Events.FOLLOW_UPDATE, () =>
+      this.bubbles.layout(this.cam.world.worldView, this.bubbleKeepOut(), this.time.now, this.settings.reducedMotion));
 
     const w = this.world;
     if (!this.resumed && w.flags.lateOpenDay === w.progress.dayIndex && this.clock.minutes < 8 * 60) {
@@ -903,7 +905,6 @@ export class StallScene extends Phaser.Scene {
     this.tap?.update(dt, !this.paused && !this.closed && this.busy?.st.id === "sink", this.settings.reducedMotion);
     this.player.draw(this.settings.reducedMotion, this.keys.C.isDown, this.settings.playerMarker !== false);
     this.drawPlayerBubble();
-    setBubbleKeepOut(this.bubbleKeepOut());
     for (const a of this.actors.values()) a.draw(this.settings.reducedMotion, this.time.now, this.elapsed);
     this.moneyPops.update(this.tickPopClock(), this.settings.reducedMotion);
     this.drawTalkTarget();
@@ -1752,18 +1753,14 @@ export class StallScene extends Phaser.Scene {
     if (!p || this.elapsed >= p.until) {
       if (this.playerSay) this.playerSay = null;
       this.bubbles.release("player", this.settings.reducedMotion);
-      return;
-    }
-    const b = this.bubbles.acquire("player");
-    b.setText(p.text);
+    } else this.bubbles.acquire("player").setText(p.text);
     const { sx, sy } = toScreen(this.player.x, this.player.y);
-    b.place(sx, footY(sy) - HEAD_PX - 46, OVERLAY_DEPTH + 2, 1, this.settings.reducedMotion);
+    this.bubbles.anchor("player", sx, footY(sy) - HEAD_PX - 46, BUBBLE_DEPTH);
   }
 
-  /** ⚠️ CỐ Ý ngắn và ĐỘNG: liệt kê cả cái quầy thì bong bóng rời hẳn khỏi người đang nói. Chỉ ba thứ. */
-  private bubbleKeepOut(): BubbleKeepOutBox[] {
-    const v = this.cameras.main.worldView;
-    const out: BubbleKeepOutBox[] = [{ x0: v.left, x1: v.right, y0: v.top - 80, y1: v.top + HUD_BAND_H / ZOOM }];
+  /** Chỉ thứ đổi theo trạng thái món, không theo chỗ người chơi đứng, kẻo bong bóng nhảy theo bước chân. */
+  private bubbleKeepOut(): Box[] {
+    const out: Box[] = [];
     const at = (tx: number, ty: number, w = 92, h = 76) => {
       const { sx, sy } = toScreen(tx + 0.5, ty + 0.5);
       const y = footY(sy);
@@ -1777,7 +1774,6 @@ export class StallScene extends Phaser.Scene {
       const st = STATIONS.find((x) => x.id === "board");
       if (st) at(st.tx, st.ty);
     }
-    if (this.near) at(this.near.tx, this.near.ty);
     return out;
   }
 

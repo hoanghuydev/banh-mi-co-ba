@@ -22,7 +22,7 @@ import { DEFAULT_SHOP_NAME } from "../content/shop";
 import { phoneTick, type PhoneState } from "../sim/phone";
 import { sfx } from "../audio/sfx";
 import { paintTick, showLoading } from "../ui/bootScreen";
-import { nightIn, shutterDown, shutterUp } from "../ui/transition";
+import { nightIn, shutterDown, shutterFade, shutterHold } from "../ui/transition";
 
 /** Scene thường trực sở hữu `GameContext`, không bao giờ restart; scene con nhận ctx lúc launch và chỉ phát event. */
 export type DayStart = { mode: "new"; shopName?: string; phone?: PhoneState } | { mode: "continue" };
@@ -139,10 +139,9 @@ export class DayScene extends Phaser.Scene {
   }
 
   private closeShop() {
-    void shutterDown(this).then(() => {
-      if (!this.sys.isActive()) return;
-      this.launch("evening", {});
-      void shutterUp(this);
+    void shutterDown(this).then(shutterHold).then(() => {
+      if (this.sys.isActive()) this.launch("evening", {});
+      void shutterFade();
     });
   }
 
