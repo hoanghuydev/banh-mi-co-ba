@@ -55,23 +55,61 @@ async function networkFirst(req) {
   }
 }
 
-const filling = new Set();
+/** Mỗi file đang tải bản đủ: `take` trao luồng gốc cho đúng một trang, bản sao đi vào cache. */
+const filling = new Map();
 
-/** Nhạc phát qua <audio> xin từng khúc (Range): có bản đủ trong cache thì cắt đúng khúc trả 206; chưa có thì đi mạng và tải bản đủ về sau. */
+function download(e, url) {
+  let job = filling.get(url);
+  if (job) return job;
+  const res = fetch(url).then((r) => (r.status === 200 ? r : null), () => null);
+  const stored = res.then((r) => {
+    if (!r) return;
+    const copy = r.clone();
+    return caches.open(STATIC).then((c) => c.put(url, copy));
+  }).catch(() => {}).finally(() => filling.delete(url));
+  let taken = false;
+  job = { res, stored, take: () => !taken && (taken = true) };
+  filling.set(url, job);
+  e.waitUntil(stored);
+  return job;
+}
+
+/** Khúc nhỏ (Safari dò `bytes=0-1`) đi mạng thẳng, khỏi chờ tải đủ. */
+const PROBE_MAX = 65536;
+
+function partial(body, type, start, end, size) {
+  return new Response(body, {
+    status: 206,
+    headers: {
+      "Content-Type": type || "audio/mpeg",
+      "Content-Range": `bytes ${start}-${end}/${size}`,
+      "Content-Length": String(end - start + 1),
+      "Accept-Ranges": "bytes",
+    },
+  });
+}
+
+/** Nhạc phát qua <audio> xin từng khúc (Range): mỗi file chỉ tải bản đủ một lần, khúc nào cũng cắt từ bản đó trả 206. */
 async function ranged(e) {
   const req = e.request;
   const cache = await caches.open(STATIC);
-  const hit = await cache.match(req.url, { ignoreVary: true });
+  const m = /^bytes=(\d*)-(\d*)$/.exec(req.headers.get("range").trim());
+  let hit = await cache.match(req.url, { ignoreVary: true });
   if (!hit) {
-    if (!filling.has(req.url)) {
-      filling.add(req.url);
-      e.waitUntil(fetch(req.url).then((res) => (res.status === 200 ? cache.put(req.url, res) : null)).catch(() => {}).finally(() => filling.delete(req.url)));
+    const job = download(e, req.url);
+    if (m && m[1] !== "" && m[2] !== "" && Number(m[2]) - Number(m[1]) < PROBE_MAX) return fetch(req);
+    if (m && m[1] === "0") {
+      const r = await job.res;
+      const size = Number(r?.headers.get("Content-Length"));
+      const fits = size > 0 && !r.headers.get("Content-Encoding") && (m[2] === "" || Number(m[2]) >= size - 1);
+      if (fits && job.take()) return partial(r.body, r.headers.get("Content-Type"), 0, size - 1, size);
     }
-    return fetch(req);
+    await job.stored;
+    hit = await cache.match(req.url, { ignoreVary: true });
+    if (!hit) return fetch(req);
   }
   const blob = await hit.blob();
   const size = blob.size;
-  const m = /^bytes=(\d*)-(\d*)$/.exec(req.headers.get("range").trim());
   let start = 0, end = size - 1;
   if (m && m[1] !== "") {
     start = Number(m[1]);
@@ -80,15 +118,7 @@ async function ranged(e) {
     start = Math.max(0, size - Number(m[2]));
   }
   if (!m || start > end) return new Response(null, { status: 416, headers: { "Content-Range": `bytes */${size}` } });
-  return new Response(blob.slice(start, end + 1), {
-    status: 206,
-    headers: {
-      "Content-Type": hit.headers.get("Content-Type") || "audio/mpeg",
-      "Content-Range": `bytes ${start}-${end}/${size}`,
-      "Content-Length": String(end - start + 1),
-      "Accept-Ranges": "bytes",
-    },
-  });
+  return partial(blob.slice(start, end + 1), hit.headers.get("Content-Type"), start, end, size);
 }
 
 self.addEventListener("fetch", (e) => {
