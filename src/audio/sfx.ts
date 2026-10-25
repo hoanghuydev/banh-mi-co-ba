@@ -90,6 +90,9 @@ type Loop = {
   pan: number;
   crowd: boolean;
   stopAtZero: boolean;
+  /** Giá trị đã ghi xuống AudioParam; `loop()` gọi mỗi frame nên chỉ ghi khi đổi. */
+  outVol: number;
+  outPan: number;
 };
 
 type Opts = {
@@ -282,7 +285,7 @@ class SfxDirector {
     const snd = scene.sound.add(key, { loop: true, volume: 0 }) as Loop["sound"];
     const l: Loop = {
       sound: snd, bus: e.bus, level: 0, target: 0, rate: 0,
-      pan: o.pan ?? 0, crowd: id === ("amb_crowd"), stopAtZero: false,
+      pan: o.pan ?? 0, crowd: id === ("amb_crowd"), stopAtZero: false, outVol: NaN, outPan: NaN,
     };
     this.loops.set(id, l);
     snd.play();
@@ -370,8 +373,10 @@ class SfxDirector {
   private applyLoopGain(l: Loop) {
     const sub = l.crowd ? this.crowdVol : 1;
     const duck = this.voiceLeft > 0 ? (l.crowd ? CROWD_DUCK : VOICE_DUCK[l.bus]) : 1;
-    l.sound.setVolume(l.level * this.vol[l.bus] * CEILING[l.bus] * sub * duck);
-    this.setPan(l.sound as Phaser.Sound.BaseSound, l.pan);
+    const vol = l.level * this.vol[l.bus] * CEILING[l.bus] * sub * duck;
+    if (vol !== l.outVol) { l.outVol = vol; l.sound.setVolume(vol); }
+    const pan = this.mono ? 0 : Math.max(-1, Math.min(1, l.pan));
+    if (pan !== l.outPan) { l.outPan = pan; this.setPan(l.sound as Phaser.Sound.BaseSound, pan); }
   }
 
   private dropLoop(l: Loop) {

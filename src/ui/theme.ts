@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { loadSettings } from "../core/save";
+import { settings } from "../core/flags";
 import { sfx } from "../audio/sfx";
 import { MIN_FONT, MIN_TOUCH, designFor, fitScale, isTouch } from "../core/device";
 import { ZOOM } from "../world/camera";
@@ -51,7 +51,7 @@ export function hintedButtonHeight(maxScale = 1.5) {
 }
 
 export function textScale() {
-  return loadSettings().textScale;
+  return settings().textScale;
 }
 
 export function label(

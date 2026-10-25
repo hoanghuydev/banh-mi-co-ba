@@ -148,6 +148,7 @@ export class Hud {
   private scene: Phaser.Scene;
   private m!: Metrics;
   private lastUpdate: Parameters<Hud["update"]>[0] | null = null;
+  private statKey = "";
 
   constructor(scene: Phaser.Scene, private settings: Settings, private onPause?: () => void, private onPhone?: () => void) {
     this.scene = scene;
@@ -327,6 +328,7 @@ export class Hud {
     this.carryNums = [];
     this.carryBg.clear();
     this.saveDot.setPosition(GAME_W - 14, GAME_H - 14);
+    this.statKey = "";
     if (this.lastUpdate) this.update(this.lastUpdate);
   }
 
@@ -465,15 +467,19 @@ export class Hud {
   }) {
     this.lastUpdate = s;
     const m = Math.floor(s.clock.minutes);
-    const hhmm = `${Math.floor(m / 60)}h${String(m % 60).padStart(2, "0")}`;
-    const slow = this.settings.noTimePressure ? " · thong thả" : "";
-    const money = `${s.money.toLocaleString("vi-VN")}₫`;
-    if (this.m.touch) {
-      this.left.setText(`Ngày ${s.day} · ${hhmm}${slow}`);
-      this.right.setText(money);
-    } else {
-      this.left.setText(`ngày ${s.day}\n${hhmm} · ${BAND_LABEL[s.clock.band]}${slow}`);
-      this.right.setText(`${money}\nđã bán ${s.served} ổ`);
+    const statKey = `${s.day}|${m}|${s.clock.band}|${s.money}|${s.served}|${this.m.touch}`;
+    if (statKey !== this.statKey) {
+      this.statKey = statKey;
+      const hhmm = `${Math.floor(m / 60)}h${String(m % 60).padStart(2, "0")}`;
+      const slow = this.settings.noTimePressure ? " · thong thả" : "";
+      const money = `${s.money.toLocaleString("vi-VN")}₫`;
+      if (this.m.touch) {
+        this.left.setText(`Ngày ${s.day} · ${hhmm}${slow}`);
+        this.right.setText(money);
+      } else {
+        this.left.setText(`ngày ${s.day}\n${hhmm} · ${BAND_LABEL[s.clock.band]}${slow}`);
+        this.right.setText(`${money}\nđã bán ${s.served} ổ`);
+      }
     }
     this.drawStats();
     this.placeBadges();

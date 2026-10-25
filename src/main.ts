@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { GAME_W, GAME_H } from "./core/config";
 import { RENDER_SCALE, installTextResolution } from "./core/render";
 import { BUILD_TIME, DEV_TOOLS } from "./core/flags";
+import { FPS_LIMIT, installPhaserPatches } from "./core/phaserPatches";
 import "./core/session";
 import { BootScene } from "./scenes/BootScene";
 import { MenuScene } from "./scenes/MenuScene";
@@ -24,6 +25,7 @@ if (import.meta.env.PROD && "serviceWorker" in navigator) {
 
 // Phải chạy trước khi dựng game: nó thay factory `add.text` của Phaser.
 installTextResolution();
+installPhaserPatches();
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -34,7 +36,7 @@ const game = new Phaser.Game({
   backgroundColor: "#1d232b",
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   render: { pixelArt: false, antialias: true, roundPixels: true, powerPreference: "high-performance" },
-  // Không khoá fps: mọi hệ chạy theo `dt`, 30 fps chỉ là sàn.
+  fps: { target: FPS_LIMIT, limit: FPS_LIMIT },
   scene: [BootScene, MenuScene, IntroScene, DayScene, StallScene, EveningScene, BrokeScene, WinScene],
 });
 

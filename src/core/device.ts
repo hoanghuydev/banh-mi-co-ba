@@ -12,10 +12,21 @@ export const MIN_FONT = 14;
 const hasWindow = typeof window !== "undefined";
 const listeners = new Set<() => void>();
 
+// Gọi mỗi khung cho từng khách nên giữ lại tới lần đổi cỡ kế tiếp; đọc lại DOM là ép layout.
+let viewCache: { w: number; h: number } | null = null;
+let fitCache: number | null = null;
+
+function clearViewCache() {
+  viewCache = null;
+  fitCache = null;
+}
+
 export function viewport(): { w: number; h: number } {
   if (!hasWindow) return { w: GAME_W, h: GAME_H };
+  if (viewCache) return viewCache;
   const v = window.visualViewport;
-  return { w: Math.round(v?.width ?? window.innerWidth), h: Math.round(v?.height ?? window.innerHeight) };
+  viewCache = { w: Math.round(v?.width ?? window.innerWidth), h: Math.round(v?.height ?? window.innerHeight) };
+  return viewCache;
 }
 
 export function orientation(): Orientation {
@@ -49,9 +60,13 @@ export function isTouch(): boolean {
 
 /** Hệ số FIT: pixel CSS thật trên một pixel thiết kế của canvas. */
 export function fitScale(): number {
+  if (fitCache !== null) return fitCache;
   const { w, h } = viewport();
   const host = hasWindow ? document.getElementById("game")?.clientWidth : 0;
-  return Math.min((host || w) / GAME_W, h / GAME_H);
+  // Chưa có khung game thì chưa giữ, để lần sau đo lại.
+  if (!host) return Math.min(w / GAME_W, h / GAME_H);
+  fitCache = Math.min(host / GAME_W, h / GAME_H);
+  return fitCache;
 }
 
 /** Số pixel thiết kế cần để chiếm `cssPx` pixel CSS thật trên canvas. */
@@ -72,6 +87,7 @@ export function onDeviceChange(cb: () => void): () => void {
 /** Gọi khi cài đặt `touchControls` đổi để mọi nơi vẽ lại. */
 export function notifyDeviceChange() {
   clearTouchCache();
+  clearViewCache();
   applyAttrs();
   for (const cb of [...listeners]) cb();
 }
@@ -87,6 +103,7 @@ if (hasWindow) {
   applyAttrs();
   let raf = 0;
   const fire = () => {
+    clearViewCache();
     cancelAnimationFrame(raf);
     raf = requestAnimationFrame(notifyDeviceChange);
   };

@@ -400,6 +400,7 @@ export type DiffedDefect = Defect & { key: string | null; witness: "ANTICIPATED"
 export class Service {
   readonly customers: Customer[] = [];
   private active: ActiveStim[] = [];
+  private readonly obsBefore = new Map<string, ObsState>();
   private schedule: Visit[] = [];
   private barks: Barks;
   readonly speaker: Speaker;
@@ -680,11 +681,12 @@ export class Service {
   /** ⚠️ Không được hoãn — hoãn perception là đổi kết quả game. */
   perceive(dt: number, nowSec: number, occluders: readonly Occluder[] = []) {
     this.nowSec = nowSec;
-    this.active = this.active.filter((s) => s.until > nowSec - 30);
+    if (this.active.some((s) => s.until <= nowSec - 30)) this.active = this.active.filter((s) => s.until > nowSec - 30);
 
+    const before = this.obsBefore;
     for (const c of this.audience) {
       c.traitMul = Math.min(2.2, c.baseTrait * (1 + 0.35 * this.dirt)) - (c.now < c.washRelief ? 0.12 : 0);
-      const before = new Map<string, ObsState>();
+      before.clear();
       for (const [k, o] of c.observations) before.set(k, stateOf(o.certainty));
       observe(c, this.active, nowSec, dt, occluders);
       for (const [key, o] of c.observations) {
@@ -1973,8 +1975,10 @@ export class Service {
     return c.npc ? c.npc.id : c.ambient ? "QUA_DUONG" : "WALKIN";
   }
 
+  /** Dùng ngay trong một lượt lọc rồi bỏ, nên ảnh chụp thế giới dựng một lần cho mọi `holds`. */
   private talkCtx(c: Customer): TalkCtx {
     const m = this.mem(c.memKey);
+    let w: WorldSnapshot | undefined;
     return {
       npcId: this.talkKey(c),
       day: this.deps.day,
@@ -1985,7 +1989,7 @@ export class Service {
       usedBefore: c.npc ? (m.talksDone ?? []) : (this.talkedThisVisit.get(c.id) ?? []),
       hasEquip: (id: string) => has(this.deps.equip, id as EquipId),
       practice: this.practiceOf(c),
-      holds: (key: string) => holds(key, this.snapshot(c)),
+      holds: (key: string) => holds(key, w ??= this.snapshot(c)),
       score: (t) => this.scoreTalk(c, t),
     };
   }

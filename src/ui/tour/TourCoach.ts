@@ -73,6 +73,7 @@ export class TourCoach {
   private dots: HTMLDivElement;
   private dotCount = 0;
   private last = "";
+  private lastGeo = "";
   private who!: HTMLDivElement;
   private okBtn: HTMLButtonElement;
   private onOk: (() => void) | null = null;
@@ -141,6 +142,7 @@ export class TourCoach {
     if (this.root.style.display === "none") return;
     this.root.style.display = "none";
     this.last = "";
+    this.lastGeo = "";
   }
 
   pointEl(el: Element | null, text: string, step?: number, total?: number, shape: CoachShape = "rect", low = false) {
@@ -176,11 +178,16 @@ export class TourCoach {
       this.stepEl.textContent = a.step && a.total ? `việc ${a.step}/${a.total}` : "";
       this.paintDots(a.step ?? 0, a.total ?? 0);
     }
-    this.bub.classList.toggle("strip", isTouch());
-    this.root.style.display = "";
-
     const pad = shape === "circle" ? 10 : 8;
     const x = a.x - pad, y = a.y - pad, w = a.w + pad * 2, h = a.h + pad * 2;
+    // Gọi mỗi khung: chỉ ghi style và đo lại khi lỗ, chữ hoặc khung nhìn đổi, tránh ép layout.
+    const touch = isTouch();
+    const geo = `${this.last}|${Math.round(x)},${Math.round(y)},${Math.round(w)},${Math.round(h)}|${a.low}|${touch}|${window.innerWidth}x${window.innerHeight}`;
+    if (geo === this.lastGeo) return;
+    this.lastGeo = geo;
+    this.bub.classList.toggle("strip", touch);
+    this.root.style.display = "";
+
     const s = this.hole.style;
     s.left = `${Math.round(x)}px`;
     s.top = `${Math.round(y)}px`;

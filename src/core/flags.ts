@@ -66,7 +66,9 @@ export const DEFAULT_SETTINGS: Settings = {
 /** Cài đặt sống độc lập với save. */
 const SKEY = "byesep.settings.v1";
 
-export function loadSettings(): Settings {
+let cached: Settings | null = null;
+
+function readSettings(): Settings {
   const raw = platform.read(SKEY);
   if (!raw) return { ...DEFAULT_SETTINGS };
   try {
@@ -78,15 +80,24 @@ export function loadSettings(): Settings {
   }
 }
 
+/** Bản đọc chung, không được sửa; cần sửa thì dùng `loadSettings()`. */
+export function settings(): Readonly<Settings> {
+  return (cached ??= readSettings());
+}
+
+export function loadSettings(): Settings {
+  return { ...settings() };
+}
+
+if (typeof window !== "undefined") window.addEventListener("storage", (e) => { if (e.key === SKEY) cached = null; });
+
 const savedListeners = new Set<() => void>();
 
 export function onSettingsSaved(cb: () => void) { savedListeners.add(cb); }
 
 export function saveSettings(s: Settings) {
   platform.write(SKEY, JSON.stringify(s));
+  cached = { ...s };
   for (const cb of savedListeners) cb();
 }
 
-export const flags = {
-  get a11y(): Settings { return loadSettings(); },
-};

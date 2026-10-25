@@ -221,7 +221,9 @@ export const DAY_SNAPSHOT_KEEP = 2;
 export type DayStartSnapshot = { key: string; dayIndex: number; payload: SaveFile };
 
 export class SaveService {
+  /** Bản chụp chốt ở lúc chuyển cảnh; `dirty` thì bản mới hơn còn trong `world`. */
   private pending: SaveFile | null = null;
+  private dirty = false;
   private handle: number | null = null;
   private slot: "A" | "B";
   forcedWrites = 0;
@@ -239,8 +241,9 @@ export class SaveService {
     return this.readMeta()?.schemaVersion === SCHEMA_VERSION;
   }
 
+  /** Chỉ đánh dấu; chụp và ghi lúc rảnh, nên nhiều yêu cầu dồn lại thành một lần chụp. */
   request(reason: AutosaveReason) {
-    this.pending = this.snapshot();
+    this.dirty = true;
     this.bus.emit("save:autosaveRequested", { reason });
     if (this.handle !== null) return;
 
@@ -257,11 +260,17 @@ export class SaveService {
     }
   }
 
-  /** Luôn chụp lại vì `request()` đang chờ có thể giữ bản chụp cũ. */
   flushNow(reason: AutosaveReason = "QUIT") {
-    this.pending = this.snapshot();
+    this.dirty = true;
     this.bus.emit("save:autosaveRequested", { reason });
     this.flush();
+  }
+
+  /** Gọi trước khi đổi cảnh: yêu cầu đang chờ phải chụp trạng thái của cảnh cũ. */
+  capture() {
+    if (!this.dirty) return;
+    this.pending = this.snapshot();
+    this.dirty = false;
   }
 
   private flush() {
@@ -271,8 +280,9 @@ export class SaveService {
       g.clearTimeout?.(this.handle);
       this.handle = null;
     }
-    const snap = this.pending;
+    const snap = this.dirty ? this.snapshot() : this.pending;
     this.pending = null;
+    this.dirty = false;
     if (!snap) return;
 
     const t0 = now();
@@ -333,6 +343,7 @@ export class SaveService {
 
   clear() {
     this.pending = null;
+    this.dirty = false;
     for (const k of [K.slotA, K.slotB, K.meta]) this.platform.remove(k);
     for (const k of this.platform.keys(`${PREFIX}day.`)) this.platform.remove(k);
   }

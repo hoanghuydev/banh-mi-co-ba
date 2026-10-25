@@ -214,11 +214,11 @@ export class TouchControls {
 
     const a = v.action;
     this.setText(this.act, a.text);
-    this.act.hidden = !a.enabled && !this.act.classList.contains("on");
+    hide(this.act, !a.enabled && !this.act.classList.contains("on"));
     this.act.classList.toggle("hold", a.hold);
-    this.runBtn.hidden = !v.run;
+    hide(this.runBtn, !v.run);
     this.ctxKind = v.ctx?.kind ?? null;
-    this.ctxBtn.hidden = !v.ctx;
+    hide(this.ctxBtn, !v.ctx);
     if (v.ctx) this.setText(this.ctxBtn, v.ctx.text);
   }
 
@@ -237,3 +237,7 @@ export class TouchControls {
   }
 }
 
+/** Ghi `hidden` cùng giá trị vẫn là một lần đổi thuộc tính, làm trình duyệt tính lại style. */
+function hide(e: HTMLElement, v: boolean) {
+  if (e.hidden !== v) e.hidden = v;
+}

@@ -9,6 +9,7 @@ import { loadSettings, type Settings } from "../core/save";
 import { DEV_TOOLS, PLAYTEST } from "../core/flags";
 import { telemetry } from "../core/session";
 import { Service, bubbleLife } from "../sim/service";
+import type { Customer } from "../sim/customer";
 import { SALIENCE } from "../sim/perception";
 import { runFrame } from "../sim/frame";
 import { cool, isWarm } from "../sim/loaf";
@@ -834,7 +835,6 @@ export class StallScene extends Phaser.Scene {
     runFrame({
       clock: (raw) => {
         frameDeltas.push(raw);
-        if (frameDeltas.length > 5400) frameDeltas.shift();
         this.clock.busy = this.service.busy || this.talkHoldsClock;
         // dt = 0 thì `runFrame` bỏ qua cả frame, đóng băng mọi hệ.
         if (this.tourHolding() || this.eyeLesson) return 0;
@@ -939,6 +939,7 @@ export class StallScene extends Phaser.Scene {
 
   /** Chỉ đọc state rồi vẽ; `dt` là giây thật, 0 khi pause. */
   private renderSync(dt: number) {
+    this.talkAimNow = null;
     const p = toScreen(this.player.x, this.player.y);
     this.cam.lookAt(p.sx, footY(p.sy));
     this.syncActors();
@@ -1016,7 +1017,7 @@ export class StallScene extends Phaser.Scene {
 
   /** Thứ tự nhánh là thứ tự ưu tiên, việc gấp nhất trước. */
   private promptLine(): string | null {
-    const waiting = this.service.talkTargetNow;
+    const waiting = this.talkAim().who;
     if (waiting && !this.talk.isOpen && this.service.pendingTalkers.includes(waiting.id)) {
       return `${this.service.label(waiting)} đang chờ mình trả lời${hint(" — bấm F", "")}`;
     }
@@ -1037,9 +1038,9 @@ export class StallScene extends Phaser.Scene {
       return this.boardPrompt() ?? (this.player.hand === "empty" ? `thớt${hint(" — bấm E để lau thớt", " — lau thớt")}${slow}` : null);
     }
     if (this.nearMenuBoard()) return hint("bảng menu — bấm E đọc công thức", "bảng menu — đọc công thức");
-    const who = this.service.talkTargetNow;
+    const who = waiting;
     if (who && !this.talk.isOpen) {
-      return this.service.talkVerb(who) === "mời"
+      return this.talkVerb() === "mời"
         ? hint(`F — mời ${this.service.label(who)} ghé mua`, `mời ${this.service.label(who)} ghé mua`)
         : hint(`F — nói chuyện với ${this.service.label(who)}`, `nói chuyện với ${this.service.label(who)}`);
     }
@@ -1076,14 +1077,26 @@ export class StallScene extends Phaser.Scene {
     return none;
   }
 
+  /** Người đang nhắm để nói chuyện; giữ từ đầu `renderSync` tới hết frame vì nhãn và nút đọc nhiều lần. */
+  private talkAimNow: { who: Customer | null; verb?: "mời" | "nói chuyện" } | null = null;
+
+  private talkAim() {
+    return (this.talkAimNow ??= { who: this.service.talkTargetNow });
+  }
+
+  private talkVerb() {
+    const a = this.talkAim();
+    return a.who ? (a.verb ??= this.service.talkVerb(a.who)) : null;
+  }
+
   private touchView(): TouchView {
     const h = this.player.hand, busy = this.handsBusy;
     const onBoard = this.near?.id === "board";
-    const who = this.service.talkTargetNow;
+    const who = this.talkAim().who;
     const canDiscard = !busy && (h !== "empty" || this.nearestFloor() >= 0 || (onBoard && !!this.boardLoaf));
     const lift = !busy && onBoard && h === "empty" && !!this.boardLoaf && this.boardLoaf.length === 0;
     let ctx: TouchView["ctx"] = null;
-    if (who && !this.talk.isOpen) ctx = { kind: "talk", text: this.service.talkVerb(who) === "mời" ? "Mời khách" : "Nói chuyện" };
+    if (who && !this.talk.isOpen) ctx = { kind: "talk", text: this.talkVerb() === "mời" ? "Mời khách" : "Nói chuyện" };
     else if (lift) ctx = { kind: "lift", text: "Nhấc bánh" };
     else if (canDiscard) ctx = { kind: "discard", text: h === "empty" && this.nearestFloor() >= 0 ? "Nhặt" : "Đặt xuống" };
     return {
@@ -2766,5 +2779,18 @@ export class StallScene extends Phaser.Scene {
 }
 
 /** Khoảng cách giữa các frame (ms) — telemetry đọc để ra fps p5 / frame ms p95. */
-const frameDeltas: number[] = [];
-telemetry.frameSampler = () => ({ frameDeltas: frameDeltas.splice(0) });
+const frameDeltas = (() => {
+  const buf = new Float64Array(5400);
+  let head = 0, n = 0;
+  return {
+    push(v: number) { buf[head] = v; head = (head + 1) % buf.length; n = Math.min(n + 1, buf.length); },
+    /** Cũ trước mới sau, rồi xoá. */
+    take(): number[] {
+      const out: number[] = [];
+      for (let i = head - n; i < head; i++) out.push(buf[(i + buf.length) % buf.length]);
+      n = 0;
+      return out;
+    },
+  };
+})();
+telemetry.frameSampler = () => ({ frameDeltas: frameDeltas.take() });
