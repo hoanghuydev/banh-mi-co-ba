@@ -66,7 +66,7 @@ const TALK_GAIN = 0.62;
 
 const MAX_CONCURRENT = 14;
 
-/** Loop giải mã từ chừng này byte trở lên (≈ 6 s stereo) thì nhả khi tắt; loop ngắn bật tắt liên tục nên giữ. */
+/** Loop giải mã từ chừng này byte trở lên (≈ 6 s stereo) thì nhả khi rời cảnh đã dùng nó. */
 const BED_BYTES = 2 * 1024 * 1024;
 
 /** Cao độ chọn tay để phân biệt NPC; hash cho ra vài cặp sát nhau nghe như một người. */
@@ -125,6 +125,13 @@ class SfxDirector {
   private live = new Set<Phaser.Sound.BaseSound>();
   private now = 0;
   private warned = new Set<string>();
+  /** Loop đang nạp lười, theo cảnh gọi nạp: mỗi id một lượt nạp. */
+  private pending = new Map<string, Phaser.Scene>();
+  /** Cảnh dùng loop gần nhất theo key âm thanh. */
+  private owner = new Map<string, Phaser.Scene>();
+  /** Key mà cảnh dùng nó đã tắt, chờ âm dừng hẳn để nhả bộ nhớ. */
+  private retired = new Set<string>();
+  private hooked = new Set<Phaser.Scene>();
 
   attach(game: Phaser.Game) {
     if (this.game) return;
@@ -271,14 +278,17 @@ class SfxDirector {
     if (!scene) return;
 
     if (cur) {
+      this.own(scene, cur.sound.key);
       cur.pan = o.pan ?? cur.pan;
       if (cur.target !== 1 || cur.stopAtZero) this.fadeLoop(cur, 1, fadeMs, false);
       this.applyLoopGain(cur);
       return;
     }
 
+    if (this.pending.get(id) === scene) return;
     const idx = this.drawVariant(id, e.files.length);
     const key = this.key(id, idx);
+    this.own(scene, key);
     if (!scene.cache.audio.exists(key)) {
       // Nạp lười: fade-in che được độ trễ, đỡ ~4 MB lúc vào quán.
       this.lazyLoad(scene, id, key, () => this.loop(scene, id, true, o, fadeMs));
@@ -354,11 +364,12 @@ class SfxDirector {
   private lazyLoad(scene: Phaser.Scene, id: string, key: string, done: () => void) {
     const e = CATALOG[id];
     const i = Number(key.slice(key.lastIndexOf("_") + 1));
+    this.pending.set(id, scene);
     scene.load.audio(key, e.files[i]);
     scene.load.once(Phaser.Loader.Events.COMPLETE, () => {
+      if (this.pending.get(id) === scene) this.pending.delete(id);
       if (scene.cache.audio.exists(key)) done();
     });
-    scene.load.once(Phaser.Loader.Events.FILE_LOAD_ERROR, () => { });
     if (!scene.load.isLoading()) scene.load.start();
   }
 
@@ -387,15 +398,35 @@ class SfxDirector {
     l.sound.stop();
     l.sound.destroy();
     for (const [k, v] of this.loops) if (v === l) this.loops.delete(k);
-    this.freeBed(key);
+    if (this.retired.has(key)) this.freeBed(key);
   }
 
-  /** Nền âm dài giải mã ra hàng chục MB nên nhả khi tắt; lần sau `loop` tự nạp lại, fade-in che độ trễ. */
+  private own(scene: Phaser.Scene, key: string) {
+    this.owner.set(key, scene);
+    this.retired.delete(key);
+    if (this.hooked.has(scene)) return;
+    this.hooked.add(scene);
+    scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.leave(scene));
+  }
+
+  private leave(scene: Phaser.Scene) {
+    this.hooked.delete(scene);
+    for (const [id, s] of this.pending) if (s === scene) this.pending.delete(id);
+    for (const [key, s] of this.owner) {
+      if (s !== scene) continue;
+      this.owner.delete(key);
+      this.retired.add(key);
+      this.freeBed(key);
+    }
+  }
+
+  /** Nền âm dài giải mã ra hàng chục MB; nhả khi âm đã dừng, lần sau `loop` tự nạp lại. */
   private freeBed(key: string) {
     const cache = this.game?.cache.audio;
-    const buf = cache?.get(key) as AudioBuffer | undefined;
-    if (!cache || !buf?.length || this.game!.sound.getAll(key).some((s) => !s.pendingRemove)) return;
-    if (buf.length * buf.numberOfChannels * 4 >= BED_BYTES) cache.remove(key);
+    if (!cache || this.game!.sound.getAll(key).some((s) => !s.pendingRemove)) return;
+    this.retired.delete(key);
+    const buf = cache.get(key) as AudioBuffer | undefined;
+    if (buf?.length && buf.length * buf.numberOfChannels * 4 >= BED_BYTES) cache.remove(key);
   }
 
   private duckForVoice(seconds: number) {
