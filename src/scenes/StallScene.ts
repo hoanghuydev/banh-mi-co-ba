@@ -81,8 +81,7 @@ import { music, type CueId } from "../audio/music";
 import { StallAudio } from "../audio/stallAudio";
 import { reveal } from "../ui/transition";
 import { ART_SHARE, LOADING, loadingShown, setStep } from "../ui/bootScreen";
-import { runSteps, slice, type Step } from "../art/steps";
-import { WAIT_SLICE_MS } from "./warmup";
+import { boostSlice, runSteps, type Step } from "../art/steps";
 import { holdLoop } from "../core/loopHold";
 
 const WIPE_LABEL = "đang lau thớt";
@@ -291,6 +290,8 @@ export class StallScene extends Phaser.Scene {
 
   private ready = false;
   private buildRun = 0;
+  /** Dọn những gì đã dựng, chạy ngược thứ tự lúc SHUTDOWN dù dựng xong hay dừng giữa chừng. */
+  private undo: (() => void)[] = [];
 
   constructor() { super("stall"); }
 
@@ -348,7 +349,15 @@ export class StallScene extends Phaser.Scene {
     this.ready = false;
     this.sys.setVisible(false);
     const run = ++this.buildRun;
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { if (run === this.buildRun) this.buildRun++; });
+    const hold = `stall-build-${run}`;
+    const release = boostSlice();
+    const done = () => { release(); holdLoop(this.game, hold, false); };
+    this.undo = [];
+    // Trả giữ vòng lặp ở `finally`, không ở đây: thức vòng lặp giữa lúc SceneManager xử lý hàng đợi sẽ chạy lại lệnh start.
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      if (run === this.buildRun) this.buildRun++;
+      for (const f of this.undo.splice(0).reverse()) f();
+    });
     const check = () => { if (run !== this.buildRun) throw STOPPED; };
     const live = (f: Step): Step => () => {
       check();
@@ -357,17 +366,12 @@ export class StallScene extends Phaser.Scene {
     };
     this.begin();
     // Cảnh đang ẩn dưới màn che: tạm dừng vẽ để mỗi lát dựng được nhiều việc hơn.
-    holdLoop(this.game, "stall-build", true);
+    holdLoop(this.game, hold, true);
     const shown = loadingShown();
-    const keep = slice.ms;
-    slice.ms = WAIT_SLICE_MS;
-    void runSteps(this.buildSteps().map(live), undefined,
-      (done, total) => { if (shown && run === this.buildRun) setStep(LOADING, ART_SHARE + (1 - ART_SHARE) * done / total); })
+    void runSteps(this.buildSteps(done).map(live), undefined,
+      (n, total) => { if (shown && run === this.buildRun) setStep(LOADING, ART_SHARE + (1 - ART_SHARE) * n / total); })
       .catch((e) => { if (e !== STOPPED) throw e; })
-      .finally(() => {
-        slice.ms = keep;
-        holdLoop(this.game, "stall-build", false);
-      });
+      .finally(done);
   }
 
   /** Phần dựng làm liền trong `create`, trước các bước chia lát. */
@@ -385,12 +389,24 @@ export class StallScene extends Phaser.Scene {
       indoor: (_wx, wy) => indoorWeight(wy),
       sun: () => 1,
     };
+    this.undo.push(() => {
+      for (const a of this.actors.values()) a.destroy();
+      this.actors.clear();
+    }, () => {
+      for (const f of this.off) f();
+      this.off = [];
+      this.tap?.destroy();
+      this.tap = null;
+      this.settingsDom?.close();
+    });
     this.registry.set(LIGHT_ENV_KEY, env);
+    this.undo.push(() => this.registry.remove(LIGHT_ENV_KEY));
 
     this.floorBake = this.bakeGround();
     const pixels = new TexPixels(this);
     this.light = new SceneLight(this, this.floorBake, env, LIGHT_SS, pixels);
     this.sheen = new PropSheen(this, env, pixels);
+    this.undo.push(() => this.floorBake.destroy(), () => this.light.destroy(), () => this.sheen.destroy());
     // Dọn TRƯỚC `placeProps` — chính nó gọi `addStationLabel` để nạp lại.
     this.labelY.clear();
     this.choreAt.clear();
@@ -399,7 +415,7 @@ export class StallScene extends Phaser.Scene {
     this.floorImgs = [];
   }
 
-  private buildSteps(): Step[] {
+  private buildSteps(done: () => void): Step[] {
     let props!: Phaser.GameObjects.Image[];
     return [
       () => {
@@ -411,9 +427,14 @@ export class StallScene extends Phaser.Scene {
         this.cameras.main.setBackgroundColor(this.raining ? "#5f686c" : "#6f838d");
         this.rain = Rain.for(this, this.world.progress.weather, this.settings.reducedMotion);
         this.daylight = new Daylight(this, this.floorBake, this.raining);
+        this.undo.push(() => this.cam.destroy(), () => {
+          this.rain?.destroy();
+          this.rain = null;
+        }, () => this.daylight.destroy());
       },
       () => {
         this.lamps = new Lamps(this, LAMP_SPOTS, { overcast: this.raining });
+        this.undo.push(() => this.lamps.destroy());
       },
       () => {
         this.ring = this.add.image(0, 0, FX.ring).setOrigin(0.5, 0.5).setVisible(false);
@@ -433,6 +454,10 @@ export class StallScene extends Phaser.Scene {
         this.handSteam = new Steam(this);
         this.boardSteam = new Steam(this);
         this.wipePuff = new WipePuff(this);
+        this.undo.push(() => {
+          this.touch?.destroy();
+          this.touch = null;
+        }, () => this.talk.destroy(), () => this.wipePuff.destroy());
         this.flies = [];
         // `y` là mép dưới texture để `heldFootPad` đặt đáy ổ chạm mặt thớt.
         this.boardLoafImg = fitPhoto(this.add.image(0, 0, HELD.key("loaf_hot")))
@@ -472,6 +497,7 @@ export class StallScene extends Phaser.Scene {
           readMul: (this.settings.textScale > 1 ? 1.25 : 1) * (this.settings.noTimePressure ? 1.5 : 1),
           resumeAt: this.resumed || w.flags.lateOpenDay === w.progress.dayIndex ? this.clock.minutes : undefined,
         });
+        this.undo.push(() => this.service.dispose());
       },
       () => {
         this.assembly = new AssemblyPanel(this,
@@ -560,8 +586,9 @@ export class StallScene extends Phaser.Scene {
 
         this.time.delayedCall(900, () => this.autoPhone());
 
-        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-          this.registry.remove(LIGHT_ENV_KEY);
+        // Ghi lại `world.stall` chỉ khi đã dựng xong: dừng giữa chừng thì nó chưa bị đọc ra.
+        this.undo.push(() => {
+          if (DEV_TOOLS && dev.stall?.service === this.service) dev.stall = null;
           this.coach?.destroy();
           this.coach = null;
           const st = this.world.stall;
@@ -581,31 +608,9 @@ export class StallScene extends Phaser.Scene {
             bus.emit("ui:pauseToggled", { paused: false, source: "MENU" });
           }
           this.audio?.destroy();
-          this.wipePuff.destroy();
-          this.tap?.destroy();
-          this.tap = null;
-          this.rain?.destroy();
-          this.rain = null;
-          this.daylight.destroy();
-          this.lamps.destroy();
-          this.light.destroy();
-          this.floorBake.destroy();
-          this.sheen.destroy();
-          // Listener trên `window`, không gỡ thì Esc màn sau chạy vào thẻ đã chết.
-          this.talk.destroy();
-          this.cam.destroy();
-          for (const f of this.off) f();
-          this.off = [];
-          this.touch?.destroy();
-          this.settingsDom?.close();
-          this.touch = null;
-          this.service.dispose();
-          for (const a of this.actors.values()) a.destroy();
-          this.actors.clear();
-          if (DEV_TOOLS && dev.stall?.service === this.service) dev.stall = null;
         });
         this.ready = true;
-        holdLoop(this.game, "stall-build", false);
+        done();
         this.sys.setVisible(true);
         reveal(this);
       },

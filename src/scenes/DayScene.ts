@@ -21,7 +21,7 @@ import { morning as resellMorning } from "../sim/resell";
 import { DEFAULT_SHOP_NAME } from "../content/shop";
 import { phoneTick, type PhoneState } from "../sim/phone";
 import { sfx } from "../audio/sfx";
-import { ART_SHARE, LOADING, paintTick, setStep, showLoading } from "../ui/bootScreen";
+import { ART_SHARE, LOADING, fadeOut, paintTick, setStep, showLoading } from "../ui/bootScreen";
 import { whenWarm } from "./warmup";
 import { nightIn, shutterDown, shutterFade, shutterHold } from "../ui/transition";
 
@@ -137,9 +137,18 @@ export class DayScene extends Phaser.Scene {
     if (child !== "stall") return this.launch(child, extra);
     const shown = this.entering;
     if (shown) showLoading(LOADING);
-    void whenWarm(shown ? (p) => setStep(LOADING, p * ART_SHARE) : undefined)
+    const warm = () => whenWarm(shown ? (p) => setStep(LOADING, p * ART_SHARE) : undefined);
+    warm()
+      .catch((e) => {
+        console.error("nướng ảnh lỗi, thử lại", e);
+        return warm();
+      })
       .then(paintTick)
-      .then(() => { if (this.sys.isActive()) this.launch(child, extra); });
+      .then(() => { if (this.sys.isActive()) this.launch(child, extra); }, (e) => {
+        console.error("nướng ảnh lỗi, về menu", e);
+        fadeOut();
+        if (this.sys.isActive()) this.quitToMenu();
+      });
   }
 
   private closeShop() {

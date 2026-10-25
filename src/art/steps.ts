@@ -9,8 +9,25 @@ const nextTask = () => new Promise<void>((done) => {
 });
 const now = () => performance.now();
 
-/** Số ms làm liền một mạch trước khi nhường luồng; màn chờ đang hiện thì nâng lên cho nhanh xong. */
-export const slice = { ms: 8 };
+const BASE_SLICE_MS = 8;
+/** Ngân sách mỗi lát khi màn chờ đang che: sát mốc 50 ms của long task để xong sớm. */
+const WAIT_SLICE_MS = 40;
+let boosts = 0;
+
+/** Số ms làm liền một mạch trước khi nhường luồng. */
+export const slice = { ms: BASE_SLICE_MS };
+
+/** Lát dài trong lúc màn chờ che, tới khi mọi lượt nâng đã trả; hàm trả gọi lại nhiều lần vô hại. */
+export function boostSlice() {
+  boosts++;
+  slice.ms = WAIT_SLICE_MS;
+  let given = false;
+  return () => {
+    if (given) return;
+    given = true;
+    if (--boosts === 0) slice.ms = BASE_SLICE_MS;
+  };
+}
 
 /** Chạy hết `steps` theo thứ tự, nhường luồng mỗi khi quá `slice.ms`. */
 export async function runSteps(
