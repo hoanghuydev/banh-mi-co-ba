@@ -17,7 +17,7 @@ SAME = 5.0       # |Δ| trung bình dưới mức này là hai frame trông như
 MIN_SHAPES = 5   # số hình khác nhau tối thiểu trong 8 frame đi
 MOTION = 16.0    # biên độ: |Δ| RGBA trung bình giữa frame liền kề ở cỡ 40×64 (anh Bảo 3D: 18,8–34); dưới mức này trong game trông như đứng yên
 COLOR = 8.0      # lệch màu trung bình so với ảnh đứng im (0–255)
-SIZE = 0.10      # lệch bề ngang đầu so với ảnh đứng im (render 3D anh Bảo tới 6%)
+SIZE = 0.13      # lệch bề ngang đầu so với ảnh đứng im (anh Bảo 3D tới 8%, chú Đạt đã duyệt tới 12%)
 FOOT = 0.05      # đáy chân lệch đáy chung, theo chiều cao ô (3D nhún tới 4%)
 
 
@@ -46,10 +46,11 @@ def mean_rgb(im):
 
 
 def head_w(im):
+    """Trung vị bề ngang trong dải 10–25% trên: một mốc lẻ dễ rơi đúng vành nón hay búi tóc."""
     a = np.asarray(im)[..., 3] > 128
     ys = np.nonzero(a.any(axis=1))[0]
-    top = a[ys[0]: ys[0] + max(1, int((ys[-1] - ys[0]) * 0.15))]
-    return float(np.median(top.sum(axis=1)[-5:]))
+    t, b = ys[0], ys[-1]
+    return float(np.median([a[t + int((b - t) * p)].sum() for p in np.linspace(0.10, 0.25, 16)]))
 
 
 def foot_y(im):
@@ -116,6 +117,15 @@ def main():
             dr.text((3, r * h + 3), d, fill=(255, 255, 255, 255))
         out.convert("RGB").save(sys.argv[2])
         print(f"ảnh soi: {sys.argv[2]} (cột 1 = đứng im, vạch vàng = đáy chân)")
+        # nền hồng tím phóng ×2: nền trắng sót ở khe tay–thân, nách, khe chân nổi hẳn lên
+        keys = [f"idle_{d}_00" for d in DIRS] + [f"walk_{d}_{j:02d}" for d in ("s", "n") for j in (0, 4)]
+        big = Image.new("RGBA", (4 * w * 2, (len(keys) // 4) * h * 2), (200, 0, 160, 255))
+        for i, k in enumerate(keys):
+            f = cells[k].resize((w * 2, h * 2), Image.NEAREST)
+            big.alpha_composite(f, ((i % 4) * w * 2, (i // 4) * h * 2))
+        to = Path(sys.argv[2]).with_name(Path(sys.argv[2]).stem + "-to.png")
+        big.convert("RGB").save(to)
+        print(f"ảnh soi khe: {to} (nền hồng tím ×2 — tìm mảng trắng/xám ở khe tay–thân, nách, khe chân)")
 
     if errs:
         print("\n".join(["LỖI:"] + errs))

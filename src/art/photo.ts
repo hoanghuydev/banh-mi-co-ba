@@ -142,10 +142,15 @@ const PLAYER_H = 65;
 
 /** Khoá là `memKey` = tiền tố texture của `CustomerActor`; `walk` là atlas chu kỳ đi, thiếu thì đứng yên. */
 const NPC_PHOTOS: Record<string, { src: (d: Facing8) => string; h: number; walk?: string }> = {
-  ANH_DUNG: { src: (d) => `npc/anh-dung/${d}`, h: 64 },
+  ANH_DUNG: { src: (d) => `npc/anh-dung/${d}`, h: 65, walk: "minh-quan" },
   BA_BAY: { src: (d) => `npc/ba-bay/${d}`, h: 64, walk: "ba-bay" },
   ANH_BAO: { src: (d) => `npc/anh-bao/${d}`, h: 65, walk: "anh-bao" },
   CHU_KIET: { src: (d) => `npc/chu-dat/${d}`, h: 64, walk: "chu-dat" },
+  CHU_TU: { src: (d) => `npc/chu-quang/${d}`, h: 64, walk: "chu-quang" },
+  CHI_LAN: { src: (d) => `npc/ngoc-tram/${d}`, h: 63, walk: "ngoc-tram" },
+  ONG_HAI: { src: (d) => `npc/chu-thinh/${d}`, h: 65, walk: "chu-thinh" },
+  BE_SU: { src: (d) => `npc/kha-han/${d}`, h: 57, walk: "kha-han" },
+  CO_MAI: { src: (d) => `npc/co-thuy/${d}`, h: 60, walk: "co-thuy" },
 };
 
 const CARRIED: Partial<Record<HeldLook, [src: string, size: Fit]>> = {

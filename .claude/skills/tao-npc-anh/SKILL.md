@@ -32,9 +32,11 @@ Thứ tự hướng mọi nơi: `s se e ne n nw w sw`. `s` = mặt nhìn camera,
 - **Khoá đèn và màu trong mọi prompt**: đèn trên-phải, độ sáng và màu y ảnh đứng im. Ghép xong vẫn bù màu: **một độ bù chung cả strip**, không chỉnh từng frame (chỉnh từng frame làm frame sáng tối xen nhau).
 - **Ảnh đứng im và ảnh đi lệch tỉ lệ thân** (hai lượt vẽ khác nhau): cỡ = trung bình nhân của khớp-bề-ngang-đầu và khớp-chiều-cao. Đã có trong `ghep-npc.py`.
 - **Đủ frame ngay từ đầu: mỗi hướng 2 dải = 8 frame khác nhau.** Game cần 8 frame đi (`GAIT_FRAMES.walk = 8`). ChatGPT vẽ bước trái và bước phải gần như một (pha 1 ≈ pha 3), nên chỉ 1 dải 4 pha nhân đôi lên 8 thì trong game chỉ thấy **2 hình lật qua lật lại** (lỗi user bắt ở chú Đạt, phải làm bù 8 lượt). Luôn làm cả dải bước (mẫu frame 1,3,5,7) lẫn dải chuyển tiếp (mẫu frame 0,2,4,6) — chân lướt qua nhau, người nhún lên — rồi `ghep-npc.py` xen kẽ: chẵn = chuyển tiếp, lẻ = bước. Không bao giờ nhân đôi frame để đủ số.
-- **Hướng s và n (đi thẳng về/ra xa camera) dễ trông như trượt**: tạp dề, váy, áo dài che chân nên frame gần như giống nhau (chú Đạt hướng s chỉ đạt biên độ 13,7, anh Bảo 18,8). Prompt hai hướng này phải thêm câu "legs/feet clearly visible" (xem `references/prompt.md`).
+- **Hướng s và n (đi thẳng về/ra xa camera) dễ trông như trượt**: tạp dề, váy, áo dài che chân nên frame gần như giống nhau (chú Đạt hướng s chỉ đạt biên độ 13,7, anh Bảo 18,8). Prompt hai hướng này phải thêm câu "legs/feet clearly visible" (xem `references/prompt.md`); vẫn dưới 16 thì gen lại với câu "EXAGGERATE" — bước to, nhấc gót thấy đế, tay vung rộng (mẫu: `references/prompt.md` mục "EXAGGERATE").
 - Bước 1–2 cùng một chat để giữ mặt; bước 4a mỗi hướng một chat mới, ảnh tham chiếu đính lại đầy đủ; bước 4b gửi tiếp trong chính chat đó.
 - Chạy 8 hướng song song (8 tab), xong cả 8 dải bước mới gửi 8 dải chuyển tiếp.
+- **Tách nền sót ở khe kín**: tay chạm quần/hông thì khoảng trắng giữa tay và thân bị bao kín, tách nền tưởng là một phần người nên giữ lại (lỗi user bắt ở Chú Quang, ảnh đứng hướng s). `ghep-npc.py` xoá mọi lỗ trắng kín **dưới phần đầu** (38% trên của hình), trong phần đầu chỉ xoá lỗ to để giữ lòng trắng mắt. Máy không đo được lỗi này trên atlas (khe sót và áo/giày trắng có số đo như nhau), nên **bắt buộc soi `-to.png`** (nền hồng tím, phóng ×2): khe tay–thân, nách, khe chân không được còn mảng trắng/xám.
+- **Áo sáng màu dễ bị khoét thủng**: lỗ kín chỉ bị xoá khi trung bình min kênh ≥ 247 (khe nền thật ≥ 246,8; áo xanh nhạt của Ngọc Trâm 236–246,6). Áo trắng tinh có thể vượt ngưỡng → soi `-to.png` xem áo còn nguyên mảng. Bị khoét thì xin ChatGPT áo trắng ngà có bóng đổ rõ ("off-white, soft shading, not pure white"), đừng hạ ngưỡng chung. Ăn mòn còn đến từ phía ngoài: mặt áo trắng được đèn chiếu (≥236) chạm liền nền thì phần nền tô từ mép ăn luôn vào áo (Khả Hân: mất áo cả 8 frame hướng sw). Áo/tóc sáng màu (trắng, kem, bạc, xanh nhạt) thì **xin ngay từ đầu** màu ngà có bóng xám rõ và viền xám mảnh (prompt mẫu: `references/prompt.md` mục "Áo/tóc sáng màu").
 
 ## Chấm ảnh (mở bằng Read)
 
@@ -61,7 +63,7 @@ Máy kiểm (phải ra `ĐẠT`; đã chỉnh ngưỡng cho anh Bảo 3D đạt,
 | Thiếu pha | < 5 hình khác nhau trong 8 frame một hướng |
 | Chuyển động yếu | biên độ (|Δ| frame liền kề, cỡ 40×64) < 16 — anh Bảo thấp nhất 18,8; dưới mức này trong game trông như đứng yên |
 | Lệch màu | trung bình màu dải đi lệch ảnh đứng im > 8/255 |
-| Lệch cỡ | bề ngang đầu lệch ảnh đứng im > 10% |
+| Lệch cỡ | bề ngang đầu (trung vị dải 10–25% trên) lệch ảnh đứng im > 13% |
 | Chân lơ lửng / lún | đáy chân lệch đáy chung > 5% chiều cao ô |
 
 Mắt soi trên ảnh soi (mỗi hàng một hướng, cột 1 = đứng im, vạch vàng = đáy chân) — máy **không** đo tin được mấy thứ này:
@@ -69,7 +71,7 @@ Mắt soi trên ảnh soi (mỗi hàng một hướng, cột 1 = đứng im, v�
 - **Sai hướng**: mọi frame trong hàng quay cùng phía với cột 1 (mặt/lưng, trái/phải). Không frame nào lật ngược.
 - **Đúng chu kỳ**: đọc trái → phải thấy bước → lướt → bước chân kia → lướt; không có frame nhảy cóc.
 - **Đúng người**: mặt, ria, tóc, tạp dề, dép giống nhau mọi frame; không lẫn đồ của mẫu dáng (kính, áo khoác anh Bảo).
-- **Sạch**: không viền trắng, không đốm trắng giữa chân, không cụt tay chân.
+- **Sạch** — soi trên `soi-<ten>-to.png` (nền hồng tím ×2): không viền trắng, không mảng trắng ở khe tay–thân, nách, khe chân, không cụt tay chân.
 - Cỡ 65 px (ảnh soi thu nhỏ): đứng ↔ đi không co giãn.
 
 Lỗi nằm ở hướng nào thì gen lại đúng dải đó trong chat của hướng đó, ghép và review lại cả atlas.
@@ -100,12 +102,13 @@ CHU_KIET: { src: (d) => `npc/chu-dat/${d}`, h: 64, walk: "chu-dat" },
 
 Dùng **Claude in Chrome** (Chrome thật, 60 khung hình/giây). **Không dùng headless** để soi chuyển động: headless chỉ ~3 khung hình/giây nên ai cũng đi như quay chậm, kết luận sai (đã sai một lần ở chú Đạt).
 
-1. `npm run dev` → tab **mới** `http://localhost:5174/` → "Chơi tiếp" (save của user; báo user là đã vào save) → chờ vào quán, đồng hồ chạy (6h00 "mới dọn hàng" là đồng hồ chưa chạy, khách đứng yên).
+1. Tìm cổng dev đang sống: `ss -ltnp | grep 517` + `ps -o stat -p <pid>` (vite bị Ctrl+Z có trạng thái `T`, vẫn giữ cổng nhưng treo — dùng cổng khác, đừng đụng tiến trình của user). Tab **mới** `http://localhost:<cổng>/` → "Chơi tiếp" (save của user; báo user là đã vào save) → chờ vào quán, đồng hồ chạy (6h00 "mới dọn hàng" là đồng hồ chưa chạy, khách đứng yên).
 2. `javascript_tool`: `dev.npc.spawn('<ID>')`. Gọi một NPC mỗi lần (hai người đứng đè nhau).
 3. Đo frame thật: chuỗi `zoom` liên tiếp (giữ tab ở trước mặt — tab nền bị Chrome hãm còn ~2 khung/giây) + `gif_creator`. Mỗi ảnh phải một dáng khác.
 4. Kiểm texture đã nạp đúng bản mới: vẽ `__game.textures.getFrame('<ID>_<h>_w<i>')` ra canvas, so 8 frame liền nhau (phải khác nhau). `__game.scene.getScene("stall").actors` → `a.body.texture.key` cho biết frame đang hiện.
 5. Game nạp atlas **một lần lúc mở trang**: thay atlas xong phải tải lại trang (Ctrl+Shift+R). Báo user tải lại tab của họ, không thì họ vẫn thấy bản cũ.
-6. Xong thì đóng tab đã mở.
+6. So cỡ cả dàn: đặt tạm một hàng `scene.add.image(x, y, '<ID>_s')` (scale lấy từ `a.body.scaleX` của một actor) cạnh người chơi và NPC cũ, phóng to xem, rồi `destroy()`. Trẻ em thấp rõ, người lớn ngang nhau.
+7. Xong thì đóng tab đã mở.
 
 ## Mẹo trình duyệt (ChatGPT Plus)
 
@@ -115,6 +118,9 @@ Dùng **Claude in Chrome** (Chrome thật, 60 khung hình/giây). **Không dùng
 - Một tab "Thinking" quá 5 phút: bấm dừng, đính lại ảnh, gửi lại trong cùng chat.
 - `javascript_tool` đứt sau 45 giây: đừng chờ ảnh trong JS, chờ bằng lượt khác. Bọc code trong `(()=>{…})()` để khỏi trùng biến giữa các lượt.
 - Ảnh mới nhất = `Generated image` cuối danh sách; chat dài thì ảnh cũ bị gỡ khỏi DOM.
+- Chrome chặn tải tự động sau 1–2 file mỗi tab: đóng tab, mở tab mới vào đúng URL chat rồi tải.
+- Dính giới hạn tần suất ("too many requests"): chờ 2–4 phút rồi bấm "Try again"; 3 agent song song là vừa.
+- **Hạn mức gói Plus**: ngày 2026-10-25 hết sau khoảng 170 ảnh trong ~3 giờ (≈ 7 nhân vật × 18–26 lượt), khoá ~7 giờ ("You've hit the Plus plan limit… resets in 7 hours"). Một đợt chỉ nên nhắm ~6–7 nhân vật; gặp màn này thì dừng tất cả agent, ghi log.md (ảnh đạt, hướng còn thiếu, URL chat từng hướng) để làm tiếp, không bấm "Upgrade".
 
 ## Báo user
 

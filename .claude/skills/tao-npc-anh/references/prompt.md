@@ -46,3 +46,25 @@ Tạp dề/váy/áo dài che chân thì frame gần như giống nhau, trong gam
 ```
 Walking straight toward (or away from) the camera hides the legs, so make the walk clearly readable: both trouser legs and both sandals must be clearly visible below the apron in every frame, the stepping foot lifted and moved clearly forward, the apron swinging with each step, shoulders and arms swinging visibly.
 ```
+
+## Áo/tóc sáng màu (trắng, kem, bạc, xanh nhạt): bản đã sửa cho Khả Hân
+
+Mặt sáng của áo chạm liền nền thì bị tách nền ăn mất. Thêm vào cả hai dải (và nên dùng ngay từ chat A):
+
+```
+Generate an image. The attached image is one of your Kha Han walk strips. Redraw it with exactly the same 4 poses, same character, same direction, same camera, same scale and same colours, with ONE fix: the white school shirt must never be pure white. Make the shirt a soft warm off-white (#ECE8DF) with gentle grey shading in its folds and on the side away from the light, and a thin slightly darker grey edge all around the shirt and sleeve silhouette, so the shirt is clearly separated from the pure white background everywhere, even on its brightest side. Everything else stays identical. One single row of 4 frames, evenly spaced, feet on one baseline, full body, pure white background, no shadow, no text. Wide landscape image.
+```
+
+## Hướng s/n vẫn trông như trượt: câu EXAGGERATE (Khả Hân)
+
+Dải bước:
+
+```
+Generate an image. Image 1 is the POSE REFERENCE again (4 stepping frames of the boy). Image 2 is your previous Kha Han strip. Redraw the Kha Han strip copying the poses of image 1 frame by frame, same character, same direction, same camera, same scale, same soft light from the upper right and same colours as image 2, but EXAGGERATE the walk so it reads clearly at tiny size: big clear steps, the stepping foot lifted high so we see the sole of the sandal, the two legs clearly apart with a visible gap between the trouser legs, the body leaning and bobbing, arms swinging wide and far away from the body. Both trouser legs and both sandals clearly visible in every frame. The white school shirt is a soft warm off-white (#ECE8DF) with gentle grey shading and a thin slightly darker grey edge so it never blends into the white background. One single row of 4 frames, evenly spaced, feet on one baseline, full body, pure white background, no shadow, no text. Wide landscape image.
+```
+
+Dải chuyển tiếp:
+
+```
+Generate an image. Image 1 is the POSE REFERENCE for the 4 IN-BETWEEN frames (legs passing each other, body slightly up). Image 2 is your latest exaggerated Kha Han strip. Draw Kha Han in a strip of 4 frames copying the EXACT body pose of each frame of image 1, frame by frame: the passing leg lifted clearly off the ground with the knee bent so its sandal sole shows, the other leg straight, arms swinging clearly away from the body, the body slightly higher. Keep everything else identical to image 2: same character, same direction, same camera, same scale (same height in pixels), same soft light from the upper right, same colours, off-white shirt with grey shading and thin darker edge. Do NOT copy the boy's face, hair, glasses or clothes from image 1. Both trouser legs and both sandals clearly visible and separated in every frame. One single row of 4 frames, evenly spaced, feet on one baseline, full body, pure white background, no shadow, no text. Wide landscape image.
+```
