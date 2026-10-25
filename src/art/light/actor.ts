@@ -126,9 +126,9 @@ function free(c: HTMLCanvasElement | undefined) {
   c.height = 0;
 }
 
-/** Vẽ frame (có thể lật ngang) vào canvas nháp dùng chung, trả ctx của nó. */
+/** Vẽ cả khung (kể lề đã cắt của frame trim, có thể lật ngang) vào canvas nháp dùng chung, trả ctx của nó. */
 function sprite(img: CanvasImageSource, cut: Phaser.Textures.Frame, flip: boolean) {
-  const w = cut.cutWidth, h = cut.cutHeight;
+  const w = cut.realWidth, h = cut.realHeight;
   tmp ??= canvas(1, 1);
   tmp.width = Math.max(tmp.width, w);
   tmp.height = Math.max(tmp.height, h);
@@ -137,7 +137,7 @@ function sprite(img: CanvasImageSource, cut: Phaser.Textures.Frame, flip: boolea
   ctx.globalCompositeOperation = "source-over";
   ctx.clearRect(0, 0, tmp.width, tmp.height);
   if (flip) { ctx.translate(w, 0); ctx.scale(-1, 1); }
-  ctx.drawImage(img, cut.cutX, cut.cutY, w, h, 0, 0, w, h);
+  ctx.drawImage(img, cut.cutX, cut.cutY, cut.cutWidth, cut.cutHeight, cut.x, cut.y, cut.cutWidth, cut.cutHeight);
   return ctx;
 }
 
@@ -166,7 +166,7 @@ function softenWithoutFilter(ctx: CanvasRenderingContext2D, px: number) {
 }
 
 function bakeShadow(img: CanvasImageSource, cut: Phaser.Textures.Frame, flip: boolean, foot: number, K: number, ss: number, soft = 1) {
-  const w = cut.cutWidth, h = cut.cutHeight;
+  const w = cut.realWidth, h = cut.realHeight;
   const t = sprite(img, cut, flip);
   t.globalCompositeOperation = "source-in";
   t.fillStyle = `rgb(${SHADOW_RGB.join(",")})`;
@@ -192,7 +192,7 @@ function bakeShadow(img: CanvasImageSource, cut: Phaser.Textures.Frame, flip: bo
 }
 
 function bakeReflection(img: CanvasImageSource, cut: Phaser.Textures.Frame, flip: boolean, foot: number, ss: number) {
-  const w = cut.cutWidth, h = cut.cutHeight;
+  const w = cut.realWidth, h = cut.realHeight;
   sprite(img, cut, flip);
   const blur = REFLECT_BLUR * ss;
   const L = bakeLayout(w, h, foot, 1, 0, Math.ceil(blur * 3) + 2, BAKE_RES);
@@ -246,7 +246,7 @@ function measureFoot(cut: Phaser.Textures.Frame) {
   const hit = footOf(cut);
   if (hit !== undefined) return hit;
   const ctx = sprite(cut.source.image as CanvasImageSource, cut, false);
-  const foot = soleRow(ctx.getImageData(0, 0, cut.cutWidth, cut.cutHeight).data, cut.cutWidth, cut.cutHeight);
+  const foot = soleRow(ctx.getImageData(0, 0, cut.realWidth, cut.realHeight).data, cut.realWidth, cut.realHeight);
   keepFoot(cut, foot);
   return foot;
 }
@@ -263,22 +263,26 @@ export function* feetSteps(textures: Phaser.Textures.TextureManager) {
     let w = 1, y = 0;
     while (todo.length) {
       const f = todo[todo.length - 1];
-      const h = Math.max(1, Math.ceil(f.cutHeight * SOLE_SLICE));
+      const h = Math.max(1, Math.ceil(f.realHeight * SOLE_SLICE));
       if (frames.length && y + h > SHEET_H) break;
       todo.pop();
       frames.push({ f, h, y });
-      w = Math.max(w, f.cutWidth);
+      w = Math.max(w, f.realWidth);
       y += h;
     }
     const sheet = canvas(w, y);
     const ctx = sheet.getContext("2d")!;
-    for (const { f, h, y: at } of frames) ctx.drawImage(f.source.image as CanvasImageSource, f.cutX, f.cutY + f.cutHeight - h, f.cutWidth, h, 0, at, f.cutWidth, h);
+    for (const { f, h, y: at } of frames) {
+      // Hàng `realHeight − h` của khung đầy đủ nằm ở `at`; frame trim chỉ chép phần hàng nó có.
+      const top = Math.max(0, f.realHeight - h - f.y), bot = Math.min(f.cutHeight, f.realHeight - f.y);
+      if (bot > top) ctx.drawImage(f.source.image as CanvasImageSource, f.cutX, f.cutY + top, f.cutWidth, bot - top, f.x, at + f.y + top - (f.realHeight - h), f.cutWidth, bot - top);
+    }
     const data = ctx.getImageData(0, 0, w, y).data;
     free(sheet);
     for (const { f, h, y: at } of frames) {
       for (let r = h - 1; r >= 0; r--) {
         if (!opaqueRow(data, w, at + r)) continue;
-        keepFoot(f, f.cutHeight - h + r + 1);
+        keepFoot(f, f.realHeight - h + r + 1);
         break;
       }
       measureFoot(f);
@@ -449,7 +453,7 @@ export class ActorLight {
     const src = frame.source.image as CanvasImageSource;
     const k = body.scaleX;
     const ss = 1 / k;
-    const h = frame.cutHeight;
+    const h = frame.realHeight;
     const flip = body.flipX;
     const key = `${frame.texture.key}|${frame.name}|${flip ? 1 : 0}`;
     if (key !== this.entryKey || this.entry?.src !== frame.source) this.enter(key, frame.source, frame);

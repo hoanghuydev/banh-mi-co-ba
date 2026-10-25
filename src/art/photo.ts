@@ -350,18 +350,40 @@ function blank(scene: Phaser.Scene, key: string, w: number, h: number, ss = 1) {
   return { tex, ctx };
 }
 
-/** Mép dưới ảnh là chỗ chạm đất (`prep-art.py` cắt sát). */
-function standing(scene: Phaser.Scene, key: string, src: string, o: Standing) {
+/** Lề trong suốt quanh vùng vẽ, để lọc song tuyến ở mép đọc ra 0 như khung đầy đủ. */
+const TRIM_PAD = 2;
+
+/** Như `blank` nhưng texture chỉ phủ vùng sẽ vẽ (x, 0, w, h) cộng lề; frame `setTrim` nên sprite đặt, lật và đo cỡ như khung đầy đủ W × H. */
+function trimmedBlank(scene: Phaser.Scene, key: string, W: number, H: number, x: number, w: number, h: number) {
+  const fw = Math.ceil(W * ART_SS), fh = Math.ceil(H * ART_SS);
+  const x0 = Math.max(0, Math.floor(x * ART_SS) - TRIM_PAD);
+  const x1 = Math.min(fw, Math.ceil((x + w) * ART_SS) + TRIM_PAD);
+  const y1 = Math.min(fh, Math.ceil(h * ART_SS) + TRIM_PAD);
+  if (scene.textures.exists(key)) scene.textures.remove(key);
+  const tex = scene.textures.createCanvas(key, x1 - x0, y1);
+  if (!tex) return null;
+  const ctx = tex.getContext();
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.setTransform(ART_SS, 0, 0, ART_SS, -x0, 0);
+  if (ART_SS !== 1) ssOf.set(key, ART_SS); else ssOf.delete(key);
+  tex.get().setTrim(fw, fh, x0, 0, x1 - x0, y1);
+  return { tex, ctx };
+}
+
+/** Mép dưới ảnh là chỗ chạm đất (`prep-art.py` cắt sát); `trim` cho khung nhân vật. */
+function standing(scene: Phaser.Scene, key: string, src: string, o: Standing, trim = false) {
   const img = source(scene, src);
   if (!img) return;
   const h = o.h;
   const w = (img.width / img.height) * h;
   const W = Math.max(TW + 2, Math.ceil(w + 2 * Math.abs(o.dx ?? 0)) + 6);
   const H = Math.ceil(h + BASE + TH / 2 + 1 - (o.dy ?? SIT));
-  const made = blank(scene, key, W, H, ART_SS);
+  const x = Math.round(W / 2 - w / 2 + (o.dx ?? 0));
+  const made = trim ? trimmedBlank(scene, key, W, H, x, w, h) : blank(scene, key, W, H, ART_SS);
   if (!made) return;
   // `shrink` tính theo pixel thật, `drawImage` theo toạ độ thiết kế.
-  drawShrunk(made.ctx, img, w * ART_SS, h * ART_SS, Math.round(W / 2 - w / 2 + (o.dx ?? 0)), 0, w, h);
+  drawShrunk(made.ctx, img, w * ART_SS, h * ART_SS, x, 0, w, h);
   made.tex.refresh();
 }
 
@@ -451,7 +473,7 @@ function prepFromLong(scene: Phaser.Scene) {
   made.tex.refresh();
 }
 
-/** Cắt ô ra canvas riêng trước khi `shrink`, không thì màu ô bên cạnh loang sang. */
+/** Khung nhân vật; cắt ô ra canvas riêng trước khi `shrink`, không thì màu ô bên cạnh loang sang. */
 function standingFromAtlas(
   scene: Phaser.Scene, key: string, file: string, frame: string, o: Standing,
 ) {
@@ -463,14 +485,14 @@ function standingFromAtlas(
   const w = (f.w / f.h) * h;
   const W = Math.max(TW + 2, Math.ceil(w + 2 * Math.abs(o.dx ?? 0)) + 6);
   const H = Math.ceil(h + BASE + TH / 2 + 1 - (o.dy ?? SIT));
-  const made = blank(scene, key, W, H, ART_SS);
+  const x = Math.round(W / 2 - w / 2 + (o.dx ?? 0));
+  const made = trimmedBlank(scene, key, W, H, x, w, h);
   if (!made) return false;
   const cut = document.createElement("canvas");
   cut.width = f.w;
   cut.height = f.h;
   cut.getContext("2d")!.drawImage(sheet.img, f.x, f.y, f.w, f.h, 0, 0, f.w, f.h);
-  drawShrunk(made.ctx, cut, w * ART_SS, h * ART_SS,
-    Math.round(W / 2 - w / 2 + (o.dx ?? 0)), 0, w, h);
+  drawShrunk(made.ctx, cut, w * ART_SS, h * ART_SS, x, 0, w, h);
   free(cut);
   made.tex.refresh();
   return true;
@@ -559,7 +581,7 @@ function* eightWay(
   markEightWay(who);
   for (const dir of DIRS8) {
     for (const pose of poses) {
-      standing(scene, textureFor(dir, who, pose).key, src(dir), { h, dy: 0 });
+      standing(scene, textureFor(dir, who, pose).key, src(dir), { h, dy: 0 }, true);
       yield;
     }
   }
