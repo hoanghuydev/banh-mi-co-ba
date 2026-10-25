@@ -33,7 +33,7 @@ import { dueReviews, enqueue, rollReview, unseen } from "../sim/reviews";
 import { achTick, takeAch } from "../sim/ach";
 import { openIngredients, openedOn } from "../sim/unlock";
 import { SWIFT_MUL, canSpin, cleanHandsToday, finishRookie, linked, questDone, swiftToday } from "../sim/system";
-import { EYE_TEXT, KHO_READ, QUEST_DONE, QUEST_TEXT, ROOKIE_DONE } from "../content/system";
+import { EYE_TEXT, HANDS_TEXT, QUEST_DONE, QUEST_TEXT, ROOKIE_DONE } from "../content/system";
 import { TourCoach } from "../ui/tour/TourCoach";
 import { dishQuality, isRain, portionsFor, putBack, sickChance, stockOf, take, takeFull, goodsFor, type Portion } from "../sim/econ";
 import { EQUIP, dirtMul, has, type EquipId } from "../sim/equipment";
@@ -129,6 +129,7 @@ const FLOOR_SEC = 0.35;
 const BIN_SEC = 0.4;
 const TAKE_MONEY_SEC = 0.8;
 const WASH_EVERY = 10;
+const STORAGE_GUIDE = "khoHuongDan";
 const CHORE_R = 11;
 const CHORE_EDGE = 8;
 /** Không mượn `HUD_BAND_PX`: số đó cho tiền bay lên, còn cái lò nằm ngay hàng trên cùng. */
@@ -235,6 +236,9 @@ export class StallScene extends Phaser.Scene {
   private tourFreeze = false;
   /** Đang dừng cảnh giải thích biểu tượng mắt, chờ bấm "Đã hiểu". */
   private eyeLesson = false;
+  /** Bước rửa tay: chỉ nút tay bẩn trước, nhấn gì cũng qua chỉ bồn. */
+  private handsLesson: "idle" | "show" | "done" = "idle";
+  private handsLessonOff: (() => void) | null = null;
   private grip = new Grip();
   private gripGfx!: Phaser.GameObjects.Graphics;
   /** Bốn field đi cùng nhau, luôn đặt qua `beBusy()`. */
@@ -243,7 +247,7 @@ export class StallScene extends Phaser.Scene {
   private handsBusyWhat = "";
   private handsBusyBar = true;
   private holdLatch = false;
-  private hands: "CLEAN" | "MONEY" = "CLEAN";
+  private hands: "CLEAN" | "DIRTY" = "CLEAN";
   private soldSinceWash = 0;
   private dirtyEpisode = 0;
   private lastFlourish = new Map<string, number>();
@@ -306,7 +310,7 @@ export class StallScene extends Phaser.Scene {
     this.handSoiled = false;
     this.boardSoiled = false;
     this.floor = [];
-    this.hands = "CLEAN";
+    this.hands = tourAt(this.world, "TAY") ? "DIRTY" : "CLEAN";
     this.soldSinceWash = 0;
     this.lastFlourish = new Map();
     this.intents = [];
@@ -496,7 +500,7 @@ export class StallScene extends Phaser.Scene {
     if (touring(this.world)) {
       this.coach = new TourCoach({
         textScale: this.settings.textScale,
-        onSkip: () => { tourSkip(this.world); this.eyeLesson = false; this.coach?.destroy(); this.coach = null; },
+        onSkip: () => { tourSkip(this.world); this.eyeLesson = false; this.endHandsLesson(); this.coach?.destroy(); this.coach = null; },
       });
     }
 
@@ -504,6 +508,7 @@ export class StallScene extends Phaser.Scene {
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.registry.remove(LIGHT_ENV_KEY);
+      this.endHandsLesson();
       this.coach?.destroy();
       this.coach = null;
       const st = this.world.stall;
@@ -837,7 +842,7 @@ export class StallScene extends Phaser.Scene {
         if (frameDeltas.length > 5400) frameDeltas.shift();
         this.clock.busy = this.service.busy || this.talkHoldsClock;
         // dt = 0 thì `runFrame` bỏ qua cả frame, đóng băng mọi hệ.
-        if (this.tourHolding() || this.eyeLesson) return 0;
+        if (this.tourHolding() || this.eyeLesson || this.handsLesson === "show") return 0;
         return this.closed ? 0 : this.clock.advance(raw);
       },
       input: (dt) => {
@@ -866,7 +871,7 @@ export class StallScene extends Phaser.Scene {
         this.addDirt(0.0015 * Math.max(0, this.clock.minutes - this.lastMinutes));
         this.lastMinutes = this.clock.minutes;
         this.service.dirt = this.dirt;
-        this.service.handsDirty = this.hands === "MONEY";
+        this.service.handsDirty = this.hands === "DIRTY";
         this.service.playerAt = { x: this.player.x, y: this.player.y };
         // `Service` có thể tự kết thúc phiên; thiếu nhánh này thì `talkHoldsClock` kẹt.
         if (this.talk.isOpen && !this.service.talkOpen) this.closeTalkPanel();
@@ -1534,8 +1539,9 @@ export class StallScene extends Phaser.Scene {
     // ⚖️ P1-01 §2.11 ghi 2,0 s, nhưng nhận tiền không phải thao tác có tay nghề. 0,8 s vẫn giữ cái giá
     // thật của nó: tay DÍNH TIỀN cho tới khi đi rửa.
     if (wasDish) {
-      if (!cleanHandsToday(this.world) && ++this.soldSinceWash >= WASH_EVERY && this.hands === "CLEAN") {
-        this.hands = "MONEY";
+      const due = tourAt(this.world, "TAY") || (!cleanHandsToday(this.world) && ++this.soldSinceWash >= WASH_EVERY);
+      if (due && this.hands === "CLEAN") {
+        this.hands = "DIRTY";
         this.hud.toast("tay dơ rồi, rửa ngay", "info", this.popClock, { icon: "alert" });
       }
       this.audio.money();
@@ -1595,7 +1601,7 @@ export class StallScene extends Phaser.Scene {
    */
   private touchFood() {
     if (has(this.world.equipment, "KEP_GAP")) return;
-    if (this.hands !== "MONEY") return;
+    if (this.hands !== "DIRTY") return;
     // đếm SAU cái cổng: "tay cầm tiền xong đụng vô đồ ăn" mới là việc cái kẹp gắp gỡ được.
     // Đếm ở chỗ gọi (mỗi lần bỏ một thứ nhân) thì ra con số của số nguyên liệu, không phải
     // của số lần tay dơ chạm đồ ăn.
@@ -2025,12 +2031,6 @@ export class StallScene extends Phaser.Scene {
     const w = this.world;
     if (!touring(w) || w.system.stage === "new") { c.hide(); return; }
     c.setWho(linked(w) ? "Hệ thống" : "Hướng dẫn");
-    if (this.storageView?.open && tourAt(w, "KHO")) {
-      const read = linked(w) ? KHO_READ
-        : "Số lượng: hàng còn lại. \"Còn … ngày\": hạn dùng. Thanh màu càng ngắn càng gần hỏng. Xem xong bấm Đóng.";
-      c.pointEl(document.querySelector(".sv-det"), read, tourIndex(w), TOUR_TOTAL, "rect", true);
-      return;
-    }
     if (this.paused || this.closed || this.menuBoard?.open || this.storageView?.open || this.phoneView?.open) {
       c.hide();
       return;
@@ -2045,10 +2045,39 @@ export class StallScene extends Phaser.Scene {
       });
       return;
     }
+    if (tourAt(w, "TAY") && this.handsLesson !== "done") {
+      if (this.handsLesson === "idle") this.startHandsLesson();
+      const text = linked(w) ? HANDS_TEXT : "Tay đang bẩn. Biểu tượng này còn sáng thì tay vẫn bẩn.";
+      c.pointDesign(this.game.canvas, GAME_W, GAME_H, {
+        ...this.hud.handsBox, shape: "rect", text, ok: () => this.endHandsLesson(),
+      });
+      return;
+    }
     const aim = this.coachAim();
     if (!aim) { c.hide(); return; }
     c.pointDesign(this.game.canvas, GAME_W, GAME_H,
       { ...aim, step: tourIndex(w), total: TOUR_TOTAL });
+  }
+
+  private startHandsLesson() {
+    this.handsLesson = "show";
+    const next = () => this.endHandsLesson();
+    // Trễ một nhịp để cú bấm vừa giao bánh không tính là nhấn qua.
+    const t = window.setTimeout(() => {
+      window.addEventListener("keydown", next, true);
+      window.addEventListener("pointerdown", next, true);
+    }, 300);
+    this.handsLessonOff = () => {
+      window.clearTimeout(t);
+      window.removeEventListener("keydown", next, true);
+      window.removeEventListener("pointerdown", next, true);
+    };
+  }
+
+  private endHandsLesson() {
+    this.handsLessonOff?.();
+    this.handsLessonOff = null;
+    if (this.handsLesson === "show") this.handsLesson = "done";
   }
 
   /**
@@ -2096,7 +2125,7 @@ export class StallScene extends Phaser.Scene {
       if (!gap || !tile) return { ...this.assembly.wrapBounds(), shape: "rect", text: "Ổ đúng đơn rồi — bấm Gói lại." };
       return { ...tile, shape: "rect", text: gapText(gap) };
     }
-    if (tourAt(w, "TAY")) return ring("sink", say("TAY", hint("Rửa tay ở bồn — bấm E.", "Rửa tay ở bồn — giữ nút Rửa tay.")));
+    if (tourAt(w, "TAY")) return ring("sink", say("TAY", hint("Tay đang bẩn. Tới bồn rửa tay — bấm E. Cứ 10 ổ bán ra phải rửa một lần.", "Tay đang bẩn. Tới bồn rửa tay — giữ nút Rửa tay. Cứ 10 ổ bán ra phải rửa một lần.")));
     if (tourAt(w, "DT")) {
       return { ...this.hud.phoneRect, shape: "rect", text: say("DT", hint("Có tin nhắn mới. Bấm Tab hoặc bấm biểu tượng điện thoại.", "Có tin nhắn mới. Bấm biểu tượng điện thoại.")) };
     }
@@ -2211,7 +2240,7 @@ export class StallScene extends Phaser.Scene {
     // Thớt bẩn tới mức có ruồi: lau một cái là xong.
     if (this.dirt > FLY_DIRT_MIN) this.bang(g, this.choreAt.get("board"), bob);
     // Tay dính tiền: đi tới vòi, giữ E.
-    if (this.hands === "MONEY") this.bang(g, this.choreAt.get("sink"), bob);
+    if (this.hands === "DIRTY") this.bang(g, this.choreAt.get("sink"), bob);
     // Vòng độ giòn đã nói điều này bằng màu, nhưng chỉ đọc được khi đang nhìn vào lò.
     if (this.oven.slots.some((l) => l && bandOfCrust(l.crust, this.oven.burnAt, this.oven.singeAt) === "BURNT")) {
       this.bang(g, this.choreAt.get("oven"), bob);
@@ -2632,6 +2661,8 @@ export class StallScene extends Phaser.Scene {
       inventory: this.world.inventory,
       title: this.storageName(),
       fridge: has(this.world.equipment, "TU_MAT"),
+      guide: this.world.flags[STORAGE_GUIDE] !== true,
+      onGuideDone: () => { this.world.flags[STORAGE_GUIDE] = true; },
       onClose: () => {
         this.storageView = null;
         this.resume();

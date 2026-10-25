@@ -34,7 +34,7 @@ export class BootScene extends Phaser.Scene {
     setStep("đang mở menu…", 0.97);
     const fonts = document.fonts;
     if (fonts?.load) {
-      const need = Promise.all([fonts.load('700 32px "Be Vietnam Pro"', "ễ"), fonts.load('800 32px "Be Vietnam Pro"', "ễ"), fonts.load(`32px ${HAND_FONT}`, "Bánh mì ặổữợ")]).catch(() => {});
+      const need = Promise.all([fonts.load('700 32px "Be Vietnam Pro"', "Bánh mì ễƯ"), fonts.load('800 32px "Be Vietnam Pro"', "Bánh mì ễƯ"), fonts.load(`32px ${HAND_FONT}`, "Bánh mì ặổữợ")]).catch(() => {});
       await Promise.race([need, new Promise((done) => setTimeout(done, FONT_WAIT_MS))]);
     }
     await paintTick();

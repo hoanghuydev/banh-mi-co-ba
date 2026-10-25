@@ -26,11 +26,11 @@ export { FX } from "./fx";
 export { TILE, BUILD, COUNTER, PROP };
 
 export const ICON = {
-  handClean: "icon:hand-clean", handMoney: "icon:hand-money",
+  handClean: "icon:hand-clean", handDirty: "icon:hand-dirty",
   eyeGlance: "icon:eye-glance", eyeClose: "icon:eye-close",
 } as const;
 const ICON_FILE: Record<string, string> = {
-  [ICON.handClean]: "art/hud_hand_clean.webp", [ICON.handMoney]: "art/hud_hand_money.webp",
+  [ICON.handClean]: "art/hud_hand_clean.webp", [ICON.handDirty]: "art/hud_hand_dirty.webp",
   [ICON.eyeGlance]: "art/hud_eye_glance.webp", [ICON.eyeClose]: "art/hud_eye_close.webp",
 };
 export const NTF = ["phone", "star", "chat", "alert", "box", "check", "info", "flame", "medal_dong", "medal_bac", "medal_vang", "medal_kc"] as const;

@@ -86,11 +86,11 @@ export const QUEST_TEXT: Record<string, string> = byDevice({
   NHAN: "Kẹp nhân. Đủ từng phần theo đơn của khách.",
   GOI: "Gói. Bấm Gói lại.",
   GIAO: "Giao hàng. Đưa cho khách ở quầy gọi món.",
-  TAY: "Tay dơ rồi rửa ngay. Tới bồn, bấm E. Cứ 10 ổ bán ra thì rửa tay một lần.",
+  TAY: "Tay đang bẩn, rửa ngay. Tới bồn, bấm E. Cứ 10 ổ bán ra thì rửa tay một lần.",
   DT: "Kiểm tra truyền âm. Có tin nhắn mới, bấm Tab.",
 });
 
-export const KHO_READ = "Keng! Số lượng: tài nguyên còn lại. \"Còn … ngày\": hạn dùng. Thanh màu càng ngắn càng gần hỏng. Xem xong bấm Đóng.";
+export const HANDS_TEXT = "Keng! Phát hiện tay ký chủ đang bẩn. Biểu tượng này còn sáng thì tay vẫn bẩn.";
 
 export const EYE_TEXT = "Keng! Mắt sáng: có khách đang nhìn ký chủ. Mắt đỏ nháy: khách nhìn chằm vào tay. Sơ suất lúc này, khách thấy rõ.";
 
@@ -103,7 +103,7 @@ export const QUEST_TEXT_PLAIN: Record<string, string> = byDevice({
   NHAN: "Kẹp đủ nhân theo đơn của khách.",
   GOI: "Bấm Gói lại.",
   GIAO: "Đưa ổ cho khách ở quầy gọi món.",
-  TAY: "Tay dơ rồi rửa ngay. Tới bồn, bấm E. Cứ 10 ổ bán ra thì rửa tay một lần",
+  TAY: "Tay đang bẩn. Tới bồn rửa tay, bấm E. Cứ 10 ổ bán ra phải rửa một lần.",
   DT: "Có tin nhắn mới. Bấm Tab mở điện thoại.",
 });
 

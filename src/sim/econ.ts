@@ -128,10 +128,10 @@ export function portionsFor(inv: InventoryState, ing: Ingredient, day: number) {
 /** Một phần hàng lấy ra khỏi kho: chất lượng và xác suất đau bụng của nó (chỉ hàng dỏm mới có). */
 export type Portion = { q: number; sick: number };
 
+/** Lấy theo thứ tự lô trong kho: người chơi kéo thả để đổi lô nào dùng trước. */
 export function takeFull(inv: InventoryState, ing: Ingredient | "bread", n: number, day: number): Portion[] {
   const goods = ing === "bread" ? (["BANH"] as GoodId[]) : goodsFor(ing);
-  const lots = inv.lots.filter((l) => goods.includes(l.good) && l.left > 0 && lq(inv, l, day) !== null)
-    .sort((a, b) => a.day - b.day);
+  const lots = inv.lots.filter((l) => goods.includes(l.good) && l.left > 0 && lq(inv, l, day) !== null);
   const out: Portion[] = [];
   for (const l of lots) {
     const sick = l.tier === "BAN" ? GOODS[l.good].sick ?? 0 : 0;
@@ -157,7 +157,10 @@ export function putBack(inv: InventoryState, ing: Ingredient, n: number, day: nu
 
 export function buy(inv: InventoryState, g: GoodId, units: number, day: number, tier: Quality = "THUONG") {
   if (units <= 0) return;
-  inv.lots.push({ good: g, day, left: units * GOODS[g].perUnit, q0: q0Of(g, day) * QUALITIES[tier].taste, tier });
+  const left = units * GOODS[g].perUnit;
+  const same = inv.lots.find((l) => l.good === g && l.day === day && (l.tier ?? "THUONG") === tier);
+  if (same) same.left += left;
+  else inv.lots.push({ good: g, day, left, q0: q0Of(g, day) * QUALITIES[tier].taste, tier });
 }
 
 export function expire(inv: InventoryState, day: number): { good: GoodId; units: number }[] {

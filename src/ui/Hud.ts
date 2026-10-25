@@ -10,7 +10,7 @@ import { blockedReason, type Hand, type Station } from "../world/stations";
 import { INGREDIENTS, portionsOf, type Ingredient } from "../sim/order";
 import { FOOD } from "../art/food";
 import { FONT, UI, iconButton, touchFont, touchSize } from "./theme";
-import { CLAY, clayButton, clayImage } from "./clay";
+import { CLAY, clayButton, clayImage, clayOrigin } from "./clay";
 
 const DEPTH = 9_000_000;
 const HELP_UNTIL_DAY = 3;
@@ -458,7 +458,7 @@ export class Hud {
     /** Bỏ dòng nhãn trạm vì nút cảm ứng đã nói việc cần làm. */
     quiet?: boolean;
     carry?: readonly Ingredient[] | null;
-    hands?: "CLEAN" | "MONEY";
+    hands?: "CLEAN" | "DIRTY";
     watch?: Watch;
     now?: number;
     work?: { frac: number } | null;
@@ -530,18 +530,31 @@ export class Hud {
     }
   }
 
-  /** Cảm ứng: biểu tượng tay và mắt nằm cạnh ô ngày giờ, tay chỉ hiện khi dính tiền. */
-  private placeBadges() {
+  /** Cảm ứng: biểu tượng tay và mắt nằm cạnh ô ngày giờ, tay chỉ hiện khi bẩn. */
+  private badgePos() {
     const m = this.m;
-    if (!m.touch) return;
+    if (!m.touch) return { hx: m.hands, ex: m.eye, y: m.cy };
     const b = this.left.getBounds();
     const gap = Math.ceil(designFor(PILL_GAP));
     const hx = b.right + 14 + gap + m.btnW / 2;
-    const ex = hx + (this.handsKey === "MONEY" ? m.btnW + gap : 0);
-    const y = m.statY - 10 + (b.height + 18) / 2;
+    const ex = hx + (this.handsKey === "DIRTY" ? m.btnW + gap : 0);
+    return { hx, ex, y: m.statY - 10 + (b.height + 18) / 2 };
+  }
+
+  private placeBadges() {
+    const m = this.m;
+    if (!m.touch) return;
+    const { hx, ex, y } = this.badgePos();
+    const o = clayOrigin(m.btnW, m.btnH);
     this.handsIcon.setPosition(hx, y - 2);
-    this.handsPlate.setPosition(hx, y);
+    this.handsPlate.setPosition(hx + o.x, y + o.y);
     this.eyeGroup.setPosition(ex, y);
+  }
+
+  get handsBox() {
+    const { btnW, btnH } = this.m;
+    const { hx, y } = this.badgePos();
+    return { x: hx - btnW / 2, y: y - btnH / 2, w: btnW, h: btnH };
   }
 
   get eyeBox() {
@@ -571,14 +584,14 @@ export class Hud {
     this.eyeGroup.setAlpha(close ? 0.6 + 0.4 * beat : 1);
   }
 
-  private drawHands(state: "CLEAN" | "MONEY") {
+  private drawHands(state: "CLEAN" | "DIRTY") {
     if (state === this.handsKey) return;
     this.handsKey = state;
     if (this.m.touch) {
-      this.handsPlate.setVisible(state === "MONEY");
-      this.handsIcon.setVisible(state === "MONEY");
+      this.handsPlate.setVisible(state === "DIRTY");
+      this.handsIcon.setVisible(state === "DIRTY");
     }
-    this.handsIcon.setTexture(state === "MONEY" ? ICON.handMoney : ICON.handClean);
+    this.handsIcon.setTexture(state === "DIRTY" ? ICON.handDirty : ICON.handClean);
     this.fitIcon(this.handsIcon);
   }
 

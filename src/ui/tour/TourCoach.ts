@@ -12,8 +12,9 @@ export type CoachAim = {
   total?: number;
   /** Có thì hiện nút "Đã hiểu" gọi hàm này. */
   ok?: () => void;
-  /** Bong bóng đặt ngang thì bám mép dưới lỗ thay vì giữa. */
-  low?: boolean;
+  okText?: string;
+  /** Cảm ứng: đặt bong bóng vào khoảng trống bên trái khung này. */
+  beside?: DOMRect;
 };
 
 const STYLE = `
@@ -143,11 +144,12 @@ export class TourCoach {
     this.last = "";
   }
 
-  pointEl(el: Element | null, text: string, step?: number, total?: number, shape: CoachShape = "rect", low = false) {
+  pointEl(el: Element | null, text: string, step?: number, total?: number,
+    o: { ok?: () => void; okText?: string; beside?: DOMRect } = {}) {
     if (!el) { this.hide(); return; }
     const r = el.getBoundingClientRect();
     if (!r.width || !r.height) { this.hide(); return; }
-    this.aim({ x: r.left, y: r.top, w: r.width, h: r.height, shape, text, step, total, low });
+    this.aim({ x: r.left, y: r.top, w: r.width, h: r.height, shape: "rect", text, step, total, ...o });
   }
 
   /** Khoanh một ô theo toạ độ thiết kế; người gọi đã quy về toạ độ thiết kế. */
@@ -167,12 +169,13 @@ export class TourCoach {
     this.lastAim = a;
     const shape = a.shape ?? "circle";
     // Chỉ ghi chữ khi đổi, không thì nút "Bỏ qua" mất focus.
-    const key = `${a.text}|${a.step}|${shape}|${!!a.ok}`;
+    const key = `${a.text}|${a.step}|${shape}|${!!a.ok}|${a.okText}`;
     this.onOk = a.ok ?? null;
     if (key !== this.last) {
       this.last = key;
       this.txt.textContent = a.text;
       this.okBtn.style.display = a.ok ? "" : "none";
+      this.okBtn.textContent = a.okText ?? "Đã hiểu";
       this.stepEl.textContent = a.step && a.total ? `việc ${a.step}/${a.total}` : "";
       this.paintDots(a.step ?? 0, a.total ?? 0);
     }
@@ -188,7 +191,7 @@ export class TourCoach {
     s.height = `${Math.round(h)}px`;
     s.borderRadius = shape === "circle" ? "50%" : "12px";
 
-    this.place(x, y, w, h, !!a.low);
+    this.place(x, y, w, h, a.beside);
   }
 
   private paintDots(step: number, total: number) {
@@ -218,14 +221,23 @@ export class TourCoach {
     this.bub.style.top = `${Math.round(by)}px`;
   }
 
+  private placeBeside(y: number, h: number, r: DOMRect) {
+    const bw = Math.min(560, r.left - EDGE * 3);
+    this.bub.style.width = `${bw}px`;
+    const bh = this.bub.offsetHeight;
+    this.bub.style.left = `${Math.round(r.left - EDGE * 2 - bw)}px`;
+    this.bub.style.top = `${Math.round(clamp(y + h / 2 - bh / 2, EDGE, window.innerHeight - EDGE - bh))}px`;
+  }
+
   /** Dưới → phải → trên → trái; bỏ vị trí đè lên nút cảm ứng, hết chỗ thì lấy vị trí đầu tiên lọt khung. */
-  private place(x: number, y: number, w: number, h: number, low: boolean) {
+  private place(x: number, y: number, w: number, h: number, beside?: DOMRect) {
+    if (isTouch() && beside) { this.placeBeside(y, h, beside); return; }
     if (isTouch()) { this.placeStrip(x, y, w, h); return; }
     this.bub.style.width = "";
     const bw = this.bub.offsetWidth, bh = this.bub.offsetHeight;
     const vw = window.innerWidth, vh = window.innerHeight;
     const midX = () => clamp(x + w / 2 - bw / 2, EDGE, vw - EDGE - bw);
-    const midY = () => clamp(low ? y + h - bh : y + h / 2 - bh / 2, EDGE, vh - EDGE - bh);
+    const midY = () => clamp(y + h / 2 - bh / 2, EDGE, vh - EDGE - bh);
     const avoid = touchRects();
     const hits = (bx: number, by: number) => avoid.some((r) =>
       bx < r.right + AVOID_PAD && bx + bw > r.left - AVOID_PAD && by < r.bottom + AVOID_PAD && by + bh > r.top - AVOID_PAD);
