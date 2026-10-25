@@ -4,6 +4,8 @@ import { sfx } from "../audio/sfx";
 import { CLAY, clayButton, clayCard, clayFaceDy, clayImage, type ClayState } from "./clay";
 
 export const FONT = '"Be Vietnam Pro", ui-sans-serif, "Segoe UI", system-ui, sans-serif';
+/** Chữ viết tay trên bảng trong cảnh; tự host ở `public/fonts`. */
+export const HAND_FONT = `"Pangolin", ${FONT}`;
 
 export const UI = {
   ink: "#222a31",

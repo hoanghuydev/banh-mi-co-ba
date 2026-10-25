@@ -3,6 +3,7 @@ import { buildTextures, preloadArt } from "../art";
 import { sfx } from "../audio/sfx";
 import { preloadBackdrop } from "../ui/backdrop";
 import { fadeOut, paintTick, setLoading, setStep } from "../ui/bootScreen";
+import { HAND_FONT } from "../ui/theme";
 
 /** Ảnh phải tải xong trước `buildTextures` vì `art/photo.ts` đè lên texture vẽ code trong đó. */
 export class BootScene extends Phaser.Scene {
@@ -32,6 +33,7 @@ export class BootScene extends Phaser.Scene {
     try {
       await (document as any).fonts?.load?.('700 32px "Be Vietnam Pro"');
       await (document as any).fonts?.load?.('800 32px "Be Vietnam Pro"');
+      await (document as any).fonts?.load?.(`32px ${HAND_FONT}`, "Bánh mì ặổữợ");
       await (document as any).fonts?.ready;
     } catch { /* không có Font Loading API */ }
 

@@ -26,13 +26,13 @@ import { sfx } from "../audio/sfx";
 import { PhoneView } from "../ui/phone/PhoneView";
 import { totalUnread } from "../sim/phone";
 import { chorePin } from "../ui/chorePin";
-import { TOUR_TOTAL, dishGaps, gapText, tourAt, tourDone, tourIndex, tourOrdered, tourSkip, tourStep, touring, type TourStep } from "../sim/tour";
+import { TOUR_TOTAL, dishGaps, explainEye, eyeExplained, gapText, tourAt, tourDone, tourIndex, tourOrdered, tourSkip, tourStep, touring, type TourStep } from "../sim/tour";
 import { deliverDue } from "../sim/shop";
 import { dueReviews, enqueue, rollReview, unseen } from "../sim/reviews";
 import { achTick, takeAch } from "../sim/ach";
 import { openIngredients, openedOn } from "../sim/unlock";
 import { SWIFT_MUL, canSpin, cleanHandsToday, finishRookie, linked, questDone, swiftToday } from "../sim/system";
-import { QUEST_DONE, QUEST_TEXT, ROOKIE_DONE } from "../content/system";
+import { EYE_TEXT, KHO_READ, QUEST_DONE, QUEST_TEXT, ROOKIE_DONE } from "../content/system";
 import { TourCoach } from "../ui/tour/TourCoach";
 import { dishQuality, isRain, portionsFor, putBack, sickChance, stockOf, take, takeFull, goodsFor, type Portion } from "../sim/econ";
 import { EQUIP, dirtMul, has, type EquipId } from "../sim/equipment";
@@ -68,7 +68,7 @@ import {
   heldTexture, paintNpcPhotos, preloadArt, sliceImage, spriteEdges, textureForTile, type Awning,
 } from "../art";
 import { Player } from "../entities/Player";
-import { Hud, type Watch } from "../ui/Hud";
+import { EYE_BOX, Hud, type Watch } from "../ui/Hud";
 import { UI, label, platedButtonHeight, platedKit, textScale, tray } from "../ui/theme";
 import { music, type CueId } from "../audio/music";
 import { StallAudio } from "../audio/stallAudio";
@@ -149,9 +149,6 @@ const HUSH_ON: ReadonlySet<StimId> = new Set<StimId>(["BURNT_OR_COLD", "DROPPED_
 
 const HUSH_SECONDS = 6;
 
-/** Giữ C để núp thì đi chậm lại, không miễn phí. */
-const COVER_SLOW = 1.3;
-
 /** Số ô cái dù lùi sau `SHADE_SPOT`; nhỏ nhất để `depthOf` vẽ người đứng mát đè lên dù. */
 const UMBRELLA_BACK = 0.45;
 
@@ -207,7 +204,6 @@ export class StallScene extends Phaser.Scene {
   private boardLoafImg!: Phaser.GameObjects.Image;
   private flies: Phaser.GameObjects.Image[] = [];
   private boardTopY = 0;
-  private coverGfx!: Phaser.GameObjects.Graphics;
   private handCrust = 0;
   private boardCrust = 0;
   private boardQ = 1;
@@ -230,6 +226,8 @@ export class StallScene extends Phaser.Scene {
   private tourSpot = new Map<string, { x: number; y: number; r: number }>();
   /** Ngày 1 đứng hình lúc ổ vừa vàng, vì khúc vàng chỉ dài vài giây; bấm E chạy tiếp. */
   private tourFreeze = false;
+  /** Đang dừng cảnh giải thích biểu tượng mắt, chờ bấm "Đã hiểu". */
+  private eyeLesson = false;
   private grip = new Grip();
   private gripGfx!: Phaser.GameObjects.Graphics;
   /** Bốn field đi cùng nhau, luôn đặt qua `beBusy()`. */
@@ -380,7 +378,6 @@ export class StallScene extends Phaser.Scene {
     // `y` là mép dưới texture để `heldFootPad` đặt đáy ổ chạm mặt thớt.
     this.boardLoafImg = fitPhoto(this.add.image(0, 0, HELD.key("loaf_hot")))
       .setOrigin(0.5, 1).setVisible(false);
-    this.coverGfx = this.add.graphics();
     this.ovenGfx = this.add.graphics().setDepth(LABEL_DEPTH + 2);
     this.choreGfx = this.add.graphics().setDepth(LABEL_DEPTH + 4);
     this.gripGfx = this.add.graphics();
@@ -489,7 +486,7 @@ export class StallScene extends Phaser.Scene {
     if (touring(this.world)) {
       this.coach = new TourCoach({
         textScale: this.settings.textScale,
-        onSkip: () => { tourSkip(this.world); this.coach?.destroy(); this.coach = null; },
+        onSkip: () => { tourSkip(this.world); this.eyeLesson = false; this.coach?.destroy(); this.coach = null; },
       });
     }
 
@@ -661,12 +658,13 @@ export class StallScene extends Phaser.Scene {
     this.awning = createSign(this, this.world.shopName);
 
     const m = toScreen(MENU_TILE.x, MENU_TILE.y);
-    createMenuBoard(this, m.sx, m.sy, this.world.progress.dayIndex);
+    const board = createMenuBoard(this, m.sx, m.sy, this.world.progress.dayIndex)
+      .map((img) => img.getBounds())
+      .reduce((a, b) => Phaser.Geom.Rectangle.Union(a, b));
     // Dấu cắm ở chỗ đứng đọc, không ở tấm bảng treo cao.
     const ms = toScreen(MENU_SPOT.x, MENU_SPOT.y);
     this.choreAt.set("menu", { x: ms.sx, y: footY(ms.sy) });
-    // Tâm ô chứ không `footY`, `footY` tụt xuống dưới chỗ đứng.
-    this.tourSpot.set("menu", { x: ms.sx, y: ms.sy, r: 30 });
+    this.tourSpot.set("menu", { x: board.centerX, y: board.centerY, r: Math.max(board.width, board.height) / 2 });
 
     return placed;
   }
@@ -746,7 +744,7 @@ export class StallScene extends Phaser.Scene {
 
   private bindInput() {
     const kb = this.input.keyboard!;
-    this.keys = kb.addKeys("W,A,S,D,UP,LEFT,DOWN,RIGHT,E,SPACE,Q,R,ESC,SHIFT,C,F,P") as any;
+    this.keys = kb.addKeys("W,A,S,D,UP,LEFT,DOWN,RIGHT,E,SPACE,Q,R,ESC,SHIFT,F,P") as any;
 
     // Phaser có lúc phát lại cùng một sự kiện DOM vài lần trong frame chậm, nên khử trùng theo object.
     const seenEsc = new WeakSet<KeyboardEvent>(), seenKey = new WeakSet<KeyboardEvent>();
@@ -788,7 +786,7 @@ export class StallScene extends Phaser.Scene {
         if (frameDeltas.length > 5400) frameDeltas.shift();
         this.clock.busy = this.service.busy || this.talkHoldsClock;
         // dt = 0 thì `runFrame` bỏ qua cả frame, đóng băng mọi hệ.
-        if (this.tourHolding()) return 0;
+        if (this.tourHolding() || this.eyeLesson) return 0;
         return this.closed ? 0 : this.clock.advance(raw);
       },
       input: (dt) => {
@@ -800,7 +798,7 @@ export class StallScene extends Phaser.Scene {
           down: this.keys.S.isDown || this.keys.DOWN.isDown,
           left: this.keys.A.isDown || this.keys.LEFT.isDown,
           right: this.keys.D.isDown || this.keys.RIGHT.isDown,
-          run: this.keys.SHIFT.isDown && !this.keys.C.isDown,
+          run: this.keys.SHIFT.isDown,
         }, dt);
         this.near = stationNear(this.player.x, this.player.y, this.near);
         // Chưa mua bình trà thì không có trạm trà; lọc ở đây vì `STATIONS` là dữ liệu tĩnh.
@@ -902,7 +900,7 @@ export class StallScene extends Phaser.Scene {
     this.player.heldCrust = this.handCrust;
     this.syncPlayerActivity();
     this.tap?.update(dt, !this.paused && !this.closed && this.busy?.st.id === "sink", this.settings.reducedMotion);
-    this.player.draw(this.settings.reducedMotion, this.keys.C.isDown, this.settings.playerMarker !== false);
+    this.player.draw(this.settings.reducedMotion, this.settings.playerMarker !== false);
     this.awning?.follow(this.player.x, this.player.y);
     this.drawPlayerBubble();
     for (const a of this.actors.values()) a.draw(this.settings.reducedMotion, this.time.now, this.elapsed);
@@ -920,7 +918,6 @@ export class StallScene extends Phaser.Scene {
     this.drawCoach();
     this.drawBasket();
     this.drawFloorItems();
-    this.drawCover();
     this.rain?.draw(this.cam.world.worldView, dt, this.time.now, this.settings.reducedMotion);
     this.daylight.update(this.clock.minutes, this.cam.world.worldView);
     this.lamps.update(this.clock.minutes);
@@ -962,20 +959,6 @@ export class StallScene extends Phaser.Scene {
     return this.popClock;
   }
 
-  private zonePoint = (slot: Station["slot"]) => {
-    if ((slot === "BOARD" || slot === "HANDS") && this.assembly.isOpen) return this.assembly.loafPoint;
-    if (slot === "HANDS") {
-      const h = this.player.heldSprite;
-      if (h.visible) return { x: h.x, y: h.y };
-      const { sx, sy } = toScreen(this.player.x, this.player.y);
-      return { x: sx, y: footY(sy) - 40 };
-    }
-    const id = slot === "OVEN" ? "oven" : slot === "BOARD" ? "board" : "shelf";
-    const st = STATIONS.find((x) => x.id === id)!;
-    const { sx, sy } = toScreen(st.tx + 0.5, st.ty + 0.5);
-    return { x: sx, y: footY(sy) - 30 };
-  };
-
   /** Thứ tự nhánh là thứ tự ưu tiên, việc gấp nhất trước. */
   private promptLine(): string | null {
     const waiting = this.service.talkTargetNow;
@@ -983,7 +966,6 @@ export class StallScene extends Phaser.Scene {
       return `${this.service.label(waiting)} đang chờ mình trả lời — bấm F`;
     }
     if (this.handsBusy) return `${this.handsBusyWhat || "tay đang bận"}…`;
-    if (this.keys.C.isDown) return "che tay — đi chậm lại, không chạy được";
     if (this.player.hand === "empty" && this.nearestFloor() >= 0) {
       return "dưới sàn có đồ, bấm Q nhặt lên";
     }
@@ -1012,7 +994,7 @@ export class StallScene extends Phaser.Scene {
   private ovenPrompt(): string {
     const h = this.player.hand, n = this.oven.count;
     const lo = has(this.world.equipment, "LO_DIEN") ? "lò điện" : "lò than";
-    if (h === "loaf_cold") return this.oven.hasRoom ? `${lo} — bấm E bỏ ổ vào (${n}/${OVEN_SLOTS})` : `${lo} — lò đầy rồi`;
+    if (h === "loaf_cold" || h === "loaf_hot") return this.oven.hasRoom ? `${lo} — bấm E bỏ ổ vào (${n}/${OVEN_SLOTS})` : `${lo} — lò đầy rồi`;
     if (h === "empty") return n ? `${lo} — bấm E lấy ổ chín nhất ra` : `${lo} — lò trống, lấy ổ bánh ở kệ trước`;
     return `${lo} — tay đang cầm đồ`;
   }
@@ -1105,7 +1087,7 @@ export class StallScene extends Phaser.Scene {
 
   private workSeconds(s: number) {
     const k = swiftToday(this.world) ? SWIFT_MUL : 1;
-    return this.keys.C.isDown ? s * COVER_SLOW * k : s * k;
+    return s * k;
   }
 
   private tickStation(dtMs: number) {
@@ -1128,7 +1110,7 @@ export class StallScene extends Phaser.Scene {
       // Tiếng rót phát lúc bắt đầu giữ, không lúc ly đã đầy.
       if (st!.id === "tea") this.audio.tea();
     }
-    this.busy.ms += this.keys.C.isDown ? dtMs / COVER_SLOW : dtMs;
+    this.busy.ms += dtMs;
 
     if (st!.overcookMs) {
       if (this.busy.ms >= st!.overcookMs) {
@@ -1629,11 +1611,11 @@ export class StallScene extends Phaser.Scene {
     this.beBusy(this.workSeconds(FLOOR_SEC), "đang nhặt lên", "quick");
   }
 
-  /** Bấm E cầm ổ nguội = bỏ vào; tay không = lấy ổ chín nhất ra. */
+  /** Bấm E cầm ổ trơn = bỏ vào; tay không = lấy ổ chín nhất ra. */
   private pressOven() {
     const h = this.player.hand;
-    if (h === "loaf_cold") {
-      // Ổ mang cả chất lượng lô lẫn phần vỏ đã nướng dở vào lò (nướng lại ổ đã nguội).
+    if (h === "loaf_cold" || h === "loaf_hot") {
+      // Ổ mang cả chất lượng lô lẫn phần vỏ đã nướng dở vào lò.
       if (!this.oven.put(this.breadQ, this.handCrust, this.handSoiled)) { this.hud.toast("lò đầy rồi", "info", this.popClock); return; }
       this.audio.ovenDoor();
       this.player.hand = "empty";
@@ -1861,10 +1843,9 @@ export class StallScene extends Phaser.Scene {
     this.hud.toast("rơi rồi…", "bad", this.popClock);
   }
 
-  /** Vật che tầm nhìn (P1-02 §2.6): thân người che tay (giữ C) · hơi lò khi lò đang nướng. */
+  /** Hơi lò che tầm nhìn khi lò đang nướng. */
   private occluders(): Occluder[] {
     const out: Occluder[] = [];
-    if (this.keys.C.isDown) out.push({ mul: 0.45, slots: ["HANDS", "BOARD"], zones: ["FRONT_CENTER", "FRONT_SIDE"] });
     if (this.oven.busy) out.push({ mul: 0.8, slots: ["OVEN", "BOARD"], zones: ["FRONT_CENTER", "FRONT_SIDE", "QUEUE_2", "QUEUE_3", "SEATED_FAR"] });
     return out;
   }
@@ -1938,13 +1919,30 @@ export class StallScene extends Phaser.Scene {
     const c = this.coach;
     if (!c) return;
     const w = this.world;
-    if (!touring(w) || w.system.stage === "new" || this.paused || this.closed || this.menuBoard?.open || this.storageView?.open || this.phoneView?.open) {
+    if (!touring(w) || w.system.stage === "new") { c.hide(); return; }
+    c.setWho(linked(w) ? "Hệ thống" : "Hướng dẫn");
+    if (this.storageView?.open && tourAt(w, "KHO")) {
+      const read = linked(w) ? KHO_READ
+        : "Số lượng: hàng còn lại. \"Còn … ngày\": hạn dùng. Thanh màu càng ngắn càng gần hỏng. Xem xong bấm Đóng.";
+      c.pointEl(document.querySelector(".sv-det"), read, tourIndex(w), TOUR_TOTAL, "rect", true);
+      return;
+    }
+    if (this.paused || this.closed || this.menuBoard?.open || this.storageView?.open || this.phoneView?.open) {
       c.hide();
+      return;
+    }
+    if (!this.eyeLesson && !eyeExplained(w) && this.watchLevel() !== "NONE") this.eyeLesson = true;
+    if (this.eyeLesson) {
+      const text = linked(w) ? EYE_TEXT
+        : "Mắt sáng: có khách đang nhìn bạn. Mắt đỏ nháy: khách nhìn chằm vào tay. Sơ suất lúc này, khách thấy rõ.";
+      c.pointDesign(this.game.canvas, GAME_W, GAME_H, {
+        ...EYE_BOX, shape: "rect", text,
+        ok: () => { explainEye(w); this.eyeLesson = false; },
+      });
       return;
     }
     const aim = this.coachAim();
     if (!aim) { c.hide(); return; }
-    c.setWho(linked(w) ? "Hệ thống" : "Hướng dẫn");
     c.pointDesign(this.game.canvas, GAME_W, GAME_H,
       { ...aim, step: tourIndex(w), total: TOUR_TOTAL });
   }
@@ -1974,7 +1972,11 @@ export class StallScene extends Phaser.Scene {
     if (tourAt(w, "CHO")) {
       return { x: GAME_W / 2 + 36, y: 8, w: 48, h: 36, shape: "rect", text: say("CHO", "Mở điện thoại, vào Thực phẩm, đặt hàng đủ bán hôm nay.") };
     }
-    if (tourAt(w, "MENU")) return ring("menu", say("MENU", "Tới chỗ này, bấm E đọc bảng menu."));
+    if (tourAt(w, "MENU")) return ring("menu", say("MENU", "Tới bảng menu, bấm E đọc."));
+    if (tourAt(w, "KHO")) {
+      if (stockOf(w.inventory, "BANH", w.progress.dayIndex) <= 0) return ring("kho", "Hàng đang trên đường giao. Chờ một chút.");
+      return ring("kho", say("KHO", "Tới thùng xốp, bấm E xem hàng còn lại."));
+    }
     if (tourAt(w, "BANH")) {
       if (stockOf(w.inventory, "BANH", w.progress.dayIndex) <= 0 && this.player.hand === "empty") {
         return ring("shelf", "Hàng đang trên đường giao. Chờ một chút.");
@@ -2058,7 +2060,7 @@ export class StallScene extends Phaser.Scene {
   private ovenAim(ring: (id: string, text: string) => { x: number; y: number; w: number; h: number; shape?: "circle" | "rect"; text: string } | null) {
     const h = this.player.hand;
     if (h === "loaf_burnt") return ring("bin", "Khét rồi — đem bỏ thùng rác.");
-    if (h === "loaf_cold") return ring("oven", "Tới lò, bấm E bỏ ổ vào.");
+    if (h === "loaf_cold" || h === "loaf_hot") return ring("oven", "Tới lò, bấm E bỏ ổ vào.");
     if (h !== "empty") return ring("bin", "Tay đang cầm đồ — bỏ xuống trước.");
     const band = this.ovenBand();
     if (!band) return ring("shelf", "Lò trống. Lấy ổ bánh ở kệ trước.");
@@ -2251,23 +2253,6 @@ export class StallScene extends Phaser.Scene {
     if (this.assembly.isOpen) this.assembly.setWarm(warm, t, rm);
   }
 
-  /** Occluder 0,45 chỉ được tồn tại nếu người chơi THẤY mình đang che. ⚠️ CÒN THIẾU tư thế xoay nghiêng của chính nhân vật. */
-  private drawCover() {
-    const g = this.coverGfx;
-    g.clear();
-    if (!this.keys.C.isDown || this.paused || this.closed) return;
-    const held = this.player.heldSprite;
-    const at = held.visible ? { x: held.x, y: held.y } : this.zonePoint("HANDS");
-    g.setDepth((held.visible ? held.depth : LABEL_DEPTH) + 2);
-    g.fillStyle(0x1b2429, 0.55).fillEllipse(at.x + 5, at.y + 3, 44, 30);   // lưng quay ra phía khách
-    g.lineStyle(3, 0xcdbb96, 0.85);                                        // cẳng tay vòng qua trước món
-    g.beginPath();
-    g.arc(at.x + 3, at.y + 5, 19, -2.7, -0.5);
-    g.strokePath();
-    const b = this.zonePoint("BOARD");
-    g.fillStyle(0x1b2429, 0.3).fillEllipse(b.x, b.y + 10, 66, 26);
-  }
-
   /** Vòng sáng dưới chân trạm đang với tới được — người chơi không phải đoán. */
   private drawRing() {
     if (!this.near) { this.ring.setVisible(false); return; }
@@ -2293,7 +2278,7 @@ export class StallScene extends Phaser.Scene {
       burning: this.player.hand === "loaf_burnt"
         || this.oven.slots.some((l) => !!l && l.crust > this.oven.burnAt),
       moving: this.player.moving && !this.paused,
-      running: this.keys.SHIFT.isDown && !this.keys.C.isDown,
+      running: this.keys.SHIFT.isDown,
     });
   }
 
@@ -2435,6 +2420,9 @@ export class StallScene extends Phaser.Scene {
       gg.fillStyle(0xe8eef1, 1).fillRoundedRect(x - 12, y - h, 24, h, 3);
       gg.lineStyle(1, 0x9aa6ae, 1).strokeRoundedRect(x - 12, y - h, 24, h, 3);
     });
+    const { sx, sy } = toScreen(3.5, 2.4);
+    const h = fridge ? 40 : 29;
+    this.tourSpot.set("kho", { x: sx, y: footY(sy) - h / 2, r: h / 2 + 12 });
   }
 
   /**
@@ -2520,11 +2508,14 @@ export class StallScene extends Phaser.Scene {
       inventory: this.world.inventory,
       title: this.storageName(),
       fridge: has(this.world.equipment, "TU_MAT"),
-      onClose: () => { this.storageView = null; this.resume(); },
+      onClose: () => {
+        this.storageView = null;
+        this.resume();
+        if (stockOf(this.world.inventory, "BANH", this.world.progress.dayIndex) > 0) this.quest("KHO", true);
+      },
     });
   }
 
-  /** `exact`: chỉ tính khi đang đúng bước đó, không nhảy cóc. */
   /** Đầu ngày: Hệ thống thức tỉnh (ngày 1) hoặc vòng quay điểm danh tự bật; tin rao bán báo qua HUD. */
   private autoPhone() {
     if (this.closed || this.paused) return;
@@ -2536,6 +2527,7 @@ export class StallScene extends Phaser.Scene {
     if ((w.system.stage === "new" && w.progress.dayIndex === 1) || canSpin(w)) this.openPhone({ app: "sys" });
   }
 
+  /** `exact`: chỉ tính khi đang đúng bước đó, không nhảy cóc. */
   private quest(step: TourStep, exact = false) {
     const w = this.world;
     if (exact && !tourAt(w, step)) return;

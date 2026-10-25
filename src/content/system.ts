@@ -67,6 +67,7 @@ export const ROOKIE_DONE = [
 export const QUEST_TEXT: Record<string, string> = {
   CHO: "Thu thập tài nguyên. Mở điện thoại, vào Thực phẩm, đặt hàng đủ bán hôm nay.",
   MENU: "Tra cứu thực đơn. Tới bảng menu, bấm E.",
+  KHO: "Kiểm kê tài nguyên. Tới thùng xốp, bấm E.",
   BANH: "Lấy phôi bánh. Tới kệ, bấm E.",
   LO: "Luyện bánh. Bỏ vào lò, bấm E. Vàng giòn thì lấy ra.",
   THOT: "Lên thớt. Gác ổ lên thớt, bấm E.",
@@ -77,17 +78,8 @@ export const QUEST_TEXT: Record<string, string> = {
   DT: "Kiểm tra truyền âm. Có tin nhắn mới, bấm Tab.",
 };
 
-export const QUEST_TEXT_PLAIN: Record<string, string> = {
-  CHO: "Mở điện thoại, vào Thực phẩm, đặt hàng đủ bán hôm nay.",
-  MENU: "Tới bảng menu, bấm E.",
-  BANH: "Tới kệ, bấm E lấy một ổ bánh.",
-  LO: "Bỏ ổ vào lò, bấm E. Vàng giòn thì lấy ra.",
-  THOT: "Gác ổ lên thớt, bấm E.",
-  NHAN: "Kẹp đủ nhân theo đơn của khách.",
-  GOI: "Bấm Gói lại.",
-  GIAO: "Đưa ổ cho khách ở quầy gọi món.",
-  TAY: "Tay dơ rồi rửa ngay. Tới bồn, bấm E. Cứ 10 ổ bán ra thì rửa tay một lần",
-  DT: "Có tin nhắn mới. Bấm Tab mở điện thoại.",
-};
+export const KHO_READ = "Keng! Số lượng: tài nguyên còn lại. \"Còn … ngày\": hạn dùng. Thanh màu càng ngắn càng gần hỏng. Xem xong bấm Đóng.";
+
+export const EYE_TEXT = "Keng! Mắt sáng: có khách đang nhìn ký chủ. Mắt đỏ nháy: khách nhìn chằm vào tay. Sơ suất lúc này, khách thấy rõ.";
 
 export const LUCK_LINES = ["Hệ thống đã cố gắng.", "Hệ thống không tiếp nhận khiếu nại."];

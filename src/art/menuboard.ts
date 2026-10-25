@@ -4,7 +4,7 @@ import { FACE_SLOPE } from "./canvas";
 import { WALL_H } from "./building";
 import { artScale, bakeWall, drawFrame } from "./photo";
 import { WALL_OVERHANG, sliceColumns } from "./slices";
-import { FONT } from "../ui/theme";
+import { HAND_FONT } from "../ui/theme";
 import { MENU_BOARD } from "../sim/menu";
 import { isOpen } from "../sim/unlock";
 
@@ -28,17 +28,21 @@ export function createMenuBoard(scene: Phaser.Scene, sx: number, sy: number, day
     drawFrame(ctx, scene, "menu_khung", W, H, 46, BORDER);
 
     ctx.textBaseline = "middle";
-    ctx.fillStyle = GOLD;
-    ctx.font = `800 8px ${FONT}`;
-    ctx.fillText("BÁNH MÌ", LEFT, 14);
-    ctx.fillRect(LEFT, 18.5, 31, 0.7);
+    ctx.fillStyle = ctx.strokeStyle = GOLD;
+    ctx.font = `9.5px ${HAND_FONT}`;
+    // Viền cùng màu cho nét đậm như bút sơn: font chỉ có một độ đậm.
+    ctx.lineWidth = 0.45;
+    ctx.strokeText("BÁNH MÌ", LEFT, 13.5);
+    ctx.fillText("BÁNH MÌ", LEFT, 13.5);
+    ctx.fillRect(LEFT, 18, ctx.measureText("BÁNH MÌ").width, 0.7);
 
     // Chỉ ghi tên món, không ghi giá: cỡ chữ này thêm cột số là nhoè; giá xem ở bảng bấm E.
     const COT = 4;
-    ctx.font = `500 5.6px ${FONT}`;
+    ctx.font = `6.4px ${HAND_FONT}`;
     ctx.fillStyle = CREAM;
     MENU_BOARD.filter((it) => isOpen(it.id, day)).forEach((it, i) => {
-      ctx.fillText(it.call, LEFT + Math.floor(i / COT) * 32, 24 + (i % COT) * 5.9);
+      const x = LEFT + Math.floor(i / COT) * 24;
+      ctx.fillText(it.call, x, 23.5 + (i % COT) * 6.2, W - BORDER - 3 - x);
     });
   });
 

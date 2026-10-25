@@ -151,10 +151,6 @@ export class AssemblyPanel {
     return this.stack;
   }
 
-  get loafPoint() {
-    return { x: this.loafImg.x, y: this.loafImg.y + this.root.y };
-  }
-
   /** Toạ độ khung thiết kế (đã cộng `root.y`) cho lớp dẫn DOM, không trả GameObject. */
   trayBounds() {
     const w = TRAY_COLS * this.tw + (TRAY_COLS - 1) * 8;

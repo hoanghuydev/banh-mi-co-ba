@@ -81,7 +81,7 @@ const SNOW = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-
 
 const ICON: Record<GoodId, string> = {
   BANH: "held_loaf_cold", PATE: "ing_pate", THIT_NGUOI: "ing_thit", CHA_LUA: "ing_chalua", XIU_MAI: "ing_xiumai", SOT: "kho_tuongot",
-  TRUNG: "ing_opla", RAU: "ing_hanhngo", OT: "kho_ot", DO_CHUA_NL: "ing_dochua", DO_CHUA_SAN: "ing_dochua",
+  TRUNG: "ing_opla", RAU: "kho_rau", OT: "kho_ot", DO_CHUA_NL: "kho_dochua", DO_CHUA_SAN: "kho_dochua",
 };
 
 export type StorageViewOpts = {

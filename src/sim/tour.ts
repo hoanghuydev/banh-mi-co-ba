@@ -4,9 +4,9 @@ import { GOODS, type GoodId } from "./econ";
 import { itemsOf } from "./shop";
 
 // Dẫn ngày 1, mỗi lúc một việc; lưu trong `flags` nên save cũ đọc ra `undefined` → bước đầu, khỏi migrate.
-export type TourStep = "CHO" | "MENU" | "BANH" | "LO" | "THOT" | "NHAN" | "GOI" | "GIAO" | "TAY" | "DT" | "XONG";
+export type TourStep = "CHO" | "MENU" | "KHO" | "BANH" | "LO" | "THOT" | "NHAN" | "GOI" | "GIAO" | "TAY" | "DT" | "XONG";
 
-const ORDER: readonly TourStep[] = ["CHO", "MENU", "BANH", "LO", "THOT", "NHAN", "GOI", "GIAO", "TAY", "DT", "XONG"];
+const ORDER: readonly TourStep[] = ["CHO", "MENU", "KHO", "BANH", "LO", "THOT", "NHAN", "GOI", "GIAO", "TAY", "DT", "XONG"];
 
 export const TOUR_TOTAL = ORDER.length - 1;
 
@@ -29,6 +29,13 @@ export function touring(w: SaveFile): boolean {
 
 export function tourAt(w: SaveFile, step: TourStep): boolean {
   return touring(w) && tourStep(w) === step;
+}
+
+/** Cờ riêng, ngoài thứ tự bước: mắt sáng lần đầu thì dừng lại giải thích một lần. */
+const EYE_KEY = "tourMat";
+export const eyeExplained = (w: SaveFile) => w.flags[EYE_KEY] === true;
+export function explainEye(w: SaveFile): void {
+  w.flags[EYE_KEY] = true;
 }
 
 export function tourSkip(w: SaveFile): void {

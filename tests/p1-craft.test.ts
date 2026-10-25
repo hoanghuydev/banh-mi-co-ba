@@ -127,6 +127,14 @@ test("ổ đã gói đem lại thớt được: kẹp nhầm thì mở ra sửa,
   assert.ok(blockedReason(board, "loaf_burnt"));
 });
 
+test("ổ lấy ra sớm còn nóng trên tay bỏ thẳng lại vào lò được", () => {
+  const oven = STATIONS.find((s) => s.id === "oven")!;
+  assert.equal(blockedReason(oven, "loaf_hot"), null);
+  assert.equal(blockedReason(oven, "loaf_cold"), null);
+  assert.ok(blockedReason(oven, "loaf_filled"));
+  assert.ok(blockedReason(oven, "loaf_burnt"));
+});
+
 test("mở ổ ra thì kho nhận lại đúng số phần đã trừ lúc gói", () => {
   const w = newGame("t", "unwrap");
   const day = w.progress.dayIndex;

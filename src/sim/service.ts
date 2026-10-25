@@ -11,7 +11,7 @@ import { newNpcState, type NpcState } from "../core/save";
 import { orderDefectKey } from "../core/stimid";
 import { Customer, DEFAULT_PATIENCE_SEC, LEAVE_AT, PATIENCE_BONUS_SEC, TEA, teaSuspectAtCup, type LeaveReason } from "./customer";
 import {
-  INGREDIENTS, diffDish, extraPortions, generosityOf, labelOf, levelsOf, mkDefect,
+  INGREDIENTS, diffDish, extraPortions, extrasOf, generosityOf, monVi, labelOf, levelsOf, mkDefect,
   sayOrder,
   type Defect, type DefectKind, type Ingredient, type OrderSpec,
 } from "./order";
@@ -1408,10 +1408,10 @@ export class Service {
     const others = crustDefect ? defects.filter((d) => d !== crustDefect) : defects;
     const spoken = this.pickSpoken(others.length ? others : defects);
     const crustTail = crustDefect && spoken !== crustDefect ? crustDefect : null;
-    // Cho thêm trên ổ có lỗi vẫn được nói ra, dù không được điểm.
-    const extraMons = extraPortions(c.order!, dish).map(labelOf);
-    const gaveExtra = extraMons.length > 0;
-    const playerSay = gaveExtra
+    // Câu nói kể đủ mọi thứ bỏ dư; chỉ đồ "dễ thương" mới tính là cho thêm.
+    const extraMons = extrasOf(c.order!, dish).map(labelOf);
+    const gaveExtra = extraPortions(c.order!, dish).length > 0;
+    const playerSay = extraMons.length
       ? this.fill(c, this.barks.take("extraOffer", c.memKey, { mon: monVi(extraMons) }))
       : undefined;
     let positive = 0;
@@ -2661,12 +2661,6 @@ const isCrustDefect = (d: Defect) => d.kind === "WRONG_TEMP" && (d.label === UND
 
 /** Vế bổ sung nói bằng mấy chữ nào: "chưa giòn" / "cháy cạnh". */
 const crustTailWord = (d: Defect) => (d.label === SINGED_LABEL ? "cháy cạnh" : "chưa giòn");
-
-/** "đồ chua", "đồ chua với ớt", "đồ chua, ớt với tương ớt" — cách kể món của người mình. */
-function monVi(names: readonly string[]): string {
-  if (names.length <= 1) return names[0] ?? "";
-  return `${names.slice(0, -1).join(", ")} với ${names[names.length - 1]}`;
-}
 
 // ───────────────────────────────────────────────────────────────────── đi lại
 

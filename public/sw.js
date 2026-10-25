@@ -1,6 +1,6 @@
 const VERSION = new URL(self.location).searchParams.get("v") || "0";
 const CACHE = `assets-${VERSION}`;
-const HEAVY = /\/(art|audio)\//;
+const HEAVY = /\/(art|audio|fonts)\//;
 
 self.addEventListener("install", () => self.skipWaiting());
 

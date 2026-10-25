@@ -49,7 +49,7 @@ export const STATIONS: Station[] = [
   },
   {
     id: "oven", tx: 7, ty: STATION_ROW_Y, name: "lò than", verb: "nướng bánh",
-    slot: "OVEN", needs: ["loaf_cold"], gives: "loaf_hot",
+    slot: "OVEN", needs: ["loaf_cold", "loaf_hot"], gives: "loaf_hot",
     holdMs: 1500, overcookMs: 2300, spoils: "loaf_burnt",
   },
   {

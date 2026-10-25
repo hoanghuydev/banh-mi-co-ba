@@ -7,17 +7,19 @@ import type { Hand } from "../world/stations";
 /** Tâm texture là điểm cầm, không phải tâm hình học của món. */
 export const HELD = { key: (h: HeldLook) => `held_${h}`, W: 40, H: 40 } as const;
 
-/** `loaf_baked` chỉ là chuyện vẽ nên không thêm vào `Hand`. */
-export type HeldLook = Hand | "loaf_baked";
+/** `loaf_soft`, `loaf_baked` chỉ là chuyện vẽ nên không thêm vào `Hand`. */
+export type HeldLook = Hand | "loaf_soft" | "loaf_baked";
 
 const CARRIED = [
-  "loaf_cold", "loaf_baked", "loaf_hot", "loaf_burnt", "loaf_filled", "tea",
+  "loaf_cold", "loaf_soft", "loaf_baked", "loaf_hot", "loaf_burnt", "loaf_filled", "tea",
 ] as const;
 
-/** Ổ nguội đã nướng giòn thì vẽ khác ổ bột sống. */
+/** Ổ trần theo độ giòn: bột trắng (chưa nướng) · vàng nhạt (chưa giòn) · vàng nâu (giòn). */
 export function heldTexture(hand: Hand, crust = 0): string {
-  if (hand === "loaf_cold" && crust >= CRUST.READY) return HELD.key("loaf_baked");
-  return HELD.key(hand);
+  if (hand !== "loaf_cold" && hand !== "loaf_hot") return HELD.key(hand);
+  if (crust <= 0) return HELD.key("loaf_cold");
+  if (crust < CRUST.READY) return HELD.key("loaf_soft");
+  return HELD.key(hand === "loaf_hot" ? "loaf_hot" : "loaf_baked");
 }
 
 const footPad = new Map<string, number>();
@@ -63,6 +65,12 @@ function loafCold(g: Pen, cx: number, cy: number) {
   loafBody(g, cx, cy, 0xe3d3ae, 0xbba884);
   g.fillStyle(0xcdbb96, 0.55);                         // vết bột còn bám trên vỏ
   g.fillEllipse(cx + 5, cy - 0.5, 7, 2.6);
+}
+
+function loafSoft(g: Pen, cx: number, cy: number) {
+  loafBody(g, cx, cy, 0xf0d58c, 0xcfb06a);
+  g.fillStyle(0xfaf0d2, 0.9);                          // vết rạch còn trắng
+  g.fillEllipse(cx, cy - 3.6, 14, 2.6);
 }
 
 /** Độ sáng xám bốn ổ phải tách nấc (nhợt 211 · vàng 178 · nguội 137 · cháy 62), đừng làm ổ này sáng lên. */
@@ -174,6 +182,7 @@ function teaCup(g: Pen, cx: number, cy: number) {
 
 const DRAW: Record<(typeof CARRIED)[number], (g: Pen, cx: number, cy: number) => void> = {
   loaf_cold: loafCold,
+  loaf_soft: loafSoft,
   loaf_baked: loafBakedCold,
   loaf_hot: loafHot,
   loaf_burnt: loafBurnt,

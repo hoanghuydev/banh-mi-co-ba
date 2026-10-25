@@ -8,6 +8,10 @@ export type CoachAim = {
   text: string;
   step?: number;
   total?: number;
+  /** Có thì hiện nút "Đã hiểu" gọi hàm này. */
+  ok?: () => void;
+  /** Bong bóng đặt ngang thì bám mép dưới lỗ thay vì giữa. */
+  low?: boolean;
 };
 
 const STYLE = `
@@ -30,6 +34,11 @@ const STYLE = `
   background:#fbf7ec;color:#4a4330;cursor:pointer;min-height:30px}
 .tg-skip:hover{background:#efe7d3}
 .tg-skip:focus-visible{outline:2px solid #8e2a20;outline-offset:2px}
+.tg-btns{display:flex;gap:8px}
+.tg-ok{font:inherit;font-size:.8em;font-weight:700;padding:5px 13px;border-radius:7px;border:1px solid #8e2a20;
+  background:#8e2a20;color:#fff7e6;cursor:pointer;min-height:30px}
+.tg-ok:hover{background:#a63427}
+.tg-ok:focus-visible{outline:2px solid #2b2f31;outline-offset:2px}
 `;
 
 const GAP = 14;
@@ -43,6 +52,8 @@ export class TourCoach {
   private stepEl: HTMLSpanElement;
   private last = "";
   private who!: HTMLDivElement;
+  private okBtn: HTMLButtonElement;
+  private onOk: (() => void) | null = null;
 
   constructor(opts: { textScale?: number; onSkip: () => void }) {
     if (!document.getElementById("tg-style")) {
@@ -76,7 +87,14 @@ export class TourCoach {
     skip.className = "tg-skip";
     skip.textContent = "Bỏ qua";
     skip.onclick = () => { this.hide(); opts.onSkip(); };
-    bar.append(this.stepEl, skip);
+    this.okBtn = document.createElement("button");
+    this.okBtn.className = "tg-ok";
+    this.okBtn.textContent = "Đã hiểu";
+    this.okBtn.onclick = () => this.onOk?.();
+    const btns = document.createElement("div");
+    btns.className = "tg-btns";
+    btns.append(skip, this.okBtn);
+    bar.append(this.stepEl, btns);
     col.append(who, this.txt, bar);
     this.bub.append(col);
 
@@ -95,33 +113,35 @@ export class TourCoach {
     this.last = "";
   }
 
-  pointEl(el: Element | null, text: string, step?: number, total?: number, shape: CoachShape = "rect") {
+  pointEl(el: Element | null, text: string, step?: number, total?: number, shape: CoachShape = "rect", low = false) {
     if (!el) { this.hide(); return; }
     const r = el.getBoundingClientRect();
     if (!r.width || !r.height) { this.hide(); return; }
-    this.aim({ x: r.left, y: r.top, w: r.width, h: r.height, shape, text, step, total });
+    this.aim({ x: r.left, y: r.top, w: r.width, h: r.height, shape, text, step, total, low });
   }
 
   /** Khoanh một ô theo toạ độ thiết kế; người gọi đã quy về toạ độ thiết kế. */
   pointDesign(canvas: HTMLCanvasElement | null, designW: number, designH: number,
-    o: { x: number; y: number; w: number; h: number; shape?: CoachShape; text: string; step?: number; total?: number }) {
+    o: { x: number; y: number; w: number; h: number; shape?: CoachShape; text: string; step?: number; total?: number; ok?: () => void }) {
     if (!canvas) { this.hide(); return; }
     const r = canvas.getBoundingClientRect();
     if (!r.width || !r.height) { this.hide(); return; }
     const kx = r.width / designW, ky = r.height / designH;
     this.aim({
       x: r.left + o.x * kx, y: r.top + o.y * ky, w: o.w * kx, h: o.h * ky,
-      shape: o.shape, text: o.text, step: o.step, total: o.total,
+      shape: o.shape, text: o.text, step: o.step, total: o.total, ok: o.ok,
     });
   }
 
   private aim(a: CoachAim) {
     const shape = a.shape ?? "circle";
     // Chỉ ghi chữ khi đổi, không thì nút "Bỏ qua" mất focus.
-    const key = `${a.text}|${a.step}|${shape}`;
+    const key = `${a.text}|${a.step}|${shape}|${!!a.ok}`;
+    this.onOk = a.ok ?? null;
     if (key !== this.last) {
       this.last = key;
       this.txt.textContent = a.text;
+      this.okBtn.style.display = a.ok ? "" : "none";
       this.stepEl.textContent = a.step && a.total ? `việc ${a.step}/${a.total}` : "";
     }
     this.root.style.display = "";
@@ -135,15 +155,15 @@ export class TourCoach {
     s.height = `${Math.round(h)}px`;
     s.borderRadius = shape === "circle" ? "50%" : "12px";
 
-    this.place(x, y, w, h);
+    this.place(x, y, w, h, !!a.low);
   }
 
   /** Dưới → phải → trên → trái; phải trước trên để không đè ổ bánh khi lỗ khoét cao. */
-  private place(x: number, y: number, w: number, h: number) {
+  private place(x: number, y: number, w: number, h: number, low: boolean) {
     const bw = this.bub.offsetWidth, bh = this.bub.offsetHeight;
     const vw = window.innerWidth, vh = window.innerHeight;
     const midX = () => clamp(x + w / 2 - bw / 2, EDGE, vw - EDGE - bw);
-    const midY = () => clamp(y + h / 2 - bh / 2, EDGE, vh - EDGE - bh);
+    const midY = () => clamp(low ? y + h - bh : y + h / 2 - bh / 2, EDGE, vh - EDGE - bh);
 
     let bx: number, by: number;
     if (y + h + GAP + bh <= vh - EDGE) { bx = midX(); by = y + h + GAP; }

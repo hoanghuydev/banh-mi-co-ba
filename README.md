@@ -59,7 +59,6 @@ Chợ sáng  →  Quầy (6:00–11:00 giờ game)  →  Tối đếm tiền  �
 | `1`–`9`, `0` / chạm | bỏ thêm một phần nguyên liệu trong bảng kẹp nhân · `Backspace` hoàn tác · `Esc` gác ổ lại |
 | `R` | nhấc ổ đang gác trên thớt |
 | `Q` | bỏ thứ đang cầm vô thùng |
-| giữ `C` | nghiêng người che tay — khách khó thấy hơn, nhưng không đi được |
 | `F` | trả lời / bắt chuyện người gần nhất. Đồng hồ vẫn chạy |
 | `P` / `Esc` / ⏸ | tạm dừng |
 

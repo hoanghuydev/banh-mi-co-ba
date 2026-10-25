@@ -120,8 +120,7 @@ export class Player {
     this.bob += dt * 11;
   }
 
-  /** `covering`: giữ C nghiêng người che tay — squash ngang + đẩy món ra sau thân thay cho frame mới. */
-  draw(reducedMotion: boolean, covering = false, marker = true) {
+  draw(reducedMotion: boolean, marker = true) {
     const { sx, sy } = toScreen(this.x, this.y);
     const depth = depthOf(this.x, this.y);
 
@@ -149,15 +148,14 @@ export class Player {
     // Frame đi đã có sẵn nhún, nên tắt cả nhún lẫn squash code để không nảy hai tầng.
     const bodyAmp = walkTex ? 0 : amp;
     const hop = Math.abs(Math.sin(this.bob)) * 2.4 * bodyAmp;
-    const lean = covering ? 5 : 0;
-    this.body.setPosition(sx + lean, footY(sy) - hop).setDepth(depth);
+    this.body.setPosition(sx, footY(sy) - hop).setDepth(depth);
     // Hệ số siêu lấy mẫu thuộc về texture (ảnh thật vs vẽ code), phải tính lại sau mỗi `setTexture`.
     const k = 1 / artScale(tex.key);
-    this.body.setScale(k * (covering ? 0.92 : 1), k * (1 + Math.sin(this.bob * 2) * 0.022 * bodyAmp));
+    this.body.setScale(k, k * (1 + Math.sin(this.bob * 2) * 0.022 * bodyAmp));
 
     this.light.update({ wx: this.x, wy: this.y, lift: hop });
 
-    this.drawMark(sx + lean, sy, hop, reducedMotion, marker);
+    this.drawMark(sx, sy, hop, reducedMotion, marker);
 
     if (!carrying) {
       this.held.setVisible(false);
@@ -171,8 +169,8 @@ export class Player {
     const feet = footY(sy) - (1 + BASE + TH / 2);
     // Tra hình theo cả độ giòn: ổ nướng dở để nguội vẫn là `loaf_cold` nhưng không được vẽ như bột sống.
     fitPhoto(this.held.setTexture(heldTexture(this.hand, this.heldCrust)))
-      .setPosition(sx + lean + (covering ? a.x * 0.35 : a.x), feet - hop - a.y)
-      .setDepth(depth + (covering || a.behind ? -0.5 : 1))
+      .setPosition(sx + a.x, feet - hop - a.y)
+      .setDepth(depth + (a.behind ? -0.5 : 1))
       .setVisible(true);
   }
 

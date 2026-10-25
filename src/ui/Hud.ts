@@ -16,7 +16,7 @@ const HELP_UNTIL_DAY = 3;
 const HELP_BY_DAY = [
   "WASD đi · E làm việc · Esc tạm dừng",
   "WASD đi · Shift chạy · E làm việc · Q đặt xuống",
-  "WASD đi · E làm việc · R cầm ổ trên thớt · Q đặt xuống · F hỏi chuyện · giữ C che tay",
+  "WASD đi · E làm việc · R cầm ổ trên thớt · Q đặt xuống · F hỏi chuyện",
 ];
 
 /** `GLANCE` = có người nhìn MẶT mình · `CLOSE` = có người nhìn thẳng vào TAY mình. */
@@ -54,6 +54,7 @@ export type ToastOpts = { icon?: NtfIcon; title?: string };
 
 const CREAM = "#f7f1e2";
 const BTN_W = 48, BTN_H = 38;
+export const EYE_BOX = { x: EYE_X - BTN_W / 2, y: EYE_Y - BTN_H / 2, w: BTN_W, h: BTN_H };
 
 /** Cùng kiểu với `glass()` nhưng vẽ lại được vào Graphics có sẵn khi kích thước đổi. */
 function paintGlass(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number, r = 12) {

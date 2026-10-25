@@ -138,10 +138,12 @@ const NPC_PHOTOS: Record<string, { src: (d: Facing8) => string; h: number; walk?
   ANH_DUNG: { src: (d) => `npc/anh-dung/${d}`, h: 64 },
   BA_BAY: { src: (d) => `npc/ba-bay/${d}`, h: 64, walk: "ba-bay" },
   ANH_BAO: { src: (d) => `npc/anh-bao/${d}`, h: 65, walk: "anh-bao" },
+  CHU_KIET: { src: (d) => `npc/chu-dat/${d}`, h: 64, walk: "chu-dat" },
 };
 
 const CARRIED: Partial<Record<HeldLook, [src: string, size: Fit]>> = {
   loaf_cold: ["held_loaf_cold", { w: 21 }],
+  loaf_soft: ["held_loaf_soft", { w: 21 }],
   loaf_baked: ["held_loaf_baked", { w: 21 }],
   loaf_hot: ["held_loaf_hot", { w: 21 }],
   loaf_burnt: ["held_loaf_burnt", { w: 21 }],
@@ -156,9 +158,11 @@ const FILLINGS: Partial<Record<Ingredient, [src: string, fill?: number, inLoaf?:
   xiumai: ["ing_xiumai"],
   opla: ["ing_opla"],
   dochua: ["ing_dochua"],
+  dualeo: ["ing_dualeo"],
   hanhngo: ["ing_hanhngo"],
   // Ảnh ớt kín khung nên thu nhỏ; số thứ ba là cỡ lúc nằm trong ổ.
   ot: ["ing_ot", 0.62, 0.40],
+  tuongot: ["ing_tuongot"],
 };
 
 const OPEN_LOAF = ["loaf_lid", "loaf_trough"] as const;

@@ -371,6 +371,7 @@ PROPS = [
 # Cột 3: có xoay về ngang không.
 HELD = [
     ("held_loaf_cold", "bread_dough" + R, True),
+    ("held_loaf_soft", "half_baked_baguette-cut.png", True),
     ("held_loaf_baked", "o_nguoi-Photoroom.png", True),
     ("held_loaf_hot", "baked_baguette" + R, True),
     ("held_loaf_burnt", "burnt_baguette" + R, True),
@@ -378,22 +379,25 @@ HELD = [
     ("held_tea", "iced_tea_glass" + R, False),
 ]
 
-# Thiếu `dualeo` và `tuongot`: hai món này vẽ bằng code trong `photo.ts`.
 INGREDIENTS = [
     ("ing_pate", "pate_spread" + R),
     ("ing_thit", "ham_slice" + R),
     ("ing_chalua", "pork_roll_slice" + R),
     ("ing_xiumai", "meatball_in_tomato_sauce" + R),
     ("ing_opla", "fried_egg" + R),
-    ("ing_dochua", "pickled_carrot_and_daikon" + R),
+    ("ing_dochua", "pickle_two_strips-cut.png"),
+    ("ing_dualeo", "cucumber_slice-cut.png"),
     ("ing_hanhngo", "cilantro_and_scallion" + R),
     ("ing_ot", "sliced_red_chili" + R.replace(".png", " (2).png")),
+    ("ing_tuongot", "chili_sauce_drizzle-cut.png"),
 ]
 
 # Ảnh ô kho, khác ảnh nhân đặt lên bánh.
 STOCK = [
     ("kho_ot", "ot_trai-Photoroom.png"),
     ("kho_tuongot", "chai_tuong_ot-Photoroom.png"),
+    ("kho_dochua", "pickled_carrot_and_daikon" + R),
+    ("kho_rau", "veg_cucumber_herbs-cut.png"),
 ]
 
 
