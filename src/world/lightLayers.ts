@@ -125,6 +125,55 @@ function coverOf(img: ImageData) {
   };
 }
 
+/** Lề lặp điểm ảnh mép quanh mỗi khung, để lọc song tuyến ở mép đọc như texture riêng (kẹp mép). */
+const ATLAS_PAD = 2;
+const ATLAS_W = 2048;
+
+/** Xếp ảnh theo hàng vào một canvas. */
+class Atlas {
+  readonly frames: { x: number; y: number; w: number; h: number; img: Img }[] = [];
+  private x = 0;
+  private y = 0;
+  private row = 0;
+
+  add(img: Img) {
+    const w = img.w + ATLAS_PAD * 2, h = img.h + ATLAS_PAD * 2;
+    if (this.x + w > ATLAS_W) {
+      this.x = 0;
+      this.y += this.row;
+      this.row = 0;
+    }
+    this.frames.push({ x: this.x + ATLAS_PAD, y: this.y + ATLAS_PAD, w: img.w, h: img.h, img });
+    this.x += w;
+    this.row = Math.max(this.row, h);
+    return this.frames.length - 1;
+  }
+
+  canvas() {
+    const c = document.createElement("canvas");
+    c.width = Math.max(1, ...this.frames.map((f) => f.x + f.w + ATLAS_PAD));
+    c.height = Math.max(1, this.y + this.row);
+    const ctx = c.getContext("2d")!;
+    for (const { x, y, img } of this.frames) {
+      const w = img.w + ATLAS_PAD * 2, h = img.h + ATLAS_PAD * 2;
+      const out = new ImageData(w, h);
+      for (let j = 0; j < h; j++) {
+        const sy = Math.min(img.h - 1, Math.max(0, j - ATLAS_PAD));
+        for (let i = 0; i < w; i++) {
+          const sx = Math.min(img.w - 1, Math.max(0, i - ATLAS_PAD));
+          const o = (j * w + i) * 4, q = (sy * img.w + sx) * 4;
+          out.data[o] = img.data[q];
+          out.data[o + 1] = img.data[q + 1];
+          out.data[o + 2] = img.data[q + 2];
+          out.data[o + 3] = img.data[q + 3];
+        }
+      }
+      ctx.putImageData(out, x - ATLAS_PAD, y - ATLAS_PAD);
+    }
+    return c;
+  }
+}
+
 /** Lightmap, phản chiếu và đốm lá của sàn cùng các đạo cụ đứng yên. */
 export class SceneLight {
   private readonly props: Prop[] = [];
@@ -232,9 +281,12 @@ export class SceneLight {
     }
   }
 
+  /** Mỗi tường bốn lớp phủ; xếp hai lớp MULTIPLY rồi hai lớp SCREEN (thân và nóc không chồng nhau) và gom vào atlas để mỗi nhóm một lượt vẽ. */
   private buildWalls() {
     const leafAt = leafCover(wallCanopies(this.scene));
-    const made = new Map<string, { shade: string; light: string; scale: number }>();
+    const shade = new Atlas(), light = new Atlas();
+    const made = new Map<string, { shade: number; light: number }>();
+    const placed: { img: Phaser.GameObjects.Image; shade: number; light: number; topShade: number; topLight: number }[] = [];
     for (const img of this.walls) {
       const key = img.texture.key;
       const src = this.cache.get(key) ?? readImg(this.scene, key);
@@ -243,7 +295,7 @@ export class SceneLight {
       let m = made.get(key);
       if (!m) {
         const o = wallOverlays(src, imgScale);
-        m = { shade: this.paint(o.shade), light: this.paint(o.light), scale: img.scaleX };
+        m = { shade: shade.add(o.shade), light: light.add(o.light) };
         made.set(key, m);
       }
       const groundY = img.y - TH / 2 - BASE;
@@ -251,18 +303,29 @@ export class SceneLight {
         const { wx, wy } = worldAt(img.x + dx, groundY + dy);
         return leafAt(wx, wy);
       });
+      placed.push({ img, ...m, topShade: shade.add(top.shade), topLight: light.add(top.light) });
+    }
+    const shadeKey = this.paintAtlas("wall-shade", shade), lightKey = this.paintAtlas("wall-light", light);
+    for (const p of placed) {
+      const { img } = p;
       const topY = img.y - img.displayHeight;
+      const add = (x: number, y: number, key: string, frame: number, oy: number, blend: number) =>
+        this.scene.add.image(x, y, key, frame).setOrigin(0.5, oy).setScale(img.scaleX)
+          .setDepth(img.depth + 0.1).setBlendMode(blend);
       this.objects.push(
-        this.scene.add.image(img.x, img.y, m.shade).setOrigin(0.5, 1).setScale(m.scale)
-          .setDepth(img.depth + 0.1).setBlendMode(Phaser.BlendModes.MULTIPLY),
-        this.scene.add.image(img.x, img.y, m.light).setOrigin(0.5, 1).setScale(m.scale)
-          .setDepth(img.depth + 0.1).setBlendMode(Phaser.BlendModes.SCREEN),
-        this.scene.add.image(img.x, topY, this.paint(top.shade)).setOrigin(0.5, 0).setScale(m.scale)
-          .setDepth(img.depth + 0.1).setBlendMode(Phaser.BlendModes.MULTIPLY),
-        this.scene.add.image(img.x, topY, this.paint(top.light)).setOrigin(0.5, 0).setScale(m.scale)
-          .setDepth(img.depth + 0.1).setBlendMode(Phaser.BlendModes.SCREEN),
+        add(img.x, img.y, shadeKey, p.shade, 1, Phaser.BlendModes.MULTIPLY),
+        add(img.x, topY, shadeKey, p.topShade, 0, Phaser.BlendModes.MULTIPLY),
+        add(img.x, img.y, lightKey, p.light, 1, Phaser.BlendModes.SCREEN),
+        add(img.x, topY, lightKey, p.topLight, 0, Phaser.BlendModes.SCREEN),
       );
     }
+  }
+
+  private paintAtlas(name: string, atlas: Atlas) {
+    const key = this.paintCanvas(name, atlas.canvas());
+    const tex = this.scene.textures.get(key);
+    atlas.frames.forEach((f, i) => tex.add(i, 0, f.x, f.y, f.w, f.h));
+    return key;
   }
 
   private paintCanvas(name: string, canvas: HTMLCanvasElement) {
