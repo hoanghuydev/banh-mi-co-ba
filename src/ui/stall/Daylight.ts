@@ -84,7 +84,6 @@ function buildPatch(scene: Phaser.Scene, key: string, ground: Phaser.Geom.Rectan
 }
 
 export class Daylight {
-  private readonly tone: Phaser.GameObjects.Rectangle;
   private readonly vignette: Phaser.GameObjects.Image;
   private readonly patch: Phaser.GameObjects.Image | null;
   private readonly view = new Phaser.Geom.Rectangle();
@@ -97,10 +96,8 @@ export class Daylight {
     this.patchX = ground.x;
     this.sun = overcast ? OVERCAST : sunAt(0);
     buildVignette(scene);
-    this.tone = scene.add.rectangle(0, 0, 1, 1, 0xffffff).setOrigin(0, 0)
-      .setDepth(TONE_DEPTH).setBlendMode(Phaser.BlendModes.MULTIPLY);
     this.vignette = scene.add.image(0, 0, VIGNETTE).setOrigin(0, 0)
-      .setDepth(TONE_DEPTH + 1).setBlendMode(Phaser.BlendModes.MULTIPLY);
+      .setDepth(TONE_DEPTH).setBlendMode(Phaser.BlendModes.MULTIPLY);
 
     if (overcast) {
       this.patch = null;
@@ -122,7 +119,6 @@ export class Daylight {
       this.view.setTo(view.x, view.y, view.width, view.height);
       const x = view.x - VIEW_PAD, y = view.y - VIEW_PAD;
       const w = view.width + VIEW_PAD * 2, h = view.height + VIEW_PAD * 2;
-      this.tone.setPosition(x, y).setSize(w, h);
       this.vignette.setPosition(x, y).setDisplaySize(w, h);
     }
 
@@ -131,14 +127,14 @@ export class Daylight {
     this.step = step;
     if (!this.overcast) this.sun = sunAt(minutes);
     const s = this.sun;
-    this.tone.setFillStyle(s.tone);
+    // Màu ngày nhân vào vignette: hai lớp MULTIPLY gộp thành một lượt phủ màn.
+    this.vignette.setTint(s.tone);
     this.patch?.setX(this.patchX + s.patchShift * (TW / 2))
       .setAlpha(s.patchAlpha).setTint(s.patchTint);
     return this.patch !== null;
   }
 
   destroy() {
-    this.tone.destroy();
     this.vignette.destroy();
   }
 }
