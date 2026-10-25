@@ -8,8 +8,8 @@ import { holdLoop } from "../core/loopHold";
 
 /** Phần thanh tiến độ dành cho tải file; còn lại là nướng texture. */
 const LOAD_SHARE = 0.4;
-/** Ngân sách mỗi lát khi có người đang chờ màn tải: vẫn dưới mốc 50 ms của long task. */
-export const WAIT_SLICE_MS = 25;
+/** Ngân sách mỗi lát khi màn chờ đang che: sát mốc 50 ms của long task để xong sớm. */
+export const WAIT_SLICE_MS = 40;
 
 let job: Promise<void> | null = null;
 let loaded: Promise<unknown> | null = null;
