@@ -8,7 +8,7 @@ import { SKY_FROM_Y, WORLD_H, WORLD_W, tileAt } from "./map";
 import { floorAtScreen, lightSpecOf, worldAt } from "./lightParams";
 import { BASE } from "../art/canvas";
 import { TH, toScreen } from "./iso";
-import { buildCornerAo, buildTintLayers, roadWeight, wallOverlays, wallTopOverlays } from "./lightTint";
+import { buildCornerAo, buildTintLayers, roadWeight, wallOverlays, wallTopOverlays, type TintLayers } from "./lightTint";
 import type { FloorBake } from "./floorBake";
 import { readImg, type TexPixels } from "./texPixels";
 
@@ -16,6 +16,9 @@ const DAPPLE_DEPTH = 0.2;
 
 type Prop = { img: Phaser.GameObjects.Image; key: string };
 type Lit = { obj: LitObject; img: Phaser.GameObjects.Image; indoor: boolean };
+type TintKey = Exclude<keyof TintLayers, "w" | "h">;
+/** Kết quả giữa các bước dựng; bước sau dùng xong thì gỡ ra để GC thu sớm. */
+type Build = { objects: Lit[]; out?: FloorLightOutput; sun?: FloorLightOutput["sun"]; tint?: Partial<Pick<TintLayers, TintKey>> };
 
 const grayCache = new Map<string, Gray>();
 
@@ -194,15 +197,16 @@ export class SceneLight {
 
   /** Các bước dựng theo thứ tự; mỗi `yield` là chỗ được nhường luồng. */
   steps(): Step[] {
-    const st: { objects: Lit[]; out?: FloorLightOutput } = { objects: [] };
+    const st: Build = { objects: [] };
     const lit = () => !this.env.overcast;
     return [
       () => this.readProps(st.objects),
       () => this.compose(st),
-      () => this.paintFloorLight(st.out!),
-      () => (lit() ? this.paintTints(st.out!.sun) : undefined),
+      () => this.paintFloorLight(st),
+      () => (lit() ? this.buildTints(st) : undefined),
+      () => (lit() ? this.paintTints(st) : undefined),
       () => (lit() ? this.buildWalls() : undefined),
-      () => (lit() ? this.dapple(st.objects, st.out!.sun) : undefined),
+      () => (lit() ? this.dapple(st) : undefined),
     ];
   }
 
@@ -226,7 +230,7 @@ export class SceneLight {
     }
   }
 
-  private *compose(st: { objects: Lit[]; out?: FloorLightOutput }) {
+  private *compose(st: Build) {
     const { ground } = this;
     const canopies = canopiesOf(this.scene);
     yield;
@@ -242,14 +246,15 @@ export class SceneLight {
     });
   }
 
-  private *paintFloorLight(out: FloorLightOutput) {
+  private *paintFloorLight(st: Build) {
     const { scene, ground, env, scale } = this;
-    this.layer("lightmap", out.lightmap, LIGHT_DEPTH.lightmap, true);
+    this.layer("lightmap", st.out!.lightmap, LIGHT_DEPTH.lightmap, true);
     yield;
-    this.layer("reflection", out.reflection, LIGHT_DEPTH.reflection, false);
+    this.layer("reflection", st.out!.reflection, LIGHT_DEPTH.reflection, false);
+    const sun = (st.sun = st.out!.sun);
+    st.out = undefined;
     yield;
 
-    const sun = out.sun;
     const sunCanvas = document.createElement("canvas");
     sunCanvas.width = sun.w;
     sunCanvas.height = sun.h;
@@ -275,27 +280,33 @@ export class SceneLight {
       .setDepth(LIGHT_DEPTH.lightmap + 2).setBlendMode(Phaser.BlendModes.MULTIPLY));
   }
 
-  private *paintTints(sun: FloorLightOutput["sun"]) {
-    const tint = yield* buildTintLayers(this.ground, sun, this.scale, insideAt, toScreen);
-    const tints: [string, Img, boolean, number | undefined][] = [
-      ["warm", tint.warm, false, Phaser.BlendModes.SCREEN],
-      ["walk", tint.walk, false, Phaser.BlendModes.SCREEN],
-      ["shopshade", tint.shade, true, undefined],
-      ["lift", tint.lift, false, Phaser.BlendModes.SCREEN],
-      ["shaft", tint.shaft, false, undefined],
-      ["core", tint.core, false, Phaser.BlendModes.SCREEN],
-      ["cool", tint.cool, true, undefined],
-    ];
-    for (const [name, img, multiply, blend] of tints) {
-      this.layer(name, img, LIGHT_DEPTH.lightmap + 1, multiply, blend, 1);
-      yield;
-    }
+  private *buildTints(st: Build) {
+    st.tint = yield* buildTintLayers(this.ground, st.sun!, this.scale, insideAt, toScreen);
   }
 
-  private *dapple(objects: Lit[], sun: FloorLightOutput["sun"]) {
+  private *paintTints(st: Build) {
+    const tints: [string, TintKey, boolean, number | undefined][] = [
+      ["warm", "warm", false, Phaser.BlendModes.SCREEN],
+      ["walk", "walk", false, Phaser.BlendModes.SCREEN],
+      ["shopshade", "shade", true, undefined],
+      ["lift", "lift", false, Phaser.BlendModes.SCREEN],
+      ["shaft", "shaft", false, undefined],
+      ["core", "core", false, Phaser.BlendModes.SCREEN],
+      ["cool", "cool", true, undefined],
+    ];
+    for (const [name, k, multiply, blend] of tints) {
+      this.layer(name, st.tint![k]!, LIGHT_DEPTH.lightmap + 1, multiply, blend, 1);
+      delete st.tint![k];
+      yield;
+    }
+    st.tint = undefined;
+  }
+
+  private *dapple(st: Build) {
     const { ground, scale } = this;
+    const sun = st.sun!;
     const rect = { x: ground.x, y: ground.y, w: ground.width, h: ground.height };
-    for (const { obj, img, indoor } of objects) {
+    for (const { obj, img, indoor } of st.objects) {
       if (indoor) continue;
       const over = dappleOverlay(obj, sun, rect, scale, obj.shadowK ?? LIGHT.SUN_K);
       const key = this.paint(over);
@@ -378,7 +389,7 @@ export class SceneLight {
     const key = `light/${this.scene.scene.key}/${name}`;
     if (this.scene.textures.exists(key)) this.scene.textures.remove(key);
     const tex = this.scene.textures.createCanvas(key, img.w, img.h)!;
-    tex.getContext().putImageData(new ImageData(new Uint8ClampedArray(img.data), img.w, img.h), 0, 0);
+    tex.getContext().putImageData(new ImageData(img.data as Uint8ClampedArray<ArrayBuffer>, img.w, img.h), 0, 0);
     tex.refresh();
     this.keys.push(key);
     return key;

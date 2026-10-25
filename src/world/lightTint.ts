@@ -85,6 +85,7 @@ function shaftField(
     ctx.fill();
   }
   const d = ctx.getImageData(0, 0, w, h).data;
+  c.width = c.height = 0;
   const f = new Float32Array(w * h);
   for (let i = 0; i < f.length; i++) f[i] = d[i * 4 + 3] / 255;
   boxBlur(f, w, h, blur);
@@ -185,7 +186,9 @@ export function* buildTintLayers(
   const shopMask = new Float32Array(n);
   const dark = new Float32Array(n);
   const corner = new Float32Array(n);
-  const cornerData = buildCornerAo(ground, toScreen).getContext("2d")!.getImageData(0, 0, w, h).data;
+  const cornerAo = buildCornerAo(ground, toScreen);
+  const cornerData = cornerAo.getContext("2d")!.getImageData(0, 0, w, h).data;
+  cornerAo.width = cornerAo.height = 0;
   for (let i = 0; i < n; i++) {
     shopMask[i] = zone[i * 3];
     dark[i] = zone[i * 3] > 0 ? 1 - Math.min(1, sunSharp[i]) : 0;

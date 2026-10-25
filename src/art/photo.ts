@@ -294,8 +294,8 @@ function source(scene: Phaser.Scene, name: string): HTMLImageElement | null {
 }
 
 /** Thu nhỏ từng nửa một, vì thu một phát thì song tuyến tính bỏ sót điểm nguồn, ảnh rỗ. */
-function shrink(img: HTMLImageElement | HTMLCanvasElement, w: number, h: number): CanvasImageSource {
-  let src: CanvasImageSource = img;
+function shrink(img: HTMLImageElement | HTMLCanvasElement, w: number, h: number): HTMLImageElement | HTMLCanvasElement {
+  let src = img;
   let sw = img.width, sh = img.height;
   while (sw > w * 2 && sh > h * 2) {
     sw = Math.max(Math.round(w), sw >> 1);
@@ -307,9 +307,25 @@ function shrink(img: HTMLImageElement | HTMLCanvasElement, w: number, h: number)
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
     ctx.drawImage(src, 0, 0, sw, sh);
+    if (src !== img) free(src);
     src = step;
   }
   return src;
+}
+
+/** Trả bộ nhớ canvas nháp ngay, không chờ GC (Safari iOS dọn rất trễ). */
+function free(c: HTMLImageElement | HTMLCanvasElement) {
+  if (c instanceof HTMLCanvasElement) c.width = c.height = 0;
+}
+
+/** `shrink` rồi vẽ vào `ctx` ở khung thiết kế `x, y, dw, dh`. */
+function drawShrunk(
+  ctx: CanvasRenderingContext2D, img: HTMLImageElement | HTMLCanvasElement, w: number, h: number,
+  x: number, y: number, dw: number, dh: number,
+) {
+  const small = shrink(img, w, h);
+  ctx.drawImage(small, x, y, dw, dh);
+  if (small !== img) free(small);
 }
 
 function onCounter(scene: Phaser.Scene, key: string, src: string, w: number) {
@@ -318,7 +334,7 @@ function onCounter(scene: Phaser.Scene, key: string, src: string, w: number) {
   const h = (img.height / img.width) * w;
   const made = blank(scene, key, w, h, ART_SS);
   if (!made) return;
-  made.ctx.drawImage(shrink(img, w * ART_SS, h * ART_SS), 0, 0, w, h);
+  drawShrunk(made.ctx, img, w * ART_SS, h * ART_SS, 0, 0, w, h);
   made.tex.refresh();
 }
 
@@ -345,8 +361,7 @@ function standing(scene: Phaser.Scene, key: string, src: string, o: Standing) {
   const made = blank(scene, key, W, H, ART_SS);
   if (!made) return;
   // `shrink` tính theo pixel thật, `drawImage` theo toạ độ thiết kế.
-  made.ctx.drawImage(shrink(img, w * ART_SS, h * ART_SS),
-    Math.round(W / 2 - w / 2 + (o.dx ?? 0)), 0, w, h);
+  drawShrunk(made.ctx, img, w * ART_SS, h * ART_SS, Math.round(W / 2 - w / 2 + (o.dx ?? 0)), 0, w, h);
   made.tex.refresh();
 }
 
@@ -386,6 +401,7 @@ function bench(scene: Phaser.Scene) {
     made.ctx.restore();
     made.tex.refresh();
   }
+  if (small !== img) free(small);
 }
 
 /** Bàn để bánh là lát một ô cắt từ ảnh bàn 2 × 1 (mặt phẳng x = 5), nên cùng màu và mép với bàn kề, chỗ nối liền. */
@@ -410,7 +426,7 @@ function prepFromLong(scene: Phaser.Scene) {
   made.ctx.lineTo(left + 4000, 2000);
   made.ctx.closePath();
   made.ctx.clip();
-  made.ctx.drawImage(shrink(img, w * ART_SS, h * ART_SS), Math.round(W / 2 - w / 2 + dx), -0.8, w, h);
+  drawShrunk(made.ctx, img, w * ART_SS, h * ART_SS, Math.round(W / 2 - w / 2 + dx), -0.8, w, h);
 
   // Mặt bàn dài sáng dần về đầu phải; làm sáng mặt trên lát giảm dần về 0 để màu nối tiếp liên tục.
   const zt = h - 3 * (TH / 2);
@@ -443,19 +459,19 @@ function standingFromAtlas(
   const f = sheet?.frames.get(frame);
   if (!sheet || !f) return false;
 
-  const cut = document.createElement("canvas");
-  cut.width = f.w;
-  cut.height = f.h;
-  cut.getContext("2d")!.drawImage(sheet.img, f.x, f.y, f.w, f.h, 0, 0, f.w, f.h);
-
   const h = o.h;
   const w = (f.w / f.h) * h;
   const W = Math.max(TW + 2, Math.ceil(w + 2 * Math.abs(o.dx ?? 0)) + 6);
   const H = Math.ceil(h + BASE + TH / 2 + 1 - (o.dy ?? SIT));
   const made = blank(scene, key, W, H, ART_SS);
   if (!made) return false;
-  made.ctx.drawImage(shrink(cut, w * ART_SS, h * ART_SS),
+  const cut = document.createElement("canvas");
+  cut.width = f.w;
+  cut.height = f.h;
+  cut.getContext("2d")!.drawImage(sheet.img, f.x, f.y, f.w, f.h, 0, 0, f.w, f.h);
+  drawShrunk(made.ctx, cut, w * ART_SS, h * ART_SS,
     Math.round(W / 2 - w / 2 + (o.dx ?? 0)), 0, w, h);
+  free(cut);
   made.tex.refresh();
   return true;
 }
@@ -469,7 +485,7 @@ function boxed(scene: Phaser.Scene, key: string, src: string, size: number, fit:
   const w = img.width * k, h = img.height * k;
   const made = blank(scene, key, size, size, ART_SS);
   if (!made) return;
-  made.ctx.drawImage(shrink(img, w, h), (size - w) / 2, (size - h) / 2, w, h);
+  drawShrunk(made.ctx, img, w, h, (size - w) / 2, (size - h) / 2, w, h);
   made.tex.refresh();
 }
 
@@ -494,7 +510,7 @@ export function photoRatio(scene: Phaser.Scene, name: string) {
 
 export function drawPhoto(ctx: CanvasRenderingContext2D, scene: Phaser.Scene, name: string, w: number, h: number) {
   const img = source(scene, name);
-  if (img) ctx.drawImage(shrink(img, w * ART_SS, h * ART_SS), 0, 0, w, h);
+  if (img) drawShrunk(ctx, img, w * ART_SS, h * ART_SS, 0, 0, w, h);
 }
 
 /** Vẽ ảnh khung co giãn 9 mảnh: mảnh góc `slice` px ảnh nguồn thành `border` px thiết kế. */
@@ -624,8 +640,8 @@ function openLoaf(scene: Phaser.Scene) {
   const x = (FOOD.LOAF_W - w) / 2;
   const cy = FOOD.LOAF_H / 2 + FOOD.CRUMB_DY;
   // Mép trên nắp cao hơn mép trên máng đúng `LID_PEEK`, không phụ thuộc chiều cao nắp.
-  made.ctx.drawImage(shrink(lid, w, lh), x, cy - th / 2 - FOOD.LID_PEEK, w, lh);
-  made.ctx.drawImage(shrink(trough, w, th), x, cy - th / 2, w, th);
+  drawShrunk(made.ctx, lid, w, lh, x, cy - th / 2 - FOOD.LID_PEEK, w, lh);
+  drawShrunk(made.ctx, trough, w, th, x, cy - th / 2, w, th);
   made.tex.refresh();
 }
 

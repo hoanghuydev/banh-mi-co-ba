@@ -11,6 +11,7 @@ export function readImg(scene: Phaser.Scene, key: string): Img | null {
     const ctx = c.getContext("2d", { willReadFrequently: true })!;
     ctx.drawImage(src, 0, 0);
     const d = ctx.getImageData(0, 0, c.width, c.height);
+    c.width = c.height = 0;
     return { w: d.width, h: d.height, data: d.data };
   } catch {
     return null;
@@ -35,5 +36,9 @@ export class TexPixels {
   get(key: string): Img | null {
     if (!this.got.has(key)) this.got.set(key, readImg(this.scene, key));
     return this.got.get(key)!;
+  }
+
+  clear() {
+    this.got.clear();
   }
 }

@@ -263,6 +263,7 @@ export function* feetSteps(textures: Phaser.Textures.TextureManager) {
     const ctx = sheet.getContext("2d")!;
     for (const { f, h, y: at } of frames) ctx.drawImage(f.source.image as CanvasImageSource, f.cutX, f.cutY + f.cutHeight - h, f.cutWidth, h, 0, at, f.cutWidth, h);
     const data = ctx.getImageData(0, 0, w, y).data;
+    sheet.width = sheet.height = 0;
     for (const { f, h, y: at } of frames) {
       for (let r = h - 1; r >= 0; r--) {
         if (!opaqueRow(data, w, at + r)) continue;

@@ -20,6 +20,7 @@ export function opaqueBox(scene: Phaser.Scene, key: string): OpaqueBox {
     const ctx = cv.getContext("2d", { willReadFrequently: true })!;
     ctx.drawImage(src, 0, 0);
     const d = ctx.getImageData(0, 0, w, h).data;
+    cv.width = cv.height = 0;
     let l = w, r = -1, t = h, b = -1;
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {

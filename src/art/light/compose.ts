@@ -13,14 +13,15 @@ type Placed = { obj: LitObject; fit: Img; x0: number; y0: number };
 
 type CanopyField = { w: number; h: number; data: Float32Array };
 
-const canopyCache = new WeakMap<Gray, Map<number, CanopyField>>();
+/** Không giữ qua các lượt dựng: mỗi trường vài MB. */
+type CanopyMemo = Map<Gray, Map<number, CanopyField>>;
 
 /** Giá trị xám -> độ che 0–1, giữ nguyên chi tiết; trắng là nắng, xám trung bình là bóng đủ; `soft` là độ nhoè theo ô. */
-function canopyField(c: Canopy): CanopyField {
+function canopyField(c: Canopy, memo: CanopyMemo): CanopyField {
   const img = c.img;
   const sigma = Math.round(((c.soft ?? 0) * img.w) / c.w * 4) / 4;
-  let bySigma = canopyCache.get(img);
-  if (!bySigma) canopyCache.set(img, (bySigma = new Map()));
+  let bySigma = memo.get(img);
+  if (!bySigma) memo.set(img, (bySigma = new Map()));
   const hit = bySigma.get(sigma);
   if (hit) return hit;
   const data = new Float32Array(img.w * img.h);
@@ -56,7 +57,8 @@ function canopyAt(f: CanopyField, c: Canopy, wx: number, wy: number): number {
 
 /** Độ che lá 0–1 tại điểm thế giới (ô): hợp các mảng. */
 export function leafCover(canopies: Canopy[]): (wx: number, wy: number) => number {
-  const fields = canopies.map(canopyField);
+  const memo: CanopyMemo = new Map();
+  const fields = canopies.map((c) => canopyField(c, memo));
   return (wx, wy) => {
     let lf = 0;
     for (let k = 0; k < fields.length; k++) lf = 1 - (1 - lf) * (1 - canopyAt(fields[k], canopies[k], wx, wy));
@@ -189,7 +191,7 @@ export function composeFloorLight(input: FloorLightInput): FloorLightOutput {
 
 /** Như `composeFloorLight`, mỗi `yield` là chỗ được nhường luồng. */
 export function* composeFloorLightSteps(input: FloorLightInput): Generator<void, FloorLightOutput> {
-  const { rect, scale, canopies, glossAt, insideAt, overcast } = input;
+  const { rect, scale, glossAt, insideAt, overcast } = input;
   const W = Math.ceil(rect.w * scale);
   const H = Math.ceil(rect.h * scale);
   const n = W * H;
@@ -198,6 +200,52 @@ export function* composeFloorLightSteps(input: FloorLightInput): Generator<void,
     placed.push(placeObject(o, rect, scale));
     yield;
   }
+  const inside = new Uint8Array(n);
+  fillCoarse(inside, W, H, GRID_STEP, (px, py) => (insideAt(rect.x + px / scale, rect.y + py / scale) ? 1 : 0));
+  yield;
+  const { lm, sun } = yield* lightPass(input, placed, inside, W, H);
+  const gloss = new Float32Array(n);
+  fillCoarse(gloss, W, H, GRID_STEP, (px, py) => glossAt(rect.x + px / scale, rect.y + py / scale));
+  yield;
+
+  const sunField = { w: W, h: H, data: sun };
+  const refl = new Uint8ClampedArray(n * 4);
+  const mat = FLOOR_MATERIALS.shop;
+  for (const p of placed) {
+    const lit = overcast
+      ? p.fit
+      : multiplyOverlay(p.fit, dappleOverlay({ ...p.obj, img: p.fit, imgScale: scale }, sunField, rect, scale, p.obj.shadowK ?? LIGHT.SUN_K));
+    yield;
+    const r = reflect(lit, p.obj.side, mat.reflNear, mat.reflFar);
+    for (let y = 0; y < r.h; y++) {
+      const gy = p.y0 + y;
+      if (gy < 0 || gy >= H) continue;
+      for (let x = 0; x < r.w; x++) {
+        const gx = p.x0 + x;
+        if (gx < 0 || gx >= W) continue;
+        const i = (y * r.w + x) << 2;
+        const ra = r.data[i + 3];
+        const o = gy * W + gx;
+        if (ra === 0 || !inside[o]) continue;
+        const gl = gloss[o];
+        const a = (ra / 255) * (gl < 0 ? 0 : gl > 1 ? 1 : gl);
+        if (a <= 0) continue;
+        const q = o << 2;
+        const oa = refl[q + 3] / 255;
+        const na = a + oa * (1 - a);
+        for (let c = 0; c < 3; c++) refl[q + c] = (r.data[i + c] * a + refl[q + c] * oa * (1 - a)) / na;
+        refl[q + 3] = na * 255;
+      }
+    }
+  }
+
+  return { lightmap: { w: W, h: H, data: lm }, reflection: { w: W, h: H, data: refl }, sun: sunField };
+}
+
+/** Bóng, AO và lá ra lightmap cùng ảnh nắng; mảng trung gian hết hạn khi hàm trả về. */
+function* lightPass(input: FloorLightInput, placed: Placed[], inside: Uint8Array, W: number, H: number) {
+  const { rect, scale, canopies, overcast } = input;
+  const n = W * H;
   const cast = new Float32Array(n);
   const ao = new Float32Array(n);
   for (const p of placed) {
@@ -206,19 +254,13 @@ export function* composeFloorLightSteps(input: FloorLightInput): Generator<void,
     yield;
   }
 
-  const inside = new Uint8Array(n);
-  fillCoarse(inside, W, H, GRID_STEP, (px, py) => (insideAt(rect.x + px / scale, rect.y + py / scale) ? 1 : 0));
-  yield;
-  const gloss = new Float32Array(n);
-  fillCoarse(gloss, W, H, GRID_STEP, (px, py) => glossAt(rect.x + px / scale, rect.y + py / scale));
-  yield;
-
   const SW = Math.ceil(W / GRID_STEP) + 2;
   const SH = Math.ceil(H / GRID_STEP) + 2;
   const gs = new Float32Array(SW * SH).fill(1);
+  const memo: CanopyMemo = new Map();
   const fields: CanopyField[] = [];
   for (const c of canopies) {
-    fields.push(canopyField(c));
+    fields.push(canopyField(c, memo));
     yield;
   }
   const leafA = new Float32Array(W);
@@ -296,37 +338,5 @@ export function* composeFloorLightSteps(input: FloorLightInput): Generator<void,
       out[o] = ((255 << 24) | ((bb > 255 ? 255 : bb + 0.5) << 16) | ((gg > 255 ? 255 : gg + 0.5) << 8) | (r > 255 ? 255 : r + 0.5)) >>> 0;
     }
   }
-
-  const sunField = { w: W, h: H, data: sun };
-  const refl = new Uint8ClampedArray(n * 4);
-  const mat = FLOOR_MATERIALS.shop;
-  for (const p of placed) {
-    const lit = overcast
-      ? p.fit
-      : multiplyOverlay(p.fit, dappleOverlay({ ...p.obj, img: p.fit, imgScale: scale }, sunField, rect, scale, p.obj.shadowK ?? LIGHT.SUN_K));
-    yield;
-    const r = reflect(lit, p.obj.side, mat.reflNear, mat.reflFar);
-    for (let y = 0; y < r.h; y++) {
-      const gy = p.y0 + y;
-      if (gy < 0 || gy >= H) continue;
-      for (let x = 0; x < r.w; x++) {
-        const gx = p.x0 + x;
-        if (gx < 0 || gx >= W) continue;
-        const i = (y * r.w + x) << 2;
-        const ra = r.data[i + 3];
-        const o = gy * W + gx;
-        if (ra === 0 || !inside[o]) continue;
-        const gl = gloss[o];
-        const a = (ra / 255) * (gl < 0 ? 0 : gl > 1 ? 1 : gl);
-        if (a <= 0) continue;
-        const q = o << 2;
-        const oa = refl[q + 3] / 255;
-        const na = a + oa * (1 - a);
-        for (let c = 0; c < 3; c++) refl[q + c] = (r.data[i + c] * a + refl[q + c] * oa * (1 - a)) / na;
-        refl[q + 3] = na * 255;
-      }
-    }
-  }
-
-  return { lightmap: { w: W, h: H, data: lm }, reflection: { w: W, h: H, data: refl }, sun: sunField };
+  return { lm, sun };
 }

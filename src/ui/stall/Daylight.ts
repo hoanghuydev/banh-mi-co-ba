@@ -80,6 +80,7 @@ function buildPatch(scene: Phaser.Scene, key: string, ground: Phaser.Geom.Rectan
   mask.height = h;
   mask.getContext("2d")!.putImageData(gloss, 0, 0);
   ctx.drawImage(mask, 0, 0);
+  mask.width = mask.height = 0;
   tex.refresh();
 }
 
