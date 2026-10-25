@@ -8,6 +8,7 @@ import { floorAtScreen, lightSpecOf, worldAt } from "./lightParams";
 import { BASE } from "../art/canvas";
 import { TH, toScreen } from "./iso";
 import { buildCornerAo, buildTintLayers, roadWeight, wallOverlays, wallTopOverlays } from "./lightTint";
+import type { FloorBake } from "./floorBake";
 
 const DAPPLE_DEPTH = 0.2;
 
@@ -98,12 +99,16 @@ export class SceneLight {
   private readonly cache = new Map<string, Img | null>();
   private serial = 0;
 
+  private readonly ground: Phaser.Geom.Rectangle;
+
   constructor(
     private readonly scene: Phaser.Scene,
-    private readonly ground: Phaser.Geom.Rectangle,
+    private readonly floor: FloorBake,
     private readonly env: LightEnv,
     private readonly scale: number,
-  ) {}
+  ) {
+    this.ground = floor.rect;
+  }
 
   add(img: Phaser.GameObjects.Image) {
     this.props.push({ img, key: img.texture.key });
@@ -168,7 +173,7 @@ export class SceneLight {
 
     const ao = buildCornerAo(ground, toScreen);
     const aoKey = this.paintCanvas("corner-ao", ao);
-    this.objects.push(scene.add.image(ground.x, ground.y, aoKey).setOrigin(0, 0)
+    this.floor.add(scene.make.image({ x: ground.x, y: ground.y, key: aoKey }, false).setOrigin(0, 0)
       .setDepth(LIGHT_DEPTH.lightmap + 2).setBlendMode(Phaser.BlendModes.MULTIPLY));
 
     if (env.overcast) return;
@@ -234,11 +239,11 @@ export class SceneLight {
   }
 
   private layer(name: string, img: Img, depth: number, multiply: boolean, blend?: number, scale = this.scale) {
-    const image = this.scene.add.image(this.ground.x, this.ground.y, this.paint(img, name))
+    const image = this.scene.make.image({ x: this.ground.x, y: this.ground.y, key: this.paint(img, name) }, false)
       .setOrigin(0, 0).setScale(1 / scale).setDepth(depth);
     if (multiply) image.setBlendMode(Phaser.BlendModes.MULTIPLY);
     else if (blend !== undefined) image.setBlendMode(blend);
-    this.objects.push(image);
+    this.floor.add(image);
   }
 
   private paint(img: Img, name = `dapple${this.serial++}`) {
