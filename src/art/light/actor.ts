@@ -253,11 +253,23 @@ function prefetchFeet(cut: Phaser.Textures.Frame) {
     const f = manager.getFrame(key);
     if (!f || footOf(f) !== undefined) continue;
     const h = Math.max(1, Math.ceil(f.cutHeight * SOLE_SLICE));
+    if (frames.length && y + h > FEET_SHEET_H) {
+      readFeet(frames, w, y);
+      frames.length = 0;
+      w = 1;
+      y = 0;
+    }
     frames.push({ f, h, y });
     w = Math.max(w, f.cutWidth);
     y += h;
   }
-  if (!frames.length) return;
+  if (frames.length) readFeet(frames, w, y);
+}
+
+/** Canvas cao quá cỡ texture GPU thì Chrome vẽ bằng CPU, mỗi drawImage chậm cả chục ms. */
+const FEET_SHEET_H = 4096;
+
+function readFeet(frames: { f: Phaser.Textures.Frame; h: number; y: number }[], w: number, y: number) {
   const sheet = canvas(w, y);
   const ctx = sheet.getContext("2d")!;
   for (const { f, h, y: at } of frames) ctx.drawImage(f.source.image as CanvasImageSource, f.cutX, f.cutY + f.cutHeight - h, f.cutWidth, h, 0, at, f.cutWidth, h);
