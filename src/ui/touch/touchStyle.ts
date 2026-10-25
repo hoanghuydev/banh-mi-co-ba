@@ -1,10 +1,10 @@
-import { MIN_FONT, MIN_TOUCH } from "../../core/device";
+import { MIN_FONT } from "../../core/device";
 
 export const STICK_BASE = 112;
 export const STICK_KNOB = 52;
 export const ACTION_SIZE = 84;
-export const PILL_W = 104;
-export const PILL_H = 48;
+export const RUN_SIZE = 60;
+export const CTX_SIZE = 60;
 export const EDGE = 16;
 export const PILL_GAP = 8;
 
@@ -22,7 +22,7 @@ export const TOUCH_CSS = `
 .tc-btn.on{background:rgba(214,92,52,.95);border-color:#fff}
 .tc-btn[hidden]{display:none}
 .tc-act{width:${ACTION_SIZE}px;height:${ACTION_SIZE}px;border-radius:50%;font-size:${MIN_FONT + 2}px;padding:6px;background:rgba(190,70,38,.9)}
-.tc-act.off{background:rgba(32,38,44,.55);border-color:rgba(255,244,222,.35);color:rgba(255,248,234,.55)}
 .tc-act.hold::after{content:"";position:absolute;inset:-9px;border-radius:50%;border:3px dashed rgba(255,244,222,.55);pointer-events:none}
-.tc-pill{width:${PILL_W}px;height:${Math.max(PILL_H, MIN_TOUCH + 4)}px;border-radius:${PILL_H / 2}px;font-size:${MIN_FONT}px;padding:0 8px}
+.tc-sm{width:${RUN_SIZE}px;height:${RUN_SIZE}px;border-radius:50%;font-size:${MIN_FONT}px;padding:4px;flex-direction:column;gap:1px}
+.tc-sm svg{width:20px;height:20px;flex:none}
 `;

@@ -1,21 +1,22 @@
-import { MIN_TOUCH, isTouch, onDeviceChange, viewport } from "../../core/device";
+import { isTouch, onDeviceChange, viewport } from "../../core/device";
 import { stickDirs, type InputState } from "../../input/intent";
 import {
-  ACTION_SIZE, EDGE, PILL_GAP, PILL_H, PILL_W, STICK_BASE, TOUCH_CSS,
+  ACTION_SIZE, EDGE, RUN_SIZE, CTX_SIZE, STICK_BASE, TOUCH_CSS,
 } from "./touchStyle";
 
 export type TouchLabel = { text: string; hold: boolean; enabled: boolean };
 
-/** `null` = nút không áp dụng được lúc này, ẩn đi. */
+export type CtxKind = "cover" | "discard" | "lift" | "talk";
+
+/** Ba ô cố định: `action` và `ctx` ẩn khi không áp dụng được, vị trí các ô không đổi. */
 export type TouchView = {
   visible: boolean;
   action: TouchLabel;
   run: boolean;
-  cover: boolean;
-  discard: string | null;
-  lift: string | null;
-  talk: string | null;
+  ctx: { kind: CtxKind; text: string } | null;
 };
+
+const RUN_ICON = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4l6 6-6 6M11 4l6 6-6 6"/></svg>';
 
 const STICK_RADIUS = STICK_BASE / 2 - 8;
 /** Phần bề ngang bên trái nhận ngón điều khiển. */
@@ -40,11 +41,10 @@ export class TouchControls {
   private base = el("div", "tc-base", this.root);
   private knob = el("div", "tc-knob", this.base);
   private act = el("button", "tc-btn tc-act", this.root);
-  private runBtn = el("button", "tc-btn tc-pill", this.root);
-  private coverBtn = el("button", "tc-btn tc-pill", this.root);
-  private discardBtn = el("button", "tc-btn tc-pill", this.root);
-  private liftBtn = el("button", "tc-btn tc-pill", this.root);
-  private talkBtn = el("button", "tc-btn tc-pill", this.root);
+  private runBtn = el("button", "tc-btn tc-sm", this.root);
+  private ctxBtn = el("button", "tc-btn tc-sm", this.root);
+  private ctxKind: CtxKind | null = null;
+  private ctxDown: CtxKind | null = null;
 
   private stickId: number | null = null;
   private origin = { x: 0, y: 0 };
@@ -62,8 +62,7 @@ export class TouchControls {
       document.head.appendChild(st);
     }
     document.body.appendChild(this.root);
-    this.runBtn.textContent = "Chạy";
-    this.coverBtn.textContent = "Che tay";
+    this.runBtn.innerHTML = `${RUN_ICON}<span>Chạy</span>`;
     this.setText(this.act, "");
 
     this.bindStick();
@@ -72,10 +71,16 @@ export class TouchControls {
       if (down) this.input.fire("interact");
     });
     this.bindHold(this.runBtn, (down) => { this.input.touchRun = down; });
-    this.bindHold(this.coverBtn, (down) => { this.input.touchCover = down; });
-    this.bindHold(this.discardBtn, (down) => { if (down) this.input.fire("discard"); });
-    this.bindHold(this.liftBtn, (down) => { if (down) this.input.fire("lift"); });
-    this.bindHold(this.talkBtn, (down) => { if (down) this.input.fire("talk"); });
+    this.bindHold(this.ctxBtn, (down) => {
+      if (down) {
+        this.ctxDown = this.ctxKind;
+        if (this.ctxDown === "cover") this.input.touchCover = true;
+        else if (this.ctxDown) this.input.fire(this.ctxDown);
+      } else {
+        if (this.ctxDown === "cover") this.input.touchCover = false;
+        this.ctxDown = null;
+      }
+    });
 
     this.offDevice = onDeviceChange(() => { this.layoutKey = ""; });
   }
@@ -171,7 +176,7 @@ export class TouchControls {
 
     const s = this.safe();
     const cl = cr ? Math.max(0, cr.left) : 0, cRight = cr ? Math.max(0, w - cr.right) : 0;
-    const rightC = cRight >= STRIP_MIN ? (w - cRight / 2) - ACTION_SIZE / 2 - PILL_W / 2 - 40 : null;
+    const rightC = cRight >= STRIP_MIN ? (w - cRight / 2) - ACTION_SIZE / 2 - RUN_SIZE / 2 - 40 : null;
     const mr = Math.max(EDGE, s.r);
     const ml = Math.max(EDGE, s.l);
     const mb = Math.max(EDGE, s.b);
@@ -182,16 +187,8 @@ export class TouchControls {
       e.style.bottom = `${b}px`;
     };
     place(this.act, right, mb);
-    const pillGap = PILL_GAP;
-    const colA = right;
-    const colB = right + ACTION_SIZE + 12;
-    const rowH = Math.max(PILL_H, MIN_TOUCH + 4) + pillGap;
-    const aBase = mb + ACTION_SIZE + 10;
-    place(this.coverBtn, colA, aBase);
-    place(this.discardBtn, colA, aBase + rowH);
-    place(this.liftBtn, colA, aBase + rowH * 2);
-    place(this.runBtn, colB, mb + (ACTION_SIZE - Math.max(PILL_H, MIN_TOUCH + 4)) / 2);
-    place(this.talkBtn, colB, mb + (ACTION_SIZE - Math.max(PILL_H, MIN_TOUCH + 4)) / 2 + rowH);
+    place(this.runBtn, right + ACTION_SIZE + 12, mb + (ACTION_SIZE - RUN_SIZE) / 2);
+    place(this.ctxBtn, right + (ACTION_SIZE - CTX_SIZE) / 2, mb + ACTION_SIZE + 10);
 
     const zoneRight = (cr ? cr.left + cr.width * ZONE_FRAC : w * ZONE_FRAC);
     const zoneTop = h * ZONE_TOP_FRAC;
@@ -219,25 +216,19 @@ export class TouchControls {
 
     const a = v.action;
     this.setText(this.act, a.text);
-    this.act.classList.toggle("off", !a.enabled);
-    this.act.classList.toggle("hold", a.hold && a.enabled);
+    this.act.hidden = !a.enabled && !this.act.classList.contains("on");
+    this.act.classList.toggle("hold", a.hold);
     this.runBtn.hidden = !v.run;
-    this.coverBtn.hidden = !v.cover;
-    this.show(this.discardBtn, v.discard);
-    this.show(this.liftBtn, v.lift);
-    this.show(this.talkBtn, v.talk);
-  }
-
-  private show(b: HTMLElement, t: string | null) {
-    b.hidden = t === null;
-    if (t !== null) this.setText(b, t);
+    this.ctxKind = v.ctx?.kind ?? null;
+    this.ctxBtn.hidden = !v.ctx;
+    if (v.ctx) this.setText(this.ctxBtn, v.ctx.text);
   }
 
   private releaseAll() {
     this.stickId = null;
     this.base.classList.remove("live");
     this.knob.style.transform = "";
-    for (const b of [this.act, this.runBtn, this.coverBtn]) b.classList.remove("on");
+    for (const b of [this.act, this.runBtn, this.ctxBtn]) b.classList.remove("on");
     this.input.releaseTouch();
   }
 

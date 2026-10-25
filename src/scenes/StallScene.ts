@@ -21,6 +21,7 @@ import { BubblePool } from "../ui/stall/BubblePool";
 import { TalkPanel } from "../ui/stall/TalkPanel";
 import { MoneyPops } from "../ui/stall/MoneyPops";
 import { MenuBoardView } from "../ui/menu/MenuBoardView";
+import { MenuDom } from "../ui/menu/MenuDom";
 import { StorageView } from "../ui/stall/StorageView";
 import { sfx } from "../audio/sfx";
 import { PhoneView } from "../ui/phone/PhoneView";
@@ -274,6 +275,7 @@ export class StallScene extends Phaser.Scene {
   private resumed = false;
   private overlay: Phaser.GameObjects.Container | null = null;
   private overlayBack: (() => void) | null = null;
+  private settingsDom: MenuDom | null = null;
   private off: (() => void)[] = [];
 
   constructor() { super("stall"); }
@@ -538,6 +540,7 @@ export class StallScene extends Phaser.Scene {
       for (const f of this.off) f();
       this.off = [];
       this.touch?.destroy();
+      this.settingsDom?.close();
       this.touch = null;
       this.service.dispose();
       for (const a of this.actors.values()) a.destroy();
@@ -969,6 +972,7 @@ export class StallScene extends Phaser.Scene {
     this.daylight.update(this.clock.minutes, this.cam.world.worldView);
     this.lamps.update(this.clock.minutes);
     const ticket = this.frontTicket();
+    const quiet = this.promptDuplicatesButtons();
     this.hud.dockFeed(this.assembly.isOpen);
     this.hud.update({
       day: this.world.progress.dayIndex, clock: this.clock,
@@ -978,12 +982,20 @@ export class StallScene extends Phaser.Scene {
       ticket: ticket,
       carry: this.player.hand === "loaf_filled" ? this.dish : null,
       hands: this.hands,
-      prompt: this.assembly.isOpen ? null : this.promptLine(),
+      prompt: this.assembly.isOpen || quiet ? null : this.promptLine(),
+      quiet,
       watch: this.watchLevel(),
       now: this.popClock,
       // Dùng chung chỗ vẽ với thanh giữ phím ở trạm.
       work: !this.busy && this.handsBusy && this.handsBusyBar ? { frac: this.handsBusyFrac } : null,
     });
+  }
+
+  /** Cảm ứng: nút đã ghi việc cần làm thì dòng nhãn trạm là thừa. */
+  private promptDuplicatesButtons() {
+    if (!isTouch() || this.handsBusy || this.intent.cover) return false;
+    const v = this.touchView();
+    return v.action.enabled || v.ctx?.kind === "talk" || v.ctx?.kind === "lift" || v.ctx?.text === "Nhặt";
   }
 
   /** Đọc từ trạng thái ánh nhìn chứ không `certainty`, để mắt sáng trước khi mình làm bậy. */
@@ -1088,15 +1100,20 @@ export class StallScene extends Phaser.Scene {
     const onBoard = this.near?.id === "board";
     const who = this.service.talkTargetNow;
     const canDiscard = !busy && (h !== "empty" || this.nearestFloor() >= 0 || (onBoard && !!this.boardLoaf));
+    const carrying = h !== "empty" || !!this.boardLoaf;
+    const lift = !busy && onBoard && h === "empty" && !!this.boardLoaf && this.boardLoaf.length === 0;
+    const watched = this.watchLevel() !== "NONE";
+    let ctx: TouchView["ctx"] = null;
+    if (who && !this.talk.isOpen) ctx = { kind: "talk", text: this.service.talkVerb(who) === "mời" ? "Mời khách" : "Nói chuyện" };
+    else if (carrying && watched) ctx = { kind: "cover", text: "Che tay" };
+    else if (lift) ctx = { kind: "lift", text: "Nhấc bánh" };
+    else if (canDiscard) ctx = { kind: "discard", text: h === "empty" && this.nearestFloor() >= 0 ? "Nhặt" : "Đặt xuống" };
     return {
       visible: !this.closed && !this.paused && !this.overlay && !this.assembly.isOpen && !this.talk.isOpen
         && !this.menuBoard?.open && !this.storageView?.open && !this.phoneView?.open,
       action: this.actionLabel(),
       run: !busy,
-      cover: h !== "empty" || !!this.boardLoaf,
-      discard: canDiscard ? (h === "empty" && this.nearestFloor() >= 0 ? "Nhặt" : "Đặt xuống") : null,
-      lift: !busy && onBoard && h === "empty" && !!this.boardLoaf && this.boardLoaf.length === 0 ? "Nhấc bánh" : null,
-      talk: who && !this.talk.isOpen ? (this.service.talkVerb(who) === "mời" ? "Mời khách" : "Nói chuyện") : null,
+      ctx,
     };
   }
 
@@ -2063,7 +2080,7 @@ export class StallScene extends Phaser.Scene {
 
     const say = (step: TourStep, plain: string) => (linked(w) ? QUEST_TEXT[step] : plain);
     if (tourAt(w, "CHO")) {
-      return { x: GAME_W / 2 + 36, y: 8, w: 48, h: 36, shape: "rect", text: say("CHO", "Mở điện thoại, vào Thực phẩm, đặt hàng đủ bán hôm nay.") };
+      return { ...this.hud.phoneRect, shape: "rect", text: say("CHO", "Mở điện thoại, vào Thực phẩm, đặt hàng đủ bán hôm nay.") };
     }
     if (tourAt(w, "MENU")) return ring("menu", say("MENU", hint("Tới chỗ này, bấm E đọc bảng menu.", "Tới chỗ này, bấm nút Đọc bảng.")));
     if (tourAt(w, "BANH")) {
@@ -2083,7 +2100,7 @@ export class StallScene extends Phaser.Scene {
     }
     if (tourAt(w, "TAY")) return ring("sink", say("TAY", hint("Rửa tay ở bồn — bấm E.", "Rửa tay ở bồn — giữ nút Rửa tay.")));
     if (tourAt(w, "DT")) {
-      return { x: GAME_W / 2 + 36, y: 8, w: 48, h: 36, shape: "rect", text: say("DT", hint("Có tin nhắn mới. Bấm Tab hoặc bấm biểu tượng điện thoại.", "Có tin nhắn mới. Bấm biểu tượng điện thoại.")) };
+      return { ...this.hud.phoneRect, shape: "rect", text: say("DT", hint("Có tin nhắn mới. Bấm Tab hoặc bấm biểu tượng điện thoại.", "Có tin nhắn mới. Bấm biểu tượng điện thoại.")) };
     }
     if (tourAt(w, "GOI")) {
       if (!this.assembly.isOpen) return ring("board", hint("Mở ổ ra: tới thớt bấm E.", "Mở ổ ra: tới thớt bấm nút Mở ổ."));
@@ -2423,10 +2440,30 @@ export class StallScene extends Phaser.Scene {
     this.overlayBack = null;
     this.overlay = this.modal(title, [
       ["Tiếp tục bán", () => this.resume()],
-      ["Chơi lại ngày này", () => this.confirmReplay()],
-      ["Dẹp hàng sớm", () => this.close("PLAYER")],
+      ["Cài đặt", () => this.openSettings()],
       ["Lưu và về sảnh", () => this.confirmQuit()],
-    ]);
+      ["Dẹp hàng sớm", () => this.confirmEarlyClose()],
+      ["Chơi lại ngày này", () => this.confirmReplay()],
+    ], undefined, 3);
+  }
+
+  private openSettings() {
+    this.overlay?.destroy(true);
+    this.overlay = null;
+    this.overlayBack = null;
+    this.settingsDom = new MenuDom(this, () => {}, {
+      page: "settings",
+      onExit: () => { this.settingsDom = null; this.showPauseMenu("Tạm dừng"); },
+    });
+  }
+
+  private confirmEarlyClose() {
+    this.overlay?.destroy(true);
+    this.overlay = this.modal("Dẹp hàng sớm?", [
+      ["Thôi, bán tiếp", () => this.showPauseMenu("Tạm dừng")],
+      ["Dẹp hàng", () => this.close("PLAYER")],
+    ], "Ngưng bán và chốt sổ ngày hôm nay.");
+    this.overlayBack = () => this.showPauseMenu("Tạm dừng");
   }
 
   /**
@@ -2714,7 +2751,8 @@ export class StallScene extends Phaser.Scene {
     bus.emit("stall:closed", { reason, served: t.served, revenue: t.revenue, lost: t.lost });
   }
 
-  private modal(title: string, actions: [string, () => void][], sub?: string) {
+  /** `gapAt`: chỉ số nút bắt đầu nhóm riêng, cách xa nhóm trước. */
+  private modal(title: string, actions: [string, () => void][], sub?: string, gapAt = -1) {
     const c = this.add.container(0, 0).setDepth(9_500_000).setScrollFactor(0);
     const sz = textScale();
     const step = platedButtonHeight() + 16;
@@ -2723,7 +2761,8 @@ export class StallScene extends Phaser.Scene {
     const note = sub ? label(this, GAME_W / 2, 0, sub, 13, "#d8cfba", "400").setWordWrapWidth(420).setOrigin(0.5, 0) : null;
     const noteTop = pad + ttl.height + 10;
     const btnTop = note ? noteTop + note.height + 20 : pad + ttl.height + 20;
-    const h = Math.min(GAME_H - 16, btnTop + actions.length * step - 16 + pad + 6 * sz);
+    const gap = gapAt >= 0 ? step * 0.6 : 0;
+    const h = Math.min(GAME_H - 16, btnTop + actions.length * step - 16 + gap + pad + 6 * sz);
     const top = GAME_H / 2 - h / 2;
     ttl.setY(top + pad + ttl.height / 2);
     note?.setY(top + noteTop);
@@ -2733,7 +2772,7 @@ export class StallScene extends Phaser.Scene {
     actions.forEach(([text, fn], i) =>
       // scrollFactor(0) cho TỪNG nút: camera quán đang cuộn, nút không đặt thì vùng bấm
       // lệch khỏi chỗ vẽ đúng bằng độ cuộn — bấm vào nút mà không ăn.
-      c.add(platedKit.button(this, GAME_W / 2, top + btnTop + platedButtonHeight() / 2 + i * step, text, fn, { width: 280, primary: i === 0 }).setScrollFactor(0)));
+      c.add(platedKit.button(this, GAME_W / 2, top + btnTop + platedButtonHeight() / 2 + i * step + (gapAt >= 0 && i >= gapAt ? gap : 0), text, fn, { width: 280, primary: i === 0 }).setScrollFactor(0)));
     return c;
   }
 }

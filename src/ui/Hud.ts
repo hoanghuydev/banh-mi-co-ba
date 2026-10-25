@@ -2,8 +2,8 @@ import Phaser from "phaser";
 import { ICON, ntfKey, type NtfIcon } from "../art";
 import { fitPhoto } from "../art/photo";
 import { GAME_W, GAME_H } from "../core/config";
-import { designFor, hint, isTouch, onDeviceChange } from "../core/device";
-import { ACTION_SIZE, EDGE, PILL_GAP, PILL_W, STICK_BASE } from "./touch/touchStyle";
+import { designFor, isTouch, onDeviceChange } from "../core/device";
+import { ACTION_SIZE, CTX_SIZE, EDGE, PILL_GAP, RUN_SIZE, STICK_BASE } from "./touch/touchStyle";
 import { BAND_LABEL, type Clock } from "../core/clock";
 import type { Settings } from "../core/save";
 import { blockedReason, type Hand, type Station } from "../world/stations";
@@ -16,15 +16,16 @@ const DEPTH = 9_000_000;
 const HELP_UNTIL_DAY = 3;
 
 const HELP_BY_DAY = [
-  ["WASD đi · E làm việc · Esc tạm dừng", "cần trái đi · nút phải làm việc"],
-  ["WASD đi · Shift chạy · E làm việc · Q đặt xuống", "cần trái đi · nút phải làm việc · nút Chạy"],
-  ["WASD đi · E làm việc · R cầm ổ trên thớt · Q đặt xuống · F hỏi chuyện · giữ C che tay", "cần trái đi · nút phải làm việc · nút Chạy"],
+  "WASD đi · E làm việc · Esc tạm dừng",
+  "WASD đi · Shift chạy · E làm việc · Q đặt xuống",
+  "WASD đi · E làm việc · R cầm ổ trên thớt · Q đặt xuống · F hỏi chuyện · giữ C che tay",
 ];
 
-/** Chừa chỗ cho cần và nút điều khiển cảm ứng, pixel thật. */
+/** Chừa chỗ cho cần và cụm nút điều khiển cảm ứng, pixel thật. */
 const LEFT_RESERVE = EDGE + STICK_BASE + 24;
-const RIGHT_RESERVE = EDGE + ACTION_SIZE + 12 + PILL_W + 8;
+const RIGHT_RESERVE = EDGE + ACTION_SIZE + 12 + RUN_SIZE + 8;
 const STICK_TOP = EDGE + STICK_BASE + 40;
+const CLUSTER_TOP = EDGE + ACTION_SIZE + 10 + CTX_SIZE + 16;
 
 /** `GLANCE` = có người nhìn MẶT mình · `CLOSE` = có người nhìn thẳng vào TAY mình. */
 export type Watch = "NONE" | "GLANCE" | "CLOSE";
@@ -95,6 +96,11 @@ type Metrics = {
   pause: number;
   phone: number;
   eye: number;
+  pauseY: number;
+  phoneY: number;
+  statL: number;
+  statR: number;
+  statY: number;
   /** Mép trái/phải của dải giữa, nơi prompt, thanh tiến độ và dòng gợi ý được đặt. */
   midL: number;
   midR: number;
@@ -131,6 +137,7 @@ export class Hud {
   private phoneBadge!: Phaser.GameObjects.Text;
   private unread = 0;
   private handsIcon!: Phaser.GameObjects.Image;
+  private handsPlate!: Phaser.GameObjects.Image;
   private handsKey = "";
   private eyeGroup!: Phaser.GameObjects.Container;
   private eyePlate!: Phaser.GameObjects.Image;
@@ -232,6 +239,7 @@ export class Hud {
       return {
         touch, k: 1, btnW: 48, btnH: 38, cy: 26,
         hands: GAME_W / 2 - 58, pause: GAME_W / 2, phone: GAME_W / 2 + 60, eye: GAME_W / 2 + 124,
+        pauseY: 26, phoneY: 26, statL: 26, statR: GAME_W - 26, statY: 20,
         midL: 40, midR: GAME_W - 40,
         toastRight: TOAST_RIGHT, toastBottom: GAME_H, bodyW: TOAST_BODY_W,
         feedX: 26, feedY: GAME_H - 100, feedW: 380, helpY: GAME_H - 12,
@@ -239,15 +247,21 @@ export class Hud {
     }
     const k = Math.max(1, this.font(13) / 13);
     const btnW = touchSize(48), btnH = touchSize(38);
-    const step = btnW + Math.ceil(designFor(PILL_GAP));
-    const at = (i: number) => GAME_W / 2 + (i - 1.5) * step;
+    const gap = Math.ceil(designFor(PILL_GAP));
+    const edge = designFor(EDGE);
+    const statY = edge + 10;
+    const pillBottom = statY + Math.round(this.font(14) * 1.4) + 8;
+    const colX = GAME_W - edge - btnW / 2;
+    const pauseY = pillBottom + gap + btnH / 2;
     const midL = designFor(LEFT_RESERVE), midR = GAME_W - designFor(RIGHT_RESERVE);
     return {
-      touch, k, btnW, btnH, cy: Math.max(26, btnH / 2 + designFor(6)),
-      hands: at(0), pause: at(1), phone: at(2), eye: at(3),
+      touch, k, btnW, btnH, cy: statY + Math.round(this.font(14) * 0.7),
+      hands: 0, pause: colX, phone: colX, eye: 0,
+      pauseY, phoneY: pauseY + btnH + gap,
+      statL: edge + 14, statR: GAME_W - edge - 14, statY,
       midL, midR,
-      toastRight: GAME_W - designFor(EDGE),
-      toastBottom: GAME_H - designFor(STICK_TOP),
+      toastRight: GAME_W - edge - btnW - designFor(12),
+      toastBottom: GAME_H - designFor(CLUSTER_TOP),
       bodyW: Math.round(190 * k),
       feedX: designFor(EDGE), feedY: GAME_H - designFor(STICK_TOP), feedW: Math.min(380, Math.round(midR - midL - designFor(24))),
       helpY: GAME_H - designFor(8),
@@ -262,14 +276,14 @@ export class Hud {
 
     for (const o of this.cluster) o.destroy();
     this.cluster = [];
-    const pause = iconButton(this.scene, m.pause, m.cy, m.btnW, m.btnH, () => this.onPause?.());
+    const pause = iconButton(this.scene, m.pause, m.pauseY, m.btnW, m.btnH, () => this.onPause?.());
     const kb = m.btnH / 38;
     pause.icon.setScale(kb);
     pause.icon.fillStyle(0xffffff, 0.8).fillRoundedRect(-8, -7, 5, 16, 1.5).fillRoundedRect(3, -7, 5, 16, 1.5);
     pause.icon.fillStyle(0x2a2420, 1).fillRoundedRect(-8, -8, 5, 16, 1.5).fillRoundedRect(3, -8, 5, 16, 1.5);
     fixed(pause, DEPTH + 200);
 
-    const phone = iconButton(this.scene, m.phone, m.cy, m.btnW, m.btnH, () => this.onPhone?.());
+    const phone = iconButton(this.scene, m.phone, m.phoneY, m.btnW, m.btnH, () => this.onPhone?.());
     phone.setIconImage(ntfKey("phone"), 21 * kb);
     fixed(phone, DEPTH + 200);
     this.phoneBadgeGfx = fixed(this.scene.add.graphics(), DEPTH + 201);
@@ -277,21 +291,22 @@ export class Hud {
       fontFamily: FONT, fontSize: `${touchFont(11)}px`, fontStyle: "800", color: "#ffffff",
     }).setOrigin(0.5).setShadow(0, 1, "#8f1f13", 0, false, true), DEPTH + 202);
 
-    const handsPlate = fixed(clayImage(this.scene, clayButton(this.scene, CLAY.cream, m.btnW, m.btnH, "up"), m.hands, m.cy, m.btnW, m.btnH), DEPTH);
+    this.handsPlate = fixed(clayImage(this.scene, clayButton(this.scene, CLAY.cream, m.btnW, m.btnH, "up"), m.hands, m.cy, m.btnW, m.btnH), DEPTH);
     this.handsIcon = fixed(this.scene.add.image(m.hands, m.cy - 2, ICON.handClean), DEPTH + 1);
     this.handsKey = "";
     this.eyePlate = clayImage(this.scene, clayButton(this.scene, CLAY.cream, m.btnW, m.btnH, "up"), 0, 0, m.btnW, m.btnH);
     this.eyeIcon = this.scene.add.image(0, -2, ICON.eyeGlance);
     this.eyeGroup = fixed(this.scene.add.container(m.eye, m.cy, [this.eyePlate, this.eyeIcon]), DEPTH + 150).setVisible(false);
-    this.cluster.push(pause, phone, this.phoneBadgeGfx, this.phoneBadge, handsPlate, this.handsIcon, this.eyeGroup);
+    this.cluster.push(pause, phone, this.phoneBadgeGfx, this.phoneBadge, this.handsPlate, this.handsIcon, this.eyeGroup);
     this.fitIcon(this.handsIcon);
     this.fitIcon(this.eyeIcon);
     this.paintPhone();
 
     const stat = (t: Phaser.GameObjects.Text, x: number) => t
       .setFontSize(this.fs(14)).setLineSpacing(this.spacing(7)).setPosition(x, 20);
-    stat(this.left, 26);
-    stat(this.right, GAME_W - 26);
+    stat(this.left, m.statL);
+    stat(this.right, m.statR);
+    this.left.y = this.right.y = m.statY;
 
     const mid = (m.midL + m.midR) / 2;
     const midW = m.midR - m.midL;
@@ -333,9 +348,9 @@ export class Hud {
   private paintPhone() {
     const g = this.phoneBadgeGfx;
     g.clear();
-    const { btnW, btnH, phone, cy } = this.m;
+    const { btnW, btnH, phone, phoneY } = this.m;
     const kb = btnH / 38;
-    const x = phone + btnW / 2 - 4 * kb, y = cy - btnH / 2 + 4 * kb;
+    const x = phone + btnW / 2 - 4 * kb, y = phoneY - btnH / 2 + 4 * kb;
     this.phoneBadge.setPosition(x, y);
     if (this.unread > 0) {
       const r = (this.unread > 9 ? 10 : 9) * Math.max(1, kb * 0.9);
@@ -393,6 +408,13 @@ export class Hud {
     return this.left.getBounds().bottom + 11;
   }
 
+  /** Ô nút điện thoại theo toạ độ thiết kế. */
+  get phoneRect() {
+    if (!this.m.touch) return { x: GAME_W / 2 + 36, y: 8, w: 48, h: 36 };
+    const { phone, phoneY, btnW, btnH } = this.m;
+    return { x: phone - btnW / 2, y: phoneY - btnH / 2, w: btnW, h: btnH };
+  }
+
   /** Bảng kẹp nhân mở thì dời nhật ký lời người sang phải để không chồng nhau; cảm ứng thì ẩn. */
   dockFeed(right: boolean) {
     if (this.feedDocked === right) return;
@@ -433,6 +455,8 @@ export class Hud {
     frozen: boolean;
     ticket: { name: string; text: string; urgent: boolean } | null;
     prompt?: string | null;
+    /** Bỏ dòng nhãn trạm vì nút cảm ứng đã nói việc cần làm. */
+    quiet?: boolean;
     carry?: readonly Ingredient[] | null;
     hands?: "CLEAN" | "MONEY";
     watch?: Watch;
@@ -443,22 +467,26 @@ export class Hud {
     const m = Math.floor(s.clock.minutes);
     const hhmm = `${Math.floor(m / 60)}h${String(m % 60).padStart(2, "0")}`;
     const slow = this.settings.noTimePressure ? " · thong thả" : "";
-    this.left.setText(`ngày ${s.day}\n${hhmm} · ${BAND_LABEL[s.clock.band]}${slow}`);
-    this.right.setText(`${s.money.toLocaleString("vi-VN")}₫\nđã bán ${s.served} ổ`);
-    this.drawStats();
-
-    const show = s.day <= HELP_UNTIL_DAY && !this.feedDocked;
-    if (show) {
-      const lines = HELP_BY_DAY[Math.min(s.day, HELP_BY_DAY.length) - 1];
-      this.help.setText(hint(lines[0], lines[1]));
+    const money = `${s.money.toLocaleString("vi-VN")}₫`;
+    if (this.m.touch) {
+      this.left.setText(`Ngày ${s.day} · ${hhmm}${slow}`);
+      this.right.setText(money);
+    } else {
+      this.left.setText(`ngày ${s.day}\n${hhmm} · ${BAND_LABEL[s.clock.band]}${slow}`);
+      this.right.setText(`${money}\nđã bán ${s.served} ổ`);
     }
+    this.drawStats();
+    this.placeBadges();
+
+    const show = !this.m.touch && s.day <= HELP_UNTIL_DAY && !this.feedDocked;
+    if (show) this.help.setText(HELP_BY_DAY[Math.min(s.day, HELP_BY_DAY.length) - 1]);
     this.help.setVisible(show);
     this.helpBg.clear();
     if (show) {
       const hb = this.help.getBounds();
       paintGlass(this.helpBg, hb.x - 12, hb.y - 6, hb.width + 24, hb.height + 12, 10);
     }
-    this.drawPrompt(s.near, s.hand, s.frozen, s.prompt ?? null);
+    this.drawPrompt(s.quiet ? null : s.near, s.hand, s.frozen, s.prompt ?? null);
     this.drawBar(s.busy, s.work ?? null);
     this.drawTicket(s.ticket, s.frozen);
     this.drawCarry(s.frozen ? null : s.carry ?? null);
@@ -502,6 +530,20 @@ export class Hud {
     }
   }
 
+  /** Cảm ứng: biểu tượng tay và mắt nằm cạnh ô ngày giờ, tay chỉ hiện khi dính tiền. */
+  private placeBadges() {
+    const m = this.m;
+    if (!m.touch) return;
+    const b = this.left.getBounds();
+    const gap = Math.ceil(designFor(PILL_GAP));
+    const hx = b.right + 14 + gap + m.btnW / 2;
+    const ex = hx + (this.handsKey === "MONEY" ? m.btnW + gap : 0);
+    const y = m.statY - 10 + (b.height + 18) / 2;
+    this.handsIcon.setPosition(hx, y - 2);
+    this.handsPlate.setPosition(hx, y);
+    this.eyeGroup.setPosition(ex, y);
+  }
+
   private fitIcon(img: Phaser.GameObjects.Image) {
     const { btnW, btnH } = this.m;
     img.setScale(ICON_H * (btnH / 38) / img.height);
@@ -527,6 +569,10 @@ export class Hud {
   private drawHands(state: "CLEAN" | "MONEY") {
     if (state === this.handsKey) return;
     this.handsKey = state;
+    if (this.m.touch) {
+      this.handsPlate.setVisible(state === "MONEY");
+      this.handsIcon.setVisible(state === "MONEY");
+    }
     this.handsIcon.setTexture(state === "MONEY" ? ICON.handMoney : ICON.handClean);
     this.fitIcon(this.handsIcon);
   }

@@ -31,7 +31,9 @@ export class MenuDom {
   constructor(
     private scene: Phaser.Scene,
     private onStart: (key: string, data?: object) => void,
+    private opts: { page?: Page; onExit?: () => void } = {},
   ) {
+    this.at = opts.page ?? "main";
     if (!document.getElementById("mn-style")) {
       const st = el("style");
       st.id = "mn-style";
@@ -64,12 +66,18 @@ export class MenuDom {
 
   private deviceShape() { return `${orientation()}${isTouch()}`; }
 
+  private exit() {
+    this.close();
+    this.opts.onExit?.();
+  }
+
   private onFs = () => this.render(false);
 
   private onKey = (e: KeyboardEvent) => {
     if (e.key !== "Escape") return;
     e.preventDefault();
     if (this.at === "audio") this.show("settings");
+    else if (this.at === "settings" && this.opts.onExit) this.exit();
     else if (this.at !== "main") this.show("main");
   };
 
@@ -292,7 +300,8 @@ export class MenuDom {
       this.sw("Ghi số liệu chơi thử", !!s.telemetry, () => { put({ telemetry: !s.telemetry }); telemetry.enabled = !!s.telemetry; },
         "nằm trong máy này, không tự gửi đi đâu"),
     );
-    return this.fitPage("Cài đặt", tray, this.button("Xuất số liệu", () => this.exportData(), "ghost"), this.back("main"));
+    return this.fitPage("Cài đặt", tray, this.button("Xuất số liệu", () => this.exportData(), "ghost"),
+      this.opts.onExit ? this.button("Quay lại", () => this.exit(), "ghost") : this.back("main"));
   }
 
   private exportData() {

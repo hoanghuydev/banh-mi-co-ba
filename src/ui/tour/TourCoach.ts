@@ -1,5 +1,5 @@
 // Lớp DOM để chỉ được cả phần tử DOM lẫn ô trên canvas; không nuốt chuột trừ bong bóng.
-import { onDeviceChange } from "../../core/device";
+import { isTouch, onDeviceChange } from "../../core/device";
 
 export type CoachShape = "circle" | "rect";
 
@@ -30,6 +30,16 @@ const STYLE = `
 .tg-step{font-size:max(14px,.76em);color:#8a7d64;font-variant-numeric:tabular-nums}
 .tg-skip{font:inherit;font-size:max(14px,.8em);padding:5px 14px;border-radius:7px;border:1px solid #b8ab8e;
   background:#fbf7ec;color:#4a4330;cursor:pointer;min-height:44px;min-width:44px}
+.tg-dots{display:none;gap:4px;align-items:center}
+.tg-dot{width:7px;height:7px;border-radius:50%;background:#cdbf9f}
+.tg-dot.on{background:#8e2a20}
+.tg-bub.strip{display:grid;grid-template-columns:auto 1fr auto;column-gap:10px;row-gap:2px;align-items:center;padding:8px 10px 8px 14px;box-sizing:border-box}
+.tg-bub.strip .tg-col,.tg-bub.strip .tg-bar{display:contents}
+.tg-bub.strip .tg-who{grid-column:1;grid-row:1}
+.tg-bub.strip .tg-dots{display:flex;grid-column:2;grid-row:1}
+.tg-bub.strip .tg-step{display:none}
+.tg-bub.strip .tg-text{grid-column:1/3;grid-row:2;margin:0;font-size:max(14px,.93em);line-height:1.3}
+.tg-bub.strip .tg-skip{grid-column:3;grid-row:1/3;padding:0 12px}
 @media (hover:hover){.tg-skip:hover{background:#efe7d3}}
 .tg-skip:focus-visible{outline:2px solid #8e2a20;outline-offset:2px}
 `;
@@ -50,6 +60,8 @@ export class TourCoach {
   private bub: HTMLDivElement;
   private txt: HTMLParagraphElement;
   private stepEl: HTMLSpanElement;
+  private dots: HTMLDivElement;
+  private dotCount = 0;
   private last = "";
   private who!: HTMLDivElement;
   private lastAim: CoachAim | null = null;
@@ -87,7 +99,9 @@ export class TourCoach {
     skip.className = "tg-skip";
     skip.textContent = "Bỏ qua";
     skip.onclick = () => { this.hide(); opts.onSkip(); };
-    bar.append(this.stepEl, skip);
+    this.dots = document.createElement("div");
+    this.dots.className = "tg-dots";
+    bar.append(this.stepEl, this.dots, skip);
     col.append(who, this.txt, bar);
     this.bub.append(col);
 
@@ -139,7 +153,9 @@ export class TourCoach {
       this.last = key;
       this.txt.textContent = a.text;
       this.stepEl.textContent = a.step && a.total ? `việc ${a.step}/${a.total}` : "";
+      this.paintDots(a.step ?? 0, a.total ?? 0);
     }
+    this.bub.classList.toggle("strip", isTouch());
     this.root.style.display = "";
 
     const pad = shape === "circle" ? 10 : 8;
@@ -154,8 +170,37 @@ export class TourCoach {
     this.place(x, y, w, h);
   }
 
+  private paintDots(step: number, total: number) {
+    if (total !== this.dotCount) {
+      this.dotCount = total;
+      this.dots.replaceChildren(...Array.from({ length: total }, () => {
+        const d = document.createElement("i");
+        d.className = "tg-dot";
+        return d;
+      }));
+    }
+    [...this.dots.children].forEach((d, i) => d.classList.toggle("on", i < step));
+  }
+
+  /** Dải gọn: trên giữa, giữa ô ngày giờ và cột nút; lọt vào ô được chỉ thì xuống dưới. */
+  private placeStrip(x: number, y: number, w: number, h: number) {
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const left = 190, right = 170;
+    const bw = Math.min(560, vw - left - right);
+    this.bub.style.width = `${bw}px`;
+    const bh = this.bub.offsetHeight;
+    const bx = (vw - bw) / 2 + (left - right) / 2;
+    const top = EDGE, bottom = vh - EDGE - bh;
+    const hit = (by: number) => bx < x + w + AVOID_PAD && bx + bw > x - AVOID_PAD && by < y + h + AVOID_PAD && by + bh > y - AVOID_PAD;
+    const by = hit(top) && !hit(bottom) ? bottom : top;
+    this.bub.style.left = `${Math.round(bx)}px`;
+    this.bub.style.top = `${Math.round(by)}px`;
+  }
+
   /** Dưới → phải → trên → trái; bỏ vị trí đè lên nút cảm ứng, hết chỗ thì lấy vị trí đầu tiên lọt khung. */
   private place(x: number, y: number, w: number, h: number) {
+    if (isTouch()) { this.placeStrip(x, y, w, h); return; }
+    this.bub.style.width = "";
     const bw = this.bub.offsetWidth, bh = this.bub.offsetHeight;
     const vw = window.innerWidth, vh = window.innerHeight;
     const midX = () => clamp(x + w / 2 - bw / 2, EDGE, vw - EDGE - bw);
