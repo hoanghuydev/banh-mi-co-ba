@@ -674,23 +674,33 @@ export class StallScene extends Phaser.Scene {
       shrunk.set(key, name);
       return name;
     };
-    const put = (rt: Phaser.GameObjects.RenderTexture, ox: number, oy: number, key: string, tx: number, ty: number) => {
+    type Stamp = { name: string; x: number; y: number };
+    const place = (out: Stamp[], ox: number, oy: number, key: string, tx: number, ty: number) => {
       const k = artScale(key);
       const tex = this.textures.get(key).getSourceImage();
       const dw = tex.width / k, dh = tex.height / k;
       const { sx, sy } = toScreen(tx + 0.5, ty + 0.5);
       const left = sx + (-dw / 2) * TILE_GROW, top = sy + (footY(sy) - dh - sy) * TILE_GROW;
-      stamp.setTexture(prepared(key, dw, dh)).setScale(1);
-      rt.batchDraw(stamp, (left - minX - ox) * ss, (top - minY - oy) * ss);
+      out.push({ name: prepared(key, dw, dh), x: (left - minX - ox) * ss, y: (top - minY - oy) * ss });
+    };
+    // Vị trí ô tính một lần mỗi mảnh; mỗi bước nắng vẽ lại sàn chỉ còn đóng dấu.
+    const stamps = new Map<string, Stamp[]>();
+    const stampsOf = (ox: number, oy: number) => {
+      const id = `${ox},${oy}`;
+      let out = stamps.get(id);
+      if (out) return out;
+      stamps.set(id, (out = []));
+      for (let ty = 0; ty < WORLD_H; ty++)
+        for (let tx = 0; tx < WORLD_W; tx++) place(out, ox, oy, floorTextureAt(floorAt(tx, ty), tx, ty), tx, ty);
+      if (this.raining) {
+        for (let ty = SKY_FROM_Y; ty < WORLD_H; ty++)
+          for (let tx = 0; tx < WORLD_W; tx++) place(out, ox, oy, TILE.wet, tx, ty);
+      }
+      return out;
     };
     const tiles = {
       draw: (rt: Phaser.GameObjects.RenderTexture, ox: number, oy: number) => {
-        for (let ty = 0; ty < WORLD_H; ty++)
-          for (let tx = 0; tx < WORLD_W; tx++) put(rt, ox, oy, floorTextureAt(floorAt(tx, ty), tx, ty), tx, ty);
-        if (this.raining) {
-          for (let ty = SKY_FROM_Y; ty < WORLD_H; ty++)
-            for (let tx = 0; tx < WORLD_W; tx++) put(rt, ox, oy, TILE.wet, tx, ty);
-        }
+        for (const { name, x, y } of stampsOf(ox, oy)) rt.batchDraw(stamp.setTexture(name), x, y);
       },
       destroy: () => {
         stamp.destroy();

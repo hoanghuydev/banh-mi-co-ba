@@ -100,7 +100,7 @@ export function bakeLayout(w: number, h: number, foot: number, reach: number, si
 }
 
 type Entry = {
-  src: unknown; users: number; foot: number;
+  src: Phaser.Textures.TextureSource; users: number; foot: number;
   shadow?: HTMLCanvasElement; shadowL?: BakeLayout; shadowIn?: HTMLCanvasElement; shadowInL?: BakeLayout;
   refl?: string; reflL?: BakeLayout;
 };
@@ -215,8 +215,8 @@ export function soleRow(data: ArrayLike<number>, w: number, h: number) {
   return h;
 }
 
-/** Hàng chân theo ảnh nguồn rồi theo frame, không đổi khi lật ngang; giữ lâu hơn `cache` vì đọc điểm ảnh là bước đắt nhất. */
-const feet = new WeakMap<object, Map<string, number>>();
+/** Hàng chân theo TextureSource rồi theo frame, không theo canvas vì Phaser dùng lại canvas của texture đã xoá. */
+const feet = new WeakMap<Phaser.Textures.TextureSource, Map<string, number>>();
 /** Ảnh khung hình của một nhân vật theo hướng và bước đi. */
 const POSE_KEY = /^.+?_(?:n|ne|e|se|s|sw|w|nw)(?:_[a-z]+\d*)?$/;
 /** Phần đáy khung được đọc gộp; chân nằm cao hơn thì đọc riêng cả khung. */
@@ -224,10 +224,10 @@ const SOLE_SLICE = 0.4;
 /** Trần bề cao tấm gộp, để tấm vẫn nằm trên GPU và mỗi lần đọc ngắn. */
 const SHEET_H = 2048;
 
-const footOf = (cut: Phaser.Textures.Frame) => feet.get(cut.source.image)?.get(cut.name);
+const footOf = (cut: Phaser.Textures.Frame) => feet.get(cut.source)?.get(cut.name);
 function keepFoot(cut: Phaser.Textures.Frame, foot: number) {
-  let m = feet.get(cut.source.image);
-  if (!m) feet.set(cut.source.image, (m = new Map()));
+  let m = feet.get(cut.source);
+  if (!m) feet.set(cut.source, (m = new Map()));
   m.set(cut.name, foot);
 }
 
@@ -403,7 +403,7 @@ export class ActorLight {
     this.entryKey = "";
   }
 
-  private enter(key: string, src: unknown, frame: Phaser.Textures.Frame) {
+  private enter(key: string, src: Phaser.Textures.TextureSource, frame: Phaser.Textures.Frame) {
     this.release();
     let e = cache.get(key);
     if (e && e.src !== src) {
@@ -432,7 +432,7 @@ export class ActorLight {
     const h = frame.cutHeight;
     const flip = body.flipX;
     const key = `${frame.texture.key}|${frame.name}|${flip ? 1 : 0}`;
-    if (key !== this.entryKey) this.enter(key, src, frame);
+    if (key !== this.entryKey || this.entry?.src !== frame.source) this.enter(key, frame.source, frame);
     const e = this.entry!;
     const foot = e.foot;
     const lift = p.lift ?? 0;
