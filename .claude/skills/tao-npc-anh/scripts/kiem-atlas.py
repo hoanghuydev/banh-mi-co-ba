@@ -1,0 +1,127 @@
+"""Review atlas NPC trước khi chốt: thiếu ô, frame lặp, lệch màu, lệch cỡ, chân lơ lửng; xuất ảnh soi bằng mắt.
+
+  python3 .claude/skills/tao-npc-anh/scripts/kiem-atlas.py public/art/<ten>.json [anh-soi.png]
+
+Thoát mã 1 nếu có lỗi. Sai hướng máy không đo tin được: soi từng hàng của ảnh soi (cột 1 = đứng im cùng hướng).
+"""
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+from PIL import Image, ImageDraw
+
+DIRS = ["s", "se", "e", "ne", "n", "nw", "w", "sw"]
+WALK = 8
+SAME = 5.0       # |Δ| trung bình dưới mức này là hai frame trông như một
+MIN_SHAPES = 5   # số hình khác nhau tối thiểu trong 8 frame đi
+MOTION = 16.0    # biên độ: |Δ| RGBA trung bình giữa frame liền kề ở cỡ 40×64 (anh Bảo 3D: 18,8–34); dưới mức này trong game trông như đứng yên
+COLOR = 8.0      # lệch màu trung bình so với ảnh đứng im (0–255)
+SIZE = 0.10      # lệch bề ngang đầu so với ảnh đứng im (render 3D anh Bảo tới 6%)
+FOOT = 0.05      # đáy chân lệch đáy chung, theo chiều cao ô (3D nhún tới 4%)
+
+
+def load(path):
+    meta = json.loads(Path(path).read_text())
+    sheet = Image.open(Path(path).with_name(meta["meta"]["image"])).convert("RGBA")
+    cells = {}
+    for k, v in meta["frames"].items():
+        f = v["frame"]
+        cells[k] = sheet.crop((f["x"], f["y"], f["x"] + f["w"], f["y"] + f["h"]))
+    return cells
+
+
+def small(im):
+    return np.asarray(im.resize((60, 96), Image.LANCZOS)).astype(float)
+
+
+def diff(a, b):
+    return float(np.abs(a - b).mean())
+
+
+def mean_rgb(im):
+    a = np.asarray(im).astype(float)
+    m = a[..., 3] > 250
+    return a[m][:, :3].mean(axis=0)
+
+
+def head_w(im):
+    a = np.asarray(im)[..., 3] > 128
+    ys = np.nonzero(a.any(axis=1))[0]
+    top = a[ys[0]: ys[0] + max(1, int((ys[-1] - ys[0]) * 0.15))]
+    return float(np.median(top.sum(axis=1)[-5:]))
+
+
+def foot_y(im):
+    return int(np.nonzero((np.asarray(im)[..., 3] > 128).any(axis=1))[0][-1])
+
+
+def main():
+    if len(sys.argv) < 2:
+        sys.exit(__doc__)
+    cells = load(sys.argv[1])
+    errs = []
+
+    need = [f"idle_{d}_00" for d in DIRS] + [f"walk_{d}_{j:02d}" for d in DIRS for j in range(WALK)]
+    miss = [k for k in need if k not in cells]
+    if miss:
+        sys.exit(f"THIẾU Ô: {', '.join(miss[:10])}{' …' if len(miss) > 10 else ''}")
+    empty = [k for k in need if cells[k].getbbox() is None]
+    errs += [f"{k}: ô trống" for k in empty]
+
+    idle = {d: cells[f"idle_{d}_00"] for d in DIRS}
+    base = foot_y(idle["s"])
+    tol = FOOT * idle["s"].height
+
+    for d in DIRS:
+        fr = [cells[f"walk_{d}_{j:02d}"] for j in range(WALK)]
+        fs = [small(f) for f in fr]
+        # frame lặp: liền kề quá giống nhau, và số hình khác nhau trong cả vòng
+        for j in range(WALK):
+            dd = diff(fs[j], fs[(j + 1) % WALK])
+            if dd < SAME:
+                errs.append(f"walk_{d}: frame {j:02d}→{(j + 1) % WALK:02d} gần như trùng (Δ {dd:.1f})")
+        tiny = [np.asarray(f.resize((40, 64), Image.LANCZOS)).astype(float) for f in fr]
+        motion = float(np.mean([diff(tiny[j], tiny[(j + 1) % WALK]) for j in range(WALK)]))
+        if motion < MOTION:
+            errs.append(f"walk_{d}: biên độ {motion:.1f} < {MOTION} — ở cỡ game trông như đứng yên (chân bị che? dáng quá nhỏ?)")
+        shapes = [j for j in range(WALK) if all(diff(fs[j], fs[k]) > SAME for k in range(j))]
+        if len(shapes) < MIN_SHAPES:
+            errs.append(f"walk_{d}: chỉ {len(shapes)} hình khác nhau / {WALK} (cần ≥ {MIN_SHAPES}) — thiếu pha chuyển tiếp?")
+        # màu, cỡ, chân
+        c0, h0 = mean_rgb(idle[d]), head_w(idle[d])
+        dc = float(np.abs(np.mean([mean_rgb(f) for f in fr], axis=0) - c0).max())
+        if dc > COLOR:
+            errs.append(f"walk_{d}: màu lệch ảnh đứng im {dc:.1f}")
+        for j, f in enumerate(fr):
+            r = head_w(f) / h0
+            if abs(r - 1) > SIZE:
+                errs.append(f"walk_{d}_{j:02d}: đầu {r:.2f}× ảnh đứng im — lệch cỡ")
+            if abs(foot_y(f) - base) > tol:
+                errs.append(f"walk_{d}_{j:02d}: chân lệch đáy {foot_y(f) - base:+d}px — lơ lửng/lún")
+        print(f"{d:>2}: {len(shapes)} hình khác nhau, biên độ {motion:.1f}, màu lệch {dc:.1f}")
+    for d in DIRS:
+        if abs(foot_y(idle[d]) - base) > tol:
+            errs.append(f"idle_{d}: chân lệch đáy {foot_y(idle[d]) - base:+d}px")
+
+    if len(sys.argv) > 2:
+        w, h = idle["s"].size
+        out = Image.new("RGBA", ((WALK + 1) * w, 8 * h), (60, 60, 70, 255))
+        dr = ImageDraw.Draw(out)
+        for r, d in enumerate(DIRS):
+            row = [idle[d]] + [cells[f"walk_{d}_{j:02d}"] for j in range(WALK)]
+            for c, f in enumerate(row):
+                out.alpha_composite(f, (c * w, r * h))
+            dr.line([(0, r * h + base), (out.width, r * h + base)], fill=(255, 220, 0, 160))
+            dr.text((3, r * h + 3), d, fill=(255, 255, 255, 255))
+        out.convert("RGB").save(sys.argv[2])
+        print(f"ảnh soi: {sys.argv[2]} (cột 1 = đứng im, vạch vàng = đáy chân)")
+
+    if errs:
+        print("\n".join(["LỖI:"] + errs))
+        sys.exit(1)
+    print("ĐẠT")
+
+
+if __name__ == "__main__":
+    main()

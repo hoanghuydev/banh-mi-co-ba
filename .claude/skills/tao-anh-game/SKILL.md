@@ -47,7 +47,7 @@ Mục tiêu: ra ảnh **đúng style, đúng góc, đúng hình khối** của g
 
 - Mọi prompt gửi AI viết bằng tiếng Anh. Báo cáo cho user viết tiếng Việt.
 - Đồ vật: nền trắng thuần, không bóng đổ xuống đất, không chữ, không logo.
-- **Nhân vật luôn T-pose**, nhìn thẳng chính diện (mục Nhân vật ở `references/style-camera.md`).
+- **Nhân vật làm model 3D luôn T-pose**, nhìn thẳng chính diện (mục Nhân vật ở `references/style-camera.md`). NPC làm sprite chỉ bằng ảnh (đứng im + đi 8 hướng): dùng skill `tao-npc-anh`.
 - Mỗi lượt là cuộc trò chuyện mới, đính kèm lại ảnh, prompt đầy đủ. Không gửi câu sửa ngắn vào chat cũ.
 - Chỉ thao tác trên ChatGPT, Photoroom (và Tripo khi user cho phép). Cần đăng nhập mà chưa đăng nhập thì dừng, nhờ user đăng nhập.
 - Trước khi dùng Chrome, đọc skill `claude-in-chrome`.
