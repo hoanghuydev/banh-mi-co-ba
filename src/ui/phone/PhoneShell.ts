@@ -1,9 +1,12 @@
 import Phaser from "phaser";
 import { PHONE_STYLE } from "./phoneStyle";
+import { isTouch, onDeviceChange, viewport } from "../../core/device";
 import { btn, el, svg } from "./dom";
 
 const FRAME_W = 438;
 const FRAME_H = 835;
+const FRAMED_MIN_K_TOUCH = 0.85;
+const FRAMED_MIN_K_PC = 0.5;
 
 export type Dir = "r" | "l" | "up" | "";
 
@@ -58,7 +61,7 @@ export class PhoneShell {
     return typeof l === "function" ? l() : !!l;
   }
 
-  private onResize = () => this.layout();
+  private offDevice: () => void;
 
   constructor(private game: Phaser.Game | null, private opts: ShellOpts) {
     if (!document.getElementById("ph-style")) {
@@ -77,7 +80,9 @@ export class PhoneShell {
     this.status.append(el("span", "", opts.clock));
     const right = el("span", "r");
     right.innerHTML = `${SIGNAL}${WIFI}${BATTERY}`;
-    this.status.append(right);
+    const x = btn("ph-x", "", () => this.close(), "Đóng điện thoại");
+    x.innerHTML = svg('<path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>', 24);
+    this.status.append(right, x);
     const frame = el("img", "ph-frame");
     frame.src = "art/phone.webp";
     frame.alt = "";
@@ -89,7 +94,7 @@ export class PhoneShell {
     this.root.addEventListener("pointerdown", (e) => { if (e.target === this.root && !this.isLocked()) this.close(); });
     document.body.appendChild(this.root);
     window.addEventListener("keydown", this.onKey, true);
-    window.addEventListener("resize", this.onResize);
+    this.offDevice = onDeviceChange(() => this.layout());
     if (this.game?.input.keyboard) {
       this.prevKbd = this.game.input.keyboard.enabled;
       this.game.input.keyboard.enabled = false;
@@ -98,10 +103,31 @@ export class PhoneShell {
   }
 
   private layout() {
-    const k = Math.max(0.5, Math.min(1.1, (window.innerHeight - 28) / FRAME_H, (window.innerWidth - 16) / FRAME_W));
-    this.root.style.setProperty("--k", String(k));
-    this.fit.style.width = `${FRAME_W * k}px`;
-    this.fit.style.height = `${FRAME_H * k}px`;
+    const { w, h } = viewport();
+    const vv = window.visualViewport;
+    this.root.style.top = `${Math.round(vv?.offsetTop ?? 0)}px`;
+    this.root.style.bottom = "auto";
+    this.root.style.height = `${h}px`;
+    const fit = Math.min((h - 28) / FRAME_H, (w - 16) / FRAME_W);
+    const framed = fit >= (isTouch() ? FRAMED_MIN_K_TOUCH : FRAMED_MIN_K_PC);
+    const set = (a: string, on: boolean) => (on ? this.root.setAttribute(a, "") : this.root.removeAttribute(a));
+    set("data-compact", !framed);
+    set("data-short", !framed && h < 520);
+    const touch = isTouch();
+    if (framed) {
+      const k = Math.min(1.1, fit);
+      this.root.style.setProperty("--k", String(k));
+      this.root.style.setProperty("--fmin", touch ? `${14 / k}px` : "0px");
+      this.root.style.setProperty("--tmin", touch ? `${44 / k}px` : "38px");
+      this.fit.style.width = `${FRAME_W * k}px`;
+      this.fit.style.height = `${FRAME_H * k}px`;
+    } else {
+      this.root.style.setProperty("--k", "1");
+      this.root.style.setProperty("--fmin", touch ? "14px" : "0px");
+      this.root.style.setProperty("--tmin", touch ? "44px" : "38px");
+      this.fit.style.width = "";
+      this.fit.style.height = "";
+    }
   }
 
   setClock(text: string) {
@@ -123,7 +149,7 @@ export class PhoneShell {
     const keep = dir ? [] : this.scrollPos();
     this.view?.remove();
     const v = el("div", "ph-view");
-    v.style.fontSize = `${Math.round(15 * Math.min(this.opts.textScale, 1.4))}px`;
+    v.style.fontSize = `max(calc(var(--fmin) * 1.08), ${Math.round(15 * Math.min(this.opts.textScale, 1.4))}px)`;
     if (dir) v.classList.add(`in-${dir}`);
     v.append(content);
     content.style.cssText += "flex:1;min-height:0;display:flex;flex-direction:column";
@@ -135,6 +161,8 @@ export class PhoneShell {
       this.screen.insertBefore(v, bar);
     }
     this.view = v;
+    if (this.isLocked()) this.root.setAttribute("data-locked", "");
+    else this.root.removeAttribute("data-locked");
     v.querySelectorAll<HTMLElement>(".ph-scroll, .ph-chips").forEach((n, i) => {
       if (keep[i]) { n.scrollTop = keep[i][0]; n.scrollLeft = keep[i][1]; }
     });
@@ -149,7 +177,7 @@ export class PhoneShell {
     if (this.closed) return;
     this.closed = true;
     window.removeEventListener("keydown", this.onKey, true);
-    window.removeEventListener("resize", this.onResize);
+    this.offDevice();
     this.root.remove();
     if (this.game?.input.keyboard && this.prevKbd !== null) this.game.input.keyboard.enabled = this.prevKbd;
     this.opts.onClose();

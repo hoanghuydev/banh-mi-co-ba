@@ -44,12 +44,15 @@ const DUCK_GAIN = 0.25;
 const VOICE_DUCK_GAIN = 0.2;
 
 type Track = {
+  id: CueId;
   sound: Phaser.Sound.BaseSound & { setVolume(v: number): unknown };
   level: number;
   target: number;
   rate: number;
   stopAtZero: boolean;
 };
+
+const GESTURES = ["pointerup", "touchend", "click", "keydown"] as const;
 
 class MusicDirector {
   private game: Phaser.Game | null = null;
@@ -63,12 +66,31 @@ class MusicDirector {
   private hushLeft = 0;
 
   private loading = new Set<CueId>();
+  private gestured = false;
+  private pending: { scene: Phaser.Scene; id: CueId; fadeMs: number } | null = null;
 
   attach(game: Phaser.Game) {
     if (this.game) return;
     this.game = game;
     this.applySettings(loadSettings());
     game.events.on(Phaser.Core.Events.PRE_STEP, this.step, this);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") this.resumeContext();
+    });
+    const onGesture = () => {
+      for (const g of GESTURES) window.removeEventListener(g, onGesture, true);
+      this.gestured = true;
+      this.resumeContext();
+      const p = this.pending;
+      this.pending = null;
+      if (p && this.currentId === p.id) this.start(p.scene, p.id, p.fadeMs);
+    };
+    for (const g of GESTURES) window.addEventListener(g, onGesture, { capture: true, passive: true });
+  }
+
+  private resumeContext() {
+    const ctx = (this.game?.sound as { context?: AudioContext } | undefined)?.context;
+    if (ctx && ctx.state !== "running") ctx.resume().catch(() => {});
   }
 
   applySettings(s: Settings) {
@@ -81,7 +103,7 @@ class MusicDirector {
   /** Gọi lại với cue đang phát thì không làm gì, nên gọi mỗi frame cũng được. */
   play(scene: Phaser.Scene, id: CueId, fadeMs = 1400) {
     if (this.currentId === id) return;
-    if (this.volume === 0) { this.currentId = id; return; }
+    if (this.volume === 0) { this.currentId = id; this.pending = null; return; }
 
     const cue = CUES[id];
     if (!scene.cache.audio.exists(cue.key)) {
@@ -98,7 +120,8 @@ class MusicDirector {
 
   stop(fadeMs = 900) {
     this.currentId = null;
-    this.tracks.forEach((t) => this.fadeTo(t, 0, fadeMs, true));
+    this.pending = null;
+    [...this.tracks.values()].forEach((t) => this.fadeTo(t, 0, fadeMs, true));
   }
 
   /** Menu tạm dừng: hạ −12 dB chứ không tắt. */
@@ -145,10 +168,11 @@ class MusicDirector {
   }
 
   private start(scene: Phaser.Scene, id: CueId, fadeMs: number) {
+    if (!this.gestured) { this.pending = { scene, id, fadeMs }; return; }
     let t = this.tracks.get(id);
     if (!t) {
       const sound = scene.sound.add(CUES[id].key, { loop: true, volume: 0 }) as Track["sound"];
-      t = { sound, level: 0, target: 0, rate: 0, stopAtZero: false };
+      t = { id, sound, level: 0, target: 0, rate: 0, stopAtZero: false };
       this.tracks.set(id, t);
     }
     // Bị chặn autoplay thì Phaser tự xếp hàng và phát sau cú chạm đầu tiên.
@@ -170,7 +194,7 @@ class MusicDirector {
     if (ms <= 0) {
       t.level = target;
       this.applyGain(t);
-      if (target === 0 && stopAtZero) t.sound.stop();
+      if (target === 0 && stopAtZero) this.retire(t);
     }
   }
 
@@ -191,7 +215,7 @@ class MusicDirector {
       if (this.hushLeft <= 0) { this.hushLeft = 0; this.refreshGains(); }
     }
 
-    this.tracks.forEach((t, id) => {
+    [...this.tracks.values()].forEach((t) => {
       if (t.level === t.target) return;
       const stepSize = t.rate === Infinity ? 1 : t.rate * dt;
       t.level = t.level < t.target
@@ -199,12 +223,14 @@ class MusicDirector {
         : Math.max(t.target, t.level - stepSize);
       this.applyGain(t);
 
-      if (t.level === 0 && t.stopAtZero) {
-        t.sound.stop();
-        t.sound.destroy();
-        this.tracks.delete(id);
-      }
+      if (t.level === 0 && t.stopAtZero) this.retire(t);
     });
+  }
+
+  private retire(t: Track) {
+    t.sound.stop();
+    t.sound.destroy();
+    this.tracks.delete(t.id);
   }
 }
 

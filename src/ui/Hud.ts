@@ -2,12 +2,14 @@ import Phaser from "phaser";
 import { ICON, ntfKey, type NtfIcon } from "../art";
 import { fitPhoto } from "../art/photo";
 import { GAME_W, GAME_H } from "../core/config";
+import { designFor, isTouch, onDeviceChange } from "../core/device";
+import { ACTION_SIZE, CTX_SIZE, EDGE, PILL_GAP, RUN_SIZE, STICK_BASE } from "./touch/touchStyle";
 import { BAND_LABEL, type Clock } from "../core/clock";
 import type { Settings } from "../core/save";
 import { blockedReason, type Hand, type Station } from "../world/stations";
 import { INGREDIENTS, portionsOf, type Ingredient } from "../sim/order";
 import { FOOD } from "../art/food";
-import { FONT, UI, iconButton } from "./theme";
+import { FONT, UI, iconButton, touchFont, touchSize } from "./theme";
 import { CLAY, clayButton, clayImage } from "./clay";
 
 const DEPTH = 9_000_000;
@@ -19,14 +21,16 @@ const HELP_BY_DAY = [
   "WASD đi · E làm việc · R cầm ổ trên thớt · Q đặt xuống · F hỏi chuyện",
 ];
 
+/** Chừa chỗ cho cần và cụm nút điều khiển cảm ứng, pixel thật. */
+const LEFT_RESERVE = EDGE + STICK_BASE + 24;
+const RIGHT_RESERVE = EDGE + ACTION_SIZE + 12 + RUN_SIZE + 8;
+const STICK_TOP = EDGE + STICK_BASE + 40;
+const CLUSTER_TOP = EDGE + ACTION_SIZE + 10 + CTX_SIZE + 16;
+
 /** `GLANCE` = có người nhìn MẶT mình · `CLOSE` = có người nhìn thẳng vào TAY mình. */
 export type Watch = "NONE" | "GLANCE" | "CLOSE";
 
-/** Không đặt giữa màn hình: vòng độ giòn trên cửa lò nằm ở quãng y 60–90. */
-const EYE_X = GAME_W / 2 + 124;
-const EYE_Y = 26;
 const ICON_H = 19;
-const HANDS_X = GAME_W / 2 - 58;
 const EYE_BLINK_MS = 1150;
 
 /** Toast nằm cột phải vì giữa đỉnh màn hình là chỗ nhãn trạm. */
@@ -53,8 +57,6 @@ export type ToastTone = "good" | "bad" | "info";
 export type ToastOpts = { icon?: NtfIcon; title?: string };
 
 const CREAM = "#f7f1e2";
-const BTN_W = 48, BTN_H = 38;
-export const EYE_BOX = { x: EYE_X - BTN_W / 2, y: EYE_Y - BTN_H / 2, w: BTN_W, h: BTN_H };
 
 /** Cùng kiểu với `glass()` nhưng vẽ lại được vào Graphics có sẵn khi kích thước đổi. */
 function paintGlass(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number, r = 12) {
@@ -69,10 +71,12 @@ function paintPaper(g: Phaser.GameObjects.Graphics, x: number, y: number, w: num
   g.fillStyle(fill, a).fillRoundedRect(x, y, w, h, r);
 }
 
+
 type Toast = {
   text: Phaser.GameObjects.Text;
   title: Phaser.GameObjects.Text;
   icon: Phaser.GameObjects.Image;
+  hit: Phaser.GameObjects.Zone;
   iconName: NtfIcon;
   born: number;
   tone: ToastTone;
@@ -81,9 +85,33 @@ type Toast = {
   life: number;
 };
 
-/** Không hiện điểm, sao, thanh kiên nhẫn hay "đúng/sai" của hệ thống. */
-const PHONE_X = GAME_W / 2 + 60;
-const PHONE_Y = 26;
+type Metrics = {
+  touch: boolean;
+  /** Hệ số phóng hình theo cỡ chữ; 1 trên chuột. */
+  k: number;
+  btnW: number;
+  btnH: number;
+  cy: number;
+  hands: number;
+  pause: number;
+  phone: number;
+  eye: number;
+  pauseY: number;
+  phoneY: number;
+  statL: number;
+  statR: number;
+  statY: number;
+  /** Mép trái/phải của dải giữa, nơi prompt, thanh tiến độ và dòng gợi ý được đặt. */
+  midL: number;
+  midR: number;
+  toastRight: number;
+  toastBottom: number;
+  bodyW: number;
+  feedX: number;
+  feedY: number;
+  feedW: number;
+  helpY: number;
+};
 
 export class Hud {
   private left: Phaser.GameObjects.Text;
@@ -96,6 +124,7 @@ export class Hud {
   private feedBg: Phaser.GameObjects.Graphics;
   private helpBg: Phaser.GameObjects.Graphics;
   private feed: string[] = [];
+  private feedDocked = false;
   private ticketBg: Phaser.GameObjects.Graphics;
   private ticketText: Phaser.GameObjects.Text;
   private help: Phaser.GameObjects.Text;
@@ -104,36 +133,36 @@ export class Hud {
   private carryIcons: Phaser.GameObjects.Image[] = [];
   private carryNums: Phaser.GameObjects.Text[] = [];
   private carryKey = "";
-  private phoneBadgeGfx: Phaser.GameObjects.Graphics;
-  private phoneBadge: Phaser.GameObjects.Text;
+  private phoneBadgeGfx!: Phaser.GameObjects.Graphics;
+  private phoneBadge!: Phaser.GameObjects.Text;
   private unread = 0;
-  private handsIcon: Phaser.GameObjects.Image;
+  private handsIcon!: Phaser.GameObjects.Image;
+  private handsPlate!: Phaser.GameObjects.Image;
   private handsKey = "";
-  private eyeGroup: Phaser.GameObjects.Container;
-  private eyePlate: Phaser.GameObjects.Image;
-  private eyeIcon: Phaser.GameObjects.Image;
+  private eyeGroup!: Phaser.GameObjects.Container;
+  private eyePlate!: Phaser.GameObjects.Image;
+  private eyeIcon!: Phaser.GameObjects.Image;
+  private cluster: Phaser.GameObjects.GameObject[] = [];
   private toastBg: Phaser.GameObjects.Graphics;
   private toasts: Toast[] = [];
   private scene: Phaser.Scene;
-  private fs: (n: number) => string;
+  private m!: Metrics;
+  private lastUpdate: Parameters<Hud["update"]>[0] | null = null;
 
-  constructor(scene: Phaser.Scene, private settings: Settings, onPause?: () => void, onPhone?: () => void) {
+  constructor(scene: Phaser.Scene, private settings: Settings, private onPause?: () => void, private onPhone?: () => void) {
     this.scene = scene;
-    const fs = this.fs = (n: number) => `${Math.round(n * settings.textScale)}px`;
-    const fixed = <T extends Phaser.GameObjects.GameObject>(o: T, d = DEPTH) =>
-      (o as any).setScrollFactor(0).setDepth(d) as T;
+    const fixed = this.fixed;
 
     this.statBg = fixed(scene.add.graphics());
-    const stat = (x: number, origin: number) => fixed(scene.add.text(x, 20, "", {
-      fontFamily: FONT, fontSize: fs(14), fontStyle: "600", color: CREAM, lineSpacing: Math.round(7 * settings.textScale),
+    const stat = (origin: number) => fixed(scene.add.text(0, 20, "", {
+      fontFamily: FONT, fontStyle: "600", color: CREAM,
     }).setOrigin(origin, 0).setShadow(0, 1, "#1b1410", 2, false, true), DEPTH + 100);
-    this.left = stat(26, 0);
-    this.right = stat(GAME_W - 26, 1);
+    this.left = stat(0);
+    this.right = stat(1);
 
     this.promptBg = fixed(scene.add.graphics());
     this.prompt = fixed(scene.add.text(GAME_W / 2, GAME_H - 66, "", {
-      fontFamily: FONT, fontSize: fs(15), fontStyle: "500", color: UI.ink, align: "center",
-      wordWrap: { width: GAME_W - 80 },
+      fontFamily: FONT, fontStyle: "500", color: UI.ink, align: "center",
     }).setOrigin(0.5), DEPTH + 100);
 
     this.bar = fixed(scene.add.graphics(), DEPTH + 50);
@@ -141,71 +170,172 @@ export class Hud {
     // Phiếu đơn ở góc trên phải để không che mặt khách và không bị bảng kẹp nhân che.
     this.ticketBg = fixed(scene.add.graphics());
     this.ticketText = fixed(scene.add.text(GAME_W - 26, 100, "", {
-      fontFamily: FONT, fontSize: fs(13), fontStyle: "500", color: UI.ink, align: "right",
-      lineSpacing: Math.round(7 * settings.textScale), wordWrap: { width: 320 * Math.min(settings.textScale, 1.5) },
+      fontFamily: FONT, fontStyle: "500", color: UI.ink, align: "right",
     }).setOrigin(1, 0), DEPTH + 100);
 
     this.feedBg = fixed(scene.add.graphics());
     this.feedText = fixed(scene.add.text(26, GAME_H - 100, "", {
-      fontFamily: FONT, fontSize: fs(12), color: CREAM, lineSpacing: Math.round(6 * settings.textScale),
-      wordWrap: { width: 380 },
+      fontFamily: FONT, color: CREAM,
     }).setOrigin(0, 1), DEPTH + 100);
 
-    // Ở cỡ chữ 200% dòng này tràn khung nên phải xuống dòng, neo đáy để `drawPrompt` xếp lên trên.
     this.helpBg = fixed(scene.add.graphics(), DEPTH + 90);
-    this.help = fixed(scene.add.text(GAME_W / 2, GAME_H - 12, HELP_BY_DAY[0], {
-      fontFamily: FONT, fontSize: fs(11), color: CREAM,
-      align: "center", wordWrap: { width: GAME_W - 80 },
+    this.help = fixed(scene.add.text(GAME_W / 2, GAME_H - 12, "", {
+      fontFamily: FONT, color: CREAM, align: "center",
     }).setOrigin(0.5, 1), DEPTH + 100);
 
     this.carryBg = fixed(scene.add.graphics());
 
-    const pause = iconButton(scene, GAME_W / 2, 26, BTN_W, BTN_H, () => onPause?.());
-    pause.icon.fillStyle(0xffffff, 0.8).fillRoundedRect(-8, -7, 5, 16, 1.5).fillRoundedRect(3, -7, 5, 16, 1.5);
-    pause.icon.fillStyle(0x2a2420, 1).fillRoundedRect(-8, -8, 5, 16, 1.5).fillRoundedRect(3, -8, 5, 16, 1.5);
-    fixed(pause, DEPTH + 200);
-
-    const phone = iconButton(scene, PHONE_X, PHONE_Y, BTN_W, BTN_H, () => onPhone?.());
-    phone.setIconImage(ntfKey("phone"), 21);
-    fixed(phone, DEPTH + 200);
-    this.phoneBadgeGfx = fixed(scene.add.graphics(), DEPTH + 201);
-    this.phoneBadge = fixed(scene.add.text(PHONE_X + 20, PHONE_Y - 15, "", {
-      fontFamily: FONT, fontSize: "11px", fontStyle: "800", color: "#ffffff",
-    }).setOrigin(0.5).setShadow(0, 1, "#8f1f13", 0, false, true), DEPTH + 202);
-    this.paintPhone();
-
-    fixed(clayImage(scene, clayButton(scene, CLAY.cream, BTN_W, BTN_H, "up"), HANDS_X, 26, BTN_W, BTN_H), DEPTH);
-    this.handsIcon = fixed(scene.add.image(HANDS_X, 24, ICON.handClean), DEPTH + 1);
-    this.fitIcon(this.handsIcon);
-
-    this.eyePlate = clayImage(scene, clayButton(scene, CLAY.cream, BTN_W, BTN_H, "up"), 0, 0, BTN_W, BTN_H);
-    this.eyeIcon = scene.add.image(0, -2, ICON.eyeGlance);
-    this.fitIcon(this.eyeIcon);
-    this.eyeGroup = fixed(scene.add.container(EYE_X, EYE_Y, [this.eyePlate, this.eyeIcon]), DEPTH + 150).setVisible(false);
-
     // Pool cố định để tránh GC giật đúng giờ cao điểm.
     this.toastBg = fixed(scene.add.graphics(), DEPTH + 160);
     for (let i = 0; i < TOAST_MAX; i++) {
-      this.toasts.push({
+      const hit = fixed(scene.add.zone(0, 0, 10, 10).setOrigin(0, 0).setInteractive(), DEPTH + 170);
+      const toast: Toast = {
         text: fixed(scene.add.text(TOAST_RIGHT, 0, "", {
-          fontFamily: FONT, fontSize: fs(13), fontStyle: "500", color: UI.ink,
-          // Rộng hơn 210 px thì dòng dài thò ra giữa màn hình, đè nhãn trạm.
-          wordWrap: { width: TOAST_BODY_W },
+          fontFamily: FONT, fontStyle: "500", color: UI.ink,
         }).setOrigin(0, 0).setVisible(false), DEPTH + 162),
         title: fixed(scene.add.text(TOAST_RIGHT, 0, "", {
-          fontFamily: FONT, fontSize: fs(11), fontStyle: "700", color: "#6a7680",
+          fontFamily: FONT, fontStyle: "700", color: "#6a7680",
         }).setOrigin(0, 0).setVisible(false), DEPTH + 162),
         icon: fixed(scene.add.image(0, 0, ntfKey("info")).setVisible(false), DEPTH + 162),
+        hit,
         iconName: "info",
         born: -1,
         tone: "info",
         body: "",
         count: 0,
         life: TOAST_MIN_MS,
-      });
+      };
+      hit.input!.enabled = false;
+      hit.on("pointerdown", () => this.dismiss(toast));
+      this.toasts.push(toast);
     }
 
     this.saveDot = fixed(scene.add.circle(GAME_W - 14, GAME_H - 14, 4, 0xf4f1e8), DEPTH + 100).setAlpha(0);
+
+    this.applyDevice();
+    const off = onDeviceChange(() => this.applyDevice());
+    scene.events.once(Phaser.Scenes.Events.SHUTDOWN, off);
+  }
+
+  private fixed = <T extends Phaser.GameObjects.GameObject>(o: T, d = DEPTH) =>
+    (o as any).setScrollFactor(0).setDepth(d) as T;
+
+  /** Chữ thật ≥14 px trên cảm ứng: phóng theo hệ số FIT hiện tại. */
+  private font(n: number) {
+    return touchFont(Math.round(n * this.settings.textScale));
+  }
+
+  private fs(n: number) {
+    return `${this.font(n)}px`;
+  }
+
+  private spacing(n: number) {
+    return Math.round(n * this.settings.textScale * (isTouch() ? this.m.k : 1));
+  }
+
+  private metrics(): Metrics {
+    const touch = isTouch();
+    if (!touch) {
+      return {
+        touch, k: 1, btnW: 48, btnH: 38, cy: 26,
+        hands: GAME_W / 2 - 58, pause: GAME_W / 2, phone: GAME_W / 2 + 60, eye: GAME_W / 2 + 124,
+        pauseY: 26, phoneY: 26, statL: 26, statR: GAME_W - 26, statY: 20,
+        midL: 40, midR: GAME_W - 40,
+        toastRight: TOAST_RIGHT, toastBottom: GAME_H, bodyW: TOAST_BODY_W,
+        feedX: 26, feedY: GAME_H - 100, feedW: 380, helpY: GAME_H - 12,
+      };
+    }
+    const k = Math.max(1, this.font(13) / 13);
+    const btnW = touchSize(48), btnH = touchSize(38);
+    const gap = Math.ceil(designFor(PILL_GAP));
+    const edge = designFor(EDGE);
+    const statY = edge + 10;
+    const pillBottom = statY + Math.round(this.font(14) * 1.4) + 8;
+    const colX = GAME_W - edge - btnW / 2;
+    const pauseY = pillBottom + gap + btnH / 2;
+    const midL = designFor(LEFT_RESERVE), midR = GAME_W - designFor(RIGHT_RESERVE);
+    return {
+      touch, k, btnW, btnH, cy: statY + Math.round(this.font(14) * 0.7),
+      hands: 0, pause: colX, phone: colX, eye: 0,
+      pauseY, phoneY: pauseY + btnH + gap,
+      statL: edge + 14, statR: GAME_W - edge - 14, statY,
+      midL, midR,
+      toastRight: GAME_W - edge - btnW - designFor(12),
+      toastBottom: GAME_H - designFor(CLUSTER_TOP),
+      bodyW: Math.round(190 * k),
+      feedX: designFor(EDGE), feedY: GAME_H - designFor(STICK_TOP), feedW: Math.min(380, Math.round(midR - midL - designFor(24))),
+      helpY: GAME_H - designFor(8),
+    };
+  }
+
+  /** Dựng lại mọi thứ phụ thuộc thiết bị: kích thước nút, cỡ chữ, vùng tránh cần và nút cảm ứng. */
+  private applyDevice() {
+    const m = this.m = this.metrics();
+    const ts = this.settings.textScale;
+    const fixed = this.fixed;
+
+    for (const o of this.cluster) o.destroy();
+    this.cluster = [];
+    const pause = iconButton(this.scene, m.pause, m.pauseY, m.btnW, m.btnH, () => this.onPause?.());
+    const kb = m.btnH / 38;
+    pause.icon.setScale(kb);
+    pause.icon.fillStyle(0xffffff, 0.8).fillRoundedRect(-8, -7, 5, 16, 1.5).fillRoundedRect(3, -7, 5, 16, 1.5);
+    pause.icon.fillStyle(0x2a2420, 1).fillRoundedRect(-8, -8, 5, 16, 1.5).fillRoundedRect(3, -8, 5, 16, 1.5);
+    fixed(pause, DEPTH + 200);
+
+    const phone = iconButton(this.scene, m.phone, m.phoneY, m.btnW, m.btnH, () => this.onPhone?.());
+    phone.setIconImage(ntfKey("phone"), 21 * kb);
+    fixed(phone, DEPTH + 200);
+    this.phoneBadgeGfx = fixed(this.scene.add.graphics(), DEPTH + 201);
+    this.phoneBadge = fixed(this.scene.add.text(0, 0, "", {
+      fontFamily: FONT, fontSize: `${touchFont(11)}px`, fontStyle: "800", color: "#ffffff",
+    }).setOrigin(0.5).setShadow(0, 1, "#8f1f13", 0, false, true), DEPTH + 202);
+
+    this.handsPlate = fixed(clayImage(this.scene, clayButton(this.scene, CLAY.cream, m.btnW, m.btnH, "up"), m.hands, m.cy, m.btnW, m.btnH), DEPTH);
+    this.handsIcon = fixed(this.scene.add.image(m.hands, m.cy - 2, ICON.handClean), DEPTH + 1);
+    this.handsKey = "";
+    this.eyePlate = clayImage(this.scene, clayButton(this.scene, CLAY.cream, m.btnW, m.btnH, "up"), 0, 0, m.btnW, m.btnH);
+    this.eyeIcon = this.scene.add.image(0, -2, ICON.eyeGlance);
+    this.eyeGroup = fixed(this.scene.add.container(m.eye, m.cy, [this.eyePlate, this.eyeIcon]), DEPTH + 150).setVisible(false);
+    this.cluster.push(pause, phone, this.phoneBadgeGfx, this.phoneBadge, this.handsPlate, this.handsIcon, this.eyeGroup);
+    this.fitIcon(this.handsIcon);
+    this.fitIcon(this.eyeIcon);
+    this.paintPhone();
+
+    const stat = (t: Phaser.GameObjects.Text, x: number) => t
+      .setFontSize(this.fs(14)).setLineSpacing(this.spacing(7)).setPosition(x, 20);
+    stat(this.left, m.statL);
+    stat(this.right, m.statR);
+    this.left.y = this.right.y = m.statY;
+
+    const mid = (m.midL + m.midR) / 2;
+    const midW = m.midR - m.midL;
+    this.prompt.setFontSize(this.fs(15)).setWordWrapWidth(m.touch ? midW - 34 : GAME_W - 80);
+    this.help.setFontSize(this.fs(11)).setWordWrapWidth(m.touch ? midW - 24 : GAME_W - 80).setPosition(mid, m.helpY);
+    this.ticketText.setFontSize(this.fs(13)).setLineSpacing(this.spacing(7))
+      .setWordWrapWidth(m.touch ? Math.round(190 * m.k) : 320 * Math.min(ts, 1.5));
+    this.feedText.setFontSize(this.fs(12)).setLineSpacing(this.spacing(6)).setWordWrapWidth(m.feedW);
+    this.placeFeed();
+
+    for (const t of this.toasts) {
+      t.text.setFontSize(this.fs(13)).setWordWrapWidth(m.bodyW);
+      t.title.setFontSize(this.fs(11));
+    }
+    this.carryKey = "";
+    for (const o of [...this.carryIcons, ...this.carryNums]) o.destroy();
+    this.carryIcons = [];
+    this.carryNums = [];
+    this.carryBg.clear();
+    this.saveDot.setPosition(GAME_W - 14, GAME_H - 14);
+    if (this.lastUpdate) this.update(this.lastUpdate);
+  }
+
+  private placeFeed() {
+    const m = this.m;
+    const docked = this.feedDocked && !m.touch;
+    this.feedText.setPosition(docked ? 496 : m.feedX, docked ? GAME_H - 14 : m.feedY);
+    this.feedText.setVisible(!(this.feedDocked && m.touch));
+    this.redrawFeedBg();
   }
 
   /** Việc máy báo, không dùng cho lời người (đi `say()`); hết chỗ thì cướp dòng già nhất. */
@@ -218,9 +348,12 @@ export class Hud {
   private paintPhone() {
     const g = this.phoneBadgeGfx;
     g.clear();
-    const x = PHONE_X + 20, y = PHONE_Y - 15;
+    const { btnW, btnH, phone, phoneY } = this.m;
+    const kb = btnH / 38;
+    const x = phone + btnW / 2 - 4 * kb, y = phoneY - btnH / 2 + 4 * kb;
+    this.phoneBadge.setPosition(x, y);
     if (this.unread > 0) {
-      const r = this.unread > 9 ? 10 : 9;
+      const r = (this.unread > 9 ? 10 : 9) * Math.max(1, kb * 0.9);
       g.fillStyle(0x3c1c0a, 0.35).fillCircle(x, y + 4, r);
       g.fillStyle(0x8f1f13, 1).fillCircle(x, y + 2, r);
       g.fillStyle(0xe0432f, 1).fillCircle(x, y, r);
@@ -254,9 +387,15 @@ export class Hud {
     t.text.setText(t.count > 1 ? `${t.body}  ×${t.count}` : t.body);
     t.title.setText(opts.title ?? "").setVisible(!!opts.title);
     t.iconName = opts.icon ?? TOAST_ICON[t.tone];
-    t.icon.setTexture(ntfKey(t.iconName)).setScale(TOAST_ICON_PX / t.icon.height).setVisible(true);
+    t.icon.setTexture(ntfKey(t.iconName)).setScale(TOAST_ICON_PX * this.m.k / t.icon.height).setVisible(true);
     const chars = t.text.text.length;
     t.life = Math.min(TOAST_MAX_MS, Math.max(TOAST_MIN_MS, TOAST_BASE_MS + chars * TOAST_PER_CHAR_MS));
+  }
+
+  private dismiss(t: Toast) {
+    t.born = -1; t.count = 0; t.body = "";
+    t.text.setVisible(false); t.title.setVisible(false); t.icon.setVisible(false);
+    t.hit.input!.enabled = false;
   }
 
   flashSaved() {
@@ -269,17 +408,23 @@ export class Hud {
     return this.left.getBounds().bottom + 11;
   }
 
-  /** Bảng kẹp nhân mở thì dời nhật ký lời người sang phải để không chồng nhau. */
+  /** Ô nút điện thoại theo toạ độ thiết kế. */
+  get phoneRect() {
+    if (!this.m.touch) return { x: GAME_W / 2 + 36, y: 8, w: 48, h: 36 };
+    const { phone, phoneY, btnW, btnH } = this.m;
+    return { x: phone - btnW / 2, y: phoneY - btnH / 2, w: btnW, h: btnH };
+  }
+
+  /** Bảng kẹp nhân mở thì dời nhật ký lời người sang phải để không chồng nhau; cảm ứng thì ẩn. */
   dockFeed(right: boolean) {
-    const x = right ? 496 : 26;
-    if (this.feedText.x === x) return;
-    this.feedText.setPosition(x, right ? GAME_H - 14 : GAME_H - 100);
-    this.redrawFeedBg();
+    if (this.feedDocked === right) return;
+    this.feedDocked = right;
+    this.placeFeed();
   }
 
   private redrawFeedBg() {
     this.feedBg.clear();
-    if (!this.feed.length) return;
+    if (!this.feed.length || !this.feedText.visible) return;
     const b = this.feedText.getBounds();
     paintGlass(this.feedBg, b.x - 10, b.y - 6, b.width + 20, b.height + 12, 10);
   }
@@ -300,7 +445,7 @@ export class Hud {
     this.feed = [];
     this.feedText.setText("");
     this.feedBg.clear();
-    for (const t of this.toasts) { t.born = -1; t.count = 0; t.body = ""; t.text.setVisible(false); t.title.setVisible(false); t.icon.setVisible(false); }
+    for (const t of this.toasts) this.dismiss(t);
     this.toastBg.clear();
   }
 
@@ -310,20 +455,30 @@ export class Hud {
     frozen: boolean;
     ticket: { name: string; text: string; urgent: boolean } | null;
     prompt?: string | null;
+    /** Bỏ dòng nhãn trạm vì nút cảm ứng đã nói việc cần làm. */
+    quiet?: boolean;
     carry?: readonly Ingredient[] | null;
     hands?: "CLEAN" | "MONEY";
     watch?: Watch;
     now?: number;
     work?: { frac: number } | null;
   }) {
+    this.lastUpdate = s;
     const m = Math.floor(s.clock.minutes);
     const hhmm = `${Math.floor(m / 60)}h${String(m % 60).padStart(2, "0")}`;
     const slow = this.settings.noTimePressure ? " · thong thả" : "";
-    this.left.setText(`ngày ${s.day}\n${hhmm} · ${BAND_LABEL[s.clock.band]}${slow}`);
-    this.right.setText(`${s.money.toLocaleString("vi-VN")}₫\nđã bán ${s.served} ổ`);
+    const money = `${s.money.toLocaleString("vi-VN")}₫`;
+    if (this.m.touch) {
+      this.left.setText(`Ngày ${s.day} · ${hhmm}${slow}`);
+      this.right.setText(money);
+    } else {
+      this.left.setText(`ngày ${s.day}\n${hhmm} · ${BAND_LABEL[s.clock.band]}${slow}`);
+      this.right.setText(`${money}\nđã bán ${s.served} ổ`);
+    }
     this.drawStats();
+    this.placeBadges();
 
-    const show = s.day <= HELP_UNTIL_DAY && this.feedText.x < 100;
+    const show = !this.m.touch && s.day <= HELP_UNTIL_DAY && !this.feedDocked;
     if (show) this.help.setText(HELP_BY_DAY[Math.min(s.day, HELP_BY_DAY.length) - 1]);
     this.help.setVisible(show);
     this.helpBg.clear();
@@ -331,7 +486,7 @@ export class Hud {
       const hb = this.help.getBounds();
       paintGlass(this.helpBg, hb.x - 12, hb.y - 6, hb.width + 24, hb.height + 12, 10);
     }
-    this.drawPrompt(s.near, s.hand, s.frozen, s.prompt ?? null);
+    this.drawPrompt(s.quiet ? null : s.near, s.hand, s.frozen, s.prompt ?? null);
     this.drawBar(s.busy, s.work ?? null);
     this.drawTicket(s.ticket, s.frozen);
     this.drawCarry(s.frozen ? null : s.carry ?? null);
@@ -344,32 +499,60 @@ export class Hud {
   private drawToasts(now: number, reducedMotion: boolean) {
     const g = this.toastBg;
     g.clear();
+    const m = this.m, k = m.k;
     const live = this.toasts.filter((t) => t.born >= 0).sort((a, b) => b.born - a.born);
     const ticketBottom = this.ticketText.text ? this.ticketText.getBounds().bottom + 18 : 0;
-    let y = Math.max(TOAST_TOP, ticketBottom);
+    let y = m.touch ? Math.max(this.right.getBounds().bottom + 16, ticketBottom) : Math.max(TOAST_TOP, ticketBottom);
+    const tile = TOAST_TILE_PX * k;
     for (const t of live) {
       const age = (now - t.born) / t.life;
-      if (age >= 1) { t.born = -1; t.count = 0; t.body = ""; t.text.setVisible(false); t.title.setVisible(false); t.icon.setVisible(false); continue; }
+      if (age >= 1) { this.dismiss(t); continue; }
       const alpha = age < TOAST_FADE_FROM ? 1 : 1 - (age - TOAST_FADE_FROM) / (1 - TOAST_FADE_FROM);
       const slide = reducedMotion ? 0 : Math.max(0, 1 - (now - t.born) / TOAST_SLIDE_MS) * TOAST_SLIDE_PX;
       const titleH = t.title.visible ? t.title.height + 1 : 0;
-      const pad = 12, textX = pad + TOAST_TILE_PX + 10;
-      const h = Math.max(TOAST_TILE_PX + 16, titleH + t.text.height + 18);
+      const pad = 12, textX = pad + tile + 10;
+      const h = Math.max(tile + 16, titleH + t.text.height + 18);
       const w = Math.max(150, textX + Math.max(t.text.width, t.title.visible ? t.title.width : 0) + pad + 2);
-      const x1 = TOAST_RIGHT + slide, x0 = x1 - w, y0 = y;
+      const hidden = m.touch && y + h > m.toastBottom;
+      for (const o of [t.text, t.icon]) o.setVisible(!hidden);
+      t.title.setVisible(!hidden && !!t.title.text);
+      t.hit.input!.enabled = m.touch && !hidden;
+      if (hidden) continue;
+      const x1 = m.toastRight + slide, x0 = x1 - w, y0 = y;
       paintPaper(g, x0, y0, w, h, 16, 0xffffff, alpha * 0.97);
-      const ty = y0 + (h - TOAST_TILE_PX) / 2;
-      g.fillStyle(TOAST_TILE[t.tone], alpha).fillRoundedRect(x0 + pad, ty, TOAST_TILE_PX, TOAST_TILE_PX, 10);
-      t.icon.setPosition(x0 + pad + TOAST_TILE_PX / 2, ty + TOAST_TILE_PX / 2).setAlpha(alpha);
+      const ty = y0 + (h - tile) / 2;
+      g.fillStyle(TOAST_TILE[t.tone], alpha).fillRoundedRect(x0 + pad, ty, tile, tile, 10);
+      t.icon.setPosition(x0 + pad + tile / 2, ty + tile / 2).setAlpha(alpha);
       t.title.setPosition(x0 + textX, y0 + 9).setAlpha(alpha);
       t.text.setPosition(x0 + textX, y0 + 9 + titleH).setAlpha(alpha);
+      t.hit.setPosition(x0, y0).setSize(w, h);
       y += h + TOAST_GAP;
     }
   }
 
+  /** Cảm ứng: biểu tượng tay và mắt nằm cạnh ô ngày giờ, tay chỉ hiện khi dính tiền. */
+  private placeBadges() {
+    const m = this.m;
+    if (!m.touch) return;
+    const b = this.left.getBounds();
+    const gap = Math.ceil(designFor(PILL_GAP));
+    const hx = b.right + 14 + gap + m.btnW / 2;
+    const ex = hx + (this.handsKey === "MONEY" ? m.btnW + gap : 0);
+    const y = m.statY - 10 + (b.height + 18) / 2;
+    this.handsIcon.setPosition(hx, y - 2);
+    this.handsPlate.setPosition(hx, y);
+    this.eyeGroup.setPosition(ex, y);
+  }
+
+  get eyeBox() {
+    const { btnW, btnH } = this.m;
+    return { x: this.eyeGroup.x - btnW / 2, y: this.eyeGroup.y - btnH / 2, w: btnW, h: btnH };
+  }
+
   private fitIcon(img: Phaser.GameObjects.Image) {
-    img.setScale(ICON_H / img.height);
-    if (img.displayWidth > BTN_W - 12) img.setScale((BTN_W - 16) / img.width);
+    const { btnW, btnH } = this.m;
+    img.setScale(ICON_H * (btnH / 38) / img.height);
+    if (img.displayWidth > btnW - 12) img.setScale((btnW - 16) / img.width);
   }
 
   /** Hai bậc phân biệt bằng màu nút và nháy; `reducedMotion` tắt nháy. */
@@ -382,7 +565,7 @@ export class Hud {
     const beat = this.settings.reducedMotion || !close
       ? 1
       : 0.5 + 0.5 * Math.sin((this.scene.time.now / EYE_BLINK_MS) * Math.PI * 2);
-    this.eyePlate.setTexture(clayButton(this.scene, close ? CLAY.red : CLAY.cream, BTN_W, BTN_H, "up"));
+    this.eyePlate.setTexture(clayButton(this.scene, close ? CLAY.red : CLAY.cream, this.m.btnW, this.m.btnH, "up"));
     this.eyeIcon.setTexture(close ? ICON.eyeClose : ICON.eyeGlance);
     this.fitIcon(this.eyeIcon);
     this.eyeGroup.setAlpha(close ? 0.6 + 0.4 * beat : 1);
@@ -391,6 +574,10 @@ export class Hud {
   private drawHands(state: "CLEAN" | "MONEY") {
     if (state === this.handsKey) return;
     this.handsKey = state;
+    if (this.m.touch) {
+      this.handsPlate.setVisible(state === "MONEY");
+      this.handsIcon.setVisible(state === "MONEY");
+    }
     this.handsIcon.setTexture(state === "MONEY" ? ICON.handMoney : ICON.handClean);
     this.fitIcon(this.handsIcon);
   }
@@ -408,7 +595,7 @@ export class Hud {
     this.ticketBg.clear();
     if (!t || frozen) { this.ticketText.setText(""); return; }
     const top = this.right.getBounds().bottom + 20;
-    this.ticketText.setText(`${t.name}\n${t.text}`).setPosition(GAME_W - 26, top);
+    this.ticketText.setText(`${t.name}\n${t.text}`).setPosition(this.m.touch ? this.m.toastRight : GAME_W - 26, top);
     const b = this.ticketText.getBounds();
     this.ticketBg.fillStyle(UI.paper, 1).fillRoundedRect(b.x - 12, b.y - 8, b.width + 24, b.height + 16, 10);
     this.ticketBg.lineStyle(1.2, UI.line, 1).strokeRoundedRect(b.x - 12, b.y - 8, b.width + 24, b.height + 16, 10);
@@ -422,24 +609,29 @@ export class Hud {
     for (const o of [...this.carryIcons, ...this.carryNums]) o.setVisible(false);
     if (!dish || !dish.length || !this.scene.textures.exists(FOOD.icon("pate"))) return;
 
+    const m = this.m;
+    const kc = m.touch ? Math.min(1.7, this.font(11) / 11) : 1;
     const counts = portionsOf(dish as Ingredient[]);
     const items = INGREDIENTS.filter((i) => counts.has(i.id));
-    const step = 46, w = items.length * step + 16, y = 76;
-    const x0 = Math.max(16, Math.min(GAME_W / 2 - w / 2, this.ticketText.getBounds().left - 24 - w));
-    this.carryBg.fillStyle(UI.paper, 1).fillRoundedRect(x0, y - 22, w, 44, 10);
+    const step = 46 * kc, w = items.length * step + 16, half = 22 * kc;
+    const y = m.touch ? this.left.getBounds().bottom + 24 + half : 76;
+    const x0 = m.touch
+      ? designFor(EDGE)
+      : Math.max(16, Math.min(GAME_W / 2 - w / 2, this.ticketText.getBounds().left - 24 - w));
+    this.carryBg.fillStyle(UI.paper, 1).fillRoundedRect(x0, y - half, w, half * 2, 10);
     items.forEach((ing, i) => {
       const icon = this.carryIcons[i] ??= this.scene.add.image(0, 0, FOOD.icon(ing.id)).setScrollFactor(0).setDepth(DEPTH + 100);
       const num = this.carryNums[i] ??= this.scene.add.text(0, 0, "", {
         fontFamily: FONT, fontSize: this.fs(11), fontStyle: "700", color: UI.ink,
       }).setOrigin(0, 1).setScrollFactor(0).setDepth(DEPTH + 101);
       const cx = x0 + 8 + step * i + step / 2 - 4;
-      fitPhoto(icon.setTexture(FOOD.icon(ing.id)), 0.62).setPosition(cx, y).setVisible(true);
-      num.setText(`×${counts.get(ing.id)}`).setPosition(cx + 11, y + 18).setVisible(true);
+      fitPhoto(icon.setTexture(FOOD.icon(ing.id)), 0.62 * kc).setPosition(cx, y).setVisible(true);
+      num.setText(`×${counts.get(ing.id)}`).setPosition(cx + 11 * kc, y + 18 * kc).setVisible(true);
     });
   }
 
   private get stackTop() {
-    return this.help.visible ? this.help.getBounds().top - 16 : GAME_H - 48;
+    return this.help.visible ? this.help.getBounds().top - 16 : GAME_H - (this.m.touch ? designFor(8) + 16 : 48);
   }
 
   private drawPrompt(st: Station | null, hand: Hand, frozen: boolean, override: string | null) {
@@ -447,14 +639,19 @@ export class Hud {
     if (frozen || (!st && !override)) { this.prompt.setText(""); return; }
 
     const why = override || !st ? null : blockedReason(st, hand);
-    const keyHint = st && st.holdMs === 0 ? "bấm E" : "giữ E";
+    const hold = !!st && st.holdMs > 0;
+    const key = this.m.touch ? (hold ? "giữ nút" : "") : hold ? "giữ E" : "bấm E";
+    const act = st?.verb === st?.name
+      ? key
+      : key ? `${key} để ${st?.verb}` : `${st?.verb}`;
     this.prompt.setText(override ?? (why
       ? `${st!.name} — ${why}`
-      : `${st!.name} — ${keyHint} để ${st!.verb}`));
+      : act ? `${st!.name} — ${act}` : st!.name));
 
+    const cx = (this.m.midL + this.m.midR) / 2;
     const w = this.prompt.width + 34, h = this.prompt.height + 16;
-    const x = GAME_W / 2 - w / 2, y = this.stackTop - h;
-    this.prompt.setPosition(GAME_W / 2, y + h / 2);
+    const x = cx - w / 2, y = this.stackTop - h;
+    this.prompt.setPosition(cx, y + h / 2);
     paintPaper(this.promptBg, x, y, w, h, 10, why ? 0xe7e0d2 : 0xf7f1e2);
   }
 
@@ -466,7 +663,8 @@ export class Hud {
     const done = !!busy && busy.ms >= busy.st.holdMs;
     const promptH = this.prompt.text ? this.prompt.height + 16 : 0;
     const W = Math.max(150, this.prompt.text ? this.prompt.width + 16 : 0), H = 12, pad = 5;
-    const px = GAME_W / 2 - W / 2, py = this.stackTop - promptH - 5 - (H + pad * 2);
+    const cx = (this.m.midL + this.m.midR) / 2;
+    const px = cx - W / 2, py = this.stackTop - promptH - 5 - (H + pad * 2);
     const gx = px + pad, gy = py + pad, gw = W - pad * 2;
     const g = this.bar;
     g.fillStyle(0x2a2018, 0.72).fillRoundedRect(px, py, W, H + pad * 2, (H + pad * 2) / 2);

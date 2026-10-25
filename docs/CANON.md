@@ -513,6 +513,18 @@ Nhân: thịt / heo quay / pate / xíu mại / chả lụa / cá / gà / ốp la
 
 > ☠️ ~~**Nguyên tắc kết game:** "Đừng làm ending dựa trên 'bạn đã làm tốt tới đâu'. Cho mọi ending đều tử tế, chỉ khác nhau về ai còn ở đó với mình."~~ → Kết game giờ là **thắng 50tr / thua ATTP** (§13). Màn thua vẫn phải **tử tế, không chế giễu nghề** (§14.1).
 
+### 15.1. Nền tảng và điều khiển
+
+| | PC | Cảm ứng (điện thoại, máy tính bảng) |
+|---|---|---|
+| Đi | `WASD` / mũi tên, `Shift` chạy | Joystick ảo, nút chạy riêng |
+| Làm việc | `E` / `Space`, chuột | Một nút hành động lớn đổi nhãn theo trạm; nút nhỏ chạy / che / bỏ / nhấc / nói chỉ hiện khi dùng được |
+| Cảnh quán | Cửa sổ nào cũng được | **Chỉ ngang**; máy dọc hiện lớp nhắc xoay. Menu và intro dùng được cả dọc |
+
+- Hiện điều khiển cảm ứng theo thiết bị; cài đặt `touchControls` (tự động / bật / tắt) đè được.
+- **Chuẩn chạm: nút ≥ 44 CSS px, chữ ≥ 14 CSS px.** Không thao tác nào chỉ có phím hoặc hover.
+- Không đổi số cân bằng theo thiết bị. Chi tiết: `responsive/PLAN.md`.
+
 ---
 
 ## 16. Ba thứ ĐỪNG làm

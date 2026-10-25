@@ -133,8 +133,7 @@ export class PhoneView {
   private home() {
     const w = this.w;
     const d = w.progress.dayIndex;
-    const wrap = el("div");
-    wrap.style.cssText = "display:flex;flex-direction:column;flex:1;min-height:0;padding:6px 22px 0";
+    const wrap = el("div", "ph-scroll ph-homewrap");
 
     const widget = el("div", "ph-widget");
     widget.append(el("div", "shop", w.shopName));

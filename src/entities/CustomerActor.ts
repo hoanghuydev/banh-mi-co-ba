@@ -7,7 +7,8 @@ import { artScale } from "../art/photo";
 import { ActorLight } from "../art/light/actor";
 import type { Customer } from "../sim/customer";
 import { nowState } from "../sim/perception";
-import { FONT } from "../ui/theme";
+import { isTouch } from "../core/device";
+import { FONT, worldFont } from "../ui/theme";
 import type { BubblePool } from "../ui/stall/BubblePool";
 import { NEUTRAL, POSES } from "../sim/reaction";
 import { intensityMul } from "../sim/personality";
@@ -94,7 +95,7 @@ export class CustomerActor {
   // Quãng đã đi (ô), cộng dồn để bàn chân khớp mặt đất.
   private gait = 0;
 
-  constructor(private scene: Phaser.Scene, private c: Customer, private bubbles: BubblePool, textScale = 1,
+  constructor(private scene: Phaser.Scene, private c: Customer, private bubbles: BubblePool, private textScale = 1,
     private label: (c: Customer) => string = (x) => x.name) {
     if (!scene.textures.exists(`${c.memKey}_s`)) buildBody(scene, c.memKey, c.body);
 
@@ -102,7 +103,7 @@ export class CustomerActor {
     this.light = new ActorLight(scene, this.body);
 
     this.tag = scene.add.text(0, 0, label(c), {
-      fontFamily: FONT, fontSize: `${Math.round(10 * textScale)}px`, fontStyle: "500", color: "#f2efe6",
+      fontFamily: FONT, fontSize: `${this.tagPx()}px`, fontStyle: "500", color: "#f2efe6",
       stroke: "#1b2429", strokeThickness: 3,
     }).setOrigin(0.5);
 
@@ -115,6 +116,10 @@ export class CustomerActor {
 
     this.lastX = c.x;
     this.lastY = c.y;
+  }
+
+  private tagPx() {
+    return worldFont(Math.round(10 * this.textScale), 12);
   }
 
   draw(reducedMotion: boolean, time: number, nowSec: number) {
@@ -187,8 +192,10 @@ export class CustomerActor {
     const headX = sx + fidget, headY = footY(sy) - BODY_H + 12 - hop;
     const name = this.label(c);
     if (this.tag.text !== name) this.tag.setText(name);
+    const tagPx = `${this.tagPx()}px`;
+    if (this.tag.style.fontSize !== tagPx) this.tag.setFontSize(tagPx);
     // Chip đặt dưới chân vì trên đầu thì đè thân người trước và nhãn trạm.
-    this.tag.setVisible(!c.ambient);
+    this.tag.setVisible(!c.ambient && (!isTouch() || c.phase === "ordering" || c.phase === "waiting"));
     this.tag.setPosition(sx, sy + TAG_BELOW_FEET).setDepth(OVERLAY_DEPTH)
       .setAlpha(c.phase === "leaving" ? 0.45 : 0.9);
     this.clampInView(this.tag);

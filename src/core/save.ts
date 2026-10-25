@@ -3,7 +3,7 @@ import { ECON, newInventory, scaledVnd, weatherOf, type InventoryState } from ".
 import { newEconState, type EconState } from "../sim/obligations";
 import { EQUIP, newEquipState } from "../sim/equipment";
 import { fnv1a, type BagState, type StreamName } from "./rng";
-import { platform as defaultPlatform, type Platform } from "./platform";
+import { platform as defaultPlatform, reportSaveWrite, type Platform } from "./platform";
 import { BUILD_ID, DEFAULT_SETTINGS, loadSettings, type Settings } from "./flags";
 import type { Bus } from "./eventbus";
 import type { AutosaveReason, NpcId, SceneKey, Weather } from "./types";
@@ -282,7 +282,9 @@ export class SaveService {
     const { json, checksum } = stringifyWithChecksum(snap);
 
     const next: "A" | "B" = this.slot === "A" ? "B" : "A";
-    if (!this.platform.write(next === "A" ? K.slotA : K.slotB, json)) return;
+    const ok = this.platform.write(next === "A" ? K.slotA : K.slotB, json);
+    reportSaveWrite(ok);
+    if (!ok) return;
     this.platform.write(K.meta, JSON.stringify({
       activeSlot: next, schemaVersion: SCHEMA_VERSION, savedAt: snap.savedAt, checksum,
     } satisfies Meta));

@@ -38,7 +38,7 @@ export function page(...kids: HTMLElement[]): HTMLElement {
 }
 
 export function navBar(ctx: AppCtx, o: {
-  title?: string; sub?: string; back?: { label: string; to: Route }; right?: HTMLElement; onTitle?: () => void;
+  title?: string; sub?: string; shortOnly?: boolean; back?: { label: string; to: Route }; right?: HTMLElement; onTitle?: () => void;
 }): HTMLElement {
   const bar = el("div", "ph-nav");
   const l = el("div");
@@ -49,6 +49,7 @@ export function navBar(ctx: AppCtx, o: {
   }
   const t = el(o.onTitle ? "button" : "div", "t");
   if (o.onTitle) { (t as HTMLButtonElement).type = "button"; t.classList.add("link"); t.onclick = o.onTitle; }
+  if (o.shortOnly) t.classList.add("short-only");
   if (o.title) t.append(document.createTextNode(o.title));
   if (o.sub) t.append(el("small", "", o.sub));
   const r = el("div", "r");

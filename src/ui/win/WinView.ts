@@ -3,23 +3,27 @@ import { starText } from "../../sim/reviews";
 import { winReport } from "../../sim/win";
 
 const STYLE = `
-.wn-root{position:fixed;inset:0;z-index:9100;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto;background:linear-gradient(180deg,#2a2013,#14100a);font-family:"Be Vietnam Pro",system-ui,sans-serif;color:#1c2329}
-.wn-page{width:min(460px,100%);display:flex;flex-direction:column;gap:12px}
+.wn-root{position:fixed;inset:0;z-index:9100;display:flex;padding:max(16px,var(--safe-top)) max(16px,var(--safe-right)) max(16px,var(--safe-bottom)) max(16px,var(--safe-left));box-sizing:border-box;overflow:auto;background:linear-gradient(180deg,#2a2013,#14100a);font-family:"Be Vietnam Pro",system-ui,sans-serif;color:#1c2329}
+.wn-page{margin:auto;width:min(460px,100%);display:flex;flex-direction:column;gap:12px}
 .wn-card{background:#f8f4ea;border-radius:18px;padding:18px 20px;box-shadow:0 14px 40px rgba(0,0,0,.45)}
 .wn-h{font-weight:700;font-size:1.35em;line-height:1.25;margin:0}
-.wn-day{margin-top:4px;color:#6b6252;font-size:.95em}
+.wn-day{margin-top:4px;color:#6b6252;font-size:max(14px,.95em)}
 .wn-rows{margin-top:12px;display:flex;flex-direction:column;gap:6px;font-variant-numeric:tabular-nums}
 .wn-row{display:flex;justify-content:space-between;gap:12px;line-height:1.5}
 .wn-row b{font-weight:700}
 .wn-row.big{border-top:1.5px solid rgba(0,0,0,.12);padding-top:8px;margin-top:4px;font-size:1.1em}
 .wn-note{display:flex;gap:10px;align-items:flex-start;background:rgba(250,248,242,.96);border-radius:16px;padding:11px 14px;box-shadow:0 6px 18px rgba(0,0,0,.3)}
 .wn-av{flex:none;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
-.wn-note b{display:block;font-size:.9em}
-.wn-note span{font-size:.92em;color:#3a444b}
+.wn-note b{display:block;font-size:max(14px,.9em)}
+.wn-note span{font-size:max(14px,.92em);color:#3a444b}
 .wn-btns{display:flex;flex-direction:column;gap:8px;margin-top:12px}
-.wn-btn{min-height:48px;border-radius:24px;border:0;font:inherit;font-weight:700;cursor:pointer;background:#d9a21b;color:#2a2013}
+.wn-btn{min-height:48px;flex:none;border-radius:24px;border:0;font:inherit;font-weight:700;cursor:pointer;background:#d9a21b;color:#2a2013}
 .wn-btn.ghost{background:transparent;color:inherit;border:1.5px solid rgba(128,128,128,.55);font-weight:500}
 .wn-btn:focus-visible{outline:3px solid #fff;outline-offset:2px}
+@media (orientation:landscape) and (max-height:520px){
+  .wn-page{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.75fr);align-items:start;width:min(900px,100%);column-gap:16px}
+  .wn-page>:last-child{grid-column:2;grid-row:1/span 3;align-self:center}
+}
 `;
 
 const money = (v: number) => `${Math.round(v).toLocaleString("vi-VN")}₫`;

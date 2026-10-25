@@ -39,6 +39,14 @@
 - Áp khi: gen ảnh, xoá nền, ép iso, cắt, nướng ô sàn, đóng atlas, thu nhỏ lúc boot (`fit()`, `floor_tile()`, `ART_SS`). Bước nào đưa kích thước xuống dưới mức sàn thì sai.
 - Kiểm: `fit(im, longest)` không được đặt `longest` thấp hơn cạnh dài thiết kế × 3,2; thấy ảnh gốc nhỏ hơn mức sàn thì gen lại ở độ phân giải cao hơn, không phóng to bằng code.
 
+## Canvas trên cảm ứng
+
+- **`ZOOM` đổi theo thiết bị** (`world/camera.ts`): PC 1,28; cảm ứng tăng tới trần 1,7 để 1 px thế giới chiếm đủ cỡ chạm. Mọi tính toán "px màn hình trên 1 px thiết kế" ở mục trên đọc `ZOOM` hiện hành, không số cố định.
+- **Dấu hiệu trong cảnh** (vòng lò, dấu việc cần làm, vòng quanh món đang cầm) nhân `markScale()` (1,25 trên cảm ứng) để không nhỏ hơn ngón tay.
+- **Chữ vẽ trong thế giới** đặt cỡ bằng `worldFont(base)` (đã tính `fitScale()` và `ZOOM`; bong bóng thoại, nhãn khách dùng nó), không `touchFont`, vì camera thế giới phóng thêm. Chữ ở lớp UI dùng `touchFont` / `touchSize`.
+- Camera cảm ứng nhìn cao hơn PC để hàng vòng lò không bị nút HUD che. Soi cả khi đo ảnh chụp ở 844×390.
+- Chụp kiểm cảnh: `tools/screenshot.mjs --touch --dpr 3` (xem `responsive/PLAN.md`).
+
 ## Cách làm để tránh
 
 - **Đúng từ gốc:** dùng khối xám khi gen để ảnh ra đã đúng góc, đúng tỉ lệ ô. Ảnh lệch xa thì gen lại, không cố kéo cho đúng.

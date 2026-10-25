@@ -132,7 +132,7 @@ function catalog(ctx: AppCtx, cat: string): HTMLElement {
 
   const goods = CATEGORIES.flatMap((c) => c.goods).filter((g) => goodOpen(g, day));
   if (goodFilter && !goods.includes(goodFilter)) goodFilter = "";
-  const kinds = el("div", "ph-chips");
+  const kinds = el("div", "ph-chips ph-kinds");
   const kind = (g: GoodId | "", label: string) =>
     kinds.append(btn(`ph-pill${g === goodFilter ? " on" : ""}`, label, () => { goodFilter = g; ctx.rerender(); }));
   kind("", "Mọi món");
@@ -164,7 +164,7 @@ function catalog(ctx: AppCtx, cat: string): HTMLElement {
   if (n) {
     const q = quote(ctx.w, ctx.w.shop.cart, ctx.host.minutes(), { coupon: false, express: false, beforeOpen: ctx.host.beforeOpen() });
     const bar = btn("ph-cartbar", "", () => ctx.go({ app: "shop", tab: "cart" }));
-    bar.append(el("span", "", `${n} món trong giỏ`), el("b", "", money(q.subtotal)), el("span", "go", "Xem giỏ ›"));
+    bar.append(el("span", "", `Giỏ (${n})`), el("b", "", money(q.subtotal)), el("span", "go", "Đặt ›"));
     wrap.append(bar);
   }
   return wrap;

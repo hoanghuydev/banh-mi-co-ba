@@ -131,9 +131,28 @@ function sprite(img: CanvasImageSource, cut: Phaser.Textures.Frame, flip: boolea
   return ctx;
 }
 
+const canFilter = (ctx: CanvasRenderingContext2D) => "filter" in ctx;
+
 const blurOf = (ctx: CanvasRenderingContext2D, px: number) => {
-  if ("filter" in ctx) ctx.filter = `blur(${px}px)`;
+  if (canFilter(ctx)) ctx.filter = `blur(${px}px)`;
 };
+
+/** Thay `ctx.filter` ở trình duyệt thiếu: thu nhỏ rồi phóng lại cho mềm. */
+function softenWithoutFilter(ctx: CanvasRenderingContext2D, px: number) {
+  if (canFilter(ctx)) return;
+  const { width: w, height: h } = ctx.canvas;
+  const k = Math.max(2, Math.round(px * 2));
+  const small = canvas(Math.max(1, Math.ceil(w / k)), Math.max(1, Math.ceil(h / k)));
+  const s = small.getContext("2d")!;
+  s.imageSmoothingQuality = "high";
+  s.drawImage(ctx.canvas, 0, 0, small.width, small.height);
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = "copy";
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(small, 0, 0, w, h);
+  ctx.restore();
+}
 
 function bakeShadow(img: CanvasImageSource, cut: Phaser.Textures.Frame, flip: boolean, foot: number, K: number, ss: number, soft = 1) {
   const w = cut.cutWidth, h = cut.cutHeight;
@@ -157,6 +176,7 @@ function bakeShadow(img: CanvasImageSource, cut: Phaser.Textures.Frame, flip: bo
   const m = shadowMatrix(K, foot);
   ctx.transform(m[0], m[1], m[2], m[3], m[4], m[5]);
   ctx.drawImage(tmp!, 0, 0, w, h, 0, 0, w, h);
+  softenWithoutFilter(ctx, blur * BAKE_RES);
   return { out, L };
 }
 
@@ -176,6 +196,7 @@ function bakeReflection(img: CanvasImageSource, cut: Phaser.Textures.Frame, flip
   ctx.transform(1, 0, 0, -1, 0, 2 * foot);
   ctx.drawImage(tmp!, 0, 0, w, h, 0, 0, w, h);
   ctx.restore();
+  softenWithoutFilter(ctx, blur * BAKE_RES);
   ctx.filter = "none";
   ctx.globalCompositeOperation = "destination-in";
   const g = ctx.createLinearGradient(0, foot, 0, 2 * foot);

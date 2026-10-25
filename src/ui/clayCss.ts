@@ -7,7 +7,7 @@ export const CLAY_CSS = `
   text-shadow:0 1px 0 #fff;transition:none}
 .clay-btn::before{content:"";position:absolute;left:.7em;right:.7em;top:.22em;height:36%;border-radius:.9em .9em 1.4em 1.4em;
   background:linear-gradient(rgba(255,255,255,.62),rgba(255,255,255,.04));pointer-events:none}
-.clay-btn:hover{transform:translateY(-2px);box-shadow:0 6px 0 #b9a47a,0 8px 5px -2px rgba(60,28,10,.34),0 16px 18px rgba(60,28,10,.24),inset 0 2px 1px #fff,inset 0 -4px 6px rgba(0,0,0,.1)}
+@media (hover:hover){.clay-btn:hover{transform:translateY(-2px);box-shadow:0 6px 0 #b9a47a,0 8px 5px -2px rgba(60,28,10,.34),0 16px 18px rgba(60,28,10,.24),inset 0 2px 1px #fff,inset 0 -4px 6px rgba(0,0,0,.1)}}
 .clay-btn:active,.clay-btn.on{transform:translateY(3px);box-shadow:0 1px 0 #b9a47a,0 2px 2px rgba(60,28,10,.35),inset 0 3px 7px rgba(0,0,0,.22)}
 .clay-btn.red{color:#fff;text-shadow:0 2px 0 #8f1f13;background:linear-gradient(180deg,#f77a64 0%,#e0432f 55%,#b52a1a 100%);box-shadow:0 4px 0 #8f1f13,0 6px 4px -2px rgba(60,28,10,.38),0 12px 16px rgba(60,28,10,.26),inset 0 2px 1px rgba(255,255,255,.55),inset 0 -4px 6px rgba(0,0,0,.16)}
 .clay-btn.red:active{box-shadow:0 1px 0 #8f1f13,0 2px 2px rgba(60,28,10,.35),inset 0 3px 7px rgba(0,0,0,.28)}

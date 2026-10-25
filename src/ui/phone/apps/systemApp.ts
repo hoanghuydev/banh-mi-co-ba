@@ -98,19 +98,26 @@ function awakening(ctx: AppCtx): HTMLElement {
     queueMicrotask(() => { body.scrollTop = body.scrollHeight; });
   };
 
-  let fast = false;
+  let timer = 0;
+  let finish: (() => void) | null = null;
   const run = (items: (string | (() => void))[], done: () => void, gap = 520) => {
+    const play = (it: string | (() => void)) => (typeof it === "string" ? showLine(it) : it());
     const step = () => {
       if (!root.isConnected) return;
-      if (i >= items.length) { done(); return; }
-      const it = items[i++];
-      if (typeof it === "string") showLine(it); else it();
-      window.setTimeout(step, fast ? 30 : gap);
+      if (i >= items.length) { finish = null; done(); return; }
+      play(items[i++]);
+      timer = window.setTimeout(step, gap);
+    };
+    finish = () => {
+      window.clearTimeout(timer);
+      while (i < items.length) play(items[i++]);
+      finish = null;
+      done();
     };
     i = 0;
-    window.setTimeout(step, 450);
+    timer = window.setTimeout(step, 450);
   };
-  root.addEventListener("pointerdown", () => { fast = true; });
+  root.addEventListener("pointerdown", () => finish?.());
 
   const stats = () => {
     const t = el("div", "sys-stats");

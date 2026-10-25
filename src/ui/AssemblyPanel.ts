@@ -1,9 +1,10 @@
 import Phaser from "phaser";
 import { fitPhoto } from "../art/photo";
-import { GAME_H } from "../core/config";
+import { GAME_H, GAME_W } from "../core/config";
+import { designFor, isTouch, onDeviceChange } from "../core/device";
 import { FOOD, buildFood } from "../art/food";
 import { CAPACITY, INGREDIENTS, labelOf, portionsOf, type Ingredient, type IngredientInfo } from "../sim/order";
-import { FONT, UI, hintedButtonHeight, platedKit, textScale, tray, well } from "./theme";
+import { FONT, UI, hintedButtonHeight, iconButton, platedButtonHeight, platedKit, textScale, touchFont, touchSize, tray, well } from "./theme";
 import { Steam } from "./stall/Steam";
 
 const { button } = platedKit;
@@ -19,6 +20,9 @@ const PANEL_LEFT = 8;
 const PANEL_TOP = 96;
 const TILE_H = 44;
 const TRAY_COLS = 3;
+const TOUCH_COLS = 5;
+/** Chạm giữ chip suất chia sẵn lâu hơn mức này thì hiện tên suất. */
+const LONG_PRESS_MS = 450;
 const LOAF_H = FOOD.LOAF_H;
 /** Khung thiết kế chỉ cao 576 px và bảng phải nằm gọn dưới dải HUD. */
 const MAX_SCALE = 1.45;
@@ -26,6 +30,21 @@ const MAX_SCALE_W = 1.15;
 const MAX_SCALE_BTN = 1.25;
 /** Gói trong khoảng này sau miếng cuối thì tính là gói khéo. */
 const WRAP_SNAP_MS = 900;
+
+type Spot = { x: number; y: number; w: number };
+type Geo = {
+  presets: Spot[];
+  park: Spot;
+  loaf: { x: number; y: number };
+  well: number;
+  hint: { x: number; y: number };
+  /** Tâm ô đầu tiên của khay nguyên liệu. */
+  tray0: { x: number; y: number };
+  rows: number;
+  cols: number;
+  undo: Spot;
+  wrap: Spot;
+};
 
 export class AssemblyPanel {
   private root: Phaser.GameObjects.Container;
@@ -50,22 +69,22 @@ export class AssemblyPanel {
   addCooldownMs = 0;
   private lastAddAt = -1e9;
   private open = false;
-  private trayRows = 0;
-  private actRow = 0;
 
   private s = 1;
   private sw = 1;
   private pw = PANEL_W;
   private ph = 400;
+  private left = PANEL_LEFT;
+  private top = PANEL_TOP;
+  private longPressed = false;
   private tw = 140;
   private th = TILE_H;
   private rowStep = 50;
-  private yPreset = 0;
-  private yLoaf = 0;
-  private yHint = 0;
-  private yTray = 0;
-  private yAct = 0;
-  private cx = 0;
+  private g!: Geo;
+  private touch = false;
+  private presetsCache: readonly { id: string; name: string; prepped: number }[] | null = null;
+  private offDevice: () => void;
+  private savedDragThreshold = 0;
 
   constructor(
     private scene: Phaser.Scene,
@@ -81,67 +100,146 @@ export class AssemblyPanel {
     private ingredients: readonly IngredientInfo[] = INGREDIENTS,
   ) {
     buildFood(scene);
-    this.layout();
-
-    const cx = this.cx = PANEL_LEFT + this.pw / 2, cy = PANEL_TOP + this.ph / 2;
-    const top = PANEL_TOP;
     this.root = scene.add.container(0, 0).setDepth(9_400_000).setScrollFactor(0).setVisible(false);
-    this.root.add(tray(scene, cx, cy, this.pw, this.ph, 22, 0.72).setScrollFactor(0));
-    const pw = Math.round(100 * this.sw), pgap = Math.round(108 * this.sw);
-    for (let i = 0; i < 3; i++) {
-      const b = button(scene, cx - this.pw / 2 + Math.round(62 * this.sw) + i * pgap, top + this.yPreset,
-        `P${i + 1}`, () => this.applyPreset(i), { width: pw, hint: " ", maxScale: MAX_SCALE_BTN });
-      b.setScrollFactor(0);
-      this.presetBtns.push(b.list.filter((o) => o instanceof Phaser.GameObjects.Text) as Phaser.GameObjects.Text[]);
-      this.root.add(b);
-    }
-    this.root.add(button(scene, cx + this.pw / 2 - Math.round(60 * this.sw), top + this.yPreset, "Gác lại", () => this.park(), {
-      width: Math.round(96 * this.sw), hint: "Esc", maxScale: MAX_SCALE_BTN,
-    }).setScrollFactor(0));
-
-    this.buildLoaf(cx, top + this.yLoaf);
-    this.buildTray(cx, top + this.yTray);
-    this.buildActions(cx, top + this.yAct);
+    this.build();
+    this.offDevice = onDeviceChange(() => this.rebuild());
+    scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.offDevice());
   }
 
-  /** Giãn theo cỡ chữ để ở 200% không bị cắt. */
+  private build() {
+    this.layout();
+    const g = this.g;
+    const scene = this.scene;
+    this.root.add(tray(scene, this.left + this.pw / 2, this.top + this.ph / 2, this.pw, this.ph, 22, 0.72).setScrollFactor(0));
+    g.presets.forEach((p, i) => {
+      const onTap = () => { if (!this.longPressed) this.applyPreset(i); };
+      const b = button(scene, p.x, p.y, `P${i + 1}`, onTap, { width: p.w, hint: this.touch ? undefined : " ", maxScale: MAX_SCALE_BTN });
+      b.setScrollFactor(0);
+      if (this.touch) this.holdForName(b, i);
+      this.presetBtns.push(b.list.filter((o) => o instanceof Phaser.GameObjects.Text) as Phaser.GameObjects.Text[]);
+      this.root.add(b);
+    });
+    this.root.add(button(scene, g.park.x, g.park.y, "Gác lại", () => this.park(), {
+      width: g.park.w, hint: this.touch ? undefined : "Esc", maxScale: MAX_SCALE_BTN,
+    }).setScrollFactor(0));
+
+    this.buildLoaf(g.loaf.x, g.loaf.y);
+    this.buildTray();
+    this.buildActions();
+  }
+
+  /** Dựng lại toàn bộ khi đổi thiết bị, giữ nguyên phần đang kẹp. */
+  private rebuild() {
+    const wasOpen = this.open, stack = [...this.stack], at = this.root.y;
+    this.ghost?.destroy();
+    this.ghost = null;
+    this.root.removeAll(true);
+    this.presetBtns = [];
+    this.tiles.clear();
+    this.tileSpot.clear();
+    this.build();
+    this.root.y = at;
+    this.dropZone.y += at;
+    this.root.setVisible(wasOpen);
+    if (wasOpen) { this.stack = stack; this.repaint(); }
+    this.presetsCache && this.setPresets(this.presetsCache);
+  }
+
+  /** Giãn theo cỡ chữ để ở 200% không bị cắt; cảm ứng thì hàng cao tới mức chạm được. */
   private layout() {
+    this.touch = isTouch();
     this.s = Math.max(1, Math.min(textScale(), MAX_SCALE));
     this.sw = Math.min(this.s, MAX_SCALE_W);
+    const n = this.ingredients.length;
+    const bh = hintedButtonHeight(MAX_SCALE_BTN);
+    const L = PANEL_LEFT, T = PANEL_TOP;
+
+    this.left = L;
+    this.top = T;
+    if (this.touch) {
+      const gap = 8, pad = 8;
+      const font = touchFont(Math.round(13 * this.s));
+      const ab = Math.max(platedButtonHeight(MAX_SCALE_BTN), touchSize(44));
+      const cols = n > 8 ? TOUCH_COLS : 4;
+      this.th = touchSize(TILE_H, 56);
+      this.rowStep = this.th + 6;
+      const leftW = FOOD.LOAF_W;
+      this.pw = GAME_W - 2 * L;
+      this.left = L;
+      const trayX = pad + leftW + 16;
+      this.tw = Math.floor((this.pw - trayX - pad - (cols - 1) * 8) / cols);
+      const hintH = Math.ceil(font * 2.3);
+      const loafY = pad + LOAF_H / 2;
+      const hintY = pad + LOAF_H + 2 + hintH / 2;
+      const btnY = pad + LOAF_H + 2 + hintH + 4 + ab / 2;
+      const rows = Math.ceil(n / cols);
+      const trayY = pad + ab + gap;
+      const trayBottom = trayY + (rows - 1) * this.rowStep + this.th;
+      this.ph = Math.round(Math.max(btnY + ab / 2, trayBottom) + pad);
+      this.top = GAME_H - 6 - this.ph;
+      const T0 = this.top, X = (v: number) => L + v;
+      const presetW = Math.max(Math.round(designFor(78)), 110);
+      const parkW = Math.round(designFor(96));
+      const presets = [0, 1, 2].map((i) => ({ x: X(trayX + presetW / 2 + i * (presetW + gap)), y: T0 + pad + ab / 2, w: presetW }));
+      const park = { x: X(this.pw - pad - parkW / 2), y: T0 + pad + ab / 2, w: parkW };
+      const loaf = { x: X(pad + leftW / 2), y: T0 + loafY };
+      const undoW = ab, wrapW = leftW - undoW - gap;
+      this.g = {
+        presets, park, loaf, well: leftW, hint: { x: loaf.x, y: T0 + hintY },
+        tray0: { x: X(trayX + this.tw / 2), y: T0 + trayY + this.th / 2 }, rows, cols,
+        undo: { x: X(pad + undoW / 2), y: T0 + btnY, w: undoW },
+        wrap: { x: X(pad + undoW + gap + wrapW / 2), y: T0 + btnY, w: wrapW },
+      };
+      return;
+    }
+
     this.pw = Math.round(PANEL_W * this.sw);
     this.tw = Math.round((this.pw - 2 * 17 - 2 * 8) / TRAY_COLS);
     this.th = Math.round(TILE_H - 18 + 18 * this.s);
     this.rowStep = this.th + 6;
 
-    const bh = hintedButtonHeight(MAX_SCALE_BTN);
     let y = 6;
-    this.yPreset = y + bh / 2; y += bh + 6;
-    this.yLoaf = y + LOAF_H / 2; y += LOAF_H;
-    this.yHint = y + Math.round(7 * this.s); y += Math.round(18 * this.s);
-    const n = this.ingredients.length;
-    this.trayRows = Math.ceil(n / TRAY_COLS);
-    this.actRow = n % TRAY_COLS === 1 ? this.trayRows - 1 : this.trayRows;
-    this.yTray = y + this.th / 2;
-    this.yAct = this.yTray + this.actRow * this.rowStep;
-    this.ph = Math.round(this.yAct + Math.max(this.th, bh) / 2 + 8);
+    const yPreset = y + bh / 2; y += bh + 6;
+    const yLoaf = y + LOAF_H / 2; y += LOAF_H;
+    const yHint = y + Math.round(7 * this.s); y += Math.round(18 * this.s);
+    const rows = Math.ceil(n / TRAY_COLS);
+    const actRow = n % TRAY_COLS === 1 ? rows - 1 : rows;
+    const yTray = y + this.th / 2;
+    const yAct = yTray + actRow * this.rowStep;
+    this.ph = Math.round(yAct + Math.max(this.th, bh) / 2 + 8);
+
+    const cx = L + this.pw / 2;
+    const pw = Math.round(100 * this.sw), pgap = Math.round(108 * this.sw);
+    const col = (c: number) => cx + (c - (TRAY_COLS - 1) / 2) * (this.tw + 8);
+    this.g = {
+      presets: [0, 1, 2].map((i) => ({ x: cx - this.pw / 2 + Math.round(62 * this.sw) + i * pgap, y: T + yPreset, w: pw })),
+      park: { x: cx + this.pw / 2 - Math.round(60 * this.sw), y: T + yPreset, w: Math.round(96 * this.sw) },
+      loaf: { x: cx, y: T + yLoaf },
+      well: this.pw - 36,
+      hint: { x: cx, y: T + yHint },
+      tray0: { x: col(0), y: T + yTray }, rows, cols: TRAY_COLS,
+      undo: { x: col(1), y: T + yAct, w: this.tw }, wrap: { x: col(2), y: T + yAct, w: this.tw },
+    };
   }
 
   private buildLoaf(x: number, y: number) {
     this.loafImg = fitPhoto(this.scene.add.image(x, y, FOOD.loaf)).setScrollFactor(0);
     this.fillLayer = this.scene.add.container(0, 0).setScrollFactor(0);
     this.steam = new Steam(this.scene, true);
-    const slot = well(this.scene, x, y - 2, this.pw - 36, LOAF_H - 8, 14).setScrollFactor(0);
+    const slot = well(this.scene, x, y - 2, this.g.well, LOAF_H - 8, 14).setScrollFactor(0);
     this.root.add([slot, this.loafImg, this.fillLayer, this.steam.graphics]);
 
     // Không được chạm hàng nút phía trên, nhả tay trúng nút là bấm nút.
     this.dropZone = new Phaser.Geom.Rectangle(
       x - FOOD.LOAF_W / 2 + 10, y - LOAF_H / 2 + 6, FOOD.LOAF_W - 20, LOAF_H - 12);
-    this.hint = this.text(x, PANEL_TOP + this.yHint, "kéo miếng nhân thả vào đây", 11, HINT, "400");
+    this.hint = this.text(this.g.hint.x, this.g.hint.y, this.idleHint(), 11, HINT, "400");
+    if (this.touch) this.hint.setWordWrapWidth(FOOD.LOAF_W).setAlign("center");
     this.root.add(this.hint);
   }
 
   placeBelow(y: number) {
-    const dy = Math.max(0, Math.min(GAME_H - 4 - (PANEL_TOP + this.ph), y + 8 - PANEL_TOP));
+    if (this.touch) return;
+    const dy = Math.max(0, Math.min(GAME_H - 4 - (this.top + this.ph), y + 8 - this.top));
     if (dy === this.root.y) return;
     this.dropZone.y += dy - this.root.y;
     this.root.y = dy;
@@ -153,19 +251,21 @@ export class AssemblyPanel {
 
   /** Toạ độ khung thiết kế (đã cộng `root.y`) cho lớp dẫn DOM, không trả GameObject. */
   trayBounds() {
-    const w = TRAY_COLS * this.tw + (TRAY_COLS - 1) * 8;
+    const { tray0, rows, cols } = this.g;
     return {
-      x: this.cx - w / 2, y: PANEL_TOP + this.yTray - this.th / 2 + this.root.y,
-      w, h: (this.trayRows - 1) * this.rowStep + this.th,
+      x: tray0.x - this.tw / 2, y: tray0.y - this.th / 2 + this.root.y,
+      w: cols * this.tw + (cols - 1) * 8, h: (rows - 1) * this.rowStep + this.th,
     };
   }
 
   wrapBounds() {
-    const h = hintedButtonHeight(MAX_SCALE_BTN);
-    return {
-      x: this.cx + (this.tw + 8) - this.tw / 2, y: PANEL_TOP + this.yAct - h / 2 + this.root.y,
-      w: this.tw, h,
-    };
+    const { wrap } = this.g;
+    const h = this.touch ? Math.max(platedButtonHeight(MAX_SCALE_BTN), touchSize(44)) : hintedButtonHeight(MAX_SCALE_BTN);
+    return { x: wrap.x - wrap.w / 2, y: wrap.y - h / 2 + this.root.y, w: wrap.w, h };
+  }
+
+  private idleHint() {
+    return this.touch ? "" : "kéo miếng nhân thả vào đây";
   }
 
   setWarm(warm: boolean, time: number, reducedMotion: boolean) {
@@ -173,10 +273,11 @@ export class AssemblyPanel {
     this.steam.draw(this.loafImg.x, this.loafImg.y - LOAF_H / 2, 0, time, warm, reducedMotion, 1.6);
   }
 
-  private buildTray(x: number, y: number) {
+  private buildTray() {
+    const { x, y } = this.g.tray0;
     this.ingredients.forEach((ing, i) => {
-      const col = i % TRAY_COLS, row = (i / TRAY_COLS) | 0;
-      const tx = x + (col - (TRAY_COLS - 1) / 2) * (this.tw + 8);
+      const col = i % this.g.cols, row = (i / this.g.cols) | 0;
+      const tx = x + col * (this.tw + 8);
       const ty = y + row * this.rowStep;
       this.tileSpot.set(ing.id, { x: tx, y: ty });
       this.root.add(this.makeTile(ing.id, ing.label, tx, ty));
@@ -204,21 +305,22 @@ export class AssemblyPanel {
     };
     paint(false);
 
-    const si = Math.min(this.s, 1.2);
-    const iconX = -TW / 2 + Math.round(16 + 14 * si);
+    const si = Math.min(this.s, 1.2) * (this.touch ? 0.8 : 1);
+    const iconX = -TW / 2 + Math.round(this.touch ? 34 : 16 + 14 * si);
     const icon = fitPhoto(this.scene.add.image(iconX, 0, FOOD.icon(id)), si).setScrollFactor(0);
-    const nameX = -TW / 2 + Math.round(30 + 24 * si);
+    const nameX = -TW / 2 + Math.round(this.touch ? 66 : 30 + 24 * si);
     const name = this.scene.add.text(nameX, 0, label, {
-      fontFamily: FONT, fontSize: `${Math.round(13 * this.s)}px`, fontStyle: "500", color: "#2a2420",
-      wordWrap: { width: TW / 2 - 8 - nameX, useAdvancedWrap: true },
+      fontFamily: FONT, fontSize: `${touchFont(Math.round(13 * this.s))}px`, fontStyle: "500", color: "#2a2420",
+      ...(this.touch ? {} : { wordWrap: { width: TW / 2 - 8 - nameX, useAdvancedWrap: true } }),
     }).setOrigin(0, 0.5).setScrollFactor(0);
     // Huy hiệu "×n" ở góc ảnh, vì bên phải là chỗ của tên.
-    const r = Math.round(10 * Math.min(this.s, 1.3));
+    const badgeFont = touchFont(Math.round(12 * this.s));
+    const r = this.touch ? Math.ceil(badgeFont * 0.72) : Math.round(10 * Math.min(this.s, 1.3));
     const bx = iconX - Math.round(FOOD.ICON * si / 2) + Math.round(r * 0.5);
     const by = -TH / 2 + r + 2;
     const badgeBg = this.scene.add.graphics().setScrollFactor(0);
     const badge = this.scene.add.text(bx, by, "", {
-      fontFamily: FONT, fontSize: `${Math.round(12 * this.s)}px`, fontStyle: "700", color: "#ffffff",
+      fontFamily: FONT, fontSize: `${badgeFont}px`, fontStyle: "700", color: "#ffffff",
     }).setOrigin(0.5).setScrollFactor(0);
 
     this.tiles.set(id, () => {
@@ -235,24 +337,28 @@ export class AssemblyPanel {
     c.setSize(TW, TH);
     c.setInteractive(new Phaser.Geom.Rectangle(0, 0, TW, TH), Phaser.Geom.Rectangle.Contains);
     this.scene.input.setDraggable(c);
+    let pressed = false;
 
-    c.on("pointerover", () => paint(true));
-    c.on("pointerout", () => paint(false));
-    c.on("pointerdown", () => { this.dragging = false; });
-    c.on("pointerup", () => { if (!this.dragging) this.add(id); });
+    if (!this.touch) {
+      c.on("pointerover", () => paint(true));
+      c.on("pointerout", () => paint(false));
+    }
+    c.on("pointerdown", () => { this.dragging = false; pressed = true; });
+    c.on("pointerup", () => { if (pressed && !this.dragging) this.add(id); pressed = false; });
 
     c.on("dragstart", (p: Phaser.Input.Pointer) => {
       this.dragging = true;
-      this.ghost = fitPhoto(this.scene.add.image(p.x, p.y, FOOD.icon(id)), 1.15 * si)
+      this.ghost = fitPhoto(this.scene.add.image(p.x, p.y - this.fingerLift(), FOOD.icon(id)), 1.15 * si)
         .setScrollFactor(0).setDepth(9_450_000).setAlpha(0.95);
     });
     c.on("drag", (p: Phaser.Input.Pointer) => {
-      this.ghost?.setPosition(p.x, p.y);
-      const over = this.dropZone.contains(p.x, p.y);
+      const y = p.y - this.fingerLift();
+      this.ghost?.setPosition(p.x, y);
+      const over = this.dropZone.contains(p.x, y);
       this.hint.setColor(over ? HINT_OK : HINT);
     });
     c.on("dragend", (p: Phaser.Input.Pointer) => {
-      const dropped = this.dropZone.contains(p.x, p.y);
+      const dropped = this.dropZone.contains(p.x, p.y - this.fingerLift());
       this.ghost?.destroy();
       this.ghost = null;
       this.hint.setColor(HINT);
@@ -263,15 +369,28 @@ export class AssemblyPanel {
     return c;
   }
 
+  /** Bóng kéo nằm cao hơn ngón để ngón không che. */
+  private fingerLift() {
+    return this.touch ? Math.ceil(designFor(56)) : 0;
+  }
+
   private maxOf(id: Ingredient) {
     return this.ingredients.find((i) => i.id === id)!.max;
   }
 
-  private buildActions(cx: number, y: number) {
-    const col = (c: number) => cx + (c - (TRAY_COLS - 1) / 2) * (this.tw + 8);
-    this.root.add(button(this.scene, col(1), y, "Hoàn tác", () => this.undo(), { width: this.tw, maxScale: MAX_SCALE_BTN }));
-    this.root.add(button(this.scene, col(2), y, "Gói lại", () => this.confirm(), {
-      width: this.tw, primary: true, hint: "E", maxScale: MAX_SCALE_BTN,
+  private buildActions() {
+    const { undo, wrap } = this.g;
+    if (this.touch) {
+      const ab = Math.max(platedButtonHeight(MAX_SCALE_BTN), touchSize(44));
+      const u = iconButton(this.scene, undo.x, undo.y, undo.w, ab, () => this.undo());
+      u.icon.lineStyle(4, 0x2a2420, 1).beginPath().arc(0, 2, 11, Phaser.Math.DegToRad(200), Phaser.Math.DegToRad(20), false).strokePath();
+      u.icon.fillStyle(0x2a2420, 1).fillTriangle(-17, -2, -3, -9, -5, 7);
+      this.root.add(u);
+    } else {
+      this.root.add(button(this.scene, undo.x, undo.y, "Hoàn tác", () => this.undo(), { width: undo.w, maxScale: MAX_SCALE_BTN }));
+    }
+    this.root.add(button(this.scene, wrap.x, wrap.y, "Gói lại", () => this.confirm(), {
+      width: wrap.w, primary: true, hint: this.touch ? undefined : "E", maxScale: MAX_SCALE_BTN,
     }));
     this.root.list.filter((o) => o instanceof Phaser.GameObjects.Container)
       .forEach((o) => (o as Phaser.GameObjects.Container).setScrollFactor(0));
@@ -280,7 +399,7 @@ export class AssemblyPanel {
   private text(x: number, y: number, t: string, size: number, color: string,
     weight: "400" | "500" | "700") {
     return this.scene.add.text(x, y, t, {
-      fontFamily: FONT, fontSize: `${Math.round(size * this.s)}px`, fontStyle: weight, color,
+      fontFamily: FONT, fontSize: `${touchFont(Math.round(size * this.s))}px`, fontStyle: weight, color,
     }).setOrigin(0.5).setScrollFactor(0);
   }
 
@@ -320,11 +439,31 @@ export class AssemblyPanel {
     this.repaint();
   }
 
+  private holdForName(b: Phaser.GameObjects.Container, i: number) {
+    let timer: Phaser.Time.TimerEvent | null = null;
+    const stop = () => { timer?.remove(); timer = null; };
+    b.on("pointerdown", () => {
+      this.longPressed = false;
+      stop();
+      timer = this.scene.time.delayedCall(LONG_PRESS_MS, () => {
+        const p = this.presetsCache?.[i];
+        if (!p || !this.open) return;
+        this.longPressed = true;
+        this.hint.setText(p.name).setColor(HINT);
+        this.scene.time.delayedCall(2500, () => { if (this.open) this.repaint(); });
+      });
+    });
+    b.on("pointerup", stop);
+    b.on("pointerout", stop);
+  }
+
   setPresets(list: readonly { id: string; name: string; prepped: number }[]) {
+    this.presetsCache = list;
     list.slice(0, 3).forEach((p, i) => {
       const [main, hint] = this.presetBtns[i] ?? [];
       main?.setText(`${p.id} · ${p.prepped}`);
       hint?.setText(p.name);
+      if (hint) hint.setScale(Math.min(1, (this.g.presets[i].w - 14) / Math.max(1, hint.width)));
     });
   }
 
@@ -374,11 +513,13 @@ export class AssemblyPanel {
     this.hint.setColor(HINT);
 
     if (this.stack.length === 0) {
-      this.hint.setText("kéo miếng nhân thả vào đây");
+      this.hint.setText(this.idleHint());
       this.tiles.forEach((f) => f());
       return;
     }
-    this.hint.setText(`bấm vào một lớp để gỡ bớt   ·   ${this.stack.length}/${CAPACITY} phần`);
+    this.hint.setText(this.touch
+      ? `${this.stack.length}/${CAPACITY} phần`
+      : `bấm vào một lớp để gỡ bớt   ·   ${this.stack.length}/${CAPACITY} phần`);
 
     // Luôn một hàng dọc ruột bánh, nhiều miếng thì đè khít hơn chứ không xuống hàng.
     const SIZE = Math.ceil(FOOD.ICON * FOOD.BIG_SCALE);
@@ -395,8 +536,10 @@ export class AssemblyPanel {
         const x = this.loafImg.x + (i - (total - 1) / 2) * STEP;
         const img = fitPhoto(this.scene.add.image(x, baseY, FOOD.big(ing.id)))
           .setScrollFactor(0);
-        img.setInteractive({ useHandCursor: true });
-        img.on("pointerup", () => this.removeOne(ing.id));
+        if (!this.touch) {
+          img.setInteractive({ useHandCursor: true });
+          img.on("pointerup", () => this.removeOne(ing.id));
+        }
         this.fillLayer.add(img);
       }
     }
@@ -414,8 +557,10 @@ export class AssemblyPanel {
     // Mở lại ổ gác dở không tính là vừa đặt nhân.
     this.lastAddAt = -1e9;
     this.presetArm = null;
+    if (!this.open) this.savedDragThreshold = this.scene.input.dragDistanceThreshold;
     this.open = true;
     this.root.setVisible(true);
+    this.scene.input.dragDistanceThreshold = this.touch ? Math.ceil(designFor(8)) : this.savedDragThreshold;
     this.repaint();
   }
 
@@ -428,6 +573,7 @@ export class AssemblyPanel {
   }
 
   hide() {
+    if (this.open) this.scene.input.dragDistanceThreshold = this.savedDragThreshold;
     this.open = false;
     this.ghost?.destroy();
     this.ghost = null;

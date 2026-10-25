@@ -5,6 +5,8 @@ import { preloadBackdrop } from "../ui/backdrop";
 import { fadeOut, paintTick, setLoading, setStep } from "../ui/bootScreen";
 import { HAND_FONT } from "../ui/theme";
 
+const FONT_WAIT_MS = 400;
+
 /** Ảnh phải tải xong trước `buildTextures` vì `art/photo.ts` đè lên texture vẽ code trong đó. */
 export class BootScene extends Phaser.Scene {
   constructor() { super("boot"); }
@@ -23,19 +25,19 @@ export class BootScene extends Phaser.Scene {
   }
 
   async create() {
-    // `buildTextures` chặn luồng, phải nhường một nhịp vẽ cho dòng chữ hiện ra.
+    // Nhường một nhịp vẽ cho dòng chữ hiện ra trước khi dựng.
     setStep("đang dựng hình…", 0.9);
     await paintTick();
-    buildTextures(this);
+    await buildTextures(this);
 
-    // Không chờ thì chữ có dấu nhảy layout một nhịp.
-    setStep("đang chờ phông chữ…", 0.96);
-    try {
-      await (document as any).fonts?.load?.('700 32px "Be Vietnam Pro"');
-      await (document as any).fonts?.load?.('800 32px "Be Vietnam Pro"');
-      await (document as any).fonts?.load?.(`32px ${HAND_FONT}`, "Bánh mì ặổữợ");
-      await (document as any).fonts?.ready;
-    } catch { /* không có Font Loading API */ }
+    // Chờ ngắn để chữ có dấu khỏi nhảy layout; quá hạn thì vào luôn với phông dự phòng.
+    setStep("đang mở menu…", 0.97);
+    const fonts = document.fonts;
+    if (fonts?.load) {
+      const need = Promise.all([fonts.load('700 32px "Be Vietnam Pro"', "ễ"), fonts.load('800 32px "Be Vietnam Pro"', "ễ"), fonts.load(`32px ${HAND_FONT}`, "Bánh mì ặổữợ")]).catch(() => {});
+      await Promise.race([need, new Promise((done) => setTimeout(done, FONT_WAIT_MS))]);
+    }
+    await paintTick();
 
     fadeOut();
     this.scene.start("menu");

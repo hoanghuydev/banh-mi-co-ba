@@ -1,4 +1,6 @@
 // Lớp DOM để chỉ được cả phần tử DOM lẫn ô trên canvas; không nuốt chuột trừ bong bóng.
+import { isTouch, onDeviceChange } from "../../core/device";
+
 export type CoachShape = "circle" | "rect";
 
 export type CoachAim = {
@@ -26,23 +28,41 @@ const STYLE = `
   background:#f6f2e6;color:#2b2f31;border-radius:12px;padding:12px 14px;pointer-events:auto;
   box-shadow:0 14px 34px rgba(0,0,0,.5);border-top:3px solid #8e2a20}
 .tg-col{min-width:0;flex:1}
-.tg-who{font-size:.72em;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8e2a20}
+.tg-who{font-size:max(14px,.72em);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8e2a20}
 .tg-text{margin:2px 0 0;font-size:.98em;line-height:1.5}
 .tg-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px}
-.tg-step{font-size:.76em;color:#8a7d64;font-variant-numeric:tabular-nums}
-.tg-skip{font:inherit;font-size:.8em;padding:5px 11px;border-radius:7px;border:1px solid #b8ab8e;
-  background:#fbf7ec;color:#4a4330;cursor:pointer;min-height:30px}
-.tg-skip:hover{background:#efe7d3}
+.tg-step{font-size:max(14px,.76em);color:#8a7d64;font-variant-numeric:tabular-nums}
+.tg-skip{font:inherit;font-size:max(14px,.8em);padding:5px 14px;border-radius:7px;border:1px solid #b8ab8e;
+  background:#fbf7ec;color:#4a4330;cursor:pointer;min-height:44px;min-width:44px}
+.tg-dots{display:none;gap:4px;align-items:center}
+.tg-dot{width:7px;height:7px;border-radius:50%;background:#cdbf9f}
+.tg-dot.on{background:#8e2a20}
+.tg-bub.strip{display:grid;grid-template-columns:auto 1fr auto;column-gap:10px;row-gap:2px;align-items:center;padding:8px 10px 8px 14px;box-sizing:border-box}
+.tg-bub.strip .tg-col,.tg-bub.strip .tg-bar{display:contents}
+.tg-bub.strip .tg-who{grid-column:1;grid-row:1}
+.tg-bub.strip .tg-dots{display:flex;grid-column:2;grid-row:1}
+.tg-bub.strip .tg-step{display:none}
+.tg-bub.strip .tg-text{grid-column:1/3;grid-row:2;margin:0;font-size:max(14px,.93em);line-height:1.3}
+.tg-bub.strip .tg-skip{grid-column:3;grid-row:1/3;padding:0 12px}
+@media (hover:hover){.tg-skip:hover{background:#efe7d3}}
 .tg-skip:focus-visible{outline:2px solid #8e2a20;outline-offset:2px}
 .tg-btns{display:flex;gap:8px}
-.tg-ok{font:inherit;font-size:.8em;font-weight:700;padding:5px 13px;border-radius:7px;border:1px solid #8e2a20;
-  background:#8e2a20;color:#fff7e6;cursor:pointer;min-height:30px}
-.tg-ok:hover{background:#a63427}
+.tg-ok{font:inherit;font-size:max(14px,.8em);font-weight:700;padding:5px 13px;border-radius:7px;border:1px solid #8e2a20;
+  background:#8e2a20;color:#fff7e6;cursor:pointer;min-height:44px;min-width:44px}
+@media (hover:hover){.tg-ok:hover{background:#a63427}}
+.tg-bub.strip .tg-btns{grid-column:3;grid-row:1/3}
 .tg-ok:focus-visible{outline:2px solid #2b2f31;outline-offset:2px}
 `;
 
 const GAP = 14;
 const EDGE = 10;
+const AVOID_PAD = 8;
+
+/** Vùng nút và cần cảm ứng đang hiện, toạ độ CSS px theo khung nhìn. */
+function touchRects(): DOMRect[] {
+  return [...document.querySelectorAll<HTMLElement>(".tc-root.on .tc-btn:not([hidden]), .tc-root.on .tc-base")]
+    .map((e) => e.getBoundingClientRect());
+}
 
 export class TourCoach {
   private root: HTMLDivElement;
@@ -50,10 +70,14 @@ export class TourCoach {
   private bub: HTMLDivElement;
   private txt: HTMLParagraphElement;
   private stepEl: HTMLSpanElement;
+  private dots: HTMLDivElement;
+  private dotCount = 0;
   private last = "";
   private who!: HTMLDivElement;
   private okBtn: HTMLButtonElement;
   private onOk: (() => void) | null = null;
+  private lastAim: CoachAim | null = null;
+  private offDevice: () => void;
 
   constructor(opts: { textScale?: number; onSkip: () => void }) {
     if (!document.getElementById("tg-style")) {
@@ -94,16 +118,22 @@ export class TourCoach {
     const btns = document.createElement("div");
     btns.className = "tg-btns";
     btns.append(skip, this.okBtn);
-    bar.append(this.stepEl, btns);
+    this.dots = document.createElement("div");
+    this.dots.className = "tg-dots";
+    bar.append(this.stepEl, this.dots, btns);
     col.append(who, this.txt, bar);
     this.bub.append(col);
 
     this.root.append(this.hole, this.bub);
     document.body.appendChild(this.root);
     this.hide();
+    this.offDevice = onDeviceChange(() => { if (this.lastAim && this.root.style.display !== "none") this.aim(this.lastAim); });
   }
 
-  destroy() { this.root.remove(); }
+  destroy() {
+    this.offDevice();
+    this.root.remove();
+  }
 
   setWho(text: string) { if (this.who.textContent !== text) this.who.textContent = text; }
 
@@ -134,6 +164,7 @@ export class TourCoach {
   }
 
   private aim(a: CoachAim) {
+    this.lastAim = a;
     const shape = a.shape ?? "circle";
     // Chỉ ghi chữ khi đổi, không thì nút "Bỏ qua" mất focus.
     const key = `${a.text}|${a.step}|${shape}|${!!a.ok}`;
@@ -143,7 +174,9 @@ export class TourCoach {
       this.txt.textContent = a.text;
       this.okBtn.style.display = a.ok ? "" : "none";
       this.stepEl.textContent = a.step && a.total ? `việc ${a.step}/${a.total}` : "";
+      this.paintDots(a.step ?? 0, a.total ?? 0);
     }
+    this.bub.classList.toggle("strip", isTouch());
     this.root.style.display = "";
 
     const pad = shape === "circle" ? 10 : 8;
@@ -158,22 +191,54 @@ export class TourCoach {
     this.place(x, y, w, h, !!a.low);
   }
 
-  /** Dưới → phải → trên → trái; phải trước trên để không đè ổ bánh khi lỗ khoét cao. */
+  private paintDots(step: number, total: number) {
+    if (total !== this.dotCount) {
+      this.dotCount = total;
+      this.dots.replaceChildren(...Array.from({ length: total }, () => {
+        const d = document.createElement("i");
+        d.className = "tg-dot";
+        return d;
+      }));
+    }
+    [...this.dots.children].forEach((d, i) => d.classList.toggle("on", i < step));
+  }
+
+  /** Dải gọn: trên giữa, giữa ô ngày giờ và cột nút; lọt vào ô được chỉ thì xuống dưới. */
+  private placeStrip(x: number, y: number, w: number, h: number) {
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const left = 190, right = 170;
+    const bw = Math.min(560, vw - left - right);
+    this.bub.style.width = `${bw}px`;
+    const bh = this.bub.offsetHeight;
+    const bx = (vw - bw) / 2 + (left - right) / 2;
+    const top = EDGE, bottom = vh - EDGE - bh;
+    const hit = (by: number) => bx < x + w + AVOID_PAD && bx + bw > x - AVOID_PAD && by < y + h + AVOID_PAD && by + bh > y - AVOID_PAD;
+    const by = hit(top) && !hit(bottom) ? bottom : top;
+    this.bub.style.left = `${Math.round(bx)}px`;
+    this.bub.style.top = `${Math.round(by)}px`;
+  }
+
+  /** Dưới → phải → trên → trái; bỏ vị trí đè lên nút cảm ứng, hết chỗ thì lấy vị trí đầu tiên lọt khung. */
   private place(x: number, y: number, w: number, h: number, low: boolean) {
+    if (isTouch()) { this.placeStrip(x, y, w, h); return; }
+    this.bub.style.width = "";
     const bw = this.bub.offsetWidth, bh = this.bub.offsetHeight;
     const vw = window.innerWidth, vh = window.innerHeight;
     const midX = () => clamp(x + w / 2 - bw / 2, EDGE, vw - EDGE - bw);
     const midY = () => clamp(low ? y + h - bh : y + h / 2 - bh / 2, EDGE, vh - EDGE - bh);
+    const avoid = touchRects();
+    const hits = (bx: number, by: number) => avoid.some((r) =>
+      bx < r.right + AVOID_PAD && bx + bw > r.left - AVOID_PAD && by < r.bottom + AVOID_PAD && by + bh > r.top - AVOID_PAD);
 
-    let bx: number, by: number;
-    if (y + h + GAP + bh <= vh - EDGE) { bx = midX(); by = y + h + GAP; }
-    else if (x + w + GAP + bw <= vw - EDGE) { bx = x + w + GAP; by = midY(); }
-    else if (y - GAP - bh >= EDGE) { bx = midX(); by = y - GAP - bh; }
-    else if (x - GAP - bw >= EDGE) { bx = x - GAP - bw; by = midY(); }
-    else { bx = midX(); by = midY(); }
+    const below = y + h + GAP + bh <= vh - EDGE ? { bx: midX(), by: y + h + GAP } : null;
+    const right = x + w + GAP + bw <= vw - EDGE ? { bx: x + w + GAP, by: midY() } : null;
+    const above = y - GAP - bh >= EDGE ? { bx: midX(), by: y - GAP - bh } : null;
+    const left = x - GAP - bw >= EDGE ? { bx: x - GAP - bw, by: midY() } : null;
+    const options = [below, right, above, left].filter((o): o is { bx: number; by: number } => !!o);
+    const pick = options.find((o) => !hits(o.bx, o.by)) ?? options[0] ?? { bx: midX(), by: midY() };
 
-    this.bub.style.left = `${Math.round(bx)}px`;
-    this.bub.style.top = `${Math.round(by)}px`;
+    this.bub.style.left = `${Math.round(pick.bx)}px`;
+    this.bub.style.top = `${Math.round(pick.by)}px`;
   }
 }
 

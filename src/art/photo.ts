@@ -40,7 +40,14 @@ export const BASKET_W = 23;
 
 
 /** Pixel texture trên một pixel thiết kế; trần 3 vì diện tích tăng theo bình phương. */
-export const ART_SS = Math.min(3, Math.max(1, RENDER_SCALE * 1.4));
+export const ART_SS = Math.min(weakDevice() ? 2 : 3, Math.max(1, RENDER_SCALE * 1.4));
+
+/** Màn mật độ cao hoặc ít RAM thì texture nướng dư pixel dễ hết bộ nhớ. */
+function weakDevice() {
+  if (typeof window === "undefined") return false;
+  const mem = (navigator as { deviceMemory?: number }).deviceMemory;
+  return (window.devicePixelRatio || 1) >= 3 || (mem !== undefined && mem <= 4);
+}
 
 /** Không suy từ cỡ texture được vì texture vẽ code (1:1) dùng chung key với ảnh thật. */
 const ssOf = new Map<string, number>();

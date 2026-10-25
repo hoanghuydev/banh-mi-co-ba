@@ -4,23 +4,28 @@ import { WEEKDAY_VI, weekdayIdx } from "../../sim/econ";
 import { average, starText } from "../../sim/reviews";
 
 const STYLE = `
-.ev-root{position:fixed;inset:0;z-index:8990;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;background:rgba(14,18,22,.45);font-family:"Be Vietnam Pro",system-ui,sans-serif;color:#2b2f31}
+.ev-root{position:fixed;inset:0;z-index:8990;display:flex;align-items:center;justify-content:center;padding:max(16px,var(--safe-top)) max(16px,var(--safe-right)) max(16px,var(--safe-bottom)) max(16px,var(--safe-left));box-sizing:border-box;background:rgba(14,18,22,.45);font-family:"Be Vietnam Pro",system-ui,sans-serif;color:#2b2f31}
 .ev-book{width:min(420px,100%);max-height:100%;display:flex;flex-direction:column;background:#efe6d2;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.45);overflow:hidden}
 .ev-col{padding:18px 20px 14px;overflow:auto;min-height:0;flex:1 1 auto;font-variant-numeric:tabular-nums}
 .ev-h{font-weight:700;font-size:1.15em;margin:0 0 4px}
-.ev-sub{font-size:.85em;color:#6d624e;margin-bottom:10px}
+.ev-sub{font-size:max(14px,.85em);color:#6d624e;margin-bottom:10px}
 .ev-r{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px dashed #d8cdb3}
 .ev-r span+span{white-space:nowrap}
 .ev-r.in span+span{font-weight:700}
 .ev-r.out span,.ev-r.out span+span{color:#6d624e}
 .ev-cash{display:flex;justify-content:space-between;gap:12px;margin-top:12px;padding-top:10px;border-top:2px solid #cdbf9f;font-weight:700;font-size:1.1em}
-.ev-note{font-size:.85em;color:#6d624e;margin-top:6px}
+.ev-note{font-size:max(14px,.85em);color:#6d624e;margin-top:6px}
 .ev-says{margin-top:12px;padding-left:10px;border-left:3px solid #ddd2b8}
-.ev-say{font-style:italic;color:#4a5a6a;margin:4px 0;font-size:.9em;line-height:1.5}
+.ev-say{font-style:italic;color:#4a5a6a;margin:4px 0;font-size:max(14px,.9em);line-height:1.5}
 .ev-says .ev-note{margin-top:4px;font-style:italic}
-.ev-btn{font:inherit;font-size:.92em;padding:8px 18px;border-radius:6px;border:1px solid #2f5d8a;background:#2f5d8a;color:#fff;cursor:pointer;min-height:36px}
+.ev-btn{position:relative;font:inherit;font-size:max(14px,.92em);padding:8px 18px;border-radius:6px;border:1px solid #2f5d8a;background:#2f5d8a;color:#fff;cursor:pointer;min-height:48px;min-width:88px}
+.ev-btn.ghost{background:#fbf7ec;color:#2f5d8a;margin-top:6px}
+.ev-btn.sleep{min-height:48px;min-width:132px;background:#c0392b;border-color:#c0392b;font-weight:700;margin-left:auto;box-shadow:0 3px 10px rgba(192,57,43,.35)}
+.ev-btn.sleep:focus-visible{outline-color:#c0392b}
+.ev-badge[hidden]{display:none}
+.ev-badge{position:absolute;top:-12px;right:-10px;min-width:24px;height:24px;padding:0 6px;border-radius:12px;background:#e03a2c;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px #efe6d2;font-variant-numeric:tabular-nums}
 .ev-btn:focus-visible{outline:2px solid #2f5d8a;outline-offset:2px}
-.ev-foot{display:flex;justify-content:flex-end;padding:10px 20px;border-top:2px solid #cdbf9f}
+.ev-foot{display:flex;align-items:center;gap:16px;padding:8px 20px 10px;border-top:2px solid #cdbf9f}
 `;
 
 const money = (v: number) => `${Math.round(v).toLocaleString("vi-VN")}₫`;
@@ -28,9 +33,10 @@ const signed = (v: number) => `${v < 0 ? "+" : "−"}${money(Math.abs(v))}`;
 
 export class EveningView {
   private root: HTMLDivElement;
+  private badge: HTMLSpanElement | null = null;
 
   constructor(private w: SaveFile,
-    private opts: { textScale: number; lines?: string[]; onSleep: () => void }) {
+    private opts: { textScale: number; lines?: string[]; unread?: () => number; onPhone?: () => void; onSleep: () => void }) {
     if (!document.getElementById("ev-style")) {
       const st = document.createElement("style");
       st.id = "ev-style"; st.textContent = STYLE;
@@ -98,10 +104,28 @@ export class EveningView {
 
   private foot() {
     const foot = this.el("div", "ev-foot");
-    const sleep = this.el("button", "ev-btn", "Đi ngủ");
+    const sleep = this.el("button", "ev-btn sleep", "Đi ngủ");
+    sleep.type = "button";
     sleep.onclick = () => this.opts.onSleep();
+    if (this.opts.onPhone) {
+      const phone = this.el("button", "ev-btn ghost", "Điện thoại");
+      phone.type = "button";
+      phone.onclick = () => this.opts.onPhone?.();
+      this.badge = this.el("span", "ev-badge");
+      phone.append(this.badge);
+      foot.append(phone);
+      this.setUnread();
+    }
     foot.append(sleep);
     return foot;
+  }
+
+  /** Đọc lại số tin chưa xem từ `opts.unread`. */
+  setUnread() {
+    const n = this.opts.unread?.() ?? 0;
+    if (!this.badge) return;
+    this.badge.hidden = n <= 0;
+    this.badge.textContent = n > 9 ? "9+" : String(n);
   }
 
   close() { this.root.remove(); }

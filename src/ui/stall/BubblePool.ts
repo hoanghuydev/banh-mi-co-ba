@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { FONT, UI } from "../theme";
+import { FONT, UI, worldFont } from "../theme";
 import { bubbleX, type Box } from "../../world/bubbleLayout";
 
 /** Pool bong bóng thoại dựng sẵn, không cấp phát mới trong scene để tránh GC spike giờ cao điểm. */
@@ -28,8 +28,10 @@ export class Bubble {
   /** Độ lệch ngang so với `anchor` đang vẽ; `null` là chưa đặt lần nào, frame đầu đặt thẳng. */
   off: number | null = null;
 
-  constructor(private scene: Phaser.Scene, textScale: number) {
-    const size = Math.round(12 * textScale);
+  private px = 0;
+
+  constructor(private scene: Phaser.Scene, private textScale: number) {
+    const size = this.px = this.fontPx();
     this.bg = scene.add.graphics();
     this.tail = scene.add.graphics();
     this.label = scene.add.text(0, 0, "", {
@@ -42,8 +44,17 @@ export class Bubble {
 
   get hiding() { return this.hidingAt >= 0; }
 
+  private fontPx() {
+    return worldFont(Math.round(12 * this.textScale));
+  }
+
   setText(text: string) {
-    if (text === this.text && !this.hiding) return;
+    const size = this.fontPx();
+    if (text === this.text && !this.hiding && size === this.px) return;
+    if (size !== this.px) {
+      this.px = size;
+      this.label.setFontSize(`${size}px`).setLineSpacing(Math.round(size * 0.7));
+    }
     const fresh = this.text === "" || this.hiding;
     this.text = text;
     this.saidAt = ++Bubble.said;

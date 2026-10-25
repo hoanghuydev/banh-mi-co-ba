@@ -34,6 +34,16 @@ npm run sim -- --days 30 --policy newbie   # chạy N ngày không render
 | `python3 tools/prep-art.py` | `art-raw/` → `public/art/` (cần Pillow) |
 | `python3 tools/render-character.py` | render 8 hướng nhân vật từ model 3D đã rig |
 
+## Chạy trên điện thoại
+
+| Việc | Cách |
+|---|---|
+| Mở từ máy cùng wifi | `npm run dev` (đã `host: true`, cổng 5174) → `http://<IP máy tính>:5174` |
+| Điều khiển | joystick + nút ngữ cảnh; quán chỉ chơi ngang |
+| Chụp giả lập | `node tools/screenshot.mjs --size 844,390 --touch --dpr 3` · cả ma trận: `tools/shot-matrix.mjs` |
+
+Chi tiết và giới hạn: [`docs/responsive/PLAN.md`](docs/responsive/PLAN.md).
+
 ## Một ngày
 
 ```
