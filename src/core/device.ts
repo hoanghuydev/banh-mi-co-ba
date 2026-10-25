@@ -50,7 +50,8 @@ export function isTouch(): boolean {
 /** Hệ số FIT: pixel CSS thật trên một pixel thiết kế của canvas. */
 export function fitScale(): number {
   const { w, h } = viewport();
-  return Math.min(w / GAME_W, h / GAME_H);
+  const host = hasWindow ? document.getElementById("game")?.clientWidth : 0;
+  return Math.min((host || w) / GAME_W, h / GAME_H);
 }
 
 /** Số pixel thiết kế cần để chiếm `cssPx` pixel CSS thật trên canvas. */

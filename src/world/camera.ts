@@ -37,6 +37,8 @@ const LERP = 0.09;
 const LOOK_DOWN = 4;
 /** Cảm ứng nhìn cao hơn để hàng vòng lò không chui xuống dưới nút HUD. */
 const LOOK_DOWN_TOUCH = -48;
+/** Cảm ứng nhìn lệch trái để hàng khách ở mép trái nằm ngoài tầm ngón cái và vùng cắt của khung. */
+const LOOK_LEFT_TOUCH = 60;
 
 export class StallCamera {
   readonly ui: Phaser.Cameras.Scene2D.Camera;
@@ -79,9 +81,10 @@ export class StallCamera {
   /** Toạ độ màn hình (đã qua `toScreen` + `footY`). */
   lookAt(sx: number, sy: number) {
     const y = sy + (touchMode ? LOOK_DOWN_TOUCH : LOOK_DOWN);
-    this.target.setPosition(sx, y);
+    const x = sx - (touchMode ? LOOK_LEFT_TOUCH : 0);
+    this.target.setPosition(x, y);
     // Frame đầu nhảy thẳng tới, không trôi từ giữa bản đồ vào.
-    if (!this.snapped) { this.snapped = true; this.world.centerOn(sx, y); }
+    if (!this.snapped) { this.snapped = true; this.world.centerOn(x, y); }
   }
 
   /** Chạy ở `PRE_RENDER` vì `setScrollFactor` và `container.add()` gọi sau lúc dựng object. */

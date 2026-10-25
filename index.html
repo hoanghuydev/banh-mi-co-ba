@@ -47,7 +47,7 @@
     -webkit-font-smoothing: antialiased;
   }
   input, textarea, [contenteditable] { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
-  #game { position: fixed; inset: 0; touch-action: none; }
+  #game { position: fixed; top: 0; bottom: 0; left: var(--safe-left); right: var(--safe-right); touch-action: none; }
   #game canvas { display: block; }
 
   #boot {
