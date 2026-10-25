@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { isTouch, onDeviceChange, orientation } from "../core/device";
+import { holdLoop } from "../core/loopHold";
 
 type FsDoc = Document & { webkitFullscreenElement?: Element | null; webkitFullscreenEnabled?: boolean; webkitExitFullscreen?: () => Promise<void> | void };
 type FsEl = HTMLElement & { webkitRequestFullscreen?: () => Promise<void> | void };
@@ -72,8 +73,7 @@ export function installRotatePrompt(game: Phaser.Game) {
     if (want === shown) return;
     shown = want;
     el.classList.toggle("on", want);
-    if (want) game.loop.sleep();
-    else { game.loop.wake(); game.loop.resetDelta(); }
+    holdLoop(game, "rotate", want);
   };
   const setStall = (on: boolean) => {
     if (on && !inStall && isFullscreen()) lockLandscape();

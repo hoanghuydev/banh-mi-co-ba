@@ -22,6 +22,8 @@ import { installSaveToast } from "./ui/saveToast";
 // Mỗi bản dựng một tên cache, nên art/nhạc đổi là người chơi tải lại đúng một lần.
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
   navigator.serviceWorker.register(`sw.js?v=${BUILD_TIME}`).catch(() => {});
+  // `keepForOffline` đọc danh sách này; mặc định chỉ giữ 250 file.
+  performance.setResourceTimingBufferSize(1000);
 }
 
 // Phải chạy trước khi dựng game: nó thay factory `add.text` của Phaser.

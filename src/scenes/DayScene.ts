@@ -21,7 +21,8 @@ import { morning as resellMorning } from "../sim/resell";
 import { DEFAULT_SHOP_NAME } from "../content/shop";
 import { phoneTick, type PhoneState } from "../sim/phone";
 import { sfx } from "../audio/sfx";
-import { paintTick, showLoading } from "../ui/bootScreen";
+import { ART_SHARE, LOADING, paintTick, setStep, showLoading } from "../ui/bootScreen";
+import { whenWarm } from "./warmup";
 import { nightIn, shutterDown, shutterFade, shutterHold } from "../ui/transition";
 
 /** Scene thường trực sở hữu `GameContext`, không bao giờ restart; scene con nhận ctx lúc launch và chỉ phát event. */
@@ -134,8 +135,11 @@ export class DayScene extends Phaser.Scene {
 
   private open(child: Child, extra: Record<string, unknown> = {}) {
     if (child !== "stall") return this.launch(child, extra);
-    if (this.entering) showLoading("đang vào game…");
-    void paintTick().then(() => { if (this.sys.isActive()) this.launch(child, extra); });
+    const shown = this.entering;
+    if (shown) showLoading(LOADING);
+    void whenWarm(shown ? (p) => setStep(LOADING, p * ART_SHARE) : undefined)
+      .then(paintTick)
+      .then(() => { if (this.sys.isActive()) this.launch(child, extra); });
   }
 
   private closeShop() {

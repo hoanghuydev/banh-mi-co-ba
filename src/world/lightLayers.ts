@@ -1,33 +1,21 @@
 import Phaser from "phaser";
 import { LEAF_A_KEY, LEAF_B_KEY, LEAF_C_KEY, LEAF_EAVE_KEY, LEAF_WALL_A_KEY, LEAF_WALL_B_KEY, artScale } from "../art/photo";
 import { INDOOR_SHADOW as INDOOR, LIGHT_DEPTH, type LightEnv } from "../art/light/env";
-import type { Canopy, Gray, Img, LitObject } from "../art/light/types";
-import { LIGHT, composeFloorLight, dappleOverlay, leafCover, materialOf } from "../art/light";
+import type { Canopy, FloorLightOutput, Gray, Img, LitObject } from "../art/light/types";
+import type { Step } from "../art/steps";
+import { LIGHT, composeFloorLightSteps, dappleOverlay, leafCover, materialOf } from "../art/light";
 import { SKY_FROM_Y, WORLD_H, WORLD_W, tileAt } from "./map";
 import { floorAtScreen, lightSpecOf, worldAt } from "./lightParams";
 import { BASE } from "../art/canvas";
 import { TH, toScreen } from "./iso";
 import { buildCornerAo, buildTintLayers, roadWeight, wallOverlays, wallTopOverlays } from "./lightTint";
 import type { FloorBake } from "./floorBake";
+import { readImg, type TexPixels } from "./texPixels";
 
 const DAPPLE_DEPTH = 0.2;
 
 type Prop = { img: Phaser.GameObjects.Image; key: string };
-
-function readImg(scene: Phaser.Scene, key: string): Img | null {
-  try {
-    const src = scene.textures.get(key).getSourceImage() as HTMLCanvasElement | HTMLImageElement;
-    const c = document.createElement("canvas");
-    c.width = src.width;
-    c.height = src.height;
-    const ctx = c.getContext("2d", { willReadFrequently: true })!;
-    ctx.drawImage(src, 0, 0);
-    const d = ctx.getImageData(0, 0, c.width, c.height);
-    return { w: d.width, h: d.height, data: d.data };
-  } catch {
-    return null;
-  }
-}
+type Lit = { obj: LitObject; img: Phaser.GameObjects.Image; indoor: boolean };
 
 const grayCache = new Map<string, Gray>();
 
@@ -180,7 +168,6 @@ export class SceneLight {
   private readonly walls: Phaser.GameObjects.Image[] = [];
   private readonly keys: string[] = [];
   private readonly objects: Phaser.GameObjects.Image[] = [];
-  private readonly cache = new Map<string, Img | null>();
   private serial = 0;
 
   private readonly ground: Phaser.Geom.Rectangle;
@@ -190,6 +177,7 @@ export class SceneLight {
     private readonly floor: FloorBake,
     private readonly env: LightEnv,
     private readonly scale: number,
+    private readonly pixels: TexPixels,
   ) {
     this.ground = floor.rect;
   }
@@ -204,14 +192,29 @@ export class SceneLight {
     return img;
   }
 
-  build() {
-    const { scene, ground, env, scale } = this;
-    const objects: { obj: LitObject; img: Phaser.GameObjects.Image; indoor: boolean }[] = [];
+  /** Các bước dựng theo thứ tự; mỗi `yield` là chỗ được nhường luồng. */
+  steps(): Step[] {
+    const st: { objects: Lit[]; out?: FloorLightOutput } = { objects: [] };
+    const lit = () => !this.env.overcast;
+    return [
+      () => this.readProps(st.objects),
+      () => this.compose(st),
+      () => this.paintFloorLight(st.out!),
+      () => (lit() ? this.paintTints(st.out!.sun) : undefined),
+      () => (lit() ? this.buildWalls() : undefined),
+      () => (lit() ? this.dapple(st.objects, st.out!.sun) : undefined),
+    ];
+  }
+
+  private *readProps(objects: Lit[]) {
+    yield* this.pixels.load([
+      ...this.props.filter((p) => lightSpecOf(p.key)).map((p) => p.key),
+      ...this.walls.map((w) => w.texture.key),
+    ]);
     for (const { img, key } of this.props) {
       const spec = lightSpecOf(key);
       if (!spec) continue;
-      if (!this.cache.has(key)) this.cache.set(key, readImg(scene, key));
-      const pixels = this.cache.get(key);
+      const pixels = this.pixels.get(key);
       if (!pixels) continue;
       const footWy = worldAt(img.x, img.y - TH / 2 - BASE).wy;
       const indoor = footWy < SKY_FROM_Y;
@@ -221,20 +224,30 @@ export class SceneLight {
         obj: { img: pixels, imgScale: artScale(key), footX: img.x, footY: img.y, ...spec, ...(indoor ? INDOOR_SHADOW : {}) },
       });
     }
+  }
 
-    const out = composeFloorLight({
+  private *compose(st: { objects: Lit[]; out?: FloorLightOutput }) {
+    const { ground } = this;
+    const canopies = canopiesOf(this.scene);
+    yield;
+    st.out = yield* composeFloorLightSteps({
       rect: { x: ground.x, y: ground.y, w: ground.width, h: ground.height },
-      scale,
-      objects: objects.map((o) => o.obj),
-      canopies: canopiesOf(scene),
+      scale: this.scale,
+      objects: st.objects.map((o) => o.obj),
+      canopies,
       leafStrengthAt,
       glossAt: (sx, sy) => materialOf(floorAtScreen(sx, sy)).gloss,
       insideAt,
-      overcast: env.overcast,
+      overcast: this.env.overcast,
     });
+  }
 
+  private *paintFloorLight(out: FloorLightOutput) {
+    const { scene, ground, env, scale } = this;
     this.layer("lightmap", out.lightmap, LIGHT_DEPTH.lightmap, true);
+    yield;
     this.layer("reflection", out.reflection, LIGHT_DEPTH.reflection, false);
+    yield;
 
     const sun = out.sun;
     const sunCanvas = document.createElement("canvas");
@@ -248,6 +261,7 @@ export class SceneLight {
       sunPixels.data[o + 3] = Math.round(Math.min(1, Math.max(0, sun.data[i])) * 255);
     }
     sunCtx.putImageData(sunPixels, 0, 0);
+    yield;
     env.sunLayer = { canvas: sunCanvas, x: ground.x, y: ground.y, scale, cover: coverOf(sunPixels) };
     env.sun = (sx, sy) => {
       const ix = Math.floor((sx - ground.x) * scale), iy = Math.floor((sy - ground.y) * scale);
@@ -259,37 +273,49 @@ export class SceneLight {
     const aoKey = this.paintCanvas("corner-ao", ao);
     this.floor.add(scene.make.image({ x: ground.x, y: ground.y, key: aoKey }, false).setOrigin(0, 0)
       .setDepth(LIGHT_DEPTH.lightmap + 2).setBlendMode(Phaser.BlendModes.MULTIPLY));
+  }
 
-    if (env.overcast) return;
-    const tint = buildTintLayers(ground, sun, scale, insideAt, toScreen);
-    this.layer("warm", tint.warm, LIGHT_DEPTH.lightmap + 1, false, Phaser.BlendModes.SCREEN, 1);
-    this.layer("walk", tint.walk, LIGHT_DEPTH.lightmap + 1, false, Phaser.BlendModes.SCREEN, 1);
-    this.layer("shopshade", tint.shade, LIGHT_DEPTH.lightmap + 1, true, undefined, 1);
-    this.layer("lift", tint.lift, LIGHT_DEPTH.lightmap + 1, false, Phaser.BlendModes.SCREEN, 1);
-    this.layer("shaft", tint.shaft, LIGHT_DEPTH.lightmap + 1, false, undefined, 1);
-    this.layer("core", tint.core, LIGHT_DEPTH.lightmap + 1, false, Phaser.BlendModes.SCREEN, 1);
-    this.layer("cool", tint.cool, LIGHT_DEPTH.lightmap + 1, true, undefined, 1);
-    this.buildWalls();
+  private *paintTints(sun: FloorLightOutput["sun"]) {
+    const tint = yield* buildTintLayers(this.ground, sun, this.scale, insideAt, toScreen);
+    const tints: [string, Img, boolean, number | undefined][] = [
+      ["warm", tint.warm, false, Phaser.BlendModes.SCREEN],
+      ["walk", tint.walk, false, Phaser.BlendModes.SCREEN],
+      ["shopshade", tint.shade, true, undefined],
+      ["lift", tint.lift, false, Phaser.BlendModes.SCREEN],
+      ["shaft", tint.shaft, false, undefined],
+      ["core", tint.core, false, Phaser.BlendModes.SCREEN],
+      ["cool", tint.cool, true, undefined],
+    ];
+    for (const [name, img, multiply, blend] of tints) {
+      this.layer(name, img, LIGHT_DEPTH.lightmap + 1, multiply, blend, 1);
+      yield;
+    }
+  }
+
+  private *dapple(objects: Lit[], sun: FloorLightOutput["sun"]) {
+    const { ground, scale } = this;
     const rect = { x: ground.x, y: ground.y, w: ground.width, h: ground.height };
     for (const { obj, img, indoor } of objects) {
       if (indoor) continue;
       const over = dappleOverlay(obj, sun, rect, scale, obj.shadowK ?? LIGHT.SUN_K);
       const key = this.paint(over);
-      this.objects.push(scene.add.image(img.x, img.y, key).setOrigin(0.5, 1)
+      this.objects.push(this.scene.add.image(img.x, img.y, key).setOrigin(0.5, 1)
         .setScale(1 / obj.imgScale).setDepth(img.depth + DAPPLE_DEPTH)
         .setBlendMode(Phaser.BlendModes.MULTIPLY));
+      yield;
     }
   }
 
   /** Mỗi tường bốn lớp phủ; xếp hai lớp MULTIPLY rồi hai lớp SCREEN (thân và nóc không chồng nhau) và gom vào atlas để mỗi nhóm một lượt vẽ. */
-  private buildWalls() {
+  private *buildWalls() {
     const leafAt = leafCover(wallCanopies(this.scene));
+    yield;
     const shade = new Atlas(), light = new Atlas();
     const made = new Map<string, { shade: number; light: number }>();
     const placed: { img: Phaser.GameObjects.Image; shade: number; light: number; topShade: number; topLight: number }[] = [];
     for (const img of this.walls) {
       const key = img.texture.key;
-      const src = this.cache.get(key) ?? readImg(this.scene, key);
+      const src = this.pixels.get(key);
       if (!src) continue;
       const imgScale = artScale(key);
       let m = made.get(key);
@@ -304,8 +330,12 @@ export class SceneLight {
         return leafAt(wx, wy);
       });
       placed.push({ img, ...m, topShade: shade.add(top.shade), topLight: light.add(top.light) });
+      yield;
     }
-    const shadeKey = this.paintAtlas("wall-shade", shade), lightKey = this.paintAtlas("wall-light", light);
+    const shadeKey = this.paintAtlas("wall-shade", shade);
+    yield;
+    const lightKey = this.paintAtlas("wall-light", light);
+    yield;
     for (const p of placed) {
       const { img } = p;
       const topY = img.y - img.displayHeight;
@@ -361,6 +391,5 @@ export class SceneLight {
     this.keys.length = 0;
     this.props.length = 0;
     this.walls.length = 0;
-    this.cache.clear();
   }
 }

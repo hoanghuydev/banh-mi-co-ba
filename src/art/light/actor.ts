@@ -217,10 +217,12 @@ export function soleRow(data: ArrayLike<number>, w: number, h: number) {
 
 /** Hàng chân theo ảnh nguồn rồi theo frame, không đổi khi lật ngang; giữ lâu hơn `cache` vì đọc điểm ảnh là bước đắt nhất. */
 const feet = new WeakMap<object, Map<string, number>>();
-/** Ảnh khung hình của một nhân vật theo hướng và bước đi; cùng gốc là cùng một người. */
-const POSE_KEY = /^(.+?)_(?:n|ne|e|se|s|sw|w|nw)(?:_[a-z]+\d*)?$/;
+/** Ảnh khung hình của một nhân vật theo hướng và bước đi. */
+const POSE_KEY = /^.+?_(?:n|ne|e|se|s|sw|w|nw)(?:_[a-z]+\d*)?$/;
 /** Phần đáy khung được đọc gộp; chân nằm cao hơn thì đọc riêng cả khung. */
 const SOLE_SLICE = 0.4;
+/** Trần bề cao tấm gộp, để tấm vẫn nằm trên GPU và mỗi lần đọc ngắn. */
+const SHEET_H = 2048;
 
 const footOf = (cut: Phaser.Textures.Frame) => feet.get(cut.source.image)?.get(cut.name);
 function keepFoot(cut: Phaser.Textures.Frame, foot: number) {
@@ -228,10 +230,8 @@ function keepFoot(cut: Phaser.Textures.Frame, foot: number) {
   if (!m) feet.set(cut.source.image, (m = new Map()));
   m.set(cut.name, foot);
 }
-const fetched = new Set<string>();
 
 function measureFoot(cut: Phaser.Textures.Frame) {
-  if (footOf(cut) === undefined) prefetchFeet(cut);
   const hit = footOf(cut);
   if (hit !== undefined) return hit;
   const ctx = sprite(cut.source.image as CanvasImageSource, cut, false);
@@ -240,34 +240,38 @@ function measureFoot(cut: Phaser.Textures.Frame) {
   return foot;
 }
 
-/** Đáy mọi khung cùng người vẽ chung một canvas rồi đọc một lần: mỗi lần getImageData phải chờ GPU. */
-function prefetchFeet(cut: Phaser.Textures.Frame) {
-  const base = POSE_KEY.exec(cut.texture.key)?.[1];
-  if (!base || fetched.has(base)) return;
-  fetched.add(base);
-  const manager = cut.texture.manager;
-  const frames: { f: Phaser.Textures.Frame; h: number; y: number }[] = [];
-  let w = 1, y = 0;
-  for (const key of manager.getTextureKeys()) {
-    if (POSE_KEY.exec(key)?.[1] !== base) continue;
-    const f = manager.getFrame(key);
-    if (!f || footOf(f) !== undefined) continue;
-    const h = Math.max(1, Math.ceil(f.cutHeight * SOLE_SLICE));
-    frames.push({ f, h, y });
-    w = Math.max(w, f.cutWidth);
-    y += h;
+/** Đọc trước chân mọi khung nhân vật: đáy nhiều khung vẽ chung một tấm rồi đọc một lần, vì mỗi lần getImageData phải chờ GPU; mỗi tấm một `yield`. */
+export function* feetSteps(textures: Phaser.Textures.TextureManager) {
+  const todo: Phaser.Textures.Frame[] = [];
+  for (const key of textures.getTextureKeys()) {
+    const f = POSE_KEY.test(key) ? textures.getFrame(key) : null;
+    if (f && footOf(f) === undefined) todo.push(f);
   }
-  if (!frames.length) return;
-  const sheet = canvas(w, y);
-  const ctx = sheet.getContext("2d")!;
-  for (const { f, h, y: at } of frames) ctx.drawImage(f.source.image as CanvasImageSource, f.cutX, f.cutY + f.cutHeight - h, f.cutWidth, h, 0, at, f.cutWidth, h);
-  const data = ctx.getImageData(0, 0, w, y).data;
-  for (const { f, h, y: at } of frames) {
-    for (let r = h - 1; r >= 0; r--) {
-      if (!opaqueRow(data, w, at + r)) continue;
-      keepFoot(f, f.cutHeight - h + r + 1);
-      break;
+  while (todo.length) {
+    const frames: { f: Phaser.Textures.Frame; h: number; y: number }[] = [];
+    let w = 1, y = 0;
+    while (todo.length) {
+      const f = todo[todo.length - 1];
+      const h = Math.max(1, Math.ceil(f.cutHeight * SOLE_SLICE));
+      if (frames.length && y + h > SHEET_H) break;
+      todo.pop();
+      frames.push({ f, h, y });
+      w = Math.max(w, f.cutWidth);
+      y += h;
     }
+    const sheet = canvas(w, y);
+    const ctx = sheet.getContext("2d")!;
+    for (const { f, h, y: at } of frames) ctx.drawImage(f.source.image as CanvasImageSource, f.cutX, f.cutY + f.cutHeight - h, f.cutWidth, h, 0, at, f.cutWidth, h);
+    const data = ctx.getImageData(0, 0, w, y).data;
+    for (const { f, h, y: at } of frames) {
+      for (let r = h - 1; r >= 0; r--) {
+        if (!opaqueRow(data, w, at + r)) continue;
+        keepFoot(f, f.cutHeight - h + r + 1);
+        break;
+      }
+      measureFoot(f);
+    }
+    yield;
   }
 }
 

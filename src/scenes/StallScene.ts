@@ -63,6 +63,7 @@ import { materialOf } from "../art/light/materials";
 import { SceneLight, indoorWeight } from "../world/lightLayers";
 import { FloorBake } from "../world/floorBake";
 import { PropSheen } from "../world/propSheen";
+import { TexPixels } from "../world/texPixels";
 import { Lamps, LAMP_SPOTS } from "../ui/stall/Lamps";
 import { SUNK, TABLE_DROP, artScale, fitPhoto, BOARD_TEX, BOARD_W, BASKET_TEX, BASKET_W } from "../art/photo";
 import { BUYABLE_TILES, MENU_REACH, MENU_SPOT, MENU_TILE, SEAT_SPOT, SHADE_SPOT, SKY_FROM_Y, WORLD_H, WORLD_W, assertWalkable, floorAt, openTilesFor, setOpenTiles, setPole, tileAt, type TileCode } from "../world/map";
@@ -71,7 +72,7 @@ import {
 } from "../world/stations";
 import {
   BASE, COUNTER, FX, HELD, PROP, TILE, createMenuBoard, createSign, floorTextureAt, footY, heldFootPad,
-  heldTexture, paintNpcPhotos, preloadArt, sliceImage, spriteEdges, textureForTile, type Awning,
+  heldTexture, sliceImage, spriteEdges, textureForTile, type Awning,
 } from "../art";
 import { Player } from "../entities/Player";
 import { Hud, type Watch } from "../ui/Hud";
@@ -79,8 +80,13 @@ import { UI, label, platedButtonHeight, platedKit, textScale, tray } from "../ui
 import { music, type CueId } from "../audio/music";
 import { StallAudio } from "../audio/stallAudio";
 import { reveal } from "../ui/transition";
+import { ART_SHARE, LOADING, loadingShown, setStep } from "../ui/bootScreen";
+import { runSteps, slice, type Step } from "../art/steps";
+import { WAIT_SLICE_MS } from "./warmup";
+import { holdLoop } from "../core/loopHold";
 
 const WIPE_LABEL = "đang lau thớt";
+const STOPPED = Symbol("stopped");
 const LABEL_DEPTH = 8_000_000;
 
 const MAX_TEX = 4096;
@@ -283,6 +289,9 @@ export class StallScene extends Phaser.Scene {
   private settingsDom: MenuDom | null = null;
   private off: (() => void)[] = [];
 
+  private ready = false;
+  private buildRun = 0;
+
   constructor() { super("stall"); }
 
   init(data: { ctx: GameContext; day: DayScene; resume?: boolean }) {
@@ -334,20 +343,40 @@ export class StallScene extends Phaser.Scene {
 
   private get raining() { return isRain(this.world.progress.weather); }
 
-  preload() {
-    preloadArt(this, true);
-    Lamps.preload(this);
-    StallAudio.preload(this);
+  /** Dựng chia lát dưới màn che nên `update` đứng yên tới khi xong. */
+  create() {
+    this.ready = false;
+    this.sys.setVisible(false);
+    const run = ++this.buildRun;
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { if (run === this.buildRun) this.buildRun++; });
+    const check = () => { if (run !== this.buildRun) throw STOPPED; };
+    const live = (f: Step): Step => () => {
+      check();
+      const it = f();
+      return it && { next: () => { check(); return it.next(); } };
+    };
+    this.begin();
+    // Cảnh đang ẩn dưới màn che: tạm dừng vẽ để mỗi lát dựng được nhiều việc hơn.
+    holdLoop(this.game, "stall-build", true);
+    const shown = loadingShown();
+    const keep = slice.ms;
+    slice.ms = WAIT_SLICE_MS;
+    void runSteps(this.buildSteps().map(live), undefined,
+      (done, total) => { if (shown && run === this.buildRun) setStep(LOADING, ART_SHARE + (1 - ART_SHARE) * done / total); })
+      .catch((e) => { if (e !== STOPPED) throw e; })
+      .finally(() => {
+        slice.ms = keep;
+        holdLoop(this.game, "stall-build", false);
+      });
   }
 
-  create() {
+  /** Phần dựng làm liền trong `create`, trước các bước chia lát. */
+  private begin() {
     // Soi bản đồ gốc, trước khi mở ô đạo cụ chưa mua.
     if (import.meta.env.DEV) { assertWalkable(); assertMenuSpotFree(); assertStationsOnCounter(); }
     // Trước mọi thứ biết đi.
     setOpenTiles(openTilesFor((id) => has(this.world.equipment, id as EquipId)));
     setPole(has(this.world.equipment, "DU_CHE") ? { x: SHADE_SPOT.x - UMBRELLA_BACK, y: SHADE_SPOT.y - UMBRELLA_BACK } : null);
-
-    paintNpcPhotos(this);
 
     const env: LightEnv = {
       overcast: this.raining,
@@ -359,204 +388,228 @@ export class StallScene extends Phaser.Scene {
     this.registry.set(LIGHT_ENV_KEY, env);
 
     this.floorBake = this.bakeGround();
-    const ground = this.floorBake.rect;
-    this.light = new SceneLight(this, this.floorBake, env, LIGHT_SS);
-    this.sheen = new PropSheen(this, env);
+    const pixels = new TexPixels(this);
+    this.light = new SceneLight(this, this.floorBake, env, LIGHT_SS, pixels);
+    this.sheen = new PropSheen(this, env, pixels);
     // Dọn TRƯỚC `placeProps` — chính nó gọi `addStationLabel` để nạp lại.
     this.labelY.clear();
     this.choreAt.clear();
     this.tourSpot.clear();
     this.basketImgs = [];
     this.floorImgs = [];
-    this.cam = new StallCamera(this, this.sceneBounds(ground, this.placeProps()));
-    // Chỉ `backgroundColor` vẽ ra ngoài hình bao cảnh.
-    this.cameras.main.setBackgroundColor(this.raining ? "#5f686c" : "#6f838d");
-    this.rain = Rain.for(this, this.world.progress.weather, this.settings.reducedMotion);
-    this.daylight = new Daylight(this, this.floorBake, this.raining);
-    this.lamps = new Lamps(this, LAMP_SPOTS, { overcast: this.raining });
+  }
 
-    this.ring = this.add.image(0, 0, FX.ring).setOrigin(0.5, 0.5).setVisible(false);
-
-    this.player = new Player(this);
-    this.player.reset();
-
-    this.hud = new Hud(this, this.settings, () => (this.paused ? this.resume() : this.pause()), () => this.openPhone());
-    this.hud.setUnread(totalUnread(this.world.phone) + unseen(this.world));
-    this.touch = new TouchControls(this.intent);
-    this.talkRing = this.add.graphics();
-    this.pendingDots = this.add.graphics();
-    this.talk = new TalkPanel(this, (i) => this.pickTalk(i), () => this.endTalk(),
-      () => this.paused || this.closed || !!this.overlay);
-    this.moneyPops = new MoneyPops(this, this.settings.textScale, LABEL_DEPTH + 6);
-    this.handSteam = new Steam(this);
-    this.boardSteam = new Steam(this);
-    this.wipePuff = new WipePuff(this);
-    this.flies = [];
-    // `y` là mép dưới texture để `heldFootPad` đặt đáy ổ chạm mặt thớt.
-    this.boardLoafImg = fitPhoto(this.add.image(0, 0, HELD.key("loaf_hot")))
-      .setOrigin(0.5, 1).setVisible(false);
-    this.ovenGfx = this.add.graphics().setDepth(LABEL_DEPTH + 2);
-    this.ovenArc = this.add.graphics().setDepth(LABEL_DEPTH + 2);
-    this.ovenTop = this.add.graphics().setDepth(LABEL_DEPTH + 2);
-    this.choreGfx = this.add.graphics().setDepth(LABEL_DEPTH + 4);
-    this.gripGfx = this.add.graphics();
-    this.lastMinutes = this.clock.minutes;
-    this.bubbles = new BubblePool(this, this.settings.textScale, undefined, () => {
-      telemetry.bubblePoolSteals++;
-      bus.emit("telemetry:mark", { key: "bubble.steal", value: 1 });
-    });
-    // Xếp bong bóng sau khi camera cuộn xong frame, không thì kẹp theo khung frame trước.
-    this.cam.world.on(Phaser.Cameras.Scene2D.Events.FOLLOW_UPDATE, () =>
-      this.bubbles.layout(this.cam.world.worldView, this.bubbleKeepOut(), this.time.now, this.settings.reducedMotion));
-
-    const w = this.world;
-    if (!this.resumed && w.flags.lateOpenDay === w.progress.dayIndex && this.clock.minutes < 8 * 60) {
-      this.clock.minutes = 8 * 60;
-      this.lastMinutes = this.clock.minutes;
-    }
-    this.service = new Service({
-      bus, hub: this.ctx.rng, saveId: w.saveId, day: w.progress.dayIndex,
-      npcs: w.npcs, bags: w.shuffleBags, dialog: w.dialogState,
-      ...dayDeps(w),
-      till: w.econ, flags: w.flags,
-      equip: w.equipment, loaOn: has(w.equipment, "LOA_RAO") && (w.econ?.loaOffUntil ?? 0) < w.progress.dayIndex,
-      noTimePressure: this.settings.noTimePressure,
-      todayCounters: w.progress.today,
-      onServed: (rec) => {
-        const p = rollReview(w, rec, this.clock.minutes);
-        if (p) enqueue(w, p);
+  private buildSteps(): Step[] {
+    let props!: Phaser.GameObjects.Image[];
+    return [
+      () => {
+        props = this.placeProps();
       },
-      readMul: (this.settings.textScale > 1 ? 1.25 : 1) * (this.settings.noTimePressure ? 1.5 : 1),
-      resumeAt: this.resumed || w.flags.lateOpenDay === w.progress.dayIndex ? this.clock.minutes : undefined,
-    });
-    this.assembly = new AssemblyPanel(this,
-      (dish, even) => this.intents.push(() => this.finishDish(dish, even)),
-      (dish) => { this.boardLoaf = dish; },
-      (id) => this.intents.push(() => {
-        if (!this.dishGaps().length) this.quest("NHAN");
-        this.onPlace(id);
-      }),
-      (i) => this.usePreset(i),
-      (id, stack) => {
-        // Đếm theo hàng trong kho: `dualeo` và `hanhngo` cùng rút từ hàng RAU.
-        const mine = new Set(goodsFor(id));
-        const inStack = stack.filter((x) => goodsFor(x).some((g) => mine.has(g))).length;
-        return portionsFor(this.world.inventory, id, this.world.progress.dayIndex) > inStack ? null : `hết ${labelOf(id)}`;
+      () => {
+        this.cam = new StallCamera(this, this.sceneBounds(this.floorBake.rect, props));
+        // Chỉ `backgroundColor` vẽ ra ngoài hình bao cảnh.
+        this.cameras.main.setBackgroundColor(this.raining ? "#5f686c" : "#6f838d");
+        this.rain = Rain.for(this, this.world.progress.weather, this.settings.reducedMotion);
+        this.daylight = new Daylight(this, this.floorBake, this.raining);
       },
-      () => this.orderIsEmptyLoaf(),
-      (i) => this.consumePreset(i),
-      openIngredients(this.world.progress.dayIndex),
-    );
-    this.drawEquipment();
-    this.light.build();
-    this.sheen.build();
-    this.paintFloor();
-    this.bindInput();
-    this.wire();
+      () => {
+        this.lamps = new Lamps(this, LAMP_SPOTS, { overcast: this.raining });
+      },
+      () => {
+        this.ring = this.add.image(0, 0, FX.ring).setOrigin(0.5, 0.5).setVisible(false);
 
-    // Sau `service`: cần chỗ khách đứng để pan tiếng.
-    const ambientRng = this.ctx.rng.stream("ambient");
-    this.audio = new StallAudio({
-      scene: this,
-      panOf: (npcId) => this.panOf(npcId),
-      rand: () => ambientRng.next(),
-    });
-
-    if (DEV_TOOLS) {
-      dev.stall = {
-        service: this.service,
-        end: () => this.close("PLAYER"),
-        fire: (id, zone) => this.emit(id as StimId, zone as Station["slot"] | undefined),
-        gameObjects: () => this.children.length,
-      };
-    }
-
-    {
-      const st = w.stall;
-      if (this.resumed) {
-        if (st.board) {
-          this.boardLoaf = st.board.dish as Ingredient[];
-          this.boardWarmth = st.board.warmth; this.boardCrust = st.board.crust; this.boardQ = st.board.q;
+        this.player = new Player(this);
+        this.player.reset();
+      },
+      () => {
+        this.hud = new Hud(this, this.settings, () => (this.paused ? this.resume() : this.pause()), () => this.openPhone());
+        this.hud.setUnread(totalUnread(this.world.phone) + unseen(this.world));
+        this.touch = new TouchControls(this.intent);
+        this.talkRing = this.add.graphics();
+        this.pendingDots = this.add.graphics();
+        this.talk = new TalkPanel(this, (i) => this.pickTalk(i), () => this.endTalk(),
+          () => this.paused || this.closed || !!this.overlay);
+        this.moneyPops = new MoneyPops(this, this.settings.textScale, LABEL_DEPTH + 6);
+        this.handSteam = new Steam(this);
+        this.boardSteam = new Steam(this);
+        this.wipePuff = new WipePuff(this);
+        this.flies = [];
+        // `y` là mép dưới texture để `heldFootPad` đặt đáy ổ chạm mặt thớt.
+        this.boardLoafImg = fitPhoto(this.add.image(0, 0, HELD.key("loaf_hot")))
+          .setOrigin(0.5, 1).setVisible(false);
+        this.ovenGfx = this.add.graphics().setDepth(LABEL_DEPTH + 2);
+        this.ovenArc = this.add.graphics().setDepth(LABEL_DEPTH + 2);
+        this.ovenTop = this.add.graphics().setDepth(LABEL_DEPTH + 2);
+        this.choreGfx = this.add.graphics().setDepth(LABEL_DEPTH + 4);
+        this.gripGfx = this.add.graphics();
+        this.lastMinutes = this.clock.minutes;
+        this.bubbles = new BubblePool(this, this.settings.textScale, undefined, () => {
+          telemetry.bubblePoolSteals++;
+          bus.emit("telemetry:mark", { key: "bubble.steal", value: 1 });
+        });
+        // Xếp bong bóng sau khi camera cuộn xong frame, không thì kẹp theo khung frame trước.
+        this.cam.world.on(Phaser.Cameras.Scene2D.Events.FOLLOW_UPDATE, () =>
+          this.bubbles.layout(this.cam.world.worldView, this.bubbleKeepOut(), this.time.now, this.settings.reducedMotion));
+      },
+      () => {
+        const w = this.world;
+        if (!this.resumed && w.flags.lateOpenDay === w.progress.dayIndex && this.clock.minutes < 8 * 60) {
+          this.clock.minutes = 8 * 60;
+          this.lastMinutes = this.clock.minutes;
         }
-        if (st.hand) {
-          this.player.hand = st.hand.item as Player["hand"];
-          this.handWarmth = st.hand.warmth; this.handCrust = st.hand.crust; this.breadQ = st.hand.q;
+        this.service = new Service({
+          bus, hub: this.ctx.rng, saveId: w.saveId, day: w.progress.dayIndex,
+          npcs: w.npcs, bags: w.shuffleBags, dialog: w.dialogState,
+          ...dayDeps(w),
+          till: w.econ, flags: w.flags,
+          equip: w.equipment, loaOn: has(w.equipment, "LOA_RAO") && (w.econ?.loaOffUntil ?? 0) < w.progress.dayIndex,
+          noTimePressure: this.settings.noTimePressure,
+          todayCounters: w.progress.today,
+          onServed: (rec) => {
+            const p = rollReview(w, rec, this.clock.minutes);
+            if (p) enqueue(w, p);
+          },
+          readMul: (this.settings.textScale > 1 ? 1.25 : 1) * (this.settings.noTimePressure ? 1.5 : 1),
+          resumeAt: this.resumed || w.flags.lateOpenDay === w.progress.dayIndex ? this.clock.minutes : undefined,
+        });
+      },
+      () => {
+        this.assembly = new AssemblyPanel(this,
+          (dish, even) => this.intents.push(() => this.finishDish(dish, even)),
+          (dish) => { this.boardLoaf = dish; },
+          (id) => this.intents.push(() => {
+            if (!this.dishGaps().length) this.quest("NHAN");
+            this.onPlace(id);
+          }),
+          (i) => this.usePreset(i),
+          (id, stack) => {
+            // Đếm theo hàng trong kho: `dualeo` và `hanhngo` cùng rút từ hàng RAU.
+            const mine = new Set(goodsFor(id));
+            const inStack = stack.filter((x) => goodsFor(x).some((g) => mine.has(g))).length;
+            return portionsFor(this.world.inventory, id, this.world.progress.dayIndex) > inStack ? null : `hết ${labelOf(id)}`;
+          },
+          () => this.orderIsEmptyLoaf(),
+          (i) => this.consumePreset(i),
+          openIngredients(this.world.progress.dayIndex),
+        );
+      },
+      () => this.drawEquipment(),
+      ...this.light.steps(),
+      () => this.sheen.build(),
+      () => this.paintFloor(),
+      () => {
+        const w = this.world;
+        this.bindInput();
+        this.wire();
+
+        // Sau `service`: cần chỗ khách đứng để pan tiếng.
+        const ambientRng = this.ctx.rng.stream("ambient");
+        this.audio = new StallAudio({
+          scene: this,
+          panOf: (npcId) => this.panOf(npcId),
+          rand: () => ambientRng.next(),
+        });
+
+        if (DEV_TOOLS) {
+          dev.stall = {
+            service: this.service,
+            end: () => this.close("PLAYER"),
+            fire: (id, zone) => this.emit(id as StimId, zone as Station["slot"] | undefined),
+            gameObjects: () => this.children.length,
+          };
         }
-        this.basket = (st.basket ?? []).slice(0, BASKET_SLOTS).map((l) => ({
-          ...l,
-          hand: (l.hand ?? "loaf_hot") as Hand,
-          soiled: !!l.soiled,
-          dish: (l.dish ?? []) as Ingredient[],
-          dishQ: l.dishQ ?? 1,
-          dishSick: l.dishSick ?? 0,
-        }));
-        this.floor = (st.floor ?? []).slice(0, FLOOR_MAX)
-          .map((f) => ({ ...f, hand: f.hand as Hand, dish: f.dish as Ingredient[] }));
-        this.handSoiled = !!st.handSoiled;
-        this.boardSoiled = !!st.boardSoiled;
-      } else {
-        this.basket = [];
-        this.floor = [];
-      }
-      st.board = null; st.hand = null; st.basket = null; st.floor = null;
-    }
 
-    music.duck(false);
-    this.syncMusic();
-    if (touring(this.world)) {
-      this.coach = new TourCoach({
-        textScale: this.settings.textScale,
-        onSkip: () => { tourSkip(this.world); this.eyeLesson = false; this.coach?.destroy(); this.coach = null; },
-      });
-    }
+        {
+          const st = w.stall;
+          if (this.resumed) {
+            if (st.board) {
+              this.boardLoaf = st.board.dish as Ingredient[];
+              this.boardWarmth = st.board.warmth; this.boardCrust = st.board.crust; this.boardQ = st.board.q;
+            }
+            if (st.hand) {
+              this.player.hand = st.hand.item as Player["hand"];
+              this.handWarmth = st.hand.warmth; this.handCrust = st.hand.crust; this.breadQ = st.hand.q;
+            }
+            this.basket = (st.basket ?? []).slice(0, BASKET_SLOTS).map((l) => ({
+              ...l,
+              hand: (l.hand ?? "loaf_hot") as Hand,
+              soiled: !!l.soiled,
+              dish: (l.dish ?? []) as Ingredient[],
+              dishQ: l.dishQ ?? 1,
+              dishSick: l.dishSick ?? 0,
+            }));
+            this.floor = (st.floor ?? []).slice(0, FLOOR_MAX)
+              .map((f) => ({ ...f, hand: f.hand as Hand, dish: f.dish as Ingredient[] }));
+            this.handSoiled = !!st.handSoiled;
+            this.boardSoiled = !!st.boardSoiled;
+          } else {
+            this.basket = [];
+            this.floor = [];
+          }
+          st.board = null; st.hand = null; st.basket = null; st.floor = null;
+        }
 
-    this.time.delayedCall(900, () => this.autoPhone());
-
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      this.registry.remove(LIGHT_ENV_KEY);
-      this.coach?.destroy();
-      this.coach = null;
-      const st = this.world.stall;
-      st.board = this.boardLoaf
-        ? { dish: [...this.boardLoaf], warmth: this.boardWarmth, crust: this.boardCrust, q: this.boardQ }
-        : null;
-      st.hand = this.player.hand !== "empty"
-        ? { item: this.player.hand, warmth: this.handWarmth, crust: this.handCrust, q: this.breadQ }
-        : null;
-      st.basket = this.basket.length ? this.basket.map((l) => ({ ...l })) : null;
-      st.floor = this.floor.length ? this.floor.map((f) => ({ ...f, dish: [...f.dish] })) : null;
-      st.handSoiled = this.handSoiled;
-      st.boardSoiled = this.boardSoiled;
-      // Pause đang hạ nhạc −12 dB, trả về trước khi rời scene.
-      if (this.paused && !this.closed) {
         music.duck(false);
-        bus.emit("ui:pauseToggled", { paused: false, source: "MENU" });
-      }
-      this.audio?.destroy();
-      this.wipePuff.destroy();
-      this.tap?.destroy();
-      this.tap = null;
-      this.rain?.destroy();
-      this.rain = null;
-      this.daylight.destroy();
-      this.lamps.destroy();
-      this.light.destroy();
-      this.floorBake.destroy();
-      this.sheen.destroy();
-      // Listener trên `window`, không gỡ thì Esc màn sau chạy vào thẻ đã chết.
-      this.talk.destroy();
-      this.cam.destroy();
-      for (const f of this.off) f();
-      this.off = [];
-      this.touch?.destroy();
-      this.settingsDom?.close();
-      this.touch = null;
-      this.service.dispose();
-      for (const a of this.actors.values()) a.destroy();
-      this.actors.clear();
-      if (DEV_TOOLS && dev.stall?.service === this.service) dev.stall = null;
-    });
-    reveal(this);
+        this.syncMusic();
+        if (touring(this.world)) {
+          this.coach = new TourCoach({
+            textScale: this.settings.textScale,
+            onSkip: () => { tourSkip(this.world); this.eyeLesson = false; this.coach?.destroy(); this.coach = null; },
+          });
+        }
+
+        this.time.delayedCall(900, () => this.autoPhone());
+
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+          this.registry.remove(LIGHT_ENV_KEY);
+          this.coach?.destroy();
+          this.coach = null;
+          const st = this.world.stall;
+          st.board = this.boardLoaf
+            ? { dish: [...this.boardLoaf], warmth: this.boardWarmth, crust: this.boardCrust, q: this.boardQ }
+            : null;
+          st.hand = this.player.hand !== "empty"
+            ? { item: this.player.hand, warmth: this.handWarmth, crust: this.handCrust, q: this.breadQ }
+            : null;
+          st.basket = this.basket.length ? this.basket.map((l) => ({ ...l })) : null;
+          st.floor = this.floor.length ? this.floor.map((f) => ({ ...f, dish: [...f.dish] })) : null;
+          st.handSoiled = this.handSoiled;
+          st.boardSoiled = this.boardSoiled;
+          // Pause đang hạ nhạc −12 dB, trả về trước khi rời scene.
+          if (this.paused && !this.closed) {
+            music.duck(false);
+            bus.emit("ui:pauseToggled", { paused: false, source: "MENU" });
+          }
+          this.audio?.destroy();
+          this.wipePuff.destroy();
+          this.tap?.destroy();
+          this.tap = null;
+          this.rain?.destroy();
+          this.rain = null;
+          this.daylight.destroy();
+          this.lamps.destroy();
+          this.light.destroy();
+          this.floorBake.destroy();
+          this.sheen.destroy();
+          // Listener trên `window`, không gỡ thì Esc màn sau chạy vào thẻ đã chết.
+          this.talk.destroy();
+          this.cam.destroy();
+          for (const f of this.off) f();
+          this.off = [];
+          this.touch?.destroy();
+          this.settingsDom?.close();
+          this.touch = null;
+          this.service.dispose();
+          for (const a of this.actors.values()) a.destroy();
+          this.actors.clear();
+          if (DEV_TOOLS && dev.stall?.service === this.service) dev.stall = null;
+        });
+        this.ready = true;
+        holdLoop(this.game, "stall-build", false);
+        this.sys.setVisible(true);
+        reveal(this);
+      },
+    ];
   }
 
   private listen<K extends EventKey>(k: K, fn: (p: EventMap[K]) => void) {
@@ -839,6 +892,7 @@ export class StallScene extends Phaser.Scene {
 
   /** Qua `runFrame` để test bắt được nếu đổi thứ tự pha. */
   update(_t: number, dtMs: number) {
+    if (!this.ready) return;
     this.syncKeys();
     touchMarks = isTouch();
     runFrame({

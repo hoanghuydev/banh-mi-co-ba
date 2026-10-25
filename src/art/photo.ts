@@ -14,6 +14,7 @@ import {
   type Gait, type Pose,
 } from "./character";
 import type { Facing8 } from "../world/iso";
+import type { Step } from "./steps";
 
 // Ảnh artist ghi đè lên texture vẽ code cùng key; cỡ texture tính từ chiều cao muốn có vì điểm chạm đất là `H − 1 − BASE − TH/2`, không phải đáy.
 
@@ -21,7 +22,6 @@ const SRC = "photo/";
 
 /** Atlas ba động tác tại chỗ của người chơi; thiếu thì rơi về ảnh đứng yên. */
 const WORK_FILE = "player_work";
-const walkAtlas = (file: string) => `${SRC}${file}_walk`;
 
 const HOLD_JSON = SRC + "player_hold";
 
@@ -182,9 +182,11 @@ const OPEN_LOAF = ["loaf_lid", "loaf_trough"] as const;
 /** `textures.exists` chưa đủ: lượt tải đang bay mà xin lại là Phaser báo trùng key. */
 const asked = new Set<string>();
 
-/** Ảnh chỉ dùng để nướng một lần trong `paintPhotos`; nướng xong là bỏ. */
+/** Ảnh sàn thành luôn texture sàn nên đi qua loader của Phaser. */
+const FLOOR_SRC = FLOORS.flatMap((f) => [0, 1, 2, 3].map((i) => `f_${f}${i}`));
+
+/** Ảnh chỉ dùng để nướng một lần trong `photoSteps`; nướng xong là bỏ. */
 const BAKE_ONCE = [
-  ...FLOORS.flatMap((f) => [0, 1, 2, 3].map((i) => `f_${f}${i}`)),
   ...Object.values(STANDING).map(([src]) => src),
   BENCH.src,
   ...Object.values(CARRIED).map(([src]) => src),
@@ -199,13 +201,54 @@ const BAKE_ONCE = [
 const KEPT = ["shopfront", "menu_khung", "leaf_a", "leaf_c", "leaf_b", "leaf_eave", "leaf_wall_a", "leaf_wall_b"];
 
 export function preloadPhotos(scene: Phaser.Scene) {
-  for (const n of [...BAKE_ONCE, ...KEPT]) {
+  for (const n of [...FLOOR_SRC, ...KEPT]) {
     if (asked.has(n) || scene.textures.exists(SRC + n)) continue;
     asked.add(n);
     scene.load.image(SRC + n, `art/${n}.webp`);
   }
-  preloadWalk(scene, "player", true);
-  preloadWalk(scene, WORK_FILE);
+  // File riêng vì Phaser nuốt atlas JSON, moi phụ chú ra rất lắt léo.
+  if (!asked.has(HOLD_JSON)) {
+    asked.add(HOLD_JSON);
+    scene.load.json(HOLD_JSON, `art/player_hold.json`);
+  }
+}
+
+type Rect = { x: number; y: number; w: number; h: number };
+
+/** Ảnh chỉ để nướng, theo tên file trong `art/`: giải mã ngoài luồng chính và không đưa lên GPU. */
+const images = new Map<string, HTMLImageElement>();
+/** Atlas thì ô nào cũng chép qua canvas trước khi thu nhỏ, nên giữ dạng `ImageBitmap` cho nhanh. */
+const sheets = new Map<string, { img: ImageBitmap; frames: Map<string, Rect> }>();
+
+/** Ảnh vẽ thẳng (không qua canvas) phải là `<img>` như loader của Phaser, vì `ImageBitmap` thu nhỏ ra điểm ảnh hơi khác. */
+async function fetchImage(name: string) {
+  const img = new Image();
+  img.src = `art/${name}.webp`;
+  await img.decode();
+  images.set(name, img);
+}
+
+async function fetchSheet(file: string) {
+  const get = (ext: string) => fetch(`art/${file}.${ext}`).then((r) => {
+    if (!r.ok) throw new Error(`${r.status} art/${file}.${ext}`);
+    return r;
+  });
+  const [img, json] = await Promise.all([
+    get("webp").then((r) => r.blob()).then((b) => createImageBitmap(b)),
+    get("json").then((r) => r.json() as Promise<{ frames: Record<string, { frame: Rect }> }>),
+  ]);
+  sheets.set(file, { img, frames: new Map(Object.entries(json.frames).map(([k, v]) => [k, v.frame])) });
+}
+
+/** Mỗi phần tử tải một ảnh nguồn cho `photoSteps`/`npcSteps`; lỗi thì bỏ qua như ảnh thiếu. */
+export function bakeSourceLoads(): (() => Promise<void>)[] {
+  const npc = npcAssets();
+  const names = [...BAKE_ONCE, ...npc.flatMap((a) => ("image" in a ? [a.image] : []))];
+  const files = ["player", WORK_FILE, ...npc.flatMap((a) => ("walk" in a ? [a.walk] : []))];
+  return [
+    ...names.filter((n) => !images.has(n)).map((n) => () => fetchImage(n).catch(() => {})),
+    ...files.filter((f) => !sheets.has(f)).map((f) => () => fetchSheet(f).catch(() => {})),
+  ];
 }
 
 /** Ai có atlas thì ảnh đứng yên lấy từ atlas, khỏi tải tám file rời. */
@@ -217,29 +260,15 @@ function npcAssets(): NpcAsset[] {
     : DIRS8.map((d) => ({ image: o.src(d) }))));
 }
 
-/** Ảnh NPC không chặn lúc khởi động; ai gọi lúc cần ngay thì dùng cùng hàm này. */
-export function preloadNpcPhotos(scene: Phaser.Scene) {
-  for (const a of npcAssets()) {
-    if ("walk" in a) preloadWalk(scene, a.walk);
-    else if (!asked.has(a.image) && !scene.textures.exists(SRC + a.image)) {
-      asked.add(a.image);
-      scene.load.image(SRC + a.image, `art/${a.image}.webp`);
-    }
-  }
-}
-
-function npcLoaded(scene: Phaser.Scene) {
-  return npcAssets().every((a) => scene.textures.exists("walk" in a ? walkAtlas(a.walk) : SRC + a.image));
-}
-
-let npcPainted = false;
-
-/** Gọi sau khi ảnh NPC đã tải; sơn một lần, vì sơn lại sẽ xoá texture đang có sprite dùng. */
-export function paintNpcPhotos(scene: Phaser.Scene) {
-  if (npcPainted || !npcLoaded(scene)) return;
-  npcPainted = true;
-  npcPhotos(scene);
-  drop(scene, npcAssets().map((a) => ("walk" in a ? walkAtlas(a.walk) : SRC + a.image)));
+/** Sơn một lần, vì sơn lại sẽ xoá texture đang có sprite dùng. */
+export function npcSteps(scene: Phaser.Scene): Step[] {
+  return [
+    ...Object.entries(NPC_PHOTOS).map(([who, o]) => function* () {
+      yield* eightWay(scene, who, o.src, o.h, ["idle"], o.walk);
+      if (o.walk) yield* paintWalk(scene, who, o.walk, o.h, ["walk"]);
+    }),
+    () => forget(npcAssets().map((a) => ("walk" in a ? a.walk : a.image))),
+  ];
 }
 
 /** `asked` giữ key nên các lượt `preload` sau không tải lại ảnh đã bỏ. */
@@ -247,31 +276,17 @@ function drop(scene: Phaser.Scene, keys: string[]) {
   for (const k of keys) if (scene.textures.exists(k)) scene.textures.remove(k);
 }
 
-/** Tải nền ngay sau khi vào menu; scene tắt giữa chừng thì loader bỏ dở nên phải quên các key đã xin. */
-export function warmNpcPhotos(scene: Phaser.Scene) {
-  if (npcPainted) return;
-  preloadNpcPhotos(scene);
-  scene.load.once(Phaser.Loader.Events.COMPLETE, () => paintNpcPhotos(scene));
-  scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-    if (npcPainted) return;
-    for (const a of npcAssets()) {
-      if ("walk" in a) { if (!scene.textures.exists(walkAtlas(a.walk))) asked.delete(walkAtlas(a.walk)); }
-      else if (!scene.textures.exists(SRC + a.image)) asked.delete(a.image);
-    }
-  });
-  if (!scene.load.isLoading()) scene.load.start();
-}
-
-function preloadWalk(scene: Phaser.Scene, file: string, hold = false) {
-  const key = walkAtlas(file);
-  if (asked.has(key) || scene.textures.exists(key)) return;
-  asked.add(key);
-  scene.load.atlas(key, `art/${file}.webp`, `art/${file}.json`);
-  // File riêng vì Phaser nuốt atlas JSON, moi phụ chú ra rất lắt léo.
-  if (hold) scene.load.json(HOLD_JSON, `art/${file}_hold.json`);
+function forget(names: string[]) {
+  for (const n of names) {
+    images.delete(n);
+    sheets.get(n)?.img.close();
+    sheets.delete(n);
+  }
 }
 
 function source(scene: Phaser.Scene, name: string): HTMLImageElement | null {
+  const own = images.get(name);
+  if (own) return own;
   const key = SRC + name;
   if (!scene.textures.exists(key)) return null;
   const img = scene.textures.get(key).getSourceImage();
@@ -422,22 +437,19 @@ function prepFromLong(scene: Phaser.Scene) {
 
 /** Cắt ô ra canvas riêng trước khi `shrink`, không thì màu ô bên cạnh loang sang. */
 function standingFromAtlas(
-  scene: Phaser.Scene, key: string, atlas: string, frame: string, o: Standing,
+  scene: Phaser.Scene, key: string, file: string, frame: string, o: Standing,
 ) {
-  if (!scene.textures.exists(atlas)) return false;
-  const f = scene.textures.getFrame(atlas, frame);
-  if (!f) return false;
-  const img = scene.textures.get(atlas).getSourceImage();
-  if (!(img instanceof HTMLImageElement) && !(img instanceof HTMLCanvasElement)) return false;
+  const sheet = sheets.get(file);
+  const f = sheet?.frames.get(frame);
+  if (!sheet || !f) return false;
 
   const cut = document.createElement("canvas");
-  cut.width = f.cutWidth;
-  cut.height = f.cutHeight;
-  cut.getContext("2d")!.drawImage(
-    img, f.cutX, f.cutY, f.cutWidth, f.cutHeight, 0, 0, f.cutWidth, f.cutHeight);
+  cut.width = f.w;
+  cut.height = f.h;
+  cut.getContext("2d")!.drawImage(sheet.img, f.x, f.y, f.w, f.h, 0, 0, f.w, f.h);
 
   const h = o.h;
-  const w = (f.cutWidth / f.cutHeight) * h;
+  const w = (f.w / f.h) * h;
   const W = Math.max(TW + 2, Math.ceil(w + 2 * Math.abs(o.dx ?? 0)) + 6);
   const H = Math.ceil(h + BASE + TH / 2 + 1 - (o.dy ?? SIT));
   const made = blank(scene, key, W, H, ART_SS);
@@ -520,60 +532,61 @@ function floors(scene: Phaser.Scene) {
 }
 
 /** Ưu tiên atlas để đứng yên và bước đi cùng một nguồn, trộn với bảng artist là nhân vật nhấp nháy. */
-function eightWay(
+function* eightWay(
   scene: Phaser.Scene, who: string,
   src: (d: Facing8) => string, h: number, poses: readonly Pose[],
   file?: string,
 ) {
-  if (file && eightWayFromAtlas(scene, who, file, h, poses)) return;
+  if (file && (yield* eightWayFromAtlas(scene, who, file, h, poses))) return;
   if (DIRS8.some((d) => !source(scene, src(d)))) return;
   // Ghi sổ trước khi sơn vì `textureFor` tra sổ này để ra tên tám hướng.
   markEightWay(who);
   for (const dir of DIRS8) {
     for (const pose of poses) {
       standing(scene, textureFor(dir, who, pose).key, src(dir), { h, dy: 0 });
+      yield;
     }
   }
 }
 
 /** Chỉ ghi sổ khi atlas đủ cả tám ô, thiếu là Phaser vẽ ô xanh lá. */
-function eightWayFromAtlas(
+function* eightWayFromAtlas(
   scene: Phaser.Scene, who: string, file: string, h: number, poses: readonly Pose[],
 ) {
-  const atlas = walkAtlas(file);
-  if (!scene.textures.exists(atlas)) return false;
-  if (DIRS8.some((d) => !scene.textures.getFrame(atlas, `idle_${d}_00`))) return false;
+  const frames = sheets.get(file)?.frames;
+  if (!frames || DIRS8.some((d) => !frames.has(`idle_${d}_00`))) return false;
   markEightWay(who);
   for (const dir of DIRS8) {
     for (const pose of poses) {
-      standingFromAtlas(scene, textureFor(dir, who, pose).key, atlas,
+      standingFromAtlas(scene, textureFor(dir, who, pose).key, file,
                         `idle_${dir}_00`, { h, dy: 0 });
+      yield;
     }
   }
   return true;
 }
 
-function player(scene: Phaser.Scene) {
-  eightWay(scene, "p", PLAYER_SRC, PLAYER_H, ["idle", "carry"], "player");
-  paintWalk(scene, "p", "player", PLAYER_H, ["walk", "carry"]);
-  paintWalk(scene, "p", WORK_FILE, PLAYER_H, ["wipe", "wash", "breathe"]);
+function* player(scene: Phaser.Scene) {
+  yield* eightWay(scene, "p", PLAYER_SRC, PLAYER_H, ["idle", "carry"], "player");
+  yield* paintWalk(scene, "p", "player", PLAYER_H, ["walk", "carry"]);
+  yield* paintWalk(scene, "p", WORK_FILE, PLAYER_H, ["wipe", "wash", "breathe"]);
   readHoldAnchors(scene);
 }
 
 /** Chỉ ghi sổ khi đủ 8 hướng × số ô của gait, thiếu một ô là Phaser vẽ ô xanh lá. */
-function paintWalk(
+function* paintWalk(
   scene: Phaser.Scene, who: string, file: string, h: number, gaits: readonly Gait[],
 ) {
-  const atlas = walkAtlas(file);
-  if (!scene.textures.exists(atlas)) return;
+  if (!sheets.has(file)) return;
   for (const gait of gaits) {
     let n = 0;
     for (const dir of DIRS8) {
       for (let i = 0; i < GAIT_FRAMES[gait]; i++) {
         const key = walkKey(who, dir, gait, i);
         const frame = `${gait}_${dir}_${String(i).padStart(2, "0")}`;
-        if (!standingFromAtlas(scene, key, atlas, frame, { h, dy: 0 })) break;
+        if (!standingFromAtlas(scene, key, file, frame, { h, dy: 0 })) break;
         n++;
+        yield;
       }
     }
     if (n === DIRS8.length * GAIT_FRAMES[gait]) markGait(who, gait);
@@ -598,13 +611,6 @@ export function holdAnchorAt(facing: string, frame: number) {
   return holdOf.get(`${facing}_${String(frame).padStart(2, "0")}`) ?? null;
 }
 
-function npcPhotos(scene: Phaser.Scene) {
-  for (const [who, o] of Object.entries(NPC_PHOTOS)) {
-    eightWay(scene, who, o.src, o.h, ["idle"], o.walk);
-    if (o.walk) paintWalk(scene, who, o.walk, o.h, ["walk"]);
-  }
-}
-
 /** Nắp vẽ trước, máng đè lên để nắp chỉ ló phần lưng ra sau. */
 function openLoaf(scene: Phaser.Scene) {
   const lid = source(scene, "loaf_lid"), trough = source(scene, "loaf_trough");
@@ -623,32 +629,40 @@ function openLoaf(scene: Phaser.Scene) {
   made.tex.refresh();
 }
 
-export function paintFoodPhotos(scene: Phaser.Scene) {
+function* foodPhotos(scene: Phaser.Scene) {
   openLoaf(scene);
   for (const ing of INGREDIENTS) {
     const spec = FILLINGS[ing.id];
     if (!spec) continue;
     const [src, fill = 1, inLoaf = fill] = spec;
     const big = Math.ceil(FOOD.ICON * FOOD.BIG_SCALE);
+    yield;
     boxed(scene, FOOD.icon(ing.id), src, FOOD.ICON, { h: (FOOD.ICON - 2) * fill });
     boxed(scene, FOOD.big(ing.id), src, big, { h: (big - 4) * inLoaf });
   }
 }
 
-/** Gọi cuối `buildTextures()`. */
-export function paintPhotos(scene: Phaser.Scene) {
-  floors(scene);
-  // Khung vuông để xoay quanh tâm không lệch.
-  boxed(scene, FX.fly, FLY, FLY_BOX, { w: FLY_W });
-  onCounter(scene, BOARD_TEX, BOARD, BOARD_W);
-  onCounter(scene, BASKET_TEX, BASKET, BASKET_W);
-  for (const [key, [src, o]] of Object.entries(STANDING)) standing(scene, key, src, o);
-  bench(scene);
-  prepFromLong(scene);
-  player(scene);
-  for (const [hand, [src, fit]] of Object.entries(CARRIED) as [HeldLook, [string, Fit]][]) {
-    boxed(scene, HELD.key(hand), src, HELD.W, fit);
-  }
-  paintFoodPhotos(scene);
-  drop(scene, [...BAKE_ONCE.map((n) => SRC + n), walkAtlas("player"), walkAtlas(WORK_FILE)]);
+/** Chạy sau các bước vẽ code của `artSteps()`. */
+export function photoSteps(scene: Phaser.Scene): Step[] {
+  return [
+    () => floors(scene),
+    // Khung vuông để xoay quanh tâm không lệch.
+    () => boxed(scene, FX.fly, FLY, FLY_BOX, { w: FLY_W }),
+    () => onCounter(scene, BOARD_TEX, BOARD, BOARD_W),
+    () => onCounter(scene, BASKET_TEX, BASKET, BASKET_W),
+    ...Object.entries(STANDING).map(([key, [src, o]]) => () => standing(scene, key, src, o)),
+    () => bench(scene),
+    () => prepFromLong(scene),
+    () => player(scene),
+    () => {
+      for (const [hand, [src, fit]] of Object.entries(CARRIED) as [HeldLook, [string, Fit]][]) {
+        boxed(scene, HELD.key(hand), src, HELD.W, fit);
+      }
+    },
+    () => foodPhotos(scene),
+    () => {
+      drop(scene, FLOOR_SRC.map((n) => SRC + n));
+      forget([...BAKE_ONCE, "player", WORK_FILE]);
+    },
+  ];
 }

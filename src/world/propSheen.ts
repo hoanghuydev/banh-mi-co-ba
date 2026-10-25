@@ -1,50 +1,35 @@
 import Phaser from "phaser";
 import { sheenFactor, sheenImage } from "../art/light/sheen";
 import type { LightEnv } from "../art/light/env";
-import type { Img } from "../art/light/types";
 import { artScale } from "../art/photo";
 import { rimGainOf, sheenSpecOf } from "./sheenParams";
 import { TW } from "./iso";
 import type { Crop } from "../art/slices";
+import type { TexPixels } from "./texPixels";
 
 const SHEEN_DEPTH = 0.15;
-
-function readImg(scene: Phaser.Scene, key: string): Img | null {
-  try {
-    const src = scene.textures.get(key).getSourceImage() as HTMLCanvasElement | HTMLImageElement;
-    const c = document.createElement("canvas");
-    c.width = src.width;
-    c.height = src.height;
-    const ctx = c.getContext("2d", { willReadFrequently: true })!;
-    ctx.drawImage(src, 0, 0);
-    const d = ctx.getImageData(0, 0, c.width, c.height);
-    return { w: d.width, h: d.height, data: d.data };
-  } catch {
-    return null;
-  }
-}
 
 /** Lớp bóng bề mặt (kim loại, sứ, men) của đạo cụ đứng yên, nướng một lần, blend SCREEN. */
 export class PropSheen {
   private readonly props: { img: Phaser.GameObjects.Image; key: string; crop?: Crop }[] = [];
   private readonly objects: Phaser.GameObjects.Image[] = [];
   private readonly keys: string[] = [];
-  private readonly cache = new Map<string, Img | null>();
 
-  constructor(private readonly scene: Phaser.Scene, private readonly env: LightEnv) {}
+  constructor(private readonly scene: Phaser.Scene, private readonly env: LightEnv, private readonly pixels: TexPixels) {}
 
   register(img: Phaser.GameObjects.Image, key: string, crop?: Crop) {
     this.props.push({ img, key, crop });
     return img;
   }
 
-  /** Gọi sau `SceneLight.build` để `env.sun` đã có bản đồ nắng. */
-  build() {
+  /** Gọi sau `SceneLight.build` để `env.sun` đã có bản đồ nắng; mỗi `yield` là chỗ được nhường luồng. */
+  *build() {
     const { scene, env } = this;
     let serial = 0;
+    yield* this.pixels.load(this.props.map((p) => p.key));
     for (const { img, key, crop } of this.props) {
-      if (!this.cache.has(key)) this.cache.set(key, readImg(scene, key));
-      const pixels = this.cache.get(key);
+      yield;
+      const pixels = this.pixels.get(key);
       if (!pixels) continue;
       const out = sheenImage(pixels, sheenSpecOf(key) ?? [], sheenFactor(env.sun(img.x, img.y), env.overcast), { unit: TW * artScale(key), gain: rimGainOf(key) });
       if (!out) continue;
@@ -69,6 +54,5 @@ export class PropSheen {
     for (const k of this.keys) if (this.scene.textures.exists(k)) this.scene.textures.remove(k);
     this.keys.length = 0;
     this.props.length = 0;
-    this.cache.clear();
   }
 }

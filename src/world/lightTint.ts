@@ -116,19 +116,20 @@ function boxBlur(a: Float32Array, w: number, h: number, r: number) {
 
 export type TintLayers = { warm: Img; walk: Img; cool: Img; shaft: Img; core: Img; lift: Img; shade: Img; w: number; h: number };
 
-/** Ba lớp màu ở 1 px mỗi px thiết kế: nắng ấm (SCREEN), phủ cam gạch đỏ (SCREEN), tông lạnh dưới lá (MULTIPLY). */
-export function buildTintLayers(
+/** Ba lớp màu ở 1 px mỗi px thiết kế: nắng ấm (SCREEN), phủ cam gạch đỏ (SCREEN), tông lạnh dưới lá (MULTIPLY); mỗi `yield` là chỗ được nhường luồng. */
+export function* buildTintLayers(
   ground: { x: number; y: number; width: number; height: number },
   sun: { w: number; h: number; data: Float32Array },
   scale: number,
   inside: (sx: number, sy: number) => boolean,
   toScreen: (wx: number, wy: number) => { sx: number; sy: number },
-): TintLayers {
+): Generator<void, TintLayers> {
   const w = Math.ceil(ground.width), h = Math.ceil(ground.height);
   const n = w * h;
   const sunLow = new Float32Array(n);
   const zone = new Float32Array(n * 3);
   for (let y = 0; y < h; y++) {
+    if ((y & 31) === 31) yield;
     const sy = ground.y + y + 0.5;
     const sj = Math.min(sun.h - 1, Math.floor((y + 0.5) * scale));
     for (let x = 0; x < w; x++) {
@@ -143,10 +144,14 @@ export function buildTintLayers(
       sunLow[i] = sun.data[sj * sun.w + Math.min(sun.w - 1, Math.floor((x + 0.5) * scale))];
     }
   }
+  yield;
   const sunSharp = Float32Array.from(sunLow);
   boxBlur(sunSharp, w, h, 2);
+  yield;
   boxBlur(sunLow, w, h, SUN_BLUR);
+  yield;
   boxBlur(sunLow, w, h, SUN_BLUR);
+  yield;
 
   const warm = new Uint8ClampedArray(n * 4);
   const walk = new Uint8ClampedArray(n * 4);
@@ -172,6 +177,7 @@ export function buildTintLayers(
     cool[o + 2] = COOL[2];
     cool[o + 3] = (1 - Math.min(1, s)) * out * COOL_A * 255;
   }
+  yield;
   const shaft = new Uint8ClampedArray(n * 4);
   const core = new Uint8ClampedArray(n * 4);
   const shade = new Uint8ClampedArray(n * 4);
@@ -185,15 +191,24 @@ export function buildTintLayers(
     dark[i] = zone[i * 3] > 0 ? 1 - Math.min(1, sunSharp[i]) : 0;
     corner[i] = cornerData[i * 4 + 3] / 255;
   }
+  yield;
   boxBlur(shopMask, w, h, LIFT_BLUR);
+  yield;
   boxBlur(shopMask, w, h, LIFT_BLUR);
+  yield;
   boxBlur(dark, w, h, DEPTH_BLUR);
+  yield;
   const wide = Float32Array.from(dark);
   boxBlur(wide, w, h, COOL_LOCAL_BLUR);
+  yield;
   boxBlur(corner, w, h, CORNER_BLUR);
+  yield;
   boxBlur(corner, w, h, CORNER_BLUR);
+  yield;
   const broad = shaftField(w, h, ground, toScreen, 0, SHAFT_BLUR);
+  yield;
   const bright = shaftField(w, h, ground, toScreen, CORE_INSET, CORE_BLUR);
+  yield;
   for (let i = 0; i < n; i++) {
     const shop = zone[i * 3];
     if (shop <= 0) continue;

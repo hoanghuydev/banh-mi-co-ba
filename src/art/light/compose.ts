@@ -2,6 +2,7 @@ import { LIGHT } from "./constants";
 import { dappleOverlay } from "./dapple";
 import { FLOOR_MATERIALS } from "./materials";
 import { bilinear, blur, fillCoarse, resizeImg } from "./raster";
+import { drain } from "../steps";
 import { reflect } from "./reflect";
 import { castShadow, footprintPatch, type Patch } from "./shadow";
 import type { Canopy, FloorLightInput, FloorLightOutput, Gray, Img, LitObject } from "./types";
@@ -84,7 +85,7 @@ type ShadowWindow = { v: Float32Array; bw: number; bh: number; padX: number; M: 
 
 const shadowCache = new WeakMap<Img, Map<string, ShadowWindow>>();
 
-function shadowWindow(obj: LitObject, hs: number): ShadowWindow {
+function* shadowWindow(obj: LitObject, hs: number): Generator<void, ShadowWindow> {
   const k = obj.shadowK ?? LIGHT.SUN_K;
   const soft0 = obj.shadowSoft ?? 1;
   const alpha = obj.shadowAlpha ?? 1;
@@ -96,6 +97,7 @@ function shadowWindow(obj: LitObject, hs: number): ShadowWindow {
 
   const fit = fitOf(obj.img, hs / obj.imgScale);
   const sh = castShadow(fit, k);
+  yield;
   const M = Math.ceil(15 * hs * soft0) + 3;
   const bw = sh.w + 2 * M;
   const bh = sh.h + 2 * M;
@@ -108,8 +110,11 @@ function shadowWindow(obj: LitObject, hs: number): ShadowWindow {
   const soft = m.slice();
   const mid = m.slice();
   blur(soft, bw, bh, 5 * hs * soft0);
+  yield;
   blur(mid, bw, bh, 2 * hs * soft0);
+  yield;
   blur(m, bw, bh, 0.45 * hs * soft0);
+  yield;
   const v = new Float32Array(bw * bh);
   for (let i = 0; i < v.length; i++) {
     const tt = Math.min(1, t[i]);
@@ -123,9 +128,9 @@ function shadowWindow(obj: LitObject, hs: number): ShadowWindow {
 }
 
 /** Bóng tính ở nửa độ phân giải rồi nội suy lên lightmap. */
-function addShadow(p: Placed, cast: Float32Array, W: number, H: number, scale: number, rect: FloorLightInput["rect"]): void {
+function* addShadow(p: Placed, cast: Float32Array, W: number, H: number, scale: number, rect: FloorLightInput["rect"]) {
   const hs = scale / 2;
-  const { v, bw, bh, padX, M, fw, fh } = shadowWindow(p.obj, hs);
+  const { v, bw, bh, padX, M, fw, fh } = yield* shadowWindow(p.obj, hs);
   const ox = Math.round((p.obj.footX - rect.x) * hs - fw / 2) - padX - M;
   const oy = Math.round((p.obj.footY - rect.y) * hs - fh) - M;
   const gx0 = Math.max(0, ox * 2);
@@ -179,27 +184,43 @@ function multiplyOverlay(img: Img, overlay: Img): Img {
 }
 
 export function composeFloorLight(input: FloorLightInput): FloorLightOutput {
+  return drain(composeFloorLightSteps(input));
+}
+
+/** Như `composeFloorLight`, mỗi `yield` là chỗ được nhường luồng. */
+export function* composeFloorLightSteps(input: FloorLightInput): Generator<void, FloorLightOutput> {
   const { rect, scale, canopies, glossAt, insideAt, overcast } = input;
   const W = Math.ceil(rect.w * scale);
   const H = Math.ceil(rect.h * scale);
   const n = W * H;
-  const placed = [...input.objects].sort((a, b) => a.footY - b.footY).map((o) => placeObject(o, rect, scale));
+  const placed: Placed[] = [];
+  for (const o of [...input.objects].sort((a, b) => a.footY - b.footY)) {
+    placed.push(placeObject(o, rect, scale));
+    yield;
+  }
   const cast = new Float32Array(n);
   const ao = new Float32Array(n);
   for (const p of placed) {
-    if (!overcast) addShadow(p, cast, W, H, scale, rect);
+    if (!overcast) yield* addShadow(p, cast, W, H, scale, rect);
     addFootprint(p.obj, rect, scale, ao, W, H);
+    yield;
   }
 
   const inside = new Uint8Array(n);
   fillCoarse(inside, W, H, GRID_STEP, (px, py) => (insideAt(rect.x + px / scale, rect.y + py / scale) ? 1 : 0));
+  yield;
   const gloss = new Float32Array(n);
   fillCoarse(gloss, W, H, GRID_STEP, (px, py) => glossAt(rect.x + px / scale, rect.y + py / scale));
+  yield;
 
   const SW = Math.ceil(W / GRID_STEP) + 2;
   const SH = Math.ceil(H / GRID_STEP) + 2;
   const gs = new Float32Array(SW * SH).fill(1);
-  const fields = canopies.map(canopyField);
+  const fields: CanopyField[] = [];
+  for (const c of canopies) {
+    fields.push(canopyField(c));
+    yield;
+  }
   const leafA = new Float32Array(W);
   const leafB = new Float32Array(H);
   const strengthAt = input.leafStrengthAt;
@@ -232,6 +253,7 @@ export function composeFloorLight(input: FloorLightInput): FloorLightOutput {
   const sb255 = sb * 255;
   const white = 0xffffffff;
   for (let y = 0; y < H; y++) {
+    if ((y & 7) === 7) yield;
     const lb = leafB[y];
     for (let x = 0; x < W; x++) {
       const o = y * W + x;
@@ -282,6 +304,7 @@ export function composeFloorLight(input: FloorLightInput): FloorLightOutput {
     const lit = overcast
       ? p.fit
       : multiplyOverlay(p.fit, dappleOverlay({ ...p.obj, img: p.fit, imgScale: scale }, sunField, rect, scale, p.obj.shadowK ?? LIGHT.SUN_K));
+    yield;
     const r = reflect(lit, p.obj.side, mat.reflNear, mat.reflFar);
     for (let y = 0; y < r.h; y++) {
       const gy = p.y0 + y;

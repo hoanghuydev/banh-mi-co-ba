@@ -1,35 +1,26 @@
 import Phaser from "phaser";
-import { buildTextures, preloadArt } from "../art";
 import { sfx } from "../audio/sfx";
+import { BOOT_SFX, BOOT_SFX_BUS } from "../core/bootFiles";
 import { preloadBackdrop } from "../ui/backdrop";
 import { fadeOut, paintTick, setLoading, setStep } from "../ui/bootScreen";
 import { HAND_FONT } from "../ui/theme";
+import { warmUp } from "./warmup";
 
 const FONT_WAIT_MS = 400;
 
-/** Ảnh phải tải xong trước `buildTextures` vì `art/photo.ts` đè lên texture vẽ code trong đó. */
+/** Chỉ tải thứ menu cần rồi mở menu; scene này sống tiếp để loader của nó tải nền phần còn lại. */
 export class BootScene extends Phaser.Scene {
   constructor() { super("boot"); }
 
   preload() {
     setLoading(0);
     this.load.on("progress", setLoading);
-    preloadArt(this);
     preloadBackdrop(this);
-    // Sảnh không có `preload` riêng mà nút nào cũng kêu.
-    sfx.preload(this, sfx.idsOfBus("amBao"));
-    // `DayScene` thường trực không có `preload` riêng.
-    sfx.preload(this, ["sfx_cua_cuon"]);
-    // Điện thoại gọi hai tiếng này từ HTML, không qua `preload` của cảnh quán.
-    sfx.preload(this, ["sfx_tien_le", "sfx_ngan_keo"]);
+    sfx.preload(this, [...sfx.idsOfBus(BOOT_SFX_BUS), ...BOOT_SFX]);
   }
 
   async create() {
-    // Nhường một nhịp vẽ cho dòng chữ hiện ra trước khi dựng.
-    setStep("đang dựng hình…", 0.9);
-    await paintTick();
-    await buildTextures(this);
-
+    this.load.off("progress", setLoading);
     // Chờ ngắn để chữ có dấu khỏi nhảy layout; quá hạn thì vào luôn với phông dự phòng.
     setStep("đang mở menu…", 0.97);
     const fonts = document.fonts;
@@ -40,6 +31,7 @@ export class BootScene extends Phaser.Scene {
     await paintTick();
 
     fadeOut();
-    this.scene.start("menu");
+    this.scene.launch("menu");
+    void warmUp(this);
   }
 }

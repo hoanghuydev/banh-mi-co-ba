@@ -8,11 +8,12 @@ import { buildCharacter } from "./character";
 import { buildHeld } from "./held";
 import { buildFood } from "./food";
 import { buildFx } from "./fx";
-import { runSteps } from "./steps";
-import { paintPhotos, preloadNpcPhotos, preloadPhotos } from "./photo";
+import type { Step } from "./steps";
+import { npcSteps, photoSteps, preloadPhotos } from "./photo";
+import { feetSteps } from "./light/actor";
 
 export { BASE, footY } from "./canvas";
-export { paintNpcPhotos, warmNpcPhotos } from "./photo";
+export { bakeSourceLoads } from "./photo";
 export {
   textureFor, buildBody, holdAnchor, BODY_H, PLAYER_STYLE,
   type BodyStyle, type Pose,
@@ -39,9 +40,8 @@ export const ntfKey = (n: NtfIcon) => `icon:ntf-${n}`;
 for (const n of NTF) ICON_FILE[ntfKey(n)] = `art/ntf_${n}.webp`;
 const askedIcon = new Set<string>();
 
-export function preloadArt(scene: Phaser.Scene, withNpc = false) {
+export function preloadArt(scene: Phaser.Scene) {
   preloadPhotos(scene);
-  if (withNpc) preloadNpcPhotos(scene);
   // Lúc đang tải `textures.exists` vẫn false, nên phải nhớ key đã xin kẻo Phaser báo trùng.
   for (const [key, file] of Object.entries(ICON_FILE)) {
     if (askedIcon.has(key) || scene.textures.exists(key)) continue;
@@ -50,9 +50,9 @@ export function preloadArt(scene: Phaser.Scene, withNpc = false) {
   }
 }
 
-export async function buildTextures(scene: Phaser.Scene) {
-  if (scene.textures.exists(BUILD.door)) return;
-  await runSteps([
+/** Gọi một lần sau khi `preloadArt` tải xong; ảnh thật phải đè sau cùng lên texture vẽ bằng code. */
+export function artSteps(scene: Phaser.Scene): Step[] {
+  return [
     () => buildTiles(scene),
     () => buildBuilding(scene),
     () => buildCounter(scene),
@@ -61,9 +61,10 @@ export async function buildTextures(scene: Phaser.Scene) {
     () => buildHeld(scene),
     () => buildFood(scene),
     () => buildFx(scene),
-    // Ảnh thật phải đè sau cùng lên texture vẽ bằng code.
-    () => paintPhotos(scene),
-  ]);
+    ...photoSteps(scene),
+    ...npcSteps(scene),
+    () => feetSteps(scene.textures),
+  ];
 }
 
 export function floorTextureAt(kind: Floor, tx: number, ty: number) {

@@ -1,10 +1,38 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { runSteps } from "../src/art/steps";
+import { drain, runSteps, slice } from "../src/art/steps";
 
-test("runSteps chạy đủ bước theo thứ tự và nhường giữa các bước", async () => {
+test("runSteps chạy đủ bước theo thứ tự, hết ngân sách thì nhường cả giữa bước", async () => {
   const log: string[] = [];
-  const steps = ["a", "b", "c"].map((n) => () => { log.push(n); });
-  await runSteps(steps, async () => { log.push("-"); });
-  assert.deepEqual(log, ["a", "-", "b", "-", "c"]);
+  const keep = slice.ms;
+  slice.ms = 0;
+  try {
+    const steps = [
+      () => { log.push("a"); },
+      function* () { log.push("b1"); yield; log.push("b2"); },
+      () => { log.push("c"); },
+    ];
+    const seen: number[] = [];
+    await runSteps(steps, async () => { log.push("-"); }, (done) => seen.push(done));
+    assert.deepEqual(log, ["a", "-", "b1", "-", "b2", "-", "c", "-"]);
+    assert.deepEqual(seen, [1, 2, 3]);
+  } finally {
+    slice.ms = keep;
+  }
+});
+
+test("runSteps không nhường khi còn ngân sách", async () => {
+  const log: string[] = [];
+  const keep = slice.ms;
+  slice.ms = 1e9;
+  try {
+    await runSteps([() => { log.push("a"); }, function* () { log.push("b"); yield; }], async () => { log.push("-"); });
+    assert.deepEqual(log, ["a", "b"]);
+  } finally {
+    slice.ms = keep;
+  }
+});
+
+test("drain chạy hết iterator và trả giá trị cuối", () => {
+  assert.equal(drain((function* () { yield; yield; return 7; })()), 7);
 });
