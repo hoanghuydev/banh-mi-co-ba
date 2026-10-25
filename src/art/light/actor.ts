@@ -25,7 +25,9 @@ const SUN_RING = 22;
 const BAKE_RES = 0.5;
 const SHADOW_BLUR = 1.2;
 const REFLECT_BLUR = 0.9;
-const CACHE_CAP = 600;
+/** Số khung bake giữ cho mỗi thân đang sống: đủ một vòng bước đi và lúc quay người. */
+const POSES_PER_ACTOR = 16;
+const CACHE_MIN = 32;
 const AO_KEY = "actor-ao";
 const AO_W = 34;
 const AO_H = 17;
@@ -107,6 +109,7 @@ type Entry = {
 
 const cache = new Map<string, Entry>();
 let serial = 0;
+let actors = 0;
 let tmp: HTMLCanvasElement | null = null;
 
 function canvas(w: number, h: number) {
@@ -114,6 +117,13 @@ function canvas(w: number, h: number) {
   c.width = w;
   c.height = h;
   return c;
+}
+
+/** Safari giữ bộ nhớ canvas tới lúc GC, nên thu về 0 ngay khi bỏ. */
+function free(c: HTMLCanvasElement | undefined) {
+  if (!c) return;
+  c.width = 0;
+  c.height = 0;
 }
 
 /** Vẽ frame (có thể lật ngang) vào canvas nháp dùng chung, trả ctx của nó. */
@@ -152,6 +162,7 @@ function softenWithoutFilter(ctx: CanvasRenderingContext2D, px: number) {
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(small, 0, 0, w, h);
   ctx.restore();
+  free(small);
 }
 
 function bakeShadow(img: CanvasImageSource, cut: Phaser.Textures.Frame, flip: boolean, foot: number, K: number, ss: number, soft = 1) {
@@ -263,7 +274,7 @@ export function* feetSteps(textures: Phaser.Textures.TextureManager) {
     const ctx = sheet.getContext("2d")!;
     for (const { f, h, y: at } of frames) ctx.drawImage(f.source.image as CanvasImageSource, f.cutX, f.cutY + f.cutHeight - h, f.cutWidth, h, 0, at, f.cutWidth, h);
     const data = ctx.getImageData(0, 0, w, y).data;
-    sheet.width = sheet.height = 0;
+    free(sheet);
     for (const { f, h, y: at } of frames) {
       for (let r = h - 1; r >= 0; r--) {
         if (!opaqueRow(data, w, at + r)) continue;
@@ -282,13 +293,20 @@ const opaqueRow = (data: ArrayLike<number>, w: number, y: number) => {
 };
 
 function drop(textures: Phaser.Textures.TextureManager, e: Entry) {
-  if (e.refl && textures.exists(e.refl)) textures.remove(e.refl);
+  free(e.shadow);
+  free(e.shadowIn);
+  if (e.refl && textures.exists(e.refl)) {
+    const img = textures.get(e.refl).getSourceImage();
+    textures.remove(e.refl);
+    if (img instanceof HTMLCanvasElement) free(img);
+  }
 }
 
-/** Xoá mục cũ nhất không ai dùng cho tới khi về trần. */
+/** Xoá mục cũ nhất không ai dùng cho tới khi về trần theo số thân đang sống. */
 function evict(textures: Phaser.Textures.TextureManager) {
+  const cap = Math.max(CACHE_MIN, actors * POSES_PER_ACTOR);
   for (const [k, e] of cache) {
-    if (cache.size <= CACHE_CAP) return;
+    if (cache.size <= cap) return;
     if (e.users > 0) continue;
     drop(textures, e);
     cache.delete(k);
@@ -390,6 +408,7 @@ export class ActorLight {
   private lives: { o?: Live; i?: Live } = {};
 
   constructor(private scene: Phaser.Scene, private body: Phaser.GameObjects.Image) {
+    actors++;
     aoTexture(scene);
     const mk = (depth: number) => scene.add.image(0, 0, AO_KEY).setDepth(depth).setVisible(false);
     this.shadow = mk(LIGHT_DEPTH.actorShadow).setBlendMode("MULTIPLY");
@@ -415,8 +434,8 @@ export class ActorLight {
     if (e) cache.delete(key);
     e ??= { src, users: 0, foot: measureFoot(frame) };
     cache.set(key, e);
-    evict(this.scene.textures);
     e.users++;
+    evict(this.scene.textures);
     this.entry = e;
     this.entryKey = key;
   }
@@ -556,5 +575,7 @@ export class ActorLight {
     this.ao.destroy();
     if (this.mask) releaseMask(this.mask);
     this.mask = null;
+    actors--;
+    evict(this.scene.textures);
   }
 }
