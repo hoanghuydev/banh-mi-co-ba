@@ -261,15 +261,25 @@ type Live = {
 /** Lề px ảnh nắng quanh vùng lấy mẫu, phủ phần lọc song tuyến đọc lấn ra. */
 const COVER_PAD = 4;
 
-type ReflMask = { env: LightEnv; gfx: Phaser.GameObjects.Graphics; mask: Phaser.Display.Masks.GeometryMask; users: number };
+type ReflMask = {
+  env: LightEnv; gfx: Phaser.GameObjects.Graphics; mask: Phaser.Display.Masks.GeometryMask;
+  /** Mọi phản chiếu chung một mặt nạ, vẽ trong một Container để stencil chỉ dựng một lần mỗi khung. */
+  layer: Phaser.GameObjects.Container; users: number;
+};
 
 let reflMask: ReflMask | null = null;
+
+function destroyMask(m: ReflMask) {
+  m.layer.removeAll(false);
+  m.layer.destroy();
+  m.mask.destroy();
+  m.gfx.destroy();
+}
 
 /** Một mặt nạ chung gồm các ô sàn bóng; chỉ chất liệu bóng mới phản chiếu. */
 function acquireMask(scene: Phaser.Scene, env: LightEnv) {
   if (reflMask && reflMask.env !== env) {
-    reflMask.mask.destroy();
-    reflMask.gfx.destroy();
+    destroyMask(reflMask);
     reflMask = null;
   }
   if (!reflMask) {
@@ -282,7 +292,9 @@ function acquireMask(scene: Phaser.Scene, env: LightEnv) {
         gfx.fillPoints([{ x: a.sx, y: a.sy }, { x: b.sx, y: b.sy }, { x: c.sx, y: c.sy }, { x: d.sx, y: d.sy }], true);
       }
     }
-    reflMask = { env, gfx, mask: gfx.createGeometryMask(), users: 0 };
+    const mask = gfx.createGeometryMask();
+    const layer = scene.add.container(0, 0).setDepth(LIGHT_DEPTH.reflection + 1).setMask(mask);
+    reflMask = { env, gfx, mask, layer, users: 0 };
   }
   reflMask.users++;
   return reflMask;
@@ -291,8 +303,7 @@ function acquireMask(scene: Phaser.Scene, env: LightEnv) {
 function releaseMask(m: ReflMask) {
   if (--m.users > 0) return;
   if (reflMask === m) reflMask = null;
-  m.mask.destroy();
-  m.gfx.destroy();
+  destroyMask(m);
 }
 
 export type ActorPose = {
@@ -403,7 +414,7 @@ export class ActorLight {
       if (this.mask?.env !== env) {
         if (this.mask) releaseMask(this.mask);
         this.mask = acquireMask(this.scene, env);
-        this.refl.setMask(this.mask.mask);
+        this.mask.layer.add(this.refl);
       }
       if (!e.refl) {
         const { out, L } = bakeReflection(src, frame, flip, foot, ss);
