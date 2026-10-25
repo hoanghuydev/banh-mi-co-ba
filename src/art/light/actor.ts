@@ -215,10 +215,63 @@ export function soleRow(data: ArrayLike<number>, w: number, h: number) {
   return h;
 }
 
-function measureFoot(img: CanvasImageSource, cut: Phaser.Textures.Frame, flip: boolean) {
-  const ctx = sprite(img, cut, flip);
-  return soleRow(ctx.getImageData(0, 0, cut.cutWidth, cut.cutHeight).data, cut.cutWidth, cut.cutHeight);
+/** Hàng chân theo frame, không đổi khi lật ngang; giữ lâu hơn `cache` vì đọc điểm ảnh là bước đắt nhất. */
+const feet = new Map<string, { src: unknown; foot: number }>();
+/** Ảnh khung hình của một nhân vật theo hướng và bước đi; cùng gốc là cùng một người. */
+const POSE_KEY = /^(.+?)_(?:n|ne|e|se|s|sw|w|nw)(?:_[a-z]+\d*)?$/;
+/** Phần đáy khung được đọc gộp; chân nằm cao hơn thì đọc riêng cả khung. */
+const SOLE_SLICE = 0.4;
+
+const footId = (cut: Phaser.Textures.Frame) => `${cut.texture.key}|${cut.name}`;
+const fetched = new Set<string>();
+
+function measureFoot(img: CanvasImageSource, cut: Phaser.Textures.Frame) {
+  const hit = feet.get(footId(cut));
+  if (hit && hit.src === img) return hit.foot;
+  prefetchFeet(cut);
+  const again = feet.get(footId(cut));
+  if (again && again.src === img) return again.foot;
+  const ctx = sprite(img, cut, false);
+  const foot = soleRow(ctx.getImageData(0, 0, cut.cutWidth, cut.cutHeight).data, cut.cutWidth, cut.cutHeight);
+  feet.set(footId(cut), { src: img, foot });
+  return foot;
 }
+
+/** Đáy mọi khung cùng người vẽ chung một canvas rồi đọc một lần: mỗi lần getImageData phải chờ GPU. */
+function prefetchFeet(cut: Phaser.Textures.Frame) {
+  const base = POSE_KEY.exec(cut.texture.key)?.[1];
+  if (!base || fetched.has(base)) return;
+  fetched.add(base);
+  const manager = cut.texture.manager;
+  const frames: { f: Phaser.Textures.Frame; h: number; y: number }[] = [];
+  let w = 1, y = 0;
+  for (const key of manager.getTextureKeys()) {
+    if (POSE_KEY.exec(key)?.[1] !== base) continue;
+    const f = manager.getFrame(key);
+    if (!f || feet.get(footId(f))?.src === f.source.image) continue;
+    const h = Math.max(1, Math.ceil(f.cutHeight * SOLE_SLICE));
+    frames.push({ f, h, y });
+    w = Math.max(w, f.cutWidth);
+    y += h;
+  }
+  if (!frames.length) return;
+  const sheet = canvas(w, y);
+  const ctx = sheet.getContext("2d")!;
+  for (const { f, h, y: at } of frames) ctx.drawImage(f.source.image as CanvasImageSource, f.cutX, f.cutY + f.cutHeight - h, f.cutWidth, h, 0, at, f.cutWidth, h);
+  const data = ctx.getImageData(0, 0, w, y).data;
+  for (const { f, h, y: at } of frames) {
+    for (let r = h - 1; r >= 0; r--) {
+      if (!opaqueRow(data, w, at + r)) continue;
+      feet.set(footId(f), { src: f.source.image, foot: f.cutHeight - h + r + 1 });
+      break;
+    }
+  }
+}
+
+const opaqueRow = (data: ArrayLike<number>, w: number, y: number) => {
+  for (let x = 0; x < w; x++) if (data[(y * w + x) * 4 + 3] >= SOLE_ALPHA) return true;
+  return false;
+};
 
 function drop(textures: Phaser.Textures.TextureManager, e: Entry) {
   if (e.refl && textures.exists(e.refl)) textures.remove(e.refl);
@@ -343,7 +396,7 @@ export class ActorLight {
     this.entryKey = "";
   }
 
-  private enter(key: string, src: unknown, frame: Phaser.Textures.Frame, flip: boolean) {
+  private enter(key: string, src: unknown, frame: Phaser.Textures.Frame) {
     this.release();
     let e = cache.get(key);
     if (e && e.src !== src) {
@@ -352,7 +405,7 @@ export class ActorLight {
       e = undefined;
     }
     if (e) cache.delete(key);
-    e ??= { src, users: 0, foot: measureFoot(src as CanvasImageSource, frame, flip) };
+    e ??= { src, users: 0, foot: measureFoot(src as CanvasImageSource, frame) };
     cache.set(key, e);
     evict(this.scene.textures);
     e.users++;
@@ -372,7 +425,7 @@ export class ActorLight {
     const h = frame.cutHeight;
     const flip = body.flipX;
     const key = `${frame.texture.key}|${frame.name}|${flip ? 1 : 0}`;
-    if (key !== this.entryKey) this.enter(key, src, frame, flip);
+    if (key !== this.entryKey) this.enter(key, src, frame);
     const e = this.entry!;
     const foot = e.foot;
     const lift = p.lift ?? 0;
