@@ -21,6 +21,14 @@ function clearViewCache() {
   fitCache = null;
 }
 
+// iOS có thể bắn resize trước khi layout xong; khung game đổi cỡ sau đó vẫn phải xoá cache.
+let hostWatched = false;
+function watchHost(el: HTMLElement) {
+  if (hostWatched || typeof ResizeObserver === "undefined") return;
+  hostWatched = true;
+  new ResizeObserver(() => { fitCache = null; }).observe(el);
+}
+
 export function viewport(): { w: number; h: number } {
   if (!hasWindow) return { w: GAME_W, h: GAME_H };
   if (viewCache) return viewCache;
@@ -62,9 +70,11 @@ export function isTouch(): boolean {
 export function fitScale(): number {
   if (fitCache !== null) return fitCache;
   const { w, h } = viewport();
-  const host = hasWindow ? document.getElementById("game")?.clientWidth : 0;
+  const el = hasWindow ? document.getElementById("game") : null;
+  const host = el?.clientWidth;
   // Chưa có khung game thì chưa giữ, để lần sau đo lại.
-  if (!host) return Math.min(w / GAME_W, h / GAME_H);
+  if (!el || !host) return Math.min(w / GAME_W, h / GAME_H);
+  watchHost(el);
   fitCache = Math.min(host / GAME_W, h / GAME_H);
   return fitCache;
 }

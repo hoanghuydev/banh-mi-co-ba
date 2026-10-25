@@ -467,7 +467,7 @@ export class Hud {
   }) {
     this.lastUpdate = s;
     const m = Math.floor(s.clock.minutes);
-    const statKey = `${s.day}|${m}|${s.clock.band}|${s.money}|${s.served}|${this.m.touch}`;
+    const statKey = `${s.day}|${m}|${s.clock.band}|${s.money}|${s.served}|${this.m.touch}|${this.settings.noTimePressure}`;
     if (statKey !== this.statKey) {
       this.statKey = statKey;
       const hhmm = `${Math.floor(m / 60)}h${String(m % 60).padStart(2, "0")}`;

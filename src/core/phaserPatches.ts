@@ -9,10 +9,7 @@ type Loop = {
   smoothDelta(d: number): number; updateFPS(t: number): void; callback(t: number, d: number): void;
 };
 
-/**
- * Thay `stepLimitFPS` của Phaser: bản gốc đòi đủ 1000/limit ms rồi xoá phần dư, nên màn 60 Hz rớt khung khi
- * rAF lệch vài phần mười ms và màn 144 Hz chỉ còn 48 khung. Ở đây hạn khung kế cộng dồn, dung sai nửa khung màn.
- */
+/** Thay `stepLimitFPS` của Phaser (bản gốc rớt khung khi rAF lệch, màn 144 Hz chỉ còn 48) bằng hạn cộng dồn dung sai nửa khung màn. */
 function installFrameCap() {
   let due = 0;
   (Phaser.Core.TimeStep.prototype as unknown as { stepLimitFPS: (this: Loop, time: number) => void }).stepLimitFPS = function (time) {
