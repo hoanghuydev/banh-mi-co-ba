@@ -247,7 +247,7 @@ export class Hud {
       touch, k, btnW, btnH, cy: Math.max(26, btnH / 2 + designFor(6)),
       hands: at(0), pause: at(1), phone: at(2), eye: at(3),
       midL, midR,
-      toastRight: GAME_W - designFor(PILL_RESERVE + 8),
+      toastRight: GAME_W - designFor(EDGE),
       toastBottom: GAME_H - designFor(STICK_TOP),
       bodyW: Math.round(190 * k),
       feedX: designFor(EDGE), feedY: GAME_H - designFor(STICK_TOP), feedW: Math.min(380, Math.round(midR - midL - designFor(24))),

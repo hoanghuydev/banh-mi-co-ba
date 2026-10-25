@@ -5,6 +5,7 @@ import { isOpen } from "../../sim/unlock";
 import { INGREDIENTS, levelsOf, type IngredientInfo } from "../../sim/order";
 import { shopName } from "../../content/shop";
 import { isTouch } from "../../core/device";
+import { guardStrayClick } from "../tapGuard";
 
 // Mọi tên món và con số đọc từ `sim/menu` + `sim/econ`, để bảng dạy đúng cái `diffDish` chấm.
 
@@ -109,6 +110,7 @@ export class MenuBoardView {
     this.root.addEventListener("keydown", this.keyGuard, true);
     this.root.addEventListener("keyup", (e) => { if (e.code !== "KeyP") e.stopPropagation(); }, true);
     this.root.addEventListener("pointerdown", (e) => { if (e.target === this.root) this.close(); });
+    guardStrayClick(this.root);
     document.body.appendChild(this.root);
     if (this.game.input.keyboard) this.game.input.keyboard.enabled = false;
     this.render();

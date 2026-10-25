@@ -3,6 +3,7 @@ import { GOODS, QUALITIES, type GoodId, type InventoryState } from "../../sim/ec
 import { fmtUnits } from "../../sim/day";
 import { coldUsage, freshnessOf, stacksOf, type Freshness, type Stack } from "../../sim/stock";
 import { CLAY_CSS } from "../clayCss";
+import { guardStrayClick } from "../tapGuard";
 
 const STYLE = `
 .sv-root{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;padding:max(18px,var(--safe-top)) max(18px,var(--safe-right)) max(18px,var(--safe-bottom)) max(18px,var(--safe-left));box-sizing:border-box;background:rgba(12,15,18,.74);font-family:"Be Vietnam Pro",system-ui,sans-serif;color:#f7f1e2}
@@ -133,6 +134,7 @@ export class StorageView {
     this.root.addEventListener("keydown", this.keyGuard, true);
     this.root.addEventListener("keyup", (e) => { if (e.code !== "KeyP") e.stopPropagation(); }, true);
     this.root.addEventListener("pointerdown", (e) => { if (e.target === this.root) this.close(); });
+    guardStrayClick(this.root);
     this.root.appendChild(this.card());
     document.body.appendChild(this.root);
     if (this.game.input.keyboard) this.game.input.keyboard.enabled = false;

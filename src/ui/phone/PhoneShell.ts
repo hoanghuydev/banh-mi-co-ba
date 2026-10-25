@@ -112,19 +112,19 @@ export class PhoneShell {
     const framed = fit >= (isTouch() ? FRAMED_MIN_K_TOUCH : FRAMED_MIN_K_PC);
     const set = (a: string, on: boolean) => (on ? this.root.setAttribute(a, "") : this.root.removeAttribute(a));
     set("data-compact", !framed);
-    set("data-card", !framed && w >= 500);
     set("data-short", !framed && h < 520);
+    const touch = isTouch();
     if (framed) {
       const k = Math.min(1.1, fit);
       this.root.style.setProperty("--k", String(k));
-      this.root.style.setProperty("--fmin", `${14 / k}px`);
-      this.root.style.setProperty("--tmin", `${44 / k}px`);
+      this.root.style.setProperty("--fmin", touch ? `${14 / k}px` : "0px");
+      this.root.style.setProperty("--tmin", touch ? `${44 / k}px` : "38px");
       this.fit.style.width = `${FRAME_W * k}px`;
       this.fit.style.height = `${FRAME_H * k}px`;
     } else {
       this.root.style.setProperty("--k", "1");
-      this.root.style.setProperty("--fmin", "14px");
-      this.root.style.setProperty("--tmin", "44px");
+      this.root.style.setProperty("--fmin", touch ? "14px" : "0px");
+      this.root.style.setProperty("--tmin", touch ? "44px" : "38px");
       this.fit.style.width = "";
       this.fit.style.height = "";
     }

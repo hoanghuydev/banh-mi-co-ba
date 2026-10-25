@@ -1,19 +1,16 @@
 export const PHONE_STYLE = `
-.ph-root{box-sizing:border-box;--fmin:14px;--tmin:44px;position:fixed;left:0;right:0;top:0;bottom:0;z-index:8995;display:flex;align-items:center;justify-content:center;background:rgba(12,16,20,.62);font-family:"Be Vietnam Pro",system-ui,sans-serif;color:#1c2329;animation:ph-fade .18s ease-out}
+.ph-root{box-sizing:border-box;--fmin:0px;--tmin:38px;position:fixed;left:0;right:0;top:0;bottom:0;z-index:8995;display:flex;align-items:center;justify-content:center;background:rgba(12,16,20,.62);font-family:"Be Vietnam Pro",system-ui,sans-serif;color:#1c2329;animation:ph-fade .18s ease-out}
 @keyframes ph-fade{from{opacity:0}to{opacity:1}}
 .ph-root{user-select:none;-webkit-user-select:none}
 .ph-root input,.ph-root textarea{user-select:text;-webkit-user-select:text}
 .ph-fit{position:relative;flex:none}
-.ph-root[data-compact]{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
-.ph-root[data-compact][data-card]{padding:12px}
-.ph-root[data-compact] .ph-fit{width:min(100%,460px);height:100%}
+.ph-root[data-compact]{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);background:#0c1014}
+.ph-root[data-compact] .ph-fit{width:100%;height:100%}
 .ph-root[data-compact] .ph-stage{width:100%;height:100%;transform:none;animation:ph-rise-c .26s cubic-bezier(.2,.8,.2,1)}
 @keyframes ph-rise-c{from{transform:translateY(40px);opacity:0}}
 .ph-root[data-compact] .ph-screen{left:0;top:0;width:100%;height:100%;border-radius:0}
-.ph-root[data-compact][data-card] .ph-screen{border-radius:30px;box-shadow:0 0 0 2px rgba(255,255,255,.12)}
 .ph-root[data-compact] .ph-frame{display:none}
 .ph-root[data-compact] .ph-status{height:36px;padding:0 14px 0 18px}
-.ph-root[data-compact][data-short] .ph-status{height:30px}
 
 .ph-stage{position:absolute;left:0;top:0;width:438px;height:835px;transform-origin:0 0;animation:ph-rise .26s cubic-bezier(.2,.8,.2,1)}
 @keyframes ph-rise{from{transform:translateY(40px) scale(var(--k));opacity:0}}
@@ -29,8 +26,18 @@ export const PHONE_STYLE = `
 .ph-root:not([data-locked]) .ph-status{height:calc(var(--tmin) + 6px)}
 .ph-root[data-locked] .ph-x{display:none}
 .ph-root[data-short] .ph-bar{display:none}
-.ph-root[data-short] .ph-status{height:var(--tmin)}
-.ph-root[data-short] .ph-tab{min-height:var(--tmin)}
+.ph-root[data-short] .ph-screen{flex-direction:row}
+.ph-root[data-short] .ph-status,.ph-root[data-short]:not([data-locked]) .ph-status{flex:none;width:calc(var(--tmin) + 8px);height:auto;padding:4px 0 0;flex-direction:column;justify-content:flex-start;align-items:center}
+.ph-root[data-short] .ph-status>span{display:none}
+.ph-root[data-short] .ph-x{margin:0;background:rgba(128,128,128,.22)}
+.ph-root[data-short][data-locked] .ph-status{display:none}
+.ph-root[data-short] .ph-view{min-width:0}
+.ph-root[data-short] .ph-view>div:has(>.ph-tabs){display:grid!important;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+.ph-root[data-short] .ph-view>div:has(>.ph-tabs)>:not(.ph-tabs){grid-column:2;min-height:0;min-width:0}
+.ph-root[data-short] .ph-view>div:has(>.ph-tabs)>.ph-nav{grid-row:1}
+.ph-root[data-short] .ph-view>div:has(>.ph-tabs)>:not(.ph-tabs):not(.ph-nav){grid-row:2}
+.ph-root[data-short] .ph-tabs{grid-column:1;grid-row:1/3;flex-direction:column;justify-content:flex-start;width:88px;white-space:nowrap;border-top:0;border-right:1px solid #ddd8cb;overflow-y:auto}
+.ph-root[data-short] .ph-tab{flex:none;min-height:calc(var(--tmin) + 14px)}
 .ph-root[data-short] .ph-chips{padding-top:6px;padding-bottom:0}
 .ph-root[data-short] .ph-nav{min-height:var(--tmin)}
 .ph-status svg{display:block}
@@ -67,7 +74,7 @@ export const PHONE_STYLE = `
 @media (hover:hover){.ph-app:hover .ico{transform:translateY(-2px)}}
 .ph-app:active .ico{transform:scale(.94)}
 .ph-app:focus-visible{outline:3px solid #fff;outline-offset:2px}
-.ph-app .badge{position:absolute;top:-7px;right:-7px;min-width:24px;height:24px;padding:0 6px;border-radius:12px;background:#e03a2c;color:#fff;font-size:var(--fmin);font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px #fff;text-shadow:none;font-variant-numeric:tabular-nums}
+.ph-app .badge{position:absolute;top:-7px;right:-7px;min-width:24px;height:24px;padding:0 6px;border-radius:12px;background:#e03a2c;color:#fff;font-size:max(var(--fmin),12px);font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px #fff;text-shadow:none;font-variant-numeric:tabular-nums}
 
 /* ── thanh điều hướng trong app ── */
 .ph-nav{flex:none;display:grid;grid-template-columns:112px 1fr 112px;align-items:center;min-height:48px;padding:0 6px;border-bottom:1px solid #ddd8cb;background:rgba(250,248,242,.94)}
@@ -97,7 +104,7 @@ export const PHONE_STYLE = `
 .ph-row .side span:first-child{white-space:nowrap}
 .ph-row.unread .nm{font-weight:700}
 .ph-row.unread .pv{color:#1c2329;font-weight:500}
-.ph-dot{min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:#c0392b;color:#fff;font-size:var(--fmin);font-weight:700;display:flex;align-items:center;justify-content:center}
+.ph-dot{min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:#c0392b;color:#fff;font-size:max(var(--fmin),12px);font-weight:700;display:flex;align-items:center;justify-content:center}
 .ph-reply-flag{font-size:max(var(--fmin),.74em);font-weight:700;color:#b02f22;background:#fbe4e0;padding:2px 8px;border-radius:9px}
 
 .ph-chat{padding:14px 14px 10px;display:flex;flex-direction:column;gap:4px}
@@ -113,7 +120,7 @@ export const PHONE_STYLE = `
 .ph-who{font-size:max(var(--fmin),.74em);font-weight:700;margin:6px 0 1px 41px}
 @keyframes ph-pop{from{transform:scale(.9) translateY(6px);opacity:0}}
 .ph-file{display:flex;align-items:center;gap:10px;padding:8px 12px 8px 9px}
-.ph-file .fi{flex:none;width:42px;height:40px;border-radius:6px;background:#fff;color:#c0392b;font-size:var(--fmin);font-weight:700;display:flex;align-items:flex-end;justify-content:center;padding-bottom:5px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.ph-file .fi{flex:none;width:42px;height:40px;border-radius:6px;background:#fff;color:#c0392b;font-size:max(var(--fmin),12px);font-weight:700;display:flex;align-items:flex-end;justify-content:center;padding-bottom:5px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
 .ph-file .fn{font-size:max(var(--fmin),.9em);font-weight:500;word-break:break-all;line-height:1.3}
 .ph-typing{align-self:flex-end;display:flex;gap:4px;padding:13px 15px;background:#2f7d57;border-radius:19px;border-bottom-right-radius:6px}
 .ph-typing.l{align-self:flex-start;background:#e8e4d8}
@@ -208,7 +215,7 @@ export const PHONE_STYLE = `
 .ph-tab{position:relative;flex:1;min-height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:0;font:inherit;font-size:max(var(--fmin),.72em);font-weight:500;color:#6b7680;cursor:pointer}
 .ph-tab.on{color:#e5532b;font-weight:700}
 .ph-tab:focus-visible{outline:2px solid #e5532b;outline-offset:-3px}
-.ph-tab-n{position:absolute;top:5px;left:calc(50% + 8px);min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#e5532b;color:#fff;font-style:normal;font-size:var(--fmin);font-weight:700;display:flex;align-items:center;justify-content:center}
+.ph-tab-n{position:absolute;top:5px;left:calc(50% + 8px);min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#e5532b;color:#fff;font-style:normal;font-size:max(var(--fmin),12px);font-weight:700;display:flex;align-items:center;justify-content:center}
 .ph-chips{display:flex;gap:8px;padding:12px 14px 4px;overflow-x:auto;scrollbar-width:none}
 .ph-chips::-webkit-scrollbar{display:none}
 .ph-pill{flex:none;min-height:var(--tmin);padding:0 15px;border-radius:18px;border:1.5px solid #cfc9b9;background:#fff;font:inherit;font-size:max(var(--fmin),.88em);font-weight:500;color:#2b3339;cursor:pointer}

@@ -4,7 +4,7 @@ import { el } from "./dom";
 import { sfx } from "../../audio/sfx";
 
 const STYLE = `
-.ph-banner{position:fixed;top:14px;right:14px;z-index:8994;width:min(340px,calc(100vw - 28px));display:flex;gap:11px;align-items:center;text-align:left;
+.ph-banner{position:fixed;top:calc(env(safe-area-inset-top) + 14px);right:calc(env(safe-area-inset-right) + 14px);left:auto;z-index:8994;width:min(340px,calc(100vw - 28px));display:flex;gap:11px;align-items:center;text-align:left;
   min-height:44px;padding:11px 14px;border:0;border-radius:18px;background:rgba(250,248,242,.97);color:#1c2329;font:inherit;cursor:pointer;
   box-shadow:0 10px 30px rgba(0,0,0,.4);animation:ph-ban .3s cubic-bezier(.2,.8,.2,1)}
 @media (hover:hover){.ph-banner:hover{background:#fff}}

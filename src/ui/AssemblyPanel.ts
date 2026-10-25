@@ -320,13 +320,14 @@ export class AssemblyPanel {
     c.setSize(TW, TH);
     c.setInteractive(new Phaser.Geom.Rectangle(0, 0, TW, TH), Phaser.Geom.Rectangle.Contains);
     this.scene.input.setDraggable(c);
+    let pressed = false;
 
     if (!this.touch) {
       c.on("pointerover", () => paint(true));
       c.on("pointerout", () => paint(false));
     }
-    c.on("pointerdown", () => { this.dragging = false; });
-    c.on("pointerup", () => { if (!this.dragging) this.add(id); });
+    c.on("pointerdown", () => { this.dragging = false; pressed = true; });
+    c.on("pointerup", () => { if (pressed && !this.dragging) this.add(id); pressed = false; });
 
     c.on("dragstart", (p: Phaser.Input.Pointer) => {
       this.dragging = true;
