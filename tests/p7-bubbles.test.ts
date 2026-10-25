@@ -2,10 +2,10 @@
  * HIỂN THỊ BONG BÓNG THOẠI — ba lỗi người chơi báo, dựng thành lưới.
  *
  *  1. chữ trôi quá nhanh, không kịp đọc
- *  2. khách xếp hàng cạnh nhau thì bong bóng chồng lên nhau
+ *  2. bong bóng lệch khỏi đầu người nói
  *  3. bong bóng che mất chỗ người chơi đang làm
  *
- * Phần chọn chỗ đặt là hàm thuần (`stackBubbles`) để test không cần Phaser.
+ * Phần chọn chỗ đặt là hàm thuần (`bubbleX`) để test không cần Phaser.
  */
 import { test } from "node:test";
 import { readFile } from "node:fs/promises";
@@ -14,7 +14,7 @@ import assert from "node:assert/strict";
 import {
   BUBBLE_MAX_SEC, BUBBLE_MIN_SEC, NOTICE_SEC, READ_CPS, bubbleLife, offerBubbleLife,
 } from "../src/sim/service";
-import { stackBubbles, TAIL_INSET, type Box, type Slot } from "../src/world/bubbleLayout";
+import { bubbleX, TAIL_INSET, type Box } from "../src/world/bubbleLayout";
 
 const dir = new URL("../src/content/rules/", import.meta.url);
 const BARKS: string[] = [];
@@ -64,76 +64,35 @@ test("B-4 người đọc chậm được thêm giờ — cỡ chữ lớn / kh�
   assert.ok(offerBubbleLife(line) > bubbleLife(line));
 });
 
-// ────────────────────────── C — bám đầu, không chồng, không che lò (lỗi #2, #3)
+// ─────────────────────────────── C — bám đầu, không che lò (lỗi #2, #3)
 
-const V = { left: 0, right: 800, top: 0 };
+const V = { left: 0, right: 800 };
 const W = 190, H = 54;
-const ask = (x: number, y: number, prev: Slot | null = null) => ({ x, y, w: W, h: H, prev });
-const boxOf = (s: { x: number; y: number }) => ({ x0: s.x - W / 2, x1: s.x + W / 2, y0: s.y - H, y1: s.y });
-const hit = (a: Box, b: Box) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
-/** Thân bong bóng còn che đỉnh đầu và không tụt xuống dưới chỗ gốc. */
-const onHead = (s: { x: number; y: number }, a: { x: number; y: number }) =>
-  Math.abs(s.x - a.x) <= W / 2 - TAIL_INSET + 1e-9 && s.y <= a.y;
+const ask = (x: number, y = 300) => ({ x, y, w: W, h: H });
+const onHead = (cx: number, x: number) => Math.abs(cx - x) <= W / 2 - TAIL_INSET + 1e-9;
 
-test("C-1 hai người đứng cạnh nhau: không chồng, mà ai vẫn trên đầu người nấy", () => {
-  // Hàng chờ cách nhau 48 px ngang, 24 px dọc; bong bóng rộng ~190 px nên chồng là hình học.
-  const a = [ask(400, 300), ask(448, 276)];
-  const [s0, s1] = stackBubbles(a, V);
-  assert.ok(!hit(boxOf(s0), boxOf(s1)), `vẫn chồng: ${JSON.stringify([s0, s1])}`);
-  assert.ok(onHead(s0, a[0]) && onHead(s1, a[1]), `rời đầu: ${JSON.stringify([s0, s1])}`);
+test("C-1 không vướng gì thì nằm ngay giữa đỉnh đầu", () => {
+  assert.equal(bubbleX(ask(400), V), 400);
 });
 
-test("C-2 dù đông tới đâu cũng không bao giờ rời đỉnh đầu hay tụt xuống thân", () => {
-  const crowd = Array.from({ length: 7 }, (_, i) => ask(380 + (i % 3) * 30, 300 - i * 12));
-  stackBubbles(crowd, V).forEach((s, i) => assert.ok(onHead(s, crowd[i]), `người ${i}: ${JSON.stringify(s)}`));
+test("C-2 sát mép khung thì dạt vào trong, ra khỏi khung thì đi theo người", () => {
+  const edge = bubbleX(ask(80), V);
+  assert.ok(edge - W / 2 >= V.left, `lòi ra mép trái: ${edge}`);
+  assert.ok(onHead(edge, 80));
+  assert.ok(onHead(bubbleX(ask(-300), V), -300), "bị kẹp lại trong khung, bỏ người nói");
 });
 
-test("C-3 sát mép khung thì dạt vào trong, ra khỏi khung thì đi theo người", () => {
-  const [edge] = stackBubbles([ask(80, 300)], V);
-  assert.ok(edge.x - W / 2 >= V.left, `lòi ra mép trái: ${edge.x}`);
-  assert.ok(onHead(edge, ask(80, 300)));
-  const [gone] = stackBubbles([ask(-300, 300)], V);
-  assert.ok(onHead(gone, ask(-300, 300)), `bị kẹp lại trong khung, bỏ người nói: ${gone.x}`);
-});
-
-test("C-4 tránh vòng lò mà vẫn trên đầu", () => {
+test("C-3 tránh vòng lò mà vẫn trên đầu", () => {
   // Che vòng độ giòn lúc ổ sắp sém là mất thứ duy nhất báo nó sắp cháy (CANON T5).
-  const oven = { x0: 354, x1: 446, y0: 214, y1: 290 };
-  const [s] = stackBubbles([ask(400, 300)], V, [oven]);
-  assert.ok(!hit(boxOf(s), oven), `vẫn đè lò: ${JSON.stringify(s)}`);
-  assert.ok(onHead(s, ask(400, 300)));
+  const oven: Box = { x0: 290, x1: 370, y0: 214, y1: 290 };
+  const cx = bubbleX(ask(400), V, [oven]);
+  assert.ok(cx - W / 2 >= oven.x1, `vẫn đè lò: ${cx}`);
+  assert.ok(onHead(cx, 400));
 });
 
-test("C-5 đã dạt sang một phía thì giữ phía đó, không đổi qua lại theo từng frame", () => {
-  const other = ask(400, 300);
-  const [, moved] = stackBubbles([other, ask(430, 300)], V);
-  assert.notDeepEqual({ side: moved.side, level: moved.level }, { side: 0, level: 0 }, "chưa phải né thì test không kiểm được gì");
-  // Người kia bước sang bên kia: phía cũ vẫn sạch thì giữ.
-  const [, again] = stackBubbles([ask(330, 300), ask(430, 300, moved)], V);
-  assert.deepEqual({ side: again.side, level: again.level }, { side: moved.side, level: moved.level });
-});
-
-test("C-6 chỗ gốc trống lại thì về chỗ gốc", () => {
-  const [s] = stackBubbles([ask(400, 300, { side: 1, level: 1 })], V);
-  assert.deepEqual({ side: s.side, level: s.level }, { side: 0, level: 0 });
-});
-
-test("C-8 hết chỗ sạch thì đứng yên ở chỗ cũ, không giật qua lại mỗi frame", () => {
-  const wall = [{ x0: 0, x1: 800, y0: 0, y1: 310 }];
-  const prev = { side: 0.5, level: 1 };
-  const [s] = stackBubbles([ask(400, 300, prev)], V, wall);
-  assert.deepEqual({ side: s.side, level: s.level }, prev);
-});
-
-test("C-9 sát mép trên thì không nâng tầng ra khỏi khung", () => {
-  const [, s] = stackBubbles([ask(400, 70), ask(420, 70)], V);
-  assert.ok(s.y - H >= V.top, `lòi khỏi mép trên: ${JSON.stringify(s)}`);
-});
-
-test("C-7 không chỗ nào sạch thì vẫn trả chỗ hợp lệ trên đầu", () => {
-  const wall = Array.from({ length: 9 }, (_, i) => ({ x0: 0, x1: 800, y0: i * 50, y1: i * 50 + 40 }));
-  const [s] = stackBubbles([ask(400, 300)], V, wall);
-  assert.ok(Number.isFinite(s.x) && Number.isFinite(s.y) && onHead(s, ask(400, 300)));
+test("C-4 không né được lò thì vẫn trên đầu", () => {
+  const wall: Box = { x0: 0, x1: 800, y0: 0, y1: 310 };
+  assert.equal(bubbleX(ask(400), V, [wall]), 400);
 });
 
 // ──────────────────── D — thẻ trò chuyện không được NHẢY giữa hai nhịp

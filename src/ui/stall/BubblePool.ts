@@ -1,11 +1,11 @@
 import Phaser from "phaser";
 import { FONT, UI } from "../theme";
-import { stackBubbles, type Box, type Slot } from "../../world/bubbleLayout";
+import { bubbleX, type Box } from "../../world/bubbleLayout";
 
 /** Pool bong bóng thoại dựng sẵn, không cấp phát mới trong scene để tránh GC spike giờ cao điểm. */
 export const BUBBLE_POOL_SIZE = 8;
 const FADE_IN = 120, FADE_OUT = 260;
-// Giây; đổi chỗ né thì trượt ~96% quãng trong 0,3 s.
+// Giây; đổi phía né thì trượt ~96% quãng trong 0,3 s.
 const GLIDE_TAU = 0.1;
 
 export class Bubble {
@@ -16,15 +16,17 @@ export class Bubble {
   owner: string | null = null;
   text = "";
   since = 0;
+  /** Thứ tự câu đang hiện được nói ra; câu nói sau vẽ đè câu nói trước. */
+  saidAt = 0;
+  private static said = 0;
   /** ms theo đồng hồ scene. */
   private shownAt = 0;
   private hidingAt = -1;
   private w = 0;
   private h = 0;
   anchor = { x: 0, y: 0, scale: 1, depth: 0 };
-  /** Độ lệch so với `anchor` đang vẽ; `null` là chưa đặt lần nào, frame đầu đặt thẳng. */
-  off: { x: number; y: number } | null = null;
-  slot: Slot | null = null;
+  /** Độ lệch ngang so với `anchor` đang vẽ; `null` là chưa đặt lần nào, frame đầu đặt thẳng. */
+  off: number | null = null;
 
   constructor(private scene: Phaser.Scene, textScale: number) {
     const size = Math.round(12 * textScale);
@@ -44,8 +46,9 @@ export class Bubble {
     if (text === this.text && !this.hiding) return;
     const fresh = this.text === "" || this.hiding;
     this.text = text;
+    this.saidAt = ++Bubble.said;
     this.hidingAt = -1;
-    if (fresh) { this.shownAt = this.scene.time.now; this.off = null; this.slot = null; }
+    if (fresh) { this.shownAt = this.scene.time.now; this.off = null; }
     this.label.setText(text).setPosition(0, 0);
     const w = this.w = Math.max(this.label.width + 22, 60);
     const h = this.h = this.label.height + 14;
@@ -60,7 +63,7 @@ export class Bubble {
     this.tail.fillTriangle(-2, h / 2 - 1, 8, h / 2 - 1, 0, h / 2 + 9);
   }
 
-  /** `y` là mép dưới thân bong bóng lúc không phải né ai, `x` là đỉnh đầu. */
+  /** `y` là mép dưới thân bong bóng, `x` là đỉnh đầu. */
   setAnchor(x: number, y: number, depth: number, scale = 1) {
     this.anchor = { x, y, scale, depth };
   }
@@ -68,16 +71,11 @@ export class Bubble {
   get size() { return { w: this.w * this.anchor.scale, h: this.h * this.anchor.scale }; }
 
   /** Chỉ trượt độ lệch so với đầu, nên đầu đi tới đâu bong bóng theo tới đó. */
-  place(spot: Slot & { x: number; y: number }, dt: number, reducedMotion: boolean, order = 0) {
+  place(cx: number, dt: number, reducedMotion: boolean, order = 0) {
     const { scale, depth } = this.anchor;
-    this.slot = { side: spot.side, level: spot.level };
-    const want = { x: spot.x - this.anchor.x, y: spot.y - this.anchor.y };
-    if (!this.off || reducedMotion) this.off = want;
-    else {
-      const k = 1 - Math.exp(-dt / GLIDE_TAU);
-      this.off = { x: this.off.x + (want.x - this.off.x) * k, y: this.off.y + (want.y - this.off.y) * k };
-    }
-    const x = this.anchor.x + this.off.x;
+    const want = cx - this.anchor.x;
+    this.off = this.off === null || reducedMotion ? want : this.off + (want - this.off) * (1 - Math.exp(-dt / GLIDE_TAU));
+    const x = this.anchor.x + this.off;
     const now = this.scene.time.now;
     let a = scale < 1 ? 0.85 : 1;
     if (!reducedMotion) {
@@ -86,7 +84,7 @@ export class Bubble {
     } else if (this.hiding) a = 0;
     // Hình đuôi rộng -2…8 quanh mũi, mũi nằm 12 px bên trái đỉnh đầu; giữ đáy đuôi trong phần thẳng của viền.
     this.tail.setX(Math.min(Math.max((this.anchor.x - x) / scale - 12, 11 - this.w / 2), this.w / 2 - 17));
-    this.root.setPosition(x, this.anchor.y + this.off.y - (this.h / 2) * scale)
+    this.root.setPosition(x, this.anchor.y - (this.h / 2) * scale)
       .setScale(scale).setDepth(depth + order).setAlpha(a).setVisible(a > 0);
   }
 
@@ -104,7 +102,6 @@ export class Bubble {
     this.text = "";
     this.hidingAt = -1;
     this.off = null;
-    this.slot = null;
   }
 }
 
@@ -129,7 +126,6 @@ export class BubblePool {
       this.live.splice(this.live.indexOf(b), 1);
       // Không `hide()`: cướp nhau mỗi frame mà reset độ hiện dần thì cả đám tàng hình.
       b.off = null;
-      b.slot = null;
       this.steals++;
       this.onSteal?.();
     }
@@ -154,12 +150,11 @@ export class BubblePool {
   }
 
   /** Gọi sau khi camera đã cuộn xong frame này, không thì kẹp vào khung cũ. */
-  layout(view: { left: number; right: number; top: number }, keepOut: readonly Box[], now: number, reducedMotion: boolean) {
+  layout(view: { left: number; right: number }, keepOut: readonly Box[], now: number, reducedMotion: boolean) {
     const dt = this.lastNow < 0 ? 0 : Math.min(0.05, (now - this.lastNow) / 1000);
     this.lastNow = now;
-    // `live` đã theo thứ tự nói trước vì `acquire` chỉ đẩy vào cuối; buộc phải chồng thì câu mới nhất nằm trên.
-    const spots = stackBubbles(this.live.map((b) => ({ x: b.anchor.x, y: b.anchor.y, ...b.size, prev: b.slot })), view, keepOut);
-    this.live.forEach((b, i) => b.place(spots[i], dt, reducedMotion, i * 1e-3));
+    const rank = [...this.live].sort((a, b) => a.saidAt - b.saidAt);
+    for (const b of this.live) b.place(bubbleX({ x: b.anchor.x, y: b.anchor.y, ...b.size }, view, keepOut), dt, reducedMotion, rank.indexOf(b) * 1e-3);
   }
 
   get liveCount() { return this.live.length; }

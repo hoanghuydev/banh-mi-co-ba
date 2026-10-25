@@ -1438,7 +1438,7 @@ export class StallScene extends Phaser.Scene {
     this.quest("GIAO", true);
     // Mình nói ra chuyện vừa cho thêm — bong bóng của người chơi, ngay lúc chìa ổ bánh.
     // Câu đáp của khách tới sau ~0,2–0,4 s (`BARK_DELAY_MIN`), nên hai bong bóng chồng nhau một
-    // quãng: đúng như hai người nói chuyện, và `bubbleLayout` lo chuyện chúng không đè lên nhau.
+    // quãng: đúng như hai người nói chuyện.
     if (res.playerSay) this.sayAsPlayer(res.playerSay, bubbleLife(res.playerSay, this.readMul()));
 
     this.handSoiled = false;
