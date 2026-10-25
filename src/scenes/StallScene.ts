@@ -82,6 +82,7 @@ import { StallAudio } from "../audio/stallAudio";
 import { reveal } from "../ui/transition";
 import { ART_SHARE, LOADING, loadingShown, setStep } from "../ui/bootScreen";
 import { boostSlice, runSteps, type Step } from "../art/steps";
+import { trail } from "../dev/trail";
 import { holdLoop } from "../core/loopHold";
 
 const WIPE_LABEL = "đang lau thớt";
@@ -351,7 +352,7 @@ export class StallScene extends Phaser.Scene {
     const run = ++this.buildRun;
     const hold = `stall-build-${run}`;
     const release = boostSlice();
-    const done = () => { release(); holdLoop(this.game, hold, false); };
+    const done = () => { release(); holdLoop(this.game, hold, false); trail("vào quán xong"); };
     this.undo = [];
     // Trả giữ vòng lặp ở `finally`, không ở đây: thức vòng lặp giữa lúc SceneManager xử lý hàng đợi sẽ chạy lại lệnh start.
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -369,7 +370,7 @@ export class StallScene extends Phaser.Scene {
     holdLoop(this.game, hold, true);
     const shown = loadingShown();
     void runSteps(this.buildSteps(done).map(live), undefined,
-      (n, total) => { if (shown && run === this.buildRun) setStep(LOADING, ART_SHARE + (1 - ART_SHARE) * n / total); })
+      (n, total) => { trail(`dựng quán ${n}/${total}`); if (shown && run === this.buildRun) setStep(LOADING, ART_SHARE + (1 - ART_SHARE) * n / total); })
       .catch((e) => { if (e !== STOPPED) throw e; })
       .finally(done);
   }
