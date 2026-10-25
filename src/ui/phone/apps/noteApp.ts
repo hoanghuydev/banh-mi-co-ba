@@ -53,7 +53,7 @@ export function noteList(ctx: AppCtx) {
     body.append(card);
   }
   return page(
-    navBar(ctx, { back: { label: "Màn chính", to: { app: "home" } }, right: compose }),
+    navBar(ctx, { title: "Note", shortOnly: true, back: { label: "Màn chính", to: { app: "home" } }, right: compose }),
     el("div", "ph-title-l", "Note"),
     scroller(body),
   );

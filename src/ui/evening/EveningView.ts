@@ -18,12 +18,14 @@ const STYLE = `
 .ev-says{margin-top:12px;padding-left:10px;border-left:3px solid #ddd2b8}
 .ev-say{font-style:italic;color:#4a5a6a;margin:4px 0;font-size:max(14px,.9em);line-height:1.5}
 .ev-says .ev-note{margin-top:4px;font-style:italic}
-.ev-btn{position:relative;font:inherit;font-size:max(14px,.92em);padding:8px 18px;border-radius:6px;border:1px solid #2f5d8a;background:#2f5d8a;color:#fff;cursor:pointer;min-height:44px;min-width:88px}
-.ev-btn.ghost{background:#fbf7ec;color:#2f5d8a}
+.ev-btn{position:relative;font:inherit;font-size:max(14px,.92em);padding:8px 18px;border-radius:6px;border:1px solid #2f5d8a;background:#2f5d8a;color:#fff;cursor:pointer;min-height:48px;min-width:88px}
+.ev-btn.ghost{background:#fbf7ec;color:#2f5d8a;margin-top:6px}
+.ev-btn.sleep{min-height:48px;min-width:132px;background:#c0392b;border-color:#c0392b;font-weight:700;margin-left:auto;box-shadow:0 3px 10px rgba(192,57,43,.35)}
+.ev-btn.sleep:focus-visible{outline-color:#c0392b}
 .ev-badge[hidden]{display:none}
-.ev-badge{position:absolute;top:-8px;right:-8px;min-width:24px;height:24px;padding:0 6px;border-radius:12px;background:#e03a2c;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px #efe6d2;font-variant-numeric:tabular-nums}
+.ev-badge{position:absolute;top:-12px;right:-10px;min-width:24px;height:24px;padding:0 6px;border-radius:12px;background:#e03a2c;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px #efe6d2;font-variant-numeric:tabular-nums}
 .ev-btn:focus-visible{outline:2px solid #2f5d8a;outline-offset:2px}
-.ev-foot{display:flex;justify-content:space-between;gap:12px;padding:10px 20px;border-top:2px solid #cdbf9f}
+.ev-foot{display:flex;align-items:center;gap:16px;padding:8px 20px 10px;border-top:2px solid #cdbf9f}
 `;
 
 const money = (v: number) => `${Math.round(v).toLocaleString("vi-VN")}₫`;
@@ -102,7 +104,7 @@ export class EveningView {
 
   private foot() {
     const foot = this.el("div", "ev-foot");
-    const sleep = this.el("button", "ev-btn", "Đi ngủ");
+    const sleep = this.el("button", "ev-btn sleep", "Đi ngủ");
     sleep.type = "button";
     sleep.onclick = () => this.opts.onSleep();
     if (this.opts.onPhone) {

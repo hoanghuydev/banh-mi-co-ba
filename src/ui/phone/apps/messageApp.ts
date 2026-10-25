@@ -11,7 +11,7 @@ export function messageList(ctx: AppCtx): HTMLElement {
   if (!threads.length) list.append(el("div", "ph-blank", "Chưa có tin nhắn"));
   for (const t of threads) list.append(threadRow(ctx, t));
   return page(
-    navBar(ctx, { back: { label: "Màn chính", to: { app: "home" } } }),
+    navBar(ctx, { title: "Message", shortOnly: true, back: { label: "Màn chính", to: { app: "home" } } }),
     el("div", "ph-title-l", "Message"),
     scroller(list),
   );

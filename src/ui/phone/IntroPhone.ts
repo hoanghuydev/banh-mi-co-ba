@@ -98,14 +98,16 @@ export class IntroPhone {
     this.opts.onChaptersDone(this.phone);
   }
 
-  /** Hiện hết phần còn lại của cuộc trò chuyện đang đọc, dừng ở nút Tiếp. */
+  /** Điền hết các cuộc còn lại rồi sang bước kế. */
   skip() {
+    if (this.ended) return;
     clearTimeout(this.timer);
-    const c = this.chapter();
-    const from = this.shown();
-    while (this.bi < c.beats.length) beatToMsg(this.phone, c, c.beats[this.bi++]);
-    this.waiting = false;
-    this.render("", from);
+    for (let ci = this.ci; ci < this.opts.chapters.length; ci++) {
+      const c = this.opts.chapters[ci];
+      for (let bi = ci === this.ci ? this.bi : 0; bi < c.beats.length; bi++) beatToMsg(this.phone, c, c.beats[bi]);
+    }
+    this.ended = true;
+    this.opts.onChaptersDone(this.phone);
   }
 
   /** `fromIdx`: bong bóng từ vị trí này trở đi mới có hiệu ứng hiện. */
@@ -117,8 +119,8 @@ export class IntroPhone {
     const nav = el("div", "ph-nav");
     const done = this.bi >= c.beats.length && !this.waiting;
     const r = el("div", "r");
-    if (!done) r.append(btn("ph-btn-text muted", "Bỏ qua", () => this.skip(), "Bỏ qua cuộc trò chuyện này"));
-    nav.style.gridTemplateColumns = "20px 1fr 90px";
+    r.append(btn("ph-skip", "Bỏ qua", () => this.skip(), "Bỏ qua phần giới thiệu"));
+    nav.style.gridTemplateColumns = "20px 1fr 120px";
     nav.append(el("div"), el("div", "t", ct.name), r);
     if (ct.group) (nav.querySelector(".t") as HTMLElement).append(el("small", "", `${(MEMBERS[ct.id]?.length ?? 0) + 1} thành viên`));
 
