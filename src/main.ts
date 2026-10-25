@@ -41,6 +41,9 @@ const game = new Phaser.Game({
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   render: { pixelArt: false, antialias: true, roundPixels: true, powerPreference: "high-performance" },
   fps: { target: FPS_LIMIT, limit: FPS_LIMIT },
+  // Không dùng preFX/postFX; bật thì Phaser dựng sẵn hơn trăm render target chiếm vài trăm MB.
+  disablePreFX: true,
+  disablePostFX: true,
   scene: [BootScene, MenuScene, IntroScene, DayScene, StallScene, EveningScene, BrokeScene, WinScene],
 });
 

@@ -55,7 +55,29 @@ function installDepthGuard() {
 }
 
 /** Phải chạy trước khi dựng game. */
+type PixelCopy = { imageData: ImageData | null; data: Uint8ClampedArray | null; pixels: Uint32Array | null; buffer: ArrayBuffer | null };
+
+const dropPixels = <T>(t: T): T => {
+  Object.assign(t as PixelCopy, { imageData: null, data: null, pixels: null, buffer: null });
+  return t;
+};
+
+/** CanvasTexture giữ một bản ImageData của cả canvas mà game không đọc; trên iOS đó là trăm MB chết. */
+function installCanvasPixelDrop() {
+  const CT = Phaser.Textures.CanvasTexture.prototype as unknown as { update(): unknown };
+  CT.update = function (this: PixelCopy) { return dropPixels(this); };
+  const TM = Phaser.Textures.TextureManager.prototype as unknown as Record<"createCanvas" | "addCanvas", (...a: unknown[]) => unknown>;
+  for (const k of ["createCanvas", "addCanvas"] as const) {
+    const native = TM[k];
+    TM[k] = function (this: unknown, ...a: unknown[]) {
+      const t = native.apply(this, a);
+      return t ? dropPixels(t) : t;
+    };
+  }
+}
+
 export function installPhaserPatches() {
   installFrameCap();
   installDepthGuard();
+  installCanvasPixelDrop();
 }
