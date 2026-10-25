@@ -4,7 +4,7 @@ import { sfx } from "../audio/sfx";
 import { preloadBackdrop } from "../ui/backdrop";
 import { fadeOut, paintTick, setLoading, setStep } from "../ui/bootScreen";
 
-const FONT_TIMEOUT_MS = 3000;
+const FONT_WAIT_MS = 400;
 
 /** Ảnh phải tải xong trước `buildTextures` vì `art/photo.ts` đè lên texture vẽ code trong đó. */
 export class BootScene extends Phaser.Scene {
@@ -29,13 +29,14 @@ export class BootScene extends Phaser.Scene {
     await paintTick();
     await buildTextures(this);
 
-    // Không chờ thì chữ có dấu nhảy layout một nhịp; quá hạn thì chạy tiếp với phông dự phòng.
-    setStep("đang chờ phông chữ…", 0.96);
-    const fonts = (document as any).fonts;
+    // Chờ ngắn để chữ có dấu khỏi nhảy layout; quá hạn thì vào luôn với phông dự phòng.
+    setStep("đang mở menu…", 0.97);
+    const fonts = document.fonts;
     if (fonts?.load) {
-      const loaded = Promise.all([fonts.load('700 32px "Be Vietnam Pro"'), fonts.load('800 32px "Be Vietnam Pro"'), fonts.ready]).catch(() => {});
-      await Promise.race([loaded, new Promise((done) => setTimeout(done, FONT_TIMEOUT_MS))]);
+      const need = Promise.all([fonts.load('700 32px "Be Vietnam Pro"', "ễ"), fonts.load('800 32px "Be Vietnam Pro"', "ễ")]).catch(() => {});
+      await Promise.race([need, new Promise((done) => setTimeout(done, FONT_WAIT_MS))]);
     }
+    await paintTick();
 
     fadeOut();
     this.scene.start("menu");

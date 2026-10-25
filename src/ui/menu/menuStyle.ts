@@ -28,13 +28,20 @@ export const MENU_CSS = CLAY_CSS + `
 @media (hover:hover){.mn-root .clay-btn.ghost:hover{background:rgba(70,54,40,.75)}}
 @media (hover:none){.clay-btn:hover{transform:none}}
 
+.mn-root .clay-btn.mn-hold{overflow:hidden;flex-direction:column;gap:0;background:rgba(42,32,24,.6);color:#ffb4a6;text-shadow:none;box-shadow:0 0 0 2px #e0432f;user-select:none;-webkit-user-select:none;touch-action:none;-webkit-touch-callout:none}
+.mn-hold::before{display:none}
+.mn-hold-bar{position:absolute;inset:0;background:#e0432f;transform:scaleX(0);transform-origin:left;transition:transform .15s ease-out}
+.mn-hold.holding .mn-hold-bar{transform:scaleX(1);transition:transform 1s linear}
+.mn-hold-t,.mn-hold-s{position:relative;pointer-events:none}
+.mn-hold-t{font-weight:700}
+.mn-root .clay-btn.mn-hold.holding{color:#fff}
+.mn-root .mn-hold .mn-hold-s{font-size:.9em;font-weight:500;color:inherit}
 .mn-paper{background:rgba(247,244,236,.95);color:#222a31;border-radius:1.2em;padding:1.1em 1.2em;box-shadow:0 10px 24px rgba(0,0,0,.35)}
 .mn-paper p{margin:.6em 0 0}
 .mn-paper .mn-h{margin-bottom:.1em}
 .mn-muted{color:#5b6670}
 .mn-paper p.mn-small{font-size:.9em}
-.mn-gap{height:20px}
-.mn-sep{height:2px;margin:6px 0;background:rgba(247,241,226,.25);border-radius:1px}
+.mn-gap{height:12px}
 .mn-info{text-align:center}
 .mn-tray{padding:.5em;display:flex;flex-direction:column;gap:.5em}
 .mn-tray-h{margin:.5em .5em 0;font-size:.9em;font-weight:700;color:#e9d9b4;letter-spacing:.02em}
@@ -82,6 +89,8 @@ export const MENU_CSS = CLAY_CSS + `
   .mn-foot .clay-btn{flex:1 1 0}
 }
 
+.mn-paper.mn-about{display:block;padding:1.1em 1.2em}
+.mn-about p:first-child{margin-top:0}
 .mn-credit{font-size:.9em;color:#4a545c}
 .mn-credit p{margin:.5em 0 0}
 

@@ -16,6 +16,7 @@ type Chan = "masterVolume" | "musicVolume" | "streetVolume" | "voiceVolume" | "f
 
 const peek = () => new SaveService(bus, () => { throw new Error("peek"); });
 const vnd = (n: number) => `${n.toLocaleString("vi-VN")}₫`;
+const HOLD_MS = 1000;
 const onOff = (b: boolean) => (b ? "Bật" : "Tắt");
 
 /** Menu dựng bằng DOM phủ trên canvas; chuyển cảnh qua `onStart`. */
@@ -141,19 +142,19 @@ export class MenuDom {
     hero.append(h, el("p", "mn-sub", "Một quán nhỏ đầu hẻm, Sài Gòn"));
 
     const stack = el("div", "mn-stack");
-    stack.append(this.button("Chơi mới", () => this.startNew(), "red"));
-    const cont = this.button("", () => this.continueRun());
+    const fresh = this.button("Chơi mới", () => this.startNew(), save ? "" : "red");
     if (save) {
       const info = [cleanName(save.shopName ?? ""), `ngày ${save.progress.dayIndex}`, vnd(save.money.cash)]
         .filter(Boolean).join(" · ");
+      const cont = this.button("", () => this.continueRun(), "red");
       const col = el("span", "mn-btn-col", "Chơi tiếp");
       col.append(el("small", "", info));
       cont.append(col);
+      stack.append(cont, fresh);
     } else {
-      cont.textContent = "Chưa có ván nào";
-      cont.disabled = true;
+      stack.append(fresh);
     }
-    stack.append(cont, this.button("Cài đặt", () => this.show("settings")), this.button("Giới thiệu", () => this.show("about")));
+    stack.append(this.button("Cài đặt", () => this.show("settings")), this.button("Giới thiệu", () => this.show("about")));
     p.append(hero, stack);
     return p;
   }
@@ -181,9 +182,29 @@ export class MenuDom {
       ? `Đang chơi dở: ngày ${save.progress.dayIndex} · ${vnd(save.money.cash)}`
       : "Đang có một bản lưu."));
     card.append(el("p", "mn-info mn-muted mn-small", "Game chỉ lưu được một ván. Chơi mới là ván này mất luôn, không lấy lại được."));
-    p.append(card, this.button("Giữ ván cũ", () => this.show("main")), el("div", "mn-gap"), el("div", "mn-sep"),
-      this.button("Xoá, chơi mới", () => this.askTelemetryThenStart(), "red"));
+    p.append(card, this.button("Giữ ván cũ", () => this.show("main"), "red"), el("div", "mn-gap"),
+      this.holdButton("Xoá, chơi mới", () => this.askTelemetryThenStart()));
     return p;
+  }
+
+  private holdButton(text: string, fn: () => void) {
+    const b = el("button", "clay-btn mn-hold");
+    b.type = "button";
+    b.append(el("span", "mn-hold-bar"), el("span", "mn-hold-t", text), el("small", "mn-hold-s", "giữ 1 giây"));
+    let timer = 0;
+    const stop = () => { clearTimeout(timer); timer = 0; b.classList.remove("holding"); };
+    const start = () => {
+      if (timer) return;
+      b.classList.add("holding");
+      timer = window.setTimeout(() => { stop(); sfx.play(this.scene, "ui_click"); fn(); }, HOLD_MS);
+    };
+    b.onpointerdown = (e) => { if (e.button === 0) start(); };
+    b.onpointerup = b.onpointercancel = b.onpointerleave = stop;
+    b.onkeydown = (e) => { if ((e.key === " " || e.key === "Enter") && !e.repeat) { e.preventDefault(); start(); } };
+    b.onkeyup = stop;
+    b.onblur = stop;
+    b.oncontextmenu = (e) => e.preventDefault();
+    return b;
   }
 
   private setTelemetry(on: boolean) {
@@ -355,9 +376,7 @@ export class MenuDom {
   }
 
   private pageAbout() {
-    const p = this.page();
-    const card = el("div", "mn-paper");
-    card.append(this.heading("Giới thiệu"));
+    const card = el("div", "mn-paper mn-tray mn-about");
     for (const t of [
       "Phương Anh, 24 tuổi, nghỉ việc văn phòng sau hai năm OT không lương. Cô dồn hết tiền tiết kiệm thuê một mặt bằng nhỏ đầu hẻm và mở quán bánh mì.",
       "Khách đứng ngay trước quầy, thấy hết mọi thứ bạn làm, rồi chấm sao trên điện thoại.",
@@ -375,7 +394,6 @@ export class MenuDom {
       el("p", "", `Bản dựng thử v0.2${PLAYTEST ? " · chơi thử" : ""}`),
     );
     card.append(credit);
-    p.append(card, this.back("main"));
-    return p;
+    return this.fitPage("Giới thiệu", card, this.back("main"));
   }
 }
