@@ -24,7 +24,7 @@ export class BrokeScene extends Phaser.Scene {
     const w = this.ctx.world;
     this.cameras.main.setBackgroundColor(0x121820);
     this.add.rectangle(GAME_W / 2, GAME_H / 2, GAME_W, GAME_H, 0x121820, 1);
-    music.play(this, "toi", 2200);
+    music.play("toi", 2200);
     sfx.loop(this, "amb_toi_nha", true, {}, 2500);
     this.view = new BrokeView(w, {
       textScale: loadSettings().textScale,

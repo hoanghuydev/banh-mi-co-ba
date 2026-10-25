@@ -16,7 +16,7 @@ export class IntroScene extends Phaser.Scene {
   create() {
     fitDesignFrame(this.cameras.main);
     this.cameras.main.setBackgroundColor(0x1d232b);
-    music.play(this, "toi", 1200);
+    music.play("toi", 1200);
     const textScale = loadSettings().textScale;
     this.phone = new IntroPhone(this.game, {
       textScale,

@@ -2390,7 +2390,7 @@ export class StallScene extends Phaser.Scene {
     const cue: CueId = this.clock.isPeak ? "cao_diem"
       : this.clock.minutes < PEAK_START_MIN ? "to_mo"
         : "lang";
-    music.play(this, cue);
+    music.play(cue);
   }
 
   // ───────────────────────────────────────────────────────── tạm dừng / kết ngày

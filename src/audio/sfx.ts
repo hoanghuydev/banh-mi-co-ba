@@ -66,6 +66,9 @@ const TALK_GAIN = 0.62;
 
 const MAX_CONCURRENT = 14;
 
+/** Loop giải mã từ chừng này byte trở lên (≈ 6 s stereo) thì nhả khi tắt; loop ngắn bật tắt liên tục nên giữ. */
+const BED_BYTES = 2 * 1024 * 1024;
+
 /** Cao độ chọn tay để phân biệt NPC; hash cho ra vài cặp sát nhau nghe như một người. */
 const VOICE_PITCH: Record<string, number> = {
   BA_BAY: 1.12, BA_SAU: 1.08,
@@ -375,9 +378,19 @@ class SfxDirector {
   }
 
   private dropLoop(l: Loop) {
+    const key = l.sound.key;
     l.sound.stop();
     l.sound.destroy();
     for (const [k, v] of this.loops) if (v === l) this.loops.delete(k);
+    this.freeBed(key);
+  }
+
+  /** Nền âm dài giải mã ra hàng chục MB nên nhả khi tắt; lần sau `loop` tự nạp lại, fade-in che độ trễ. */
+  private freeBed(key: string) {
+    const cache = this.game?.cache.audio;
+    const buf = cache?.get(key) as AudioBuffer | undefined;
+    if (!cache || !buf?.length || this.game!.sound.getAll(key).some((s) => !s.pendingRemove)) return;
+    if (buf.length * buf.numberOfChannels * 4 >= BED_BYTES) cache.remove(key);
   }
 
   private duckForVoice(seconds: number) {

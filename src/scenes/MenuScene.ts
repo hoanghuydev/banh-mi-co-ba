@@ -11,7 +11,7 @@ export class MenuScene extends Phaser.Scene {
   create() {
     this.dom = new MenuDom(this, (key, data) => this.scene.start(key, data));
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { this.dom?.close(); this.dom = undefined; });
-    music.play(this, "menu");
+    music.play("menu");
     warmNpcPhotos(this);
   }
 }
