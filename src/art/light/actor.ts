@@ -215,25 +215,28 @@ export function soleRow(data: ArrayLike<number>, w: number, h: number) {
   return h;
 }
 
-/** Hàng chân theo frame, không đổi khi lật ngang; giữ lâu hơn `cache` vì đọc điểm ảnh là bước đắt nhất. */
-const feet = new Map<string, { src: unknown; foot: number }>();
+/** Hàng chân theo ảnh nguồn rồi theo frame, không đổi khi lật ngang; giữ lâu hơn `cache` vì đọc điểm ảnh là bước đắt nhất. */
+const feet = new WeakMap<object, Map<string, number>>();
 /** Ảnh khung hình của một nhân vật theo hướng và bước đi; cùng gốc là cùng một người. */
 const POSE_KEY = /^(.+?)_(?:n|ne|e|se|s|sw|w|nw)(?:_[a-z]+\d*)?$/;
 /** Phần đáy khung được đọc gộp; chân nằm cao hơn thì đọc riêng cả khung. */
 const SOLE_SLICE = 0.4;
 
-const footId = (cut: Phaser.Textures.Frame) => `${cut.texture.key}|${cut.name}`;
+const footOf = (cut: Phaser.Textures.Frame) => feet.get(cut.source.image)?.get(cut.name);
+function keepFoot(cut: Phaser.Textures.Frame, foot: number) {
+  let m = feet.get(cut.source.image);
+  if (!m) feet.set(cut.source.image, (m = new Map()));
+  m.set(cut.name, foot);
+}
 const fetched = new Set<string>();
 
-function measureFoot(img: CanvasImageSource, cut: Phaser.Textures.Frame) {
-  const hit = feet.get(footId(cut));
-  if (hit && hit.src === img) return hit.foot;
-  prefetchFeet(cut);
-  const again = feet.get(footId(cut));
-  if (again && again.src === img) return again.foot;
-  const ctx = sprite(img, cut, false);
+function measureFoot(cut: Phaser.Textures.Frame) {
+  if (footOf(cut) === undefined) prefetchFeet(cut);
+  const hit = footOf(cut);
+  if (hit !== undefined) return hit;
+  const ctx = sprite(cut.source.image as CanvasImageSource, cut, false);
   const foot = soleRow(ctx.getImageData(0, 0, cut.cutWidth, cut.cutHeight).data, cut.cutWidth, cut.cutHeight);
-  feet.set(footId(cut), { src: img, foot });
+  keepFoot(cut, foot);
   return foot;
 }
 
@@ -248,7 +251,7 @@ function prefetchFeet(cut: Phaser.Textures.Frame) {
   for (const key of manager.getTextureKeys()) {
     if (POSE_KEY.exec(key)?.[1] !== base) continue;
     const f = manager.getFrame(key);
-    if (!f || feet.get(footId(f))?.src === f.source.image) continue;
+    if (!f || footOf(f) !== undefined) continue;
     const h = Math.max(1, Math.ceil(f.cutHeight * SOLE_SLICE));
     frames.push({ f, h, y });
     w = Math.max(w, f.cutWidth);
@@ -262,7 +265,7 @@ function prefetchFeet(cut: Phaser.Textures.Frame) {
   for (const { f, h, y: at } of frames) {
     for (let r = h - 1; r >= 0; r--) {
       if (!opaqueRow(data, w, at + r)) continue;
-      feet.set(footId(f), { src: f.source.image, foot: f.cutHeight - h + r + 1 });
+      keepFoot(f, f.cutHeight - h + r + 1);
       break;
     }
   }
@@ -405,7 +408,7 @@ export class ActorLight {
       e = undefined;
     }
     if (e) cache.delete(key);
-    e ??= { src, users: 0, foot: measureFoot(src as CanvasImageSource, frame) };
+    e ??= { src, users: 0, foot: measureFoot(frame) };
     cache.set(key, e);
     evict(this.scene.textures);
     e.users++;
