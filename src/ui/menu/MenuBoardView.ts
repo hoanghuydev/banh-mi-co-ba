@@ -57,6 +57,33 @@ const STYLE = `
 .mb-btn{font:inherit;font-size:1em;padding:7px 18px;border-radius:6px;border:1px solid #b8ab8e;background:#fbf7ec;color:#2b2f31;cursor:pointer;min-height:44px;min-width:88px}
 .mb-btn:focus-visible{outline:2px solid #fff2c6;outline-offset:2px}
 
+.mb-x{position:absolute;top:-4px;right:-4px;z-index:3;width:44px;height:44px;padding:0;border-radius:50%;font:inherit;font-size:1.5em;line-height:1;border:1px solid #b8ab8e;background:#fbf7ec;color:#2b2f31;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.45)}
+.mb-x:focus-visible{outline:2px solid #fff2c6;outline-offset:2px}
+.mb-card.t{position:relative;width:min(720px,100%);height:100%}
+.mb-card.t .mb-board{flex:1 1 auto;min-height:0;margin-top:0;border-width:22px;border-image-width:22px;border-image-source:url(art/menu_khung.webp)}
+.mb-card.t .mb-board-in{padding:2px 6px 2px 2px}
+.mb-card.t .mb-head{display:flex;align-items:baseline;flex-wrap:wrap;gap:0 14px;padding-right:46px}
+.mb-card.t .mb-rau{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;margin:6px 0 2px}
+.mb-card.t .mb-rau .mb-sec,.mb-card.t .mb-rau .mb-ing{margin:0}
+.mb-card.t .mb-mrow .info{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}
+.mb-card.t .mb-mrow .info .mb-ing{margin:0}
+.mb-card.t .mb-ten{font-size:1.2em}
+.mb-card.t .mb-sec{font-size:max(14px,.82em);font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#edbe62;margin:8px 0 2px}
+.mb-card.t .mb-ing{margin-top:4px}
+.mb-card.t .mb-ing>span{border-color:rgba(248,217,120,.5);background:rgba(255,255,255,.07);color:#ffe9b0;padding:2px 10px}
+.mb-card.t .mb-ing>span.nhan{border-color:#f8d978;background:rgba(248,217,120,.16);color:#fff2c6}
+.mb-card.t .mb-ing i{color:#f8d978}
+.mb-card.t .mb-mrow{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px dashed rgba(248,217,120,.25)}
+.mb-card.t .mb-mrow .info{flex:1;min-width:0}
+.mb-card.t .mb-mrow .n{font-weight:700}
+.mb-card.t .mb-mrow .trong{font-size:max(14px,.88em);color:#ded5c6}
+.mb-card.t .mb-pk{display:flex;gap:5px;margin:0;flex:none}
+.mb-card.t .mb-pk button{min-width:52px;padding:5px 6px}
+.mb-card.t .mb-chan{margin-top:8px;padding-top:8px}
+.mb-card.t .mb-tip .d{border-bottom-color:rgba(248,217,120,.4)}
+.mb-card.t .mb-tip{color:#ffe9b0}
+.mb-card.t .mb-tip .s{color:#f8d978}
+
 @media (max-height:640px){
   .mb-root{padding:max(10px,var(--safe-top)) max(10px,var(--safe-right)) max(10px,var(--safe-bottom)) max(10px,var(--safe-left))}
   .mb-row{padding:4px 0}
@@ -207,6 +234,72 @@ export class MenuBoardView {
     return b;
   }
 
+  private touchBoard(): HTMLElement {
+    const b = this.el("div", "mb-board");
+    const inner = this.el("div", "mb-board-in");
+    const head = this.el("div", "mb-head");
+    head.appendChild(this.el("div", "mb-ten", shopName(this.opts.shopName ?? "")));
+    head.appendChild(this.el("div", "mb-gio", "bán từ 6 giờ sáng"));
+    inner.appendChild(head);
+
+    const rau0 = this.el("div", "mb-rau");
+    rau0.appendChild(this.el("div", "mb-sec", "Rau nền"));
+    rau0.appendChild(this.chipRow((i) => (i.kind === "nhan" ? 0 : RAU_NEN[i.id] ?? 0)));
+    inner.appendChild(rau0);
+
+    inner.appendChild(this.el("div", "mb-sec", "Món · giá bán · nhân"));
+    for (const it of this.shown()) {
+      const pick = pickOf(this.opts.prices, it.id);
+      const row = this.el("div", "mb-mrow");
+      const info = this.el("div", "info");
+      info.appendChild(this.el("div", "n", it.name));
+      const lv = this.levels(it);
+      const nhan = this.chipRow((i) => (i.kind === "nhan" ? lv[i.id] ?? 0 : 0));
+      info.appendChild(nhan.childElementCount ? nhan : this.el("div", "trong", "không nhân"));
+      const khacNen = INGREDIENTS.some((i) => i.kind !== "nhan" && (lv[i.id] ?? 0) !== (RAU_NEN[i.id] ?? 0));
+      if (khacNen) {
+        const rau = this.chipRow((i) => (i.kind === "nhan" ? 0 : lv[i.id] ?? 0));
+        info.appendChild(rau.childElementCount ? rau : this.el("div", "trong", "không rau"));
+      }
+      row.appendChild(info);
+
+      const pk = this.el("div", "mb-pk");
+      pk.setAttribute("role", "group");
+      pk.setAttribute("aria-label", `Giá bán — ${it.name}`);
+      for (const i of [0, 1, 2] as const) {
+        const bt = this.el("button", "", `${it.k[i]}k`);
+        bt.type = "button";
+        bt.setAttribute("aria-pressed", String(pick === i));
+        bt.dataset.k = `${it.id}-${i}`;
+        bt.onclick = () => { this.opts.prices[it.id] = i; this.render(`${it.id}-${i}`); };
+        pk.appendChild(bt);
+      }
+      row.appendChild(pk);
+      inner.appendChild(row);
+    }
+
+    const chan = this.el("div", "mb-chan");
+    if (isOpen("daydu", this.opts.day)) {
+      const db = this.el("div");
+      db.append("thêm một thứ nhân — +");
+      db.appendChild(this.el("b", "", tien(vnd(ECON.menu.extra_k))));
+      chan.appendChild(db);
+    }
+    for (const d of MENU_DRINKS) chan.appendChild(this.el("div", "", `${d.name} — ${d.price}`));
+    inner.appendChild(chan);
+
+    inner.appendChild(this.el("div", "mb-sec", "Khách dặn thêm"));
+    for (const t of MENU_TIPS) {
+      const row = this.el("div", "mb-tip");
+      row.appendChild(this.el("span", "s", t.say));
+      row.appendChild(this.el("span", "d"));
+      row.appendChild(this.el("span", "", t.means));
+      inner.appendChild(row);
+    }
+    b.appendChild(inner);
+    return b;
+  }
+
   private paper(): HTMLElement {
     const p = this.el("div", "mb-giay");
     p.appendChild(this.el("div", "mb-bang"));
@@ -252,18 +345,28 @@ export class MenuBoardView {
     const scroll = [".mb-board-in", ".mb-giay-in"].map((s) => this.root.querySelector<HTMLElement>(s)?.scrollTop ?? 0);
     this.root.textContent = "";
 
-    const card = this.el("div", "mb-card");
-    const cols = this.el("div", "mb-cols");
-    cols.appendChild(this.board());
-    cols.appendChild(this.paper());
-    card.appendChild(cols);
+    const touch = isTouch();
+    const card = this.el("div", touch ? "mb-card t" : "mb-card");
+    if (touch) {
+      card.appendChild(this.touchBoard());
+      const x = this.el("button", "mb-x", "×");
+      x.type = "button";
+      x.setAttribute("aria-label", "Đóng");
+      x.onclick = () => this.close();
+      card.appendChild(x);
+    } else {
+      const cols = this.el("div", "mb-cols");
+      cols.appendChild(this.board());
+      cols.appendChild(this.paper());
+      card.appendChild(cols);
 
-    const bar = this.el("div", "mb-bar");
-    if (!isTouch()) bar.appendChild(this.el("span", "", "Esc hoặc E — đóng"));
-    const btn = this.el("button", "mb-btn", "Đóng");
-    btn.onclick = () => this.close();
-    bar.appendChild(btn);
-    card.appendChild(bar);
+      const bar = this.el("div", "mb-bar");
+      bar.appendChild(this.el("span", "", "Esc hoặc E — đóng"));
+      const btn = this.el("button", "mb-btn", "Đóng");
+      btn.onclick = () => this.close();
+      bar.appendChild(btn);
+      card.appendChild(bar);
+    }
 
     this.root.appendChild(card);
     [".mb-board-in", ".mb-giay-in"].forEach((s, i) => { const e = this.root.querySelector<HTMLElement>(s); if (e) e.scrollTop = scroll[i]; });

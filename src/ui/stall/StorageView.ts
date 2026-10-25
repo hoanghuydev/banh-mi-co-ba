@@ -3,6 +3,7 @@ import { GOODS, QUALITIES, type GoodId, type InventoryState } from "../../sim/ec
 import { fmtUnits } from "../../sim/day";
 import { coldUsage, freshnessOf, stacksOf, type Freshness, type Stack } from "../../sim/stock";
 import { CLAY_CSS } from "../clayCss";
+import { isTouch } from "../../core/device";
 import { guardStrayClick } from "../tapGuard";
 
 const STYLE = `
@@ -59,6 +60,24 @@ const STYLE = `
 .sv-btn{font-size:1em;min-width:7em;min-height:max(44px,2.6em)}
 .sv-btn:focus-visible{outline:2px solid #fff2c6;outline-offset:3px}
 
+.sv-x{display:none}
+.sv-root.t{justify-content:flex-end;align-items:stretch;padding:0;background:rgba(12,15,18,.4)}
+.sv-root.t .sv-card{display:flex;flex-direction:column;position:relative;width:max(45vw,340px);max-height:none;height:100%;gap:8px;padding:max(8px,var(--safe-top)) max(10px,var(--safe-right)) max(8px,var(--safe-bottom)) 12px;border-radius:18px 0 0 18px}
+.sv-root.t .sv-head{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;align-items:center;padding-right:52px}
+.sv-root.t .sv-head img{grid-row:span 2;height:40px}
+.sv-root.t .sv-ten{font-size:1.1em}
+.sv-root.t .sv-cold{flex:none;font-size:max(14px,.9em)}
+.sv-root.t .sv-x{display:flex;align-items:center;justify-content:center;position:absolute;top:max(6px,var(--safe-top));right:max(8px,var(--safe-right));width:44px;height:44px;padding:0;min-height:0;border-radius:50%;font:inherit;font-size:1.5em;line-height:1}
+.sv-root.t .sv-foot{display:none}
+.sv-root.t .sv-body{flex-direction:column;gap:8px;overflow:auto}
+.sv-root.t .sv-grid{flex:0 0 auto;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:8px;overflow:visible}
+.sv-root.t .sv-cell{aspect-ratio:1.1}
+.sv-root.t .sv-det{flex:0 0 auto;display:flex;flex-direction:row;flex-wrap:wrap;align-content:flex-start;align-items:center;gap:4px 10px;padding:8px 10px;overflow:visible}
+.sv-root.t .sv-det .pic{display:none}
+.sv-root.t .sv-det .row,.sv-root.t .sv-det .bar,.sv-root.t .sv-det .han{flex:1 1 100%;text-align:left}
+.sv-root.t .sv-det .han{flex:1 1 auto}
+@media (max-height:400px){.sv-root.t .sv-cell{aspect-ratio:1.35}.sv-root.t .sv-head img{height:34px}}
+
 @media (max-width:700px){
   .sv-body{flex-direction:column;overflow:auto}
   .sv-grid{flex:0 0 auto;grid-template-columns:repeat(4,minmax(0,1fr))}
@@ -85,6 +104,7 @@ const STYLE = `
 `;
 
 const COLS = 5;
+const TOUCH_COLS = 4;
 const MIN_CELLS = 20;
 
 const SNOW = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 2v20M3.3 7l17.4 10M3.3 17L20.7 7M9 3.5l3 2.5 3-2.5M9 20.5l3-2.5 3 2.5"/></svg>`;
@@ -108,11 +128,13 @@ export class StorageView {
   private stacks: Stack[];
   private sel = 0;
   private cells: HTMLButtonElement[] = [];
+  private touch = isTouch();
+  private cols = this.touch ? TOUCH_COLS : COLS;
   private det!: HTMLDivElement;
   private keyGuard = (ev: KeyboardEvent) => {
     if (ev.code === "Escape" || ev.code === "KeyE") { ev.preventDefault(); this.close(); return; }
     if (ev.code === "KeyP") return;
-    const step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -COLS, ArrowDown: COLS, KeyA: -1, KeyD: 1, KeyW: -COLS, KeyS: COLS }[ev.code];
+    const step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -this.cols, ArrowDown: this.cols, KeyA: -1, KeyD: 1, KeyW: -this.cols, KeyS: this.cols }[ev.code];
     if (step) {
       ev.preventDefault();
       const to = this.sel + step;
@@ -129,7 +151,7 @@ export class StorageView {
       document.head.appendChild(st);
     }
     this.stacks = stacksOf(opts.inventory, opts.day);
-    this.root = this.el("div", "sv-root");
+    this.root = this.el("div", this.touch ? "sv-root t" : "sv-root");
     this.root.style.fontSize = `${Math.round(16 * opts.textScale)}px`;
     this.root.addEventListener("keydown", this.keyGuard, true);
     this.root.addEventListener("keyup", (e) => { if (e.code !== "KeyP") e.stopPropagation(); }, true);
@@ -173,6 +195,14 @@ export class StorageView {
     foot.appendChild(close);
     card.appendChild(foot);
 
+    if (this.touch) {
+      const x = this.el("button", "sv-x clay-btn", "×");
+      x.type = "button";
+      x.setAttribute("aria-label", "Đóng");
+      x.onclick = () => this.close();
+      card.appendChild(x);
+    }
+
     if (this.stacks.length) this.select(0);
     return card;
   }
@@ -195,7 +225,7 @@ export class StorageView {
   private grid(): HTMLElement {
     const g = this.el("div", "sv-grid");
     g.setAttribute("role", "list");
-    const total = Math.max(MIN_CELLS, Math.ceil(this.stacks.length / COLS) * COLS);
+    const total = this.touch ? Math.ceil(this.stacks.length / this.cols) * this.cols : Math.max(MIN_CELLS, Math.ceil(this.stacks.length / COLS) * COLS);
     for (let i = 0; i < total; i++) {
       const s = this.stacks[i];
       if (!s) {
@@ -275,8 +305,7 @@ export class StorageView {
       pic,
       this.el("div", "nm", GOODS[s.good].label.replace(/^./u, (c) => c.toUpperCase())),
       chips,
-      row("Số lượng", `${fmtUnits(s.left)} ${GOODS[s.good].unit}`),
-      row("Nhập", this.ageText(s.age)),
+      ...(this.touch ? [] : [row("Số lượng", `${fmtUnits(s.left)} ${GOODS[s.good].unit}`), row("Nhập", this.ageText(s.age))]),
       row("Độ ngon", `${Math.round(s.quality * 100)}%`),
       bar,
       this.el("div", `han ${fr}`, this.hanText(s)),
