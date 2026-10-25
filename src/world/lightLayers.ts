@@ -90,6 +90,41 @@ function leafStrengthAt(sx: number, sy: number) {
   return (LEAF_INDOOR + (1 - LEAF_INDOOR) * c * c * (3 - 2 * c)) * (1 - 0.45 * roadWeight(worldAt(sx, sy).wy));
 }
 
+const COVER_BLOCK = 8;
+
+/** Tra nhanh một vùng của ảnh nắng có đều 255 hay đều 0 không, qua bảng cộng dồn theo khối. */
+function coverOf(img: ImageData) {
+  const { width: w, height: h, data } = img;
+  const bw = Math.ceil(w / COVER_BLOCK), bh = Math.ceil(h / COVER_BLOCK);
+  const lit = new Int32Array((bw + 1) * (bh + 1));
+  const dark = new Int32Array((bw + 1) * (bh + 1));
+  for (let by = 0; by < bh; by++) {
+    for (let bx = 0; bx < bw; bx++) {
+      let anyLit = 0, anyDark = 0;
+      for (let y = by * COVER_BLOCK; y < Math.min(h, (by + 1) * COVER_BLOCK); y++) {
+        for (let x = bx * COVER_BLOCK; x < Math.min(w, (bx + 1) * COVER_BLOCK); x++) {
+          const a = data[(y * w + x) * 4 + 3];
+          if (a > 0) anyLit = 1;
+          if (a < 255) anyDark = 1;
+        }
+      }
+      const i = (by + 1) * (bw + 1) + bx + 1;
+      lit[i] = anyLit + lit[i - 1] + lit[i - bw - 1] - lit[i - bw - 2];
+      dark[i] = anyDark + dark[i - 1] + dark[i - bw - 1] - dark[i - bw - 2];
+    }
+  }
+  const sum = (t: Int32Array, x0: number, y0: number, x1: number, y1: number) =>
+    t[y1 * (bw + 1) + x1] - t[y0 * (bw + 1) + x1] - t[y1 * (bw + 1) + x0] + t[y0 * (bw + 1) + x0];
+  return (x0: number, y0: number, x1: number, y1: number) => {
+    if (x0 < 0 || y0 < 0 || x1 > w || y1 > h || x1 <= x0 || y1 <= y0) return -1;
+    const bx0 = Math.floor(x0 / COVER_BLOCK), by0 = Math.floor(y0 / COVER_BLOCK);
+    const bx1 = Math.ceil(x1 / COVER_BLOCK), by1 = Math.ceil(y1 / COVER_BLOCK);
+    if (sum(dark, bx0, by0, bx1, by1) === 0) return 1;
+    if (sum(lit, bx0, by0, bx1, by1) === 0) return 0;
+    return -1;
+  };
+}
+
 /** Lightmap, phản chiếu và đốm lá của sàn cùng các đạo cụ đứng yên. */
 export class SceneLight {
   private readonly props: Prop[] = [];
@@ -164,7 +199,7 @@ export class SceneLight {
       sunPixels.data[o + 3] = Math.round(Math.min(1, Math.max(0, sun.data[i])) * 255);
     }
     sunCtx.putImageData(sunPixels, 0, 0);
-    env.sunLayer = { canvas: sunCanvas, x: ground.x, y: ground.y, scale };
+    env.sunLayer = { canvas: sunCanvas, x: ground.x, y: ground.y, scale, cover: coverOf(sunPixels) };
     env.sun = (sx, sy) => {
       const ix = Math.floor((sx - ground.x) * scale), iy = Math.floor((sy - ground.y) * scale);
       if (ix < 0 || iy < 0 || ix >= sun.w || iy >= sun.h) return 1;

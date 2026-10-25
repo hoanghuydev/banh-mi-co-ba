@@ -13,7 +13,11 @@ export type LightEnv = {
   /** Phần nắng tới được điểm trên sàn tại toạ độ màn hình thiết kế (0 = bóng đổ hoặc dưới lá, 1 = nắng đầy). */
   sun(sx: number, sy: number): number;
   /** Ảnh nắng của sàn (alpha = nắng) để bóng người chỉ hiện ở chỗ còn nắng; thiếu thì bóng người không bị cắt. */
-  sunLayer?: { canvas: HTMLCanvasElement; x: number; y: number; scale: number };
+  sunLayer?: {
+    canvas: HTMLCanvasElement; x: number; y: number; scale: number;
+    /** Vùng px canvas [x0, x1) × [y0, y1): 1 = nắng đầy cả vùng, 0 = không chút nắng, −1 = lẫn hoặc ra ngoài canvas. */
+    cover(x0: number, y0: number, x1: number, y1: number): number;
+  };
 };
 
 /** Độ sâu các lớp sáng trên sàn; sprite đạo cụ và người dùng `depthOf` nên luôn nằm trên. */

@@ -251,7 +251,15 @@ function aoTexture(scene: Phaser.Scene) {
   tex.refresh();
 }
 
-type Live = { key: string; tex: Phaser.Textures.CanvasTexture; w: number; h: number; src: HTMLCanvasElement | null; x: number; y: number };
+type Live = {
+  key: string; tex: Phaser.Textures.CanvasTexture; w: number; h: number;
+  src: HTMLCanvasElement | null; x: number; y: number;
+  /** Đang giữ nguyên bóng bake, chưa cắt theo nắng. */
+  plain: boolean;
+};
+
+/** Lề px ảnh nắng quanh vùng lấy mẫu, phủ phần lọc song tuyến đọc lấn ra. */
+const COVER_PAD = 4;
 
 type ReflMask = { env: LightEnv; gfx: Phaser.GameObjects.Graphics; mask: Phaser.Display.Masks.GeometryMask; users: number };
 
@@ -419,21 +427,30 @@ export class ActorLight {
       const key = `actor-live${serial++}`;
       const tex = this.scene.textures.createCanvas(key, baked.width, baked.height);
       if (!tex) return false;
-      live = { key, tex, w: baked.width, h: baked.height, src: null, x: NaN, y: NaN };
+      live = { key, tex, w: baked.width, h: baked.height, src: null, x: NaN, y: NaN, plain: false };
       this.lives[slot] = live;
     }
-    if (live.src !== baked || Math.abs(live.x - px) > 0.25 || Math.abs(live.y - py) > 0.25) {
-      const s = k / BAKE_RES;
+    const s = k / BAKE_RES;
+    const sx = (px - L.ox * live.w * s - layer.x) * layer.scale, sy = (py - L.oy * live.h * s - layer.y) * layer.scale;
+    const sw = live.w * s * layer.scale, sh = live.h * s * layer.scale;
+    // Nắng đều cả vùng thì cắt cũng ra y nguyên bóng bake (hoặc rỗng), khỏi vẽ lại mỗi lần nhích.
+    const cover = layer.cover(Math.floor(sx) - COVER_PAD, Math.floor(sy) - COVER_PAD, Math.ceil(sx + sw) + COVER_PAD, Math.ceil(sy + sh) + COVER_PAD);
+    if (cover === 0) return false;
+    const plain = cover === 1;
+    const stale = plain ? !live.plain : live.plain || Math.abs(live.x - px) > 0.25 || Math.abs(live.y - py) > 0.25;
+    if (live.src !== baked || stale) {
       const ctx = live.tex.getContext();
       ctx.globalCompositeOperation = "source-over";
       ctx.clearRect(0, 0, live.w, live.h);
       ctx.drawImage(baked, 0, 0);
-      ctx.globalCompositeOperation = "destination-in";
-      const dx = px - L.ox * live.w * s, dy = py - L.oy * live.h * s;
-      ctx.drawImage(layer.canvas, (dx - layer.x) * layer.scale, (dy - layer.y) * layer.scale, live.w * s * layer.scale, live.h * s * layer.scale, 0, 0, live.w, live.h);
-      ctx.globalCompositeOperation = "source-over";
+      if (!plain) {
+        ctx.globalCompositeOperation = "destination-in";
+        ctx.drawImage(layer.canvas, sx, sy, sw, sh, 0, 0, live.w, live.h);
+        ctx.globalCompositeOperation = "source-over";
+      }
       live.tex.refresh();
       live.src = baked;
+      live.plain = plain;
       live.x = px;
       live.y = py;
     }
