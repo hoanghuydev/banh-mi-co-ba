@@ -61,6 +61,7 @@ import { StallCamera, ZOOM, applyDeviceZoom } from "../world/camera";
 import { LIGHT_ENV_KEY, type LightEnv } from "../art/light/env";
 import { materialOf } from "../art/light/materials";
 import { SceneLight, indoorWeight } from "../world/lightLayers";
+import { FloorBake } from "../world/floorBake";
 import { PropSheen } from "../world/propSheen";
 import { Lamps, LAMP_SPOTS } from "../ui/stall/Lamps";
 import { SUNK, TABLE_DROP, artScale, fitPhoto, BOARD_TEX, BOARD_W, BASKET_TEX, BASKET_W } from "../art/photo";
@@ -203,6 +204,7 @@ export class StallScene extends Phaser.Scene {
   private lamps!: Lamps;
   private sheen!: PropSheen;
   private light!: SceneLight;
+  private floorBake!: FloorBake;
   /** Chỗ đặt tạm cho rảnh tay, nhặt lại giữ nguyên thông số. */
   private floor: { x: number; y: number; hand: Hand; warmth: number; crust: number; q: number; dish: Ingredient[] }[] = [];
   /** Đi theo ổ bánh chứ không theo bàn tay; chỉ bỏ ổ mới tẩy được. */
@@ -356,8 +358,9 @@ export class StallScene extends Phaser.Scene {
     };
     this.registry.set(LIGHT_ENV_KEY, env);
 
-    const ground = this.bakeGround();
-    this.light = new SceneLight(this, ground, env, LIGHT_SS);
+    this.floorBake = this.bakeGround();
+    const ground = this.floorBake.rect;
+    this.light = new SceneLight(this, this.floorBake, env, LIGHT_SS);
     this.sheen = new PropSheen(this, env);
     // Dọn TRƯỚC `placeProps` — chính nó gọi `addStationLabel` để nạp lại.
     this.labelY.clear();
@@ -369,7 +372,7 @@ export class StallScene extends Phaser.Scene {
     // Chỉ `backgroundColor` vẽ ra ngoài hình bao cảnh.
     this.cameras.main.setBackgroundColor(this.raining ? "#5f686c" : "#6f838d");
     this.rain = Rain.for(this, this.world.progress.weather, this.settings.reducedMotion);
-    this.daylight = new Daylight(this, ground, this.raining);
+    this.daylight = new Daylight(this, this.floorBake, this.raining);
     this.lamps = new Lamps(this, LAMP_SPOTS, { overcast: this.raining });
 
     this.ring = this.add.image(0, 0, FX.ring).setOrigin(0.5, 0.5).setVisible(false);
@@ -447,6 +450,7 @@ export class StallScene extends Phaser.Scene {
     this.drawEquipment();
     this.light.build();
     this.sheen.build();
+    this.paintFloor();
     this.bindInput();
     this.wire();
 
@@ -537,6 +541,7 @@ export class StallScene extends Phaser.Scene {
       this.daylight.destroy();
       this.lamps.destroy();
       this.light.destroy();
+      this.floorBake.destroy();
       this.sheen.destroy();
       // Listener trên `window`, không gỡ thì Esc màn sau chạy vào thẻ đã chết.
       this.talk.destroy();
@@ -582,6 +587,10 @@ export class StallScene extends Phaser.Scene {
     return bounds;
   }
 
+  private paintFloor() {
+    this.floorBake.paint(this.cameras.main.backgroundColor.color);
+  }
+
   /** Nướng sẵn ở mật độ màn thật, chia mảnh để mỗi RenderTexture không vượt `MAX_TEX`. */
   private bakeGround() {
     const minX = toScreen(0, WORLD_H).sx - TW;
@@ -593,7 +602,6 @@ export class StallScene extends Phaser.Scene {
     const ss = Math.min(3, ZOOM * RENDER_SCALE, weak ? WEAK_GROUND_SS : 3);
     const gl = (this.game.renderer as { gl?: WebGLRenderingContext }).gl;
     const maxTex = Math.min(MAX_TEX, gl ? gl.getParameter(gl.MAX_TEXTURE_SIZE) as number : MAX_TEX);
-    const part = Math.floor(maxTex / ss);
 
     const stamp = this.make.image({ key: TILE.floor("shop", 0) }, false).setOrigin(0, 0);
     const shrunk = new Map<string, string>();
@@ -617,25 +625,21 @@ export class StallScene extends Phaser.Scene {
       stamp.setTexture(prepared(key, dw, dh)).setScale(1);
       rt.batchDraw(stamp, (left - minX - ox) * ss, (top - minY - oy) * ss);
     };
-
-    for (let oy = 0; oy < h; oy += part) {
-      for (let ox = 0; ox < w; ox += part) {
-        const pw = Math.min(part, w - ox), ph = Math.min(part, h - oy);
-        const rt = this.add.renderTexture(minX + ox, minY + oy, Math.ceil(pw * ss), Math.ceil(ph * ss))
-          .setOrigin(0, 0).setScale(1 / ss).setDepth(-1_000_000);
-        rt.beginDraw();
+    const tiles = {
+      draw: (rt: Phaser.GameObjects.RenderTexture, ox: number, oy: number) => {
         for (let ty = 0; ty < WORLD_H; ty++)
           for (let tx = 0; tx < WORLD_W; tx++) put(rt, ox, oy, floorTextureAt(floorAt(tx, ty), tx, ty), tx, ty);
         if (this.raining) {
           for (let ty = SKY_FROM_Y; ty < WORLD_H; ty++)
             for (let tx = 0; tx < WORLD_W; tx++) put(rt, ox, oy, TILE.wet, tx, ty);
         }
-        rt.endDraw();
-      }
-    }
-    stamp.destroy();
-    for (const name of shrunk.values()) this.textures.remove(name);
-    return new Phaser.Geom.Rectangle(minX, minY, w, h);
+      },
+      destroy: () => {
+        stamp.destroy();
+        for (const name of shrunk.values()) if (this.textures.exists(name)) this.textures.remove(name);
+      },
+    };
+    return new FloorBake(this, new Phaser.Geom.Rectangle(minX, minY, w, h), ss, Math.floor(maxTex / ss), tiles);
   }
 
   /** Đồ chưa mua thì ẩn; ô `A` là tấm bảng gỗ `BANG_HIEU`, không phải banner tên quán. */
@@ -971,7 +975,7 @@ export class StallScene extends Phaser.Scene {
     this.drawBasket();
     this.drawFloorItems();
     this.rain?.draw(this.cam.world.worldView, dt, this.time.now, this.settings.reducedMotion);
-    this.daylight.update(this.clock.minutes, this.cam.world.worldView);
+    if (this.daylight.update(this.clock.minutes, this.cam.world.worldView)) this.paintFloor();
     this.lamps.update(this.clock.minutes);
     const ticket = this.frontTicket();
     const quiet = this.promptDuplicatesButtons();

@@ -215,10 +215,66 @@ export function soleRow(data: ArrayLike<number>, w: number, h: number) {
   return h;
 }
 
-function measureFoot(img: CanvasImageSource, cut: Phaser.Textures.Frame, flip: boolean) {
-  const ctx = sprite(img, cut, flip);
-  return soleRow(ctx.getImageData(0, 0, cut.cutWidth, cut.cutHeight).data, cut.cutWidth, cut.cutHeight);
+/** Hàng chân theo ảnh nguồn rồi theo frame, không đổi khi lật ngang; giữ lâu hơn `cache` vì đọc điểm ảnh là bước đắt nhất. */
+const feet = new WeakMap<object, Map<string, number>>();
+/** Ảnh khung hình của một nhân vật theo hướng và bước đi; cùng gốc là cùng một người. */
+const POSE_KEY = /^(.+?)_(?:n|ne|e|se|s|sw|w|nw)(?:_[a-z]+\d*)?$/;
+/** Phần đáy khung được đọc gộp; chân nằm cao hơn thì đọc riêng cả khung. */
+const SOLE_SLICE = 0.4;
+
+const footOf = (cut: Phaser.Textures.Frame) => feet.get(cut.source.image)?.get(cut.name);
+function keepFoot(cut: Phaser.Textures.Frame, foot: number) {
+  let m = feet.get(cut.source.image);
+  if (!m) feet.set(cut.source.image, (m = new Map()));
+  m.set(cut.name, foot);
 }
+const fetched = new Set<string>();
+
+function measureFoot(cut: Phaser.Textures.Frame) {
+  if (footOf(cut) === undefined) prefetchFeet(cut);
+  const hit = footOf(cut);
+  if (hit !== undefined) return hit;
+  const ctx = sprite(cut.source.image as CanvasImageSource, cut, false);
+  const foot = soleRow(ctx.getImageData(0, 0, cut.cutWidth, cut.cutHeight).data, cut.cutWidth, cut.cutHeight);
+  keepFoot(cut, foot);
+  return foot;
+}
+
+/** Đáy mọi khung cùng người vẽ chung một canvas rồi đọc một lần: mỗi lần getImageData phải chờ GPU. */
+function prefetchFeet(cut: Phaser.Textures.Frame) {
+  const base = POSE_KEY.exec(cut.texture.key)?.[1];
+  if (!base || fetched.has(base)) return;
+  fetched.add(base);
+  const manager = cut.texture.manager;
+  const frames: { f: Phaser.Textures.Frame; h: number; y: number }[] = [];
+  let w = 1, y = 0;
+  for (const key of manager.getTextureKeys()) {
+    if (POSE_KEY.exec(key)?.[1] !== base) continue;
+    const f = manager.getFrame(key);
+    if (!f || footOf(f) !== undefined) continue;
+    const h = Math.max(1, Math.ceil(f.cutHeight * SOLE_SLICE));
+    frames.push({ f, h, y });
+    w = Math.max(w, f.cutWidth);
+    y += h;
+  }
+  if (!frames.length) return;
+  const sheet = canvas(w, y);
+  const ctx = sheet.getContext("2d")!;
+  for (const { f, h, y: at } of frames) ctx.drawImage(f.source.image as CanvasImageSource, f.cutX, f.cutY + f.cutHeight - h, f.cutWidth, h, 0, at, f.cutWidth, h);
+  const data = ctx.getImageData(0, 0, w, y).data;
+  for (const { f, h, y: at } of frames) {
+    for (let r = h - 1; r >= 0; r--) {
+      if (!opaqueRow(data, w, at + r)) continue;
+      keepFoot(f, f.cutHeight - h + r + 1);
+      break;
+    }
+  }
+}
+
+const opaqueRow = (data: ArrayLike<number>, w: number, y: number) => {
+  for (let x = 0; x < w; x++) if (data[(y * w + x) * 4 + 3] >= SOLE_ALPHA) return true;
+  return false;
+};
 
 function drop(textures: Phaser.Textures.TextureManager, e: Entry) {
   if (e.refl && textures.exists(e.refl)) textures.remove(e.refl);
@@ -251,17 +307,35 @@ function aoTexture(scene: Phaser.Scene) {
   tex.refresh();
 }
 
-type Live = { key: string; tex: Phaser.Textures.CanvasTexture; w: number; h: number; src: HTMLCanvasElement | null; x: number; y: number };
+type Live = {
+  key: string; tex: Phaser.Textures.CanvasTexture; w: number; h: number;
+  src: HTMLCanvasElement | null; x: number; y: number;
+  /** Đang giữ nguyên bóng bake, chưa cắt theo nắng. */
+  plain: boolean;
+};
 
-type ReflMask = { env: LightEnv; gfx: Phaser.GameObjects.Graphics; mask: Phaser.Display.Masks.GeometryMask; users: number };
+/** Lề px ảnh nắng quanh vùng lấy mẫu, phủ phần lọc song tuyến đọc lấn ra. */
+const COVER_PAD = 4;
+
+type ReflMask = {
+  env: LightEnv; gfx: Phaser.GameObjects.Graphics; mask: Phaser.Display.Masks.GeometryMask;
+  /** Mọi phản chiếu chung một mặt nạ, vẽ trong một Container để stencil chỉ dựng một lần mỗi khung. */
+  layer: Phaser.GameObjects.Container; users: number;
+};
 
 let reflMask: ReflMask | null = null;
+
+function destroyMask(m: ReflMask) {
+  m.layer.removeAll(false);
+  m.layer.destroy();
+  m.mask.destroy();
+  m.gfx.destroy();
+}
 
 /** Một mặt nạ chung gồm các ô sàn bóng; chỉ chất liệu bóng mới phản chiếu. */
 function acquireMask(scene: Phaser.Scene, env: LightEnv) {
   if (reflMask && reflMask.env !== env) {
-    reflMask.mask.destroy();
-    reflMask.gfx.destroy();
+    destroyMask(reflMask);
     reflMask = null;
   }
   if (!reflMask) {
@@ -274,7 +348,9 @@ function acquireMask(scene: Phaser.Scene, env: LightEnv) {
         gfx.fillPoints([{ x: a.sx, y: a.sy }, { x: b.sx, y: b.sy }, { x: c.sx, y: c.sy }, { x: d.sx, y: d.sy }], true);
       }
     }
-    reflMask = { env, gfx, mask: gfx.createGeometryMask(), users: 0 };
+    const mask = gfx.createGeometryMask();
+    const layer = scene.add.container(0, 0).setDepth(LIGHT_DEPTH.reflection + 1).setMask(mask);
+    reflMask = { env, gfx, mask, layer, users: 0 };
   }
   reflMask.users++;
   return reflMask;
@@ -283,8 +359,7 @@ function acquireMask(scene: Phaser.Scene, env: LightEnv) {
 function releaseMask(m: ReflMask) {
   if (--m.users > 0) return;
   if (reflMask === m) reflMask = null;
-  m.mask.destroy();
-  m.gfx.destroy();
+  destroyMask(m);
 }
 
 export type ActorPose = {
@@ -324,7 +399,7 @@ export class ActorLight {
     this.entryKey = "";
   }
 
-  private enter(key: string, src: unknown, frame: Phaser.Textures.Frame, flip: boolean) {
+  private enter(key: string, src: unknown, frame: Phaser.Textures.Frame) {
     this.release();
     let e = cache.get(key);
     if (e && e.src !== src) {
@@ -333,7 +408,7 @@ export class ActorLight {
       e = undefined;
     }
     if (e) cache.delete(key);
-    e ??= { src, users: 0, foot: measureFoot(src as CanvasImageSource, frame, flip) };
+    e ??= { src, users: 0, foot: measureFoot(frame) };
     cache.set(key, e);
     evict(this.scene.textures);
     e.users++;
@@ -353,7 +428,7 @@ export class ActorLight {
     const h = frame.cutHeight;
     const flip = body.flipX;
     const key = `${frame.texture.key}|${frame.name}|${flip ? 1 : 0}`;
-    if (key !== this.entryKey) this.enter(key, src, frame, flip);
+    if (key !== this.entryKey) this.enter(key, src, frame);
     const e = this.entry!;
     const foot = e.foot;
     const lift = p.lift ?? 0;
@@ -395,7 +470,7 @@ export class ActorLight {
       if (this.mask?.env !== env) {
         if (this.mask) releaseMask(this.mask);
         this.mask = acquireMask(this.scene, env);
-        this.refl.setMask(this.mask.mask);
+        this.mask.layer.add(this.refl);
       }
       if (!e.refl) {
         const { out, L } = bakeReflection(src, frame, flip, foot, ss);
@@ -419,21 +494,30 @@ export class ActorLight {
       const key = `actor-live${serial++}`;
       const tex = this.scene.textures.createCanvas(key, baked.width, baked.height);
       if (!tex) return false;
-      live = { key, tex, w: baked.width, h: baked.height, src: null, x: NaN, y: NaN };
+      live = { key, tex, w: baked.width, h: baked.height, src: null, x: NaN, y: NaN, plain: false };
       this.lives[slot] = live;
     }
-    if (live.src !== baked || Math.abs(live.x - px) > 0.25 || Math.abs(live.y - py) > 0.25) {
-      const s = k / BAKE_RES;
+    const s = k / BAKE_RES;
+    const sx = (px - L.ox * live.w * s - layer.x) * layer.scale, sy = (py - L.oy * live.h * s - layer.y) * layer.scale;
+    const sw = live.w * s * layer.scale, sh = live.h * s * layer.scale;
+    // Nắng đều cả vùng thì cắt cũng ra y nguyên bóng bake (hoặc rỗng), khỏi vẽ lại mỗi lần nhích.
+    const cover = layer.cover(Math.floor(sx) - COVER_PAD, Math.floor(sy) - COVER_PAD, Math.ceil(sx + sw) + COVER_PAD, Math.ceil(sy + sh) + COVER_PAD);
+    if (cover === 0) return false;
+    const plain = cover === 1;
+    const stale = plain ? !live.plain : live.plain || Math.abs(live.x - px) > 0.25 || Math.abs(live.y - py) > 0.25;
+    if (live.src !== baked || stale) {
       const ctx = live.tex.getContext();
       ctx.globalCompositeOperation = "source-over";
       ctx.clearRect(0, 0, live.w, live.h);
       ctx.drawImage(baked, 0, 0);
-      ctx.globalCompositeOperation = "destination-in";
-      const dx = px - L.ox * live.w * s, dy = py - L.oy * live.h * s;
-      ctx.drawImage(layer.canvas, (dx - layer.x) * layer.scale, (dy - layer.y) * layer.scale, live.w * s * layer.scale, live.h * s * layer.scale, 0, 0, live.w, live.h);
-      ctx.globalCompositeOperation = "source-over";
+      if (!plain) {
+        ctx.globalCompositeOperation = "destination-in";
+        ctx.drawImage(layer.canvas, sx, sy, sw, sh, 0, 0, live.w, live.h);
+        ctx.globalCompositeOperation = "source-over";
+      }
       live.tex.refresh();
       live.src = baked;
+      live.plain = plain;
       live.x = px;
       live.y = py;
     }

@@ -4,6 +4,7 @@ import { SKY_FROM_Y, SUN_BAND as BAND, WORLD_H, WORLD_W } from "../../world/map"
 import { OVERCAST, sunAt, type Sun } from "../../world/daylight";
 import { materialOf } from "../../art/light/materials";
 import { floorAtScreen } from "../../world/lightParams";
+import type { FloorBake } from "../../world/floorBake";
 
 const TONE_DEPTH = 6_900_000;
 const PATCH_DEPTH = -999_999;
@@ -83,66 +84,57 @@ function buildPatch(scene: Phaser.Scene, key: string, ground: Phaser.Geom.Rectan
 }
 
 export class Daylight {
-  private readonly tone: Phaser.GameObjects.Rectangle;
   private readonly vignette: Phaser.GameObjects.Image;
   private readonly patch: Phaser.GameObjects.Image | null;
-  private readonly clip: Phaser.GameObjects.Graphics | null;
   private readonly view = new Phaser.Geom.Rectangle();
   private readonly patchX: number;
   private step = -1;
   private sun: Sun;
 
-  constructor(scene: Phaser.Scene, ground: Phaser.Geom.Rectangle, private readonly overcast: boolean) {
+  constructor(scene: Phaser.Scene, floor: FloorBake, private readonly overcast: boolean) {
+    const ground = floor.rect;
     this.patchX = ground.x;
     this.sun = overcast ? OVERCAST : sunAt(0);
     buildVignette(scene);
-    this.tone = scene.add.rectangle(0, 0, 1, 1, 0xffffff).setOrigin(0, 0)
-      .setDepth(TONE_DEPTH).setBlendMode(Phaser.BlendModes.MULTIPLY);
     this.vignette = scene.add.image(0, 0, VIGNETTE).setOrigin(0, 0)
-      .setDepth(TONE_DEPTH + 1).setBlendMode(Phaser.BlendModes.MULTIPLY);
+      .setDepth(TONE_DEPTH).setBlendMode(Phaser.BlendModes.MULTIPLY);
 
     if (overcast) {
       this.patch = null;
-      this.clip = null;
     } else {
       buildPatch(scene, "sunpatch", ground);
-      this.patch = scene.add.image(ground.x, ground.y, "sunpatch").setOrigin(0, 0)
-        .setDepth(PATCH_DEPTH).setBlendMode(Phaser.BlendModes.ADD);
-      this.clip = scene.make.graphics({}, false).fillStyle(0xffffff).fillPoints(
-        [[0, 0], [WORLD_W, 0], [WORLD_W, WORLD_H], [0, WORLD_H]].map(([tx, ty]) => {
-          const { sx, sy } = toScreen(tx, ty);
-          return new Phaser.Geom.Point(sx, sy);
-        }),
-        true,
-      );
-      this.patch.setMask(this.clip.createGeometryMask());
+      this.patch = floor.add(scene.make.image({ x: ground.x, y: ground.y, key: "sunpatch" }, false).setOrigin(0, 0)
+        .setDepth(PATCH_DEPTH).setBlendMode(Phaser.BlendModes.ADD), true);
+      floor.clipTo([[0, 0], [WORLD_W, 0], [WORLD_W, WORLD_H], [0, WORLD_H]].map(([tx, ty]) => {
+        const { sx, sy } = toScreen(tx, ty);
+        return { x: sx, y: sy };
+      }));
     }
   }
 
+  /** Trả `true` khi vạt nắng đổi, sàn nướng cần vẽ lại. */
   update(minutes: number, view: Phaser.Geom.Rectangle) {
     if (view.x !== this.view.x || view.y !== this.view.y
       || view.width !== this.view.width || view.height !== this.view.height) {
       this.view.setTo(view.x, view.y, view.width, view.height);
       const x = view.x - VIEW_PAD, y = view.y - VIEW_PAD;
       const w = view.width + VIEW_PAD * 2, h = view.height + VIEW_PAD * 2;
-      this.tone.setPosition(x, y).setSize(w, h);
       this.vignette.setPosition(x, y).setDisplaySize(w, h);
     }
 
     const step = Math.floor(minutes / STEP_MIN);
-    if (step === this.step) return;
+    if (step === this.step) return false;
     this.step = step;
     if (!this.overcast) this.sun = sunAt(minutes);
     const s = this.sun;
-    this.tone.setFillStyle(s.tone);
+    // Màu ngày nhân vào vignette: hai lớp MULTIPLY gộp thành một lượt phủ màn.
+    this.vignette.setTint(s.tone);
     this.patch?.setX(this.patchX + s.patchShift * (TW / 2))
       .setAlpha(s.patchAlpha).setTint(s.patchTint);
+    return this.patch !== null;
   }
 
   destroy() {
-    this.tone.destroy();
     this.vignette.destroy();
-    this.patch?.destroy();
-    this.clip?.destroy();
   }
 }
