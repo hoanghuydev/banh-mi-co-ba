@@ -18,7 +18,8 @@ export {
 } from "./character";
 export { HELD, heldTexture, heldFootPad, type HeldLook } from "./held";
 export { opaqueBox, opaqueEdges, spriteEdges, type Edges, type OpaqueBox, type SpriteBox } from "./opaque";
-export { createSign } from "./sign";
+export { createSign, type Awning } from "./sign";
+export { sliceImage } from "./slices";
 export { createMenuBoard } from "./menuboard";
 export { FX } from "./fx";
 export { TILE, BUILD, COUNTER, PROP };

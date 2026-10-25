@@ -1,13 +1,13 @@
 import Phaser from "phaser";
-import { TH } from "../world/iso";
+import { TH, depthOf } from "../world/iso";
 import { FACE_SLOPE } from "./canvas";
 import { WALL_H } from "./building";
-import { bakeWall, drawFrame, fitPhoto } from "./photo";
+import { artScale, bakeWall, drawFrame } from "./photo";
+import { WALL_OVERHANG, sliceColumns } from "./slices";
 import { FONT } from "../ui/theme";
 import { MENU_BOARD } from "../sim/menu";
 import { isOpen } from "../sim/unlock";
 
-// Treo cao vì cả tấm chỉ có một depth nên thấp là bị người chơi che.
 const W = 70;
 const H = 52;
 /** Px từ mép trên tường, đo dọc mặt vách. */
@@ -20,7 +20,10 @@ const BORDER = 6;
 const LEFT = 11;
 const TEX = "menu_wall";
 
-export function createMenuBoard(scene: Phaser.Scene, sx: number, sy: number, depth: number, day: number) {
+/** Lát `m` dán trên mặt ô tường (m + 1, 0): ngay trên ô đó, dưới người đứng trước tường. */
+const onWall = (m: number) => depthOf(m + 1.5, 0.5) + 50;
+
+export function createMenuBoard(scene: Phaser.Scene, sx: number, sy: number, day: number) {
   bakeWall(scene, TEX, W, H, FACE_SLOPE + TILT, (ctx) => {
     drawFrame(ctx, scene, "menu_khung", W, H, 46, BORDER);
 
@@ -40,5 +43,7 @@ export function createMenuBoard(scene: Phaser.Scene, sx: number, sy: number, dep
   });
 
   const cy = sy - WALL_H + TH / 2 + DROP;
-  return [fitPhoto(scene.add.image(sx, cy, TEX)).setDepth(depth)];
+  const src = scene.textures.get(TEX).getSourceImage();
+  const w = src.width / artScale(TEX), h = src.height / artScale(TEX);
+  return sliceColumns(scene, TEX, sx - w / 2, cy - h / 2, w, onWall, -WALL_OVERHANG).map((s) => s.img);
 }

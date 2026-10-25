@@ -59,13 +59,13 @@ import { SceneLight, indoorWeight } from "../world/lightLayers";
 import { PropSheen } from "../world/propSheen";
 import { Lamps, LAMP_SPOTS } from "../ui/stall/Lamps";
 import { SUNK, TABLE_DROP, artScale, fitPhoto, BOARD_TEX, BOARD_W, BASKET_TEX, BASKET_W } from "../art/photo";
-import { BUYABLE_TILES, MENU_DEPTH_AT, MENU_REACH, MENU_SPOT, MENU_TILE, SEAT_SPOT, SHADE_SPOT, SKY_FROM_Y, WORLD_H, WORLD_W, assertWalkable, floorAt, openTilesFor, setOpenTiles, setPole, tileAt, type TileCode } from "../world/map";
+import { BUYABLE_TILES, MENU_REACH, MENU_SPOT, MENU_TILE, SEAT_SPOT, SHADE_SPOT, SKY_FROM_Y, WORLD_H, WORLD_W, assertWalkable, floorAt, openTilesFor, setOpenTiles, setPole, tileAt, type TileCode } from "../world/map";
 import {
   HAND_LABEL, STATIONS, assertMenuSpotFree, assertStationsOnCounter, blockedReason, stationAtTile, stationNear, type Hand, type Station,
 } from "../world/stations";
 import {
   BASE, COUNTER, FX, HELD, PROP, TILE, buildTextures, createMenuBoard, createSign, floorTextureAt, footY, heldFootPad,
-  heldTexture, paintNpcPhotos, preloadArt, spriteEdges, textureForTile,
+  heldTexture, paintNpcPhotos, preloadArt, sliceImage, spriteEdges, textureForTile, type Awning,
 } from "../art";
 import { Player } from "../entities/Player";
 import { Hud, type Watch } from "../ui/Hud";
@@ -169,6 +169,7 @@ export class StallScene extends Phaser.Scene {
   private bubbles!: BubblePool;
   private audio!: StallAudio;
   private menuBoard: MenuBoardView | null = null;
+  private awning: Awning | null = null;
   private storageView: StorageView | null = null;
   private phoneView: PhoneView | null = null;
   private coach: TourCoach | null = null;
@@ -640,7 +641,7 @@ export class StallScene extends Phaser.Scene {
         if (!key || !this.textures.exists(key)) continue;
 
         if (key === PROP.tableLong) {
-          if (tileAt(tx - 1, ty) !== "Z") placed.push(this.sheen.register(this.light.add(this.addLong(key, tx, ty)), key));
+          if (tileAt(tx - 1, ty) !== "Z") placed.push(...this.addLong(key, tx, ty));
           continue;
         }
         // Nửa xa của bàn dài cùng khung ảnh với nửa gần nên neo theo ô gần.
@@ -657,11 +658,10 @@ export class StallScene extends Phaser.Scene {
       }
     }
 
-    createSign(this, this.world.shopName);
+    this.awning = createSign(this, this.world.shopName);
 
-    // Menu không lấy depth trên tất cả như bảng hiệu vì người chơi đi ngay dưới nó.
     const m = toScreen(MENU_TILE.x, MENU_TILE.y);
-    createMenuBoard(this, m.sx, m.sy, depthOf(MENU_DEPTH_AT.x, MENU_DEPTH_AT.y), this.world.progress.dayIndex);
+    createMenuBoard(this, m.sx, m.sy, this.world.progress.dayIndex);
     // Dấu cắm ở chỗ đứng đọc, không ở tấm bảng treo cao.
     const ms = toScreen(MENU_SPOT.x, MENU_SPOT.y);
     this.choreAt.set("menu", { x: ms.sx, y: footY(ms.sy) });
@@ -671,13 +671,12 @@ export class StallScene extends Phaser.Scene {
     return placed;
   }
 
-  /** Bàn 2 × 1 ô dọc theo +x, một ảnh duy nhất; đỉnh dưới của ảnh nằm đúng góc dưới của chân bàn. */
+  /** Bàn 2 × 1 ô dọc theo +x; đỉnh dưới của ảnh nằm đúng góc dưới của chân bàn. Mỗi cột lấy depth của trục giữa bàn. */
   private addLong(key: string, tx: number, ty: number) {
     const { sx, sy } = toScreen(tx + 2, ty + 1);
-    return this.add.image(sx, sy + BASE, key)
-      .setOrigin(0.5, 1)
-      .setScale(1 / artScale(key))
-      .setDepth(depthOf(tx + 1.5, ty + 0.5));
+    const img = this.light.add(this.add.image(sx, sy + BASE, key).setOrigin(0.5, 1).setScale(1 / artScale(key)));
+    return sliceImage(img, (m) => depthOf(m + ty + 1, ty + 0.5))
+      .map(({ img: part, crop }) => this.sheen.register(part, key, crop));
   }
 
   private addAt(key: string, tx: number, ty: number, anchorTy = ty) {
@@ -904,6 +903,7 @@ export class StallScene extends Phaser.Scene {
     this.syncPlayerActivity();
     this.tap?.update(dt, !this.paused && !this.closed && this.busy?.st.id === "sink", this.settings.reducedMotion);
     this.player.draw(this.settings.reducedMotion, this.keys.C.isDown, this.settings.playerMarker !== false);
+    this.awning?.follow(this.player.x, this.player.y);
     this.drawPlayerBubble();
     for (const a of this.actors.values()) a.draw(this.settings.reducedMotion, this.time.now, this.elapsed);
     this.moneyPops.update(this.tickPopClock(), this.settings.reducedMotion);

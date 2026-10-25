@@ -1,6 +1,7 @@
 import Phaser from "phaser";
-import { TW, depthOf, toScreen } from "../world/iso";
-import { artScale, bakeWall, drawPhoto, photoRatio } from "./photo";
+import { depthOf, toScreen } from "../world/iso";
+import { bakeWall, drawPhoto, photoRatio } from "./photo";
+import { WALL_OVERHANG, sliceColumns, yieldTo } from "./slices";
 import { FONT } from "../ui/theme";
 import { shopName } from "../content/shop";
 
@@ -28,9 +29,15 @@ const TEX = "shopfront_wall";
 /** Mép trước mái dù nhô ra tới đây: đồ và người đứng hàng y1 nằm dưới mái. */
 const AWNING_Y = 1.7;
 
-export function createSign(scene: Phaser.Scene, name = "") {
+/** Đặt lại depth theo chỗ người chơi mỗi khung hình. */
+export type Awning = { follow(x: number, y: number): void };
+
+/** Trên mọi đồ hàng y1 chạm cột `m`: đồ xa nhất chạm tới có tâm (m + 3,5; 1,5). */
+const underDepth = (m: number) => depthOf(m + 3.5, 1.5) + 50;
+
+export function createSign(scene: Phaser.Scene, name = ""): Awning | null {
   const ratio = photoRatio(scene, "shopfront");
-  if (!ratio) return [];
+  if (!ratio) return null;
   const h = W * ratio;
 
   bakeWall(scene, TEX, W, h, 0, (ctx) => {
@@ -55,7 +62,8 @@ export function createSign(scene: Phaser.Scene, name = "") {
   const at = toScreen(LEFT_X, 1.1);
   const left = at.sx - ANCHOR.x * SCALE;
   const top = at.sy - RIDGE_Z - ANCHOR.y * SCALE;
-  return onWall(scene, TEX, left, top, W);
+  const slices = sliceColumns(scene, TEX, left, top, W, underDepth, -WALL_OVERHANG);
+  return { follow: (x, y) => yieldTo(slices, underDepth, x, y, y >= AWNING_Y) };
 }
 
 /** Một dòng nếu đủ to, không thì tách hai dòng ở chỗ cân nhất; chọn cỡ chữ lớn hơn. */
@@ -80,24 +88,4 @@ function fitLines(ctx: CanvasRenderingContext2D, text: string, room: number, tal
     if (two.px > best.px) best = two;
   }
   return best;
-}
-
-/** Mỗi ô tường một lát, mỗi lát một độ sâu: người và đồ đứng ra phía trước mái dù (y > AWNING_Y) mới che được nó. */
-function onWall(scene: Phaser.Scene, key: string, left: number, top: number, w: number) {
-  const ss = artScale(key);
-  const tex = scene.textures.get(key).getSourceImage();
-  const right = left + w;
-  const origin = toScreen(0.5, 0.5).sx;
-  const objs: Phaser.GameObjects.Image[] = [];
-  for (let m = Math.floor((left - origin) / (TW / 2)); origin + m * (TW / 2) < right; m++) {
-    const x0 = Math.max(left, origin + m * (TW / 2));
-    const x1 = Math.min(right, origin + (m + 1) * (TW / 2));
-    if (x1 <= x0) continue;
-    objs.push(scene.add.image(left, top, key)
-      .setOrigin(0, 0)
-      .setScale(1 / ss)
-      .setCrop(Math.floor((x0 - left) * ss), 0, Math.ceil((Math.min(x1 + 1, right) - x0) * ss), tex.height)
-      .setDepth(depthOf(m + 1.5, AWNING_Y)));
-  }
-  return objs;
 }

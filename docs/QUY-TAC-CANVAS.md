@@ -47,6 +47,7 @@
 - **Soi chỗ nối** của đồ đặt cạnh nhau: cùng độ cao mặt bàn, cùng độ dày, không bậc. Cần liền hẳn thì dùng chung một nguồn ảnh và cắt theo đúng mặt phẳng ô (`bench()`, `prepFromLong()`): cùng màu, cùng mép nên không còn đường nối.
 - **Ghép vật mới vào hàng đã khớp: chỉnh vật mới ghép hoặc vật chưa khớp, đừng dịch vật đã khớp** (dịch là lệch với các vật khác trong hàng). Chỗ nối còn bậc màu hay mép thì xử lý phần vật được ghép vào, chứ không sửa đồ đã ổn.
 - **Soi quanh vật:** lơ lửng, bay, cắm vào tường, bị xén ở mép ảnh, bị đồ khác đè sai.
+- **Vật dài hơn một ô, hoặc dán trên tường cạnh chỗ người đứng** (bàn dài, mái hiên, bảng menu): cắt lát theo cột màn hình (`sliceColumns`), mỗi lát một depth. Lát dán trên tường dời ranh `WALL_OVERHANG` để không bị mép gối của ô tường kế bên đè thành vạch. Lát không thể vừa trên đồ bên dưới vừa dưới người đứng trước thì hạ theo người chơi (`yieldTo`, mái hiên). **Ô chặn phải phủ hết thân vật thật**, không chỉ ô neo ảnh (xe máy dài 2 ô có ô `m` chặn đầu xe). Soi bằng cách đặt người chơi sát từng mặt vật rồi chụp.
 - **Soi logic:** vật hướng về phía ai dùng, ô chặn và lối đi còn thông, trạm tương tác không lệch, lối khách và hàng chờ còn nguyên, không để lại khoảng trống vô dụng.
 - **Soi chữ:** font đủ dấu tiếng Việt, tên dài tự co, cùng mặt phẳng với biển.
 - **Soi các trạng thái đổi hình** (đã/chưa mua đồ, ngày/mưa) và màn hẹp.

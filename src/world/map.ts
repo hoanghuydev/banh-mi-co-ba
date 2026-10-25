@@ -9,7 +9,7 @@ export const MAP = [
   "..............A...",  // y6  hàng khách · bảng chữ A x=14
   "..................",  // y7  lối khách đi
   "..................",
-  "..C.V.............",  // y9  két nước · thùng rác
+  "..C.V..........mm.",  // y9  két nước · thùng rác · đầu xe máy
   "..........b.ss.MMP",  // y10 bàn · ghế nhựa · xe máy · chậu cây
   "..................",  // y11+ lòng đường
   "..................",
@@ -23,7 +23,7 @@ export const WORLD_H = MAP.length;
 
 export type TileCode =
   | "." | "#" | "N" | "D" | "Q" | "O" | "T" | "K" | "s" | "b" | "M" | "P"
-  | "C" | "V" | "W" | "A" | "X" | "F" | "R" | "Z";
+  | "C" | "V" | "W" | "A" | "X" | "F" | "R" | "Z" | "m";
 
 export function tileAt(tx: number, ty: number): TileCode {
   if (tx < 0 || ty < 0 || tx >= WORLD_W || ty >= WORLD_H) return "#";
@@ -192,11 +192,8 @@ export function assertWalkable() {
   }
 }
 
-/** Phủ đúng ba ô tường x=15..17 (bảng 40px) để có một `depth` vừa khít, và chỗ đứng đọc nằm ngoài tầm mọi trạm (gác ở `stations.assertMenuSpotFree()`). */
+/** Chỗ treo bảng menu trên tường sau. */
 export const MENU_TILE = { x: 13.43, y: 0.5 };
-
-/** Mốc depth ngay sau mép phải bảng: trên ba ô tường nó treo, dưới người đứng đọc và nhà bên. */
-export const MENU_DEPTH_AT = { x: MENU_TILE.x + 1.5, y: MENU_TILE.y };
 export const MENU_SPOT = { x: 14.5, y: 1.5 };
 export const MENU_REACH = 1.6;
 

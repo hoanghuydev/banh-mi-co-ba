@@ -97,9 +97,9 @@ const STANDING: Record<string, [src: string, o: Standing]> = {
   [PROP.order]: ["prop_order", { h: 50, dy: SIT + TABLE_DROP }],
   // Bàn 2 × 1 ô: `dx` đưa đỉnh dưới của ảnh (0,682 chiều ngang) về tâm khung.
   [PROP.tableLong]: ["prop_table_long", { h: 74, dx: -17, dy: SIT + TABLE_DROP }],
-  // Ảnh gần vuông, xe nằm chéo nên trông bé hơn `h`.
-  [PROP.bike]: ["prop_bike", { h: 82 }],
-  [PROP.scooter]: ["prop_scooter", { h: 78 }],
+  // Xe nằm dọc trục y dài hơn 2 ô; lùi 0,2 ô về −y cho gọn trong ô xe và ô đầu xe `m`.
+  [PROP.bike]: ["prop_bike", { h: 82, dx: 6, dy: SIT - 3 }],
+  [PROP.scooter]: ["prop_scooter", { h: 78, dx: 6, dy: SIT - 3 }],
   [PROP.pothos]: ["prop_pothos", { h: 34 }],
   [PROP.bin]: ["prop_bin", { h: 46 }],
   [PROP.sign]: ["prop_sign", { h: 58 }],

@@ -5,6 +5,7 @@ import type { Img } from "../art/light/types";
 import { artScale } from "../art/photo";
 import { rimGainOf, sheenSpecOf } from "./sheenParams";
 import { TW } from "./iso";
+import type { Crop } from "../art/slices";
 
 const SHEEN_DEPTH = 0.15;
 
@@ -25,15 +26,15 @@ function readImg(scene: Phaser.Scene, key: string): Img | null {
 
 /** Lớp bóng bề mặt (kim loại, sứ, men) của đạo cụ đứng yên, nướng một lần, blend SCREEN. */
 export class PropSheen {
-  private readonly props: { img: Phaser.GameObjects.Image; key: string }[] = [];
+  private readonly props: { img: Phaser.GameObjects.Image; key: string; crop?: Crop }[] = [];
   private readonly objects: Phaser.GameObjects.Image[] = [];
   private readonly keys: string[] = [];
   private readonly cache = new Map<string, Img | null>();
 
   constructor(private readonly scene: Phaser.Scene, private readonly env: LightEnv) {}
 
-  register(img: Phaser.GameObjects.Image, key: string) {
-    this.props.push({ img, key });
+  register(img: Phaser.GameObjects.Image, key: string, crop?: Crop) {
+    this.props.push({ img, key, crop });
     return img;
   }
 
@@ -41,7 +42,7 @@ export class PropSheen {
   build() {
     const { scene, env } = this;
     let serial = 0;
-    for (const { img, key } of this.props) {
+    for (const { img, key, crop } of this.props) {
       if (!this.cache.has(key)) this.cache.set(key, readImg(scene, key));
       const pixels = this.cache.get(key);
       if (!pixels) continue;
@@ -54,9 +55,11 @@ export class PropSheen {
       canvas.getContext().putImageData(new ImageData(new Uint8ClampedArray(out.data), out.w, out.h), 0, 0);
       canvas.refresh();
       this.keys.push(tex);
-      this.objects.push(scene.add.image(img.x, img.y, tex).setOrigin(img.originX, img.originY)
+      const o = scene.add.image(img.x, img.y, tex).setOrigin(img.originX, img.originY)
         .setScale(img.scaleX, img.scaleY).setFlipX(img.flipX)
-        .setDepth(img.depth + SHEEN_DEPTH).setBlendMode(Phaser.BlendModes.SCREEN));
+        .setDepth(img.depth + SHEEN_DEPTH).setBlendMode(Phaser.BlendModes.SCREEN);
+      if (crop) o.setCrop(...crop);
+      this.objects.push(o);
     }
   }
 
