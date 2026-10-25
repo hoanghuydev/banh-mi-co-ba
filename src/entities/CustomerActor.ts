@@ -7,6 +7,7 @@ import { artScale } from "../art/photo";
 import { ActorLight } from "../art/light/actor";
 import type { Customer } from "../sim/customer";
 import { nowState } from "../sim/perception";
+import { isTouch } from "../core/device";
 import { FONT, worldFont } from "../ui/theme";
 import type { BubblePool } from "../ui/stall/BubblePool";
 import { NEUTRAL, POSES } from "../sim/reaction";
@@ -194,7 +195,7 @@ export class CustomerActor {
     const tagPx = `${this.tagPx()}px`;
     if (this.tag.style.fontSize !== tagPx) this.tag.setFontSize(tagPx);
     // Chip đặt dưới chân vì trên đầu thì đè thân người trước và nhãn trạm.
-    this.tag.setVisible(!c.ambient);
+    this.tag.setVisible(!c.ambient && (!isTouch() || c.phase === "ordering" || c.phase === "waiting"));
     this.tag.setPosition(sx, sy + TAG_BELOW_FEET).setDepth(OVERLAY_DEPTH)
       .setAlpha(c.phase === "leaving" ? 0.45 : 0.9);
     this.clampInView(this.tag);

@@ -22,6 +22,7 @@ Không đổi số cân bằng. Nút "Bỏ giới hạn thời gian" sẵn có l
 | Menu | boot, menu chính, xác nhận chơi mới, hỏi số liệu, cài đặt, âm thanh, giới thiệu (DOM) |
 | Vào game | shutter, PhoneShell intro, đặt tên quán, đánh giá, loading |
 | Cảnh quán | `InputState`/intent, joystick + nút, HUD, AssemblyPanel, TalkPanel, modal, bubble/vòng, Storage/MenuBoard, điện thoại, buổi tối / Broke / Win, hướng dẫn theo thiết bị |
+| Đợt mobile 2 | canvas phủ toàn màn trên điện thoại ngang (`GAME_W` theo tỉ lệ màn, chốt lúc tải); HUD hai ô gọn + cột nút phải; ba ô điều khiển cố định; hướng dẫn ngày 1 thành dải; Pause có Cài đặt; lắp bánh bảng gọn, kho ngăn kéo phải, bảng menu một thẻ; điện thoại cảm ứng ngang toàn màn; Thực phẩm gọn + giỏ dính đáy; menu "Chơi tiếp" là nút chính, xoá ván giữ 1 giây; chặn click mồ côi (`tapGuard`) |
 | Hoàn thiện | ma trận chụp, sửa doc (CANON, VAN-PHONG-UI, QUY-TAC-CANVAS, R0.5, README) |
 
 ## Kiến trúc
@@ -65,6 +66,7 @@ Cần `npm run dev` (cổng 5174).
 - Bàn phím ảo (ô đặt tên quán, ô nhập khác) chưa thử thật; PhoneShell và menu bám `visualViewport` để né.
 - `RENDER_SCALE` tính một lần lúc tải trang theo cỡ khung nhìn lúc đó, trần 2.
 - `markScale` (vòng, dấu hiệu trong cảnh to thêm 1,25 lần) cũng chốt lúc dựng cảnh.
+- `GAME_W` chốt lúc tải trang: xoay máy sang tỉ lệ khác giữa chừng thì letterbox lại; chưa thử tai thỏ thật.
 - Điện thoại ngang thấp (cao ≤ 390): Cài đặt và Âm thanh cuộn trong khay (chỉ thấy khoảng 2 hàng), vì vùng chạm 44px không cho ép vừa hơn.
 - Thẻ hướng dẫn ngày 1 ở 800×360 đè một phần HUD ngày/tiền (đặt ngay dưới nút điện thoại đang được chỉ).
 - `tests/p5-rain.test.ts` ("mặt tiền ngắn bất thường") và cổng `dist/art 7,6 MB > 6 MB` đỏ sẵn từ nhánh gốc, không do phần responsive.
