@@ -24,7 +24,6 @@ const HELP_BY_DAY = [
 /** Chừa chỗ cho cần và nút điều khiển cảm ứng, pixel thật. */
 const LEFT_RESERVE = EDGE + STICK_BASE + 24;
 const RIGHT_RESERVE = EDGE + ACTION_SIZE + 12 + PILL_W + 8;
-const PILL_RESERVE = EDGE + PILL_W + PILL_GAP;
 const STICK_TOP = EDGE + STICK_BASE + 40;
 
 /** `GLANCE` = có người nhìn MẶT mình · `CLOSE` = có người nhìn thẳng vào TAY mình. */
