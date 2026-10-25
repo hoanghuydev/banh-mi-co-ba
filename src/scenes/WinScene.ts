@@ -23,7 +23,7 @@ export class WinScene extends Phaser.Scene {
     const w = this.ctx.world;
     this.cameras.main.setBackgroundColor(0x1a1510);
     this.add.rectangle(GAME_W / 2, GAME_H / 2, GAME_W, GAME_H, 0x1a1510, 1);
-    music.play(this, "toi", 2200);
+    music.play("toi", 2200);
     this.view = new WinView(w, {
       textScale: loadSettings().textScale,
       onMenu: () => bus.emit("win:done", { dayIndex: w.progress.dayIndex }),

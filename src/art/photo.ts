@@ -182,27 +182,24 @@ const OPEN_LOAF = ["loaf_lid", "loaf_trough"] as const;
 /** `textures.exists` chưa đủ: lượt tải đang bay mà xin lại là Phaser báo trùng key. */
 const asked = new Set<string>();
 
+/** Ảnh chỉ dùng để nướng một lần trong `paintPhotos`; nướng xong là bỏ. */
+const BAKE_ONCE = [
+  ...FLOORS.flatMap((f) => [0, 1, 2, 3].map((i) => `f_${f}${i}`)),
+  ...Object.values(STANDING).map(([src]) => src),
+  BENCH.src,
+  ...Object.values(CARRIED).map(([src]) => src),
+  ...Object.values(FILLINGS).map(([src]) => src),
+  ...OPEN_LOAF,
+  FLY,
+  BOARD,
+  BASKET,
+];
+
+/** Vẽ lại mỗi lần dựng quán nên giữ suốt phiên. */
+const KEPT = ["shopfront", "menu_khung", "leaf_a", "leaf_c", "leaf_b", "leaf_eave", "leaf_wall_a", "leaf_wall_b"];
+
 export function preloadPhotos(scene: Phaser.Scene) {
-  const names = [
-    ...FLOORS.flatMap((f) => [0, 1, 2, 3].map((i) => `f_${f}${i}`)),
-    ...Object.values(STANDING).map(([src]) => src),
-    BENCH.src,
-    ...Object.values(CARRIED).map(([src]) => src),
-    ...Object.values(FILLINGS).map(([src]) => src),
-    "shopfront",
-    "menu_khung",
-    "leaf_a",
-    "leaf_c",
-    "leaf_b",
-    "leaf_eave",
-    "leaf_wall_a",
-    "leaf_wall_b",
-    ...OPEN_LOAF,
-    FLY,
-    BOARD,
-    BASKET,
-  ] as string[];
-  for (const n of names) {
+  for (const n of [...BAKE_ONCE, ...KEPT]) {
     if (asked.has(n) || scene.textures.exists(SRC + n)) continue;
     asked.add(n);
     scene.load.image(SRC + n, `art/${n}.webp`);
@@ -242,6 +239,12 @@ export function paintNpcPhotos(scene: Phaser.Scene) {
   if (npcPainted || !npcLoaded(scene)) return;
   npcPainted = true;
   npcPhotos(scene);
+  drop(scene, npcAssets().map((a) => ("walk" in a ? walkAtlas(a.walk) : SRC + a.image)));
+}
+
+/** `asked` giữ key nên các lượt `preload` sau không tải lại ảnh đã bỏ. */
+function drop(scene: Phaser.Scene, keys: string[]) {
+  for (const k of keys) if (scene.textures.exists(k)) scene.textures.remove(k);
 }
 
 /** Tải nền ngay sau khi vào menu; scene tắt giữa chừng thì loader bỏ dở nên phải quên các key đã xin. */
@@ -250,6 +253,7 @@ export function warmNpcPhotos(scene: Phaser.Scene) {
   preloadNpcPhotos(scene);
   scene.load.once(Phaser.Loader.Events.COMPLETE, () => paintNpcPhotos(scene));
   scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+    if (npcPainted) return;
     for (const a of npcAssets()) {
       if ("walk" in a) { if (!scene.textures.exists(walkAtlas(a.walk))) asked.delete(walkAtlas(a.walk)); }
       else if (!scene.textures.exists(SRC + a.image)) asked.delete(a.image);
@@ -646,4 +650,5 @@ export function paintPhotos(scene: Phaser.Scene) {
     boxed(scene, HELD.key(hand), src, HELD.W, fit);
   }
   paintFoodPhotos(scene);
+  drop(scene, [...BAKE_ONCE.map((n) => SRC + n), walkAtlas("player"), walkAtlas(WORK_FILE)]);
 }

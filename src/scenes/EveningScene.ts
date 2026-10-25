@@ -36,7 +36,7 @@ export class EveningScene extends Phaser.Scene {
     const neighbor = neighborTick(w);
     const incoming = phoneTick(w, true);
     this.ctx.save.request("EVENT");
-    music.play(this, "toi", 2200);
+    music.play("toi", 2200);
     sfx.loop(this, "amb_toi_nha", true, {}, 2500);
     sfx.loop(this, "sfx_quat_may", true, {}, 2500);
     this.cameras.main.setBackgroundColor(0x1d232b);

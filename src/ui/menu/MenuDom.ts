@@ -342,13 +342,13 @@ export class MenuDom {
       const b = el("button", "mn-step", txt);
       b.type = "button";
       b.setAttribute("aria-label", label);
-      b.onclick = () => { set(s[key] + d); if (wake) music.play(this.scene, "menu", 400); };
+      b.onclick = () => { set(s[key] + d); if (wake) music.play("menu", 400); };
       return b;
     };
     const minus = step("−", `Giảm ${name}`, -5);
     const plus = step("+", `Tăng ${name}`, 5);
     range.oninput = () => set(Number(range.value));
-    range.onchange = () => { if (wake) music.play(this.scene, "menu", 400); };
+    range.onchange = () => { if (wake) music.play("menu", 400); };
     const line = el("div", "mn-slider");
     line.append(minus, range, plus);
     row.append(head, el("small", "", note), line);

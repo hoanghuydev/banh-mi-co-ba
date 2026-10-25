@@ -44,7 +44,8 @@ async function networkFirst(req) {
 self.addEventListener("fetch", (e) => {
   const req = e.request;
   const url = new URL(req.url);
-  if (req.method !== "GET" || url.origin !== location.origin) return;
+  // Nhạc phát qua <audio> xin từng khúc (Range); trả nguyên file 200 từ cache thì Safari không phát.
+  if (req.method !== "GET" || url.origin !== location.origin || req.headers.has("range")) return;
   if (req.mode === "navigate" || url.pathname.endsWith("manifest.webmanifest")) e.respondWith(networkFirst(req));
   else if (SHELL_ASSET.test(url.pathname)) e.respondWith(cacheFirst(req, SHELL));
   else if (STATIC_PATH.test(url.pathname)) e.respondWith(cacheFirst(req, STATIC));
