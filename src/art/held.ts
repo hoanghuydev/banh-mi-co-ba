@@ -37,6 +37,7 @@ export function heldFootPad(scene: Phaser.Scene, key: string): number {
     const ctx = cv.getContext("2d", { willReadFrequently: true })!;
     ctx.drawImage(src as CanvasImageSource, 0, 0);
     const data = ctx.getImageData(0, 0, w, h).data;
+    cv.width = cv.height = 0;
     rows: for (let y = h - 1; y >= 0; y--) {
       for (let x = 0; x < w; x++) if (data[(y * w + x) * 4 + 3] > 8) break rows;
       pad++;

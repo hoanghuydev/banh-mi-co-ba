@@ -46,6 +46,8 @@ export class PropSheen {
       if (crop) o.setCrop(...crop);
       this.objects.push(o);
     }
+    // Bước đọc điểm ảnh cuối của lượt dựng.
+    this.pixels.clear();
   }
 
   destroy() {

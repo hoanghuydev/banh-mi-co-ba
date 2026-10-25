@@ -92,7 +92,7 @@ const MAX_TEX = 4096;
 
 /** Thu từng nửa một tới đúng cỡ, vì thu một phát thì song tuyến bỏ sót điểm nguồn. */
 function halve(img: HTMLImageElement | HTMLCanvasElement, w: number, h: number) {
-  let src: CanvasImageSource = img;
+  let src = img;
   let sw = img.width, sh = img.height;
   for (;;) {
     const last = !(sw > w * 2 && sh > h * 2);
@@ -103,6 +103,7 @@ function halve(img: HTMLImageElement | HTMLCanvasElement, w: number, h: number) 
     const ctx = step.getContext("2d")!;
     ctx.imageSmoothingQuality = "high";
     ctx.drawImage(src, 0, 0, nw, nh);
+    if (src !== img) src.width = src.height = 0;
     if (last) return step;
     src = step;
     sw = nw;

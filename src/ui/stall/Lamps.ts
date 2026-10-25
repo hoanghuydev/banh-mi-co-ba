@@ -76,6 +76,7 @@ function downscale(src: HTMLImageElement, w: number, h: number) {
     const g = c.getContext("2d")!;
     g.imageSmoothingQuality = "high";
     g.drawImage(cur, 0, 0, c.width, c.height);
+    if (cur !== src) cur.width = cur.height = 0;
     cur = c;
   }
   const out = document.createElement("canvas");
@@ -84,6 +85,7 @@ function downscale(src: HTMLImageElement, w: number, h: number) {
   const g = out.getContext("2d")!;
   g.imageSmoothingQuality = "high";
   g.drawImage(cur, 0, 0, w, h);
+  if (cur !== src) cur.width = cur.height = 0;
   return out;
 }
 
