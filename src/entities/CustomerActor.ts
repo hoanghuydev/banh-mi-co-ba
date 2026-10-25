@@ -20,6 +20,8 @@ import { passerAlpha } from "../sim/passersby";
 const PATIENCE_COLORS = [0x3f7fb0, 0xd8b13c, 0xc0392b] as const;
 const PATIENCE_R = 11;
 const PATIENCE_W = 3.5;
+/** Chu vi lớn nhất ≈ 2π · 11 · zoom 1,7 · RENDER_SCALE 2 ≈ 235 px thật. */
+const PATIENCE_STEPS = 512;
 // Tính từ đỉnh đầu, không từ `markY`.
 const PATIENCE_LIFT = 14;
 const PATIENCE_RED_SEC = 0.9;
@@ -78,7 +80,11 @@ export class CustomerActor {
   private light: ActorLight;
   private mark: Phaser.GameObjects.Text;
   private tag: Phaser.GameObjects.Text;
+  /** Các lớp theo thứ tự vẽ; vòng kiên nhẫn và đồ cầm tay đổi mỗi frame nên tách riêng để lớp đứng yên giữ được bộ đệm đỉnh. */
   private fx: Phaser.GameObjects.Graphics;
+  private ring: Phaser.GameObjects.Graphics;
+  private gaze: Phaser.GameObjects.Graphics;
+  private over: Phaser.GameObjects.Graphics;
   private leftAt = -1;
 
   private propFx: Phaser.GameObjects.Graphics;
@@ -112,6 +118,9 @@ export class CustomerActor {
       stroke: MARK_STROKE, strokeThickness: 4,
     }).setOrigin(0.5);
     this.fx = scene.add.graphics().setDepth(FX_DEPTH);
+    this.ring = scene.add.graphics().setDepth(FX_DEPTH);
+    this.gaze = scene.add.graphics().setDepth(FX_DEPTH);
+    this.over = scene.add.graphics().setDepth(FX_DEPTH);
     this.propFx = scene.add.graphics();
 
     this.lastX = c.x;
@@ -202,6 +211,9 @@ export class CustomerActor {
 
     const g = this.fx;
     g.clear();
+    this.ring.clear();
+    this.gaze.clear();
+    this.over.clear();
     const watching = c.phase !== "leaving" && c.phase !== "arriving";
 
     const st = watching ? nowState(c, nowSec) : null;
@@ -220,18 +232,17 @@ export class CustomerActor {
     // Không trừ `hop` để vòng đứng yên, dễ đọc.
     this.drawPatience(g, sx, footY(sy) - BODY_H - PATIENCE_LIFT);
 
-    if (watching) this.drawGazeProp(g, headX, headY, time, reducedMotion);
+    if (watching) this.drawGazeProp(this.gaze, headX, headY, time, reducedMotion);
 
     const face = c.react.face;
     if (face !== NEUTRAL && (face[0] || face[1] || face[2])) {
       // Đổi mặt thì giật 1 px trong 90 ms.
       const jolt = !reducedMotion && c.now - c.react.faceChangedAt < 0.09 ? -1 : 0;
-      drawFace(g, sx + 22, markY + 6 + jolt, face, c.body.skin, browColor(c.body.hair), c.phase === "leaving" ? 0.7 : 1);
+      drawFace(this.over, sx + 22, markY + 6 + jolt, face, c.body.skin, browColor(c.body.hair), c.phase === "leaving" ? 0.7 : 1);
     }
 
     this.drawBodyProps(sx + fidget + fx, footY(sy) - hop + fy - this.sp.up.x + this.sp.sit.x, depth, time, reducedMotion);
-    g.setAlpha(fade);
-    this.propFx.setAlpha(fade);
+    for (const o of [g, this.ring, this.gaze, this.over, this.propFx]) o.setAlpha(fade);
 
     if (c.say) this.bubbles.acquire(c.id).setText(c.say);
     else this.bubbles.release(c.id, reducedMotion);
@@ -303,8 +314,8 @@ export class CustomerActor {
     }
   }
 
-  private drawPatience(g: Phaser.GameObjects.Graphics, x: number, y: number) {
-    const c = this.c;
+  private drawPatience(track: Phaser.GameObjects.Graphics, x: number, y: number) {
+    const c = this.c, g = this.ring;
     const leaving = c.phase === "leaving";
 
     if (leaving) {
@@ -321,10 +332,11 @@ export class CustomerActor {
     this.leftAt = -1;
     if (c.phase === "arriving" || c.pass) return;
 
-    const frac = c.patienceLeft;
+    // Làm tròn để đầu cung nhích ≤ 0,5 px thật mỗi lần; vòng không phải dựng lại mỗi frame.
+    const frac = Math.ceil(c.patienceLeft * PATIENCE_STEPS) / PATIENCE_STEPS;
     // Rãnh mờ để cung đỏ ngắn lúc gần cạn không trông như vệt bẩn.
-    g.lineStyle(PATIENCE_W, 0x0d1216, 0.22);
-    g.strokeCircle(x, y, PATIENCE_R);
+    track.lineStyle(PATIENCE_W, 0x0d1216, 0.22);
+    track.strokeCircle(x, y, PATIENCE_R);
     if (frac <= 0) return;
     const from = -Math.PI / 2;
     g.lineStyle(PATIENCE_W, patienceColor(frac), 0.95);
@@ -365,6 +377,9 @@ export class CustomerActor {
     this.tag.destroy();
     this.mark.destroy();
     this.fx.destroy();
+    this.ring.destroy();
+    this.gaze.destroy();
+    this.over.destroy();
     this.propFx.destroy();
     this.bubbles.release(this.c.id, true);
   }

@@ -216,7 +216,10 @@ export class StallScene extends Phaser.Scene {
   private boardCrust = 0;
   private boardQ = 1;
   private oven = new Oven();
+  /** Vòng lò ba lớp theo thứ tự vẽ; chỉ `ovenArc` đổi mỗi frame khi nướng nên hai lớp kia giữ được bộ đệm đỉnh. */
   private ovenGfx!: Phaser.GameObjects.Graphics;
+  private ovenArc!: Phaser.GameObjects.Graphics;
+  private ovenTop!: Phaser.GameObjects.Graphics;
   private choreGfx!: Phaser.GameObjects.Graphics;
   private basket: {
     hand: Hand; warmth: number; crust: number; q: number; soiled: boolean;
@@ -390,6 +393,8 @@ export class StallScene extends Phaser.Scene {
     this.boardLoafImg = fitPhoto(this.add.image(0, 0, HELD.key("loaf_hot")))
       .setOrigin(0.5, 1).setVisible(false);
     this.ovenGfx = this.add.graphics().setDepth(LABEL_DEPTH + 2);
+    this.ovenArc = this.add.graphics().setDepth(LABEL_DEPTH + 2);
+    this.ovenTop = this.add.graphics().setDepth(LABEL_DEPTH + 2);
     this.choreGfx = this.add.graphics().setDepth(LABEL_DEPTH + 4);
     this.gripGfx = this.add.graphics();
     this.lastMinutes = this.clock.minutes;
@@ -1975,8 +1980,10 @@ export class StallScene extends Phaser.Scene {
    * hằng số là vòng nói một đằng màu một nẻo.
    */
   private drawOven() {
-    const g = this.ovenGfx;
+    const g = this.ovenGfx, arc = this.ovenArc, top = this.ovenTop;
     g.clear();
+    arc.clear();
+    top.clear();
     const lab = this.labelY.get("oven");
     if (!lab) return;
     // ngay trên nhãn "lò than", và vẽ TRÊN lớp nhãn — nhãn không được che độ giòn
@@ -2004,10 +2011,10 @@ export class StallScene extends Phaser.Scene {
       g.beginPath(); g.arc(cx, baseY, R, ang(singeAt), ang(burnAt)); g.strokePath();
 
       const frac = Math.min(1, l.crust / burnAt);
-      g.lineStyle(4, col, 1);
-      g.beginPath();
-      g.arc(cx, baseY, R, -Math.PI / 2, -Math.PI / 2 + frac * Math.PI * 2);
-      g.strokePath();
+      arc.lineStyle(4, col, 1);
+      arc.beginPath();
+      arc.arc(cx, baseY, R, -Math.PI / 2, -Math.PI / 2 + frac * Math.PI * 2);
+      arc.strokePath();
 
       /*
        * ⚠️ VẠCH THỨ HAI ĐỌC `oven.singeAt`, KHÔNG ĐỌC `CRUST.SINGED`: lò điện có `singeAt` riêng,
@@ -2015,10 +2022,10 @@ export class StallScene extends Phaser.Scene {
        */
       for (const n of [CRUST.READY, singeAt]) {
         const a = ang(n);
-        g.lineStyle(2, 0xffffff, 0.9);
-        g.lineBetween(cx + Math.cos(a) * (R - 4), baseY + Math.sin(a) * (R - 4), cx + Math.cos(a) * (R + 4), baseY + Math.sin(a) * (R + 4));
+        top.lineStyle(2, 0xffffff, 0.9);
+        top.lineBetween(cx + Math.cos(a) * (R - 4), baseY + Math.sin(a) * (R - 4), cx + Math.cos(a) * (R + 4), baseY + Math.sin(a) * (R + 4));
       }
-      if (band === "BURNT") g.fillStyle(BURNT_COL, 1).fillCircle(cx, baseY, R - 3);
+      if (band === "BURNT") top.fillStyle(BURNT_COL, 1).fillCircle(cx, baseY, R - 3);
     }
   }
 
@@ -2333,9 +2340,10 @@ export class StallScene extends Phaser.Scene {
     const held = this.player.heldSprite;
     if (this.player.hand === "empty" || !held.visible || this.grip.tier === "SAFE") return;
     const shake = this.grip.tier === "SHAKE" && !this.settings.reducedMotion ? Math.sin(this.time.now / 30) * 1.5 : 0;
-    g.setDepth(held.depth + 2);
+    // Rung bằng vị trí object để lệnh vẽ đứng yên, giữ được bộ đệm đỉnh.
+    g.setDepth(held.depth + 2).setPosition(shake, 0);
     g.lineStyle(3, this.grip.tier === "SHAKE" ? 0xd0503c : 0xe39a3b, 0.95);
-    g.strokeCircle(held.x + shake, held.y, 17 * markScale());
+    g.strokeCircle(held.x, held.y, 17 * markScale());
   }
 
   /** ⚠️ `smell` chỉ cho `BURNT_OR_COLD`, phân biệt ổ CHÁY (có mùi) với ổ NGUỘI. Quên cờ này là cả hàng than phiền bánh nguội trước ổ than đen. */

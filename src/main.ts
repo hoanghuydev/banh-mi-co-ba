@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { GAME_W, GAME_H } from "./core/config";
 import { RENDER_SCALE, installTextResolution } from "./core/render";
+import { installGraphicsCache } from "./core/graphicsCache";
 import { BUILD_TIME, DEV_TOOLS } from "./core/flags";
 import { FPS_LIMIT, installPhaserPatches } from "./core/phaserPatches";
 import "./core/session";
@@ -26,6 +27,7 @@ if (import.meta.env.PROD && "serviceWorker" in navigator) {
 // Phải chạy trước khi dựng game: nó thay factory `add.text` của Phaser.
 installTextResolution();
 installPhaserPatches();
+installGraphicsCache();
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
