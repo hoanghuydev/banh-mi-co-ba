@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { GAME_H, GAME_W } from "../../core/config";
-import { isTouch, onDeviceChange } from "../../core/device";
+import { designFor, isPhone, isTouch, onDeviceChange } from "../../core/device";
 import { FONT, UI, label, textScale, touchFont, touchSize } from "../theme";
 import { sfx } from "../../audio/sfx";
 import type { TalkTone } from "../../sim/talk";
@@ -18,6 +18,9 @@ import { CARD_EDGE, placeTalkCard } from "./talkCardLayout";
 const CARD_W = 310;
 const CARD_W_TOUCH = 430;
 const PAD = 12;
+/** Điện thoại, pixel CSS thật: bề ngang thẻ và khoảng né nửa bong bóng của người nói. */
+const PHONE_CARD_CSS = 230;
+const PHONE_GAP_CSS = 104;
 
 /** Màu mép trái của mỗi dòng theo giọng. Chỉ là GỢI Ý khí, không phải điểm số (T3). */
 const TONE_TINT: Record<TalkTone, number> = {
@@ -79,8 +82,8 @@ export class TalkPanel {
     this.locked = lock;
     this.view = v;
     const sz = Math.min(textScale(), 1.35);
-    const touch = isTouch();
-    const w = Math.min((touch ? CARD_W_TOUCH : CARD_W) * Math.min(sz, 1.2), GAME_W - CARD_EDGE * 2);
+    const touch = isTouch(), phone = isPhone();
+    const w = Math.min(phone ? designFor(PHONE_CARD_CSS * Math.min(sz, 1.2)) : (touch ? CARD_W_TOUCH : CARD_W) * Math.min(sz, 1.2), GAME_W - CARD_EDGE * 2);
     const c = this.scene.add.container(0, 0).setDepth(9_400_000).setScrollFactor(0);
 
 
@@ -90,7 +93,8 @@ export class TalkPanel {
       fontFamily: FONT, fontSize: `${touchFont(Math.round(14 * sz))}px`, color: UI.ink,
       lineSpacing: Math.round(5 * sz), wordWrap: { width: w - PAD * 2 - 30 },
     }).setOrigin(0, 0.5));
-    const rowH = rowTexts.map((t) => Math.max(touchSize(Math.round(30 * sz)), t.height + Math.round(14 * sz)));
+    const rowPad = phone ? designFor(8) : Math.round(14 * sz);
+    const rowH = rowTexts.map((t) => Math.max(touchSize(Math.round(30 * sz)), t.height + rowPad));
 
     const closeH = touch ? touchSize(44) : 0;
     const nameH = Math.max(Math.round(16 * sz), closeH);
@@ -101,7 +105,7 @@ export class TalkPanel {
         fontFamily: FONT, fontSize: `${touchFont(Math.round(13 * sz))}px`, color: UI.ink,
         fontStyle: "italic", lineSpacing: Math.round(4 * sz),
         wordWrap: { width: w - PAD * 2 },
-        ...(touch ? { maxLines: 3 } : {}),
+        ...(touch ? { maxLines: phone ? 2 : 3 } : {}),
       }).setOrigin(0, 0)
       : null;
     const lineH = lineTxt ? lineTxt.height + Math.round(10 * sz) : 0;
@@ -147,7 +151,8 @@ export class TalkPanel {
 
   /** ⚠️ NEO BẰNG MÉP TRÊN, KHÔNG BẰNG TÂM: chiều cao đổi theo từng nhịp, neo bằng tâm thì cả hai mép cùng xê dịch. Mắt đọc từ trên xuống nên mỏ neo phải là chỗ họ đang nhìn. */
   private place(a: { x: number; y: number } | undefined, w: number, h: number) {
-    const r = placeTalkCard(this.locked, a, { w, h }, { w: GAME_W, h: GAME_H });
+    const gap = isPhone() ? designFor(PHONE_GAP_CSS) : undefined;
+    const r = placeTalkCard(this.locked, a, { w, h }, { w: GAME_W, h: GAME_H }, gap);
     this.locked = { cx: r.cx, top: r.top };
     return { cx: r.cx, cy: r.top + h / 2 };
   }

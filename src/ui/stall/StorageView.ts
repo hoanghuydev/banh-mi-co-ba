@@ -3,7 +3,7 @@ import { GOODS, QUALITIES, type GoodId, type InventoryState } from "../../sim/ec
 import { fmtUnits } from "../../sim/day";
 import { coldUsage, freshnessOf, moveStack, stacksOf, useRank, type Freshness, type Stack } from "../../sim/stock";
 import { CLAY_CSS } from "../clayCss";
-import { hint, isTouch } from "../../core/device";
+import { hint, isPhone, isTouch } from "../../core/device";
 import { TourCoach } from "../tour/TourCoach";
 import { guardStrayClick } from "../tapGuard";
 
@@ -82,6 +82,16 @@ const STYLE = `
 .sv-root.t .sv-det .row,.sv-root.t .sv-det .bar,.sv-root.t .sv-det .han{flex:1 1 100%;text-align:left}
 .sv-root.t .sv-det .han{flex:1 1 auto}
 @media (max-height:400px){.sv-root.t .sv-cell{aspect-ratio:1.35}.sv-root.t .sv-head img{height:34px}}
+html[data-phone="1"] .sv-root.t .sv-card{width:min(58vw,560px);height:auto;max-height:100%;align-self:flex-start;padding-right:max(18px,var(--safe-right));border-radius:0 0 0 18px}
+html[data-phone="1"] .sv-root.t .sv-x{width:36px;height:36px;font-size:1.2em}
+html[data-phone="1"] .sv-root.t .sv-head{padding-right:42px}
+html[data-phone="1"] .sv-root.t .sv-body{flex-direction:row;align-items:flex-start;overflow:hidden;flex:0 1 auto;min-height:0}
+html[data-phone="1"] .sv-root.t .sv-grid{flex:1 1 auto;max-height:100%;overflow:auto}
+html[data-phone="1"] .sv-root.t .sv-det{flex:0 0 150px;max-height:100%;overflow:auto;flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:5px}
+html[data-phone="1"] .sv-root.t .sv-det>*{flex:0 0 auto}
+html[data-phone="1"] .sv-root.t .sv-det .nm{text-align:left}
+html[data-phone="1"] .sv-root.t .sv-det .chips{justify-content:flex-start}
+html[data-phone="1"] .sv-root.t :is(.sv-cold,.sv-det .chip,.sv-det .row,.sv-cell .n){font-size:max(12px,.9em)}
 
 @media (max-width:700px){
   .sv-body{flex-direction:column;overflow:auto}
@@ -168,7 +178,7 @@ export class StorageView {
     }
     this.stacks = stacksOf(opts.inventory, opts.day);
     this.root = this.el("div", this.touch ? "sv-root t" : "sv-root");
-    this.root.style.fontSize = `${Math.round(16 * opts.textScale)}px`;
+    this.root.style.fontSize = `${Math.round((isPhone() ? 13 : 16) * opts.textScale)}px`;
     this.root.addEventListener("keydown", this.keyGuard, true);
     this.root.addEventListener("keyup", (e) => { if (e.code !== "KeyP") e.stopPropagation(); }, true);
     this.root.addEventListener("pointerdown", (e) => { if (e.target === this.root) this.close(); });
@@ -187,9 +197,10 @@ export class StorageView {
     const done = () => { this.coach?.destroy(); this.coach = null; this.opts.onGuideDone(); };
     this.coach = new TourCoach({ textScale: this.opts.textScale, onSkip: done });
     const tap = hint("Bấm", "Chạm");
+    const phone = isPhone();
     const steps = [
       {
-        el: () => this.det,
+        el: () => (phone ? this.det.parentElement : this.det),
         text: `${tap} vào một ô để xem chi tiết: độ ngon và hạn dùng. Dấu ★: hàng ngon. Dấu ▼: hàng dỏm. Dấu !: phải dùng hết hôm nay.`,
       },
       {
@@ -205,8 +216,23 @@ export class StorageView {
         beside: this.root.querySelector(".sv-card")?.getBoundingClientRect(),
         ok: () => (last ? done() : show(i + 1)),
       });
+      if (phone) this.tuckGuide();
     };
     requestAnimationFrame(() => show(0));
+  }
+
+  /** Điện thoại: đủ chỗ thì dời thẻ hướng dẫn xuống ngay dưới ngăn kéo cho sát lưới. */
+  private tuckGuide() {
+    const bub = [...document.querySelectorAll<HTMLElement>(".tg-root")].find((r) => r.style.display !== "none")?.querySelector<HTMLElement>(".tg-bub");
+    const card = this.root.querySelector(".sv-card")?.getBoundingClientRect();
+    if (!bub || !card) return;
+    const prev = bub.style.cssText;
+    bub.style.width = `${card.width - 20}px`;
+    bub.style.maxWidth = "none";
+    const top = card.bottom + 8;
+    if (top + bub.offsetHeight > window.innerHeight - 8) { bub.style.cssText = prev; return; }
+    bub.style.left = `${Math.round(card.left + 10)}px`;
+    bub.style.top = `${Math.round(top)}px`;
   }
 
   private el<K extends keyof HTMLElementTagNameMap>(tag: K, cls = "", text = ""): HTMLElementTagNameMap[K] {

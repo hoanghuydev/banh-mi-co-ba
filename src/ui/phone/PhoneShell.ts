@@ -1,11 +1,12 @@
 import Phaser from "phaser";
 import { PHONE_STYLE } from "./phoneStyle";
-import { isTouch, onDeviceChange, viewport } from "../../core/device";
+import { PHONE_FONT, PHONE_TOUCH, isPhone, isTouch, onDeviceChange, viewport } from "../../core/device";
 import { btn, el, svg } from "./dom";
 
 const FRAME_W = 438;
 const FRAME_H = 835;
-const FRAMED_MIN_K_TOUCH = 0.85;
+const FRAMED_MIN_K_PHONE = 0.85;
+const FRAMED_MIN_K_TABLET = 0.6;
 const FRAMED_MIN_K_PC = 0.5;
 
 export type Dir = "r" | "l" | "up" | "";
@@ -36,6 +37,7 @@ export class PhoneShell {
   private status: HTMLDivElement;
   private prevKbd: boolean | null = null;
   private closed = false;
+  private base = 15;
 
   private onKey = (ev: KeyboardEvent) => {
     const typing = ev.target instanceof HTMLTextAreaElement || ev.target instanceof HTMLInputElement;
@@ -108,12 +110,18 @@ export class PhoneShell {
     this.root.style.top = `${Math.round(vv?.offsetTop ?? 0)}px`;
     this.root.style.bottom = "auto";
     this.root.style.height = `${h}px`;
+    const touch = isTouch();
+    const phone = isPhone();
+    // Điện thoại thật cầm ngang thì máy trong game cũng nằm ngang, phủ kín màn.
+    const land = phone && w > h;
     const fit = Math.min((h - 28) / FRAME_H, (w - 16) / FRAME_W);
-    const framed = fit >= (isTouch() ? FRAMED_MIN_K_TOUCH : FRAMED_MIN_K_PC);
+    const framed = !land && fit >= (!touch ? FRAMED_MIN_K_PC : phone ? FRAMED_MIN_K_PHONE : FRAMED_MIN_K_TABLET);
     const set = (a: string, on: boolean) => (on ? this.root.setAttribute(a, "") : this.root.removeAttribute(a));
     set("data-compact", !framed);
     set("data-short", !framed && h < 520);
-    const touch = isTouch();
+    set("data-land", land);
+    this.base = land ? 13 : 15;
+    if (this.view) this.view.style.fontSize = this.fontSize();
     if (framed) {
       const k = Math.min(1.1, fit);
       this.root.style.setProperty("--k", String(k));
@@ -123,11 +131,15 @@ export class PhoneShell {
       this.fit.style.height = `${FRAME_H * k}px`;
     } else {
       this.root.style.setProperty("--k", "1");
-      this.root.style.setProperty("--fmin", touch ? "14px" : "0px");
-      this.root.style.setProperty("--tmin", touch ? "44px" : "38px");
+      this.root.style.setProperty("--fmin", land ? `${PHONE_FONT}px` : touch ? "14px" : "0px");
+      this.root.style.setProperty("--tmin", land ? `${PHONE_TOUCH}px` : touch ? "44px" : "38px");
       this.fit.style.width = "";
       this.fit.style.height = "";
     }
+  }
+
+  private fontSize() {
+    return `max(calc(var(--fmin) * 1.08), ${Math.round(this.base * Math.min(this.opts.textScale, 1.4))}px)`;
   }
 
   setClock(text: string) {
@@ -149,7 +161,7 @@ export class PhoneShell {
     const keep = dir ? [] : this.scrollPos();
     this.view?.remove();
     const v = el("div", "ph-view");
-    v.style.fontSize = `max(calc(var(--fmin) * 1.08), ${Math.round(15 * Math.min(this.opts.textScale, 1.4))}px)`;
+    v.style.fontSize = this.fontSize();
     if (dir) v.classList.add(`in-${dir}`);
     v.append(content);
     content.style.cssText += "flex:1;min-height:0;display:flex;flex-direction:column";

@@ -4,7 +4,7 @@ import { ECON, dishPriceVnd, pickOf, vnd, type PricePick } from "../../sim/econ"
 import { isOpen } from "../../sim/unlock";
 import { INGREDIENTS, levelsOf, type IngredientInfo } from "../../sim/order";
 import { shopName } from "../../content/shop";
-import { isTouch } from "../../core/device";
+import { isPhone, isTouch } from "../../core/device";
 import { guardStrayClick } from "../tapGuard";
 
 // Mọi tên món và con số đọc từ `sim/menu` + `sim/econ`, để bảng dạy đúng cái `diffDish` chấm.
@@ -84,6 +84,22 @@ const STYLE = `
 .mb-card.t .mb-tip{color:#ffe9b0}
 .mb-card.t .mb-tip .s{color:#f8d978}
 
+html[data-phone="1"] .mb-root{padding:max(6px,var(--safe-top)) max(8px,var(--safe-right)) max(6px,var(--safe-bottom)) max(8px,var(--safe-left))}
+html[data-phone="1"] .mb-card.t{width:min(760px,100%);height:auto;max-height:100%}
+html[data-phone="1"] .mb-card.t .mb-board{border-width:14px;border-image-width:14px}
+html[data-phone="1"] .mb-card.t .mb-head{padding-right:50px}
+html[data-phone="1"] .mb-card.t .mb-ten{font-size:1.15em}
+html[data-phone="1"] :is(.mb-gio,.mb-card.t .mb-sec,.mb-card.t .mb-ing>span,.mb-card.t .mb-mrow .trong,.mb-tip,.mb-chan,.mb-pk button){font-size:max(12px,.9em)}
+html[data-phone="1"] .mb-card.t .mb-sec{margin:4px 0 0}
+html[data-phone="1"] .mb-card.t .mb-rau{margin:2px 0 0}
+html[data-phone="1"] .mb-card.t .mb-ing>span{padding:0 8px}
+html[data-phone="1"] .mb-card.t .mb-mrow{padding:3px 0}
+html[data-phone="1"] .mb-card.t .mb-pk button{min-height:36px;min-width:44px;padding:2px 4px}
+html[data-phone="1"] .mb-card.t .mb-chan{margin-top:4px;padding-top:4px;line-height:1.4}
+html[data-phone="1"] .mb-tips{display:grid;grid-template-columns:1fr 1fr;column-gap:20px}
+html[data-phone="1"] .mb-tip{padding:2px 0;line-height:1.35}
+html[data-phone="1"] .mb-x{top:24px;right:24px;width:36px;height:36px;font-size:1.2em}
+
 @media (max-height:640px){
   .mb-root{padding:max(10px,var(--safe-top)) max(10px,var(--safe-right)) max(10px,var(--safe-bottom)) max(10px,var(--safe-left))}
   .mb-row{padding:4px 0}
@@ -133,7 +149,7 @@ export class MenuBoardView {
     }
     this.root = document.createElement("div");
     this.root.className = "mb-root";
-    this.root.style.fontSize = `${Math.round(16 * opts.textScale)}px`;
+    this.root.style.fontSize = `${Math.round((isPhone() ? 13 : 16) * opts.textScale)}px`;
     this.root.addEventListener("keydown", this.keyGuard, true);
     this.root.addEventListener("keyup", (e) => { if (e.code !== "KeyP") e.stopPropagation(); }, true);
     this.root.addEventListener("pointerdown", (e) => { if (e.target === this.root) this.close(); });
@@ -289,13 +305,15 @@ export class MenuBoardView {
     inner.appendChild(chan);
 
     inner.appendChild(this.el("div", "mb-sec", "Khách dặn thêm"));
+    const tips = this.el("div", "mb-tips");
     for (const t of MENU_TIPS) {
       const row = this.el("div", "mb-tip");
       row.appendChild(this.el("span", "s", t.say));
       row.appendChild(this.el("span", "d"));
       row.appendChild(this.el("span", "", t.means));
-      inner.appendChild(row);
+      tips.appendChild(row);
     }
+    inner.appendChild(tips);
     b.appendChild(inner);
     return b;
   }

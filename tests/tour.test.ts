@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { newGame } from "../src/core/save";
-import { TOUR_TOTAL, dishGaps, gapText, tourAt, tourDone, tourIndex, tourSkip, tourStep, touring } from "../src/sim/tour";
+import { TOUR_TOTAL, closeDone, closePending, dishGaps, gapText, tourAt, tourDone, tourIndex, tourSkip, tourStep, touring } from "../src/sim/tour";
 import { levelsOf } from "../src/sim/order";
 
 test("dẫn bữa đầu chạy đủ mười một việc, theo thứ tự", () => {
@@ -41,6 +41,22 @@ test("việc đã qua rồi thì không kéo ngược", () => {
   assert.equal(tourStep(w), "LO");
   tourDone(w, "MENU");                     // mở lại bảng menu lần hai
   assert.equal(tourStep(w), "LO");
+});
+
+test("xong việc trong điện thoại (đặt hàng, đọc tin) thì chờ chỉ nút đóng; việc khác thì không", () => {
+  const w = newGame("x", "tour-close");
+  assert.equal(closePending(w), false);
+  tourDone(w, "CHO");
+  assert.equal(closePending(w), true);
+  closeDone(w);
+  tourDone(w, "MENU");
+  assert.equal(closePending(w), false);
+  tourDone(w, "CHO");                      // bước đã qua: không bật lại
+  assert.equal(closePending(w), false);
+  for (const s of ["KHO", "BANH", "LO", "THOT", "NHAN", "GOI", "GIAO", "TAY"] as const) tourDone(w, s);
+  assert.equal(closePending(w), false);
+  tourDone(w, "DT");
+  assert.equal(closePending(w), true);
 });
 
 test("hết ngày 1 là hết dẫn, dù chưa làm xong", () => {

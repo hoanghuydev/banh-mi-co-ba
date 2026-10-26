@@ -90,6 +90,12 @@ export const QUEST_TEXT: Record<string, string> = byDevice({
   DT: "Kiểm tra truyền âm. Có tin nhắn mới, bấm Tab.",
 });
 
+/** Hàng ngày đầu chưa về; `at` lấy từ `arriveText`. */
+export const etaText = (at: string, sys: boolean) =>
+  sys ? `Tài nguyên đang vận chuyển. Dự kiến tới nơi: ${at}.` : `Hàng đang trên đường giao. Giờ về: ${at}.`;
+
+export const CLOSE_TEXT = { sys: "Chạm ✕ đóng điện thoại, trở về quán.", plain: "Chạm ✕ để đóng điện thoại." };
+
 export const HANDS_TEXT = "Keng! Phát hiện tay ký chủ đang bẩn. Biểu tượng này còn sáng thì tay vẫn bẩn.";
 
 export const EYE_TEXT = "Keng! Mắt sáng: có khách đang nhìn ký chủ. Mắt đỏ nháy: khách nhìn chằm vào tay. Sơ suất lúc này, khách thấy rõ.";

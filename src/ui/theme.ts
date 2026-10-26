@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import { settings } from "../core/flags";
 import { sfx } from "../audio/sfx";
-import { MIN_FONT, MIN_TOUCH, designFor, fitScale, isTouch } from "../core/device";
+import { designFor, fitScale, isTouch, minFont, minTouch } from "../core/device";
 import { ZOOM } from "../world/camera";
 import { CLAY, clayButton, clayFaceDy, clayImage, type ClayState } from "./clay";
 
@@ -23,17 +23,17 @@ export const UI = {
 } as const;
 
 /** Cạnh thiết kế nhỏ nhất để một vùng chạm đạt `css` px thật trên cảm ứng; chuột giữ `base`. */
-export function touchSize(base: number, css = MIN_TOUCH) {
+export function touchSize(base: number, css = minTouch()) {
   return isTouch() ? Math.max(base, Math.ceil(designFor(css))) : base;
 }
 
 /** Cỡ chữ thiết kế nhỏ nhất để chữ đạt `css` px thật trên cảm ứng; chuột giữ `base`. */
-export function touchFont(base: number, css = MIN_FONT) {
+export function touchFont(base: number, css = minFont()) {
   return isTouch() ? Math.max(base, Math.ceil(designFor(css))) : base;
 }
 
 /** Cỡ chữ trong thế giới (camera zoom) để chữ đạt `css` px thật trên cảm ứng; chuột giữ `base`. */
-export function worldFont(base: number, css = MIN_FONT) {
+export function worldFont(base: number, css = minFont()) {
   return isTouch() ? Math.max(base, Math.ceil(css / (fitScale() * ZOOM))) : base;
 }
 

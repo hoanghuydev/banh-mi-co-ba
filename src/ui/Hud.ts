@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import { ICON, ntfKey, type NtfIcon } from "../art";
 import { fitPhoto } from "../art/photo";
 import { GAME_W, GAME_H } from "../core/config";
-import { designFor, isTouch, onDeviceChange } from "../core/device";
+import { designFor, isPhone, isTouch, onDeviceChange } from "../core/device";
 import { ACTION_SIZE, CTX_SIZE, EDGE, PILL_GAP, RUN_SIZE, STICK_BASE } from "./touch/touchStyle";
 import { BAND_LABEL, type Clock } from "../core/clock";
 import type { Settings } from "../core/save";
@@ -54,7 +54,9 @@ const TOAST_ICON_PX = 19;
 const TOAST_BODY_W = 210;
 
 export type ToastTone = "good" | "bad" | "info";
-export type ToastOpts = { icon?: NtfIcon; title?: string };
+/** `notice`: tin không gấp, được hoãn khi thẻ hướng dẫn đang hiện. */
+export type ToastOpts = { icon?: NtfIcon; title?: string; notice?: boolean };
+type Held = { text: string; tone: ToastTone; opts: ToastOpts };
 
 const CREAM = "#f7f1e2";
 
@@ -87,6 +89,8 @@ type Toast = {
 
 type Metrics = {
   touch: boolean;
+  /** Điện thoại ngang: chữ và khung về sàn của điện thoại. */
+  small: boolean;
   /** Hệ số phóng hình theo cỡ chữ; 1 trên chuột. */
   k: number;
   btnW: number;
@@ -145,6 +149,10 @@ export class Hud {
   private cluster: Phaser.GameObjects.GameObject[] = [];
   private toastBg: Phaser.GameObjects.Graphics;
   private toasts: Toast[] = [];
+  private held: Held[] = [];
+  private holdAll = false;
+  private noticeKey: string | null = null;
+  private keepOut: { x: number; y: number; w: number; h: number } | null = null;
   private scene: Phaser.Scene;
   private m!: Metrics;
   private lastUpdate: Parameters<Hud["update"]>[0] | null = null;
@@ -221,13 +229,14 @@ export class Hud {
   private fixed = <T extends Phaser.GameObjects.GameObject>(o: T, d = DEPTH) =>
     (o as any).setScrollFactor(0).setDepth(d) as T;
 
-  /** Chữ thật ≥14 px trên cảm ứng: phóng theo hệ số FIT hiện tại. */
-  private font(n: number) {
-    return touchFont(Math.round(n * this.settings.textScale));
+  /** `phoneCss` là cỡ chữ thật trên điện thoại, mặc định theo sàn chung. */
+  private font(n: number, phoneCss?: number) {
+    const ts = this.settings.textScale;
+    return touchFont(Math.round(n * ts), phoneCss && isPhone() ? Math.round(phoneCss * ts) : undefined);
   }
 
-  private fs(n: number) {
-    return `${this.font(n)}px`;
+  private fs(n: number, phoneCss?: number) {
+    return `${this.font(n, phoneCss)}px`;
   }
 
   private spacing(n: number) {
@@ -238,7 +247,7 @@ export class Hud {
     const touch = isTouch();
     if (!touch) {
       return {
-        touch, k: 1, btnW: 48, btnH: 38, cy: 26,
+        touch, small: false, k: 1, btnW: 48, btnH: 38, cy: 26,
         hands: GAME_W / 2 - 58, pause: GAME_W / 2, phone: GAME_W / 2 + 60, eye: GAME_W / 2 + 124,
         pauseY: 26, phoneY: 26, statL: 26, statR: GAME_W - 26, statY: 20,
         midL: 40, midR: GAME_W - 40,
@@ -256,7 +265,7 @@ export class Hud {
     const pauseY = pillBottom + gap + btnH / 2;
     const midL = designFor(LEFT_RESERVE), midR = GAME_W - designFor(RIGHT_RESERVE);
     return {
-      touch, k, btnW, btnH, cy: statY + Math.round(this.font(14) * 0.7),
+      touch, small: isPhone(), k, btnW, btnH, cy: statY + Math.round(this.font(14) * 0.7),
       hands: 0, pause: colX, phone: colX, eye: 0,
       pauseY, phoneY: pauseY + btnH + gap,
       statL: edge + 14, statR: GAME_W - edge - 14, statY,
@@ -304,7 +313,7 @@ export class Hud {
     this.paintPhone();
 
     const stat = (t: Phaser.GameObjects.Text, x: number) => t
-      .setFontSize(this.fs(14)).setLineSpacing(this.spacing(7)).setPosition(x, 20);
+      .setFontSize(this.fs(14, 13)).setLineSpacing(this.spacing(7)).setPosition(x, 20);
     stat(this.left, m.statL);
     stat(this.right, m.statR);
     this.left.y = this.right.y = m.statY;
@@ -313,7 +322,7 @@ export class Hud {
     const midW = m.midR - m.midL;
     this.prompt.setFontSize(this.fs(15)).setWordWrapWidth(m.touch ? midW - 34 : GAME_W - 80);
     this.help.setFontSize(this.fs(11)).setWordWrapWidth(m.touch ? midW - 24 : GAME_W - 80).setPosition(mid, m.helpY);
-    this.ticketText.setFontSize(this.fs(13)).setLineSpacing(this.spacing(7))
+    this.ticketText.setFontSize(this.fs(13)).setLineSpacing(this.spacing(m.small ? 2 : 7))
       .setWordWrapWidth(m.touch ? Math.round(190 * m.k) : 320 * Math.min(ts, 1.5));
     this.feedText.setFontSize(this.fs(12)).setLineSpacing(this.spacing(6)).setWordWrapWidth(m.feedW);
     this.placeFeed();
@@ -336,7 +345,8 @@ export class Hud {
     const m = this.m;
     const docked = this.feedDocked && !m.touch;
     this.feedText.setPosition(docked ? 496 : m.feedX, docked ? GAME_H - 14 : m.feedY);
-    this.feedText.setVisible(!(this.feedDocked && m.touch));
+    // Điện thoại không có nhật ký: mọi dòng trong đó đã hiện ở bong bóng hoặc thẻ trò chuyện.
+    this.feedText.setVisible(!(this.feedDocked && m.touch) && !m.small);
     this.redrawFeedBg();
   }
 
@@ -365,7 +375,34 @@ export class Hud {
     this.phoneBadge.setText(this.unread > 9 ? "9+" : this.unread ? String(this.unread) : "");
   }
 
+  /**
+   * `all`: giữ mọi toast tới khi nhả (lớp tối đang mở). `noticeKey` khác null thì giữ tin `notice`; đổi khoá là nhả.
+   * `keepOut`: ô toạ độ thiết kế toast phải né.
+   */
+  hold(all: boolean, noticeKey: string | null, keepOut: Hud["keepOut"], now: number) {
+    this.keepOut = keepOut;
+    if (all && !this.holdAll) {
+      const live = this.toasts.filter((t) => t.born >= 0).sort((a, b) => a.born - b.born);
+      this.held.unshift(...live.map((t) => ({
+        text: t.body, tone: t.tone, opts: { icon: t.iconName, title: t.title.text || undefined },
+      })));
+      for (const t of live) this.dismiss(t);
+    }
+    const flushNotice = this.noticeKey !== null && noticeKey !== this.noticeKey;
+    this.holdAll = all;
+    this.noticeKey = noticeKey;
+    if (all || !this.held.length) return;
+    const out = this.held.filter((h) => !h.opts.notice || flushNotice || noticeKey === null);
+    if (!out.length) return;
+    this.held = this.held.filter((h) => !out.includes(h));
+    for (const h of out) this.toast(h.text, h.tone, now, { ...h.opts, notice: false });
+  }
+
   toast(text: string, tone: ToastTone = "info", now = this.scene.time.now, opts: ToastOpts = {}) {
+    if (this.holdAll || (opts.notice && this.noticeKey !== null)) {
+      if (!this.held.some((h) => h.text === text)) this.held.push({ text, tone, opts });
+      return;
+    }
     // Trùng dòng đang hiện thì gộp "×N" và đếm lại giờ từ đầu.
     const same = this.toasts.find((t) => t.born >= 0 && t.body === text);
     if (same) {
@@ -389,7 +426,7 @@ export class Hud {
     t.text.setText(t.count > 1 ? `${t.body}  ×${t.count}` : t.body);
     t.title.setText(opts.title ?? "").setVisible(!!opts.title);
     t.iconName = opts.icon ?? TOAST_ICON[t.tone];
-    t.icon.setTexture(ntfKey(t.iconName)).setScale(TOAST_ICON_PX * this.m.k / t.icon.height).setVisible(true);
+    t.icon.setTexture(ntfKey(t.iconName)).setScale((this.m.small ? designFor(14) : TOAST_ICON_PX * this.m.k) / t.icon.height).setVisible(true);
     const chars = t.text.text.length;
     t.life = Math.min(TOAST_MAX_MS, Math.max(TOAST_MIN_MS, TOAST_BASE_MS + chars * TOAST_PER_CHAR_MS));
   }
@@ -447,6 +484,7 @@ export class Hud {
     this.feed = [];
     this.feedText.setText("");
     this.feedBg.clear();
+    this.held = [];
     for (const t of this.toasts) this.dismiss(t);
     this.toastBg.clear();
   }
@@ -509,19 +547,22 @@ export class Hud {
     const live = this.toasts.filter((t) => t.born >= 0).sort((a, b) => b.born - a.born);
     const ticketBottom = this.ticketText.text ? this.ticketText.getBounds().bottom + 18 : 0;
     let y = m.touch ? Math.max(this.right.getBounds().bottom + 16, ticketBottom) : Math.max(TOAST_TOP, ticketBottom);
-    const tile = TOAST_TILE_PX * k;
+    const tile = m.small ? designFor(24) : TOAST_TILE_PX * k;
     for (const t of live) {
       const age = (now - t.born) / t.life;
       if (age >= 1) { this.dismiss(t); continue; }
       const alpha = age < TOAST_FADE_FROM ? 1 : 1 - (age - TOAST_FADE_FROM) / (1 - TOAST_FADE_FROM);
       const slide = reducedMotion ? 0 : Math.max(0, 1 - (now - t.born) / TOAST_SLIDE_MS) * TOAST_SLIDE_PX;
-      const titleH = t.title.visible ? t.title.height + 1 : 0;
-      const pad = 12, textX = pad + tile + 10;
-      const h = Math.max(tile + 16, titleH + t.text.height + 18);
-      const w = Math.max(150, textX + Math.max(t.text.width, t.title.visible ? t.title.width : 0) + pad + 2);
+      const titled = !!t.title.text;
+      const titleH = titled ? t.title.height + 1 : 0;
+      const pad = m.small ? designFor(7) : 12, textX = pad + tile + (m.small ? designFor(6) : 10);
+      const h = Math.max(tile + (m.small ? designFor(10) : 16), titleH + t.text.height + (m.small ? designFor(10) : 18));
+      const w = Math.max(150, textX + Math.max(t.text.width, titled ? t.title.width : 0) + pad + 2);
+      const ko = this.keepOut;
+      if (ko && y < ko.y + ko.h && y + h > ko.y && m.toastRight + TOAST_SLIDE_PX > ko.x && m.toastRight - w < ko.x + ko.w) y = ko.y + ko.h + TOAST_GAP;
       const hidden = m.touch && y + h > m.toastBottom;
       for (const o of [t.text, t.icon]) o.setVisible(!hidden);
-      t.title.setVisible(!hidden && !!t.title.text);
+      t.title.setVisible(!hidden && titled);
       t.hit.input!.enabled = m.touch && !hidden;
       if (hidden) continue;
       const x1 = m.toastRight + slide, x0 = x1 - w, y0 = y;
@@ -529,8 +570,9 @@ export class Hud {
       const ty = y0 + (h - tile) / 2;
       g.fillStyle(TOAST_TILE[t.tone], alpha).fillRoundedRect(x0 + pad, ty, tile, tile, 10);
       t.icon.setPosition(x0 + pad + tile / 2, ty + tile / 2).setAlpha(alpha);
-      t.title.setPosition(x0 + textX, y0 + 9).setAlpha(alpha);
-      t.text.setPosition(x0 + textX, y0 + 9 + titleH).setAlpha(alpha);
+      const ty0 = m.small ? y0 + (h - titleH - t.text.height) / 2 : y0 + 9;
+      t.title.setPosition(x0 + textX, ty0).setAlpha(alpha);
+      t.text.setPosition(x0 + textX, ty0 + titleH).setAlpha(alpha);
       t.hit.setPosition(x0, y0).setSize(w, h);
       y += h + TOAST_GAP;
     }
@@ -613,11 +655,14 @@ export class Hud {
   private drawTicket(t: { name: string; text: string; urgent: boolean } | null, frozen: boolean) {
     this.ticketBg.clear();
     if (!t || frozen) { this.ticketText.setText(""); return; }
-    const top = this.right.getBounds().bottom + 20;
-    this.ticketText.setText(`${t.name}\n${t.text}`).setPosition(this.m.touch ? this.m.toastRight : GAME_W - 26, top);
+    const m = this.m;
+    const px = m.small ? designFor(8) : 12, py = m.small ? designFor(5) : 8;
+    const top = this.right.getBounds().bottom + (m.small ? designFor(8) + py : 20);
+    const x = m.small ? m.toastRight - designFor(6) : m.touch ? m.toastRight : GAME_W - 26;
+    this.ticketText.setText(`${t.name}\n${t.text}`).setPosition(x, top);
     const b = this.ticketText.getBounds();
-    this.ticketBg.fillStyle(UI.paper, 1).fillRoundedRect(b.x - 12, b.y - 8, b.width + 24, b.height + 16, 10);
-    this.ticketBg.lineStyle(1.2, UI.line, 1).strokeRoundedRect(b.x - 12, b.y - 8, b.width + 24, b.height + 16, 10);
+    this.ticketBg.fillStyle(UI.paper, 1).fillRoundedRect(b.x - px, b.y - py, b.width + px * 2, b.height + py * 2, 10);
+    this.ticketBg.lineStyle(1.2, UI.line, 1).strokeRoundedRect(b.x - px, b.y - py, b.width + px * 2, b.height + py * 2, 10);
   }
 
   private drawCarry(dish: readonly Ingredient[] | null) {

@@ -41,7 +41,7 @@ import { nhanOf, type MenuItemId } from "./menu";
 import { isOpen } from "./unlock";
 import { easeBalk } from "./ease";
 import { peakCap } from "./ease";
-import { has, type EquipId, type EquipState } from "./equipment";
+import { AIRCON, has, priceWalkMul, type EquipId, type EquipState } from "./equipment";
 import { makeChange } from "./till";
 import { moodBaseFace, moodPatienceMul, rollMood } from "./mood";
 import { faceHoldSec, intensityMul, isSilentGrudge, reactionDelay } from "./personality";
@@ -256,7 +256,8 @@ export type ServeResult = { ok: boolean; reason?: string; playerSay?: string };
 
 export type ServiceEvent =
   | { kind: "log"; text: string }
-  | { kind: "paid"; amount: number; item: "dish" }
+  /** `amount` đã gồm `tip`. */
+  | { kind: "paid"; amount: number; item: "dish"; tip: number }
   | { kind: "cost"; amount: number; item: "tea" | "talk" }
   | { kind: "talkOffer"; npcId: string; name: string }
   /** ⚠️ Phải đi qua đây, KHÔNG tự đặt `this.playerHand` — `StallScene` gán lại nó mỗi frame. */
@@ -455,7 +456,7 @@ export class Service {
   private lastTarget: Customer | null = null;
   private actReply: { text: string; mood: TalkMood } | null = null;
   private pledges = new Map<string, { promised: string[]; discount: number; free: boolean }>();
-  /** 0 khi chưa mua bình trà — chính nó khoá `p.hasTea` cho mọi nhánh thoại mời trà. */
+  /** 0 khi chưa mua máy trà — chính nó khoá `p.hasTea` cho mọi nhánh thoại mời trà. */
   teaLeft = 0;
   dirt = 0;
   handsDirty = false;
@@ -634,7 +635,7 @@ export class Service {
     if (mood.prop === "VAI_XUOI") c.react.basePose = c.react.pose = "SETTLE_IN";
     c.rollOrder(this.deps.day);
     if (!c.balking && c.order && this.deps.hub.derive(`price:${v.seq}`).next()
-      < PRICE_FX.walkAway[pickOf(this.deps.prices, c.order.intent.mon)]) {
+      < PRICE_FX.walkAway[pickOf(this.deps.prices, c.order.intent.mon)] * priceWalkMul(this.deps.equip)) {
       c.balking = true;
       c.priceWalk = true;
     }
@@ -858,7 +859,6 @@ export class Service {
       const who = i % 2 === 0 ? a : b;
       this.say(who, text, 3, false, 18, undefined, i * CHAT_LINE_GAP);
     });
-    this.out.push({ kind: "log", text: `${this.label(a)} với ${this.label(b)} đứng tám chuyện.` });
   }
 
   private spawnPasser(rng: Rng) {
@@ -1555,7 +1555,7 @@ export class Service {
     if (!c || c.phase === "leaving") return { ok: false, reason: "chưa có ai để mời" };
     if (c.holdingTea) return { ok: false, reason: `${this.label(c)} còn cầm ly kia` };
     if (this.teaSuspect(c)) return this.refuseTea(c);
-    if (!has(this.deps.equip, "BINH_TRA")) return { ok: false, reason: "chưa có bình nước trà" };
+    if (!has(this.deps.equip, "BINH_TRA")) return { ok: false, reason: "chưa có máy nước trà" };
     if (this.teaLeft <= 0) return { ok: false, reason: "hết đá rồi" };
 
     const cup = (this.teaToday.get(c.memKey) ?? 0) + 1;
@@ -2175,7 +2175,7 @@ export class Service {
     c.ambient = false;
     c.pass = null;
     c.phase = "arriving";
-    c.rollOrder();
+    c.rollOrder(this.deps.day);
     c.dayMood = rollMood(this.deps.hub.derive(`invite-mood:${c.id}`), this.deps.day);
     c.gazeMul = this.deps.gazeMul ?? 1;
     const m = this.mem(c.memKey);
@@ -2622,7 +2622,12 @@ export class Service {
         }
       }
     }
-    this.out.push({ kind: "paid", amount, item: "dish" });
+    let tip = 0;
+    if (has(this.deps.equip, "QUAT_DIEN") && r.next() < AIRCON.tipChance) {
+      const [lo, hi] = AIRCON.tip;
+      tip = lo + Math.floor(r.next() * ((hi - lo) / 1000 + 1)) * 1000;
+    }
+    this.out.push({ kind: "paid", amount: amount + tip, item: "dish", tip });
   }
 
   label(c: Customer) {

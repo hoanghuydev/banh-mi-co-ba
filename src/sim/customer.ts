@@ -170,7 +170,7 @@ export class Customer implements Observer {
     this.gazeM = new GazeMachine(npc?.gaze ?? WALKIN_GAZE, id, rng);
   }
 
-  rollOrder(day?: number) {
+  rollOrder(day: number) {
     this.order = randomOrder(this.rng, day);
   }
 

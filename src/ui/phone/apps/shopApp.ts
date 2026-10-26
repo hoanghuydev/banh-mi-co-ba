@@ -119,6 +119,13 @@ function wheelAsScrollX(row: HTMLElement) {
     row.scrollLeft += e.deltaY;
     e.preventDefault();
   }, { passive: false });
+  // Đánh dấu mép còn cuộn được để CSS làm mờ.
+  const edges = () => {
+    row.toggleAttribute("data-fl", row.scrollLeft > 2);
+    row.toggleAttribute("data-fr", row.scrollLeft + row.clientWidth < row.scrollWidth - 2);
+  };
+  row.addEventListener("scroll", edges, { passive: true });
+  requestAnimationFrame(edges);
 }
 
 function catalog(ctx: AppCtx, cat: string): HTMLElement {
@@ -257,7 +264,7 @@ function cart(ctx: AppCtx): HTMLElement {
   go.disabled = !!q.blocked;
   dock.append(go);
 
-  const wrap = el("div");
+  const wrap = el("div", "ph-cartwrap");
   wrap.style.cssText = "display:flex;flex-direction:column;flex:1;min-height:0";
   wrap.append(scroller(lines, ...(opts.childElementCount ? [opts] : []), sum), dock);
   return wrap;

@@ -68,7 +68,7 @@
       ]
     },
     "TU_MAT": {
-      "name": "Tủ mát 100 lít",
+      "name": "Tủ lạnh 100 lít",
       "group": "BAO_QUAN",
       "price_k": 3200,
       "slots": 3,
@@ -116,9 +116,9 @@
       ]
     },
     "BINH_TRA": {
-      "name": "Bình nước trà",
+      "name": "Máy nước trà",
       "group": "TIEP_KHACH",
-      "price_k": 210,
+      "price_k": 500,
       "slots": 1,
       "daily_k": 24,
       "feel": "Rót ly nước trà đưa ra. Đợi thêm mấy phút cũng không ai càu nhàu.",
@@ -127,14 +127,16 @@
       ]
     },
     "QUAT_DIEN": {
-      "name": "Quạt điện đứng",
+      "name": "Máy lạnh",
       "group": "TIEP_KHACH",
-      "price_k": 280,
+      "price_k": 1500,
       "slots": 1,
-      "daily_k": 5,
-      "feel": "Quạt quay qua quay lại, thổi vô chỗ người ta đứng chờ.",
+      "daily_k": 15,
+      "feel": "Gắn trên tường, thổi mát xuống chỗ người ta đứng chờ.",
       "gain": [
-        "+15% kiên nhẫn cho mọi khách đang chờ"
+        "+15% kiên nhẫn cho mọi khách đang chờ",
+        "Khách bỏ đi vì giá cao giảm 20%",
+        "20% khách cho thêm 5–10k tiền tips"
       ]
     },
     "LOA_RAO": {

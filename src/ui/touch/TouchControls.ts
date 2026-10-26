@@ -1,24 +1,31 @@
 import { isTouch, onDeviceChange, viewport } from "../../core/device";
 import { stickDirs, type InputState } from "../../input/intent";
-import {
-  ACTION_SIZE, EDGE, RUN_SIZE, CTX_SIZE, STICK_BASE, TOUCH_CSS,
-} from "./touchStyle";
+import { EDGE, TOUCH_CSS, touchDims } from "./touchStyle";
 
 export type TouchLabel = { text: string; hold: boolean; enabled: boolean };
 
 export type CtxKind = "discard" | "lift" | "talk";
+export type CtxIcon = "talk" | "lift" | "pick" | "drop";
 
 /** Ba ô cố định: `action` và `ctx` ẩn khi không áp dụng được, vị trí các ô không đổi. */
 export type TouchView = {
   visible: boolean;
   action: TouchLabel;
   run: boolean;
-  ctx: { kind: CtxKind; text: string } | null;
+  ctx: { kind: CtxKind; icon: CtxIcon; text: string } | null;
 };
 
-const RUN_ICON = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4l6 6-6 6M11 4l6 6-6 6"/></svg>';
+const svg = (d: string) =>
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
 
-const STICK_RADIUS = STICK_BASE / 2 - 8;
+const RUN_ICON = svg('<path d="M2.5 17.5h19M3 17.5c0-3 .6-7.2 1.6-9.3l3 .8c1.3.4 2.6 0 3.4-.9l1.8 2.7c1.9 1.5 4.6 2.1 7 2.6 1 .2 1.7 1.2 1.7 2.2v1.9"/><path d="M11.2 10.3l1.6-1.1M12.6 11.8l1.6-1.1"/>');
+
+const CTX_ICONS: Record<CtxIcon, string> = {
+  talk: svg('<path d="M4.5 4h15a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2H12l-5 4v-4H4.5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M8 10.3h.01M12 10.3h.01M16 10.3h.01" stroke-width="3"/>'),
+  lift: svg('<path d="M18 11V6a2 2 0 0 0-4 0M14 10V4a2 2 0 0 0-4 0v2M10 10.5V6a2 2 0 0 0-4 0v8M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-6-2.3l-3.6-3.6a2 2 0 0 1 2.8-2.8L7 15"/>'),
+  pick: svg('<path d="M12 16V4M6.5 9.5 12 4l5.5 5.5M4 20.5h16"/>'),
+  drop: svg('<path d="M12 3.5v12M6.5 10 12 15.5 17.5 10M4 20.5h16"/>'),
+};
 /** Phần bề ngang bên trái nhận ngón điều khiển. */
 const ZONE_FRAC = 0.45;
 /** Chừa dải trên cho nút HUD. */
@@ -62,7 +69,7 @@ export class TouchControls {
       document.head.appendChild(st);
     }
     document.body.appendChild(this.root);
-    this.runBtn.innerHTML = `${RUN_ICON}<span>Chạy</span>`;
+    this.runBtn.innerHTML = `${RUN_ICON}<span class="tc-tag">Chạy</span>`;
     this.setText(this.act, "");
 
     this.bindStick();
@@ -87,6 +94,12 @@ export class TouchControls {
     if (this.text.get(e) === t) return;
     this.text.set(e, t);
     e.textContent = t;
+  }
+
+  private setHtml(e: HTMLElement, h: string) {
+    if (this.text.get(e) === h) return;
+    this.text.set(e, h);
+    e.innerHTML = h;
   }
 
   private bindHold(btn: HTMLElement, cb: (down: boolean) => void) {
@@ -118,7 +131,7 @@ export class TouchControls {
       this.stickId = e.pointerId;
       z.setPointerCapture(e.pointerId);
       const r = z.getBoundingClientRect();
-      const m = STICK_BASE / 2 + 4;
+      const m = touchDims().stick / 2 + 4;
       this.origin = {
         x: Math.min(r.right - m, Math.max(r.left + m, e.clientX)),
         y: Math.min(r.bottom - m, Math.max(r.top + m, e.clientY)),
@@ -137,9 +150,10 @@ export class TouchControls {
   private moveStick(e: PointerEvent) {
     const dx = e.clientX - this.origin.x, dy = e.clientY - this.origin.y;
     const len = Math.hypot(dx, dy);
-    const k = len > STICK_RADIUS ? STICK_RADIUS / len : 1;
+    const rad = touchDims().stick / 2 - 8;
+    const k = len > rad ? rad / len : 1;
     this.knob.style.transform = `translate(${dx * k}px,${dy * k}px)`;
-    this.input.stick = stickDirs(dx, dy, STICK_RADIUS);
+    this.input.stick = stickDirs(dx, dy, rad);
   }
 
   private endStick() {
@@ -173,30 +187,31 @@ export class TouchControls {
     this.layoutKey = key;
 
     const s = this.safe();
+    const { act, sm, stick, gap } = touchDims();
     const cl = cr ? Math.max(0, cr.left) : 0, cRight = cr ? Math.max(0, w - cr.right) : 0;
-    const rightC = cRight >= STRIP_MIN ? (w - cRight / 2) - ACTION_SIZE / 2 - RUN_SIZE / 2 - 40 : null;
+    const rightC = cRight >= STRIP_MIN ? (w - cRight / 2) - act / 2 - sm / 2 - 40 : null;
     const mr = Math.max(EDGE, s.r);
     const ml = Math.max(EDGE, s.l);
     const mb = Math.max(EDGE, s.b);
-    const right = rightC === null ? mr : Math.max(mr, w - rightC - ACTION_SIZE);
+    const right = rightC === null ? mr : Math.max(mr, w - rightC - act);
 
     const place = (e: HTMLElement, r: number, b: number) => {
       e.style.right = `${r}px`;
       e.style.bottom = `${b}px`;
     };
     place(this.act, right, mb);
-    place(this.runBtn, right + ACTION_SIZE + 12, mb + (ACTION_SIZE - RUN_SIZE) / 2);
-    place(this.ctxBtn, right + (ACTION_SIZE - CTX_SIZE) / 2, mb + ACTION_SIZE + 10);
+    place(this.runBtn, right + act + gap, mb + (act - sm) / 2);
+    place(this.ctxBtn, right + (act - sm) / 2, mb + act + gap);
 
     const zoneRight = (cr ? cr.left + cr.width * ZONE_FRAC : w * ZONE_FRAC);
     const zoneTop = h * ZONE_TOP_FRAC;
     Object.assign(this.zone.style, {
       left: "0px", top: `${zoneTop}px`,
-      width: `${Math.max(STICK_BASE + 16, zoneRight)}px`, height: `${h - zoneTop}px`,
+      width: `${Math.max(stick + 16, zoneRight)}px`, height: `${h - zoneTop}px`,
     });
     this.idleSpot = {
-      x: (cl >= STRIP_MIN ? cl / 2 : ml + STICK_BASE / 2 + 20),
-      y: h - mb - STICK_BASE / 2 - 20,
+      x: (cl >= STRIP_MIN ? cl / 2 : ml + stick / 2 + 20),
+      y: h - mb - stick / 2 - 20,
     };
     if (this.stickId === null) this.placeIdleBase();
   }
@@ -219,7 +234,7 @@ export class TouchControls {
     hide(this.runBtn, !v.run);
     this.ctxKind = v.ctx?.kind ?? null;
     hide(this.ctxBtn, !v.ctx);
-    if (v.ctx) this.setText(this.ctxBtn, v.ctx.text);
+    if (v.ctx) this.setHtml(this.ctxBtn, `${CTX_ICONS[v.ctx.icon]}<span class="tc-tag">${v.ctx.text}</span>`);
   }
 
   private releaseAll() {

@@ -2,6 +2,7 @@ import { sfx } from "../../audio/sfx";
 import type { SaveFile } from "../../core/save";
 import { WEEKDAY_VI, weekdayIdx } from "../../sim/econ";
 import { average, starText } from "../../sim/reviews";
+import { isPhone } from "../../core/device";
 
 const STYLE = `
 .ev-root{position:fixed;inset:0;z-index:8990;display:flex;align-items:center;justify-content:center;padding:max(16px,var(--safe-top)) max(16px,var(--safe-right)) max(16px,var(--safe-bottom)) max(16px,var(--safe-left));box-sizing:border-box;background:rgba(14,18,22,.45);font-family:"Be Vietnam Pro",system-ui,sans-serif;color:#2b2f31}
@@ -26,6 +27,18 @@ const STYLE = `
 .ev-badge{position:absolute;top:-12px;right:-10px;min-width:24px;height:24px;padding:0 6px;border-radius:12px;background:#e03a2c;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px #efe6d2;font-variant-numeric:tabular-nums}
 .ev-btn:focus-visible{outline:2px solid #2f5d8a;outline-offset:2px}
 .ev-foot{display:flex;align-items:center;gap:16px;padding:8px 20px 10px;border-top:2px solid #cdbf9f}
+html[data-phone="1"] .ev-root{padding:max(6px,var(--safe-top)) max(8px,var(--safe-right)) max(6px,var(--safe-bottom)) max(8px,var(--safe-left))}
+html[data-phone="1"] .ev-book{width:min(720px,100%)}
+html[data-phone="1"] .ev-col{display:flex;align-items:flex-start;gap:24px;padding:10px 16px 8px}
+html[data-phone="1"] :is(.ev-a,.ev-b){flex:1 1 0;min-width:0}
+html[data-phone="1"] .ev-b .ev-cash{margin-top:0;padding-top:0;border-top:0;padding-bottom:6px;border-bottom:2px solid #cdbf9f}
+html[data-phone="1"] .ev-sub{margin-bottom:4px}
+html[data-phone="1"] .ev-r{padding:3px 0}
+html[data-phone="1"] :is(.ev-sub,.ev-note,.ev-say,.ev-btn){font-size:max(12px,.92em)}
+html[data-phone="1"] .ev-says{margin-top:8px}
+html[data-phone="1"] .ev-foot{padding:6px 16px}
+html[data-phone="1"] .ev-btn,html[data-phone="1"] .ev-btn.sleep{min-height:40px;padding:4px 16px}
+html[data-phone="1"] .ev-btn.ghost{margin-top:0}
 `;
 
 const money = (v: number) => `${Math.round(v).toLocaleString("vi-VN")}₫`;
@@ -44,7 +57,7 @@ export class EveningView {
     }
     this.root = document.createElement("div");
     this.root.className = "ev-root";
-    this.root.style.fontSize = `${Math.round(14 * opts.textScale)}px`;
+    this.root.style.fontSize = `${Math.round((isPhone() ? 13 : 14) * opts.textScale)}px`;
     this.root.addEventListener("keydown", (e) => e.stopPropagation(), true);
     document.body.appendChild(this.root);
     sfx.ui("ui_mo_so_tay");
@@ -67,7 +80,8 @@ export class EveningView {
 
   private ledger() {
     const w = this.w, day = w.progress.dayIndex, e = w.econ, t = w.progress.today, et = e.today;
-    const L = this.el("div", "ev-col");
+    const col = this.el("div", "ev-col"), L = this.el("div", "ev-a"), R = this.el("div", "ev-b");
+    col.append(L, R);
     L.append(this.el("div", "ev-h", `Tối ngày ${day}`), this.el("div", "ev-sub", WEEKDAY_VI[weekdayIdx(day)]));
     const row = (a: string, b: string, dir: "in" | "out" | "" = "out") => {
       const r = this.el("div", `ev-r${dir ? ` ${dir}` : ""}`);
@@ -83,7 +97,7 @@ export class EveningView {
     row("than, đá, túi, xăng", `−${money(et.fixed)}`);
     const cash = this.el("div", "ev-cash");
     cash.append(this.el("span", "", "trong ống"), this.el("span", "", money(w.money.cash)));
-    L.append(cash);
+    R.append(cash);
 
     const says = this.el("div", "ev-says");
     if (e.rentOwed) says.append(this.el("div", "ev-say", `Chủ nhà: "Tiền chỗ mấy hôm nay con tính sao?"`));
@@ -98,8 +112,8 @@ export class EveningView {
     }
     if (et.soldOut) says.append(this.el("div", "ev-note", "có người tới mà hết bánh"));
     if (et.wasted.length) says.append(this.el("div", "ev-note", `sáng nay bỏ (hư): ${et.wasted.join(", ")}`));
-    if (says.childElementCount) L.append(says);
-    return L;
+    if (says.childElementCount) R.append(says);
+    return col;
   }
 
   private foot() {

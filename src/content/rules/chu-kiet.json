@@ -8,7 +8,7 @@
     {"id": "kiet.flourish", "concept": "NOTICE_EVENT", "when": {"npcId": "CHU_KIET", "eventId": "FLOURISH", "obsState": ">=NOTICED"}, "say": ["…Ai dạy mày rạch kiểu đó?"], "speakonce": true},
     {"id": "kiet.wait.confirmed", "concept": "NOTICE_EVENT", "when": {"npcId": "CHU_KIET", "eventId": "MADE_THEM_WAIT", "obsState": "CONFIRMED"}, "say": ["Một lò mà ôm lắm khách vậy mày. Bên tao hai lò."]},
     {"id": "kiet.del.seen", "concept": "DELIVERY", "when": {"npcId": "CHU_KIET", "defectCount": ">=1", "defectWasSeen": true}, "say": ["Tỉ lệ {mon} mày bỏ lệch quá. Khách biết đó, đừng tưởng không."]},
-    {"id": "kiet.del.found", "concept": "DELIVERY", "when": {"npcId": "CHU_KIET", "defectCount": ">=1", "defectWasSeen": false}, "say": ["Nhạt. Mày tiết kiệm {mon} hả?"]},
+    {"id": "kiet.del.found", "concept": "DELIVERY", "when": {"npcId": "CHU_KIET", "defectCount": ">=1", "defectWasSeen": false, "defectKind": ["MISSING", "RATIO_UNDER"]}, "say": ["Nhạt. Mày tiết kiệm {mon} hả?"]},
     {"id": "kiet.del.ok", "concept": "DELIVERY", "when": {"npcId": "CHU_KIET", "defectCount": 0}, "say": ["Được. Mà pate mày mua chỗ nào vậy? Nghe đồn chỗ đó trộn.", "Ăn được. Bên tao bánh giòn hơn.", "Cũng được. Mà đồ chua mày ngâm hơi non."]},
     {"id": "kiet.del.toomuch", "concept": "DELIVERY", "when": {"npcId": "CHU_KIET", "defectCount": 0, "freeExtraTooMuch": true}, "say": ["Cho thêm hoài rồi ế sao mày. Chiêu đó tao xài năm ngoái, lỗ chỏng gọng."]},
     {"id": "kiet.tea", "concept": "INTERACT", "when": {"npcId": "CHU_KIET", "interaction": "TEA"}, "say": ["…Thôi khỏi. Tao có nước rồi."]},

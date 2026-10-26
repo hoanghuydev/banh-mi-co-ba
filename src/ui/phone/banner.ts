@@ -2,6 +2,7 @@ import { contactOf } from "../../content/phone/contacts";
 import { avatar } from "./chat";
 import { el } from "./dom";
 import { sfx } from "../../audio/sfx";
+import { isPhone } from "../../core/device";
 
 const STYLE = `
 .ph-banner{position:fixed;top:calc(env(safe-area-inset-top) + 14px);right:calc(env(safe-area-inset-right) + 14px);left:auto;z-index:8994;width:min(340px,calc(100vw - 28px));display:flex;gap:11px;align-items:center;text-align:left;
@@ -16,6 +17,12 @@ const STYLE = `
 .ph-banner.out{animation:ph-ban-out .25s ease-in forwards}
 @keyframes ph-ban{from{transform:translateY(-24px);opacity:0}}
 @keyframes ph-ban-out{to{transform:translateY(-24px);opacity:0}}
+html[data-phone="1"] .ph-banner{top:calc(env(safe-area-inset-top) + 4px);right:calc(env(safe-area-inset-right) + 8px);width:min(300px,calc(100vw - 16px));gap:8px;min-height:36px;padding:5px 12px 5px 8px;border-radius:14px;font-size:12px!important}
+html[data-phone="1"] .ph-banner .ph-av{flex:none;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+html[data-phone="1"] .ph-banner .nm,html[data-phone="1"] .ph-banner .pv,html[data-phone="1"] .ph-banner .tip{font-size:12px;line-height:1.35}
+html[data-phone="1"] .ph-banner .pv{-webkit-line-clamp:1}
+html[data-phone="1"] .ph-banner .tip{position:absolute;top:5px;right:12px;margin:0}
+html[data-phone="1"] .ph-banner .tx:has(.tip) .nm{padding-right:84px}
 @media (prefers-reduced-motion:reduce){.ph-banner,.ph-banner.out{animation:none}}
 `;
 
@@ -29,6 +36,8 @@ export function showBanner(msgs: { from: string; text: string }[], onOpen: (thre
     document.head.appendChild(st);
   }
   sfx.ui("ph_tin_den");
+  // Điện thoại: thẻ tổng kết buổi tối chiếm gần hết màn, nút Điện thoại đã có số tin.
+  if (isPhone() && document.querySelector(".ev-book")) return () => {};
   const first = msgs[0];
   const b = el("button", "ph-banner");
   b.type = "button";

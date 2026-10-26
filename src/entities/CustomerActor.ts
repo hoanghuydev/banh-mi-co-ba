@@ -8,7 +8,7 @@ import { ActorLight, feetSteps } from "../art/light/actor";
 import { drain } from "../art/steps";
 import type { Customer } from "../sim/customer";
 import { nowState } from "../sim/perception";
-import { isTouch } from "../core/device";
+import { isPhone, isTouch } from "../core/device";
 import { FONT, worldFont } from "../ui/theme";
 import type { BubblePool } from "../ui/stall/BubblePool";
 import { NEUTRAL, POSES } from "../sim/reaction";
@@ -132,7 +132,7 @@ export class CustomerActor {
   }
 
   private tagPx() {
-    return worldFont(Math.round(10 * this.textScale), 12);
+    return worldFont(Math.round(10 * this.textScale), isPhone() ? 11 : 12);
   }
 
   draw(reducedMotion: boolean, time: number, nowSec: number) {

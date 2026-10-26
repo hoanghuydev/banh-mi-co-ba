@@ -2,7 +2,7 @@
 export const MAP = [
   "NN##D###########NN",  // y0  tường sau, cửa x=4
   "###..K.O.T.WX....#",  // y1  kệ · lò · trà đá · bồn rửa · bình chữa cháy
-  "###F.............#",  // y2  kho (thùng xốp / tủ mát) x=3
+  "###F.............#",  // y2  kho (thùng xốp / tủ lạnh) x=3
   "###..............#",
   "###R.............N",  // y4  bàn topping x=3, nối liền thớt ở y5
   "###QZZQ...Q..V...#",  // y5  ba bàn: thớt x=3, chỗ để bánh x=6, quầy gọi món x=10 · bàn trơn x=4–5 · thùng rác x=13

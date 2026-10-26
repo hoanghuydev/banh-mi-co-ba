@@ -8,6 +8,11 @@ export type Orientation = "landscape" | "portrait";
 export const MIN_TOUCH = 44;
 /** Cỡ chữ tối thiểu, pixel CSS thật. */
 export const MIN_FONT = 14;
+/** Điện thoại ngang chỉ cao 300–414 px nên sàn thấp hơn máy tính bảng. */
+export const PHONE_FONT = 12;
+export const PHONE_TOUCH = 36;
+/** Cạnh ngắn khung nhìn dưới mức này là điện thoại. */
+const PHONE_SHORT = 500;
 
 const hasWindow = typeof window !== "undefined";
 const listeners = new Set<() => void>();
@@ -66,6 +71,23 @@ export function isTouch(): boolean {
   return touchCache;
 }
 
+/** Cảm ứng trên màn điện thoại; máy tính bảng và PC trả false. */
+export function isPhone(): boolean {
+  if (!isTouch()) return false;
+  const { w, h } = viewport();
+  return Math.min(w, h) < PHONE_SHORT;
+}
+
+/** Sàn cỡ chữ cảm ứng theo loại máy, pixel CSS thật. */
+export function minFont(): number {
+  return isPhone() ? PHONE_FONT : MIN_FONT;
+}
+
+/** Sàn vùng chạm cảm ứng theo loại máy, pixel CSS thật. */
+export function minTouch(): number {
+  return isPhone() ? PHONE_TOUCH : MIN_TOUCH;
+}
+
 /** Hệ số FIT: pixel CSS thật trên một pixel thiết kế của canvas. */
 export function fitScale(): number {
   if (fitCache !== null) return fitCache;
@@ -106,6 +128,7 @@ function applyAttrs() {
   if (!hasWindow) return;
   const el = document.documentElement;
   el.dataset.touch = isTouch() ? "1" : "0";
+  el.dataset.phone = isPhone() ? "1" : "0";
   el.dataset.orient = orientation();
 }
 

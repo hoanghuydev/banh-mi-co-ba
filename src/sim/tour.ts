@@ -38,6 +38,13 @@ export function explainEye(w: SaveFile): void {
   w.flags[EYE_KEY] = true;
 }
 
+/** Cờ riêng: vừa xong việc trong điện thoại (đặt hàng, đọc tin) thì chỉ thêm nút đóng điện thoại. */
+const CLOSE_KEY = "tourDong";
+export const closePending = (w: SaveFile) => w.flags[CLOSE_KEY] === true;
+export function closeDone(w: SaveFile): void {
+  delete w.flags[CLOSE_KEY];
+}
+
 export function tourSkip(w: SaveFile): void {
   w.flags[KEY] = "XONG";
 }
@@ -49,6 +56,7 @@ export function tourDone(w: SaveFile, step: TourStep): number {
   const of = ORDER.indexOf(step);
   if (at > of) return 0;
   w.flags[KEY] = ORDER[of + 1] ?? "XONG";
+  if (step === "CHO" || step === "DT") w.flags[CLOSE_KEY] = true;
   return of - at + 1;
 }
 

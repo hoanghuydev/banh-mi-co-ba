@@ -44,9 +44,9 @@ export type Policy = {
   socialActs?: readonly string[];
 };
 
-/** Ghế và bình trà mua sớm vì thiếu chúng thì act xã giao không chạy. */
+/** Ghế và máy trà mua sớm vì thiếu chúng thì act xã giao không chạy. */
 export const BUILD_XA_GIAO: [number, EquipId][] = [
-  [1, "GHE_BAN"], [1, "BINH_TRA"], [2, "DU_CHE"], [3, "KEP_GAP"], [5, "QUAT_DIEN"], [8, "LONG_BAN"],
+  [1, "GHE_BAN"], [1, "BINH_TRA"], [2, "DU_CHE"], [3, "KEP_GAP"], [8, "LONG_BAN"], [12, "QUAT_DIEN"],
 ];
 
 export const BUILD_VE_SINH: [number, EquipId][] = [

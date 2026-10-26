@@ -85,7 +85,7 @@ export const STATIONS: Station[] = [
   },
   {
     // Chỉ có khi đã mua `BINH_TRA` (`StallScene` lọc, `propHidden` giấu trên bản đồ).
-    id: "tea", tx: 9, ty: STATION_ROW_Y, name: "bình nước trà", verb: "rót ly nước trà",
+    id: "tea", tx: 9, ty: STATION_ROW_Y, name: "máy nước trà", verb: "rót ly nước trà",
     slot: "UNDER_COUNTER", needs: ["empty"], gives: "tea", holdMs: 600,
   },
 ];

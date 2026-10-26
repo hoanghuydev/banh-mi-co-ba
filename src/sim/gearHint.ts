@@ -29,7 +29,7 @@ export function gearEvidence(id: EquipId, w: SaveFile): string | null {
       // đọc trời, không đọc `lost`, để khỏi trùng câu với bộ bàn ghế
       if (w.progress.weather.startsWith("MUA")) return "Hôm nay mưa.";
       return w.progress.weather === "NANG_GAT" ? "Hôm nay nắng gắt, không ai đứng lâu nổi." : null;
-    // Quạt, bình trà, bàn ghế cùng đọc `lost` nên mỗi món nói bằng cái chính nó đỡ được.
+    // Máy lạnh, máy trà, bàn ghế cùng đọc `lost` nên mỗi món nói bằng cái chính nó đỡ được.
     case "QUAT_DIEN":
       return d.lost >= 2 && w.progress.weather === "NANG_GAT" ? "Trưa nay nắng, mấy người đứng chờ cứ lấy mũ quạt." : null;
     case "BINH_TRA":

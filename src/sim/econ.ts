@@ -99,7 +99,7 @@ export type Storage = "thung_xop" | "tu_mat";
 export type InventoryState = { lots: Lot[]; lastBasket: Partial<Record<GoodId, number>>; storage?: Storage };
 export const newInventory = (): InventoryState => ({ lots: [], lastBasket: {}, storage: "thung_xop" });
 
-/** Tủ mát nhân đôi hạn đồ lạnh. */
+/** Tủ lạnh nhân đôi hạn đồ lạnh. */
 export function shelfDays(g: GoodId, storage: Storage = "thung_xop", tier: Quality = "THUONG"): number {
   const d = GOODS[g];
   const tierDelta = QUALITIES[tier].shelf;
