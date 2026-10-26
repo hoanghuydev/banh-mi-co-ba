@@ -279,7 +279,7 @@ export const regularIds = () => Object.keys(REGULARS);
 
 const ready = new Set<string>();
 
-/** Khách lạ và người chơi luôn sẵn; khách quen chỉ sẵn khi `bakeRegular` đã sơn đủ bộ. */
+/** Khách lạ và người chơi luôn sẵn; khách quen chỉ sẵn khi `bakeRegulars` đã sơn đủ bộ. */
 export const regularReady = (who: string) => !isRegular(who) || ready.has(who);
 
 const RETRY_MS = [0, 1000, 3000];
@@ -299,16 +299,26 @@ async function loadSheet(file: string, alive: () => boolean) {
   }
 }
 
-/** Mỗi `yield` là một khung; yield ra Promise là chờ tải atlas. */
-export function* bakeRegular(scene: Phaser.Scene, who: string, alive: () => boolean): Generator<Promise<void> | undefined> {
-  const o = REGULARS[who];
-  if (!o || ready.has(who)) return;
-  if (!sheets.has(o.walk)) yield loadSheet(o.walk, alive);
-  yield* paintNpc(scene, who, o);
-  forget([o.walk]);
+/** Mỗi `yield` là một khung, yield ra Promise là chờ tải atlas; tải trước atlas người kế và đo chân gộp một lần ở cuối. */
+export function* bakeRegulars(scene: Phaser.Scene, ids: Iterable<string>, alive: () => boolean): Generator<Promise<void> | undefined> {
+  const todo = [...ids].filter((id) => id in REGULARS && !ready.has(id));
+  const load = async (id?: string) => {
+    const file = id && REGULARS[id].walk;
+    if (file && !sheets.has(file)) await loadSheet(file, alive);
+  };
+  let next = load(todo[0]);
+  for (let i = 0; i < todo.length; i++) {
+    const o = REGULARS[todo[i]];
+    yield next;
+    next = load(todo[i + 1]);
+    yield* paintNpc(scene, todo[i], o);
+    forget([o.walk]);
+  }
   yield* feetSteps(scene.textures);
-  if (hasEightWay(who) && hasGait(who, "walk")) ready.add(who);
-  else dropRegular(scene, who);
+  for (const who of todo) {
+    if (hasEightWay(who) && hasGait(who, "walk")) ready.add(who);
+    else dropRegular(scene, who);
+  }
 }
 
 /** Xoá texture, sổ tám hướng/bước đi và bóng đã bake; gọi lúc dở dang cũng được. */

@@ -1,5 +1,5 @@
 import type Phaser from "phaser";
-import { bakeRegular, dropRegular, regularIds, regularReady } from "../art";
+import { bakeRegulars, dropRegular, regularIds, regularReady } from "../art";
 import { runSteps } from "../art/steps";
 import type { Service } from "../sim/service";
 
@@ -18,7 +18,7 @@ export class RegularBakes {
   *prepare(alive: () => boolean) {
     const due = this.service.regulars();
     for (const id of regularIds()) if (!due.has(id)) dropRegular(this.scene, id);
-    for (const id of due.keys()) yield* bakeRegular(this.scene, id, alive);
+    yield* bakeRegulars(this.scene, due.keys(), alive);
   }
 
   /** Mỗi khung: nướng ngầm, từng người một, ai còn lượt mà chưa có hình. */
@@ -28,7 +28,7 @@ export class RegularBakes {
     if (!id) return;
     this.job = id;
     const alive = () => !this.stopped;
-    const it = bakeRegular(this.scene, id, alive);
+    const it = bakeRegulars(this.scene, [id], alive);
     void runSteps([() => ({ next: () => (alive() ? it.next() : { done: true, value: undefined }) })])
       .finally(() => {
         this.job = null;

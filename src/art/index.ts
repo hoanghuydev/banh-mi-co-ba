@@ -13,7 +13,7 @@ import { npcSteps, photoSteps, preloadPhotos } from "./photo";
 import { feetSteps } from "./light/actor";
 
 export { BASE, footY } from "./canvas";
-export { bakeSourceLoads, bakeRegular, dropRegular, regularIds, regularReady } from "./photo";
+export { bakeSourceLoads, bakeRegulars, dropRegular, regularIds, regularReady } from "./photo";
 export {
   textureFor, buildBody, holdAnchor, BODY_H, PLAYER_STYLE,
   type BodyStyle, type Pose,
