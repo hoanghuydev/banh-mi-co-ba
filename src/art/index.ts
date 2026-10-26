@@ -62,7 +62,8 @@ export function artSteps(scene: Phaser.Scene): Step[] {
     () => buildFood(scene),
     () => buildFx(scene),
     ...photoSteps(scene),
-    ...npcSteps(scene),
+    // Đọc chân rồi niêm sau từng người, để lúc nướng chỉ một bộ khung còn giữ canvas.
+    ...npcSteps(scene).flatMap((step) => [() => feetSteps(scene.textures), step]),
     () => feetSteps(scene.textures),
   ];
 }
