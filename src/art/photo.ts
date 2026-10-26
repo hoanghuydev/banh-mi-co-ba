@@ -278,9 +278,14 @@ const isRegular = (who: string) => who in REGULARS;
 export const regularIds = () => Object.keys(REGULARS);
 
 const ready = new Set<string>();
+/** Tải hỏng hết lượt thử: hôm đó vẫn ghé, `CustomerActor` vẽ thân bằng code. */
+const failed = new Set<string>();
 
-/** Khách lạ và người chơi luôn sẵn; khách quen chỉ sẵn khi `bakeRegulars` đã sơn đủ bộ. */
-export const regularReady = (who: string) => !isRegular(who) || ready.has(who);
+/** Khách lạ và người chơi luôn sẵn; khách quen sẵn khi `bakeRegulars` đã sơn đủ bộ hoặc đã bỏ cuộc. */
+export const regularReady = (who: string) => !isRegular(who) || ready.has(who) || failed.has(who);
+
+/** Atlas khách quen, để service worker giữ sẵn cho lúc chơi offline. */
+export const regularFiles = () => Object.values(REGULARS).flatMap((o) => [`art/${o.walk}.webp`, `art/${o.walk}.json`]);
 
 const RETRY_MS = [0, 1000, 3000];
 
@@ -302,6 +307,7 @@ async function loadSheet(file: string, alive: () => boolean) {
 /** Mỗi `yield` là một khung, yield ra Promise là chờ tải atlas; tải trước atlas người kế, đo chân và niêm sau từng người. */
 export function* bakeRegulars(scene: Phaser.Scene, ids: Iterable<string>, alive: () => boolean): Generator<Promise<void> | undefined> {
   const todo = [...ids].filter((id) => id in REGULARS && !ready.has(id));
+  for (const id of todo) failed.delete(id);
   const load = async (id?: string) => {
     const file = id && REGULARS[id].walk;
     if (file && !sheets.has(file)) await loadSheet(file, alive);
@@ -317,7 +323,10 @@ export function* bakeRegulars(scene: Phaser.Scene, ids: Iterable<string>, alive:
   }
   for (const who of todo) {
     if (hasEightWay(who) && hasGait(who, "walk")) ready.add(who);
-    else dropRegular(scene, who);
+    else {
+      dropRegular(scene, who);
+      if (alive()) failed.add(who);
+    }
   }
 }
 

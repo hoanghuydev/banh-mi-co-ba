@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { artSteps, bakeSourceLoads, preloadArt } from "../art";
+import { artSteps, bakeSourceLoads, preloadArt, regularFiles } from "../art";
 import { boostSlice, runSteps } from "../art/steps";
 import { StallAudio } from "../audio/stallAudio";
 import { Lamps } from "../ui/stall/Lamps";
@@ -56,7 +56,7 @@ export function warmUp(scene: Phaser.Scene) {
       report(LOAD_SHARE + (1 - LOAD_SHARE) * baked / (from + total));
     });
     report(1);
-    keepForOffline();
+    keepForOffline(regularFiles());
   })().catch((e) => { job = null; throw e; });
   return job;
 }

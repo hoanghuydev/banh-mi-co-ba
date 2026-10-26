@@ -50,10 +50,16 @@ export function markEightWay(who: string) {
 
 export const hasEightWay = (who: string) => EIGHT.has(who);
 
+/** Ai có thân vẽ bằng code; cùng `EIGHT`/`GAITS` cho biết một tiền tố texture là nhân vật, không phải đồ đạc. */
+const BODIES = new Set<string>();
+
+export const isCharacter = (who: string) => EIGHT.has(who) || GAITS.has(who) || BODIES.has(who);
+
 /** Gỡ mọi dấu đã sơn của `who`; texture phải xoá cùng lúc. */
 export function unmarkCharacter(who: string) {
   EIGHT.delete(who);
   GAITS.delete(who);
+  BODIES.delete(who);
 }
 
 /** Hướng chéo lấy hình nghiêng, vẽ chính diện thì nhìn ra đi giật lùi. */
@@ -491,6 +497,7 @@ function draw(g: Pen, cx: number, cy: number, dir: Dir, st: BodyStyle, pose: Pos
 export function buildBody(
   scene: Phaser.Scene, who: string, style: BodyStyle, poses: readonly Pose[] = ["idle"],
 ) {
+  BODIES.add(who);
   for (const pose of poses) {
     DIRS.forEach((dir) =>
       prop(scene, keyOf(who, dir, pose), heightFor(BODY_H),

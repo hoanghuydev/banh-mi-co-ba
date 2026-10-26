@@ -4,6 +4,7 @@ import { INDOOR_SHADOW, LIGHT_DEPTH, LIGHT_ENV_KEY, type LightEnv } from "./env"
 import { toScreen } from "../../world/iso";
 import { WORLD_H, WORLD_W } from "../../world/map";
 import { sealTexture, sourceImage } from "../../core/texSeal";
+import { isCharacter } from "../character";
 
 export type Matrix = readonly [a: number, b: number, c: number, d: number, e: number, f: number];
 
@@ -230,7 +231,7 @@ export function soleRow(data: ArrayLike<number>, w: number, h: number) {
 /** Hàng chân theo TextureSource rồi theo frame, không theo canvas vì Phaser dùng lại canvas của texture đã xoá. */
 const feet = new WeakMap<Phaser.Textures.TextureSource, Map<string, number>>();
 /** Ảnh khung hình của một nhân vật theo hướng và bước đi. */
-const POSE_KEY = /^.+?_(?:n|ne|e|se|s|sw|w|nw)(?:_[a-z]+\d*)?$/;
+const POSE_KEY = /^(.+)_(?:n|ne|e|se|s|sw|w|nw)(?:_[a-z]+\d*)?$/;
 /** Phần đáy khung được đọc gộp; chân nằm cao hơn thì đọc riêng cả khung. */
 const SOLE_SLICE = 0.4;
 /** Trần bề cao tấm gộp, để tấm vẫn nằm trên GPU và mỗi lần đọc ngắn. */
@@ -256,7 +257,8 @@ function measureFoot(cut: Phaser.Textures.Frame) {
 export function* feetSteps(textures: Phaser.Textures.TextureManager) {
   const todo: Phaser.Textures.Frame[] = [];
   for (const key of textures.getTextureKeys()) {
-    const f = POSE_KEY.test(key) ? textures.getFrame(key) : null;
+    const who = POSE_KEY.exec(key)?.[1];
+    const f = who && isCharacter(who) ? textures.getFrame(key) : null;
     if (f && footOf(f) === undefined) todo.push(f);
   }
   while (todo.length) {
@@ -301,7 +303,12 @@ const opaqueRow = (data: ArrayLike<number>, w: number, y: number) => {
 function drop(textures: Phaser.Textures.TextureManager, e: Entry) {
   free(e.shadow);
   free(e.shadowIn);
-  if (e.refl && textures.exists(e.refl)) textures.remove(e.refl);
+  if (e.refl && textures.exists(e.refl)) {
+    // Đọc thẳng `source.image`: `getSourceImage` của texture đã niêm sẽ chép ngược từ GPU.
+    const img = textures.get(e.refl).source[0].image;
+    textures.remove(e.refl);
+    if (img instanceof HTMLCanvasElement) free(img);
+  }
 }
 
 /** Bỏ bóng, phản chiếu đã bake của mọi khung thuộc nhân vật `who` mà không thân nào đang dùng. */
