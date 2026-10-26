@@ -4,7 +4,8 @@ import { COUNTER_Y, QUEUE_SLOTS } from "../world/map";
 import { BODY_H, buildBody, footY, textureFor } from "../art";
 import { STRIDE, GAIT_FRAMES, walkTextureFor } from "../art/character";
 import { artScale } from "../art/photo";
-import { ActorLight } from "../art/light/actor";
+import { ActorLight, feetSteps } from "../art/light/actor";
+import { drain } from "../art/steps";
 import type { Customer } from "../sim/customer";
 import { nowState } from "../sim/perception";
 import { isTouch } from "../core/device";
@@ -103,7 +104,10 @@ export class CustomerActor {
 
   constructor(private scene: Phaser.Scene, private c: Customer, private bubbles: BubblePool, private textScale = 1,
     private label: (c: Customer) => string = (x) => x.name) {
-    if (!scene.textures.exists(`${c.memKey}_s`)) buildBody(scene, c.memKey, c.body);
+    if (!scene.textures.exists(`${c.memKey}_s`)) {
+      buildBody(scene, c.memKey, c.body);
+      drain(feetSteps(scene.textures));
+    }
 
     this.body = scene.add.image(0, 0, textureFor("n", c.memKey).key).setOrigin(0.5, 1);
     this.light = new ActorLight(scene, this.body);

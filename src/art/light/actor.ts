@@ -3,6 +3,7 @@ import { LIGHT } from "./constants";
 import { INDOOR_SHADOW, LIGHT_DEPTH, LIGHT_ENV_KEY, type LightEnv } from "./env";
 import { toScreen } from "../../world/iso";
 import { WORLD_H, WORLD_W } from "../../world/map";
+import { sealTexture, sourceImage } from "../../core/texSeal";
 
 export type Matrix = readonly [a: number, b: number, c: number, d: number, e: number, f: number];
 
@@ -127,7 +128,7 @@ function free(c: HTMLCanvasElement | undefined) {
 }
 
 /** Vẽ cả khung (kể lề đã cắt của frame trim, có thể lật ngang) vào canvas nháp dùng chung, trả ctx của nó. */
-function sprite(img: CanvasImageSource, cut: Phaser.Textures.Frame, flip: boolean) {
+function sprite(cut: Phaser.Textures.Frame, flip: boolean) {
   const w = cut.realWidth, h = cut.realHeight;
   tmp ??= canvas(1, 1);
   tmp.width = Math.max(tmp.width, w);
@@ -137,7 +138,7 @@ function sprite(img: CanvasImageSource, cut: Phaser.Textures.Frame, flip: boolea
   ctx.globalCompositeOperation = "source-over";
   ctx.clearRect(0, 0, tmp.width, tmp.height);
   if (flip) { ctx.translate(w, 0); ctx.scale(-1, 1); }
-  ctx.drawImage(img, cut.cutX, cut.cutY, cut.cutWidth, cut.cutHeight, cut.x, cut.y, cut.cutWidth, cut.cutHeight);
+  ctx.drawImage(sourceImage(cut), cut.cutX, cut.cutY, cut.cutWidth, cut.cutHeight, cut.x, cut.y, cut.cutWidth, cut.cutHeight);
   return ctx;
 }
 
@@ -165,9 +166,9 @@ function softenWithoutFilter(ctx: CanvasRenderingContext2D, px: number) {
   free(small);
 }
 
-function bakeShadow(img: CanvasImageSource, cut: Phaser.Textures.Frame, flip: boolean, foot: number, K: number, ss: number, soft = 1) {
+function bakeShadow(cut: Phaser.Textures.Frame, flip: boolean, foot: number, K: number, ss: number, soft = 1) {
   const w = cut.realWidth, h = cut.realHeight;
-  const t = sprite(img, cut, flip);
+  const t = sprite(cut, flip);
   t.globalCompositeOperation = "source-in";
   t.fillStyle = `rgb(${SHADOW_RGB.join(",")})`;
   t.fillRect(0, 0, w, h);
@@ -191,9 +192,9 @@ function bakeShadow(img: CanvasImageSource, cut: Phaser.Textures.Frame, flip: bo
   return { out, L };
 }
 
-function bakeReflection(img: CanvasImageSource, cut: Phaser.Textures.Frame, flip: boolean, foot: number, ss: number) {
+function bakeReflection(cut: Phaser.Textures.Frame, flip: boolean, foot: number, ss: number) {
   const w = cut.realWidth, h = cut.realHeight;
-  sprite(img, cut, flip);
+  sprite(cut, flip);
   const blur = REFLECT_BLUR * ss;
   const L = bakeLayout(w, h, foot, 1, 0, Math.ceil(blur * 3) + 2, BAKE_RES);
   const out = canvas(L.cw, L.ch);
@@ -245,13 +246,13 @@ function keepFoot(cut: Phaser.Textures.Frame, foot: number) {
 function measureFoot(cut: Phaser.Textures.Frame) {
   const hit = footOf(cut);
   if (hit !== undefined) return hit;
-  const ctx = sprite(cut.source.image as CanvasImageSource, cut, false);
+  const ctx = sprite(cut, false);
   const foot = soleRow(ctx.getImageData(0, 0, cut.realWidth, cut.realHeight).data, cut.realWidth, cut.realHeight);
   keepFoot(cut, foot);
   return foot;
 }
 
-/** Đọc trước chân mọi khung nhân vật: đáy nhiều khung vẽ chung một tấm rồi đọc một lần, vì mỗi lần getImageData phải chờ GPU; mỗi tấm một `yield`. */
+/** Đọc trước chân mọi khung nhân vật rồi niêm texture: đáy nhiều khung vẽ chung một tấm rồi đọc một lần, vì mỗi lần getImageData phải chờ GPU; mỗi tấm một `yield`. */
 export function* feetSteps(textures: Phaser.Textures.TextureManager) {
   const todo: Phaser.Textures.Frame[] = [];
   for (const key of textures.getTextureKeys()) {
@@ -275,7 +276,7 @@ export function* feetSteps(textures: Phaser.Textures.TextureManager) {
     for (const { f, h, y: at } of frames) {
       // Hàng `realHeight − h` của khung đầy đủ nằm ở `at`; frame trim chỉ chép phần hàng nó có.
       const top = Math.max(0, f.realHeight - h - f.y), bot = Math.min(f.cutHeight, f.realHeight - f.y);
-      if (bot > top) ctx.drawImage(f.source.image as CanvasImageSource, f.cutX, f.cutY + top, f.cutWidth, bot - top, f.x, at + f.y + top - (f.realHeight - h), f.cutWidth, bot - top);
+      if (bot > top) ctx.drawImage(sourceImage(f), f.cutX, f.cutY + top, f.cutWidth, bot - top, f.x, at + f.y + top - (f.realHeight - h), f.cutWidth, bot - top);
     }
     const data = ctx.getImageData(0, 0, w, y).data;
     free(sheet);
@@ -286,6 +287,7 @@ export function* feetSteps(textures: Phaser.Textures.TextureManager) {
         break;
       }
       measureFoot(f);
+      sealTexture(textures, f.texture.key);
     }
     yield;
   }
@@ -299,11 +301,7 @@ const opaqueRow = (data: ArrayLike<number>, w: number, y: number) => {
 function drop(textures: Phaser.Textures.TextureManager, e: Entry) {
   free(e.shadow);
   free(e.shadowIn);
-  if (e.refl && textures.exists(e.refl)) {
-    const img = textures.get(e.refl).getSourceImage();
-    textures.remove(e.refl);
-    if (img instanceof HTMLCanvasElement) free(img);
-  }
+  if (e.refl && textures.exists(e.refl)) textures.remove(e.refl);
 }
 
 /** Xoá mục cũ nhất không ai dùng cho tới khi về trần theo số thân đang sống. */
@@ -450,7 +448,6 @@ export class ActorLight {
     if (!env || !body.visible || body.alpha <= 0.01) { this.hide(); return; }
 
     const frame = body.frame;
-    const src = frame.source.image as CanvasImageSource;
     const k = body.scaleX;
     const ss = 1 / k;
     const h = frame.realHeight;
@@ -478,7 +475,7 @@ export class ActorLight {
     const inA = sAlpha * INDOOR_SHADOW.alpha * inW;
     if (outA > 0.01) {
       if (!e.shadow) {
-        const { out, L } = bakeShadow(src, frame, flip, foot, env.sunK, ss);
+        const { out, L } = bakeShadow(frame, flip, foot, env.sunK, ss);
         e.shadow = out;
         e.shadowL = L;
       }
@@ -486,7 +483,7 @@ export class ActorLight {
     } else this.shadow.setVisible(false);
     if (inA > 0.01) {
       if (!e.shadowIn) {
-        const { out, L } = bakeShadow(src, frame, flip, foot, INDOOR_SHADOW.k, ss, INDOOR_SHADOW.soft);
+        const { out, L } = bakeShadow(frame, flip, foot, INDOOR_SHADOW.k, ss, INDOOR_SHADOW.soft);
         e.shadowIn = out;
         e.shadowInL = L;
       }
@@ -501,10 +498,11 @@ export class ActorLight {
         this.mask.layer.add(this.refl);
       }
       if (!e.refl) {
-        const { out, L } = bakeReflection(src, frame, flip, foot, ss);
+        const { out, L } = bakeReflection(frame, flip, foot, ss);
         e.refl = `actor-rf${serial++}`;
         e.reflL = L;
         this.scene.textures.addCanvas(e.refl, out);
+        sealTexture(this.scene.textures, e.refl);
       }
       this.place(this.refl, e.refl, e.reflL!, lift, k);
       this.refl.setAlpha(rAlpha).setVisible(true);

@@ -5,6 +5,7 @@ import { OVERCAST, sunAt, type Sun } from "../../world/daylight";
 import { materialOf } from "../../art/light/materials";
 import { floorAtScreen } from "../../world/lightParams";
 import type { FloorBake } from "../../world/floorBake";
+import { sealTexture } from "../../core/texSeal";
 
 const TONE_DEPTH = 6_900_000;
 const PATCH_DEPTH = -999_999;
@@ -29,6 +30,7 @@ function buildVignette(scene: Phaser.Scene) {
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, 256, 144);
   tex.refresh();
+  sealTexture(scene.textures, VIGNETTE);
 }
 
 /** Vạt nắng mềm nướng một lần: mép nhoè, nhạt dần về phía xa mái hiên. */
@@ -82,6 +84,7 @@ function buildPatch(scene: Phaser.Scene, key: string, ground: Phaser.Geom.Rectan
   ctx.drawImage(mask, 0, 0);
   mask.width = mask.height = 0;
   tex.refresh();
+  sealTexture(scene.textures, key);
 }
 
 export class Daylight {

@@ -6,6 +6,7 @@ import { rimGainOf, sheenSpecOf } from "./sheenParams";
 import { TW } from "./iso";
 import type { Crop } from "../art/slices";
 import type { TexPixels } from "./texPixels";
+import { sealTexture } from "../core/texSeal";
 
 const SHEEN_DEPTH = 0.15;
 
@@ -39,6 +40,7 @@ export class PropSheen {
       const canvas = scene.textures.createCanvas(tex, out.w, out.h)!;
       canvas.getContext().putImageData(new ImageData(new Uint8ClampedArray(out.data), out.w, out.h), 0, 0);
       canvas.refresh();
+      sealTexture(scene.textures, tex);
       this.keys.push(tex);
       const o = scene.add.image(img.x, img.y, tex).setOrigin(img.originX, img.originY)
         .setScale(img.scaleX, img.scaleY).setFlipX(img.flipX)

@@ -7,6 +7,7 @@ import {
 import { LIGHT_DEPTH } from "../../art/light/env";
 import { materialOf } from "../../art/light/materials";
 import { RENDER_SCALE } from "../../core/render";
+import { sealTexture } from "../../core/texSeal";
 import { ZOOM } from "../../world/camera";
 import { COUNTER, PROP, footY } from "../../art";
 import { TABLE_DROP } from "../../art/photo";
@@ -129,6 +130,7 @@ export class Lamps {
     const img = this.scene.textures.get(src).getSourceImage() as HTMLImageElement;
     const key = `lamp${this.id}_${name}`;
     this.scene.textures.addCanvas(key, downscale(img, Math.round(LAMP_W * this.S), Math.round(LAMP_H * this.S)));
+    sealTexture(this.scene.textures, key);
     this.keys.push(key);
     return key;
   }
@@ -140,6 +142,7 @@ export class Lamps {
     ctx.scale(this.S, this.S);
     draw(ctx);
     tex.refresh();
+    sealTexture(this.scene.textures, key);
     this.keys.push(key);
     return key;
   }

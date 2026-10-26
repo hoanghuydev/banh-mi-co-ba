@@ -11,6 +11,7 @@ import { TH, toScreen } from "./iso";
 import { buildCornerAo, buildTintLayers, roadWeight, wallOverlays, wallTopOverlays, type TintLayers } from "./lightTint";
 import type { FloorBake } from "./floorBake";
 import { readImg, type TexPixels } from "./texPixels";
+import { sealTexture } from "../core/texSeal";
 
 const DAPPLE_DEPTH = 0.2;
 
@@ -373,6 +374,7 @@ export class SceneLight {
     const key = `light/${this.scene.scene.key}/${name}`;
     if (this.scene.textures.exists(key)) this.scene.textures.remove(key);
     this.scene.textures.addCanvas(key, canvas);
+    sealTexture(this.scene.textures, key);
     this.keys.push(key);
     return key;
   }
@@ -391,6 +393,7 @@ export class SceneLight {
     const tex = this.scene.textures.createCanvas(key, img.w, img.h)!;
     tex.getContext().putImageData(new ImageData(img.data as Uint8ClampedArray<ArrayBuffer>, img.w, img.h), 0, 0);
     tex.refresh();
+    sealTexture(this.scene.textures, key);
     this.keys.push(key);
     return key;
   }

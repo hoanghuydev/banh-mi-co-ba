@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { RENDER_SCALE } from "../core/render";
+import { sealTexture } from "../core/texSeal";
 
 export type ClayTone = { name: string; hi: string; base: string; lo: string; lip: string; edge: string; flat?: boolean };
 
@@ -46,6 +47,7 @@ function make(scene: Phaser.Scene, key: string, cw: number, ch: number, draw: (c
   ctx.scale(S, S);
   draw(ctx);
   tex.refresh();
+  sealTexture(scene.textures, key);
   return key;
 }
 

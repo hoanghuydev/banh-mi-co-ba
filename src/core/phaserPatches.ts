@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { installTexSeal } from "./texSeal";
 
 /** Màn 90/120/144 Hz cũng chỉ chạy ~60 khung/giây; mọi hệ theo `dt` nên trông như màn 60 Hz. */
 export const FPS_LIMIT = 60;
@@ -80,4 +81,5 @@ export function installPhaserPatches() {
   installFrameCap();
   installDepthGuard();
   installCanvasPixelDrop();
+  installTexSeal(Phaser);
 }
