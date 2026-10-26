@@ -11,6 +11,7 @@ Phase revamp gọi là **R0–R6 (+R0.1, R0.5, R0.7)** — R0.7 = nhà cung cấ
 - **Ví dụ user đưa ra là mẫu, không phải toàn bộ phạm vi.** Mơ hồ "chỉ mấy chỗ này hay tất cả" → hỏi.
 - **Một mảng việc phải được người dùng dẫn lại từ hai vòng trở lên mới đúng → ghi nhật ký vào `.claude/learning-loop/<chủ-đề>-nhat-ky.md`** (agent làm sai gì, người dùng dẫn bằng gì, gốc lỗi tư duy), rồi cập nhật skill liên quan.
 - **Hai việc không chạm file/dữ liệu của nhau → ưu tiên tạo sub agent làm song song** (Agent tool), tự làm phần còn lại. Giao rõ file được sửa và giao diện chung; việc phụ thuộc nhau thì làm tuần tự.
+- **Phần đo/chụp bằng Chrome headless thì xếp lượt**, không để nhiều agent chạy cùng lúc (máy quá tải, đo sai, chạy hàng giờ). Giao kèm script đo/chụp có sẵn để dùng lại. Agent quá ~1 tiếng → hỏi tiến độ, xem lại cách làm.
 
 ## 1. Viết plan
 

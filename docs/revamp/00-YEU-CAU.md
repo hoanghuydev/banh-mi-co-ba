@@ -501,6 +501,32 @@ Tên danh hiệu giữ nguyên chữ gốc ở mọi chỗ (Hệ thống, toast,
 - Ảnh lỗi: `/home/hoanghuy/Downloads/game/LỆCH CHAT.png`.
 - Nghiệm thu: chụp nhiều khoảnh khắc (đi, dừng, quay hướng), bong bóng luôn bám trên đầu.
 
+### R14 — Tiền lẻ & đổi tiền (phase cuối)
+
+> Chốt 2026-10-26. Hiện tại tiền lẻ chỉ là một con số ẩn (`sim/till.ts`); dòng "chạy qua cô Thuý đổi" chỉ là chữ, không có gì xảy ra.
+
+| Phần | Cách làm |
+|---|---|
+| Tiền game | Thiết kế bộ tờ tiền có mệnh giá (1k, 2k, 5k, 10k, 20k, 50k…), có ảnh riêng |
+| Thối tiền | **Tự động trừ** tờ trong két, người chơi không tính |
+| Thiếu lẻ ≤ 5k | Bớt luôn cho khách (free) |
+| Thiếu lẻ > 5k | Người chơi phải **chạy đi đổi tiền** |
+| Đổi tiền | Cô Thúy là **một xe nhỏ** trên map. Chạy tới, nhấn **E** → modal chat → chọn đổi tiền → logic đổi |
+| Xem két | Đứng ở quầy thanh toán nhấn **R** → hộc két kéo ra (animation + âm thanh kéo hộc) → xem tờ tiền bên trong |
+| Kẹt tiền lẻ | Nhấn **F** chat với khách đang chờ thối. Lúc kẹt lẻ, các lựa chọn chat cũ **được thay** bằng hai lựa chọn dưới |
+
+Hai lựa chọn khi kẹt tiền lẻ (`{npc}` = cách gọi khách, `{me}` = người chơi tự xưng):
+
+| Lựa chọn | Câu người chơi nói | Hệ quả |
+|---|---|---|
+| Đi đổi | "{npc} đợi {me} xíu, {me} đi đổi tiền lẻ tý nha." | Khách đứng chờ, người chơi chạy qua xe cô Thúy đổi |
+| Bớt tiền | "{me} bớt cho {npc} {số tiền} nha." | Bớt phần lẻ xuống tờ chẵn: ổ 28k thì lấy 20k (bớt 8k) |
+
+- Câu thoại trên là ý, viết lại theo skill `research-giong-viet` lúc làm.
+
+- *Chưa rõ:* khách làm gì trong lúc người chơi chạy đi đổi (đứng chờ, mất kiên nhẫn?); cô Thúy đổi tối đa bao nhiêu, có mất phí không; sáng có được đổi sẵn lẻ khi đi chợ không.
+- Tỉ lệ khách đưa tờ lớn + số lẻ đầu ngày phải mô phỏng (Lưu ý 1). Canvas xe cô Thúy, hộc két: `QUY-TAC-CANVAS.md`.
+
 ---
 
 ## 8. Cách làm
