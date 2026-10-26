@@ -20,9 +20,9 @@ Ra atlas `public/art/<ten>.webp + .json` có `idle_<h>_00` ×8 và `walk_<h>_00.
 | 4a | Pha bước: mỗi hướng **1 chat riêng**, 1 hàng 4 pha | Chat B1…B8 | `pose-le/<h>.png` + `idle/<h>.png` | `walk/<h>.png` |
 | 4b | Pha chuyển tiếp — **bắt buộc, làm ngay từ đầu**: gửi tiếp trong chat B của hướng đó | Chat B1…B8 | `pose-chan/<h>.png` + `walk/<h>.png` | `walk-chan/<h>.png` |
 | 5 | Ghép: `ghep-npc.py` → `pack-atlas.py` → `optimize-art.py` | — | — | `public/art/<ten>.*` |
-| 6 | **Review cuối** (mục dưới): `kiem-atlas.py` ĐẠT + soi ảnh soi bằng mắt. Chưa đạt thì gen lại đúng hướng/dải hỏng, không lắp | — | — | ảnh soi |
+| 6 | **Review cuối** (mục dưới): `kiem-atlas.py` ĐẠT + soi ảnh soi, `-to.png`, `-chan.png` bằng mắt. Chưa đạt thì gen lại đúng hướng/dải hỏng, không lắp | — | — | ảnh soi |
 | 7 | Lắp: thêm dòng `NPC_PHOTOS` trong `src/art/photo.ts` | — | — | — |
-| 8 | Test trong game bằng **Claude in Chrome** (mục Test game): GIF lúc đang đi + đo frame thật + ảnh lúc đứng | — | — | GIF, ảnh chụp |
+| 8 | Test trong game bằng **Claude in Chrome** (mục Test game): xem nhân vật đi đủ 8 hướng, nhất là se (tới quầy) và nw (đi về). **Chưa qua bước này thì chưa được báo xong nhân vật** | — | — | GIF, ảnh chụp |
 
 Thứ tự hướng mọi nơi: `s se e ne n nw w sw`. `s` = mặt nhìn camera, `e` = nghiêng phải, `n` = quay lưng.
 
@@ -33,8 +33,9 @@ Thứ tự hướng mọi nơi: `s se e ne n nw w sw`. `s` = mặt nhìn camera,
 - **Ảnh đứng im và ảnh đi lệch tỉ lệ thân** (hai lượt vẽ khác nhau): cỡ = trung bình nhân của khớp-bề-ngang-đầu và khớp-chiều-cao. Đã có trong `ghep-npc.py`.
 - **Đủ frame ngay từ đầu: mỗi hướng 2 dải = 8 frame khác nhau.** Game cần 8 frame đi (`GAIT_FRAMES.walk = 8`). ChatGPT vẽ bước trái và bước phải gần như một (pha 1 ≈ pha 3), nên chỉ 1 dải 4 pha nhân đôi lên 8 thì trong game chỉ thấy **2 hình lật qua lật lại** (lỗi user bắt ở chú Đạt, phải làm bù 8 lượt). Luôn làm cả dải bước (mẫu frame 1,3,5,7) lẫn dải chuyển tiếp (mẫu frame 0,2,4,6) — chân lướt qua nhau, người nhún lên — rồi `ghep-npc.py` xen kẽ: chẵn = chuyển tiếp, lẻ = bước. Không bao giờ nhân đôi frame để đủ số.
 - **Hướng s và n (đi thẳng về/ra xa camera) dễ trông như trượt**: tạp dề, váy, áo dài che chân nên frame gần như giống nhau (chú Đạt hướng s chỉ đạt biên độ 13,7, anh Bảo 18,8). Prompt hai hướng này phải thêm câu "legs/feet clearly visible" (xem `references/prompt.md`); vẫn dưới 16 thì gen lại với câu "EXAGGERATE" — bước to, nhấc gót thấy đế, tay vung rộng (mẫu: `references/prompt.md` mục "EXAGGERATE").
+- **Chân không đổi phiên** (cô xách giỏ, bà cụ, Dì Liên, Thầy Khải, chú Quang, Ngọc Trâm — user bắt trong game ở hướng se/nw: "giống thiếu hoạt ảnh ở giữa"): cả 8 frame cùng một chân đứng trước, chỉ dang to nhỏ khác nhau → trong game trông như trượt, khựng giữa bước. Hai nguồn: (1) dải chuyển tiếp chép dáng bước dài của ảnh 2 (dải bước cũ) thay vì vẽ chân khép — ở mẫu, cả 4 frame chuyển tiếp mọi hướng đều khép chân (dang ≤ 0,30 chiều cao), dải bước luôn có frame dang rộng; (2) dải bước gộp chân trái/phải. Prompt 3 có câu "LEG CHECK", prompt 4 có câu "Take ONLY the look … NOT its poses … feet stay close together" (`references/prompt.md`). `kiem-atlas.py` không bắt được bằng "8 hình khác nhau" hay biên độ (bản hỏng vẫn ĐẠT cả hai): nó in **khép chân** và CẢNH BÁO khi > 0,75, rồi **bắt buộc soi `-chan.png`** (vùng chân phóng ×2, hàng mẫu anh Bảo ngay trên hàng NPC): chân trước phải đổi phiên đúng như hàng mẫu, frame khép của mẫu thì NPC cũng khép. Cảnh báo có thể oan (pha lệch mẫu nhưng vẫn đổi chân đều: khách lạ w, Khả Hân nw) — mắt quyết. s/n không đo được, chỉ soi mắt.
 - Bước 1–2 cùng một chat để giữ mặt; bước 4a mỗi hướng một chat mới, ảnh tham chiếu đính lại đầy đủ; bước 4b gửi tiếp trong chính chat đó.
-- **Giày trắng của mẫu dáng lọt sang**: anh Bảo đi giày trắng, ChatGPT hay chép vào chân sau. Mọi prompt đi thêm câu "Footwear" ở `references/prompt.md`; soi chân từng frame trong `soi.png`.
+- **Giày trắng của mẫu dáng lọt sang**: anh Bảo đi giày trắng, ChatGPT hay chép vào chân sau. Mọi prompt đi thêm câu "Footwear" ở `references/prompt.md`; soi chân từng frame trong `soi.png`. Lọt rồi thì **đừng xin ChatGPT sửa giày**: lượt sửa hay vẽ lại cả dải thành bước dài, mất pha khép chân (Dì Liên se/nw, Thầy Khải se hỏng đúng kiểu này). Giữ bản đầu, tô giày bằng `scripts/to-giay.py <vào> <ra> <ô>` rồi soi phóng to.
 - Chạy 8 hướng song song (8 tab), xong cả 8 dải bước mới gửi 8 dải chuyển tiếp.
 - **Tách nền sót ở khe kín**: tay chạm quần/hông thì khoảng trắng giữa tay và thân bị bao kín, tách nền tưởng là một phần người nên giữ lại (lỗi user bắt ở Chú Quang, ảnh đứng hướng s). `ghep-npc.py` xoá mọi lỗ trắng kín **dưới phần đầu** (38% trên của hình), trong phần đầu chỉ xoá lỗ to để giữ lòng trắng mắt. Máy không đo được lỗi này trên atlas (khe sót và áo/giày trắng có số đo như nhau), nên **bắt buộc soi `-to.png`** (nền hồng tím, phóng ×2): khe tay–thân, nách, khe chân không được còn mảng trắng/xám.
 - **Áo sáng màu dễ bị khoét thủng**: lỗ kín chỉ bị xoá khi trung bình min kênh ≥ 247 (khe nền thật ≥ 246,8; áo xanh nhạt của Ngọc Trâm 236–246,6). Áo trắng tinh có thể vượt ngưỡng → soi `-to.png` xem áo còn nguyên mảng. Bị khoét thì xin ChatGPT áo trắng ngà có bóng đổ rõ ("off-white, soft shading, not pure white"), đừng hạ ngưỡng chung. Ăn mòn còn đến từ phía ngoài: mặt áo trắng được đèn chiếu (≥236) chạm liền nền thì phần nền tô từ mép ăn luôn vào áo (Khả Hân: mất áo cả 8 frame hướng sw). Áo/tóc sáng màu (trắng, kem, bạc, xanh nhạt) thì **xin ngay từ đầu** màu ngà có bóng xám rõ và viền xám mảnh (prompt mẫu: `references/prompt.md` mục "Áo/tóc sáng màu").
@@ -45,7 +46,8 @@ Thứ tự hướng mọi nơi: `s se e ne n nw w sw`. `s` = mặt nhìn camera,
 |---|---|
 | 4 mặt | Đủ 4 góc, đứng thẳng tay buông, đúng phiếu (màu áo, phụ kiện), nền trắng |
 | 8 hướng | Ô 2 xiên phải-dưới, ô 4 lưng xiên phải-trên, ô 6 lưng xiên trái-trên, ô 8 xiên trái-dưới; thấy đỉnh đầu (camera nâng); đèn đều 8 ô |
-| Đi | Đúng hướng như ô đứng im; pha chuyển tiếp chân khép/lướt, khác hẳn pha bước; cùng màu với đứng im; hướng s/n thấy rõ chân và dép |
+| Dải bước | Đúng hướng như ô đứng im; ô 1 và ô 3 ngược chân trước, ô 2 và ô 4 cũng vậy; cùng màu với đứng im; hướng s/n thấy rõ chân và dép |
+| Dải chuyển tiếp | Cả 4 ô chân khép/lướt sát nhau dưới thân — có ô nào dang chân như dải bước là hỏng, gen lại |
 
 Sai thì gửi câu sửa **trong chính chat đó** (user muốn mỗi việc một chat), sửa đúng lỗi đó.
 
@@ -71,11 +73,14 @@ Mắt soi trên ảnh soi (mỗi hàng một hướng, cột 1 = đứng im, v�
 
 - **Sai hướng**: mọi frame trong hàng quay cùng phía với cột 1 (mặt/lưng, trái/phải). Không frame nào lật ngược.
 - **Đúng chu kỳ**: đọc trái → phải thấy bước → lướt → bước chân kia → lướt; không có frame nhảy cóc.
+- **Chân đổi phiên** — soi trên `soi-<ten>-chan.png`: mỗi hướng so hàng NPC với hàng mẫu ngay trên nó; chân trước đổi đúng chỗ mẫu đổi, frame mẫu khép chân thì NPC cũng khép. Cả hàng một chân đứng trước = hỏng.
 - **Đúng người**: mặt, ria, tóc, tạp dề, dép giống nhau mọi frame; không lẫn đồ của mẫu dáng (kính, áo khoác anh Bảo).
 - **Sạch** — soi trên `soi-<ten>-to.png` (nền hồng tím ×2): không viền trắng, không mảng trắng ở khe tay–thân, nách, khe chân, không cụt tay chân.
 - Cỡ 65 px (ảnh soi thu nhỏ): đứng ↔ đi không co giãn.
 
 Lỗi nằm ở hướng nào thì gen lại đúng dải đó trong chat của hướng đó, ghép và review lại cả atlas.
+
+**Xong nhân vật = review cuối đạt + test game đạt** (bước 8): spawn NPC, xem nó đi tới quầy (se) và đi về (nw) ở Chrome thật, chân phải đổi đều, không khựng, không trượt. Agent không test game được thì báo "chưa test game", người giao việc test rồi mới chốt.
 
 ## Lệnh
 
@@ -84,6 +89,7 @@ T=.claude/skills/tao-npc-anh/scripts
 python3 $T/cat-idle.py art-raw/_duyet/<ten>                  # 8huong.png -> idle/<h>.png
 python3 $T/mau-dang.py art-raw/_duyet/<ten>/pose-le le       # mẫu pha bước
 python3 $T/mau-dang.py art-raw/_duyet/<ten>/pose-chan chan   # mẫu pha chuyển tiếp
+python3 $T/to-giay.py <vào.png> <ra.png> <ô 1–4>             # giày trắng lọt -> nâu, trước khi ghép
 python3 $T/ghep-npc.py art-raw/_duyet/<ten> <ten-atlas>      # -> art-raw/render/<ten-atlas>/
 python3 tools/pack-atlas.py <ten-atlas> --height 192         # -> public/art/<ten-atlas>.png+.json
 python3 tools/optimize-art.py                                # png -> webp
@@ -105,13 +111,15 @@ Dùng **Claude in Chrome** (Chrome thật, 60 khung hình/giây). **Không dùng
 
 1. Tìm cổng dev đang sống: `ss -ltnp | grep 517` + `ps -o stat -p <pid>` (vite bị Ctrl+Z có trạng thái `T`, vẫn giữ cổng nhưng treo — dùng cổng khác, đừng đụng tiến trình của user). Tab **mới** `http://localhost:<cổng>/` → "Chơi tiếp" (save của user; báo user là đã vào save) → chờ vào quán, đồng hồ chạy (6h00 "mới dọn hàng" là đồng hồ chưa chạy, khách đứng yên).
 2. `javascript_tool`: `dev.npc.spawn('<ID>')`. Gọi một NPC mỗi lần (hai người đứng đè nhau).
-3. Đo frame thật: chuỗi `zoom` liên tiếp (giữ tab ở trước mặt — tab nền bị Chrome hãm còn ~2 khung/giây) + `gif_creator`. Mỗi ảnh phải một dáng khác.
+3. Xem đi thật: để NPC tự đi tới quầy rồi đi về (hướng se, nw), cùng lúc người qua đường đi ngang (e, w). Đối chiếu với `-chan.png`: hướng nào nhìn khựng/trượt thì gen lại dải đó. Đo frame thật: chuỗi `zoom` liên tiếp (giữ tab ở trước mặt — tab nền bị Chrome hãm còn ~2 khung/giây) + `gif_creator`. Mỗi ảnh phải một dáng khác.
 4. Kiểm texture đã nạp đúng bản mới: vẽ `__game.textures.getFrame('<ID>_<h>_w<i>')` ra canvas, so 8 frame liền nhau (phải khác nhau). `__game.scene.getScene("stall").actors` → `a.body.texture.key` cho biết frame đang hiện.
 5. Game nạp atlas **một lần lúc mở trang**: thay atlas xong phải tải lại trang (Ctrl+Shift+R). Báo user tải lại tab của họ, không thì họ vẫn thấy bản cũ.
 6. So cỡ cả dàn: đặt tạm một hàng `scene.add.image(x, y, '<ID>_s')` (scale lấy từ `a.body.scaleX` của một actor) cạnh người chơi và NPC cũ, phóng to xem, rồi `destroy()`. Trẻ em thấp rõ, người lớn ngang nhau.
 7. Xong thì đóng tab đã mở.
 
 ## Mẹo trình duyệt (ChatGPT Plus)
+
+- **Chỉ dùng ChatGPT.** Đã thử Gemini (26/10, chú đeo kính): 41+ ảnh chưa xong một nhân vật, sửa trong chat không ăn, lệch hướng, đầu nhỏ, watermark, CAPTCHA khi mở nhiều tab; Flow không đính được ảnh tham chiếu. Hết hạn mức ChatGPT thì chờ reset.
 
 - Chạy song song nhiều tab được (đã chạy 7 tab cùng lúc, không vướng hạn mức).
 - Tab nền không nạp ảnh: chụp màn hình tab đó trước rồi mới lấy `img[alt^="Generated image"]`.

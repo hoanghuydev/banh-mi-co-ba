@@ -13,3 +13,10 @@ Thí điểm chú Đạt: sprite đi 8 hướng chỉ bằng ảnh ChatGPT. Ngư
 - Đủ 8 frame khác nhau ngay từ đầu: dải bước + dải chuyển tiếp, xen kẽ. Không nhân đôi frame.
 - Đo trước khi tin mắt: `kiem-atlas.py` đếm số hình khác nhau mỗi hướng (cần ≥ 5), báo frame liền kề trùng.
 - Chụp game nhiều ảnh liền nhau lúc NPC đang đi; mỗi ảnh phải một dáng khác.
+
+## 2026-10-26 — Chân không đổi phiên (cô xách giỏ, bà cụ, Dì Liên)
+
+- **Sai gì**: báo xong 4 nhân vật chỉ dựa vào `kiem-atlas` ĐẠT (8 hình khác nhau, biên độ đủ) và soi ảnh thu nhỏ. Cả 8 frame hướng se/nw cùng một chân đứng trước, frame chuyển tiếp vẽ thành bước dài → trong game khựng, như thiếu hoạt ảnh giữa.
+- **User dẫn bằng gì**: xem trong game, chỉ đúng hướng "dưới phải", "trên trái" của từng người; so với người đi đúng (khách lạ, chị khẩu trang).
+- **Gốc lỗi tư duy**: đo "khác nhau" thay vì đo "đúng nhịp đi"; soi tổng thể mà không soi chân phóng to cạnh mẫu; coi xong khi chưa xem nhân vật đi trong game. Thêm nữa, lượt "sửa giày trắng" đổi luôn dáng chân mà không soi lại chân.
+- **Sửa**: `kiem-atlas` in khép chân + xuất `-chan.png` (mẫu trên, NPC dưới); prompt thêm LEG CHECK / "Take ONLY the look"; giày lọt thì tô bằng `to-giay.py`, không xin sửa; nhân vật chỉ xong sau khi test game se/nw trên Chrome.

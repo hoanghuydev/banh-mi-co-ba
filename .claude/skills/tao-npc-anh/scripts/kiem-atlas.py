@@ -1,4 +1,4 @@
-"""Review atlas NPC trước khi chốt: thiếu ô, frame lặp, lệch màu, lệch cỡ, chân lơ lửng; xuất ảnh soi bằng mắt.
+"""Review atlas NPC trước khi chốt: thiếu ô, frame lặp, lệch màu, lệch cỡ, chân lơ lửng, chân không đổi phiên; xuất ảnh soi bằng mắt.
 
   python3 .claude/skills/tao-npc-anh/scripts/kiem-atlas.py public/art/<ten>.json [anh-soi.png]
 
@@ -19,6 +19,8 @@ MOTION = 16.0    # biên độ: |Δ| RGBA trung bình giữa frame liền kề �
 COLOR = 8.0      # lệch màu trung bình so với ảnh đứng im (0–255)
 SIZE = 0.13      # lệch bề ngang đầu so với ảnh đứng im (anh Bảo 3D tới 8%, chú Đạt đã duyệt tới 12%)
 FOOT = 0.05      # đáy chân lệch đáy chung, theo chiều cao ô (3D nhún tới 4%)
+KHEP = 0.75      # độ dang chân ở 2 frame khép nhất của mẫu / ở 2 frame dang nhất (anh Bảo 0,36–0,45; lỗi chân không đổi phiên 0,80–1,03)
+REF = Path(__file__).resolve().parents[4] / "public" / "art" / "anh-bao.json"
 
 
 def load(path):
@@ -53,6 +55,15 @@ def head_w(im):
     return float(np.median([a[t + int((b - t) * p)].sum() for p in np.linspace(0.10, 0.25, 16)]))
 
 
+def spread(im):
+    """Bề ngang vùng bàn chân (12% dưới cùng) chia chiều cao hình."""
+    a = np.asarray(im)[..., 3] > 40
+    ys = np.nonzero(a.any(axis=1))[0]
+    t, b = ys[0], ys[-1]
+    xs = np.nonzero(a[b - int((b - t) * 0.12): b + 1].any(axis=0))[0]
+    return (xs[-1] - xs[0]) / (b - t)
+
+
 def foot_y(im):
     return int(np.nonzero((np.asarray(im)[..., 3] > 128).any(axis=1))[0][-1])
 
@@ -61,7 +72,8 @@ def main():
     if len(sys.argv) < 2:
         sys.exit(__doc__)
     cells = load(sys.argv[1])
-    errs = []
+    errs, warns = [], []
+    ref = load(REF)
 
     need = [f"idle_{d}_00" for d in DIRS] + [f"walk_{d}_{j:02d}" for d in DIRS for j in range(WALK)]
     miss = [k for k in need if k not in cells]
@@ -100,7 +112,16 @@ def main():
                 errs.append(f"walk_{d}_{j:02d}: đầu {r:.2f}× ảnh đứng im — lệch cỡ")
             if abs(foot_y(f) - base) > tol:
                 errs.append(f"walk_{d}_{j:02d}: chân lệch đáy {foot_y(f) - base:+d}px — lơ lửng/lún")
-        print(f"{d:>2}: {len(shapes)} hình khác nhau, biên độ {motion:.1f}, màu lệch {dc:.1f}")
+        # s/n: hai chân chồng nhau theo bề ngang nên không đo được, chỉ soi mắt
+        khep = ""
+        if d not in ("s", "n"):
+            rs = np.argsort([spread(ref[f"walk_{d}_{j:02d}"]) for j in range(WALK)])
+            sp = np.array([spread(f) for f in fr])
+            k = float(sp[rs[:2]].mean() / sp[rs[-2:]].mean())
+            khep = f", khép chân {k:.2f}"
+            if k > KHEP:
+                warns.append(f"walk_{d}: khép chân {k:.2f} > {KHEP} — pha chuyển tiếp vẽ thành bước dài? soi soi-chan")
+        print(f"{d:>2}: {len(shapes)} hình khác nhau, biên độ {motion:.1f}, màu lệch {dc:.1f}{khep}")
     for d in DIRS:
         if abs(foot_y(idle[d]) - base) > tol:
             errs.append(f"idle_{d}: chân lệch đáy {foot_y(idle[d]) - base:+d}px")
@@ -126,7 +147,23 @@ def main():
         to = Path(sys.argv[2]).with_name(Path(sys.argv[2]).stem + "-to.png")
         big.convert("RGB").save(to)
         print(f"ảnh soi khe: {to} (nền hồng tím ×2 — tìm mảng trắng/xám ở khe tay–thân, nách, khe chân)")
+        # vùng chân phóng ×2, mỗi hướng: hàng mẫu anh Bảo rồi hàng nhân vật
+        y0 = int(h * 0.55)
+        legs = Image.new("RGBA", (WALK * w * 2, 16 * (h - y0) * 2), (200, 0, 160, 255))
+        dr = ImageDraw.Draw(legs)
+        for r, d in enumerate(DIRS):
+            for k, src in enumerate((ref, cells)):
+                for j in range(WALK):
+                    f = src[f"walk_{d}_{j:02d}"]
+                    f = f.crop((0, int(f.height * 0.55), f.width, f.height)).resize((w * 2, (h - y0) * 2), Image.LANCZOS)
+                    legs.alpha_composite(f, (j * w * 2, (2 * r + k) * (h - y0) * 2))
+                dr.text((4, (2 * r + k) * (h - y0) * 2 + 4), f"{d} {'mau' if k == 0 else 'NPC'}", fill=(255, 255, 255, 255))
+        ch = Path(sys.argv[2]).with_name(Path(sys.argv[2]).stem + "-chan.png")
+        legs.convert("RGB").save(ch)
+        print(f"ảnh soi chân: {ch} (mỗi hướng: hàng mẫu rồi hàng NPC — chân trước phải đổi phiên như mẫu, frame khép chân phải khép)")
 
+    if warns:
+        print("\n".join(["CẢNH BÁO (soi -chan.png bằng mắt; mẫu lệch pha có thể báo oan):"] + warns))
     if errs:
         print("\n".join(["LỖI:"] + errs))
         sys.exit(1)
