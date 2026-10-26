@@ -4,7 +4,6 @@ import { INDOOR_SHADOW, LIGHT_DEPTH, LIGHT_ENV_KEY, type LightEnv } from "./env"
 import { toScreen } from "../../world/iso";
 import { WORLD_H, WORLD_W } from "../../world/map";
 import { sealTexture, sourceImage } from "../../core/texSeal";
-import { isCharacter } from "../character";
 
 export type Matrix = readonly [a: number, b: number, c: number, d: number, e: number, f: number];
 
@@ -254,7 +253,7 @@ function measureFoot(cut: Phaser.Textures.Frame) {
 }
 
 /** Đọc trước chân mọi khung nhân vật rồi niêm texture: đáy nhiều khung vẽ chung một tấm rồi đọc một lần, vì mỗi lần getImageData phải chờ GPU; mỗi tấm một `yield`. */
-export function* feetSteps(textures: Phaser.Textures.TextureManager) {
+export function* feetSteps(textures: Phaser.Textures.TextureManager, isCharacter: (who: string) => boolean) {
   const todo: Phaser.Textures.Frame[] = [];
   for (const key of textures.getTextureKeys()) {
     const who = POSE_KEY.exec(key)?.[1];

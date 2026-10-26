@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import { depthOf, facingOf8, toScreen, type Facing8 } from "../world/iso";
 import { COUNTER_Y, QUEUE_SLOTS } from "../world/map";
 import { BODY_H, buildBody, footY, textureFor } from "../art";
-import { STRIDE, GAIT_FRAMES, walkTextureFor } from "../art/character";
+import { STRIDE, GAIT_FRAMES, isCharacter, walkTextureFor } from "../art/character";
 import { artScale } from "../art/photo";
 import { ActorLight, feetSteps } from "../art/light/actor";
 import { drain } from "../art/steps";
@@ -106,7 +106,7 @@ export class CustomerActor {
     private label: (c: Customer) => string = (x) => x.name) {
     if (!scene.textures.exists(`${c.memKey}_s`)) {
       buildBody(scene, c.memKey, c.body);
-      drain(feetSteps(scene.textures));
+      drain(feetSteps(scene.textures, isCharacter));
     }
 
     this.body = scene.add.image(0, 0, textureFor("n", c.memKey).key).setOrigin(0.5, 1);

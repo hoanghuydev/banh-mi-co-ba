@@ -4,7 +4,7 @@ import { buildTiles, TILE } from "./tiles";
 import { buildBuilding, BUILD } from "./building";
 import { buildCounter, COUNTER } from "./counter";
 import { buildProps, PROP } from "./props";
-import { buildCharacter } from "./character";
+import { buildCharacter, isCharacter } from "./character";
 import { buildHeld } from "./held";
 import { buildFood } from "./food";
 import { buildFx } from "./fx";
@@ -63,8 +63,8 @@ export function artSteps(scene: Phaser.Scene): Step[] {
     () => buildFx(scene),
     ...photoSteps(scene),
     // Đọc chân rồi niêm sau từng người, để lúc nướng chỉ một bộ khung còn giữ canvas.
-    ...npcSteps(scene).flatMap((step) => [() => feetSteps(scene.textures), step]),
-    () => feetSteps(scene.textures),
+    ...npcSteps(scene).flatMap((step) => [() => feetSteps(scene.textures, isCharacter), step]),
+    () => feetSteps(scene.textures, isCharacter),
   ];
 }
 

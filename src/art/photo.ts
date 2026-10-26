@@ -10,7 +10,7 @@ import { HELD, type HeldLook } from "./held";
 import { FOOD } from "./food";
 import { FX, FLY_W, FLY_BOX } from "./fx";
 import {
-  GAIT_FRAMES, hasEightWay, hasGait, markEightWay, markGait, textureFor, unmarkCharacter, walkKey,
+  GAIT_FRAMES, hasEightWay, hasGait, isCharacter, markEightWay, markGait, textureFor, unmarkCharacter, walkKey,
   type Gait, type Pose,
 } from "./character";
 import { feetSteps, forgetActor } from "./light/actor";
@@ -319,7 +319,7 @@ export function* bakeRegulars(scene: Phaser.Scene, ids: Iterable<string>, alive:
     next = load(todo[i + 1]);
     yield* paintNpc(scene, todo[i], o);
     forget([o.walk]);
-    yield* feetSteps(scene.textures);
+    yield* feetSteps(scene.textures, isCharacter);
   }
   for (const who of todo) {
     if (hasEightWay(who) && hasGait(who, "walk")) ready.add(who);
