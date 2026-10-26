@@ -72,7 +72,7 @@ import {
 } from "../world/stations";
 import {
   BASE, COUNTER, FX, HELD, PROP, TILE, createMenuBoard, createSign, floorTextureAt, footY, heldFootPad,
-  heldTexture, sliceImage, spriteEdges, textureForTile, type Awning,
+  heldTexture, regularReady, sliceImage, spriteEdges, textureForTile, type Awning,
 } from "../art";
 import { Player } from "../entities/Player";
 import { Hud, type Watch } from "../ui/Hud";
@@ -82,6 +82,7 @@ import { StallAudio } from "../audio/stallAudio";
 import { reveal } from "../ui/transition";
 import { ART_SHARE, LOADING, loadingShown, setStep } from "../ui/bootScreen";
 import { boostSlice, runSteps, type Step } from "../art/steps";
+import { RegularBakes } from "./regulars";
 import { holdLoop } from "../core/loopHold";
 
 const WIPE_LABEL = "đang lau thớt";
@@ -195,6 +196,7 @@ export class StallScene extends Phaser.Scene {
 
   private service!: Service;
   private actors = new Map<string, CustomerActor>();
+  private regulars!: RegularBakes;
   private assembly!: AssemblyPanel;
   private dish: Ingredient[] = [];
   /** `null` = thớt trống. */
@@ -373,7 +375,7 @@ export class StallScene extends Phaser.Scene {
     // Cảnh đang ẩn dưới màn che: tạm dừng vẽ để mỗi lát dựng được nhiều việc hơn.
     holdLoop(this.game, hold, true);
     const shown = loadingShown();
-    void runSteps(this.buildSteps(done).map(live), undefined,
+    void runSteps(this.buildSteps(done, () => run === this.buildRun).map(live), undefined,
       (n, total) => { if (shown && run === this.buildRun) setStep(LOADING, ART_SHARE + (1 - ART_SHARE) * n / total); })
       .catch((e) => { if (e !== STOPPED) throw e; })
       .finally(done);
@@ -420,7 +422,7 @@ export class StallScene extends Phaser.Scene {
     this.floorImgs = [];
   }
 
-  private buildSteps(done: () => void): Step[] {
+  private buildSteps(done: () => void, alive: () => boolean): Step[] {
     let props!: Phaser.GameObjects.Image[];
     return [
       () => {
@@ -501,9 +503,13 @@ export class StallScene extends Phaser.Scene {
           },
           readMul: (this.settings.textScale > 1 ? 1.25 : 1) * (this.settings.noTimePressure ? 1.5 : 1),
           resumeAt: this.resumed || w.flags.lateOpenDay === w.progress.dayIndex ? this.clock.minutes : undefined,
+          ready: regularReady,
         });
         this.undo.push(() => this.service.dispose());
+        this.regulars = new RegularBakes(this, this.service);
+        this.undo.push(() => this.regulars.destroy());
       },
+      () => this.regulars.prepare(alive),
       () => {
         this.assembly = new AssemblyPanel(this,
           (dish, even) => this.intents.push(() => this.finishDish(dish, even)),
@@ -993,6 +999,7 @@ export class StallScene extends Phaser.Scene {
             this.achToastAt = this.popClock + ACH_TOAST_GAP_MS;
           }
         }
+        this.regulars.tick();
         this.service.tickNpcs(dt, {
           minutes: this.clock.minutes,
           pressure: !this.settings.noTimePressure,
@@ -1226,6 +1233,7 @@ export class StallScene extends Phaser.Scene {
       if (live.has(id)) continue;
       actor.destroy();
       this.actors.delete(id);
+      this.regulars.left(id.slice(0, id.indexOf("#")));
     }
   }
 

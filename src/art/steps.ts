@@ -1,4 +1,4 @@
-/** Một bước; trả về iterator thì mỗi `yield` là chỗ được nhường luồng giữa chừng. */
+/** Một bước; trả về iterator thì mỗi `yield` là chỗ được nhường luồng giữa chừng, yield ra Promise thì chờ nó. */
 export type Step = () => void | Iterator<unknown>;
 
 /** Nhường luồng cho vẽ và input rồi chạy tiếp ngay; `setTimeout(0)` bị kẹp tối thiểu 4 ms nên chậm hơn. */
@@ -41,7 +41,11 @@ export async function runSteps(
   };
   for (let i = 0; i < steps.length; i++) {
     const it = steps[i]();
-    if (it) while (!it.next().done) await pause();
+    if (it) {
+      for (let r = it.next(); !r.done; r = it.next()) {
+        if (r.value instanceof Promise) { await r.value; t0 = now(); } else await pause();
+      }
+    }
     onStep?.(i + 1, steps.length);
     await pause();
   }

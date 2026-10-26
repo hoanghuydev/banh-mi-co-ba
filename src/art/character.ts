@@ -48,6 +48,14 @@ export function markEightWay(who: string) {
   EIGHT.add(who);
 }
 
+export const hasEightWay = (who: string) => EIGHT.has(who);
+
+/** Gỡ mọi dấu đã sơn của `who`; texture phải xoá cùng lúc. */
+export function unmarkCharacter(who: string) {
+  EIGHT.delete(who);
+  GAITS.delete(who);
+}
+
 /** Hướng chéo lấy hình nghiêng, vẽ chính diện thì nhìn ra đi giật lùi. */
 const FOLD: Record<Facing8, { dir: Dir; flip: boolean }> = {
   s: { dir: "s", flip: false },
