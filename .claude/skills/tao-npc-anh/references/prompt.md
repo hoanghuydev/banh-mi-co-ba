@@ -68,3 +68,11 @@ Dải chuyển tiếp:
 ```
 Generate an image. Image 1 is the POSE REFERENCE for the 4 IN-BETWEEN frames (legs passing each other, body slightly up). Image 2 is your latest exaggerated Kha Han strip. Draw Kha Han in a strip of 4 frames copying the EXACT body pose of each frame of image 1, frame by frame: the passing leg lifted clearly off the ground with the knee bent so its sandal sole shows, the other leg straight, arms swinging clearly away from the body, the body slightly higher. Keep everything else identical to image 2: same character, same direction, same camera, same scale (same height in pixels), same soft light from the upper right, same colours, off-white shirt with grey shading and thin darker edge. Do NOT copy the boy's face, hair, glasses or clothes from image 1. Both trouser legs and both sandals clearly visible and separated in every frame. One single row of 4 frames, evenly spaced, feet on one baseline, full body, pure white background, no shadow, no text. Wide landscape image.
 ```
+
+## Chặn giày trắng của mẫu dáng (thêm vào cả hai dải, mọi hướng)
+
+Mẫu dáng là anh Bảo đi giày thể thao trắng; ChatGPT hay chép giày đó vào một chân (gặp ở Dì Liên, Thầy Khải). Chèn ngay sau câu "Do NOT copy the boy's …":
+
+```
+Footwear: copy ONLY the leg pose from image 1, never its white sneakers. Both feet of the character wear exactly the footwear of image 2 (<mô tả dép/giày theo phiếu>) in every frame, including the foot behind.
+```

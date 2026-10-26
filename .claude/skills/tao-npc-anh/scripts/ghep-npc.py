@@ -34,6 +34,14 @@ def height_at(body, cy, cx):
     return (cy - top) / (bot - top) if bot > top else 0.0
 
 
+def cuts(ink, n, axis):
+    """Đường chia lưới n ô: chỗ ít mực nhất quanh mỗi vạch chia đều, vì hình có thể lấn qua giữa ảnh."""
+    prof = ink.sum(axis=axis)
+    r = len(prof) // (4 * n)
+    mids = [k * len(prof) // n for k in range(1, n)]
+    return [0] + [c - r + int(np.argmin(prof[c - r: c + r])) for c in mids] + [len(prof)]
+
+
 def thin(comp):
     core = np.asarray(Image.fromarray((comp * 255).astype(np.uint8)).filter(ImageFilter.MinFilter(3))) > 0
     return core.sum() < 0.2 * comp.sum()
@@ -171,10 +179,11 @@ def main():
         sys.exit(__doc__)
     src, out = Path(args[0]), ROOT / "art-raw" / "render" / args[1]
     sheet = cut_alpha(Image.open(src / "8huong.png"), shoes)
-    w, h = sheet.size
+    ink = np.asarray(sheet)[..., 3] > 0
+    cx, cy = cuts(ink, 4, 0), cuts(ink, 2, 1)
     idle = {}
     for i, d in enumerate(DIRS):
-        cell = sheet.crop((i % 4 * w // 4, i // 4 * h // 2, (i % 4 + 1) * w // 4, (i // 4 + 1) * h // 2))
+        cell = sheet.crop((cx[i % 4], cy[i // 4], cx[i % 4 + 1], cy[i // 4 + 1]))
         idle[d] = cell.crop(cell.getbbox())
     scale = 440 / max(im.height for im in idle.values())
     for d in DIRS:
