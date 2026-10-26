@@ -1,7 +1,6 @@
 import Phaser from "phaser";
 import { artSteps, bakeSourceLoads, preloadArt } from "../art";
 import { boostSlice, runSteps } from "../art/steps";
-import { trail } from "../dev/trail";
 import { StallAudio } from "../audio/stallAudio";
 import { Lamps } from "../ui/stall/Lamps";
 import { keepForOffline } from "../core/offline";
@@ -54,7 +53,6 @@ export function warmUp(scene: Phaser.Scene) {
     const from = baked;
     await runSteps(artSteps(scene).slice(from), undefined, (done, total) => {
       baked = from + done;
-      trail(`nướng ${baked}`);
       report(LOAD_SHARE + (1 - LOAD_SHARE) * baked / (from + total));
     });
     report(1);
