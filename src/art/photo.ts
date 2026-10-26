@@ -151,6 +151,13 @@ const NPC_PHOTOS: Record<string, { src: (d: Facing8) => string; h: number; walk?
   ONG_HAI: { src: (d) => `npc/chu-thinh/${d}`, h: 65, walk: "chu-thinh" },
   BE_SU: { src: (d) => `npc/kha-han/${d}`, h: 57, walk: "kha-han" },
   CO_MAI: { src: (d) => `npc/co-thuy/${d}`, h: 60, walk: "co-thuy" },
+  CHI_HANH: { src: (d) => `npc/thu-ha/${d}`, h: 63, walk: "thu-ha" },
+  BA_SAU: { src: (d) => `npc/di-lien/${d}`, h: 60, walk: "di-lien" },
+  THAY_PHUC: { src: (d) => `npc/thay-khai/${d}`, h: 63, walk: "thay-khai" },
+  walkin0: { src: (d) => `npc/khach-la/${d}`, h: 65, walk: "khach-la" },
+  walkin1: { src: (d) => `npc/chi-khau-trang/${d}`, h: 63, walk: "chi-khau-trang" },
+  walkin2: { src: (d) => `npc/co-xach-gio/${d}`, h: 63, walk: "co-xach-gio" },
+  walkin3: { src: (d) => `npc/ba-cu/${d}`, h: 58, walk: "ba-cu" },
 };
 
 const CARRIED: Partial<Record<HeldLook, [src: string, size: Fit]>> = {

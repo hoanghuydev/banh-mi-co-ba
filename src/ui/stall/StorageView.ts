@@ -1,9 +1,10 @@
 import type Phaser from "phaser";
 import { GOODS, QUALITIES, type GoodId, type InventoryState } from "../../sim/econ";
 import { fmtUnits } from "../../sim/day";
-import { coldUsage, freshnessOf, stacksOf, type Freshness, type Stack } from "../../sim/stock";
+import { coldUsage, freshnessOf, moveStack, stacksOf, useRank, type Freshness, type Stack } from "../../sim/stock";
 import { CLAY_CSS } from "../clayCss";
-import { isTouch } from "../../core/device";
+import { hint, isTouch } from "../../core/device";
+import { TourCoach } from "../tour/TourCoach";
 import { guardStrayClick } from "../tapGuard";
 
 const STYLE = `
@@ -38,6 +39,10 @@ const STYLE = `
 .sv-cell .bar.last i,.sv-det .bar.last i{background:var(--last)}
 .sv-cell .tag{position:absolute;left:4px;top:3px;font-size:max(14px,.78em);font-weight:700;line-height:1;color:#c98a00;text-shadow:0 1px 0 #fff}
 .sv-cell .tag.bad{color:#c0392b}
+.sv-cell:not(.rong){touch-action:none;cursor:grab}
+.sv-cell.keo{opacity:.35}
+.sv-cell.dich{box-shadow:0 0 0 3px #fff2c6,0 0 0 6px rgba(255,217,106,.55),0 4px 0 #b9a47a}
+.sv-ghost{position:fixed;z-index:9600;pointer-events:none;margin:0;transform:scale(1.08) rotate(-3deg);opacity:.92;cursor:grabbing;filter:drop-shadow(0 8px 10px rgba(0,0,0,.5))}
 .sv-cell .alert{position:absolute;right:4px;top:4px;width:20px;height:20px;border-radius:50%;background:var(--last);color:#fff;font-weight:700;font-size:14px;line-height:20px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.6)}
 
 .sv-det{flex:0 0 230px;display:flex;flex-direction:column;gap:11px;padding:14px;border-radius:10px;background:rgba(0,0,0,.28);box-shadow:inset 0 2px 6px rgba(0,0,0,.45)}
@@ -120,8 +125,15 @@ export type StorageViewOpts = {
   inventory: InventoryState;
   title: string;
   fridge: boolean;
+  /** Lần đầu mở kho: chỉ cách xem chi tiết và kéo thả. */
+  guide: boolean;
+  onGuideDone: () => void;
   onClose: () => void;
 };
+
+const DRAG_PX = 8;
+
+type Drag = { from: number; id: number; x: number; y: number; to: number; ghost: HTMLElement | null };
 
 export class StorageView {
   private root: HTMLDivElement;
@@ -131,6 +143,10 @@ export class StorageView {
   private touch = isTouch();
   private cols = this.touch ? TOUCH_COLS : COLS;
   private det!: HTMLDivElement;
+  private gridEl!: HTMLDivElement;
+  private drag: Drag | null = null;
+  private dropped = false;
+  private coach: TourCoach | null = null;
   private keyGuard = (ev: KeyboardEvent) => {
     if (ev.code === "Escape" || ev.code === "KeyE") { ev.preventDefault(); this.close(); return; }
     if (ev.code === "KeyP") return;
@@ -156,11 +172,41 @@ export class StorageView {
     this.root.addEventListener("keydown", this.keyGuard, true);
     this.root.addEventListener("keyup", (e) => { if (e.code !== "KeyP") e.stopPropagation(); }, true);
     this.root.addEventListener("pointerdown", (e) => { if (e.target === this.root) this.close(); });
+    this.root.addEventListener("pointermove", (e) => this.dragMove(e));
+    this.root.addEventListener("pointerup", (e) => this.dragEnd(e, true));
+    this.root.addEventListener("pointercancel", (e) => this.dragEnd(e, false));
     guardStrayClick(this.root);
     this.root.appendChild(this.card());
     document.body.appendChild(this.root);
     if (this.game.input.keyboard) this.game.input.keyboard.enabled = false;
     (this.cells[0] ?? this.root.querySelector<HTMLButtonElement>(".sv-btn"))?.focus({ preventScroll: true });
+    if (opts.guide && this.stacks.length) this.startGuide();
+  }
+
+  private startGuide() {
+    const done = () => { this.coach?.destroy(); this.coach = null; this.opts.onGuideDone(); };
+    this.coach = new TourCoach({ textScale: this.opts.textScale, onSkip: done });
+    const tap = hint("Bấm", "Chạm");
+    const steps = [
+      {
+        el: () => this.det,
+        text: `${tap} vào một ô để xem chi tiết: độ ngon và hạn dùng. Dấu ★: hàng ngon. Dấu ▼: hàng dỏm. Dấu !: phải dùng hết hôm nay.`,
+      },
+      {
+        el: () => this.gridEl,
+        text: "Kéo thả ô để đổi thứ tự. Cùng loại, ô đứng trước (trái sang phải, trên xuống dưới) được lấy dùng trước.",
+      },
+    ];
+    const show = (i: number) => {
+      const st = steps[i];
+      const last = i === steps.length - 1;
+      this.coach?.pointEl(st.el(), st.text, undefined, undefined, {
+        okText: last ? "Đã hiểu" : "Tiếp",
+        beside: this.root.querySelector(".sv-card")?.getBoundingClientRect(),
+        ok: () => (last ? done() : show(i + 1)),
+      });
+    };
+    requestAnimationFrame(() => show(0));
   }
 
   private el<K extends keyof HTMLElementTagNameMap>(tag: K, cls = "", text = ""): HTMLElementTagNameMap[K] {
@@ -223,8 +269,16 @@ export class StorageView {
   }
 
   private grid(): HTMLElement {
-    const g = this.el("div", "sv-grid");
-    g.setAttribute("role", "list");
+    this.gridEl = this.el("div", "sv-grid");
+    this.gridEl.setAttribute("role", "list");
+    this.fillGrid();
+    return this.gridEl;
+  }
+
+  private fillGrid() {
+    const g = this.gridEl;
+    g.replaceChildren();
+    this.cells = [];
     const total = this.touch ? Math.ceil(this.stacks.length / this.cols) * this.cols : Math.max(MIN_CELLS, Math.ceil(this.stacks.length / COLS) * COLS);
     for (let i = 0; i < total; i++) {
       const s = this.stacks[i];
@@ -244,13 +298,57 @@ export class StorageView {
       if (freshnessOf(s) === "last") c.appendChild(this.el("span", "alert", "!"));
       c.appendChild(this.el("span", "n", `×${fmtUnits(s.left)}`));
       c.appendChild(this.bar(s));
-      c.onpointerenter = () => this.select(i);
+      c.dataset.i = String(i);
+      c.onpointerenter = () => { if (!this.drag?.ghost) this.select(i); };
       c.onfocus = () => this.select(i);
-      c.onclick = () => this.select(i);
+      c.onclick = () => { if (!this.dropped) this.select(i); };
+      c.onpointerdown = (e) => {
+        if (e.button !== 0) return;
+        this.drag = { from: i, id: e.pointerId, x: e.clientX, y: e.clientY, to: i, ghost: null };
+      };
       this.cells.push(c);
       g.appendChild(c);
     }
-    return g;
+  }
+
+  private dragMove(e: PointerEvent) {
+    const d = this.drag;
+    if (!d || d.id !== e.pointerId) return;
+    if (!d.ghost) {
+      if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < DRAG_PX) return;
+      const src = this.cells[d.from];
+      const r = src.getBoundingClientRect();
+      d.ghost = src.cloneNode(true) as HTMLElement;
+      d.ghost.classList.remove("on");
+      d.ghost.classList.add("sv-ghost");
+      d.ghost.style.width = `${r.width}px`;
+      d.ghost.style.height = `${r.height}px`;
+      this.root.appendChild(d.ghost);
+      src.classList.add("keo");
+    }
+    const g = d.ghost;
+    g.style.left = `${e.clientX - g.offsetWidth / 2}px`;
+    g.style.top = `${e.clientY - g.offsetHeight / 2}px`;
+    const hit = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>(".sv-cell[data-i]");
+    if (hit && this.gridEl.contains(hit)) d.to = Number(hit.dataset.i);
+    this.cells.forEach((c, k) => c.classList.toggle("dich", k === d.to && k !== d.from));
+  }
+
+  private dragEnd(e: PointerEvent, drop: boolean) {
+    const d = this.drag;
+    if (!d || d.id !== e.pointerId) return;
+    this.drag = null;
+    if (!d.ghost) return;
+    d.ghost.remove();
+    this.dropped = true;
+    setTimeout(() => { this.dropped = false; });
+    if (drop && d.to !== d.from) {
+      moveStack(this.opts.inventory, this.stacks, d.from, d.to);
+      this.stacks = stacksOf(this.opts.inventory, this.opts.day);
+    }
+    const at = drop ? d.to : d.from;
+    this.fillGrid();
+    this.select(at);
   }
 
   private bar(s: Stack): HTMLElement {
@@ -301,11 +399,13 @@ export class StorageView {
       return r;
     };
     const bar = this.bar(s);
+    const rank = useRank(this.stacks, i);
     this.det.append(
       pic,
       this.el("div", "nm", GOODS[s.good].label.replace(/^./u, (c) => c.toUpperCase())),
       chips,
       ...(this.touch ? [] : [row("Số lượng", `${fmtUnits(s.left)} ${GOODS[s.good].unit}`), row("Nhập", this.ageText(s.age))]),
+      ...(rank ? [row("Thứ tự dùng", `${rank.at}/${rank.of}`)] : []),
       row("Độ ngon", `${Math.round(s.quality * 100)}%`),
       bar,
       this.el("div", `han ${fr}`, this.hanText(s)),
@@ -314,6 +414,8 @@ export class StorageView {
 
   close() {
     if (!this.root.isConnected) return;
+    this.coach?.destroy();
+    this.coach = null;
     this.root.remove();
     if (this.game.input.keyboard) this.game.input.keyboard.enabled = true;
     this.opts.onClose();

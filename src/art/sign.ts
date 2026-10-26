@@ -40,10 +40,11 @@ export function createSign(scene: Phaser.Scene, name = ""): Awning | null {
   if (!ratio) return null;
   const h = W * ratio;
 
-  bakeWall(scene, TEX, W, h, 0, (ctx) => {
+  const text = shopName(name);
+  const paint = (ctx: CanvasRenderingContext2D) => {
     drawPhoto(ctx, scene, "shopfront", W, h);
 
-    const lines = fitLines(ctx, shopName(name), TEXT_ROOM * SCALE, FACE_H * SCALE * 0.9);
+    const lines = fitLines(ctx, text, TEXT_ROOM * SCALE, FACE_H * SCALE * 0.9);
     ctx.save();
     ctx.translate(TEXT_X * SCALE, (FACE_Y + 0.5 * (TEXT_X - FACE_X)) * SCALE);
     ctx.transform(1, 0.5, 0, 1, 0, 0);
@@ -57,7 +58,23 @@ export function createSign(scene: Phaser.Scene, name = ""): Awning | null {
       ctx.fillText(line, 0, (i - (lines.text.length - 1) / 2) * step + lines.px * 0.08);
     });
     ctx.restore();
-  });
+  };
+  bakeWall(scene, TEX, W, h, 0, paint);
+  // Phông về sau lúc vẽ thì chữ ra phông dự phòng lẫn với dấu: vẽ lại lên cùng tấm.
+  const font = `800 ${BASE_PX}px ${FONT}`;
+  if (!document.fonts.check(font, text)) {
+    void document.fonts.load(font, text).then(() => {
+      if (!scene.textures.exists(TEX)) return;
+      const tex = scene.textures.get(TEX) as Phaser.Textures.CanvasTexture;
+      const ctx = tex.getContext();
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, tex.width, tex.height);
+      ctx.restore();
+      paint(ctx);
+      tex.refresh();
+    });
+  }
 
   const at = toScreen(LEFT_X, 1.1);
   const left = at.sx - ANCHOR.x * SCALE;
