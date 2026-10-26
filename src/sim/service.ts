@@ -310,6 +310,8 @@ export type ServiceDeps = {
   onServed?: (rec: ServeRecord) => void;
   /** Vừa lắp đồ nghề mới trong vài ngày gần đây. */
   freshGear?: boolean;
+  /** Khách quen chưa có hình thì dời lượt ghé từng phút tới khi có. */
+  ready?: (npcId: string) => boolean;
 };
 
 type Visit = { at: number; npc: NpcDef | null; seq: number; defer?: number };
@@ -570,8 +572,21 @@ export class Service {
     return base * rush * queuePatienceMul(ahead) * (this.deps.patienceMul ?? 1) + PATIENCE_BONUS_SEC + (this.deps.patienceBonusSec ?? 0);
   }
 
+  /** Khách quen đang ở quán (phút 0) hoặc còn lượt ghé (phút ghé sớm nhất). */
+  regulars(): Map<string, number> {
+    const out = new Map<string, number>();
+    for (const c of this.customers) if (c.npc) out.set(c.npc.id, 0);
+    for (const v of this.schedule) if (v.npc && !out.has(v.npc.id)) out.set(v.npc.id, v.at);
+    return out;
+  }
+
   private spawn(v: Visit, nowMin: number) {
     const npc = v.npc;
+    if (npc && this.deps.ready && !this.deps.ready(npc.id)) {
+      this.schedule.unshift({ ...v, at: nowMin + 1 });
+      this.schedule.sort((a, b) => a.at - b.at);
+      return;
+    }
     // Trần chỉ đếm khách vãng lai; quá trần thì dời lượt ghé một phút, không mất.
     const unlimited = !!this.deps.noTimePressure;
     if (unlimited || !npc) {

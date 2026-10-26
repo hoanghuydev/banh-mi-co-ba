@@ -304,6 +304,16 @@ function drop(textures: Phaser.Textures.TextureManager, e: Entry) {
   if (e.refl && textures.exists(e.refl)) textures.remove(e.refl);
 }
 
+/** Bỏ bóng, phản chiếu đã bake của mọi khung thuộc nhân vật `who` mà không thân nào đang dùng. */
+export function forgetActor(textures: Phaser.Textures.TextureManager, who: string) {
+  const pre = `${who}_`;
+  for (const [k, e] of cache) {
+    if (!k.startsWith(pre) || e.users > 0) continue;
+    drop(textures, e);
+    cache.delete(k);
+  }
+}
+
 /** Xoá mục cũ nhất không ai dùng cho tới khi về trần theo số thân đang sống. */
 function evict(textures: Phaser.Textures.TextureManager) {
   const cap = Math.max(CACHE_MIN, actors * POSES_PER_ACTOR);

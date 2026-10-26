@@ -36,3 +36,15 @@ test("runSteps không nhường khi còn ngân sách", async () => {
 test("drain chạy hết iterator và trả giá trị cuối", () => {
   assert.equal(drain((function* () { yield; yield; return 7; })()), 7);
 });
+
+test("runSteps chờ Promise được yield rồi chạy tiếp", async () => {
+  const log: string[] = [];
+  let open!: () => void;
+  const gate = new Promise<void>((ok) => { open = ok; });
+  const run = runSteps([function* () { log.push("a"); yield gate; log.push("b"); }], async () => {});
+  await Promise.resolve();
+  assert.deepEqual(log, ["a"]);
+  open();
+  await run;
+  assert.deepEqual(log, ["a", "b"]);
+});

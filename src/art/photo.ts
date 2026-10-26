@@ -10,9 +10,10 @@ import { HELD, type HeldLook } from "./held";
 import { FOOD } from "./food";
 import { FX, FLY_W, FLY_BOX } from "./fx";
 import {
-  GAIT_FRAMES, markEightWay, markGait, textureFor, walkKey,
+  GAIT_FRAMES, hasEightWay, hasGait, markEightWay, markGait, textureFor, unmarkCharacter, walkKey,
   type Gait, type Pose,
 } from "./character";
+import { feetSteps, forgetActor } from "./light/actor";
 import type { Facing8 } from "../world/iso";
 import type { Step } from "./steps";
 
@@ -140,24 +141,29 @@ const PLAYER_SRC = (d: Facing8) => `player/p_${d}`;
 /** Khung cao theo hướng có búi tóc cao nhất. */
 const PLAYER_H = 65;
 
-/** Khoá là `memKey` = tiền tố texture của `CustomerActor`; `walk` là atlas chu kỳ đi, thiếu thì đứng yên. */
-const NPC_PHOTOS: Record<string, { src: (d: Facing8) => string; h: number; walk?: string }> = {
-  ANH_DUNG: { src: (d) => `npc/anh-dung/${d}`, h: 65, walk: "minh-quan" },
-  BA_BAY: { src: (d) => `npc/ba-bay/${d}`, h: 64, walk: "ba-bay" },
-  ANH_BAO: { src: (d) => `npc/anh-bao/${d}`, h: 65, walk: "anh-bao" },
-  CHU_KIET: { src: (d) => `npc/chu-dat/${d}`, h: 64, walk: "chu-dat" },
-  CHU_TU: { src: (d) => `npc/chu-quang/${d}`, h: 64, walk: "chu-quang" },
-  CHI_LAN: { src: (d) => `npc/ngoc-tram/${d}`, h: 63, walk: "ngoc-tram" },
-  ONG_HAI: { src: (d) => `npc/chu-thinh/${d}`, h: 65, walk: "chu-thinh" },
-  BE_SU: { src: (d) => `npc/kha-han/${d}`, h: 57, walk: "kha-han" },
-  CO_MAI: { src: (d) => `npc/co-thuy/${d}`, h: 60, walk: "co-thuy" },
-  CHI_HANH: { src: (d) => `npc/thu-ha/${d}`, h: 63, walk: "thu-ha" },
-  BA_SAU: { src: (d) => `npc/di-lien/${d}`, h: 60, walk: "di-lien" },
-  THAY_PHUC: { src: (d) => `npc/thay-khai/${d}`, h: 63, walk: "thay-khai" },
-  walkin0: { src: (d) => `npc/khach-la/${d}`, h: 65, walk: "khach-la" },
-  walkin1: { src: (d) => `npc/chi-khau-trang/${d}`, h: 63, walk: "chi-khau-trang" },
-  walkin2: { src: (d) => `npc/co-xach-gio/${d}`, h: 63, walk: "co-xach-gio" },
-  walkin3: { src: (d) => `npc/ba-cu/${d}`, h: 58, walk: "ba-cu" },
+type NpcPhoto = { h: number; walk: string };
+
+/** Khoá là `memKey` = tiền tố texture của `CustomerActor`; `walk` là atlas đứng yên + chu kỳ đi. */
+const REGULARS: Record<string, NpcPhoto> = {
+  ANH_DUNG: { h: 65, walk: "minh-quan" },
+  BA_BAY: { h: 64, walk: "ba-bay" },
+  ANH_BAO: { h: 65, walk: "anh-bao" },
+  CHU_KIET: { h: 64, walk: "chu-dat" },
+  CHU_TU: { h: 64, walk: "chu-quang" },
+  CHI_LAN: { h: 63, walk: "ngoc-tram" },
+  ONG_HAI: { h: 65, walk: "chu-thinh" },
+  BE_SU: { h: 57, walk: "kha-han" },
+  CO_MAI: { h: 60, walk: "co-thuy" },
+  CHI_HANH: { h: 63, walk: "thu-ha" },
+  BA_SAU: { h: 60, walk: "di-lien" },
+  THAY_PHUC: { h: 63, walk: "thay-khai" },
+};
+
+const WALKINS: Record<string, NpcPhoto> = {
+  walkin0: { h: 65, walk: "khach-la" },
+  walkin1: { h: 63, walk: "chi-khau-trang" },
+  walkin2: { h: 63, walk: "co-xach-gio" },
+  walkin3: { h: 58, walk: "ba-cu" },
 };
 
 const CARRIED: Partial<Record<HeldLook, [src: string, size: Fit]>> = {
@@ -244,38 +250,91 @@ async function fetchSheet(file: string) {
     get("webp").then((r) => r.blob()).then((b) => createImageBitmap(b)),
     get("json").then((r) => r.json() as Promise<{ frames: Record<string, { frame: Rect }> }>),
   ]);
-  sheets.set(file, { img, frames: new Map(Object.entries(json.frames).map(([k, v]) => [k, v.frame])) });
+  return { img, frames: new Map(Object.entries(json.frames).map(([k, v]) => [k, v.frame])) };
 }
 
 /** Mỗi phần tử tải một ảnh nguồn cho `photoSteps`/`npcSteps`; lỗi thì bỏ qua như ảnh thiếu. */
 export function bakeSourceLoads(): (() => Promise<void>)[] {
-  const npc = npcAssets();
-  const names = [...BAKE_ONCE, ...npc.flatMap((a) => ("image" in a ? [a.image] : []))];
-  const files = ["player", WORK_FILE, ...npc.flatMap((a) => ("walk" in a ? [a.walk] : []))];
+  const files = ["player", WORK_FILE, ...Object.values(WALKINS).map((o) => o.walk)];
   return [
-    ...names.filter((n) => !images.has(n)).map((n) => () => fetchImage(n).catch(() => {})),
-    ...files.filter((f) => !sheets.has(f)).map((f) => () => fetchSheet(f).catch(() => {})),
+    ...BAKE_ONCE.filter((n) => !images.has(n)).map((n) => () => fetchImage(n).catch(() => {})),
+    ...files.filter((f) => !sheets.has(f)).map((f) => () => fetchSheet(f).then((v) => { sheets.set(f, v); }, () => {})),
   ];
 }
 
-/** Ai có atlas thì ảnh đứng yên lấy từ atlas, khỏi tải tám file rời. */
-type NpcAsset = { walk: string } | { image: string };
-
-function npcAssets(): NpcAsset[] {
-  return Object.values(NPC_PHOTOS).flatMap((o): NpcAsset[] => (o.walk
-    ? [{ walk: o.walk }]
-    : DIRS8.map((d) => ({ image: o.src(d) }))));
+function* paintNpc(scene: Phaser.Scene, who: string, o: NpcPhoto) {
+  if (yield* eightWayFromAtlas(scene, who, o.walk, o.h, ["idle"])) yield* paintWalk(scene, who, o.walk, o.h, ["walk"]);
 }
 
 /** Sơn một lần, vì sơn lại sẽ xoá texture đang có sprite dùng. */
 export function npcSteps(scene: Phaser.Scene): Step[] {
   return [
-    ...Object.entries(NPC_PHOTOS).map(([who, o]) => function* () {
-      yield* eightWay(scene, who, o.src, o.h, ["idle"], o.walk);
-      if (o.walk) yield* paintWalk(scene, who, o.walk, o.h, ["walk"]);
-    }),
-    () => forget(npcAssets().map((a) => ("walk" in a ? a.walk : a.image))),
+    ...Object.entries(WALKINS).map(([who, o]) => () => paintNpc(scene, who, o)),
+    () => forget(Object.values(WALKINS).map((o) => o.walk)),
   ];
+}
+
+const isRegular = (who: string) => who in REGULARS;
+export const regularIds = () => Object.keys(REGULARS);
+
+const ready = new Set<string>();
+
+/** Khách lạ và người chơi luôn sẵn; khách quen chỉ sẵn khi `bakeRegulars` đã sơn đủ bộ. */
+export const regularReady = (who: string) => !isRegular(who) || ready.has(who);
+
+const RETRY_MS = [0, 1000, 3000];
+
+/** Tải atlas có thử lại; `alive()` sai lúc tải xong thì trả ảnh luôn, khỏi giữ bộ nhớ. */
+async function loadSheet(file: string, alive: () => boolean) {
+  for (const wait of RETRY_MS) {
+    if (wait) await new Promise((ok) => setTimeout(ok, wait));
+    if (!alive()) return;
+    try {
+      const s = await fetchSheet(file);
+      if (alive()) sheets.set(file, s); else s.img.close();
+      return;
+    } catch (e) {
+      console.warn("tải ảnh khách quen lỗi", file, e);
+    }
+  }
+}
+
+/** Mỗi `yield` là một khung, yield ra Promise là chờ tải atlas; tải trước atlas người kế và đo chân gộp một lần ở cuối. */
+export function* bakeRegulars(scene: Phaser.Scene, ids: Iterable<string>, alive: () => boolean): Generator<Promise<void> | undefined> {
+  const todo = [...ids].filter((id) => id in REGULARS && !ready.has(id));
+  const load = async (id?: string) => {
+    const file = id && REGULARS[id].walk;
+    if (file && !sheets.has(file)) await loadSheet(file, alive);
+  };
+  let next = load(todo[0]);
+  for (let i = 0; i < todo.length; i++) {
+    const o = REGULARS[todo[i]];
+    yield next;
+    next = load(todo[i + 1]);
+    yield* paintNpc(scene, todo[i], o);
+    forget([o.walk]);
+  }
+  yield* feetSteps(scene.textures);
+  for (const who of todo) {
+    if (hasEightWay(who) && hasGait(who, "walk")) ready.add(who);
+    else dropRegular(scene, who);
+  }
+}
+
+/** Xoá texture, sổ tám hướng/bước đi và bóng đã bake; gọi lúc dở dang cũng được. */
+export function dropRegular(scene: Phaser.Scene, who: string) {
+  const o = REGULARS[who];
+  if (!o) return;
+  ready.delete(who);
+  forget([o.walk]);
+  const keys = DIRS8.flatMap((d) => [
+    textureFor(d, who).key,
+    ...Array.from({ length: GAIT_FRAMES.walk }, (_, i) => walkKey(who, d, "walk", i)),
+  ]);
+  unmarkCharacter(who);
+  forgetActor(scene.textures, who);
+  for (const k of keys) ssOf.delete(k);
+  drop(scene, keys);
 }
 
 /** `asked` giữ key nên các lượt `preload` sau không tải lại ảnh đã bỏ. */
