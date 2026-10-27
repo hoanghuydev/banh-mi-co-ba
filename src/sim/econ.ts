@@ -2,7 +2,7 @@
 import ECON_JSON from "../content/econ/econ.json";
 import GOODS_JSON from "../content/econ/goods.json";
 import CAL_JSON from "../content/econ/calendar.json";
-import type { Ingredient } from "./order";
+import type { Ingredient, TasteItem } from "./order";
 import { itemOf, type MenuItemId } from "./menu";
 
 export type Weather = "NANG_GAT" | "MAT" | "AM_U" | "MUA_RAO" | "MUA_DAM" | "OI";
@@ -108,14 +108,22 @@ export function shelfDays(g: GoodId, storage: Storage = "thung_xop", tier: Quali
   return Math.max(1, d.curve.length + delta + tierDelta);
 }
 
+const curveAt = (l: Lot, day: number, storage: Storage) =>
+  Math.min(GOODS[l.good].storage === "COLD" && storage === "tu_mat" ? Math.floor((day - l.day) / 2) : day - l.day, GOODS[l.good].curve.length - 1);
+
 export function lotQuality(l: Lot, day: number, storage: Storage = "thung_xop"): number | null {
   const age = day - l.day;
   if (age < 0 || age >= shelfDays(l.good, storage, l.tier)) return null;
-  const c = GOODS[l.good].curve;
-  const idx = GOODS[l.good].storage === "COLD" && storage === "tu_mat" ? Math.floor(age / 2) : age;
-  return l.q0 * c[Math.min(idx, c.length - 1)];
+  return l.q0 * GOODS[l.good].curve[curveAt(l, day, storage)];
 }
 const lq = (inv: InventoryState, l: Lot, day: number) => lotQuality(l, day, inv.storage ?? "thung_xop");
+
+/** Vị mất do để lâu, so với lúc ngon nhất tới nay — đồ chua chưa ngấm không tính là cũ. */
+function lotFresh(l: Lot, day: number, storage: Storage): number {
+  const c = GOODS[l.good].curve;
+  const i = curveAt(l, day, storage);
+  return c[i] / Math.max(...c.slice(0, i + 1));
+}
 
 export function stockOf(inv: InventoryState, g: GoodId, day: number) {
   return inv.lots.reduce((a, l) => a + (l.good === g && lq(inv, l, day) !== null ? l.left : 0), 0);
@@ -125,8 +133,12 @@ export function portionsFor(inv: InventoryState, ing: Ingredient, day: number) {
   return goodsFor(ing).reduce((a, g) => a + stockOf(inv, g, day), 0);
 }
 
-/** Một phần hàng lấy ra khỏi kho: chất lượng và xác suất đau bụng của nó (chỉ hàng dỏm mới có). */
-export type Portion = { q: number; sick: number };
+/** Chất lượng một phần hàng và phần trong đó thuộc về độ tươi. */
+export type Taste = { q: number; fresh: number };
+export const FULL_TASTE: Taste = { q: 1, fresh: 1 };
+
+/** Một phần hàng lấy ra khỏi kho, kèm xác suất đau bụng (chỉ hàng dỏm mới có). */
+export type Portion = Taste & { sick: number };
 
 /** Lấy theo thứ tự lô trong kho: người chơi kéo thả để đổi lô nào dùng trước. */
 export function takeFull(inv: InventoryState, ing: Ingredient | "bread", n: number, day: number): Portion[] {
@@ -135,15 +147,15 @@ export function takeFull(inv: InventoryState, ing: Ingredient | "bread", n: numb
   const out: Portion[] = [];
   for (const l of lots) {
     const sick = l.tier === "BAN" ? GOODS[l.good].sick ?? 0 : 0;
-    while (l.left > 0 && out.length < n) { l.left--; out.push({ q: lq(inv, l, day)!, sick }); }
+    while (l.left > 0 && out.length < n) { l.left--; out.push({ q: lq(inv, l, day)!, fresh: lotFresh(l, day, inv.storage ?? "thung_xop"), sick }); }
     if (out.length >= n) break;
   }
   inv.lots = inv.lots.filter((l) => l.left > 0);
   return out;
 }
 
-export const take = (inv: InventoryState, ing: Ingredient | "bread", n: number, day: number): number[] =>
-  takeFull(inv, ing, n, day).map((p) => p.q);
+export const take = (inv: InventoryState, ing: Ingredient | "bread", n: number, day: number): Taste[] =>
+  takeFull(inv, ing, n, day).map((p) => ({ q: p.q, fresh: p.fresh }));
 
 /** Xác suất khách đau bụng khi ăn ổ gồm các phần này. */
 export const sickChance = (parts: readonly Portion[]) => 1 - parts.reduce((a, p) => a * (1 - p.sick), 1);
@@ -198,21 +210,51 @@ export function dishPriceVnd(intent: { mon: MenuItemId; nhieu?: string }, pick: 
   return vnd(itemOf(intent.mon).k[pick] + extra);
 }
 
-const MEAT: ReadonlySet<string> = new Set(["thit", "chalua", "xiumai", "opla"]);
-const RAU_ING: ReadonlySet<string> = new Set(["dualeo", "hanhngo", "ot"]);
+const RECIPE_GROUP: Record<Ingredient, string> = {
+  pate: "pate", thit: "meat", chalua: "meat", xiumai: "meat", opla: "meat",
+  dochua: "dochua", dualeo: "rau", hanhngo: "rau", ot: "rau", tuongot: "sot",
+};
 
-/** 1 − Σ w·(1 − Q) theo nhóm; nhóm vắng mặt tính Q = 1. */
+/** Vị mất của từng món: 1 − Q = Σ w·(1 − Q) theo nhóm, chia đều cho các phần trong nhóm; nhóm vắng mặt không mất gì. */
+function lossByItem(bread: number, parts: { ing: Ingredient; q: number }[]): Map<TasteItem, number> {
+  const count = new Map<string, number>();
+  for (const p of parts) count.set(RECIPE_GROUP[p.ing], (count.get(RECIPE_GROUP[p.ing]) ?? 0) + 1);
+  const out = new Map<TasteItem, number>([["banh", RECIPE_W.bread * (1 - bread)]]);
+  for (const p of parts) {
+    const g = RECIPE_GROUP[p.ing];
+    out.set(p.ing, (out.get(p.ing) ?? 0) + RECIPE_W[g] * (1 - p.q) / count.get(g)!);
+  }
+  return out;
+}
+
 export function dishQuality(bread: number, parts: { ing: Ingredient; q: number }[]): number {
-  const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 1);
-  const grp = (f: (i: string) => boolean) => avg(parts.filter((p) => f(p.ing)).map((p) => p.q));
-  const q = 1
-    - RECIPE_W.bread * (1 - bread)
-    - RECIPE_W.pate * (1 - grp((i) => i === "pate"))
-    - RECIPE_W.meat * (1 - grp((i) => MEAT.has(i)))
-    - RECIPE_W.dochua * (1 - grp((i) => i === "dochua"))
-    - RECIPE_W.rau * (1 - grp((i) => RAU_ING.has(i)))
-    - RECIPE_W.sot * (1 - grp((i) => i === "tuongot"));
-  return Math.max(0, Math.min(1, q));
+  let loss = 0;
+  for (const v of lossByItem(bread, parts).values()) loss += v;
+  return Math.max(0, Math.min(1, 1 - loss));
+}
+
+/** Lỗi vị của cả ổ và món kéo vị xuống nhiều nhất. */
+export type TasteFlaw = { loss: number; item: TasteItem };
+
+function worst(bread: number, parts: { ing: Ingredient; q: number }[]): TasteFlaw {
+  let loss = 0, item: TasteItem = "banh", top = -1;
+  for (const [k, v] of lossByItem(bread, parts)) {
+    loss += v;
+    if (v > top) { top = v; item = k; }
+  }
+  return { loss, item };
+}
+
+/** Tách vị mất theo hai nguồn: `stale` do để lâu, `poor` do hạng hàng và loại hàng; hàng ngon còn tươi thì cả hai bằng 0. */
+export type DishFlaws = { stale: TasteFlaw; poor: TasteFlaw };
+export const NO_FLAWS: DishFlaws = { stale: { loss: 0, item: "banh" }, poor: { loss: 0, item: "banh" } };
+
+export function tasteFlaws(bread: Taste, parts: (Taste & { ing: Ingredient })[]): DishFlaws {
+  const grade = (t: Taste) => t.q / t.fresh;
+  return {
+    stale: worst(bread.fresh, parts.map((p) => ({ ing: p.ing, q: p.fresh }))),
+    poor: worst(grade(bread), parts.map((p) => ({ ing: p.ing, q: grade(p) }))),
+  };
 }
 
 export const tasteThreshold = (soi: number) => 0.18 - 0.10 * soi;

@@ -17,7 +17,7 @@ export function bandOfCrust(c: number, burnAt: number = CRUST.BURNT, singeAt: nu
 }
 
 /** `q` là chất lượng lô ở kệ, đi theo từng ổ; `soiled` giữ qua lò để nướng lại không tẩy được cú rớt. */
-export type OvenLoaf = { crust: number; burntFired: boolean; q: number; soiled: boolean };
+export type OvenLoaf = { crust: number; burntFired: boolean; q: number; fresh: number; soiled: boolean };
 
 /** `singeAt` phải nới theo `rateMul`, không thì lò điện làm dải giòn co lại; đo lại bằng `tools/audit-gain.ts`. */
 export const OVEN_DIEN = { rateMul: 1.35, singeAt: 1.3, burnAt: 1.9 } as const;
@@ -44,11 +44,11 @@ export class Oven {
   }
 
   /** Nướng lại giữ `crust` cũ, để khỏi thành nút reset độ giòn. */
-  put(q = 1, crust = 0, soiled = false): boolean {
+  put(q = 1, crust = 0, soiled = false, fresh = 1): boolean {
     const i = this.slots.indexOf(null);
     if (i < 0) return false;
     this.openDoor();
-    this.slots[i] = { crust, burntFired: crust > this.burnAt, q, soiled };
+    this.slots[i] = { crust, burntFired: crust > this.burnAt, q, fresh, soiled };
     return true;
   }
 

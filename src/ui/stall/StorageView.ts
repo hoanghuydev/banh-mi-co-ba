@@ -82,11 +82,12 @@ const STYLE = `
 .sv-root.t .sv-det .row,.sv-root.t .sv-det .bar,.sv-root.t .sv-det .han{flex:1 1 100%;text-align:left}
 .sv-root.t .sv-det .han{flex:1 1 auto}
 @media (max-height:400px){.sv-root.t .sv-cell{aspect-ratio:1.35}.sv-root.t .sv-head img{height:34px}}
-html[data-phone="1"] .sv-root.t .sv-card{width:min(58vw,560px);height:auto;max-height:100%;align-self:flex-start;padding-right:max(18px,var(--safe-right));border-radius:0 0 0 18px}
-html[data-phone="1"] .sv-root.t .sv-x{width:36px;height:36px;font-size:1.2em}
+html[data-phone="1"] .sv-root.t{padding:max(8px,var(--safe-top)) max(8px,var(--safe-right)) max(8px,var(--safe-bottom)) max(8px,var(--safe-left))}
+html[data-phone="1"] .sv-root.t .sv-card{width:min(58vw,560px);height:auto;max-height:100%;align-self:flex-start;padding:8px 12px 12px;border-radius:18px;background:rgb(42,32,24)}
+html[data-phone="1"] .sv-root.t .sv-x{top:8px;right:10px;width:36px;height:36px;font-size:1.2em}
 html[data-phone="1"] .sv-root.t .sv-head{padding-right:42px}
-html[data-phone="1"] .sv-root.t .sv-body{flex-direction:row;align-items:flex-start;overflow:hidden;flex:0 1 auto;min-height:0}
-html[data-phone="1"] .sv-root.t .sv-grid{flex:1 1 auto;max-height:100%;overflow:auto}
+html[data-phone="1"] .sv-root.t .sv-body{flex-direction:row;align-items:stretch;overflow:hidden;flex:0 1 auto;min-height:0}
+html[data-phone="1"] .sv-root.t .sv-grid{flex:1 1 auto;max-height:100%;overflow:auto;align-content:center}
 html[data-phone="1"] .sv-root.t .sv-det{flex:0 0 150px;max-height:100%;overflow:auto;flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:5px}
 html[data-phone="1"] .sv-root.t .sv-det>*{flex:0 0 auto}
 html[data-phone="1"] .sv-root.t .sv-det .nm{text-align:left}

@@ -1,7 +1,7 @@
 // Buổi bán không render, cùng `runFrame` với `StallScene`, tay người chơi thay bằng bot.
 import { basketFor, buyBasket, dawn, dayDeps, eveningCounting, neighborTick } from "./day";
 import { EQUIP, buyEquip, has, priceVnd, whyNot, type EquipId } from "./equipment";
-import { dishQuality, portionsFor, sickChance, take, takeFull, type Portion, type PricePick, type Quality } from "./econ";
+import { FULL_TASTE, dishQuality, portionsFor, sickChance, take, takeFull, tasteFlaws, type Portion, type PricePick, type Quality, type Taste } from "./econ";
 import { MENU_IDS } from "./menu";
 import { Bus } from "../core/eventbus";
 import { GameContext } from "../core/context";
@@ -86,7 +86,7 @@ export class HeadlessStall {
   closed = false;
   frames = 0;
   private bot: Rng;
-  private breadQ = 1;
+  private bread: Taste = FULL_TASTE;
   private pressure: boolean;
   private work: { left: number; forVisit: string; dropped: boolean; dish: Ingredient[]; wrapped: boolean } | null = null;
   private refused = new Set<string>();
@@ -221,7 +221,7 @@ export class HeadlessStall {
       }
       const bread = take(inv, "bread", 1, day);
       if (!bread.length) { s.soldOut = true; this.work = null; return; }
-      this.breadQ = bread[0];
+      this.bread = bread[0];
       const dish = dishFor(c.order).filter((ing) => portionsFor(inv, ing, day) > 0);
       if (this.bot.next() < p.defectRate && dish.length) dish.splice(this.bot.int(0, dish.length), 1);
       this.work = { left: this.bot.range(p.workSec[0], p.workSec[1]), forVisit: c.id, dropped: false, dish, wrapped: false };
@@ -248,14 +248,14 @@ export class HeadlessStall {
       }
     }
     if (w.left > 0) return;
-    const parts: { ing: typeof w.dish[number]; q: number }[] = [];
-    const taken: Portion[] = [];
-    const served: typeof w.dish = [];
+    const parts: (Portion & { ing: typeof w.dish[number] })[] = [];
     for (const ing of w.dish) {
       const got = takeFull(inv, ing, 1, day);
-      if (got.length) { parts.push({ ing, q: got[0].q }); taken.push(got[0]); served.push(ing); }
+      if (got.length) parts.push({ ...got[0], ing });
     }
-    const res = s.serveDish(served, { quality: dishQuality(this.breadQ, parts), sick: sickChance(taken), soiled: w.dropped });
+    const res = s.serveDish(parts.map((p) => p.ing), {
+      quality: dishQuality(this.bread.q, parts), flaws: tasteFlaws(this.bread, parts), sick: sickChance(parts), soiled: w.dropped,
+    });
     this.work = null;
     s.playerHand = "empty";
     if (!res.ok) this.refused.add(c.id);

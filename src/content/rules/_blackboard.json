@@ -263,7 +263,21 @@
         "RATIO_OVER",
         "WRONG_TEMP",
         "STUFFED",
-        "TASTE_OFF"
+        "TASTE_OFF",
+        "TASTE_POOR"
+      ],
+      "conditional": true
+    },
+    "tasteGroup": {
+      "scope": "Session",
+      "type": "enum",
+      "values": [
+        "banh",
+        "nhan",
+        "trung",
+        "dochua",
+        "rau",
+        "sot"
       ],
       "conditional": true
     },

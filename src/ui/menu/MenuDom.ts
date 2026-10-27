@@ -1,4 +1,5 @@
 import type Phaser from "phaser";
+import { faLock } from "@fortawesome/free-solid-svg-icons";
 import { GAME_TITLE, cleanName } from "../../content/shop";
 import { SaveService, loadSettings, saveSettings, type SaveFile, type Settings } from "../../core/save";
 import { bus } from "../../core/eventbus";
@@ -11,7 +12,7 @@ import { btn, el } from "../phone/dom";
 import { fullscreenSupported, isFullscreen, toggleFullscreen } from "../rotatePrompt";
 import { MENU_CSS } from "./menuStyle";
 
-type Page = "main" | "settings" | "audio" | "about" | "telemetry" | "confirmNew";
+type Page = "main" | "map" | "settings" | "audio" | "about" | "telemetry" | "confirmNew";
 type Chan = "masterVolume" | "musicVolume" | "streetVolume" | "voiceVolume" | "foleyVolume" | "uiVolume" | "crowdVolume";
 
 const peek = () => new SaveService(bus, () => { throw new Error("peek"); });
@@ -100,6 +101,7 @@ export class MenuDom {
       about: () => this.pageAbout(),
       telemetry: () => this.pageTelemetry(),
       confirmNew: () => this.pageConfirm(),
+      map: () => this.pageMap(),
     })[this.at]());
     if (focus) {
       this.root.scrollTop = 0;
@@ -161,7 +163,7 @@ export class MenuDom {
     hero.append(h, el("p", "mn-sub", "Một quán nhỏ đầu hẻm, Sài Gòn"));
 
     const stack = el("div", "mn-stack");
-    const fresh = this.button("Chơi mới", () => this.startNew(), save ? "" : "red");
+    const fresh = this.button("Chơi mới", () => this.show("map"), save ? "" : "red");
     if (save) {
       const info = [cleanName(save.shopName ?? ""), `ngày ${save.progress.dayIndex}`, vnd(save.money.cash)]
         .filter(Boolean).join(" · ");
@@ -178,6 +180,35 @@ export class MenuDom {
     stack.append(modes, this.button("Cài đặt", () => this.show("settings")), this.button("Giới thiệu", () => this.show("about")));
     p.append(hero, stack);
     return p;
+  }
+
+  private pageMap() {
+    const p = this.page("mn-maps");
+    const grid = el("div", "mn-map-grid");
+    const hem = this.mapCard("art/map-hem.webp", "Quán đầu hẻm");
+    hem.onclick = () => { sfx.play(this.scene, "ui_click"); this.startNew(); };
+    const lot = this.mapCard("art/map-mat-tien.webp", "Mặt tiền đường lớn, đang khoá");
+    lot.classList.add("locked");
+    lot.disabled = true;
+    const lock = el("span", "mn-lock");
+    const [w, h, , , d] = faLock.icon;
+    lock.innerHTML = `<svg viewBox="0 0 ${w} ${h}" aria-hidden="true"><path fill="currentColor" d="${String(d)}"/></svg>`;
+    lot.append(lock);
+    grid.append(hem, lot);
+    p.append(this.heading("Chọn nơi bán"), grid, this.back("main"));
+    return p;
+  }
+
+  private mapCard(src: string, label: string) {
+    const b = el("button", "mn-map");
+    b.type = "button";
+    b.setAttribute("aria-label", label);
+    const img = el("img");
+    img.src = src;
+    img.alt = "";
+    img.draggable = false;
+    b.append(img);
+    return b;
   }
 
   private startNew() {

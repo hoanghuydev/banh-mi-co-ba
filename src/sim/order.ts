@@ -148,8 +148,9 @@ export function sayOrder(spec: OrderSpec): string {
   return parts.join(", ") + ".";
 }
 
-/** `TASTE_OFF` là lỗi của kho (đồ để lâu), khách chỉ nếm ra lúc ăn. */
-export type DefectKind = "MISSING" | "UNWANTED" | "WRONG_RATIO" | "WRONG_TEMP" | "STUFFED" | "TASTE_OFF";
+/** Lỗi của kho, khách chỉ nếm ra lúc ăn: `TASTE_OFF` do đồ để lâu, `TASTE_POOR` do hàng dưới mức hàng thường. */
+export type DefectKind = "MISSING" | "UNWANTED" | "WRONG_RATIO" | "WRONG_TEMP" | "STUFFED" | "TASTE_OFF" | "TASTE_POOR";
+export type TasteItem = Ingredient | "banh";
 
 export type Defect = {
   kind: DefectKind;
@@ -163,9 +164,11 @@ export type Defect = {
   label: string;
   weight: number;
   text: string;
+  /** Món gây lỗi vị. */
+  taste?: TasteItem;
 };
 
-const BASE: Record<DefectKind, number> = { MISSING: 20, UNWANTED: 24, WRONG_RATIO: 12, WRONG_TEMP: 18, STUFFED: 12, TASTE_OFF: 20 };
+const BASE: Record<DefectKind, number> = { MISSING: 20, UNWANTED: 24, WRONG_RATIO: 12, WRONG_TEMP: 18, STUFFED: 12, TASTE_OFF: 20, TASTE_POOR: 20 };
 const ITEM_WEIGHT: Record<Ingredient, number> = {
   pate: 1.4, thit: 1.3, chalua: 1.2, xiumai: 1.3, opla: 1.3,
   dochua: 1.0, dualeo: 0.8, hanhngo: 0.7, ot: 0.8, tuongot: 1.0,
@@ -179,15 +182,27 @@ const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 export function mkDefect(kind: DefectKind, item: Ingredient | null, magnitude = 1, dir?: "under" | "over"): Defect {
   const w = item ? ITEM_WEIGHT[item] : 1;
   const sCounter = Math.min(100, BASE[kind] * w * magnitude);
-  const label = item ? labelOf(item) : kind === "WRONG_TEMP" ? "bánh nguội" : kind === "TASTE_OFF" ? "vị lạ" : "nhồi chặt quá";
+  const label = item ? labelOf(item) : kind === "WRONG_TEMP" ? "bánh nguội" : "nhồi chặt quá";
   const text = kind === "MISSING" ? `thiếu ${label}`
     : kind === "UNWANTED" ? `có ${label}`
     : kind === "WRONG_RATIO" ? `${dir === "under" ? "ít" : "nhiều"} ${label} quá`
     : kind === "WRONG_TEMP" ? "bánh nguội ngắt"
-    : kind === "TASTE_OFF" ? "ăn thấy lạ vị"
     : "ổ bánh nhồi chặt quá, kẹp không lại";
   return { kind, item, dir, magnitude, sCounter, sEat: Math.min(100, sCounter * 5), label, weight: sCounter, text };
 }
+
+/** Độ nổi như nhau mọi món; `item` để trống vì lỗi vị không gắn với nấc nhân trên đơn. */
+export function tasteDefect(kind: "TASTE_OFF" | "TASTE_POOR", taste: TasteItem): Defect {
+  const label = taste === "banh" ? "bánh" : labelOf(taste);
+  const text = kind === "TASTE_OFF" ? `${label} không tươi` : `${label} không ngon`;
+  return { ...mkDefect(kind, null), label, text, taste };
+}
+
+const TASTE_GROUP: Record<TasteItem, string> = {
+  banh: "banh", pate: "nhan", thit: "nhan", chalua: "nhan", xiumai: "nhan", opla: "trung",
+  dochua: "dochua", dualeo: "rau", hanhngo: "rau", ot: "rau", tuongot: "sot",
+};
+export const tasteGroup = (t: TasteItem) => TASTE_GROUP[t];
 
 export function portionsOf(dish: readonly Ingredient[]) {
   const m = new Map<Ingredient, number>();

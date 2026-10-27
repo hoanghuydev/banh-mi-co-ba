@@ -32,7 +32,8 @@ const TOPIC_VI: Record<string, string> = {
   "banh-song": "Bánh nướng chưa tới",
   "banh-khet": "Bánh nướng khét",
   "nhoi-nhet": "Nhồi quá nhiều, rớt ra ngoài",
-  "do-cu": "Nguyên liệu cũ, có mùi",
+  "do-cu": "Nguyên liệu để lâu, kém tươi",
+  "do-dom": "Nguyên liệu rẻ, vị kém",
   "co-san": "Ổ dính sạn / đồ đã rơi xuống đất",
   "dau-bung": "Khách đau bụng sau khi ăn",
   "tay-ban": "Khách thấy chủ quán chưa rửa tay",
@@ -46,7 +47,7 @@ const TOPIC_VI: Record<string, string> = {
 };
 
 /** Trần sao — `sim/reviews.ts: STAR_CAP`. */
-const CAP: Record<string, number> = { "co-san": 2, "do-cu": 3, "tay-ban": 2, "het-banh": 3 };
+const CAP: Record<string, number> = { "co-san": 2, "do-cu": 3, "do-dom": 3, "tay-ban": 2, "het-banh": 3 };
 
 const TONE_VI: Record<string, string> = {
   chanthat: "Chân thật", nhat: "Nhạt", vuitinh: "Vui tính", haihuoc: "Hài hước", ham: "Hãm",
@@ -65,7 +66,8 @@ const TRIGGER: Record<string, string> = {
   "banh-song": "Vỏ bánh dưới ngưỡng chín của lò đang dùng",
   "banh-khet": "Vỏ bánh trên ngưỡng sém của lò đang dùng",
   "nhoi-nhet": "`STUFFED` — quá sức chứa của ổ",
-  "do-cu": "`TASTE_OFF` — chất lượng nguyên liệu dưới ngưỡng khó tính của khách",
+  "do-cu": "`TASTE_OFF` — vị mất do để lâu vượt ngưỡng khó tính của khách",
+  "do-dom": "`TASTE_POOR` — vị mất do hàng dưới mức hàng thường vượt ngưỡng khó tính của khách",
   "co-san": "Ổ rơi xuống đất mà vẫn gói, và khách **không kịp thấy** (thấy thì họ từ chối nhận, không có đánh giá)",
   "dau-bung": "Lăn trúng xác suất đau bụng của hàng dỏm trong ổ",
   "tay-ban": "Khách quan sát tới mức `CONFIRMED` stimulus `DIRTY_HANDS`",

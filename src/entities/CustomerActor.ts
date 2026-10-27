@@ -17,14 +17,15 @@ import { drawFace } from "./face";
 import { STREET_BIN } from "../world/map";
 import { passerAlpha } from "../sim/passersby";
 
-// Vòng kiên nhẫn là ngoại lệ có chủ ý của CANON L2: chỉ hiện khi xếp hàng, không số, không vạch chia.
+// Đĩa kiên nhẫn là ngoại lệ có chủ ý của CANON L2: chỉ hiện khi xếp hàng, không số, không vạch chia.
 const PATIENCE_COLORS = [0x3f7fb0, 0xd8b13c, 0xc0392b] as const;
-const PATIENCE_R = 11;
-const PATIENCE_W = 3.5;
-/** Chu vi lớn nhất ≈ 2π · 11 · zoom 1,7 · RENDER_SCALE 2 ≈ 235 px thật. */
+const PATIENCE_R = 8.25;
+const PATIENCE_RIM = 0x3a2c22;
+const PATIENCE_FACE = 0xf4ead8;
+/** Chu vi lớn nhất ≈ 2π · 8,25 · zoom 1,7 · RENDER_SCALE 2 ≈ 176 px thật. */
 const PATIENCE_STEPS = 512;
-// Tính từ đỉnh đầu, không từ `markY`.
-const PATIENCE_LIFT = 14;
+// Khe giữa đỉnh sprite thật và mép đĩa; đĩa đặc nên không được che mặt.
+const PATIENCE_GAP = 4;
 const PATIENCE_RED_SEC = 0.9;
 
 function mixRgb(a: number, b: number, t: number) {
@@ -220,7 +221,9 @@ export class CustomerActor {
     const watching = c.phase !== "leaving" && c.phase !== "arriving";
 
     const st = watching ? nowState(c, nowSec) : null;
-    const markY = sy - BODY_H - 24;
+    // Không trừ `hop` để đĩa đứng yên, dễ đọc.
+    const discY = footY(sy) - this.body.height * k - PATIENCE_GAP - PATIENCE_R;
+    const markY = discY - PATIENCE_R - 20;
     if (st?.state === "NOTICED") {
       g.lineStyle(4, 0x2b2f31, 1);
       g.lineBetween(sx - 11, markY - 5, sx - 2, markY + 1);
@@ -232,8 +235,7 @@ export class CustomerActor {
     const glyph = st?.state === "GLIMPSED" ? "?" : st?.state === "CONFIRMED" ? "!" : "";
     this.mark.setText(glyph).setPosition(sx, markY).setDepth(OVERLAY_DEPTH + 1);
 
-    // Không trừ `hop` để vòng đứng yên, dễ đọc.
-    this.drawPatience(g, sx, footY(sy) - BODY_H - PATIENCE_LIFT);
+    this.drawPatience(g, sx, discY);
 
     if (watching) this.drawGazeProp(this.gaze, headX, headY, time, reducedMotion);
 
@@ -249,7 +251,7 @@ export class CustomerActor {
 
     if (c.say) this.bubbles.acquire(c.id).setText(c.say);
     else this.bubbles.release(c.id, reducedMotion);
-    this.bubbles.anchor(c.id, sx, footY(sy) - BODY_H - PATIENCE_LIFT - PATIENCE_R - 12, BUBBLE_DEPTH, c.slot > 0 ? 0.85 : 1);
+    this.bubbles.anchor(c.id, sx, discY - PATIENCE_R - 14, BUBBLE_DEPTH, c.slot > 0 ? 0.85 : 1);
   }
 
   private drawBodyProps(x: number, foot: number, depth: number, time: number, rm: boolean) {
@@ -319,8 +321,8 @@ export class CustomerActor {
       if (this.leftAt < 0) this.leftAt = c.now;
       const t = (c.now - this.leftAt) / PATIENCE_RED_SEC;
       if (t >= 1) return;
-      g.lineStyle(PATIENCE_W, PATIENCE_COLORS[2], 1 - t);
-      g.strokeCircle(x, y, PATIENCE_R);
+      g.fillStyle(PATIENCE_RIM, 1 - t).fillCircle(x, y, PATIENCE_R + 1.5);
+      g.fillStyle(PATIENCE_COLORS[2], 1 - t).fillCircle(x, y, PATIENCE_R);
       return;
     }
     this.leftAt = -1;
@@ -328,15 +330,13 @@ export class CustomerActor {
 
     // Làm tròn để đầu cung nhích ≤ 0,5 px thật mỗi lần; vòng không phải dựng lại mỗi frame.
     const frac = Math.ceil(c.patienceLeft * PATIENCE_STEPS) / PATIENCE_STEPS;
-    // Rãnh mờ để cung đỏ ngắn lúc gần cạn không trông như vệt bẩn.
-    track.lineStyle(PATIENCE_W, 0x0d1216, 0.22);
-    track.strokeCircle(x, y, PATIENCE_R);
+    track.fillStyle(PATIENCE_RIM, 1).fillCircle(x, y, PATIENCE_R + 1.5);
+    track.fillStyle(PATIENCE_FACE, 1).fillCircle(x, y, PATIENCE_R);
     if (frac <= 0) return;
     const from = -Math.PI / 2;
-    g.lineStyle(PATIENCE_W, patienceColor(frac), 0.95);
-    g.beginPath();
-    g.arc(x, y, PATIENCE_R, from, from + Math.PI * 2 * frac, false);
-    g.strokePath();
+    g.fillStyle(patienceColor(frac), 1);
+    g.slice(x, y, PATIENCE_R - 1.1, from, from + Math.PI * 2 * frac, false);
+    g.fillPath();
   }
 
   private drawGazeProp(g: Phaser.GameObjects.Graphics, x: number, y: number, time: number, rm: boolean) {

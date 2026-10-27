@@ -235,22 +235,40 @@
       "ham": []
     },
     "do-cu": {
-      "_note": "`TASTE_OFF` nghĩa là khách thấy nhân KÉM TƯƠI, không phải ôi thiu — viết đúng mức đó. Độ nặng để `silentScore` quyết, không chặn trần sao.",
+      "_note": "`TASTE_OFF`: món `{nl}` KÉM TƯƠI vì để lâu, không phải ôi thiu — viết đúng mức đó. `{nl}` có thể là bánh, nhân, trứng, đồ chua, rau hay tương ớt nên câu phải hợp mọi món.",
       "chanthat": [
-        "nhân không được tươi lắm",
-        "pate nhạt hơn mấy lần trước",
-        "rau hơi héo, chắc để từ sáng",
+        "{nl} không được tươi lắm",
+        "{nl} có vẻ để từ hôm qua",
         "vị không bằng hôm trước"
       ],
       "ham": [
         "đồ để lâu rồi mà vẫn bán, chán",
-        "nhân cũ thấy rõ, quán làm ăn kiểu gì"
+        "{nl} cũ thấy rõ, quán làm ăn kiểu gì"
       ],
       "haihuoc": [
-        "nhân này chắc cũng có tuổi rồi"
+        "{nl} này chắc cũng có tuổi rồi"
       ],
       "nhat": [
-        "nhân không tươi"
+        "{nl} không tươi"
+      ],
+      "vuitinh": []
+    },
+    "do-dom": {
+      "_note": "`TASTE_POOR`: món `{nl}` còn tươi nhưng là hàng rẻ, vị kém. Không được nói để lâu, cũ, không tươi.",
+      "chanthat": [
+        "{nl} hơi nhạt",
+        "{nl} ăn không đậm vị",
+        "{nl} không ngon bằng mấy chỗ khác"
+      ],
+      "ham": [
+        "{nl} dở, chắc lấy hàng rẻ",
+        "tiền đó mà {nl} dở vậy thì thôi"
+      ],
+      "haihuoc": [
+        "{nl} nhạt như nước ốc"
+      ],
+      "nhat": [
+        "{nl} dở"
       ],
       "vuitinh": []
     },
@@ -511,8 +529,12 @@
       "kẹp đầy quá rớt ra ngoài"
     ],
     "do-cu": [
-      "nhân không tươi lắm",
+      "{nl} không tươi lắm",
       "vị không bằng hôm trước"
+    ],
+    "do-dom": [
+      "{nl} hơi nhạt",
+      "{nl} không ngon lắm"
     ],
     "tay-ban": [
       "thấy không rửa tay",

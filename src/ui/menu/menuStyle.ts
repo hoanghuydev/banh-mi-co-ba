@@ -18,6 +18,18 @@ export const MENU_CSS = CLAY_CSS + `
 .mn-stack{display:flex;flex-direction:column;gap:12px}
 .mn-modes{display:flex;gap:inherit}
 .mn-modes .clay-btn{flex:1 1 0;min-width:0}
+.mn-maps{width:min(820px,100%)}
+.mn-map-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.mn-map{position:relative;display:block;padding:0;border:0;border-radius:1em;overflow:hidden;background:#1d232b;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;box-shadow:0 0 0 3px rgba(247,241,226,.9),0 10px 24px rgba(0,0,0,.4);transition:transform .12s}
+.mn-map img{display:block;width:100%;aspect-ratio:960/536;object-fit:cover}
+@media (hover:hover){.mn-map:not(:disabled):hover{transform:translateY(-2px)}}
+.mn-map:not(:disabled):active{transform:translateY(2px)}
+.mn-map:focus-visible{outline:3px solid #ffd666;outline-offset:3px}
+.mn-map.locked{cursor:default;box-shadow:0 0 0 2px rgba(247,241,226,.25),0 10px 24px rgba(0,0,0,.4)}
+.mn-map.locked img{filter:grayscale(.6) brightness(.45)}
+.mn-lock{position:absolute;left:50%;top:50%;width:3.2em;height:3.2em;margin:-1.6em 0 0 -1.6em;padding:.8em;box-sizing:border-box;border-radius:50%;background:rgba(20,24,30,.72);color:#f7f1e2}
+.mn-lock svg{display:block;width:100%;height:100%}
+@media (orientation:portrait) and (max-width:560px){.mn-map-grid{grid-template-columns:1fr}}
 .mn-h{margin:0;font-size:1.5em;line-height:1.25;font-weight:700;text-align:center;outline:0;overflow-wrap:anywhere}
 
 .mn-root .clay-btn{width:100%;min-height:3.1em;padding:.4em 1.1em;font-size:1em;touch-action:manipulation;-webkit-tap-highlight-color:transparent;overflow-wrap:anywhere;text-align:center}

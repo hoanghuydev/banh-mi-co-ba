@@ -12,7 +12,7 @@ import { orderDefectKey } from "../core/stimid";
 import { Customer, DEFAULT_PATIENCE_SEC, LEAVE_AT, PATIENCE_BONUS_SEC, TEA, teaSuspectAtCup, type LeaveReason } from "./customer";
 import {
   INGREDIENTS, diffDish, extraPortions, extrasOf, generosityOf, monVi, labelOf, levelsOf, mkDefect,
-  sayOrder,
+  sayOrder, tasteDefect, tasteGroup,
   type Defect, type DefectKind, type Ingredient, type OrderSpec,
 } from "./order";
 import type { ServeRecord } from "./reviews";
@@ -37,7 +37,7 @@ import {
   type TalkOpenBy, type Deed, type ForSec,
   type Talk, type TalkAct, type TalkCtx, type TalkEffect, type TalkGate, type TalkMood, type TalkTone,
 } from "./talk";
-import { PRICE_FX, dishPriceVnd, dongVi, isRain, pickOf, tasteThreshold, weatherOf, type PricePicks } from "./econ";
+import { PRICE_FX, dishPriceVnd, dongVi, isRain, pickOf, tasteThreshold, weatherOf, type DishFlaws, type PricePicks } from "./econ";
 import { nhanOf, type MenuItemId } from "./menu";
 import { isOpen } from "./unlock";
 import { easeBalk } from "./ease";
@@ -1092,7 +1092,7 @@ export class Service {
 
   /** Ghi sổ khách khen hoặc chê giá sau khi trả tiền. */
   private reportServed(c: Customer, o: {
-    silentScore: number; sat: number; sick: boolean; topic: string | null; gaveExtra: boolean; quality?: number;
+    silentScore: number; sat: number; sick: boolean; topic: string | null; gaveExtra: boolean; quality?: number; nl?: string;
   }) {
     if (!this.deps.onServed || !c.order) return;
     const saw = (id: string) => [...c.observations.values()].some((x) => x.peak === "CONFIRMED" && x.id === id);
@@ -1106,6 +1106,7 @@ export class Service {
       waitStage: c.waitStage,
       sick: o.sick,
       defect: o.topic,
+      nl: o.nl,
       dirtyHands: saw("DIRTY_HANDS"),
       flies: fliesAt(this.dirt),
       gaveExtra: o.gaveExtra,
@@ -1381,7 +1382,7 @@ export class Service {
   /** Lỗi thấy lúc làm → ANTICIPATED, không thấy → DISCOVERED; không bao giờ trừ tiền bánh. */
   serveDish(
     dish: Ingredient[],
-    opts: { cold?: boolean; crust?: number; quality?: number; soiled?: boolean; burnAt?: number; singeAt?: number; sick?: number } = {},
+    opts: { cold?: boolean; crust?: number; quality?: number; flaws?: DishFlaws; soiled?: boolean; burnAt?: number; singeAt?: number; sick?: number } = {},
   ): ServeResult {
     const c = this.front;
     if (!c || c.phase !== "waiting") return { ok: false, reason: "chưa có ai chờ lấy bánh" };
@@ -1422,9 +1423,11 @@ export class Service {
     const crustSinged = band === "SINGED";
     if (crustLow) raw.push(underdoneDefect(opts.crust!));
     else if (crustSinged) raw.push(singedDefect(opts.crust!, burnAt, singeAt));
-    if (opts.quality !== undefined && 1 - opts.quality >= tasteThreshold(c.personality.soi)) raw.push(mkDefect("TASTE_OFF", null));
+    const flaws = opts.flaws, tasteBar = tasteThreshold(c.personality.soi);
+    if (flaws && flaws.stale.loss >= tasteBar) raw.push(tasteDefect("TASTE_OFF", flaws.stale.item));
+    if (flaws && flaws.poor.loss >= tasteBar) raw.push(tasteDefect("TASTE_POOR", flaws.poor.item));
     const defects: DiffedDefect[] = raw.map((d) => {
-      const key = d.kind === "WRONG_TEMP" || d.kind === "STUFFED" || d.kind === "TASTE_OFF" ? null : orderDefectKey(c.id, d.kind, d.item);
+      const key = d.kind === "WRONG_TEMP" || d.kind === "STUFFED" || d.taste ? null : orderDefectKey(c.id, d.kind, d.item);
       const seen = key ? rank(peakOfKey(c, key)) >= rank("NOTICED") : false;
       return { ...d, key, witness: seen ? "ANTICIPATED" : "DISCOVERED" };
     });
@@ -1457,6 +1460,7 @@ export class Service {
       // ⚠️ `dishUnderdone`/`dishSinged` chỉ đặt khi lỗi vỏ bánh là câu chính.
       this.speakConcept(c, "DELIVERY", {
         defectCount: defects.length, defectKind: kindOf(spoken), defectWasSeen: spoken.witness === "ANTICIPATED",
+        ...(spoken.taste ? { tasteGroup: tasteGroup(spoken.taste) } : {}),
         freeExtraGiven: gaveExtra,
         dishUnderdone: spoken === crustDefect && crustLow,
         dishSinged: spoken === crustDefect && crustSinged,
@@ -1511,7 +1515,7 @@ export class Service {
     }
     this.reportServed(c, {
       silentScore, sat, sick, gaveExtra, quality: opts.quality,
-      topic: reviewTopic(spoken, { grit, crustLow, crustSinged }),
+      topic: reviewTopic(spoken, { grit, crustLow, crustSinged }), nl: spoken?.taste ? spoken.label : undefined,
     });
     this.leave(c, "served");
     return { ok: true, playerSay };
@@ -2724,6 +2728,7 @@ const DEFECT_TOPIC: Record<DefectKind, string> = {
   WRONG_TEMP: "nguoi",
   STUFFED: "nhoi-nhet",
   TASTE_OFF: "do-cu",
+  TASTE_POOR: "do-dom",
 };
 
 /** Lỗi nặng nhất khách mang về, đổi sang chủ đề để chọn câu đánh giá. */

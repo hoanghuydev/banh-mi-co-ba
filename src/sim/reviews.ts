@@ -116,6 +116,8 @@ export type ServeRecord = {
   sick: boolean;
   /** Lỗi nặng nhất khách thấy, để chọn câu. */
   defect: string | null;
+  /** Tên món gây lỗi vị, điền vào `{nl}`. */
+  nl?: string;
   /** Khách vãng lai: `who` chỉ là dáng người, đánh giá phải mượn tên khác. */
   anon?: boolean;
   dirtyHands?: boolean;
@@ -168,7 +170,7 @@ export function starsOf(r: ServeRecord, rng: Rng): number {
   if (r.sick) return rng.next() < 0.6 ? 1 : 2;
   let s = 5 - r.silentScore / SCORE_PER_STAR;
   s += (r.sat - 0.6) * SAT_WEIGHT;
-  // `TASTE_OFF` là lỗi nhị phân nên không phân biệt dỏm hẳn với hơi cũ — chỗ này phân biệt.
+  // Lỗi vị chỉ có hoặc không; dỏm nặng hay nhẹ, cũ nhiều hay ít thì trừ thêm ở đây.
   s -= qualityPenalty(r.quality);
   s += PRICE_STAR[r.pricePick] ?? 0;
   s -= r.waitStage * WAIT_PENALTY;
@@ -270,6 +272,7 @@ export function rollReview(w: SaveFile, rec: ServeRecord, at: number): Pending |
         persona: rng.pick(PERSONAS),
         stars,
         mon: rec.mon,
+        nl: rec.nl,
       }),
       food: rec.sick,
     },
