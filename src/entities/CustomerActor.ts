@@ -51,7 +51,6 @@ export const BUBBLE_DEPTH = FX_DEPTH + 1;
 
 // Đo từ `sy` (điểm chạm đất), không từ `footY(sy)` vốn thấp hơn 21 px.
 const TAG_BELOW_FEET = 14;
-const EDGE = 6;
 
 const K = 120, DAMP = 14;
 
@@ -67,8 +66,9 @@ function atCounter(c: Customer) {
     && (c.phase === "queueing" || c.phase === "ordering" || c.phase === "waiting");
 }
 type Spring = { v: number; x: number };
+// Euler ẩn để lò xo không nổ khi khung hình chậm (`dt` lớn, giảm chấn `d` cao).
 const spring = (s: Spring, target: number, dt: number, d = DAMP) => {
-  s.v += (-K * (s.x - target) - d * s.v) * dt;
+  s.v = (s.v - K * (s.x - target) * dt) / (1 + d * dt + K * dt * dt);
   s.x += s.v * dt;
 };
 const browColor = (hair: number) => {
@@ -102,7 +102,7 @@ export class CustomerActor {
   // Quãng đã đi (ô), cộng dồn để bàn chân khớp mặt đất.
   private gait = 0;
 
-  constructor(private scene: Phaser.Scene, private c: Customer, private bubbles: BubblePool, private textScale = 1,
+  constructor(scene: Phaser.Scene, private c: Customer, private bubbles: BubblePool, private textScale = 1,
     private label: (c: Customer) => string = (x) => x.name) {
     if (!scene.textures.exists(`${c.memKey}_s`)) {
       buildBody(scene, c.memKey, c.body);
@@ -211,7 +211,6 @@ export class CustomerActor {
     this.tag.setVisible(!c.ambient && (!isTouch() || c.phase === "ordering" || c.phase === "waiting"));
     this.tag.setPosition(sx, sy + TAG_BELOW_FEET).setDepth(OVERLAY_DEPTH)
       .setAlpha(c.phase === "leaving" ? 0.45 : 0.9);
-    this.clampInView(this.tag);
 
     const g = this.fx;
     g.clear();
@@ -250,16 +249,7 @@ export class CustomerActor {
 
     if (c.say) this.bubbles.acquire(c.id).setText(c.say);
     else this.bubbles.release(c.id, reducedMotion);
-    this.bubbles.anchor(c.id, sx, sy - BODY_H - 46, BUBBLE_DEPTH, c.slot > 0 ? 0.85 : 1);
-  }
-
-  private clampInView(t: Phaser.GameObjects.Text) {
-    const v = this.scene.cameras.main.worldView;
-    const hw = t.displayWidth / 2, hh = t.displayHeight / 2;
-    t.setPosition(
-      Math.min(Math.max(t.x, v.left + EDGE + hw), v.right - EDGE - hw),
-      Math.min(Math.max(t.y, v.top + EDGE + hh), v.bottom - EDGE - hh),
-    );
+    this.bubbles.anchor(c.id, sx, footY(sy) - BODY_H - PATIENCE_LIFT - PATIENCE_R - 12, BUBBLE_DEPTH, c.slot > 0 ? 0.85 : 1);
   }
 
   private drawBodyProps(x: number, foot: number, depth: number, time: number, rm: boolean) {

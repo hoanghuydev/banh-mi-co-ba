@@ -23,7 +23,7 @@ export { opaqueBox, opaqueEdges, spriteEdges, type Edges, type OpaqueBox, type S
 export { createSign, type Awning } from "./sign";
 export { sliceImage } from "./slices";
 export { createMenuBoard } from "./menuboard";
-export { FX } from "./fx";
+export { FX, RING_SS } from "./fx";
 export { TILE, BUILD, COUNTER, PROP };
 
 export const ICON = {

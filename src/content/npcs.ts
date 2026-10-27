@@ -237,7 +237,7 @@ export const NPCS: NpcDef[] = [
 /**
  * Khách vãng lai vô danh — CANON §9 "ngoài danh sách", dùng pool thoại generic.
  *
- * Tám người này phải NHÌN RA LÀ TÁM NGƯỜI KHÁC NHAU dù không ai có tên. Ở 64 px
+ * Những người này phải NHÌN RA LÀ NHỮNG NGƯỜI KHÁC NHAU dù không ai có tên. Ở 64 px
  * thì màu áo gần như vô dụng: nó bị quầy che nửa dưới, lại đứng lẫn trong một hẻm
  * toàn tông xanh xám. Thứ phân biệt được là BÓNG HÌNH — cái nằm quanh đầu và nhô
  * ra khỏi thân: nón lá, nón bảo hiểm, tóc búi, đuôi tóc, giỏ đi chợ, khẩu trang.
@@ -253,10 +253,11 @@ export const WALKIN_STYLES: BodyStyle[] = [
   { skin: 0xd3a271, hair: 0x241d1a, shirt: 0x8d9aa6, trousers: 0x33393f, hat: "helmet", mask: true },
   { skin: 0xeec49c, hair: 0x453026, shirt: 0xc46f86, trousers: 0x3a4550, hairStyle: "ponytail", build: "round" },
   { skin: 0xc99a6d, hair: 0x1d1a17, shirt: 0x3f6f8c, trousers: 0x2c333a, hairStyle: "short", build: "round", glasses: true },
+  { skin: 0xd9a77a, hair: 0x1c1816, shirt: 0xb3262b, trousers: 0x6f8fb5, hairStyle: "short", build: "slim" },
 ];
 
 /** Tên gọi tạm — khớp 1–1 theo chỉ số với `WALKIN_STYLES`, để tên đi đúng với người. */
 export const WALKIN_NAMES = [
   "khách lạ", "chị đeo khẩu trang", "cô xách giỏ", "bà cụ",
-  "cô nón lá", "anh chạy xe", "chị áo hồng", "chú đeo kính",
+  "cô nón lá", "anh chạy xe", "chị áo hồng", "chú đeo kính", "báo thủ",
 ];

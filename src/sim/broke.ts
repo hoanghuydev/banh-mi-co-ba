@@ -1,9 +1,12 @@
 import type { SaveFile } from "../core/save";
 import { unitPriceVnd } from "./day";
 import { resaleVnd, resellable } from "./equipment";
+import { rentVnd } from "./obligations";
 
 /**
- * Phá sản: tiền trong ống + bán sạch đồ nghề vẫn không mua nổi rổ nhỏ nhất cho sáng mai → thua.
+ * Phá sản khi một trong hai:
+ * - tiền trong ống không đủ tiền chỗ sáng mai (đồ nghề không tính);
+ * - trả tiền chỗ xong, tiền còn lại + bán sạch đồ nghề vẫn không mua nổi rổ nhỏ nhất.
  * Hỏi "bán hết có đủ không", không hỏi "còn món nào bán được không" — không thì kẹt vòng lặp vô tận.
  */
 
@@ -17,6 +20,10 @@ export function minBasketVnd(day: number): number {
 
 export type BrokeReport = {
   broke: boolean;
+  /** Lý do thua; `null` khi chưa thua. */
+  why: "rent" | "basket" | null;
+  /** Tiền chỗ sáng mai. */
+  rent: number;
   /** Tiền mua rổ nhỏ nhất cho sáng mai. */
   need: number;
   cash: number;
@@ -28,9 +35,10 @@ export function brokeReport(w: SaveFile): BrokeReport {
   const day = w.progress.dayIndex;
   const need = minBasketVnd(day + 1);
   const cash = w.money.cash;
+  const rent = rentVnd();
   const resale = resellable(w.equipment).reduce((a, id) => a + resaleVnd(id), 0);
-  // Phép cộng, không phải hai câu hỏi rời: mọi đồng có thể xoay ra được trước sáng mai.
-  return { broke: cash + resale < need, need, cash, resale };
+  const why = cash < rent ? "rent" : cash - rent + resale < need ? "basket" : null;
+  return { broke: why !== null, why, rent, need, cash, resale };
 }
 
 /** Chốt lúc đi ngủ. Cờ nằm trong save để vào lại ván đó thì về đúng màn phá sản. */

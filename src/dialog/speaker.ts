@@ -55,6 +55,8 @@ export const newDialogState = (): DialogState => ({ spokenOnce: [], norepeat: {}
 
 export type Picked = { rule: Rule; text: string; tier: 1 | 2 | 3 };
 
+const ADDRESS_SLOTS = new Set(["self", "you", "call", "me"]);
+
 export class Speaker {
   readonly db = ruleDb();
   readonly ctx: ContextStore;
@@ -86,7 +88,8 @@ export class Speaker {
     if (!bag) this.live.set(id, (bag = new ShuffleBag(rule.say.length, this.bags[id])));
     const i = bag.draw(this.rng, this.day);
     this.bags[id] = bag.toJSON();
-    const text = rule.say[i].replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? "");
+    // Xưng hô để nguyên cho `Service.fill` điền theo người nói.
+    const text = rule.say[i].replace(/\{(\w+)\}/g, (m, k) => vars[k] ?? (ADDRESS_SLOTS.has(k) ? m : ""));
     return { rule, text, tier: tierOfScore(rule.score) };
   }
 

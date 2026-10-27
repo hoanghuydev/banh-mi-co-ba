@@ -26,7 +26,6 @@ export type AchState = {
   baoKhi: number;
   /** Số lượt quay trượt liên tiếp ở ô may mắn. */
   luckRun: number;
-  owed: boolean;
   /** Trong ngày `dayNo`, mọi món đều ở giá rẻ nhất / đắt nhất từ đầu buổi tới giờ. */
   dayNo: number;
   low: boolean;
@@ -34,7 +33,7 @@ export type AchState = {
 };
 
 export const newAch = (): AchState => ({
-  tea: 0, soiled: 0, dropped: 0, burnt: 0, burntThru: 0, resold: 0, sup: [], baoKhi: 0, luckRun: 0, owed: false,
+  tea: 0, soiled: 0, dropped: 0, burnt: 0, burntThru: 0, resold: 0, sup: [], baoKhi: 0, luckRun: 0,
   dayNo: 0, low: true, high: true,
 });
 
@@ -134,10 +133,6 @@ function samplePrices(w: SaveFile) {
   a.high &&= picks.every((x) => x === 2);
 }
 
-function trackDebt(w: SaveFile) {
-  if (w.econ.rentOwed > 0) w.ach.owed = true;
-}
-
 /** Điều kiện đọc thẳng từ trạng thái hiện tại; chấm lúc nào cũng được. */
 const STATE: Record<string, (w: SaveFile) => boolean> = {
   dau_xuoi: (w) => servedAll(w) >= 1,
@@ -173,7 +168,6 @@ const STATE: Record<string, (w: SaveFile) => boolean> = {
   quen_mat: (w) => Object.values(w.npcs).some((n) => n.visits >= 50),
   tien_nao: (w) => has(w.equipment, "TU_MAT"),
   buon_co_ban: (w) => w.ach.sup.length >= SUPPLIERS.length,
-  kho_truoc: (w) => w.ach.owed && w.econ.rentOwed === 0,
   rau_ong: (w) => reviews(w).some((r) => r.noise === "nham"),
   tren_troi: (w) => w.ach.baoKhi > 0,
   tieng_lanh: (w) => reviews(w).length >= 50 && average(w) >= 4.2,
@@ -209,7 +203,6 @@ function run(w: SaveFile, rules: Record<string, (w: SaveFile) => boolean>, p: Pl
 /** Chấm điều kiện trạng thái; gọi khi quầy đang chạy và sau khi chốt thắng/thua. */
 export function checkLive(w: SaveFile, p: Platform = defaultPlatform) {
   samplePrices(w);
-  trackDebt(w);
   run(w, STATE, p);
 }
 

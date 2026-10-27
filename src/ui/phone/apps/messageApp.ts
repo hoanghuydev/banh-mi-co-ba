@@ -4,6 +4,7 @@ import { sfx } from "../../../audio/sfx";
 import { avatar, bubbleNodes } from "../chat";
 import { navBar, page, scroller, type AppCtx } from "../ctx";
 import { ICON, btn, el } from "../dom";
+import { postImg } from "./vietsociApp";
 
 function threadList(ctx: AppCtx, current = ""): HTMLElement {
   const list = el("div", "ph-list");
@@ -54,7 +55,19 @@ export function chatPage(ctx: AppCtx, id: string): HTMLElement {
   const body = el("div", "ph-chat");
   const sc = scroller(body);
   const msgs = t?.msgs ?? [];
-  msgs.forEach((m, i) => body.append(...bubbleNodes(m, msgs[i - 1], !!c.group, msgs[i + 1])));
+  const link = (pid: number) => {
+    const p = w.vietsoci.posts.find((x) => x.id === pid);
+    if (!p) return null;
+    const card = btn("ph-vslink", "", () => ctx.go({ app: "vs", id: String(p.id) }), `Mở bài VietSoci của ${p.kenh}`);
+    const img = el("img") as HTMLImageElement;
+    img.src = postImg(p);
+    img.alt = "";
+    const tx = el("span", "tx");
+    tx.append(el("b", "", `VietSoci · ${p.kenh}`), el("span", "", p.caption));
+    card.append(img, tx);
+    return card;
+  };
+  msgs.forEach((m, i) => body.append(...bubbleNodes(m, msgs[i - 1], !!c.group, msgs[i + 1], link)));
   const dock = el("div");
   const pe = t && pendingEvent(t);
   if (pe) {

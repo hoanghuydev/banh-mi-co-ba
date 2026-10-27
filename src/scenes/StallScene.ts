@@ -8,7 +8,7 @@ import type { GameContext } from "../core/context";
 import { loadSettings, type Settings } from "../core/save";
 import { DEV_TOOLS, PLAYTEST } from "../core/flags";
 import { telemetry } from "../core/session";
-import { Service, bubbleLife } from "../sim/service";
+import { FLY_DIRT_MIN, Service, bubbleLife, fliesAt } from "../sim/service";
 import type { Customer } from "../sim/customer";
 import { SALIENCE } from "../sim/perception";
 import { runFrame } from "../sim/frame";
@@ -25,12 +25,11 @@ import { MenuBoardView } from "../ui/menu/MenuBoardView";
 import { MenuDom } from "../ui/menu/MenuDom";
 import { StorageView } from "../ui/stall/StorageView";
 import { sfx } from "../audio/sfx";
-import { PhoneView } from "../ui/phone/PhoneView";
-import { totalUnread } from "../sim/phone";
+import { PhoneView, phoneBadge } from "../ui/phone/PhoneView";
 import { chorePin } from "../ui/chorePin";
 import { TOUR_TOTAL, closeDone, closePending, dishGaps, explainEye, eyeExplained, gapText, tourAt, tourDone, tourIndex, tourOrdered, tourSkip, tourStep, touring, type TourStep } from "../sim/tour";
 import { arriveText, deliverDue, inTransit } from "../sim/shop";
-import { dueReviews, enqueue, rollReview, unseen } from "../sim/reviews";
+import { dueReviews, enqueue, rollReview } from "../sim/reviews";
 import { achTick, takeAch } from "../sim/ach";
 import { openIngredients, openedOn } from "../sim/unlock";
 import { SWIFT_MUL, canSpin, cleanHandsToday, finishRookie, linked, questDone, swiftToday } from "../sim/system";
@@ -57,7 +56,7 @@ import { TouchControls, type TouchLabel, type TouchView } from "../ui/touch/Touc
 import { TH, TW, depthOf, facingOf8, toScreen } from "../world/iso";
 import { COUNTER_Y } from "../world/map";
 import { RENDER_SCALE } from "../core/render";
-import { StallCamera, ZOOM, applyDeviceZoom } from "../world/camera";
+import { StallCamera, WORLD_SS_MAX, ZOOM, applyDeviceZoom } from "../world/camera";
 import { LIGHT_ENV_KEY, type LightEnv } from "../art/light/env";
 import { materialOf } from "../art/light/materials";
 import { SceneLight, indoorWeight } from "../world/lightLayers";
@@ -65,13 +64,13 @@ import { FloorBake } from "../world/floorBake";
 import { PropSheen } from "../world/propSheen";
 import { TexPixels } from "../world/texPixels";
 import { Lamps, LAMP_SPOTS } from "../ui/stall/Lamps";
-import { SUNK, TABLE_DROP, artScale, fitPhoto, BOARD_TEX, BOARD_W, BASKET_TEX, BASKET_W } from "../art/photo";
+import { SUNK, TABLE_DROP, artScale, fitPhoto, BOARD_TEX, BOARD_W, BASKET_TEX, BASKET_W, type MOUNTED } from "../art/photo";
 import { BUYABLE_TILES, MENU_REACH, MENU_SPOT, MENU_TILE, SEAT_SPOT, SHADE_SPOT, SKY_FROM_Y, WORLD_H, WORLD_W, assertWalkable, floorAt, openTilesFor, setOpenTiles, setPole, tileAt, type TileCode } from "../world/map";
 import {
   HAND_LABEL, STATIONS, assertMenuSpotFree, assertStationsOnCounter, blockedReason, stationAtTile, stationNear, type Hand, type Station,
 } from "../world/stations";
 import {
-  BASE, COUNTER, FX, HELD, PROP, TILE, createMenuBoard, createSign, floorTextureAt, footY, heldFootPad,
+  BASE, COUNTER, FX, HELD, RING_SS, PROP, TILE, createMenuBoard, createSign, floorTextureAt, footY, heldFootPad,
   heldTexture, regularReady, sliceImage, spriteEdges, textureForTile, type Awning,
 } from "../art";
 import { Player } from "../entities/Player";
@@ -84,6 +83,7 @@ import { ART_SHARE, LOADING, loadingShown, setStep } from "../ui/bootScreen";
 import { boostSlice, runSteps, type Step } from "../art/steps";
 import { RegularBakes } from "./regulars";
 import { holdLoop } from "../core/loopHold";
+import { filmedToday, postClip } from "../sim/vietsoci";
 
 const WIPE_LABEL = "đang lau thớt";
 const STOPPED = Symbol("stopped");
@@ -122,7 +122,6 @@ const LIGHT_SS = 2;
 const FLY_MAX = 5;
 const ACH_TOAST_GAP_MS = 2800;
 const FLY_TILT = 0.6;
-const FLY_DIRT_MIN = 0.35;
 /** Bằng số ngăn lò: rổ đỡ một mẻ, không phải kho bánh. */
 const BASKET_SLOTS = 3;
 /** Đo dọc mặt quầy chạy chéo, lệch cả hai trục theo tỉ lệ iso 2:1. */
@@ -240,6 +239,8 @@ export class StallScene extends Phaser.Scene {
   private basketTopY = 0;
   private basketX = 0;
   private basketDepth = 0;
+  /** Tâm mặt quầy gọi món, chỗ đặt bảng QR. */
+  private orderTop: { x: number; y: number; depth: number } | null = null;
   private boardDepth = 0;
   private labelY = new Map<string, { x: number; y: number }>();
   /** Đỉnh của chính cái vật, không phải `labelY` (đỉnh khối quầy, cao hơn mặt thớt 38 px). */
@@ -451,7 +452,7 @@ export class StallScene extends Phaser.Scene {
       },
       () => {
         this.hud = new Hud(this, this.settings, () => (this.paused ? this.resume() : this.pause()), () => this.openPhone());
-        this.hud.setUnread(totalUnread(this.world.phone) + unseen(this.world));
+        this.hud.setUnread(phoneBadge(this.world));
         this.touch = new TouchControls(this.intent);
         this.talkRing = this.add.graphics();
         this.pendingDots = this.add.graphics();
@@ -500,6 +501,12 @@ export class StallScene extends Phaser.Scene {
           onServed: (rec) => {
             const p = rollReview(w, rec, this.clock.minutes);
             if (p) enqueue(w, p);
+          },
+          filmed: (ch) => filmedToday(w, ch),
+          onClip: (clip) => {
+            const r = postClip(w, clip, this.clock.minutes);
+            if (r.system) this.hud.toast(r.system, "good", this.popClock);
+            this.hud.setUnread(phoneBadge(w));
           },
           readMul: (this.settings.textScale > 1 ? 1.25 : 1) * (this.settings.noTimePressure ? 1.5 : 1),
           resumeAt: this.resumed || w.flags.lateOpenDay === w.progress.dayIndex ? this.clock.minutes : undefined,
@@ -669,7 +676,7 @@ export class StallScene extends Phaser.Scene {
     const h = toScreen(WORLD_W, WORLD_H).sy - minY + TH + BASE * 2;
     applyDeviceZoom();
     const weak = isTouch() && ((navigator as { deviceMemory?: number }).deviceMemory ?? 8) <= 4;
-    const ss = Math.min(3, ZOOM * RENDER_SCALE, weak ? WEAK_GROUND_SS : 3);
+    const ss = Math.min(ZOOM * RENDER_SCALE, weak ? WEAK_GROUND_SS : WORLD_SS_MAX);
     const gl = (this.game.renderer as { gl?: WebGLRenderingContext }).gl;
     const maxTex = Math.min(MAX_TEX, gl ? gl.getParameter(gl.MAX_TEXTURE_SIZE) as number : MAX_TEX);
 
@@ -759,6 +766,7 @@ export class StallScene extends Phaser.Scene {
         if (st?.id === "board" && primary) this.addBoard(img, tx, ty);
         if (st?.id === "basket") this.addBasket(img, tx, ty);
         if (key === COUNTER.end) this.addOnCounter(img, tx, ty, BASKET_TEX, BASKET_W);
+        if (key === PROP.order) this.orderTop = { x: img.x, y: img.y - topAbove(img), depth: depthOf(tx + 0.5, ty + 0.5) + 1 };
       }
     }
 
@@ -990,7 +998,7 @@ export class StallScene extends Phaser.Scene {
           this.hud.toast(`${r.who} — ${r.stars}★`, r.stars >= 4 ? "good" : "bad", this.popClock, { icon: "star", title: "Đánh giá mới" });
           sfx.play(this, "ui_dat_thanh_cong");
         }
-        if (fresh.length) this.hud.setUnread(totalUnread(this.world.phone) + unseen(this.world));
+        if (fresh.length) this.hud.setUnread(phoneBadge(this.world));
         achTick(this.world, dt);
         if (this.popClock >= this.achToastAt) {
           const got = takeAch();
@@ -2449,10 +2457,9 @@ export class StallScene extends Phaser.Scene {
 
   /** Độ bẩn nhìn thấy được = RUỒI. Vụn bánh vẽ bằng code đọc ra "lỗi hiển thị" chứ không ra "bẩn". */
   private drawDirt() {
-    const d = this.dirt;
     const lab = this.choreAt.get("board");
     this.drawFlies(
-      !lab || d <= FLY_DIRT_MIN ? 0 : d >= 0.7 ? 5 : d >= 0.5 ? 3 : 1,
+      lab ? fliesAt(this.dirt) : 0,
       // Bay quanh MẶT THỚT.
       lab?.x ?? 0, this.boardTopY,
     );
@@ -2528,12 +2535,12 @@ export class StallScene extends Phaser.Scene {
   private drawRing() {
     if (!this.near) { this.ring.setVisible(false); return; }
     const { sx, sy } = toScreen(this.near.tx + 0.5, this.near.ty + 0.5);
-    // Nền sáng 0,78…0,98: vòng mờ hơn thì không thấy trên gạch men trắng.
-    const pulse = this.settings.reducedMotion ? 0.1 : Math.sin(this.time.now / 260) * 0.1;
+    // Bốn góc co vào 5% rồi nở ra.
+    const pulse = this.settings.reducedMotion ? 1 : 0.975 + Math.sin(this.time.now / 500) * 0.025;
     this.ring.setVisible(true)
       .setPosition(sx, sy)
       .setDepth(depthOf(this.near.tx + 0.5, this.near.ty + 0.5) - 120)
-      .setAlpha(0.88 + pulse);
+      .setScale(pulse / RING_SS);
   }
 
   /** Cố ý không đọc `served`, `money` hay số lỗi: nhạc phản ứng với BỐI CẢNH, không bao giờ là bảng điểm. */
@@ -2668,9 +2675,13 @@ export class StallScene extends Phaser.Scene {
      * ô đó ra lúc mua. Vẽ thêm một cái bình nhỏ cạnh cái thùng là hai cái bình cho một món đồ.
      * BẢNG HIỆU cũng vậy — `createSign` dựng tấm bảng thật trên vách.
      */
-    if (has(e, "QUAT_DIEN")) this.addAirCon();
-    if (has(e, "BANG_QR")) draw(12.2, 4.2, (x, y, gg) => { gg.fillStyle(0xf8f8f4, 1).fillRect(x - 7, y - 62, 14, 16); gg.fillStyle(0x222222, 1).fillRect(x - 5, y - 60, 4, 4).fillRect(x + 1, y - 60, 4, 4).fillRect(x - 5, y - 54, 4, 4).fillRect(x + 1, y - 52, 2, 2); });
-    if (has(e, "LOA_RAO")) draw(10.2, 0.6, (x, y, gg) => { gg.fillStyle(0x3a3f45, 1).fillTriangle(x - 8, y - 86, x + 8, y - 80, x + 8, y - 92).fillRect(x - 12, y - 90, 5, 8); });
+    if (has(e, "QUAT_DIEN")) this.addMounted("aircon", 3.28, 2.42, 60, 0.238, 0.992, depthOf(3.5, 2.4) + 1);
+    // Mặt tường ngoài nhìn ra đường, sát lối vào quán.
+    if (has(e, "LOA_RAO")) this.addMounted("speaker", 2.97, 6, 76, 0.996, 0.487, depthOf(2.9, 6.05));
+    const top = this.orderTop;
+    if (has(e, "BANG_QR") && top && this.textures.exists("qr")) {
+      fitPhoto(this.add.image(top.x - 9, top.y + 6, "qr")).setOrigin(0.697, 0.994).setDepth(top.depth + 1);
+    }
     /* Vẽ đúng `SEAT_SPOT`, chỗ người ta ngồi. */
     if (has(e, "GHE_BAN")) draw(SEAT_SPOT.x, SEAT_SPOT.y, (x, y, gg) => {
       gg.fillStyle(0x2f6fb3, 1).fillRect(x - 10, y - 12, 20, 4).fillRect(x - 9, y - 8, 3, 8).fillRect(x + 6, y - 8, 3, 8);
@@ -2680,22 +2691,11 @@ export class StallScene extends Phaser.Scene {
     this.addStorage(has(e, "TU_MAT"));
   }
 
-  /** Khối vẽ tạm cho máy lạnh, gắn mặt tường x giữa góc và đèn ô (2, 3); có model thì thay. */
-  private addAirCon() {
-    const WX = 3, WY0 = 1.7, WY1 = 2.4, OUT = 0.28, Z0 = 62, Z1 = 76;
-    const p = (wx: number, wy: number, z: number) => { const s = toScreen(wx, wy); return new Phaser.Math.Vector2(s.sx, s.sy - z); };
-    const g = this.add.graphics().setDepth(depthOf(2.5, 2.5) + 10);
-    const front = [p(WX + OUT, WY0, Z0), p(WX + OUT, WY1, Z0), p(WX + OUT, WY1, Z1), p(WX + OUT, WY0, Z1)];
-    const top = [p(WX, WY0, Z1), p(WX + OUT, WY0, Z1), p(WX + OUT, WY1, Z1), p(WX, WY1, Z1)];
-    const side = [p(WX, WY1, Z0), p(WX + OUT, WY1, Z0), p(WX + OUT, WY1, Z1), p(WX, WY1, Z1)];
-    g.fillStyle(0xd9dee2, 1).fillPoints(side, true);
-    g.fillStyle(0xf4f6f7, 1).fillPoints(top, true);
-    g.fillStyle(0xeceff1, 1).fillPoints(front, true);
-    g.lineStyle(1, 0xa9b1b7, 1).strokePoints(front, true);
-    const v0 = p(WX + OUT, WY0 + 0.06, Z0 + 4), v1 = p(WX + OUT, WY1 - 0.06, Z0 + 4);
-    g.lineStyle(1, 0xb8c0c5, 1).lineBetween(v0.x, v0.y, v1.x, v1.y);
-    const led = p(WX + OUT, WY1 - 0.1, Z0 + 8);
-    g.fillStyle(0x4fd06a, 1).fillCircle(led.x, led.y, 1);
+  /** Ảnh gắn tường: điểm (`ax`, `ay`) của ảnh nằm ở điểm thế giới (`wx`, `wy`) cao `z` px. */
+  private addMounted(key: keyof typeof MOUNTED, wx: number, wy: number, z: number, ax: number, ay: number, depth: number) {
+    if (!this.textures.exists(key)) return;
+    const { sx, sy } = toScreen(wx, wy);
+    fitPhoto(this.add.image(sx, sy + BASE - z, key)).setOrigin(ax, ay).setDepth(depth);
   }
 
   /**
@@ -2875,7 +2875,7 @@ export class StallScene extends Phaser.Scene {
       onClose: () => {
         this.phoneView = null;
         if (tourOrdered(this.world)) this.quest("CHO", true);
-        this.hud.setUnread(totalUnread(this.world.phone) + unseen(this.world));
+        this.hud.setUnread(phoneBadge(this.world));
         if (!this.closed) this.resume();
       },
     });

@@ -7,6 +7,7 @@ import { GazeMachine, WALKIN_GAZE, type GazeState } from "./gaze";
 import { ReactionState } from "./reaction";
 import { CALM_MOOD, type Mood } from "./mood";
 import { newDrives, type DriveLevels } from "./drives";
+import type { Channel, ClipState } from "./vietsoci";
 
 export type CustomerPhase =
   | "arriving"
@@ -119,7 +120,9 @@ export class Customer implements Observer {
   sitUntil = 0;
   filming = false;
   filmUntil = 0;
-  filmSpoiled = false;
+  /** Clip đang quay đã dính cảnh gì. */
+  filmState: ClipState = "sach";
+  filmChannel: Channel = "su";
   /** Đứng chắn chỗ đưa hàng lúc chưa tới lượt — khác `cutLine` và `aside`. */
   blocking = false;
   eating = false;

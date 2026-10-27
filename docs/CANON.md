@@ -445,7 +445,7 @@ REMEMBERED_USUAL--0.20--> "ngon nhất khu này"           # tin tốt cũng ph�
 |---|---|---|
 | **Thắng** | Tổng tiền ≥ **mốc thắng** (50tr chỉ gợi ý). Tiêu chí chọn mốc: chơi ổn định thắng trong thời lượng mục tiêu · **không thắng được trước khi mở hết topping** · chơi bẩn lời nhanh nhưng rủi ro ATTP **lớn hơn lợi** | **Mở chi nhánh 2**, quán thành thương hiệu. Tường review, biển hiệu mới |
 | **Thua — điều tra ATTP** | Sao TB **≤ 3★** **và** **> 10 review 1–2★ do đau bụng** → đóng cửa | Màn game over đơn giản. Màn "nộp lại CV" **tuỳ chọn**, có thể không làm |
-| **Thua — phá sản** | **Hết tiền nhập hàng** (user chốt 2026-10-20) | Màn game over đơn giản |
+| **Thua — phá sản** | Ống **không đủ tiền chỗ** sáng mai (user chốt 2026-10-27), **hoặc** trả tiền chỗ xong + bán đồ nghề vẫn **hết tiền nhập hàng** (user chốt 2026-10-20). Không có nợ tiền chỗ | Màn game over đơn giản |
 
 ☠️ ~~**Fail mềm nhưng vĩnh viễn**: nghĩa vụ định kỳ — tiền thuê chỗ, tiền hụi, tiền học. Không trả không chết, nhưng mất thứ không lấy lại được. Và khách ruột mất là mất thật.~~
 

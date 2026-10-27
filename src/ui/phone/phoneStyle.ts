@@ -425,6 +425,33 @@ export const PHONE_STYLE = `
 .sys-result{margin-bottom:10px}
 .wheel .ph-primary{margin-top:6px}
 
+/* ── VietSoci ── */
+.ph-vs-feed{padding:8px 0 16px;display:flex;flex-direction:column;align-items:center;gap:8px;background:#e9ebee;min-height:100%}
+.ph-vs{background:#fff;width:100%;max-width:520px}
+.ph-vs .hd{display:flex;align-items:center;gap:8px;padding:10px 12px 6px}
+.ph-vs .av{flex:none;width:34px;height:34px;border-radius:50%;background:#1d4ed8;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}
+.ph-vs .who{display:flex;flex-direction:column;min-width:0}
+.ph-vs .who span{font-size:max(var(--fmin),.78em);color:#6b7680}
+.ph-vs .cap{padding:2px 12px 8px;line-height:1.45}
+.ph-vs .pic{position:relative;display:block;width:100%;padding:0;border:0;background:#111;cursor:pointer}
+.ph-vs .pic img{display:block;width:100%;aspect-ratio:4/3;max-height:62vh;object-fit:cover}
+.ph-vs .pic.video::after{content:"";position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;background:rgba(0,0,0,.55) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 7v10l8-5z' fill='%23fff'/%3E%3C/svg%3E") center/30px no-repeat}
+.ph-vs .st{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;color:#6b7680;font-size:max(var(--fmin),.82em)}
+.ph-vs .lk{display:flex;align-items:center;gap:4px}
+.ph-vs .fa{display:inline-flex;width:1.1em;height:1.1em}
+.ph-vs .fa svg{width:100%;height:100%}
+.ph-vs .lk .fa{width:1.35em;height:1.35em;padding:.22em;border-radius:50%;color:#fff;margin-right:-2px}
+.ph-vs .lk .like{background:#1d4ed8}
+.ph-vs .lk .love{background:#e0245e;margin-right:4px}
+.ph-vs .ac{display:flex;justify-content:space-around;margin:0 12px;padding:6px 0;border-top:1px solid #eceef1;border-bottom:1px solid #eceef1;color:#5f6b76;font-size:max(var(--fmin),.85em);font-weight:600}
+.ph-vs .ac span{display:flex;align-items:center;gap:6px}
+.ph-vs .cm{padding:8px 12px 12px;display:flex;flex-direction:column;gap:6px;font-size:max(var(--fmin),.9em);line-height:1.4}
+.ph-vs .cm div{background:#f0f2f5;border-radius:14px;padding:6px 10px;align-self:flex-start;max-width:90%}
+.ph-vslink{display:flex;gap:8px;align-items:center;width:100%;margin-top:8px;padding:6px;border:0;border-radius:10px;background:rgba(0,0,0,.06);font:inherit;color:inherit;text-align:left;cursor:pointer}
+.ph-vslink img{flex:none;width:56px;height:42px;border-radius:6px;object-fit:cover;background:#111}
+.ph-vslink .tx{display:flex;flex-direction:column;gap:2px;min-width:0;font-size:max(var(--fmin),.85em);line-height:1.35}
+.ph-vslink .tx span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
 /* ── Đánh giá: danh sách + Hồi Tâm ── */
 .ph-revs{padding:10px 14px 16px;display:flex;flex-direction:column;gap:8px}
 .ph-rev{background:#fff;border-radius:16px;padding:12px 14px 6px;box-shadow:0 1px 2px rgba(0,0,0,.06)}

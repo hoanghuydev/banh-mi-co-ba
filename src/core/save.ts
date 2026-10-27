@@ -14,6 +14,7 @@ import { newShop, type ShopState } from "../sim/shop";
 import { newResell, type ResellState } from "../sim/resell";
 import { newReviews, type ReviewState } from "../sim/reviews";
 import { newAch, type AchState } from "../sim/ach";
+import { newVietsoci, type VietsociState } from "../sim/vietsoci";
 
 export { loadSettings, saveSettings, DEFAULT_SETTINGS, type Settings } from "./flags";
 
@@ -105,6 +106,7 @@ export type SaveFile = {
   shop: ShopState;
   resell: ResellState;
   reviews: ReviewState;
+  vietsoci: VietsociState;
   ach: AchState;
   /** Mốc giá đang chọn theo mã món: 0 rẻ · 1 thường · 2 đắt; thiếu = thường. */
   menu: { price: Record<string, number> };
@@ -156,6 +158,7 @@ export function newGame(name: string, saveId = uuid()): SaveFile {
     shop: newShop(),
     resell: newResell(),
     reviews: newReviews(),
+    vietsoci: newVietsoci(),
     ach: newAch(),
     menu: { price: {} },
     a11y: { ...DEFAULT_SETTINGS, ...loadSettings() },
@@ -176,6 +179,7 @@ function normalize(s: SaveFile): SaveFile {
   s.shop = { ...d.shop, ...s.shop };
   s.resell = { ...d.resell, ...s.resell };
   s.reviews = { ...d.reviews, ...s.reviews };
+  s.vietsoci = { ...d.vietsoci, ...s.vietsoci };
   s.ach = { ...d.ach, ...s.ach };
   s.equipment = {
     ...s.equipment,

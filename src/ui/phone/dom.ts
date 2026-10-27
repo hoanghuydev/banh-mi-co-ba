@@ -1,3 +1,4 @@
+import { faUserGroup } from "@fortawesome/free-solid-svg-icons";
 export function el<K extends keyof HTMLElementTagNameMap>(
   tag: K, cls = "", text = "",
 ): HTMLElementTagNameMap[K] {
@@ -29,6 +30,7 @@ export const ICON = {
   note: svg('<rect x="5" y="3.5" width="14" height="17" rx="2.5" fill="#fff"/><path d="M8.5 9h7M8.5 12.5h7M8.5 16h4" stroke="#c98a1d" stroke-width="1.7" stroke-linecap="round"/>', 38),
   sys: svg('<g stroke="#19e3ff" stroke-width="1.6" stroke-linecap="round"><path d="M8 3v3M12 3v3M16 3v3M8 18v3M12 18v3M16 18v3M3 8h3M3 12h3M3 16h3M18 8h3M18 12h3M18 16h3"/><rect x="6" y="6" width="12" height="12" rx="1.5" fill="#06222c"/><rect x="9.5" y="9.5" width="5" height="5" fill="#39ff9c" stroke="none"/><path d="M6 12h3.5M14.5 12H18M12 6v3.5M12 14.5V18" stroke-width="1"/></g>', 40),
   bag: svg('<path d="M6 8h12l1 12H5z" fill="#fff"/><path d="M9 8V7a3 3 0 016 0v1" stroke="#fff" stroke-width="2" stroke-linecap="round"/>', 38),
+  soci: svg(`<path d="${faUserGroup.icon[4]}" fill="#fff" transform="translate(3.6 5.2) scale(0.0261)"/>`, 38),
   tag: svg('<path d="M3 12V4h8l10 10-8 8z" fill="#fff"/><circle cx="7.5" cy="8.5" r="1.6" fill="#2189a8"/>', 38),
   bagLine: svg('<path d="M6 8h12l1 12H5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 8V7a3 3 0 016 0v1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>', 24),
   cart: svg('<path d="M3 4h3l2 11h10l2-8H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="19" r="1.6" fill="currentColor"/><circle cx="17" cy="19" r="1.6" fill="currentColor"/>', 24),

@@ -400,6 +400,7 @@ export class MenuDom {
     credit.append(
       el("p", "", `Nhạc tạm: ${tracks} — Kevin MacLeod (incompetech.com), CC BY 4.0.`),
       el("p", "", "Tiếng động tạm: thư viện Freesound, toàn bộ giấy phép CC0. Nền hẻm, chợ và tiếng người là bản thu thật ở TP.HCM."),
+      el("p", "", "Biểu tượng trong app VietSoci: Font Awesome Free (fontawesome.com), CC BY 4.0."),
       el("p", "", `Bản dựng thử v0.2${PLAYTEST ? " · chơi thử" : ""}`),
     );
     card.append(credit);

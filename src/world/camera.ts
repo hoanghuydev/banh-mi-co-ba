@@ -4,15 +4,17 @@
  */
 import Phaser from "phaser";
 import { GAME_W, GAME_H } from "../core/config";
-import { RENDER_SCALE, fitDesignFrame } from "../core/render";
+import { MAX_SCALE, RENDER_SCALE, fitDesignFrame } from "../core/render";
 import { fitScale, isTouch } from "../core/device";
 
-/** Khung nhìn 800 × 450: vừa cả hàng trạm trên lẫn hàng khách dưới; độ nét đến từ `RENDER_SCALE`. */
-const BASE_ZOOM = 1.28;
+/** Khung 16:9 thấy 613 × 345 px thế giới: gần người chơi, vẫn vừa hàng trạm với quầy đưa hàng; độ nét đến từ `RENDER_SCALE`. */
+export const BASE_ZOOM = 1.67;
+/** Pixel texture tối đa trên một pixel thế giới mà PC vẽ ra màn: dư hơn là phí bộ nhớ, thiếu là mờ. */
+export const WORLD_SS_MAX = BASE_ZOOM * MAX_SCALE;
 /** Trần phóng thêm trên cảm ứng, còn thấy đủ hàng trạm. */
-const TOUCH_ZOOM_MAX = 1.7;
-/** Pixel CSS thật tối thiểu cho một pixel thế giới ở vòng lò (R = 11 → khoảng 12 px). */
-const TOUCH_WORLD_PX = 1.1;
+const TOUCH_ZOOM_MAX = 2.2;
+/** Pixel CSS thật tối thiểu cho một pixel thế giới ở vòng lò (R = 11 → khoảng 16 px). */
+const TOUCH_WORLD_PX = 1.44;
 
 /** Đổi theo thiết bị mỗi lần dựng camera; PC luôn `BASE_ZOOM`. */
 export let ZOOM = BASE_ZOOM;
@@ -26,15 +28,15 @@ export function applyDeviceZoom() {
     : BASE_ZOOM;
 }
 
-/** Rộng hơn quãng thớt → chỗ đưa hàng (360 px) để mỗi lượt khách không thành một cú lia máy. */
-const DEADZONE_W = 420;
-const DEADZONE_H = 170;
+/** Bằng quãng thớt → chỗ đưa hàng (360 px) để mỗi lượt khách không thành một cú lia máy. */
+const DEADZONE_W = 360;
+const DEADZONE_H = 140;
 
 /** 0..1 mỗi frame; thấp = trôi mượt, cao = bám sát. */
 const LERP = 0.09;
 
-/** Camera nhìn thấp hơn chân người chơi chừng này px, để dải đáng nhìn (y ≈ 75…302) nằm giữa khung. */
-const LOOK_DOWN = 4;
+/** Âm là nhìn cao hơn chân người chơi, để hàng vòng lò không chui xuống dưới nút HUD. */
+const LOOK_DOWN = -36;
 /** Cảm ứng nhìn cao hơn để hàng vòng lò không chui xuống dưới nút HUD. */
 const LOOK_DOWN_TOUCH = -48;
 /** Cảm ứng nhìn lệch trái để hàng khách ở mép trái nằm ngoài tầm ngón cái và vùng cắt của khung. */

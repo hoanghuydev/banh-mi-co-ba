@@ -33,6 +33,8 @@ export type LitObject = {
   shadowSoft?: number;
   /** Nhân độ đậm bóng (1 = mặc định); trong tiệm nhạt hơn. */
   shadowAlpha?: number;
+  /** Px thiết kế nâng tâm AO lên, cho ảnh có chân cao hơn đáy khung. */
+  aoUp?: number;
 };
 
 /** Ảnh bóng xám (trắng là nắng) trải trên hình chữ nhật thế giới `x, y, w, h` tính theo ô; `soft` làm nhoè mép (ô), `feather: false` bỏ mờ dần ở 4 mép ảnh. */

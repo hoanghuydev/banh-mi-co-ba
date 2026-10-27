@@ -116,7 +116,7 @@ Quy tắc:
 
 ## 8. Ảnh nguồn
 
-- Ảnh đạo cụ: cạnh ≥ cạnh thiết kế × 3,2; không nướng bóng, sàn, phản chiếu, bóng lá vào sprite (quy trình HD ở skill `tao-anh-game`).
+- Ảnh đạo cụ: cạnh ≥ cạnh thiết kế × 3,34; không nướng bóng, sàn, phản chiếu, bóng lá vào sprite (quy trình HD ở skill `tao-anh-game`).
 - **Ảnh bóng (tán lá, mặt tiền)**: gen bằng ChatGPT, kèm ảnh game đích và ảnh bóng thật; prompt nêu rõ: nhìn từ trên xuống, xám trên nền trắng thuần (trắng #FFFFFF là nắng, xám khoảng #808080 là bóng), không màu, không viền, không chữ; hình cụ thể cần có (lá to, cành, nồi, cột…); độ nét **vừa** (mép mềm vài px), để độ mềm cuối do `soft` chỉnh. Ảnh rộng cho dải mặt tiền.
 - Ảnh sàn: albedo phẳng, ô đường bake cùng mật độ với sàn khác (`FLOOR_SS` 4, `HD_FLOORS` trong `photo.ts`), cắt sâu khỏi mép vát 3D (`ROAD_INSET`).
 

@@ -34,7 +34,7 @@ const ICON_H = 19;
 const EYE_BLINK_MS = 1150;
 
 /** Toast nằm cột phải vì giữa đỉnh màn hình là chỗ nhãn trạm. */
-const TOAST_RIGHT = GAME_W - 26;
+const TOAST_INSET = 26;
 const TOAST_TOP = 150;
 const TOAST_GAP = 6;
 const TOAST_MAX = 3;
@@ -199,10 +199,10 @@ export class Hud {
     for (let i = 0; i < TOAST_MAX; i++) {
       const hit = fixed(scene.add.zone(0, 0, 10, 10).setOrigin(0, 0).setInteractive(), DEPTH + 170);
       const toast: Toast = {
-        text: fixed(scene.add.text(TOAST_RIGHT, 0, "", {
+        text: fixed(scene.add.text(GAME_W - TOAST_INSET, 0, "", {
           fontFamily: FONT, fontStyle: "500", color: UI.ink,
         }).setOrigin(0, 0).setVisible(false), DEPTH + 162),
-        title: fixed(scene.add.text(TOAST_RIGHT, 0, "", {
+        title: fixed(scene.add.text(GAME_W - TOAST_INSET, 0, "", {
           fontFamily: FONT, fontStyle: "700", color: "#6a7680",
         }).setOrigin(0, 0).setVisible(false), DEPTH + 162),
         icon: fixed(scene.add.image(0, 0, ntfKey("info")).setVisible(false), DEPTH + 162),
@@ -251,7 +251,7 @@ export class Hud {
         hands: GAME_W / 2 - 58, pause: GAME_W / 2, phone: GAME_W / 2 + 60, eye: GAME_W / 2 + 124,
         pauseY: 26, phoneY: 26, statL: 26, statR: GAME_W - 26, statY: 20,
         midL: 40, midR: GAME_W - 40,
-        toastRight: TOAST_RIGHT, toastBottom: GAME_H, bodyW: TOAST_BODY_W,
+        toastRight: GAME_W - TOAST_INSET, toastBottom: GAME_H, bodyW: TOAST_BODY_W,
         feedX: 26, feedY: GAME_H - 100, feedW: 380, helpY: GAME_H - 12,
       };
     }

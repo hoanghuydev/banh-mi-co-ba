@@ -100,7 +100,6 @@ export class EveningView {
     R.append(cash);
 
     const says = this.el("div", "ev-says");
-    if (e.rentOwed) says.append(this.el("div", "ev-say", `Chủ nhà: "Tiền chỗ mấy hôm nay con tính sao?"`));
     for (const l of this.opts.lines ?? []) says.append(this.el("div", "ev-say", l));
     if (t.lost) says.append(this.el("div", "ev-note", "có người đợi không nổi rồi về"));
     if (t.priceLost) says.append(this.el("div", "ev-note", `${t.priceLost} khách xem giá rồi bỏ đi`));

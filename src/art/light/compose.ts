@@ -154,7 +154,7 @@ const footCache = new Map<string, Patch>();
 function addFootprint(obj: LitObject, rect: FloorLightInput["rect"], scale: number, ao: Float32Array, W: number, H: number): void {
   const hh = (obj.fh * LIGHT.TILE_H * scale) / 2;
   const cx = Math.round((obj.footX - rect.x) * scale);
-  const cy = Math.round((obj.footY - rect.y) * scale - hh);
+  const cy = Math.round((obj.footY - (obj.aoUp ?? 0) - rect.y) * scale - hh);
   const hw = ((obj.fw * LIGHT.TILE_W * scale) / 2) * LIGHT.AO_GROW;
   const sigma = 0.12 * LIGHT.TILE_W * obj.fw * scale;
   const key = `${hw}|${hh}|${sigma}`;

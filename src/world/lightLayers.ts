@@ -226,7 +226,11 @@ export class SceneLight {
       objects.push({
         img,
         indoor: indoorWeight(footWy) > 0.5,
-        obj: { img: pixels, imgScale: artScale(key), footX: img.x, footY: img.y, ...spec, ...(indoor ? INDOOR_SHADOW : {}) },
+        obj: {
+          img: pixels, imgScale: artScale(key), footX: img.x, footY: img.y, ...spec, ...(indoor ? INDOOR_SHADOW : {}),
+          shadowK: (indoor ? INDOOR.k : LIGHT.SUN_K) * (spec.shadow ?? 1),
+          shadowAlpha: (indoor ? INDOOR.alpha : 1) * (spec.dim ?? 1),
+        },
       });
     }
   }

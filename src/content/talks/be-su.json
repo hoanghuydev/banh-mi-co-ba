@@ -21,7 +21,8 @@
             "reply": "Em quay lẹ thôi chị.",
             "act": {
               "kind": "FILM",
-              "forSec": 20
+              "forSec": 20,
+              "channel": "su"
             }
           },
           {
@@ -111,7 +112,8 @@
               "mood": "CUOI",
               "act": {
                 "kind": "FILM",
-                "forSec": 20
+                "forSec": 20,
+                "channel": "su"
               }
             },
             {
@@ -149,7 +151,8 @@
               "ref": "chao",
               "act": {
                 "kind": "FILM",
-                "forSec": 20
+                "forSec": 20,
+                "channel": "su"
               }
             },
             {
@@ -1061,7 +1064,8 @@
               "mood": "CUOI_TUOI",
               "act": {
                 "kind": "FILM",
-                "forSec": 20
+                "forSec": 20,
+                "channel": "su"
               }
             },
             {
@@ -1077,7 +1081,8 @@
               "mood": "LANH",
               "act": {
                 "kind": "FILM",
-                "forSec": 20
+                "forSec": 20,
+                "channel": "su"
               }
             }
           ]

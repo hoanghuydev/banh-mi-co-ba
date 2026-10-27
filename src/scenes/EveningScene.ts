@@ -8,9 +8,8 @@ import { EveningView } from "../ui/evening/EveningView";
 import { eveningCounting, neighborTick } from "../sim/day";
 import { music } from "../audio/music";
 import { sfx } from "../audio/sfx";
-import { phoneTick, totalUnread } from "../sim/phone";
-import { unseen } from "../sim/reviews";
-import { PhoneView, type Route } from "../ui/phone/PhoneView";
+import { phoneTick } from "../sim/phone";
+import { PhoneView, phoneBadge, type Route } from "../ui/phone/PhoneView";
 import { showBanner } from "../ui/phone/banner";
 
 export class EveningScene extends Phaser.Scene {
@@ -44,7 +43,7 @@ export class EveningScene extends Phaser.Scene {
     const s = loadSettings();
     this.view = new EveningView(w, {
       textScale: s.textScale, lines: neighbor,
-      unread: () => totalUnread(w.phone) + unseen(w), onPhone: () => this.openPhone(),
+      unread: () => phoneBadge(w), onPhone: () => this.openPhone(),
       onSleep: () => this.settle(),
     });
     this.input.keyboard?.on("keydown-TAB", (ev: KeyboardEvent) => { ev.preventDefault(); this.openPhone(); });

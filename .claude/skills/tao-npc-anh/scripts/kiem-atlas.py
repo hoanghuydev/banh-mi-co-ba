@@ -19,6 +19,7 @@ MOTION = 16.0    # biên độ: |Δ| RGBA trung bình giữa frame liền kề �
 COLOR = 8.0      # lệch màu trung bình so với ảnh đứng im (0–255)
 SIZE = 0.13      # lệch bề ngang đầu so với ảnh đứng im (anh Bảo 3D tới 8%, chú Đạt đã duyệt tới 12%)
 FOOT = 0.05      # đáy chân lệch đáy chung, theo chiều cao ô (3D nhún tới 4%)
+DUNG = 0.95      # cao đứng / trung vị cao đi (3D 1,00–1,02); thấp hơn là ảnh đứng lùn, đầu to hơn lúc đi
 KHEP = 0.75      # độ dang chân ở 2 frame khép nhất của mẫu / ở 2 frame dang nhất (anh Bảo 0,36–0,45; lỗi chân không đổi phiên 0,80–1,03)
 REF = Path(__file__).resolve().parents[4] / "public" / "art" / "anh-bao.json"
 
@@ -64,6 +65,10 @@ def spread(im):
     return (xs[-1] - xs[0]) / (b - t)
 
 
+def top_y(im):
+    return int(np.nonzero((np.asarray(im)[..., 3] > 128).any(axis=1))[0][0])
+
+
 def foot_y(im):
     return int(np.nonzero((np.asarray(im)[..., 3] > 128).any(axis=1))[0][-1])
 
@@ -72,7 +77,7 @@ def main():
     if len(sys.argv) < 2:
         sys.exit(__doc__)
     cells = load(sys.argv[1])
-    errs, warns = [], []
+    errs, warns, dung = [], [], []
     ref = load(REF)
 
     need = [f"idle_{d}_00" for d in DIRS] + [f"walk_{d}_{j:02d}" for d in DIRS for j in range(WALK)]
@@ -121,7 +126,11 @@ def main():
             khep = f", khép chân {k:.2f}"
             if k > KHEP:
                 warns.append(f"walk_{d}: khép chân {k:.2f} > {KHEP} — pha chuyển tiếp vẽ thành bước dài? soi soi-chan")
-        print(f"{d:>2}: {len(shapes)} hình khác nhau, biên độ {motion:.1f}, màu lệch {dc:.1f}{khep}")
+        hd = (foot_y(idle[d]) - top_y(idle[d])) / float(np.median([foot_y(f) - top_y(f) for f in fr]))
+        dung.append(hd)
+        print(f"{d:>2}: {len(shapes)} hình khác nhau, biên độ {motion:.1f}, màu lệch {dc:.1f}{khep}, cao đứng/đi {hd:.2f}")
+    if np.mean(dung) < DUNG:
+        errs.append(f"ảnh đứng lùn hơn lúc đi: cao đứng/đi trung bình {np.mean(dung):.3f} < {DUNG} — gen lại 8 hướng đứng theo tỉ lệ dải đi")
     for d in DIRS:
         if abs(foot_y(idle[d]) - base) > tol:
             errs.append(f"idle_{d}: chân lệch đáy {foot_y(idle[d]) - base:+d}px")

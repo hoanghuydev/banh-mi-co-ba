@@ -1,5 +1,4 @@
 import Phaser from "phaser";
-import { TW, TH } from "../world/iso";
 
 /** Các texture hạt vẽ trắng để emitter `tint`. */
 export const FX = {
@@ -8,15 +7,20 @@ export const FX = {
 } as const;
 
 /** Tam giác đặc chứ không chữ, vì trên đầu khách đã có `?` và `!`. */
-const YOU_W = 18, YOU_H = 13, YOU_PAD = 3;
+const YOU_W = 13, YOU_H = 9, YOU_PAD = 3;
 const YOU_INK = 0x2b2f31;
 const YOU_FILL = 0xffe9a8;
 
-/** Nét ngoài dày 6 thò ra 3px, cộng 1px để khỏi bị xén. */
-const RING_PAD = 4;
-const RING_INK = YOU_INK;
-const RING_EDGE = 0xffa726;
-const RING_CORE = 0xfff0c2;
+/** Nửa bề ngang ô thoi của khung góc, hụt mép ô 2,5 px để nhịp phình không chạm ô bên. */
+const RING_HW = 27.5;
+/** Mỗi nhánh chữ V dài bằng chừng này phần cạnh ô. */
+const RING_ARM = 0.3;
+const RING_PAD = 3;
+/** Nướng dày gấp chừng này để nét dưới 1 px vẫn mịn khi camera phóng; `StallScene` chia lại. */
+export const RING_SS = 4;
+const RING_SHADOW = "rgba(70,44,18,0.38)";
+const RING_EDGE = "#dc9636";
+const RING_CORE = "rgba(255,247,226,0.95)";
 
 /** Cố ý to hơn cỡ thật để độ bẩn nhìn thấy được. */
 export const FLY_W = 7;
@@ -37,18 +41,7 @@ export const RIPPLE_W = 32;
 const RIPPLE_H = 16;
 
 export function buildFx(scene: Phaser.Scene) {
-  // Ba nét (mực sậm · hổ phách · lõi sáng) để đọc được trên cả nền gạch trắng lẫn nền sậm.
-  const g2 = scene.make.graphics({ x: 0, y: 0 }, false);
-  const cx = (TW + RING_PAD * 2) / 2, cy = (TH + RING_PAD * 2) / 2;
-  const rw = TW - 12, rh = TH - 6;
-  g2.lineStyle(6, RING_INK, 0.5);
-  g2.strokeEllipse(cx, cy, rw, rh);
-  g2.lineStyle(3.5, RING_EDGE, 1);
-  g2.strokeEllipse(cx, cy, rw, rh);
-  g2.lineStyle(1.5, RING_CORE, 1);
-  g2.strokeEllipse(cx, cy, rw, rh);
-  g2.generateTexture(FX.ring, TW + RING_PAD * 2, TH + RING_PAD * 2);
-  g2.destroy();
+  ringTexture(scene);
 
   // Dự phòng; `art/photo.ts` đè ảnh thật lên nếu `fly.png` tải kịp.
   const g3 = scene.make.graphics({ x: 0, y: 0 }, false);
@@ -99,4 +92,33 @@ export function buildFx(scene: Phaser.Scene) {
   g7.strokeEllipse(rcx, rcy, RIPPLE_W - 4, RIPPLE_H - 4);
   g7.generateTexture(FX.ripple, RIPPLE_W, RIPPLE_H);
   g7.destroy();
+}
+
+/** Bốn góc chữ V ôm ô thoi; bóng nâu lệch xuống để vàng nhạt vẫn nổi trên gạch trắng. */
+function ringTexture(scene: Phaser.Scene) {
+  if (scene.textures.exists(FX.ring)) scene.textures.remove(FX.ring);
+  const hh = RING_HW / 2, w = (RING_HW + RING_PAD) * 2, h = (hh + RING_PAD) * 2;
+  const tex = scene.textures.createCanvas(FX.ring, w * RING_SS, h * RING_SS);
+  if (!tex) return;
+  const ctx = tex.getContext();
+  ctx.scale(RING_SS, RING_SS);
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  const V = [[0, -hh], [RING_HW, 0], [0, hh], [-RING_HW, 0]];
+  const corners = (dy: number) => {
+    ctx.beginPath();
+    V.forEach(([x, y], i) => {
+      const [px, py] = V[(i + 3) % 4], [nx, ny] = V[(i + 1) % 4];
+      ctx.moveTo(w / 2 + x + (px - x) * RING_ARM, h / 2 + dy + y + (py - y) * RING_ARM);
+      ctx.lineTo(w / 2 + x, h / 2 + dy + y);
+      ctx.lineTo(w / 2 + x + (nx - x) * RING_ARM, h / 2 + dy + y + (ny - y) * RING_ARM);
+    });
+  };
+  for (const [dy, lw, col] of [[0.8, 2.9, RING_SHADOW], [0, 2, RING_EDGE], [0, 0.6, RING_CORE]] as const) {
+    corners(dy);
+    ctx.lineWidth = lw;
+    ctx.strokeStyle = col;
+    ctx.stroke();
+  }
+  tex.refresh();
 }

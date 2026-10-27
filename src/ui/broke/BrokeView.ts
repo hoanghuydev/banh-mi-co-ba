@@ -70,8 +70,9 @@ export class BrokeView {
         `Bị đình chỉ vì an toàn thực phẩm: ${a.n} đánh giá đau bụng trong ${SICK_WINDOW_DAYS} ngày, sao trung bình ${starText(average(w))}.`));
     } else {
       const r = brokeReport(w);
-      card.append(el("div", "bk-why",
-        `Tiền quán còn ${money(r.cash + r.resale)}, không đủ nhập hàng cho ngày mai (cần ${money(r.need)}).`));
+      card.append(el("div", "bk-why", r.why === "rent"
+        ? `Trong ống còn ${money(r.cash)}, không đủ trả tiền chỗ sáng mai (${money(r.rent)}).`
+        : `Trả tiền chỗ xong, tiền quán còn ${money(r.cash - r.rent + r.resale)}, không đủ nhập hàng cho ngày mai (cần ${money(r.need)}).`));
     }
     page.append(
       card,

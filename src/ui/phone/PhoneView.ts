@@ -20,6 +20,8 @@ import { page, type AppCtx, type Dir, type Host, type Route } from "./ctx";
 import { ICON, btn, el, money } from "./dom";
 import { OrderTour } from "./orderTour";
 import { PhoneShell } from "./PhoneShell";
+import { vietsociApp } from "./apps/vietsociApp";
+import { unseenPosts } from "../../sim/vietsoci";
 
 export type { Route } from "./ctx";
 
@@ -47,14 +49,19 @@ const APPS: AppDef[] = [
   { key: "shop", label: "Thực phẩm", icon: ICON.bag, bg: "linear-gradient(160deg,#ff8a5c,#e5532b)", badge: (w) => inTransit(w).length },
   { key: "gear", label: "Đồ nghề", icon: ICON.tool, bg: "linear-gradient(160deg,#8d9aa6,#55626e)", badge: (w) => w.shop.gearOrders.filter((o) => !o.delivered).length },
   { key: "ach", label: "Danh hiệu", icon: ICON.medal, bg: "linear-gradient(160deg,#f0b04a,#b9722a)", badge: () => achUnseen() },
+  { key: "vs", label: "VietSoci", icon: ICON.soci, bg: "linear-gradient(160deg,#4f7cf0,#1d4ed8)", badge: unseenPosts },
   { key: "sell", label: "Rao bán", icon: ICON.tag, bg: "linear-gradient(160deg,#4fc3d9,#2189a8)" },
 ];
+
+/** Chấm đỏ trên nút điện thoại: tin nhắn, đánh giá, bài VietSoci chưa xem. */
+export const phoneBadge = (w: SaveFile) => totalUnread(w.phone) + unseen(w) + unseenPosts(w);
 
 const parentOf = (r: Route): Route | null => {
   switch (r.app) {
     case "chat": return { app: "msg" };
     case "members": return { app: "chat", id: r.id };
     case "edit": case "day": return { app: "note" };
+    case "vs": return r.id ? { app: "vs" } : { app: "home" };
     case "home": return null;
     default: return { app: "home" };
   }
@@ -117,6 +124,7 @@ export class PhoneView {
         case "gear": return gearApp(c);
         case "sell": return sellApp(c);
         case "ach": return achApp(c);
+        case "vs": return vietsociApp(c);
       }
     };
     let body: HTMLElement;

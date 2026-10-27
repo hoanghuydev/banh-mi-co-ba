@@ -1,5 +1,5 @@
 {
-  "_note": "Khách vãng lai — hệ quả của họ chỉ nằm trong LƯỢT GHÉ NÀY (`anger`, bỏ đi). Vì vậy đây là chỗ DUY NHẤT được phép viết người tới quậy thiệt: chửi, trả giá, doạ quay clip, say xỉn. Người chơi gọi họ bằng vai nào cũng được (WALKIN_CALLS). Đa số khách lạ KHÔNG bắt chuyện — họ mua bánh mì rồi đi. TẦNG `PLAYER_ONLY` (5 cuộc cuối file): `opener` khai cho đủ schema chứ KHÔNG lên màn hình (`Service` chỉ phát `opener` ở đường `offerTalk`), nhịp đầu của `tree` CHÍNH LÀ câu mở lời của người chơi. Luật viết: (a) cấm mọi câu giả định đã quen — không 'bữa trước', không 'dạo này'; (b) chuyện phải là chuyện giữa người bán và một người lạ ĐANG ĐỢI ổ bánh (khẩu vị, mới tới khu, nắng, kẹt xe, cắm mặt điện thoại, chen hàng), không phải chuyện phiếm chung; (c) mọi đại từ là chỗ trống `{call}` `{me}` `{self}` `{you}` và mọi câu phải đọc được với CẢ TÁM dáng người ở `WALKIN_ADDRESS` — bà cụ lưng còng đọc được thì anh nón bảo hiểm mới đọc được; đừng để `{you}` và `{self}` chung một mệnh đề.",
+  "_note": "Khách vãng lai — hệ quả của họ chỉ nằm trong LƯỢT GHÉ NÀY (`anger`, bỏ đi). Vì vậy đây là chỗ DUY NHẤT được phép viết người tới quậy thiệt: chửi, trả giá, doạ quay clip, say xỉn. Người chơi gọi họ bằng vai nào cũng được (WALKIN_CALLS). Đa số khách lạ KHÔNG bắt chuyện — họ mua bánh mì rồi đi. TẦNG `PLAYER_ONLY` (5 cuộc cuối file): `opener` khai cho đủ schema chứ KHÔNG lên màn hình (`Service` chỉ phát `opener` ở đường `offerTalk`), nhịp đầu của `tree` CHÍNH LÀ câu mở lời của người chơi. Luật viết: (a) cấm mọi câu giả định đã quen — không 'bữa trước', không 'dạo này'; (b) chuyện phải là chuyện giữa người bán và một người lạ ĐANG ĐỢI ổ bánh (khẩu vị, mới tới khu, nắng, kẹt xe, cắm mặt điện thoại, chen hàng), không phải chuyện phiếm chung; (c) mọi đại từ là chỗ trống `{call}` `{me}` `{self}` `{you}` và mọi câu phải đọc được với MỌI dáng người ở `WALKIN_ADDRESS` — bà cụ lưng còng đọc được thì anh nón bảo hiểm mới đọc được; đừng để `{you}` và `{self}` chung một mệnh đề.",
   "talks": [
     {
       "id": "walkin.chemac",
@@ -254,7 +254,8 @@
           ],
           "act": {
             "kind": "FILM",
-            "forSec": 20
+            "forSec": 20,
+            "channel": "review"
           }
         }
       ],

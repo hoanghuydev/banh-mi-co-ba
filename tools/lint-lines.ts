@@ -118,7 +118,7 @@ function collect(contentDir: string): { bags: Bag[]; save: () => void } {
       go(t.tree ?? [], 1);
       for (const sub of Object.values(t.shared ?? {})) go(sub as any[], 1);
       // Chỗ trống DANH XƯNG (sim/talk.WALKIN_ADDRESS, điền ở `Service.fill`): một bộ
-      // thoại dùng chung cho tám dáng người thì không viết cứng "anh" vào được.
+      // thoại dùng chung cho mọi dáng người thì không viết cứng "anh" vào được.
       const vars = [...ADDRESS_VARS, ...FILL_VARS];
       bags.push({ file: f, where: `talk ${t.id}.bong-bong`, vi: bubbleLines, vars, npc: t.npc, noVariants: true, set: () => {} });
       bags.push({ file: f, where: `talk ${t.id}.npc`, vi: npcLines, vars, npc: t.npc, noVariants: true, box: PANEL, set: () => {} });
@@ -131,7 +131,7 @@ function collect(contentDir: string): { bags: Bag[]; save: () => void } {
     const rules: any[] = Array.isArray(data) ? data : data.rules ?? [data];
     for (const rule of rules) {
       bags.push({
-        file: f, where: `rule ${rule.id}`, vi: rule.say ?? [], en: rule.en, vars: ["mon"], npc: rule.when?.npcId,
+        file: f, where: `rule ${rule.id}`, vi: rule.say ?? [], en: rule.en, vars: ["mon", "self", "you", "call", "me"], npc: rule.when?.npcId,
         set: (vi) => { rule.say = vi; dirty.set(f, () => writeFileSync(f, JSON.stringify(data, null, 2) + "\n")); },
       });
     }

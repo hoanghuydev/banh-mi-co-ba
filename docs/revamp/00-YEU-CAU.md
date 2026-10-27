@@ -299,9 +299,9 @@ Ra **báo cáo research + vài phương án mock** trước, chủ dự án ch�
 **Mục tiêu.** Chạm sự kiện hoặc làm được việc gì đó thì được một danh hiệu; app **Danh hiệu** trong điện thoại bày thành lưới ô để sưu tập.
 Vui ở chỗ **không ai nói trước** — ô xám trong lưới là lời mời thử, và vài cái chỉ lộ ra khi đã đạt.
 
-### T8.1 — Bảng danh hiệu (52 cái)
+### T8.1 — Bảng danh hiệu (51 cái)
 
-Dữ liệu: `src/content/ach.ts` (`ACH_LIST`). Hạng Đồng 15 · Bạc 21 · Vàng 11 · Kim cương 5. ✗ = danh hiệu thất bại (13). (ẩn) = che tên và điều kiện tới khi đạt (17).
+Dữ liệu: `src/content/ach.ts` (`ACH_LIST`). Hạng Đồng 15 · Bạc 20 · Vàng 11 · Kim cương 5. ✗ = danh hiệu thất bại (13). (ẩn) = che tên và điều kiện tới khi đạt (17).
 Điều kiện chỉ đọc dữ liệu có sẵn; chỗ cần đếm thì có bộ đếm trong `SaveFile.ach`.
 
 | # | Tên | Hạng | Điều kiện | Nguồn dữ liệu |
@@ -339,25 +339,24 @@ Dữ liệu: `src/content/ach.ts` (`ACH_LIST`). Hạng Đồng 15 · Bạc 21 ·
 | 31 | Tiền nào của nấy | Bạc | Mua tủ mát | `equipment.owned` |
 | 32 | Ăn ngon ngủ yên | Bạc | 30 ngày liền không ai đau bụng | `ledger.sick` |
 | 33 | Buôn có bạn bán có phường | Bạc | Đặt hàng đủ 7 nhà cung cấp | `ach.sup` (`placeOrder`) |
-| 34 | Khổ trước sướng sau | Bạc | Trả hết nợ mặt bằng sau khi từng nợ | `ach.owed`, `econ.rentOwed` |
-| 35 | Râu ông cằm bà (ẩn) | Bạc | Nhận đánh giá nhầm quán | `review.noise === nham` |
-| 36 | Trên trời rơi xuống (ẩn) | Bạc | Quay trúng đồ nghề miễn phí | `ach.baoKhi` (`spin`) |
-| 37 | Góp gió thành bão | Vàng | 1.600 ổ | tổng ổ |
-| 38 | Tiền vào như nước | Vàng | Có 20 triệu tiền mặt | `money.cash` |
-| 39 | Mở mày mở mặt | Vàng | Đạt mốc tiền thắng | `flags.won` |
-| 40 | Buôn may bán đắt | Vàng | Thắng trước ngày 100 | `flags.wonDay` |
-| 41 | Trăm hoa đua nở | Vàng | 120 đánh giá 5★ (khách thật) | `reviews.list` |
-| 42 | Đắt xắt ra miếng (ẩn) | Vàng | Cả ngày mọi món giá đắt nhất, bán ≥ 10 ổ, `lost` = 0 | `ach.high`, `today.lost` |
-| 43 | Thêm bạn bớt thù (ẩn) | Vàng | Nói chuyện sâu với đủ 12 nhân vật có tên | `npcs[id].talksDone` |
-| 44 | Đâu vào đấy | Vàng | Lắp kín 14 chỗ trên xe | `equipment` capacity/used |
-| 45 | Mệnh ta do ta (ẩn) | Vàng | Từ chối Hệ thống 2 lần | `system.stage === unlinked` |
-| 46 | Dã tràng xe cát (ẩn) | Vàng | Trúng LUCK 8 lượt quay liền | `ach.luckRun` (`spin`) |
-| 47 | Chim sa cá lặn (ẩn) | Vàng | Nhan sắc đạt cấp 10 | `system.beauty >= 10` |
-| 48 | Một vốn bốn lời (ẩn) | Kim cương | Thắng trước ngày 90 | `flags.wonDay` |
-| 49 | Tiếng lành đồn xa | Kim cương | Sao TB ≥ 4,2 với ≥ 50 đánh giá | `average(w)` |
-| 50 | Sạch như lau như li (ẩn) | Kim cương | Thắng mà cả ván 0 ổ cháy, 0 ổ rơi | `ach.burnt`, `ach.soiled` |
-| 51 | Hai bàn tay trắng (ẩn) | Kim cương | Thắng mà không liên kết Hệ thống | `system.stage` |
-| 52 | Phá gia chi tử ✗ (ẩn) | Kim cương | Phá sản trong 3 ngày đầu | `flags.brokeDay <= 3` |
+| 34 | Râu ông cằm bà (ẩn) | Bạc | Nhận đánh giá nhầm quán | `review.noise === nham` |
+| 35 | Trên trời rơi xuống (ẩn) | Bạc | Quay trúng đồ nghề miễn phí | `ach.baoKhi` (`spin`) |
+| 36 | Góp gió thành bão | Vàng | 1.600 ổ | tổng ổ |
+| 37 | Tiền vào như nước | Vàng | Có 20 triệu tiền mặt | `money.cash` |
+| 38 | Mở mày mở mặt | Vàng | Đạt mốc tiền thắng | `flags.won` |
+| 39 | Buôn may bán đắt | Vàng | Thắng trước ngày 100 | `flags.wonDay` |
+| 40 | Trăm hoa đua nở | Vàng | 120 đánh giá 5★ (khách thật) | `reviews.list` |
+| 41 | Đắt xắt ra miếng (ẩn) | Vàng | Cả ngày mọi món giá đắt nhất, bán ≥ 10 ổ, `lost` = 0 | `ach.high`, `today.lost` |
+| 42 | Thêm bạn bớt thù (ẩn) | Vàng | Nói chuyện sâu với đủ 12 nhân vật có tên | `npcs[id].talksDone` |
+| 43 | Đâu vào đấy | Vàng | Lắp kín 14 chỗ trên xe | `equipment` capacity/used |
+| 44 | Mệnh ta do ta (ẩn) | Vàng | Từ chối Hệ thống 2 lần | `system.stage === unlinked` |
+| 45 | Dã tràng xe cát (ẩn) | Vàng | Trúng LUCK 8 lượt quay liền | `ach.luckRun` (`spin`) |
+| 46 | Chim sa cá lặn (ẩn) | Vàng | Nhan sắc đạt cấp 10 | `system.beauty >= 10` |
+| 47 | Một vốn bốn lời (ẩn) | Kim cương | Thắng trước ngày 90 | `flags.wonDay` |
+| 48 | Tiếng lành đồn xa | Kim cương | Sao TB ≥ 4,2 với ≥ 50 đánh giá | `average(w)` |
+| 49 | Sạch như lau như li (ẩn) | Kim cương | Thắng mà cả ván 0 ổ cháy, 0 ổ rơi | `ach.burnt`, `ach.soiled` |
+| 50 | Hai bàn tay trắng (ẩn) | Kim cương | Thắng mà không liên kết Hệ thống | `system.stage` |
+| 51 | Phá gia chi tử ✗ (ẩn) | Kim cương | Phá sản trong 3 ngày đầu | `flags.brokeDay <= 3` |
 
 ### T8.2 — App Danh hiệu trong điện thoại
 
@@ -379,7 +378,7 @@ Dựng theo mẫu `src/ui/phone/apps/sellApp.ts` (danh sách + trang con theo `r
 | Chưa đạt | Khung xám nét đứt, hình huy hiệu dạng bóng, tên mờ |
 | Chưa đạt + ẩn | Khung xám, dấu `?` to, tên cũng là `?` |
 
-Đầu danh sách một dòng `ph-sec`: `Đã đạt 7/52`.
+Đầu danh sách một dòng `ph-sec`: `Đã đạt 7/51`.
 
 **Trang chi tiết** (bấm vào một ô): huy hiệu to · tên · mô tả một câu · điều kiện · `Ngày đạt: ngày 14`.
 Ô chưa đạt vẫn bấm được: hiện điều kiện, không có ngày. Ô ẩn chưa đạt: `?` và một dòng `Chưa rõ`.
@@ -431,7 +430,7 @@ Tên danh hiệu giữ nguyên chữ gốc ở mọi chỗ (Hệ thống, toast,
 - [ ] App Danh hiệu lên lưới 3 cột đúng: ô đã đạt có màu + tên, ô chưa đạt xám + tên mờ, ô ẩn là `?`.
 - [ ] Bấm ô đã đạt ra chi tiết có đủ tên · mô tả · điều kiện · ngày đạt; bấm ô ẩn chưa đạt chỉ ra `?`.
 - [ ] Mỗi danh hiệu chỉ chấm một lần; thoát ra vào lại không chấm lại, không mất.
-- [ ] Load save cũ (không có `ach`): vào game được, lưới hiện 0/52, không lỗi.
+- [ ] Load save cũ (không có `ach`): vào game được, lưới hiện 0/51, không lỗi.
 - [ ] Tiền, buff, `system.exp` **không đổi** trước và sau khi đạt danh hiệu.
 - [ ] Chụp màn hình lưới và trang chi tiết ở cả màn rộng lẫn màn hẹp, soi theo checklist `.claude/CLAUDE.md` §3.2.
 

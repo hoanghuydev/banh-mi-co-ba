@@ -21,6 +21,9 @@ WHITE = 236
 SHOE_WHITE = 251  # giày trắng: chỉ điểm sáng hơn mức này mới là nền nối ra mép
 FEET = 0.86       # dưới mốc này (theo chiều cao hình) là vùng bàn chân
 SHOE_GAP = 15     # px: khuyết lòng giày lấp tối đa
+HIP, ANKLE = 0.55, 0.92  # đoạn chân được nén, theo chiều cao hình
+LEG_MIN, LEG_MAX = 0.97, 1.15  # khớp đầu chỉ được lệch khớp chiều cao trong khoảng này (dải đi ChatGPT chân dài tới 17%)
+TALL_STEP, TALL_BETWEEN = 0.98, 1.00  # cao frame đi / cao ảnh đứng sau khi khớp đầu (3D: đi thấp hơn chút, pha chuyển tiếp nhún lên)
 
 
 def height_at(body, cy, cx):
@@ -150,16 +153,38 @@ def stats(im):
 
 
 def head_w(im):
-    """Bề ngang đầu (15% trên cùng): thước đo cỡ không đổi theo dáng chân."""
+    """Bề ngang đầu: trung vị dải 10–25% trên (một mốc lẻ dễ rơi đúng vành nón hay búi tóc); cùng thước với kiem-atlas."""
     a = np.asarray(im)[..., 3] > 128
-    top = a[: max(1, int(im.height * 0.15))]
-    return np.median(top.sum(axis=1)[-5:])
+    ys = np.nonzero(a.any(axis=1))[0]
+    t, b = ys[0], ys[-1]
+    return float(np.median([a[t + int((b - t) * p)].sum() for p in np.linspace(0.10, 0.25, 16)]))
 
 
 def shift(im, off):
     a = np.asarray(im).astype(float)
     a[..., :3] += off
     return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGBA")
+
+
+def fit(idle, strip, tall):
+    """Hệ số cỡ khớp đầu ảnh đứng, kẹp quanh khớp chiều cao vì vành nón/búi tóc làm sai bề ngang đầu."""
+    by_head = head_w(idle) / np.median([head_w(f) for f in strip])
+    by_height = tall * idle.height / np.median([f.height for f in strip])
+    return float(np.clip(by_head, by_height * LEG_MIN, by_height * LEG_MAX))
+
+
+def short_legs(im, height):
+    """Nén đoạn hông–cổ chân cho hình cao đúng `height` (đầu, thân, bàn chân giữ nguyên); thấp hơn sẵn thì để yên."""
+    cut = im.height - height
+    if cut <= 0:
+        return im
+    hip, ankle = int(im.height * HIP), int(im.height * ANKLE)
+    legs = im.crop((0, hip, im.width, ankle)).resize((im.width, ankle - hip - cut), Image.LANCZOS)
+    out = Image.new("RGBA", (im.width, height), (0, 0, 0, 0))
+    out.alpha_composite(im.crop((0, 0, im.width, hip)), (0, 0))
+    out.alpha_composite(legs, (0, hip))
+    out.alpha_composite(im.crop((0, ankle, im.width, im.height)), (0, ankle - cut))
+    return out
 
 
 def place(im, height):
@@ -193,21 +218,18 @@ def main():
         place(idle[d], hi).save(p)
         steps = split(cut_alpha(Image.open(src / "walk" / f"{d}.png"), shoes), 4)
         between = split(cut_alpha(Image.open(src / "walk-chan" / f"{d}.png"), shoes), 4)
-        # đầu và chiều cao cho hai tỉ lệ lệch nhau (ChatGPT vẽ thân hơi khác giữa các lượt): lấy trung bình nhân
-        by_head = head_w(idle[d]) / np.median([head_w(f) for f in steps])
-        by_height = 0.98 * idle[d].height / np.median([f.height for f in steps])
-        k_steps = (by_head * by_height) ** 0.5
-        # pha chuyển tiếp nhún cao hơn pha bước chừng 2%; đầu và chiều cao lệch nhau nên lấy trung bình nhân
-        k_head = k_steps * np.median([head_w(f) for f in steps]) / np.median([head_w(f) for f in between])
-        k_tall = k_steps * 1.02 * np.median([f.height for f in steps]) / np.median([f.height for f in between])
-        k_between = (k_head * k_tall) ** 0.5
+        # ChatGPT vẽ dải đi chân dài hơn ảnh đứng: khớp cỡ theo đầu, rồi nén chân về chiều cao chuẩn
+        k_steps = fit(idle[d], steps, TALL_STEP)
+        k_between = fit(idle[d], between, TALL_BETWEEN)
         heights = []
         for j in range(8):
             strip, k = (between, k_between) if j % 2 == 0 else (steps, k_steps)
             # một độ bù chung cả dải: kéo màu về ảnh đứng im mà frame trong dải vẫn đều nhau
             off = stats(idle[d])[0] - np.mean([stats(f)[0] for f in strip], axis=0)
             f = strip[j // 2]
-            hj = round(f.height * k * scale)
+            f = f.resize((round(f.width * k * scale), round(f.height * k * scale)), Image.LANCZOS)
+            f = short_legs(f, round(hi * (TALL_BETWEEN if j % 2 == 0 else TALL_STEP)))
+            hj = f.height
             q = out / "walk" / f"{d}_{j:02d}.png"
             q.parent.mkdir(parents=True, exist_ok=True)
             place(shift(f, off), hj).save(q)

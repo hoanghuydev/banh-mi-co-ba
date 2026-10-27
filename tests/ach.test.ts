@@ -32,12 +32,12 @@ const rev = (w: SaveFile, o: Partial<Parameters<typeof addReview>[1]> = {}) =>
 const row = (w: SaveFile, day: number, o: Partial<SaveFile["ledger"][number]> = {}) =>
   w.ledger.push({ day, revenue: 100, cost: 50, served: 10, lost: 0, ...o });
 
-test("bảng 52 danh hiệu: đủ hạng, mã và tên không trùng", () => {
-  assert.equal(ACH_LIST.length, 52);
+test("bảng 51 danh hiệu: đủ hạng, mã và tên không trùng", () => {
+  assert.equal(ACH_LIST.length, 51);
   const count = (t: string) => ACH_LIST.filter((a) => a.tier === t).length;
-  assert.deepEqual([count("dong"), count("bac"), count("vang"), count("kc")], [15, 21, 11, 5]);
-  assert.equal(new Set(ACH_LIST.map((a) => a.id)).size, 52);
-  assert.equal(new Set(ACH_LIST.map((a) => a.name)).size, 52);
+  assert.deepEqual([count("dong"), count("bac"), count("vang"), count("kc")], [15, 20, 11, 5]);
+  assert.equal(new Set(ACH_LIST.map((a) => a.id)).size, 51);
+  assert.equal(new Set(ACH_LIST.map((a) => a.name)).size, 51);
   assert.equal(ACH_LIST.filter((a) => a.hidden).length, 17);
   assert.equal(ACH_LIST.filter((a) => a.fail).length, 13);
 });
@@ -215,18 +215,6 @@ test("vòng quay: chuỗi ô may mắn liên tiếp được đếm và reset", 
   assert.ok("da_trang" in achGot(p));
 });
 
-test("nợ mặt bằng: phải từng nợ rồi mới trả hết", () => {
-  const { w, p } = setup("debt");
-  checkLive(w, p);
-  assert.ok(!("kho_truoc" in achGot(p)));
-  w.econ.rentOwed = 40_000;
-  checkLive(w, p);
-  assert.ok(!("kho_truoc" in achGot(p)));
-  w.econ.rentOwed = 0;
-  checkLive(w, p);
-  assert.ok("kho_truoc" in achGot(p));
-});
-
 test("chuỗi ngày: lỗ, ế, không đau bụng phải liền nhau", () => {
   const { w, p } = setup("streak");
   w.progress.dayIndex = 4;
@@ -331,15 +319,15 @@ test("phá sản trong 3 ngày đầu: dồn tiền vào hàng chợ rồi khôn
   assert.ok("nha_tan" in achGot(p) && "pha_gia" in achGot(p));
 });
 
-test("mua tủ mát ngày 1 không đủ để phá sản: đồ nghề bán lại được", () => {
+test("mua tủ mát rồi không bán: đồ nghề cứu được tiền hàng, không cứu được tiền chỗ", () => {
   const { w } = setup("tumat");
   dawn(w);
   buyEquip("TU_MAT", w.equipment, w.money, w.econ);
-  for (let d = 1; d <= 3; d++) {
-    if (d > 1) { nextDay(w); dawn(w); }
-    eveningCounting(w);
-  }
+  eveningCounting(w);
   assert.equal(brokeReport(w).broke, false);
+  for (let d = 2; d <= 3; d++) { nextDay(w); dawn(w); eveningCounting(w); }
+  assert.equal(w.money.cash, 0);
+  assert.equal(brokeReport(w).why, "rent");
 });
 
 test("phá sản sau ngày 3 chỉ được Nhà tan cửa nát", () => {

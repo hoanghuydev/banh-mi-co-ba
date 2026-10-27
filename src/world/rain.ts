@@ -42,8 +42,8 @@ export type RainDensity = {
 
 // Đi cùng SPEED_MIN/MAX bên ui/stall/Rain.ts: số hạt sống = drops × quãng rơi ÷ tốc độ.
 const BASE_DENSITY: Record<"MUA_RAO" | "MUA_DAM", RainDensity> = {
-  MUA_RAO: { drops: 135, drips: 7, windDeg: 7, gustDeg: 4 },
-  MUA_DAM: { drops: 78, drips: 4, windDeg: 3, gustDeg: 2 },
+  MUA_RAO: { drops: 65, drips: 7, windDeg: 7, gustDeg: 4 },
+  MUA_DAM: { drops: 38, drips: 4, windDeg: 3, gustDeg: 2 },
 };
 
 // Không tắt hẳn khi giảm chuyển động vì mưa mang thông tin gameplay.

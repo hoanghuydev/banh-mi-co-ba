@@ -112,7 +112,12 @@ export const QUEUE_SLOTS = [
   { x: 6.0, y: 6.6, zone: "QUEUE_3" },
   { x: 4.5, y: 6.6, zone: "SEATED_FAR" },
   { x: 3.0, y: 6.6, zone: "SEATED_FAR" },
+  // Hết vỉa hè trước quầy nên chỗ cuối bẻ xuống.
+  { x: 3.0, y: 7.6, zone: "SEATED_FAR" },
 ] as const;
+
+/** Chỗ người thấy hàng đầy đứng ngó rồi bỏ đi: chéo dưới đuôi hàng, đủ xa cổng để người chơi kịp thấy. */
+export const BALK_SPOT = { x: 4.2, y: 8.3 };
 
 /** Lùi ra ngoài hàng chờ, để không trông như hai người đổi chỗ trong hàng. */
 export const ASIDE_SPOT = { x: 11.6, y: 7.6 };
@@ -158,6 +163,7 @@ export function assertWalkable() {
     bad.push("SHADE_SPOT nằm chồng lên ASIDE_SPOT — người chơi không phân biệt được hai việc");
   }
   QUEUE_SLOTS.forEach((s, i) => check(`QUEUE_SLOTS[${i}]`, s));
+  check("BALK_SPOT", BALK_SPOT);
 
   MAP.forEach((row, y) => {
     if (row.length !== WORLD_W) bad.push(`hàng y${y} dài ${row.length} ô, phải là ${WORLD_W}`);

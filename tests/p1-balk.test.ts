@@ -176,7 +176,7 @@ test("quay đầu không phải một lượt ghé: không nhích `visits`", () 
 });
 
 test("tất định: cùng seed, cùng người quay đầu, cùng thứ tự", () => {
-  for (const day of [13, 17]) {
+  for (const day of [17, 23]) {
     const a = play(day), b = play(day);
     assert.deepEqual(b.balked, a.balked);
     assert.ok(a.balked.length > 0);

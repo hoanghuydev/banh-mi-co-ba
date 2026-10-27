@@ -285,6 +285,29 @@
       ],
       "vuitinh": []
     },
+    "ruoi": {
+      "chanthat": [
+        "đứng chờ thấy ruồi bay quanh cái thớt, ăn cứ lấn cấn",
+        "khay nhân để không đậy, ruồi đậu lên mấy lần",
+        "có con ruồi đậu trên thớt mà chủ quán không để ý",
+        "quầy hơi dơ, ruồi bu chỗ khay nhân"
+      ],
+      "ham": [
+        "ruồi bu đầy thớt mà vẫn kẹp bánh bán, chịu luôn",
+        "nhìn ruồi đậu khay nhân vậy ai dám ăn, mọi người né ra",
+        "quầy dơ, ruồi bay tùm lum, vậy mà cũng bán được",
+        "vệ sinh kiểu này thì thua, khỏi quay lại"
+      ],
+      "haihuoc": [
+        "đứng chờ có mấy phút mà đuổi ruồi giùm quán mỏi tay",
+        "ruồi ở đây chắc cũng là khách quen"
+      ],
+      "nhat": [
+        "có ruồi",
+        "quầy dơ"
+      ],
+      "vuitinh": []
+    },
     "chen-hang": {
       "chanthat": [
         "có người tới sau mà được lấy bánh trước, hơi kì",
@@ -495,6 +518,11 @@
       "thấy không rửa tay",
       "cái vụ tay chưa rửa thì chịu"
     ],
+    "ruoi": [
+      "có ruồi bay quanh thớt",
+      "quầy hơi nhiều ruồi",
+      "ruồi bu chỗ khay nhân"
+    ],
     "chen-hang": [
       "bị chen hàng",
       "người tới sau lấy trước"
@@ -580,6 +608,7 @@
     "co-san",
     "do-cu",
     "tay-ban",
+    "ruoi",
     "het-banh"
   ],
   "khongDan": {
@@ -589,12 +618,14 @@
     ]
   },
   "ky": {
-    "_note": "Vế phụ chứa cụm này thì bỏ, khỏi lặp lại đúng cái câu lõi vừa nói.",
+    "_note": "Vế phụ chứa cụm này thì bỏ, khỏi lặp lại câu lõi hay cãi vế trái chiều.",
     "cho-lau": "chờ",
     "gia-dat": "giá",
     "gia-re": "giá",
     "it-nhan": "rau hơi ít",
-    "nhoi-nhet": "gói"
+    "nhoi-nhet": "gói",
+    "ruoi": "sạch",
+    "tay-ban": "sạch"
   },
   "persona": {
     "sinhvien": [

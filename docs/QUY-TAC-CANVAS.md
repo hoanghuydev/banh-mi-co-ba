@@ -22,28 +22,29 @@
 
 Ánh sáng, bóng đổ, phản chiếu của đạo cụ: skill `anh-sang-vat-the`.
 
-## Độ phân giải tối thiểu (màn 27 inch)
+## Độ phân giải tối thiểu
 
-Ảnh nguồn không được thấp hơn số pixel nó chiếm trên màn thật; thấp hơn là bị phóng, mờ.
+Ảnh đi qua bốn chặng: **ảnh nguồn → nướng texture (`ART_SS`) → canvas (`RENDER_SCALE`) → màn hình.** Chặng nào ít pixel hơn chặng sau là ảnh bị phóng, mờ.
 
-- Pixel màn hình trên 1 px thiết kế = `ZOOM` (1,28) × chiều rộng màn thật / `GAME_W` (1024).
-- 27" QHD (2560 px) → **×3,2**. 27" 4K (3840 px) → **×4,8**.
-- **Mức sàn: cạnh ảnh nguồn ≥ cạnh thiết kế × 3,2.** Mục tiêu có dư cho 4K: ×4,8.
+- Pixel canvas trên 1 px thế giới = `ZOOM` × `RENDER_SCALE`. PC: `BASE_ZOOM` 1,67 × trần `MAX_SCALE` 2 = **3,34** (`WORLD_SS_MAX`, `world/camera.ts`). Canvas không vẽ nét hơn mức này, dù màn QHD hay 4K.
+- `ART_SS` và nướng sàn (`bakeGround`) tự theo `WORLD_SS_MAX`; không gõ số trần riêng. Máy yếu trần 2 để giữ bộ nhớ.
+- **Mức sàn: cạnh ảnh nguồn ≥ cạnh thiết kế × `BASE_ZOOM` × `MAX_SCALE` (hiện 3,34).** **Mục tiêu 4K: ×6,3** (`BASE_ZOOM` 1,67 × 3840 / 1024), để nâng `MAX_SCALE` lên 4K là nét ngay. Đo thấy 4K lag thì hạ mục tiêu xuống 2K: ×4,2 (1,67 × 2560 / 1024).
+- **Đổi `BASE_ZOOM` hoặc `MAX_SCALE` thì tính lại mức sàn ở đây** và soi lại các ảnh nằm sát mức cũ.
 
-| Vật | Cỡ thiết kế | Ảnh nguồn tối thiểu (3,2×) | Mục tiêu 4K (4,8×) |
+| Vật | Cỡ thiết kế | Ảnh nguồn tối thiểu (3,34×) | Mục tiêu 4K (6,3×) |
 |---|---|---|---|
-| Vật cao 100 px | 100 | 320 | 480 |
-| Thùng rác | cao 46 | 147 | 221 |
-| Ô sàn (cạnh ngang hình thoi) | 60 | 192 | 288 |
+| Vật cao 100 px | 100 | 334 | 630 |
+| Thùng rác | cao 46 | 154 | 290 |
+| Ô sàn (cạnh ngang hình thoi) | 60 | 200 | 378 |
 
 - Áp khi: gen ảnh, xoá nền, ép iso, cắt, nướng ô sàn, đóng atlas, thu nhỏ lúc boot (`fit()`, `floor_tile()`, `ART_SS`). Bước nào đưa kích thước xuống dưới mức sàn thì sai.
-- Kiểm: `fit(im, longest)` không được đặt `longest` thấp hơn cạnh dài thiết kế × 3,2; thấy ảnh gốc nhỏ hơn mức sàn thì gen lại ở độ phân giải cao hơn, không phóng to bằng code.
+- Kiểm: `fit(im, longest)` không được đặt `longest` thấp hơn cạnh dài thiết kế × 3,34; thấy ảnh gốc nhỏ hơn mức sàn thì gen lại ở độ phân giải cao hơn, không phóng to bằng code.
 
 ## Canvas trên cảm ứng
 
-- **`ZOOM` đổi theo thiết bị** (`world/camera.ts`): PC 1,28; cảm ứng tăng tới trần 1,7 để 1 px thế giới chiếm đủ cỡ chạm. Mọi tính toán "px màn hình trên 1 px thiết kế" ở mục trên đọc `ZOOM` hiện hành, không số cố định.
+- **`ZOOM` đổi theo thiết bị** (`world/camera.ts`): PC 1,67; cảm ứng tăng tới trần 2,2 để 1 px thế giới chiếm đủ cỡ chạm. Mọi tính toán "px màn hình trên 1 px thiết kế" ở mục trên đọc `ZOOM` hiện hành, không số cố định.
 - **Dấu hiệu trong cảnh** (vòng lò, dấu việc cần làm, vòng quanh món đang cầm) nhân `markScale()` (1,25 trên cảm ứng) để không nhỏ hơn ngón tay.
-- **Chữ vẽ trong thế giới** đặt cỡ bằng `worldFont(base)` (đã tính `fitScale()` và `ZOOM`; bong bóng thoại, nhãn khách dùng nó), không `touchFont`, vì camera thế giới phóng thêm. Chữ ở lớp UI dùng `touchFont` / `touchSize`.
+- **Chữ vẽ trong thế giới** đặt cỡ bằng `worldFont(base)` (đã tính `fitScale()` và `ZOOM`; nhãn khách dùng nó; bong bóng thoại thu thêm về cỡ 12 px khung thiết kế, không theo `ZOOM`), không `touchFont`, vì camera thế giới phóng thêm. Chữ ở lớp UI dùng `touchFont` / `touchSize`.
 - Camera cảm ứng nhìn cao hơn PC để hàng vòng lò không bị nút HUD che. Soi cả khi đo ảnh chụp ở 844×390.
 - Chụp kiểm cảnh: `tools/screenshot.mjs --touch --dpr 3` (xem `responsive/PLAN.md`).
 

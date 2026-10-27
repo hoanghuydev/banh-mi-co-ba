@@ -16,11 +16,12 @@ import {
   type Defect, type DefectKind, type Ingredient, type OrderSpec,
 } from "./order";
 import type { ServeRecord } from "./reviews";
+import type { Channel, ClipState } from "./vietsoci";
 import {
   MAX_LIVE_STIMULI, SALIENCE, STIM_SPEC, observe, peakOf, peakOfKey, rank, stateOf,
   type ActiveStim, type ObsState, type Occluder, type Zone,
 } from "./perception";
-import { ASIDE_SPOT, CUSTOMER_GATE, QUEUE_SLOTS, SEAT_CAPACITY, SEAT_SPOT, SHADE_CAPACITY, SHADE_SPOT, STREET_BIN, hitsWall } from "../world/map";
+import { ASIDE_SPOT, BALK_SPOT, CUSTOMER_GATE, QUEUE_SLOTS, SEAT_CAPACITY, SEAT_SPOT, SHADE_CAPACITY, SHADE_SPOT, STREET_BIN, hitsWall } from "../world/map";
 import { PASSERS_MAX, PASSER_NAMES, inviteChance, nextGapSec, planPasser } from "./passersby";
 import { rollVisit } from "./schedule";
 import { SHARED_POOL, TalkStore } from "../content/talks";
@@ -77,7 +78,9 @@ const PASSER_TALK_TAIL = 4;
 /** `talkedThisVisit` chỉ chặn mở LẠI cùng một cuộc, không chặn mở cuộc khác — trần phải nằm riêng. */
 const PASSER_TALKS_MAX = 2;
 
-const DIRT_ON_CAMERA = 0.35;
+export const FLY_DIRT_MIN = 0.35;
+/** Số ruồi quanh thớt theo độ bẩn; khách chấm sao theo đúng số người chơi thấy. */
+export const fliesAt = (dirt: number) => dirt <= FLY_DIRT_MIN ? 0 : dirt >= 0.7 ? 5 : dirt >= 0.5 ? 3 : 1;
 
 /** Phần người đi ngang ngoái lại khi nghe rao — chỉ bật `t.glanced`, người chơi vẫn phải mời. */
 const RAO_TURN = 0.45;
@@ -206,12 +209,6 @@ export function balkChance(o: {
   return Math.min(BALK_CEIL, base * intensityMul(o.person) * mood * (o.rushing ? BALK_RUSH : 1));
 }
 
-/** Lùi thêm một bậc sau chỗ cuối hàng. Phải là điểm THẬT trên vỉa hè, không thì người chơi chỉ thấy một buổi vắng khách. */
-const BALK_LOOK = (() => {
-  const n = SLOTS.length;
-  const p = n >= 2 ? { x: 2 * SLOTS[n - 1].x - SLOTS[n - 2].x, y: SLOTS[n - 1].y } : { ...SLOTS[0] };
-  return hitsWall(p.x, p.y) ? { x: SLOTS[n - 1].x, y: SLOTS[n - 1].y } : p;
-})();
 const BALK_LOOK_SEC = 0.8;
 
 const ASIDE_HOLD_SEC = 6;
@@ -309,6 +306,10 @@ export type ServiceDeps = {
   flags?: Record<string, string | number | boolean>;
   /** Mỗi lượt phục vụ xong; bên ngoài lăn thành đánh giá. */
   onServed?: (rec: ServeRecord) => void;
+  /** Kênh đã quay clip hôm nay. */
+  filmed?: (ch: Channel) => boolean;
+  /** Clip quay xong, sạch hay dơ. */
+  onClip?: (clip: { channel: Channel; state: ClipState }) => void;
   /** Vừa lắp đồ nghề mới trong vài ngày gần đây. */
   freshGear?: boolean;
   /** Khách quen chưa có hình thì dời lượt ghé từng phút tới khi có. */
@@ -447,7 +448,7 @@ export class Service {
   private offersLocal = 0;
   /** ⚠️ Phải giữ lại: rút lại mỗi lần mở thì mở–Esc–mở là một cái máy reroll nội dung. */
   private heldTalk = new Map<string, Talk>();
-  /** ⚠️ Không ghi vào `mem(memKey).talksDone`: `memKey` của người lạ là `walkin<dáng>` — tám dáng dùng chung một sổ. */
+  /** ⚠️ Không ghi vào `mem(memKey).talksDone`: `memKey` của người lạ là `walkin<dáng>` — mọi dáng dùng chung một sổ. */
   private talkedThisVisit = new Map<string, string[]>();
   /** Đếm MỌI cuộc kể cả túi dùng chung — `talkedThisVisit` cố ý không ghi cuộc `ANY`. */
   private passerTalks = new Map<string, number>();
@@ -563,6 +564,11 @@ export class Service {
   }
 
   /** Người đang đứng chờ lúc này, tính như lúc sinh lượt ghé. */
+  private queueFull() {
+    return this.customers.filter((x) => x.phase !== "leaving" && !x.pass && !x.balking && !x.aside && !x.sitting).length
+      >= SLOTS.length;
+  }
+
   private aheadNow(except: Customer) {
     return this.customers.filter((x) => x !== except && x.phase !== "leaving" && !x.pass && !x.balking).length;
   }
@@ -613,7 +619,7 @@ export class Service {
     const mood = rollMood(this.deps.hub.derive(`mood:${v.seq}`), this.deps.day);
     const ahead = this.customers.filter((x) => x.phase !== "leaving" && !x.pass && !x.balking).length;
 
-    const balking = (!this.deps.noTimePressure
+    const balking = this.queueFull() || (!this.deps.noTimePressure
       && this.deps.hub.derive(`balk:${v.seq}`).next() < easeBalk(this.deps.day) * balkChance({
         ahead, slots: SLOTS.length, person, moodPatience: moodPatienceMul(mood),
         rushing: !!npc?.rush && nowMin >= npc.rush[0] && nowMin < npc.rush[1],
@@ -935,8 +941,8 @@ export class Service {
     }
     // Sinh ra ngay tại `GATE` nên phải đi ra chỗ ngó hàng trước khi `leave()`, không thì biến mất cùng frame.
     if (c.balking && c.phase !== "leaving") {
-      walk(c, BALK_LOOK, dt);
-      if (!near(c, BALK_LOOK, 0.25)) return;
+      walk(c, BALK_SPOT, dt);
+      if (!near(c, BALK_SPOT, 0.25)) return;
       // Chốt lúc ĐỨNG NHÌN, không phải lúc sinh ra: hàng vãn giữa đường thì họ vào thật.
       if (!c.priceWalk && this.aheadNow(c) < balkFrom(SLOTS.length)) {
         c.balking = false;
@@ -1101,6 +1107,7 @@ export class Service {
       sick: o.sick,
       defect: o.topic,
       dirtyHands: saw("DIRTY_HANDS"),
+      flies: fliesAt(this.dirt),
       gaveExtra: o.gaveExtra,
       gaveTea: c.visit.gaveTea,
       wasCut: c.wasCut,
@@ -1230,8 +1237,10 @@ export class Service {
     for (const c of this.customers) {
       if (c.phase === "leaving" || c.balking) continue;
       if (c.aside || c.sitting) { c.slot = -1; c.occluder = 1; continue; }
+      // Hàng đầy mà vẫn tới được (vd. được mời vào) thì đứng ngó rồi đi, không chen chồng lên chỗ cuối.
+      if (i >= SLOTS.length && c.phase === "arriving") { c.balking = true; c.slot = -1; continue; }
       const from = c.zone;
-      c.slot = i < SLOTS.length ? i : SLOTS.length - 1;
+      c.slot = Math.min(i, SLOTS.length - 1);
       c.zone = SLOTS[c.slot].zone;
       c.occluder = c.slot >= 2 ? 0.7 : 1;
       if (from !== c.zone && c.phase !== "arriving") {
@@ -1294,8 +1303,9 @@ export class Service {
       return false;
     }
     // Dài quá thì vế cảm ơn (`pre`) rụng trước, vế chê ở lại.
-    const full = [wrap?.pre, got.text, wrap?.post].filter(Boolean).join(" ");
-    const text = full.length > WRAP_SOFT_MAX ? [got.text, wrap?.post].filter(Boolean).join(" ") : full;
+    const said = this.fill(c, got.text);
+    const full = [wrap?.pre, said, wrap?.post].filter(Boolean).join(" ");
+    const text = full.length > WRAP_SOFT_MAX ? [said, wrap?.post].filter(Boolean).join(" ") : full;
     this.say(c, text, got.tier, log, pri, got.rule, wait);
     return true;
   }
@@ -1958,6 +1968,7 @@ export class Service {
       holds: w ? (key: string) => holds(key, w) : undefined,
       cash: this.deps.till?.floatLeft,
       noInvite: !!c?.inviteRefused,
+      filmed: this.deps.filmed,
       hasEquip: (id: string) => has(this.deps.equip, id as EquipId),
     };
   }
@@ -2006,6 +2017,7 @@ export class Service {
       practice: this.practiceOf(c),
       holds: (key: string) => holds(key, w ??= this.snapshot(c)),
       score: (t) => this.scoreTalk(c, t),
+      filmed: this.deps.filmed,
     };
   }
 
@@ -2099,7 +2111,7 @@ export class Service {
         this.theySit(c, act.forSec);
         break;
       case "FILM":
-        this.startFilm(c, act.forSec);
+        this.startFilm(c, act.forSec, act.channel);
         break;
       case "STOP_FILM":
         this.stopFilm(c);
@@ -2263,21 +2275,22 @@ export class Service {
     this.out.push({ kind: "log", text: `${this.label(c)} ngồi xuống ghế.` });
   }
 
-  /** Clip phụ thuộc vào mình làm gì trong lúc máy đang chạy — `filmSpoiled` chấm liên tục, không chỉ lúc bắt đầu. */
-  private startFilm(c: Customer, forSec: ForSec) {
+  /** Clip phụ thuộc vào mình làm gì trong lúc máy đang chạy — `filmState` chấm liên tục, không chỉ lúc bắt đầu. */
+  private startFilm(c: Customer, forSec: ForSec, channel: Channel) {
     if (c.filming) return;
     c.filming = true;
     c.filmUntil = c.now + (forSecOf(forSec) ?? 20);
-    c.filmSpoiled = this.filmDirtyNow();
+    c.filmChannel = channel;
+    c.filmState = this.filmStateNow();
     this.out.push({ kind: "log", text: `${this.label(c)} giơ điện thoại lên quay.` });
   }
 
-  private filmDirtyNow() {
-    return this.dirt >= DIRT_ON_CAMERA || this.handsDirty;
+  private filmStateNow(): ClipState {
+    return fliesAt(this.dirt) > 0 ? "ruoi" : this.handsDirty ? "tay" : "sach";
   }
 
   private tickFilm(c: Customer) {
-    if (this.filmDirtyNow()) c.filmSpoiled = true;
+    if (c.filmState === "sach") c.filmState = this.filmStateNow();
     if (c.now < c.filmUntil) return;
     this.endFilm(c, true);
   }
@@ -2289,16 +2302,11 @@ export class Service {
   }
 
   private endFilm(c: Customer, quayXong: boolean) {
-    const hong = c.filmSpoiled;
     c.filming = false;
     c.filmUntil = 0;
-    c.filmSpoiled = false;
     if (!quayXong) return;
-    if (hong) {
-      this.out.push({ kind: "log", text: `đoạn quay dính cảnh quầy chưa dọn.` });
-      return;
-    }
-    this.out.push({ kind: "log", text: `${this.label(c)} quay xong một đoạn ưng ý.` });
+    this.out.push({ kind: "log", text: `${this.label(c)} quay xong, đăng lên VietSoci.` });
+    this.deps.onClip?.({ channel: c.filmChannel, state: c.filmState });
   }
 
   /** Ổ RỜI KHO thật và cầm về một món — không tiền, mà cũng không phải cho không. */

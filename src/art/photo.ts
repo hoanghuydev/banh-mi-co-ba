@@ -3,6 +3,7 @@ import { TH, TW } from "../world/iso";
 import { INGREDIENTS, type Ingredient } from "../sim/order";
 import { BASE } from "./canvas";
 import { RENDER_SCALE } from "../core/render";
+import { BASE_ZOOM, WORLD_SS_MAX } from "../world/camera";
 import { TILE } from "./tiles";
 import { PROP } from "./props";
 import { BUILD } from "./building";
@@ -39,9 +40,16 @@ const BASKET = "ro_banh_mi";
 
 export const BASKET_W = 23;
 
+/** Đồ nghề gắn tường hoặc đặt trên quầy: key texture → [ảnh, bề ngang px thiết kế]. */
+export const MOUNTED = {
+  aircon: ["may_lanh", 36],
+  speaker: ["loa_rao", 30],
+  qr: ["bang_qr", 11],
+} as const;
 
-/** Pixel texture trên một pixel thiết kế; trần 3 vì diện tích tăng theo bình phương. */
-export const ART_SS = Math.min(weakDevice() ? 2 : 3, Math.max(1, RENDER_SCALE * 1.4));
+
+/** Pixel texture trên một pixel thế giới, khớp mức camera PC vẽ ra; máy yếu trần 2 vì diện tích tăng theo bình phương. */
+export const ART_SS = Math.min(weakDevice() ? 2 : WORLD_SS_MAX, Math.max(1, RENDER_SCALE * BASE_ZOOM));
 
 /** Màn mật độ cao hoặc ít RAM thì texture nướng dư pixel dễ hết bộ nhớ. */
 function weakDevice() {
@@ -164,6 +172,10 @@ const WALKINS: Record<string, NpcPhoto> = {
   walkin1: { h: 63, walk: "chi-khau-trang" },
   walkin2: { h: 63, walk: "co-xach-gio" },
   walkin3: { h: 58, walk: "ba-cu" },
+  walkin4: { h: 64, walk: "co-non-la" },
+  walkin5: { h: 64, walk: "anh-chay-xe" },
+  walkin7: { h: 63, walk: "chu-deo-kinh" },
+  walkin8: { h: 64, walk: "bao-thu" },
 };
 
 const CARRIED: Partial<Record<HeldLook, [src: string, size: Fit]>> = {
@@ -208,6 +220,7 @@ const BAKE_ONCE = [
   FLY,
   BOARD,
   BASKET,
+  ...Object.values(MOUNTED).map(([src]) => src),
 ];
 
 /** Vẽ lại mỗi lần dựng quán nên giữ suốt phiên. */
@@ -763,6 +776,7 @@ export function photoSteps(scene: Phaser.Scene): Step[] {
     () => boxed(scene, FX.fly, FLY, FLY_BOX, { w: FLY_W }),
     () => onCounter(scene, BOARD_TEX, BOARD, BOARD_W),
     () => onCounter(scene, BASKET_TEX, BASKET, BASKET_W),
+    ...Object.entries(MOUNTED).map(([key, [src, w]]) => () => onCounter(scene, key, src, w)),
     ...Object.entries(STANDING).map(([key, [src, o]]) => () => standing(scene, key, src, o)),
     () => bench(scene),
     () => prepFromLong(scene),

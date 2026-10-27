@@ -63,7 +63,7 @@ console.log(
   "\nCòn sót thì đọc kỹ trước khi sửa — mấy chỗ này đã soi và CHO QUA:\n"
   + "  · \"mai ghé nữa\" của người ngày nào cũng tới (chị Hà giao hàng, chú Quang) —\n"
   + "    game giữ được lời đó mà không cần ghi gì.\n"
-  + "  · người lạ hẹn hôm sau: tám dáng `walkin<dáng>` dùng chung cả ván,\n"
+  + "  · người lạ hẹn hôm sau: các dáng `walkin<dáng>` dùng chung cả ván,\n"
   + "    nên cái dáng đó CÓ quay lại thật.\n"
   + "  · câu nói đá kiểu \"chú đứng đây hai phút là con mất một khách\" không phải lời mời.",
 );

@@ -55,7 +55,6 @@ export const ACH_LIST: readonly AchDef[] = [
   a("tien_nao", "Tiền nào của nấy", "bac", "Mua tủ lạnh", "Tiền nào của nấy, thần khí bảo quản đã nhập xe."),
   a("an_ngon", "Ăn ngon ngủ yên", "bac", "30 ngày liền không khách nào đau bụng", "Ba mươi ngày bình an, thực phẩm đạt chuẩn."),
   a("buon_co_ban", "Buôn có bạn bán có phường", "bac", "Đặt hàng đủ 7 nhà cung cấp", "Bảy nhà cung cấp, bảy mối giao hảo."),
-  a("kho_truoc", "Khổ trước sướng sau", "bac", "Trả hết nợ mặt bằng sau khi từng nợ", "Nợ cũ đã xóa, khổ tận cam lai."),
   a("rau_ong", "Râu ông cằm bà", "bac", "Nhận một đánh giá nhầm quán", "Có người nhầm quán, Hệ thống không tiếp nhận khiếu nại.", { hidden: true }),
   a("tren_troi", "Trên trời rơi xuống", "bac", "Quay trúng đồ nghề miễn phí", "Bảo khí từ trên trời rơi xuống, ký chủ nhận lấy.", { hidden: true }),
 

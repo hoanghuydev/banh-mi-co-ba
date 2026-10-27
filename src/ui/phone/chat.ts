@@ -11,7 +11,9 @@ export function avatar(id: string, sm = false): HTMLElement {
 }
 
 /** Dựng một bong bóng; `prev` quyết định có hiện nhãn giờ / tên người gửi / avatar hay không. */
-export function bubbleNodes(m: Msg, prev: Msg | undefined, group: boolean, next: Msg | undefined): HTMLElement[] {
+export function bubbleNodes(
+  m: Msg, prev: Msg | undefined, group: boolean, next: Msg | undefined, link?: (id: number) => HTMLElement | null,
+): HTMLElement[] {
   const out: HTMLElement[] = [];
   if (!prev || prev.at !== m.at) out.push(el("div", "ph-time", m.at));
   const mine = m.from === ME;
@@ -32,6 +34,8 @@ export function bubbleNodes(m: Msg, prev: Msg | undefined, group: boolean, next:
     b.append(fi, fn);
   } else {
     b.textContent = m.text;
+    const card = m.link ? link?.(m.link) : null;
+    if (card) b.append(card);
   }
   line.append(b);
   out.push(line);

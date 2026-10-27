@@ -1,9 +1,9 @@
 // Canvas dựng ở GAME_W × RENDER_SCALE, mọi camera zoom RENDER_SCALE nên code vẫn dùng toạ độ thiết kế.
 import Phaser from "phaser";
-import { GAME_W, GAME_H } from "./config";
+import { GAME_W, GAME_H, applyDesignSize } from "./config";
 
 // Fill rate tăng theo bình phương; nâng trần phải đo lại ngân sách 33 ms/frame.
-const MAX_SCALE = 2;
+export const MAX_SCALE = 2;
 
 /** Pixel thật trên một pixel thiết kế; đo theo khung nhìn đặt ngang để xoay máy không làm mờ, vì texture nướng một lần lúc boot. */
 export const RENDER_SCALE: number = (() => {
@@ -35,4 +35,9 @@ export function fitDesignFrame(cam: Phaser.Cameras.Scene2D.Camera) {
   cam.setZoom(RENDER_SCALE);
   cam.setOrigin(0, 0);
   cam.setScroll(0, 0);
+}
+
+/** Khung nhìn đổi tỉ lệ thì dựng lại canvas theo khung mới; chỉ gọi khi không còn cảnh chơi nào đang mở. */
+export function refitGame(game: Phaser.Game) {
+  if (applyDesignSize()) game.scale.setGameSize(Math.round(GAME_W * RENDER_SCALE), Math.round(GAME_H * RENDER_SCALE));
 }

@@ -1,8 +1,9 @@
-/** Đáy phá sản: tiền trong ống + bán sạch đồ nghề vẫn không mua nổi rổ sáng mai. */
+/** Phá sản: ống không đủ tiền chỗ, hoặc trả tiền chỗ xong + bán sạch đồ nghề vẫn không mua nổi rổ sáng mai. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { newGame } from "../src/core/save";
 import { EQUIP_IDS } from "../src/sim/equipment";
+import { rentVnd } from "../src/sim/obligations";
 import { brokeReport, markBroke, minBasketVnd } from "../src/sim/broke";
 import { evidenceFor, gearEvidence } from "../src/sim/gearHint";
 
@@ -21,13 +22,14 @@ test("HV-3 hết vốn là PHÉP CỘNG ba đường xoay, không phải ba câu
 
   // Còn đồ bán lại đủ mua rổ sáng mai thì chưa hết vốn (giá treo 149.000₫ > rổ 56.000₫).
   const conDo = tayTrang();
+  conDo.money.cash = rentVnd();
   conDo.equipment.owned.push("GIA_TREO");
   const rDo = brokeReport(conDo);
   assert.ok(rDo.resale >= rDo.need, "giá treo không còn bán đủ một rổ — ca thử này mất nghĩa, chọn món khác");
   assert.equal(rDo.broke, false, "xe còn giá treo bán đủ một rổ mà đã báo hết vốn");
 
   const conTien = tayTrang();
-  conTien.money.cash = minBasketVnd(conTien.progress.dayIndex + 1);
+  conTien.money.cash = rentVnd() + minBasketVnd(conTien.progress.dayIndex + 1);
   assert.equal(brokeReport(conTien).broke, false, "đủ tiền lấy hàng mà đã báo hết vốn");
 });
 
@@ -35,6 +37,7 @@ test("HV-3b CÒN ĐỒ BÁN mà bán hết vẫn không đủ một rổ thì V�
   // Phải hỏi "bán hết có đủ không", không phải "còn món nào bán được không" — nếu không người chơi kẹt vòng lặp vô tận.
   for (const mon of ["KEP_GAP"] as const) {
     const w = tayTrang();
+    w.money.cash = rentVnd();
     w.equipment.owned.push(mon);
     w.equipment.installed = [...w.equipment.owned];
     const r = brokeReport(w);
@@ -54,10 +57,21 @@ test("HV-3c cờ hết vốn khớp ĐÚNG phép cộng, không lệch một ca 
       w.equipment.owned.push(...own);
       w.equipment.installed = [...w.equipment.owned];
       const r = brokeReport(w);
-      assert.equal(r.broke, r.cash + r.resale < r.need,
-        `lệch ở cash=${cash} owns=${own.join("+") || "không"}: gom được ${r.cash + r.resale}₫, rổ tốn ${r.need}₫, mà broke=${r.broke}`);
+      assert.equal(r.broke, r.cash < r.rent || r.cash - r.rent + r.resale < r.need,
+        `lệch ở cash=${cash} owns=${own.join("+") || "không"}: gom được ${r.cash + r.resale}₫, tiền chỗ ${r.rent}₫, rổ tốn ${r.need}₫, mà broke=${r.broke}`);
     }
   }
+});
+
+test("HV-3d ống không đủ tiền chỗ thì phá sản, đồ nghề bán được bao nhiêu cũng vậy", () => {
+  const w = tayTrang();
+  w.money.cash = rentVnd() - 1;
+  w.equipment.owned.push("GIA_TREO");
+  const r = brokeReport(w);
+  assert.ok(r.resale >= r.rent + r.need, "giá treo không còn đủ tiền chỗ + rổ — ca thử này mất nghĩa");
+  assert.equal(r.why, "rent");
+  w.money.cash = rentVnd();
+  assert.equal(brokeReport(w).why, null, "đủ tiền chỗ, đồ nghề đủ một rổ mà vẫn báo phá sản");
 });
 
 test("HV-4 `markBroke` cắm cờ vào save một lần, kèm ngày", () => {

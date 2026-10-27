@@ -19,6 +19,7 @@ import { openTilesFor, setOpenTiles } from "../world/map";
 import { enqueue, rollReview } from "./reviews";
 import { guestsOf } from "./demand";
 import { wireAch } from "./ach";
+import { filmedToday, postClip } from "./vietsoci";
 
 /** Bot nhập dư chừng này so với số khách dự kiến. */
 const BOT_BUY_MARGIN = 1.05;
@@ -135,6 +136,8 @@ export class HeadlessStall {
         const p = rollReview(w, rec, this.ctx.clock.minutes);
         if (p) enqueue(w, p);
       },
+      filmed: (ch) => filmedToday(w, ch),
+      onClip: (clip) => postClip(w, clip, this.ctx.clock.minutes),
       resumeAt: opts.resume || lateOpen ? this.ctx.clock.minutes : undefined,
     });
     this.offAch = wireAch(bus, () => w);

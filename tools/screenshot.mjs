@@ -100,7 +100,8 @@ if (save) {
     if (r.result?.value === "true") break;
     await sleep(500);
   }
-  await js(`(() => { const sm = window.__game.scene; for (const s of sm.getScenes(true)) sm.stop(s.scene.key); sm.start("day", { mode: "continue" }); })()`);
+  // Chừa `boot`: loader của nó còn tải ảnh cho cảnh quán.
+  await js(`(() => { const sm = window.__game.scene; for (const s of sm.getScenes(true)) if (s.scene.key !== "boot") sm.stop(s.scene.key); sm.start("day", { mode: "continue" }); })()`);
 }
 const TOUCH_TYPE = { mousePressed: "touchStart", mouseMoved: "touchMove", mouseReleased: "touchEnd" };
 const mouse = (type, x, y) => touch

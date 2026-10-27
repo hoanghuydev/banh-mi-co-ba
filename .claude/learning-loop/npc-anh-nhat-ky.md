@@ -20,3 +20,17 @@ Thí điểm chú Đạt: sprite đi 8 hướng chỉ bằng ảnh ChatGPT. Ngư
 - **User dẫn bằng gì**: xem trong game, chỉ đúng hướng "dưới phải", "trên trái" của từng người; so với người đi đúng (khách lạ, chị khẩu trang).
 - **Gốc lỗi tư duy**: đo "khác nhau" thay vì đo "đúng nhịp đi"; soi tổng thể mà không soi chân phóng to cạnh mẫu; coi xong khi chưa xem nhân vật đi trong game. Thêm nữa, lượt "sửa giày trắng" đổi luôn dáng chân mà không soi lại chân.
 - **Sửa**: `kiem-atlas` in khép chân + xuất `-chan.png` (mẫu trên, NPC dưới); prompt thêm LEG CHECK / "Take ONLY the look"; giày lọt thì tô bằng `to-giay.py`, không xin sửa; nhân vật chỉ xong sau khi test game se/nw trên Chrome.
+
+## 2026-10-27 — Ảnh đứng lùn hơn lúc đi (chị đeo khẩu trang)
+
+- **Sai gì**: ảnh 8 hướng đứng vẽ đầu to thân ngắn hơn dải đi; ghép khớp cỡ theo trung bình đầu–chiều cao nên lúc dừng nhân vật co lùn ~6%. Máy không đo, mắt soi từng hàng không thấy vì không đặt đứng cạnh đi cùng đường đỉnh.
+- **User dẫn bằng gì**: ảnh dải ngang có vạch đỉnh/đáy, cột cuối (đứng) thấp hơn các cột đi.
+- **Gốc lỗi tư duy**: coi ảnh đứng là chuẩn cỡ tuyệt đối, không kiểm nó có cùng tỉ lệ thân với dải đi. Phát hiện muộn (sau ghép) thay vì ngay sau dải bước.
+- **Sửa**: prompt 2 thêm câu PROPORTIONS; `do-ti-le.py` chạy ngay sau 4a; `kiem-atlas` báo LỖI cao đứng/đi < 0,95; gen lại 8 hướng đứng đính dải đi làm mẫu tỉ lệ.
+
+## 2026-10-27 — Chân đi dài ở hướng chéo (sửa sai hướng lần trước)
+
+- **Sai gì**: thấy "ảnh đứng lùn hơn lúc đi" thì gen lại ảnh đứng cho cao bằng dải đi — làm cả nhân vật chân dài thêm. Gốc thật là dải đi ChatGPT vẽ chân dài hơn ảnh đứng 8–17%, và ghép khớp cỡ theo trung bình đầu–chiều cao nên đầu lúc đi bị thu nhỏ.
+- **User dẫn bằng gì**: so với player 3D ở các hướng chéo — "chân đi siêu dài, hết cute".
+- **Gốc lỗi tư duy**: sửa triệu chứng (cao đứng < cao đi) bằng cách đổi vật chuẩn (ảnh đứng) thay vì hỏi cái nào lệch khỏi phong cách; không so với mẫu 3D trước khi chọn hướng sửa.
+- **Sửa**: ghép khớp cỡ theo đầu (kẹp ±15% quanh khớp chiều cao), nén đoạn hông–cổ chân về 0,98–1,00 chiều cao ảnh đứng; bỏ bước gen lại ảnh đứng.

@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import { FONT, UI, worldFont } from "../theme";
 import { bubbleX, overlaps, type Box } from "../../world/bubbleLayout";
-import { fitScale, isPhone } from "../../core/device";
+import { fitScale, isPhone, isTouch, minFont } from "../../core/device";
 import { ZOOM } from "../../world/camera";
 
 /** Pool bong bóng thoại dựng sẵn, không cấp phát mới trong scene để tránh GC spike giờ cao điểm. */
@@ -13,6 +13,8 @@ const GLIDE_TAU = 0.1;
 const PHONE_WRAP_CSS = 190;
 /** Điện thoại: bong bóng không né được vùng lò thì mờ bớt để vẫn thấy vòng lò. */
 const PHONE_DIM = 0.55;
+/** Cỡ chữ bong bóng trên khung thiết kế, không theo `ZOOM`, để camera gần mà bong bóng không che cảnh. */
+const BUBBLE_PX = 12;
 
 export class Bubble {
   readonly root: Phaser.GameObjects.Container;
@@ -35,9 +37,12 @@ export class Bubble {
   off: number | null = null;
 
   private px = 0;
+  /** Tỉ lệ thu cả bong bóng về `BUBBLE_PX`; cảm ứng không thu dưới sàn chữ. */
+  private k = 1;
 
   constructor(private scene: Phaser.Scene, private textScale: number) {
     const size = this.px = this.fontPx();
+    this.k = this.shrink(size);
     this.bg = scene.add.graphics();
     this.tail = scene.add.graphics();
     this.label = scene.add.text(0, 0, "", {
@@ -54,13 +59,18 @@ export class Bubble {
     return worldFont(Math.round(12 * this.textScale));
   }
 
+  private shrink(size: number) {
+    const want = Math.max(BUBBLE_PX * this.textScale / ZOOM, isTouch() ? minFont() / (fitScale() * ZOOM) : 0);
+    return Math.min(1, want / size);
+  }
+
   private lineGap(size: number) {
     return Math.round(size * (isPhone() ? 0.3 : 0.7));
   }
 
   private wrapW() {
-    const pc = 190 * Math.min(this.textScale, 1.5);
-    return isPhone() ? Math.min(pc, Math.round(PHONE_WRAP_CSS / (fitScale() * ZOOM))) : pc;
+    const pc = 190 * Math.min(this.textScale, 1.5) / (ZOOM * this.k);
+    return isPhone() ? Math.min(pc, Math.round(PHONE_WRAP_CSS / (fitScale() * ZOOM * this.k))) : pc;
   }
 
   setText(text: string) {
@@ -68,6 +78,7 @@ export class Bubble {
     if (text === this.text && !this.hiding && size === this.px) return;
     if (size !== this.px) {
       this.px = size;
+      this.k = this.shrink(size);
       this.label.setFontSize(`${size}px`).setLineSpacing(this.lineGap(size)).setWordWrapWidth(this.wrapW());
     }
     const fresh = this.text === "" || this.hiding;
@@ -94,11 +105,12 @@ export class Bubble {
     this.anchor = { x, y, scale, depth };
   }
 
-  get size() { return { w: this.w * this.anchor.scale, h: this.h * this.anchor.scale }; }
+  get size() { const s = this.anchor.scale * this.k; return { w: this.w * s, h: this.h * s }; }
 
   /** Chỉ trượt độ lệch so với đầu, nên đầu đi tới đâu bong bóng theo tới đó. */
   place(cx: number, dt: number, reducedMotion: boolean, order = 0, dim = false) {
     const { scale, depth } = this.anchor;
+    const s = scale * this.k;
     const want = cx - this.anchor.x;
     this.off = this.off === null || reducedMotion ? want : this.off + (want - this.off) * (1 - Math.exp(-dt / GLIDE_TAU));
     const x = this.anchor.x + this.off;
@@ -109,9 +121,9 @@ export class Bubble {
       else a *= Math.min(1, (now - this.shownAt) / FADE_IN);
     } else if (this.hiding) a = 0;
     // Hình đuôi rộng -2…8 quanh mũi, mũi nằm 12 px bên trái đỉnh đầu; giữ đáy đuôi trong phần thẳng của viền.
-    this.tail.setX(Math.min(Math.max((this.anchor.x - x) / scale - 12, 11 - this.w / 2), this.w / 2 - 17));
-    this.root.setPosition(x, this.anchor.y - (this.h / 2) * scale)
-      .setScale(scale).setDepth(depth + order).setAlpha(a).setVisible(a > 0);
+    this.tail.setX(Math.min(Math.max((this.anchor.x - x) / s - 12, 11 - this.w / 2), this.w / 2 - 17));
+    this.root.setPosition(x, this.anchor.y - (this.h / 2) * s)
+      .setScale(s).setDepth(depth + order).setAlpha(a).setVisible(a > 0);
   }
 
   /** Trả true khi đã tắt hẳn. */

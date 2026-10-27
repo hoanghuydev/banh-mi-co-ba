@@ -2,19 +2,19 @@ import { COUNTER, PROP } from "../art";
 import { TH, TW } from "./iso";
 import { floorAt, type Floor } from "./map";
 
-/** `side`: phần cao ảnh là mặt bên; `fw`/`fh`: cỡ chân theo ô cho AO. */
-export type LightSpec = { side: number; fw: number; fh: number };
+/** `side`: phần cao ảnh là mặt bên; `fw`/`fh`: cỡ chân theo ô cho AO; `shadow`/`dim`: nhân độ dài/độ đậm bóng đổ; `aoUp`: px chân ảnh cao hơn đáy khung. */
+export type LightSpec = { side: number; fw: number; fh: number; shadow?: number; dim?: number; aoUp?: number };
 
 const SPECS: Record<string, LightSpec> = {
   // Thân hộp kim loại một ô, mặt trên là nắp lò.
-  [PROP.oven]: { side: 0.6, fw: 0.8, fh: 0.8 },
-  [PROP.ovenE]: { side: 0.6, fw: 0.8, fh: 0.8 },
+  [PROP.oven]: { side: 0.6, fw: 0.8, fh: 0.8, shadow: 0.6 },
+  [PROP.ovenE]: { side: 0.6, fw: 0.8, fh: 0.8, shadow: 0.6 },
   // Tủ kính nguyên ô: skill mục 2.
-  [PROP.shelf]: { side: 0.64, fw: 1.0, fh: 0.9 },
+  [PROP.shelf]: { side: 0.64, fw: 1.0, fh: 0.9, shadow: 0.6 },
   // Bình trà đặt trên thùng nhỏ, thân tròn cao.
-  [PROP.tea]: { side: 0.6, fw: 0.5, fh: 0.5 },
+  [PROP.tea]: { side: 0.6, fw: 0.5, fh: 0.5, shadow: 0.6 },
   // Bồn treo trên chân mảnh: skill mục 2.
-  [PROP.sink]: { side: 0.85, fw: 0.35, fh: 0.35 },
+  [PROP.sink]: { side: 0.85, fw: 0.35, fh: 0.35, shadow: 0.6 },
   // Ghế nhựa thấp, chân nhỏ.
   [PROP.stool]: { side: 0.55, fw: 0.5, fh: 0.5 },
   // Mặt bàn mỏng, gần hết ảnh là chân bàn.
@@ -40,12 +40,12 @@ const SPECS: Record<string, LightSpec> = {
   [PROP.bin]: { side: 0.62, fw: 0.62, fh: 0.62 },
   // Bảng chữ A mỏng, hai mặt dựng đứng.
   [PROP.sign]: { side: 0.75, fw: 0.7, fh: 0.3 },
-  // Bình trụ nhỏ, gần hết ảnh là thân.
-  [PROP.fire]: { side: 0.9, fw: 0.3, fh: 0.3 },
+  // Bình trụ nhỏ, gần hết ảnh là thân; ảnh nâng khỏi đáy khung nên AO kéo lên theo chân.
+  [PROP.fire]: { side: 0.9, fw: 0.3, fh: 0.3, aoUp: 12 },
   // Cột dù mảnh; tán ở trên cao không phản chiếu.
   [PROP.umbrella]: { side: 0.1, fw: 0.3, fh: 0.3 },
   [PROP.fridge]: { side: 0.64, fw: 0.8, fh: 0.8 },
-  [PROP.cooler]: { side: 0.6, fw: 0.8, fh: 0.8 },
+  [PROP.cooler]: { side: 0.6, fw: 0.8, fh: 0.8, shadow: 0.4, dim: 0.7 },
 };
 
 export function lightSpecOf(key: string): LightSpec | null {

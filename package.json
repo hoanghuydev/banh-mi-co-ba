@@ -39,6 +39,8 @@
     "probe:topics": "tsx tools/probe-topics.ts"
   },
   "dependencies": {
+    "@fortawesome/free-regular-svg-icons": "^6.7.2",
+    "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "phaser": "^3.90.0"
   },
   "devDependencies": {

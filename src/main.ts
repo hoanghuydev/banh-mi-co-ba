@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { GAME_W, GAME_H } from "./core/config";
-import { RENDER_SCALE, installTextResolution } from "./core/render";
+import { RENDER_SCALE, installTextResolution, refitGame } from "./core/render";
 import { installGraphicsCache } from "./core/graphicsCache";
 import { BUILD_TIME, DEV_TOOLS } from "./core/flags";
 import { FPS_LIMIT, installPhaserPatches } from "./core/phaserPatches";
@@ -58,7 +58,11 @@ if (DEV_TOOLS) {
 
 installRotatePrompt(game);
 installSaveToast();
-onDeviceChange(() => game.scale.refresh());
+onDeviceChange(() => {
+  // Đang trong ngày chơi thì giữ khung cũ, `DayScene` đổi lúc mở cảnh kế.
+  if (!game.scene.isActive("day")) refitGame(game);
+  game.scale.refresh();
+});
 
 const isField = (t: EventTarget | null) => t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement;
 window.addEventListener("contextmenu", (e) => { if (!isField(e.target)) e.preventDefault(); });

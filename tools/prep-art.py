@@ -407,6 +407,9 @@ SMALL = [
     ("shopfront", "mai_bang-Photoroom.png", 1360),
     ("cutting_board", "cutting_board-Photoroom.png", 384),
     ("ro_banh_mi", "ro-banh-mi.png", 384),
+    ("may_lanh", "may_lanh-Photoroom.png", 256),
+    ("loa_rao", "loa_rao-Photoroom.png", 256),
+    ("bang_qr", "bang_qr-Photoroom.png", 160),
 ]
 
 

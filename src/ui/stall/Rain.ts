@@ -30,8 +30,8 @@ const SPLASH_DEPTH = -900_000;
 const DROP_DEPTH = 1_000_000;
 const GRADE_DEPTH = 7_000_000;
 
-// Lưới an toàn cho frame kẹt; mưa rào bình thường chỉ ~55.
-const MAX_DROPS = 110;
+// Lưới an toàn cho frame kẹt; mưa rào bình thường chỉ ~27.
+const MAX_DROPS = 60;
 
 const GRADE_PAD = 24;
 
@@ -96,12 +96,12 @@ export class Rain {
       scaleY: () => this.pending.len / DROP_H,
       rotate: () => this.spin,
       tint: () => this.pending.tint,
-      alpha: { values: [0, 0.72, 0.88, 0.88], interpolation: "linear" },
+      alpha: { values: [0, 0.4, 0.48, 0.48], interpolation: "linear" },
       // ADD làm vệt mưa thành sợi neon.
       blendMode: "NORMAL",
       emitting: false,
       deathCallback: (p: Phaser.GameObjects.Particles.Particle) => this.splashAt(p),
-      reserve: 96,
+      reserve: 48,
       maxAliveParticles: MAX_DROPS,
     };
 

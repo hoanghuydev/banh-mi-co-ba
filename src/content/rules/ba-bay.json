@@ -27,7 +27,7 @@
       "applycontext": { "ctxBarkT1_TAY": { "value": 1, "duration": 120 } } },
 
     { "id": "bay.quaydo.nhacnho", "concept": "SMALLTALK",
-      "when": { "npcId": "BA_BAY", "stallCleanliness": "<=40", "ctxNhacQuayDo": "absent" },
+      "when": { "npcId": "BA_BAY", "stallCleanliness": "<=64", "ctxNhacQuayDo": "absent" },
       "say": ["Con quét cái sàn đi, ruồi bu kìa.", "Cái thùng rác đầy rồi con ơi. Đổ đi kẻo hôi.", "Sạch sẽ là bán được, con nhớ lời dì."],
       "norepeat": true,
       "applycontext": { "ctxNhacQuayDo": { "value": 1, "duration": -1 } } },

@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { fitDesignFrame } from "../core/render";
+import { fitDesignFrame, refitGame } from "../core/render";
 import { dawn } from "../sim/day";
 import { markBroke } from "../sim/broke";
 import { markShutdown } from "../sim/reviews";
@@ -24,6 +24,7 @@ import { sfx } from "../audio/sfx";
 import { ART_SHARE, LOADING, fadeOut, paintTick, setStep, showLoading } from "../ui/bootScreen";
 import { whenWarm } from "./warmup";
 import { nightIn, shutterDown, shutterFade, shutterHold } from "../ui/transition";
+import { dailyTin } from "../sim/vietsoci";
 
 /** Scene thường trực sở hữu `GameContext`, không bao giờ restart; scene con nhận ctx lúc launch và chỉ phát event. */
 export type DayStart = { mode: "new"; shopName?: string; phone?: PhoneState } | { mode: "continue" };
@@ -84,6 +85,7 @@ export class DayScene extends Phaser.Scene {
     deliverDue(w, DAY_START_MIN);
     resellMorning(w);
     phoneTick(w);
+    dailyTin(w);
     ctx.sync();
     w.progress.dayStartSnapshotRef = ctx.save.writeDayStart(ctx.snapshot());
     bus.emit("day:started", { dayIndex: w.progress.dayIndex, daySeed: ctx.rng.daySeed, weather: w.progress.weather });
@@ -161,6 +163,7 @@ export class DayScene extends Phaser.Scene {
   private launch(child: Child, extra: Record<string, unknown>) {
     this.entering = false;
     this.closeChildren();
+    refitGame(this.game);
     const key = ({ stall: "Stall", evening: "Evening", broke: "Broke", win: "Win" } as const)[child];
     this.ctx.setScene(key);
     this.scene.launch(child, { ctx: this.ctx, day: this, ...extra });

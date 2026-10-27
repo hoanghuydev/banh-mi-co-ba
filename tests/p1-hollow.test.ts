@@ -81,7 +81,7 @@ test("ổ chưa có nhân: người điềm đạm + dễ tha vẫn cầm — tr
 test("ổ chưa có nhân KHÔNG BAO GIỜ im — túi im lặng 7/20 không được nuốt tín hiệu này", () => {
   const pool = (RULES.rules as { id: string; say: string[] }[]).find((r) => r.id === "gen.hollow.take")!;
   const matches = (text: string) => pool.say.some((v) => {
-    const re = new RegExp("^" + v.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\\\{mon\\\}/g, ".+") + "$");
+    const re = new RegExp("^" + v.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\\\{\w+\\\}/g, ".+") + "$", "i");
     return re.test(text);
   });
 
