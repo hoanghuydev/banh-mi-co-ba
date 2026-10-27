@@ -433,7 +433,8 @@ export const PHONE_STYLE = `
 .ph-vs .who{display:flex;flex-direction:column;min-width:0}
 .ph-vs .who span{font-size:max(var(--fmin),.78em);color:#6b7680}
 .ph-vs .cap{padding:2px 12px 8px;line-height:1.45}
-.ph-vs .pic{position:relative;display:block;width:100%;padding:0;border:0;background:#111;cursor:pointer}
+.ph-vs .pic{position:relative;display:block;width:100%;padding:0;border:0;background:#111}
+.ph-vs .tap,.ph-vs button.pic{cursor:pointer}
 .ph-vs .pic img{display:block;width:100%;aspect-ratio:4/3;max-height:62vh;object-fit:cover}
 .ph-vs .pic.video::after{content:"";position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;background:rgba(0,0,0,.55) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 7v10l8-5z' fill='%23fff'/%3E%3C/svg%3E") center/30px no-repeat}
 .ph-vs .st{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;color:#6b7680;font-size:max(var(--fmin),.82em)}
@@ -596,7 +597,7 @@ ${L} .ph-cartwrap>.ph-scroll{grid-column:1/-1;grid-row:1/-1;display:grid;grid-te
 ${L} .ph-cartwrap>.ph-scroll>:first-child{grid-column:1;grid-row:1/-1}
 ${L} .ph-cartwrap>.ph-scroll>:not(:first-child){grid-column:2;margin:0 12px 8px 0}
 ${L} .ph-cartwrap .ph-card:first-child{margin-top:0}
-${L} .ph-cartwrap>.ph-compose{grid-column:2;grid-row:2;padding:6px 12px 12px 0;background:#f4f1ea;border:0}
+${L} .ph-cartwrap>.ph-compose{grid-column:2;grid-row:2;position:relative;z-index:1;padding:6px 12px 12px 0;background:#f4f1ea;border:0}
 ${L} .ph-line-item{padding:8px 10px 8px 14px}
 ${L} .ph-sum .kv{padding:8px 14px}
 ${L} .ph-switch{min-height:44px;padding:0 14px}

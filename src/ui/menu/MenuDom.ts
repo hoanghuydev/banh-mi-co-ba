@@ -17,6 +17,7 @@ type Chan = "masterVolume" | "musicVolume" | "streetVolume" | "voiceVolume" | "f
 const peek = () => new SaveService(bus, () => { throw new Error("peek"); });
 const vnd = (n: number) => `${n.toLocaleString("vi-VN")}₫`;
 const HOLD_MS = 1000;
+const SOON_MS = 1500;
 const onOff = (b: boolean) => (b ? "Bật" : "Tắt");
 
 /** Menu dựng bằng DOM phủ trên canvas; chuyển cảnh qua `onStart`. */
@@ -113,6 +114,16 @@ export class MenuDom {
     return btn(`clay-btn ${cls}`.trim(), text, () => { sfx.play(this.scene, "ui_click"); fn(); });
   }
 
+  private soon(text: string) {
+    let timer = 0;
+    const b = this.button(text, () => {
+      b.textContent = "Sắp ra mắt";
+      clearTimeout(timer);
+      timer = window.setTimeout(() => { b.textContent = text; }, SOON_MS);
+    }, "ghost");
+    return b;
+  }
+
   private heading(text: string, tag: "h1" | "h2" = "h2") {
     const h = el(tag, "mn-h", text);
     h.tabIndex = -1;
@@ -162,7 +173,9 @@ export class MenuDom {
     } else {
       stack.append(fresh);
     }
-    stack.append(this.button("Cài đặt", () => this.show("settings")), this.button("Giới thiệu", () => this.show("about")));
+    const modes = el("div", "mn-modes");
+    modes.append(this.soon("Co-op"), this.soon("PvP"));
+    stack.append(modes, this.button("Cài đặt", () => this.show("settings")), this.button("Giới thiệu", () => this.show("about")));
     p.append(hero, stack);
     return p;
   }

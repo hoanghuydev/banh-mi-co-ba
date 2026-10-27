@@ -30,7 +30,7 @@ export function vietsociApp(ctx: AppCtx) {
   const sc = scroller(feed);
   let shown = 0;
   const more = () => {
-    for (const p of posts.slice(shown, shown + FEED_STEP)) feed.append(card(ctx, p, 2));
+    for (const p of posts.slice(shown, shown + FEED_STEP)) feed.append(card(p, 2, () => ctx.go({ app: "vs", id: String(p.id) })));
     shown = Math.min(posts.length, shown + FEED_STEP);
   };
   more();
@@ -43,17 +43,19 @@ export function vietsociApp(ctx: AppCtx) {
 
 function postPage(ctx: AppCtx, p: Post) {
   const feed = el("div", "ph-vs-feed");
-  feed.append(card(ctx, p, p.comments.length));
+  feed.append(card(p, p.comments.length));
   return page(navBar(ctx, { title: p.kenh, back: { label: "VietSoci", to: { app: "vs" } } }), scroller(feed));
 }
 
-function card(ctx: AppCtx, p: Post, comments: number) {
+/** `open` có thì ảnh và phần bình luận mở trang chi tiết; trang chi tiết thì không truyền. */
+function card(p: Post, comments: number, open?: () => void) {
   const c = el("div", "ph-vs");
   const head = el("div", "hd");
   const who = el("div", "who");
   who.append(el("b", "", p.kenh), el("span", "", `Ngày ${p.day}`));
   head.append(el("span", "av", p.kenh.slice(0, 1).toUpperCase()), who);
-  const pic = btn(`pic${p.video ? " video" : ""}`, "", () => ctx.go({ app: "vs", id: String(p.id) }), `Mở bài của ${p.kenh}`);
+  const picCls = `pic${p.video ? " video" : ""}`;
+  const pic = open ? btn(picCls, "", open, `Mở bài của ${p.kenh}`) : el("div", picCls);
   const img = el("img") as HTMLImageElement;
   img.src = postImg(p);
   img.alt = "";
@@ -61,16 +63,24 @@ function card(ctx: AppCtx, p: Post, comments: number) {
   const stats = el("div", "st");
   const likes = el("span", "lk");
   likes.append(fa(faThumbsUpSolid, "like"), fa(faHeart, "love"), document.createTextNode(count(p.likes)));
-  stats.append(likes, el("span", "", `${count(p.comments.length)} bình luận`));
+  const nCm = el("span", "", `${count(p.comments.length)} bình luận`);
+  stats.append(likes, nCm);
   const acts = el("div", "ac");
   for (const [icon, label] of [[faThumbsUp, "Thích"], [faComment, "Bình luận"], [faShare, "Chia sẻ"]] as const) {
     const a = el("span");
     a.append(fa(icon), document.createTextNode(label));
     acts.append(a);
+    if (open && icon === faComment) tappable(a, open);
   }
   c.append(head, el("div", "cap", p.caption), pic, stats, acts);
   const cm = el("div", "cm");
   for (const t of p.comments.slice(0, comments)) cm.append(el("div", "", t));
   if (cm.childElementCount) c.append(cm);
+  if (open) { tappable(nCm, open); tappable(cm, open); }
   return c;
+}
+
+function tappable(e: HTMLElement, open: () => void) {
+  e.classList.add("tap");
+  e.onclick = open;
 }

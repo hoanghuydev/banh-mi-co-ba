@@ -16,6 +16,8 @@ export const MENU_CSS = CLAY_CSS + `
 .mn-logo{display:block;width:min(300px,72%);max-height:42dvh;object-fit:contain;margin:0 auto;filter:drop-shadow(0 8px 14px rgba(0,0,0,.45))}
 .mn-sub{margin:0;text-align:center;font-size:.95em;font-weight:600;color:#fffaf0;text-shadow:0 1px 2px rgba(0,0,0,.85),0 2px 8px rgba(0,0,0,.6)}
 .mn-stack{display:flex;flex-direction:column;gap:12px}
+.mn-modes{display:flex;gap:inherit}
+.mn-modes .clay-btn{flex:1 1 0;min-width:0}
 .mn-h{margin:0;font-size:1.5em;line-height:1.25;font-weight:700;text-align:center;outline:0;overflow-wrap:anywhere}
 
 .mn-root .clay-btn{width:100%;min-height:3.1em;padding:.4em 1.1em;font-size:1em;touch-action:manipulation;-webkit-tap-highlight-color:transparent;overflow-wrap:anywhere;text-align:center}

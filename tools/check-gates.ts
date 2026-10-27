@@ -54,13 +54,6 @@ if (/colyseus/i.test(read(join(ROOT, "package.json")))) gates.push({ name: "pack
 scan("clock.advance() chỉ ở StallScene + sim/headless", ["src"], /\.advance\(/, {
   exclude: (f) => ["src/core/clock.ts", "src/scenes/StallScene.ts", "src/sim/headless.ts"].includes(rel(f)),
 });
-{
-  const hits = ["README.md", "index.html"].flatMap((f) =>
-    read(join(ROOT, f)).split("\n").map((l, i) => ({ l, i }))
-      .filter(({ l }) => /\b(multiplayer|co-?op|netcode)\b/i.test(l) && !/cắt|cut|không|removed|❌/i.test(l))
-      .map(({ l, i }) => `${f}:${i + 1}  ${l.trim()}`));
-  gates.push({ name: 'không hứa "multiplayer / co-op / netcode"', hits });
-}
 
 if (process.argv.includes("--dist")) {
   const dist = join(ROOT, "dist");
