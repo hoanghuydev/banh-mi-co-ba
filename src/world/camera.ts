@@ -6,6 +6,9 @@ import Phaser from "phaser";
 import { GAME_W, GAME_H } from "../core/config";
 import { MAX_SCALE, RENDER_SCALE, fitDesignFrame } from "../core/render";
 import { fitScale, isTouch } from "../core/device";
+import { footY } from "../art/canvas";
+import { toScreen } from "./iso";
+import { MAP, STATION_ROW_Y } from "./map";
 
 /** Khung 16:9 thấy 613 × 345 px thế giới: gần người chơi, vẫn vừa hàng trạm với quầy đưa hàng; độ nét đến từ `RENDER_SCALE`. */
 export const BASE_ZOOM = 1.67;
@@ -30,17 +33,32 @@ export function applyDeviceZoom() {
 
 /** Bằng quãng thớt → chỗ đưa hàng (360 px) để mỗi lượt khách không thành một cú lia máy. */
 const DEADZONE_W = 360;
-const DEADZONE_H = 140;
+const DEADZONE_H = 40;
 
 /** 0..1 mỗi frame; thấp = trôi mượt, cao = bám sát. */
-const LERP = 0.09;
+const LERP = 0.15;
 
-/** Âm là nhìn cao hơn chân người chơi, để hàng vòng lò không chui xuống dưới nút HUD. */
-const LOOK_DOWN = -36;
-/** Cảm ứng nhìn cao hơn để hàng vòng lò không chui xuống dưới nút HUD. */
-const LOOK_DOWN_TOUCH = -48;
 /** Cảm ứng nhìn lệch trái để hàng khách ở mép trái nằm ngoài tầm ngón cái và vùng cắt của khung. */
 const LOOK_LEFT_TOUCH = 60;
+/** Nhìn trước theo hướng đi dọc màn hình, px thế giới. */
+const LOOK_AHEAD = 40;
+const LOOK_AHEAD_RATE = 3;
+/** Px/giây dọc màn hình tối thiểu để tính là đang đi. */
+const MOVE_MIN = 20;
+
+/** Trong bếp (hàng ô ≤ `KITCHEN_IN`) khung nhìn đặt theo lò, ra tới `KITCHEN_OUT` thì về bám người chơi. */
+const KITCHEN_IN = 3.2;
+const KITCHEN_OUT = 4.4;
+const ZONE_RATE = 2.5;
+/** Px từ chân lò lên đỉnh vòng lò. */
+const OVEN_RING_H = 124;
+const OVEN_MARGIN = 6;
+
+/** Neo cố định chứ không theo cột người chơi, vì hàng trạm dốc: đứng ở bồn rửa thì lò vẫn phải thấy. */
+const OVEN_TOP = (() => {
+  const tx = MAP[STATION_ROW_Y].indexOf("O");
+  return footY(toScreen(tx + 0.5, STATION_ROW_Y + 0.5).sy) - OVEN_RING_H;
+})();
 
 export class StallCamera {
   readonly ui: Phaser.Cameras.Scene2D.Camera;
@@ -49,6 +67,9 @@ export class StallCamera {
 
   private target: Phaser.GameObjects.Zone;
   private snapped = false;
+  private lastY = 0;
+  private ahead = 0;
+  private kitchen = 0;
   private pending: Phaser.GameObjects.GameObject[] = [];
   private onAdd: (o: Phaser.GameObjects.GameObject) => void;
   private onPreRender: () => void;
@@ -80,13 +101,54 @@ export class StallCamera {
     this.pending.push(...scene.children.list);
   }
 
-  /** Toạ độ màn hình (đã qua `toScreen` + `footY`). */
-  lookAt(sx: number, sy: number) {
-    const y = sy + (touchMode ? LOOK_DOWN_TOUCH : LOOK_DOWN);
+  /** `wx`, `wy` là ô thế giới của người chơi, `topInset` đáy dải HUD trên cùng theo px thiết kế, `dt` giây thật. */
+  lookAt(wx: number, wy: number, topInset: number, dt: number) {
+    const p = toScreen(wx, wy);
+    const sx = p.sx, sy = footY(p.sy);
     const x = sx - (touchMode ? LOOK_LEFT_TOUCH : 0);
+    const inKitchen = wy <= KITCHEN_IN ? 1 : wy >= KITCHEN_OUT ? 0 : (KITCHEN_OUT - wy) / (KITCHEN_OUT - KITCHEN_IN);
+    if (!this.snapped) {
+      this.kitchen = inKitchen;
+    } else if (dt > 0) {
+      const v = (sy - this.lastY) / dt;
+      if (Math.abs(v) > MOVE_MIN) this.ahead += (Math.sign(v) * LOOK_AHEAD - this.ahead) * (1 - Math.exp(-LOOK_AHEAD_RATE * dt));
+      this.kitchen += (inKitchen - this.kitchen) * (1 - Math.exp(-ZONE_RATE * dt));
+    }
+    this.lastY = sy;
+
+    const viewH = GAME_H / ZOOM;
+    const dzHalf = (DEADZONE_H * BASE_ZOOM / ZOOM) / 2;
+    const kitchenY = OVEN_TOP - OVEN_MARGIN - topInset / ZOOM + viewH / 2 - dzHalf;
+    const y = Phaser.Math.Linear(sy + this.ahead, kitchenY, this.kitchen);
     this.target.setPosition(x, y);
     // Frame đầu nhảy thẳng tới, không trôi từ giữa bản đồ vào.
     if (!this.snapped) { this.snapped = true; this.world.centerOn(x, y); }
+  }
+
+  private homeZoom = 0;
+  private held = false;
+
+  /** Tạm rời người chơi, lia tới điểm màn hình (`x`, `y`) và phóng `zoomMul` lần; `ms` 0 là cắt thẳng. */
+  focus(x: number, y: number, zoomMul: number, ms: number): Promise<void> {
+    const cam = this.world;
+    if (!this.held) { this.held = true; this.homeZoom = cam.zoom; cam.stopFollow(); }
+    return this.glide(x, y, this.homeZoom * zoomMul, ms);
+  }
+
+  /** Lia về người chơi rồi bám lại như cũ. */
+  async release(ms: number) {
+    const cam = this.world;
+    if (!this.held) return;
+    await this.glide(this.target.x, this.target.y, this.homeZoom, ms);
+    this.held = false;
+    cam.startFollow(this.target, false, cam.lerp.x, cam.lerp.y);
+  }
+
+  private glide(x: number, y: number, zoom: number, ms: number) {
+    const cam = this.world;
+    if (ms <= 0) { cam.setZoom(zoom).centerOn(x, y); return Promise.resolve(); }
+    cam.zoomTo(zoom, ms, "Sine.easeInOut", true);
+    return new Promise<void>((done) => cam.pan(x, y, ms, "Sine.easeInOut", true, (_c, t) => { if (t === 1) done(); }));
   }
 
   /** Chạy ở `PRE_RENDER` vì `setScrollFactor` và `container.add()` gọi sau lúc dựng object. */

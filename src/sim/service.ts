@@ -12,7 +12,7 @@ import { orderDefectKey } from "../core/stimid";
 import { Customer, DEFAULT_PATIENCE_SEC, LEAVE_AT, PATIENCE_BONUS_SEC, TEA, teaSuspectAtCup, type LeaveReason } from "./customer";
 import {
   INGREDIENTS, diffDish, extraPortions, extrasOf, generosityOf, monVi, labelOf, levelsOf, mkDefect,
-  sayOrder, tasteDefect, tasteGroup,
+  plainIntent, qtyOf, sayOrder, specOf, tasteDefect, tasteGroup,
   type Defect, type DefectKind, type Ingredient, type OrderSpec,
 } from "./order";
 import type { ServeRecord } from "./reviews";
@@ -35,15 +35,14 @@ import {
   // `kindOf` của `talk.ts` đụng tên với `kindOf` lỗi món đã có sẵn trong file này.
   kindOf as talkKindOf, countsAgainstDailyCap, forSecOf, satisfiesOf,
   type TalkOpenBy, type Deed, type ForSec,
-  type Talk, type TalkAct, type TalkCtx, type TalkEffect, type TalkGate, type TalkMood, type TalkTone,
+  type Talk, type TalkAct, type TalkCtx, type TalkEffect, type TalkGate, type TalkMood, type TalkOrder, type TalkTone,
 } from "./talk";
 import { PRICE_FX, dishPriceVnd, dongVi, isRain, pickOf, tasteThreshold, weatherOf, type DishFlaws, type PricePicks } from "./econ";
-import { nhanOf, type MenuItemId } from "./menu";
+import { isBare, itemOf, nhanOf, type MenuItemId } from "./menu";
 import { isOpen } from "./unlock";
 import { easeBalk } from "./ease";
 import { peakCap } from "./ease";
 import { AIRCON, has, priceWalkMul, type EquipId, type EquipState } from "./equipment";
-import { makeChange } from "./till";
 import { moodBaseFace, moodPatienceMul, rollMood } from "./mood";
 import { faceHoldSec, intensityMul, isSilentGrudge, reactionDelay } from "./personality";
 import { GROUP_OF, faceFor, poseFor, type Group, type Intensity, type PoseId } from "./reaction";
@@ -298,7 +297,8 @@ export type ServiceDeps = {
   /** Số khách lạ thêm trong ngày. */
   extraGuests?: number;
   gazeMul?: number;
-  till?: { floatLeft: number };
+  /** Tiền quán; trỏ vào `SaveFile.money`, bên ngoài trừ/cộng khi rút sự kiện. */
+  money?: { cash: number };
   equip?: EquipState;
   loaOn?: boolean;
   noTimePressure?: boolean;
@@ -1497,8 +1497,15 @@ export class Service {
     if (defects.length) this.react(c, "ORDER_DEFECT", worst >= DEFECT_FACE_I3 ? 3 : 2);
     else this.react(c, "FREE_EXTRA", 2, "HAND_OUT");
 
+    const qty = qtyOf(c.order!);
+    if (++c.handed < qty) {
+      this.out.push({ kind: "log", text: `${this.label(c)} nhận ${c.handed}/${qty} ổ.` });
+      c.waitSec = 0;
+      c.waitStage = 0;
+      return { ok: true, playerSay };
+    }
     if (hollow) this.out.push({ kind: "log", text: `${this.label(c)} cầm ổ chưa có nhân — tính tiền bánh mì không.` });
-    this.settlePayment(c, this.pricedAfterPledge(c, this.priceOf(hollow ? { mon: "khong" } : c.order!.intent)));
+    this.settlePayment(c, this.pricedAfterPledge(c, qty * this.priceOf(hollow ? { mon: "khong" } : c.order!.intent)));
     // GRIT đứng TRƯỚC DEFECT — xem `ServeOutcome`.
     this.serveOutcome.set(c.id, grit ? "GRIT" : defects.length ? "DEFECT" : c.waitStage >= 2 ? "WAITED" : "CLEAN");
     c.carrying = true;
@@ -1618,8 +1625,24 @@ export class Service {
     return !this.someoneWaiting(except) && !deepGateReason(this.deepToday, this.nowMin);
   }
 
+  private canReorder(c: Customer, o: TalkOrder): boolean {
+    if (!c.order || c.phase !== "waiting" || c.handed > 0) return false;
+    if (o.mon && !isOpen(o.mon, this.deps.day)) return false;
+    if (o.ot !== undefined && isBare(o.mon ?? c.order.intent.mon)) return false;
+    return this.stock >= (o.qty ?? 1);
+  }
+
+  private reorder(c: Customer, o: TalkOrder) {
+    if (!c.order) return;
+    const intent = o.mon && o.mon !== c.order.intent.mon ? plainIntent(o.mon) : { ...c.order.intent };
+    if (o.ot !== undefined && !isBare(intent.mon)) intent.ot = o.ot;
+    c.order = { ...specOf(intent), qty: o.qty ?? c.order.qty };
+    c.orderLine = sayOrder(c.order);
+  }
+
   /** `SHORT`/`BARK` nói được lúc đang bán nhưng chỉ với người đang phục vụ. */
   private canRun(t: Talk, c: Customer): boolean {
+    if (t.order && !this.canReorder(c, t.order)) return false;
     const kind = talkKindOf(t);
     // `inviteChance` đã tính quán vắng, không bắt qua trần ngày nữa.
     if (kind === "MOI") return !this.someoneWaiting(c);
@@ -1687,7 +1710,6 @@ export class Service {
       handsDirty: this.handsDirty,
       onStreet: this.playerOnStreet,
       soldOut: this.soldOut,
-      cash: this.deps.till?.floatLeft ?? 0,
       teaLeft: this.teaLeft,
       stock: this.stock,
       them: {
@@ -1804,6 +1826,11 @@ export class Service {
   }
 
   /** Ánh xạ nguyên nhân kỹ thuật sang lý do con người; ⚠️ duyệt người chơi trước, hoàn cảnh sau. */
+  talkLoading(): boolean {
+    const c = this.talkTarget();
+    return !!c && !this.talks.has(this.talkKey(c));
+  }
+
   talkUnavailable(): string | null {
     const c = this.talkTarget();
     if (!c) return null;
@@ -1970,7 +1997,7 @@ export class Service {
       flags: this.talkFlags(),
       day: this.deps.day,
       holds: w ? (key: string) => holds(key, w) : undefined,
-      cash: this.deps.till?.floatLeft,
+      cash: this.deps.money?.cash,
       noInvite: !!c?.inviteRefused,
       filmed: this.deps.filmed,
       hasEquip: (id: string) => has(this.deps.equip, id as EquipId),
@@ -1982,6 +2009,7 @@ export class Service {
     if (!s.includes("{")) return s;
     const a = this.addressOf(c);
     if (s.includes("{gio}")) s = s.replace(/\{gio\}/g, gioVi(this.nowMin));
+    if (s.includes("{mon}") && c.order) s = s.replace(/\{mon\}/g, itemOf(c.order.intent.mon).call);
     if (s.includes("{gia")) {
       const one = c.order ? this.priceOf(c.order.intent) : this.priceOf({ mon: "opla" });
       s = s.replace(/\{gia(\d*)\}/g, (_m, n: string) => dongVi(one * (Number(n) || 1)));
@@ -2070,16 +2098,13 @@ export class Service {
     this.pledges.set(c.id, pledge);
     switch (act.kind) {
       case "PAY": {
-        const have = this.deps.till?.floatLeft ?? Infinity;
-        const amt = Math.min(act.vnd, have);
-        if (this.deps.till) this.deps.till.floatLeft -= amt;
+        const amt = Math.min(act.vnd, this.deps.money?.cash ?? Infinity);
         this.out.push({ kind: "cost", amount: amt, item: "talk" });
         this.out.push({ kind: "log", text: `${act.note} — ${amt.toLocaleString("vi-VN")}₫` });
         break;
       }
       case "TAKE_CASH": {
-        // Vào `floatLeft`, không vào doanh thu; `cost` âm vì dương là tiền ra khỏi két.
-        if (this.deps.till) this.deps.till.floatLeft += act.vnd;
+        // `cost` âm để không tính vào doanh thu.
         this.out.push({ kind: "cost", amount: -act.vnd, item: "talk" });
         this.out.push({ kind: "log", text: `${act.note} — +${act.vnd.toLocaleString("vi-VN")}₫` });
         break;
@@ -2575,6 +2600,7 @@ export class Service {
     this.offersToday++;
     this.lastOfferAt = this.nowSec;
     this.offers.push({ c, talk, at: this.nowSec });
+    if (talk.order) this.reorder(c, talk.order);
     this.say(c, this.fill(c, talk.opener), 2, true, 70, undefined, 0, true);
     this.out.push({ kind: "talkOffer", npcId: c.memKey, name: this.label(c) });
     return true;
@@ -2617,29 +2643,15 @@ export class Service {
     return { npc: c.memKey, facts: q.dump(), ranking: this.speaker.db.explain(concept, q, this.speaker.st, this.nowSec) };
   }
 
-  /** Giá theo thực đơn (không bao giờ trừ tiền bánh). Thiếu lẻ thì làm tròn xuống hoặc chạy qua cô Thuý. */
+  /** Giá theo thực đơn (không bao giờ trừ tiền bánh). */
   private settlePayment(c: Customer, price: number) {
     const r = this.deps.hub.derive(`cash:${c.id}`);
-    const qr = has(this.deps.equip, "BANG_QR");
-    let amount = price;
-    const scanned = qr && r.next() < 0.5;
-    if (this.deps.till && !scanned) {
-      const ch = makeChange(amount, this.deps.till, r.next());
-      if (!ch.ok) {
-        if (ch.roundedDown) {
-          amount -= ch.roundedDown;
-          this.out.push({ kind: "log", text: `hết tiền lẻ — bớt cho khách ${ch.roundedDown.toLocaleString("vi-VN")}₫` });
-        } else {
-          this.out.push({ kind: "log", text: "hết tiền lẻ — chạy qua cô Thuý đổi" });
-        }
-      }
-    }
     let tip = 0;
     if (has(this.deps.equip, "QUAT_DIEN") && r.next() < AIRCON.tipChance) {
       const [lo, hi] = AIRCON.tip;
       tip = lo + Math.floor(r.next() * ((hi - lo) / 1000 + 1)) * 1000;
     }
-    this.out.push({ kind: "paid", amount: amount + tip, item: "dish", tip });
+    this.out.push({ kind: "paid", amount: price + tip, item: "dish", tip });
   }
 
   label(c: Customer) {

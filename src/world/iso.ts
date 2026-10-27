@@ -25,6 +25,12 @@ export type Facing8 = Facing | "se" | "sw" | "ne" | "nw";
 /** Chia đều 45° trên lưới iso chưa nhân tỉ lệ 2:1, để khớp đúng tám tổ hợp phím của `Player.move`. */
 const RING = ["w", "nw", "n", "ne", "e", "se", "s", "sw", "w"] as const;
 
+/** Xoay `steps` nấc 45°, dương theo chiều kim đồng hồ trên màn hình. */
+export function turn8(f: Facing8, steps: number): Facing8 {
+  const i = RING.indexOf(f);
+  return RING[(((i + steps) % 8) + 8) % 8];
+}
+
 export function facingOf8(wdx: number, wdy: number): Facing8 {
   const ssx = wdx - wdy, ssy = wdx + wdy;
   // atan2 trả về −π..π; chia 45° rồi làm tròn ra −4..4, cộng 4 thành chỉ số của RING.

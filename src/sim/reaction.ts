@@ -79,8 +79,8 @@ export function poseFor(g: Group, p: Personality, i: Intensity): PoseId {
   return POSE_TABLE[g][dominant(p)][i - 1];
 }
 
-/** Target dáng theo pixel màn hình: `fwd` về phía quầy, `up` lên trên, `rot` độ; `osc` dao động quanh target, `d` giảm chấn lò xo riêng. */
-export type PoseDef = { fwd: number; up: number; rot: number; sy?: number; osc?: { axis: "x" | "y" | "rot"; amp: number; period: number; beats?: number }; d?: number };
+/** Target dáng theo pixel màn hình: `fwd` về phía quầy, `up` lên trên, `rot` độ; `turn` số nấc 45° quay mặt đi; `osc` dao động quanh target, `d` giảm chấn lò xo riêng. */
+export type PoseDef = { fwd: number; up: number; rot: number; sy?: number; turn?: number; osc?: { axis: "x" | "y" | "rot"; amp: number; period: number; beats?: number }; d?: number };
 export const POSES: Record<PoseId, PoseDef> = {
   IDLE:              { fwd: 0, up: 0, rot: 0 },
   LEAN_IN:           { fwd: 4, up: 0, rot: 2 },
@@ -92,7 +92,7 @@ export const POSES: Record<PoseId, PoseDef> = {
   SHAKE_SLOW:        { fwd: 0, up: 0, rot: 0, osc: { axis: "rot", amp: 4, period: 0.9, beats: 2 } },
   SHRUG:             { fwd: 0, up: 3, rot: 0, sy: 1.04 },
   ARMS_CROSS:        { fwd: 0, up: 0, rot: 1, sy: 0.99 },
-  TURN_AWAY_QUARTER: { fwd: -2, up: 0, rot: -8 },
+  TURN_AWAY_QUARTER: { fwd: -2, up: 0, rot: 0, turn: 2 },
   SHIFT_WEIGHT:      { fwd: 0, up: 0, rot: 0, osc: { axis: "x", amp: 3, period: 1.8 } },
   CHECK_TIME:        { fwd: 0, up: -1, rot: 5 },
   PHONE_DOWN:        { fwd: 0, up: -2, rot: 6 },

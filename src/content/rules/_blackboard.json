@@ -382,12 +382,6 @@
       "scope": "Player",
       "type": "bool"
     },
-    "playerCash": {
-      "scope": "Player",
-      "type": "number",
-      "min": 0,
-      "_note": "till.floatLeft — đồng, không phải nghìn"
-    },
     "playerTeaLeft": {
       "scope": "Player",
       "type": "number",
@@ -643,9 +637,6 @@
     },
     "p.hasTea": {
       "playerTeaLeft": ">=1"
-    },
-    "p.cash": {
-      "playerCash": ">=$"
     },
     "p.stock": {
       "playerStock": "<=$"

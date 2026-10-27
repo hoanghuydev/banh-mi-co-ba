@@ -64,6 +64,8 @@ export class Customer implements Observer {
 
   order: OrderSpec | null = null;
   orderLine = "";
+  /** Số ổ đã nhận của đơn. */
+  handed = 0;
 
   waitSec = 0;
   /** Ly trà nới ra (`waitMore`); mốc bỏ đi là `waitT · LEAVE_AT`. */

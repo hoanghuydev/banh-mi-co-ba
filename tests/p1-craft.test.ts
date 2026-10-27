@@ -183,3 +183,11 @@ test("bánh nướng CHƯA TỚI là một lỗi thật, nặng dần, nhưng kh
   assert.ok(dough < cold, `ổ bột sống ${dough} phải nhẹ hơn ổ nguội ${cold}`);
 });
 
+
+test("máy trà chưa mua không giành chỗ của lò khi đứng giữa hai trạm", () => {
+  const noTea = (s: { id: string }) => s.id === "tea";
+  assert.equal(stationNear(8.6, 2.2)?.id, "tea");
+  assert.equal(stationNear(8.6, 2.2, null, noTea)?.id, "oven");
+  const tea = STATIONS.find((s) => s.id === "tea")!;
+  assert.equal(stationNear(8.6, 2.2, tea, noTea)?.id, "oven", "trạm cũ bị loại thì không bám");
+});

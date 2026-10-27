@@ -426,7 +426,7 @@
         {
           "say": "Rồi chạy xong cô ăn bánh mì hả?",
           "tone": "DUA",
-          "reply": "Ờ đó! Chạy xong ăn mới ngon. Con cho cô hai ổ nha.",
+          "reply": "Ờ đó! Chạy xong ăn mới ngon. Con làm lẹ cho cô nha.",
           "then": [
             {
               "say": "Vậy chạy gì nữa cô.",
@@ -434,9 +434,9 @@
               "reply": "Thì chạy cho đáng cái ổ bánh chứ con!"
             },
             {
-              "say": "Hai ổ liền cô.",
+              "say": "Có liền cô.",
               "tone": "THUONG",
-              "reply": "Ừ. Ổ thứ hai không hành nha con."
+              "reply": "Ừ. Cô đói muốn xỉu rồi nè."
             }
           ]
         },
@@ -747,7 +747,7 @@
           "say": "Chuyện sổ sách của con để con lo cô.",
           "tone": "GAT",
           "anger": 25,
-          "reply": "…Ừ. Cô lo chuyện cô. Cho cô hai ổ.",
+          "reply": "…Ừ. Cô lo chuyện cô. Làm bánh cho cô đi con.",
           "mood": "BUC"
         }
       ],

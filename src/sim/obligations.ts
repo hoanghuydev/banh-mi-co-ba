@@ -30,15 +30,12 @@ export type EconBook = { today: EconToday };
 
 export type EconState = {
   today: EconToday;
-  /** Tiền lẻ đổi ở cô Thuý sáng nay (đồng) và còn lại bao nhiêu. */
-  float: number;
-  floatLeft: number;
   neighborAnnoyance: number;
   loaOffUntil: number;
 };
 
 export const newEconState = (): EconState => ({
-  today: newToday(1), float: 0, floatLeft: 0, neighborAnnoyance: 0, loaOffUntil: 0,
+  today: newToday(1), neighborAnnoyance: 0, loaOffUntil: 0,
 });
 export const newToday = (day: number): EconToday =>
   ({ day, market: 0, fixed: 0, rent: 0, tools: 0, talk: 0, family: 0,

@@ -24,13 +24,14 @@ test("HA-1 cả hai act đều có nút nội dung gọi tới — act không ai
   assert.ok(dem("OVERHEARD_BY") >= 1, "OVERHEARD_BY không nút nào gọi");
 });
 
-test("HA-2 `TAKE_CASH` làm tiền lẻ trong ống TĂNG thật", () => {
-  const { h, svc } = dung();
+test("HA-2 `TAKE_CASH` làm tiền trong ống TĂNG thật", () => {
+  const { w, h, svc } = dung();
   for (let i = 0; i < 20000 && !svc.customers.length; i++) h.step(1000 / 30);
   assert.ok(svc.customers.length, "cả buổi không ai tới");
-  const truoc = svc.deps.till.floatLeft;
+  const truoc = w.money.cash;
   svc.applyTalkOption(svc.customers[0], { act: { kind: "TAKE_CASH", vnd: 2000, note: "thử" } });
-  assert.equal(svc.deps.till.floatLeft, truoc + 2000, "cầm tiền mà két không nhích");
+  (h as unknown as { drain(): void }).drain();
+  assert.equal(w.money.cash, truoc + 2000, "cầm tiền mà két không nhích");
 });
 
 test("HA-3 `TAKE_CASH` KHÔNG tính là doanh thu — nó là tiền quay lại ống", () => {

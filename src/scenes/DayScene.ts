@@ -79,7 +79,7 @@ export class DayScene extends Phaser.Scene {
     w.stall.cleanliness = 1 - (1 - w.stall.cleanliness) * 0.4;
     gcBags(w.shuffleBags, w.progress.dayIndex);
     // Trước bản chụp đầu ngày, để chơi lại không thu tiền chỗ hai lần.
-    installPending(w);
+    const installed = installPending(w);
     dawn(w);
     clearBuffsIfStale(w);
     deliverDue(w, DAY_START_MIN);
@@ -92,7 +92,7 @@ export class DayScene extends Phaser.Scene {
     // Ở đây chứ không ở `StallScene` vì cảnh quán còn bị mở lại giữa ngày.
     sfx.play(this, "ui_chuyen_ngay");
     sfx.play(this, "sfx_cua_cuon", { delay: 450, volume: 0.8 });
-    this.open("stall");
+    this.open("stall", { installed });
     ctx.save.request("SCENE_CHANGE");
   }
 

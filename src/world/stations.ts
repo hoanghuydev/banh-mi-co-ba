@@ -84,7 +84,7 @@ export const STATIONS: Station[] = [
     gives: "empty", holdMs: 0,
   },
   {
-    // Chỉ có khi đã mua `BINH_TRA` (`StallScene` lọc, `propHidden` giấu trên bản đồ).
+    // Chỉ có khi đã mua `BINH_TRA` (`StallScene` loại qua `skip`, `propHidden` giấu trên bản đồ).
     id: "tea", tx: 9, ty: STATION_ROW_Y, name: "máy nước trà", verb: "rót ly nước trà",
     slot: "UNDER_COUNTER", needs: ["empty"], gives: "tea", holdMs: 600,
   },
@@ -106,8 +106,8 @@ const REACH = 1.6;
 // Trạm mới phải gần hơn hẳn (bình phương khoảng cách × 0,62 ≈ gần hơn 21%) mới giật khỏi trạm đang chọn, chống nhảy qua lại.
 const STICKY = 0.62;
 
-// `current` là trạm frame trước để bám lấy; bỏ trống thì gần nhất thắng.
-export function stationNear(wx: number, wy: number, current?: Station | null): Station | null {
+// `current` là trạm frame trước để bám lấy; `skip` loại trạm chưa có trong quán.
+export function stationNear(wx: number, wy: number, current?: Station | null, skip?: (s: Station) => boolean): Station | null {
   const dist2 = (s: Station) => {
     const c = stationCenter(s);
     const dx = c.x - wx, dy = c.y - wy;
@@ -116,10 +116,11 @@ export function stationNear(wx: number, wy: number, current?: Station | null): S
   let best: Station | null = null;
   let bestD = REACH * REACH;
   for (const s of STATIONS) {
+    if (skip?.(s)) continue;
     const d = dist2(s);
     if (d < bestD) { bestD = d; best = s; }
   }
-  if (!current || !best || best === current) return best;
+  if (!current || !best || best === current || skip?.(current)) return best;
   const dCur = dist2(current);
   if (dCur <= REACH * REACH && bestD > dCur * STICKY) return current;
   return best;

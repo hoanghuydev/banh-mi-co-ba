@@ -8,6 +8,7 @@
       "source": "NPC_ONLY",
       "depth": "FULL",
       "opener": "Dạ chị ơi… ổ không thôi bao nhiêu vậy chị?",
+      "order": { "mon": "khong" },
       "weight": 12,
       "shared": {
         "ket": [
@@ -234,7 +235,8 @@
       "topic": "thi",
       "source": "NPC_ONLY",
       "depth": "BARK",
-      "opener": "Dạ cho em hai ổ đầy đủ. Em đi thi á chị.",
+      "opener": "Chị làm em hai ổ luôn nha. Em đi thi á chị.",
+      "order": { "qty": 2 },
       "weight": 11,
       "tree": [
         {
@@ -254,7 +256,7 @@
               "reply": "Một ổ để trưa á chị. Thi xong là không kịp ăn."
             },
             {
-              "say": "Ừ, hai ổ đầy đủ.",
+              "say": "Ừ, hai ổ {mon}.",
               "tone": "THUONG",
               "reply": "Dạ."
             }
@@ -586,7 +588,8 @@
       "source": "NPC_ONLY",
       "depth": "FULL",
       "weight": 10,
-      "opener": "Chị ơi. Cho em ổ đầy đủ, nhiều ớt. Em nói trọn một câu rồi nè.",
+      "opener": "Chị ơi. Cho em ổ {mon}, nhiều ớt. Em nói trọn một câu rồi nè.",
+      "order": { "ot": 2 },
       "shared": {
         "ket": [
           {
@@ -684,7 +687,7 @@
           ]
         },
         {
-          "say": "Ừ. Một ổ đầy đủ.",
+          "say": "Ừ. Một ổ {mon}.",
           "tone": "LANH",
           "reply": "…Dạ.",
           "mood": "LANH"
@@ -709,11 +712,11 @@
         {
           "say": "Ăn sáng chưa em?",
           "tone": "AM",
-          "reply": "Em ăn ổ không thôi chị. No mà.",
+          "reply": "Em ăn bánh mì nè chị. No mà.",
           "mood": "NGUONG",
           "then": [
             {
-              "say": "Ổ không khô lắm. Để chị thêm chút pate cho.",
+              "say": "Ăn vậy sao đủ. Để chị thêm chút pate cho.",
               "tone": "AM",
               "reply": "Thôi chị, để em trả thêm… …Dạ. Em cảm ơn.",
               "mood": "NGUONG",
@@ -769,8 +772,8 @@
                   "khongOt"
                 ],
                 "aiXin": "HO",
-                "ok": "Dạ… cho em ổ đầy đủ. Dạ, khỏi ớt cô.",
-                "no": "Dạ… thôi cô. Dạ em ăn như cũ."
+                "ok": "Dạ… cho em ổ đầy đủ. Dạ, khỏi ớt chị.",
+                "no": "Dạ… thôi chị. Dạ em ăn như cũ."
               },
               "need": [
                 "w.menuDayDu"

@@ -13,6 +13,7 @@ import type { Face, PoseId } from "./reaction";
 import type { PracticeId } from "../content/vocab";
 import { DRIVE_TUNE, pickWeighted, type Satisfies } from "./drives";
 import type { DriveId } from "../content/vocab";
+import type { MenuItemId } from "./menu";
 
 /** ⚠️ `GAT` là gắt với CHÍNH người đang đứng đây; `CHUI` là chửi NGƯỜI THỨ BA cùng với họ — hợp người thì được điểm. */
 export type TalkTone = "AM" | "THUONG" | "DUA" | "THANG" | "LANH" | "GAT" | "CHUI" | "IM";
@@ -48,16 +49,7 @@ export type DoiDon = "dayDu" | "themNhan" | "itRau" | "khongOt";
 
 export type TalkAct =
   | { kind: "PAY"; vnd: number; note: string }
-  /**
-   * TIỀN ĐI VÀO KÉT — chiều ngược của `PAY`, năm nút đòi (bé Hân, thầy Khải).
-   *
-   * *"Ừ. Cô cầm lại."* — bé Hân thối dư hai ngàn, mình cầm lại, và **két không nhích một
-   * đồng**. Một lời thoại nói về tiền mà không đụng tới tiền thì nó là lời thoại suông:
-   * cùng họ với "làm đầy đủ" mà đơn không đổi.
-   *
-   * ⚠️ KHÔNG phải doanh thu. Nó là tiền lẻ quay lại ống, nên đi vào `floatLeft` chứ không
-   * vào `soldOut`/`revenue` — nhập nhằng chỗ này thì trang tối nói dối người chơi.
-   */
+  /** Tiền vào ống, chiều ngược của `PAY`; không tính doanh thu. */
   | { kind: "TAKE_CASH"; vnd: number; note: string }
   | { kind: "DISCOUNT"; vnd: number }
   | { kind: "FREE_LOAF" }
@@ -272,6 +264,8 @@ export type Talk = {
   /** Vắng = mọi khung cảnh; hiếm, và phải có lý do ghi trong `_note`. */
   practice?: PracticeId | PracticeId[];
   opener: string;
+  /** Lời mở tự gọi món: đơn đổi theo ngay lúc mở lời. */
+  order?: TalkOrder;
   openMood?: TalkMood;
   /** 0..0,6, roll lúc họ đứng chờ. Người chơi làm lơ được, và làm lơ có giá — xem `ignore`. */
   initiates?: number;
@@ -285,6 +279,8 @@ export type Talk = {
 };
 
 export type TalkFile = { talks: Talk[] };
+
+export type TalkOrder = { qty?: number; mon?: MenuItemId; ot?: 0 | 1 | 2 };
 
 // ─────────────────────────────────────────────────────────────── danh xưng
 

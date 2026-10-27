@@ -82,7 +82,13 @@ export type OrderSpec = {
   phrase?: string;
   /** Khẩu vị ẩn: làm theo mức này cũng đúng, bỏ qua thì không bị gì. */
   alt?: Partial<Record<Ingredient, number>>;
+  /** Số ổ giống hệt nhau; vắng = 1. */
+  qty?: number;
 };
+
+const SO_O = ["một", "hai", "ba", "bốn", "năm"];
+export const qtyOf = (spec: OrderSpec) => spec.qty ?? 1;
+export const soO = (n: number) => SO_O[n - 1] ?? String(n);
 
 export function levelsOf(it: OrderIntent): Partial<Record<Ingredient, number>> {
   const lv: Partial<Record<Ingredient, number>> = {};
@@ -119,14 +125,18 @@ function randomIntent(rng: Rng, day?: number): OrderIntent {
 
 export const randomOrder = (rng: Rng, day?: number) => specOf(randomIntent(rng, day));
 
+export const plainIntent = (mon: MenuItemId): OrderIntent =>
+  isBare(mon) ? { mon, rau: "khong", ot: 0, tuong: 0 } : { mon, rau: "day-du", ot: 1, tuong: 1 };
+
 /** Câu nói phải tự nó quyết định được ổ bánh; phiếu đơn chỉ hiện đúng câu này. */
 export function sayOrder(spec: OrderSpec): string {
   const it = spec.intent;
   if (spec.phrase) return spec.phrase;
   const item = itemOf(it.mon);
-  if (isBare(it.mon)) return `Cho một ổ ${item.call}.`;
+  const head = `Cho ${soO(qtyOf(spec))} ổ ${item.call}`;
+  if (isBare(it.mon)) return `${head}.`;
 
-  const parts = [`Cho một ổ ${item.call}`];
+  const parts = [head];
   if (it.nhieu) parts.push(`cho nhiều ${labelOf(it.nhieu)}`);
   if (it.rau === "it") parts.push("cho ít rau");
   else if (it.rau === "khong") parts.push("không rau");

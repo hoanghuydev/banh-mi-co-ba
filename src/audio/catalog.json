@@ -497,6 +497,13 @@
    "audio/sfx/ui_dat_thanh_cong.1.mp3"
   ]
  },
+ "ui_do_moi": {
+  "bus": "amBao",
+  "desc": "do nghe moi hien ra - poc ngan",
+  "files": [
+   "audio/sfx/ui_click.1.mp3"
+  ]
+ },
  "ui_dong_menu": {
   "bus": "amBao",
   "desc": "dong menu",

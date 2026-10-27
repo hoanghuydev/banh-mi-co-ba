@@ -261,7 +261,7 @@
               "mood": "CUOI"
             },
             {
-              "say": "Ổ chả lụa không ớt không hành của chị đây.",
+              "say": "Ổ {mon} của chị đây.",
               "tone": "AM",
               "reply": "…Vâng. Em cảm ơn.",
               "mood": "CUOI"

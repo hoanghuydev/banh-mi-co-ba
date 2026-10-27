@@ -41,7 +41,7 @@
     {"id": "gen.mood.sepmang.xinloi", "concept": "GREET", "when": {"npcMoodCause": "SEP_MANG", "npcThanThien": ">=50"}, "say": ["Xin lỗi {you} nha. Hồi sáng bị nói.", "Hôm nay mệt quá, {you} đừng để bụng nha."]},
     {"id": "gen.mood.mua", "concept": "GREET", "when": {"npcMoodCause": "MUA_UOT"}, "say": ["Mắc mưa dọc đường luôn.", "Ướt hết trơn rồi nè.", "Trời gì mưa không báo trước."]},
     {"id": "gen.mood.tay", "concept": "GREET", "when": {"npcMoodCause": "DAU_OM"}, "say": ["Tay bị đứt, làm ơn gói nha.", "Tay đau quá, {you} gói kỹ cái nha."]},
-    {"id": "gen.mood.hettien", "concept": "GREET", "when": {"npcMoodCause": "HET_TIEN"}, "say": ["Cuối tháng rồi {you}.", "Hôm nay ăn ổ không thôi, cuối tháng rồi."]},
+    {"id": "gen.mood.hettien", "concept": "GREET", "when": {"npcMoodCause": "HET_TIEN"}, "say": ["Cuối tháng rồi {you}."]},
     {"id": "gen.mood.met", "concept": "GREET", "when": {"npcMoodCause": "MET"}, "say": ["Tối qua ngủ có ba tiếng.", "Mệt quá {you} ơi."]},
     {"id": "gen.mood.vui", "concept": "GREET", "when": {"npcMoodCause": "TIN_VUI"}, "say": ["Hôm nay vui quá {you} ơi!", "Có chuyện vui, hôm nay ăn ngon một bữa."]},
     {"id": "gen.del.taste.banh", "concept": "DELIVERY", "when": {"defectKind": "TASTE_OFF", "tasteGroup": "banh"}, "say": ["Bánh hôm nay dai dai sao á {you}.", "Ủa, ổ này để qua đêm hả {you}?", "Bánh hơi cứng rồi nè."]},

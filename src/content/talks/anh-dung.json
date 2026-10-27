@@ -438,7 +438,7 @@
               "mood": "NGAC_NHIEN"
             },
             {
-              "say": "Ổ xíu mại của anh đây.",
+              "say": "Ổ {mon} của anh đây.",
               "tone": "THUONG",
               "reply": "Ờ. Anh đi nha."
             }

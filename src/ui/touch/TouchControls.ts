@@ -60,6 +60,7 @@ export class TouchControls {
   private frame = 0;
   private offDevice: () => void;
   private text = new Map<HTMLElement, string>();
+  private holdResets: (() => void)[] = [];
 
   constructor(private input: InputState) {
     if (!cssDone) {
@@ -110,8 +111,10 @@ export class TouchControls {
       btn.classList.remove("on");
       cb(false);
     };
+    // Nút bị ẩn giữa lúc giữ thì có thể không bao giờ nhận `pointerup`; không xoá ở đây là nút chết luôn.
+    this.holdResets.push(() => { id = null; });
     btn.addEventListener("pointerdown", (e) => {
-      if (id !== null) return;
+      if (id !== null && btn.hasPointerCapture(id)) return;
       e.preventDefault();
       id = e.pointerId;
       btn.setPointerCapture(e.pointerId);
@@ -238,6 +241,7 @@ export class TouchControls {
   }
 
   private releaseAll() {
+    for (const r of this.holdResets) r();
     this.stickId = null;
     this.base.classList.remove("live");
     this.knob.style.transform = "";

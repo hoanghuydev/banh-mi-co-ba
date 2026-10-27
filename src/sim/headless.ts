@@ -129,7 +129,7 @@ export class HeadlessStall {
       bus, hub: this.ctx.rng, saveId: w.saveId, day: w.progress.dayIndex,
       npcs: w.npcs, bags: w.shuffleBags, dialog: w.dialogState,
       ...dayDeps(w),
-      till: w.econ, flags: w.flags,
+      money: w.money, flags: w.flags,
       equip: w.equipment, loaOn: has(w.equipment, "LOA_RAO") && (w.econ?.loaOffUntil ?? 0) < w.progress.dayIndex,
       todayCounters: w.progress.today,
       onServed: (rec) => {

@@ -10,7 +10,6 @@ export type WorldSnapshot = {
   handsDirty: boolean;
   onStreet: boolean;
   soldOut: boolean;
-  cash: number;
   teaLeft: number;
   stock: number;
 
@@ -79,7 +78,6 @@ export function queryOf(w: WorldSnapshot, q = new Query()): Query {
   q.set("playerHandsDirty", w.handsDirty);
   q.set("playerOnStreet", w.onStreet);
   q.set("playerSoldOut", w.soldOut);
-  q.set("playerCash", Math.max(0, Math.round(w.cash)));
   q.set("playerTeaLeft", Math.max(0, Math.round(w.teaLeft)));
   q.set("playerStock", Math.max(0, Math.round(w.stock)));
 

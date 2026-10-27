@@ -12,7 +12,7 @@ const TALKS: Talk[] = await TalkStore.loadAll();
 
 const W = (over: Partial<WorldSnapshot> = {}): WorldSnapshot => ({
   hand: "empty", handsDirty: false, onStreet: false, soldOut: false,
-  cash: 0, teaLeft: 10, stock: 20,
+  teaLeft: 10, stock: 20,
   them: {
     phase: "waiting", practice: "DOI_BANH", passing: false, served: false, named: true,
     cutLine: false, blocking: false, glanced: false, lookingInside: false, inShade: false, sitting: false, filming: false,

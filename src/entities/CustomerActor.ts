@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { depthOf, facingOf8, toScreen, type Facing8 } from "../world/iso";
+import { depthOf, facingOf8, toScreen, turn8, type Facing8 } from "../world/iso";
 import { COUNTER_Y, QUEUE_SLOTS } from "../world/map";
 import { BODY_H, buildBody, footY, textureFor } from "../art";
 import { STRIDE, GAIT_FRAMES, isCharacter, walkTextureFor } from "../art/character";
@@ -192,7 +192,7 @@ export class CustomerActor {
     // Mờ theo toạ độ thế giới, không theo mép màn hình kẻo người đi ngang tan giữa đường.
     const fade = c.ambient ? passerAlpha(c.x) : 1;
 
-    const tex = walkTex ?? textureFor(this.facing, c.memKey);
+    const tex = walkTex ?? textureFor(pose.turn ? turn8(this.facing, pose.turn) : this.facing, c.memKey);
     this.body.setTexture(tex.key).setFlipX(tex.flip).setAlpha(fade);
     this.body.setPosition(sx + fidget + fx, footY(sy) - hop + fy - this.sp.up.x + this.sp.sit.x).setDepth(depth);
     this.body.setAngle(this.sp.rot.x * (tex.flip ? -1 : 1));

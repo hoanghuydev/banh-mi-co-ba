@@ -176,11 +176,11 @@ export class Hud {
 
     this.bar = fixed(scene.add.graphics(), DEPTH + 50);
 
-    // Phiếu đơn ở góc trên phải để không che mặt khách và không bị bảng kẹp nhân che.
+    // Phiếu đơn dưới ô ngày giờ: góc trên phải là chỗ lò và kệ hiện ra khi đứng trong bếp.
     this.ticketBg = fixed(scene.add.graphics());
-    this.ticketText = fixed(scene.add.text(GAME_W - 26, 100, "", {
-      fontFamily: FONT, fontStyle: "500", color: UI.ink, align: "right",
-    }).setOrigin(1, 0), DEPTH + 100);
+    this.ticketText = fixed(scene.add.text(26, 100, "", {
+      fontFamily: FONT, fontStyle: "500", color: UI.ink,
+    }).setOrigin(0, 0), DEPTH + 100);
 
     this.feedBg = fixed(scene.add.graphics());
     this.feedText = fixed(scene.add.text(26, GAME_H - 100, "", {
@@ -545,8 +545,7 @@ export class Hud {
     g.clear();
     const m = this.m, k = m.k;
     const live = this.toasts.filter((t) => t.born >= 0).sort((a, b) => b.born - a.born);
-    const ticketBottom = this.ticketText.text ? this.ticketText.getBounds().bottom + 18 : 0;
-    let y = m.touch ? Math.max(this.right.getBounds().bottom + 16, ticketBottom) : Math.max(TOAST_TOP, ticketBottom);
+    let y = m.touch ? this.right.getBounds().bottom + 16 : TOAST_TOP;
     const tile = m.small ? designFor(24) : TOAST_TILE_PX * k;
     for (const t of live) {
       const age = (now - t.born) / t.life;
@@ -657,16 +656,18 @@ export class Hud {
     if (!t || frozen) { this.ticketText.setText(""); return; }
     const m = this.m;
     const px = m.small ? designFor(8) : 12, py = m.small ? designFor(5) : 8;
-    const top = this.right.getBounds().bottom + (m.small ? designFor(8) + py : 20);
-    const x = m.small ? m.toastRight - designFor(6) : m.touch ? m.toastRight : GAME_W - 26;
-    this.ticketText.setText(`${t.name}\n${t.text}`).setPosition(x, top);
+    const pill = this.left.getBounds();
+    const badges = m.touch ? this.badgePos().y + m.btnH / 2 : 0;
+    const top = Math.max(pill.bottom + 10, badges) + (m.small ? designFor(6) : 10) + py;
+    this.ticketText.setText(`${t.name}\n${t.text}`).setPosition(pill.x - 14 + px, top);
     const b = this.ticketText.getBounds();
     this.ticketBg.fillStyle(UI.paper, 1).fillRoundedRect(b.x - px, b.y - py, b.width + px * 2, b.height + py * 2, 10);
     this.ticketBg.lineStyle(1.2, UI.line, 1).strokeRoundedRect(b.x - px, b.y - py, b.width + px * 2, b.height + py * 2, 10);
   }
 
   private drawCarry(dish: readonly Ingredient[] | null) {
-    const key = dish ? dish.join(",") : "";
+    const under = this.ticketText.text ? this.ticketText.getBounds() : null;
+    const key = `${dish ? dish.join(",") : ""}|${under ? under.bottom : ""}`;
     if (key === this.carryKey) return;
     this.carryKey = key;
     this.carryBg.clear();
@@ -678,10 +679,8 @@ export class Hud {
     const counts = portionsOf(dish as Ingredient[]);
     const items = INGREDIENTS.filter((i) => counts.has(i.id));
     const step = 46 * kc, w = items.length * step + 16, half = 22 * kc;
-    const y = m.touch ? this.left.getBounds().bottom + 24 + half : 76;
-    const x0 = m.touch
-      ? designFor(EDGE)
-      : Math.max(16, Math.min(GAME_W / 2 - w / 2, this.ticketText.getBounds().left - 24 - w));
+    const y = (under ? under.bottom + (m.touch ? designFor(8) : 8) : this.left.getBounds().bottom) + 24 + half;
+    const x0 = m.touch ? designFor(EDGE) : this.left.getBounds().x - 14;
     this.carryBg.fillStyle(UI.paper, 1).fillRoundedRect(x0, y - half, w, half * 2, 10);
     items.forEach((ing, i) => {
       const icon = this.carryIcons[i] ??= this.scene.add.image(0, 0, FOOD.icon(ing.id)).setScrollFactor(0).setDepth(DEPTH + 100);

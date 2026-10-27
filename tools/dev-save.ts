@@ -2,6 +2,7 @@
  * In ra hai khoá localStorage của một ván dựng sẵn, cho `tools/screenshot.mjs` nạp vào.
  *
  *   npx tsx tools/dev-save.ts --day 3 --tour done|THOT|… --stock 1 > /tmp/save.json
+ *   --order LOA_RAO,DU_CHE   đơn đồ nghề chưa giao, sáng vào quán sẽ lắp
  */
 import { Bus } from "../src/core/eventbus";
 import { SaveService, newGame } from "../src/core/save";
@@ -28,6 +29,9 @@ for (const id of arg("equip", "").split(",").filter(Boolean)) {
   w.equipment.owned.push(id);
   w.equipment.installed.push(id);
 }
+
+const order = arg("order", "").split(",").filter(Boolean);
+if (order.length) w.shop.gearOrders.unshift({ id: ++w.shop.seq, day: day - 1, items: order, total: 0, delivered: false });
 
 const platform = memoryPlatform();
 const svc = new SaveService(new Bus(false), () => w, platform);

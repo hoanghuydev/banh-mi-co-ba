@@ -13,8 +13,8 @@ import { ROOT, Report, readJson, similarity, walk } from "./lib";
 
 export const LINE_MAX_CHARS = 90;
 const ADDRESS_VARS = ["call", "me", "self", "you"];
-/** Chỗ trống khác mà `Service.fill` điền: `gia`/`giaN` giá N ổ của đơn đang đứng đó, `gio` giờ đọc thành lời. */
-const FILL_VARS = ["gia", "gia2", "gia3", "gio"];
+/** Chỗ trống khác mà `Service.fill` điền: `gia`/`giaN` giá N ổ của đơn đang đứng đó, `gio` giờ đọc thành lời, `mon` món của đơn. */
+const FILL_VARS = ["gia", "gia2", "gia3", "gio", "mon"];
 export const LINE_SIMILARITY_MAX = 0.85;
 /** Bong bóng thoại ở fontScale 2: rộng 285 px, chữ 24 px (xem ui/stall/BubblePool). */
 const BUBBLE_PX = 285, FONT_PX_AT_2X = 24, MAX_LINES_AT_2X = 3;

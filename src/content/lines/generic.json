@@ -9,8 +9,8 @@
       ],
       "_note": "người chơi HỨA bỏ thêm {mon} và đã bỏ thật. Nhẹ thôi: giữ lời chỉ là làm đúng điều mình nói, không phải ân huệ.",
       "variants": [
-        "Ờ, có bỏ thiệt nha. Cảm ơn con.",
-        "Con nói sao làm vậy. Hiếm à nha.",
+        "Ờ, có bỏ thiệt. Cảm ơn nha.",
+        "Nói sao làm vậy. Hiếm à nha.",
         "Có {mon} nè. Ờ.",
         "Vậy mới nói chuyện được."
       ]
@@ -26,7 +26,7 @@
         "Ủa… hồi nãy nói có {mon} mà.",
         "Thôi khỏi. Mà lần sau đừng hứa.",
         "Hứa rồi quên hả. Ờ.",
-        "Nói thì dễ hả con."
+        "Nói thì dễ ha."
       ]
     },
     {
@@ -39,8 +39,8 @@
       "variants": [
         "Cái này đâu phải {mon}.",
         "Ủa, nói {mon} mà sao cái này.",
-        "Thôi cũng được. Mà đâu phải thứ con nói.",
-        "Con bỏ nhầm rồi."
+        "Thôi cũng được. Mà đâu phải thứ hồi nãy nói.",
+        "Bỏ nhầm rồi kìa."
       ]
     },
     {

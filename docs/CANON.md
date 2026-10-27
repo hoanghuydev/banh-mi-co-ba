@@ -326,6 +326,11 @@ silentScore = sum(all defects)               // các lỗi còn lại vẫn ản
 | **Mở rộng nơi bán** | 🔁 **ĐỔI NGHĨA (R0.5)** | Xe → **quán có mặt bằng thuê**, nên ~~"đổi chỗ đứng của xe"~~ ☠️. **Chi nhánh 2 là MÀN KẾT khi thắng**, không phải gameplay — trong lúc chơi vẫn **một quầy**, nhiều quầy song song = giết T1 |
 | **Thuê nhân viên** | ❌ **TỪ CHỐI** (có phương án thay) | Người chơi là người bị nhìn. Nhân viên làm bánh = **không còn ai để nhìn** → T1 và T2 sụp cùng lúc. Phương án thay: **"người phụ việc không chạm vào bánh"** — xem `phu-luc/A-quyet-dinh-co-che-moi.md` |
 
+### 10.1. Đồ nghề mới giao
+
+- Món có hình trong cảnh phải đăng ký hình: ô bản đồ → `BUYABLE_TILES` (`world/map.ts`); ảnh hoặc nét vẽ rời → `addGear` (`StallScene`). Đăng ký rồi thì sáng hôm giao tự có màn ra mắt (`ui/stall/GearReveal.ts`): lia máy tới, món bật ra, thẻ tên + `gain`. Không có hình thì không có màn ra mắt.
+- `gain` không được rỗng; hiệu ứng ngầm phải ghi kèm số (test `tests/gear-reveal.test.ts`).
+
 ---
 
 ## 11. Số dòng thoại và kiến trúc thoại

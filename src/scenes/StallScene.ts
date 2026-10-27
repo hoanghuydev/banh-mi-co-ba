@@ -15,6 +15,7 @@ import { runFrame } from "../sim/frame";
 import { cool, isWarm } from "../sim/loaf";
 import { Steam } from "../ui/stall/Steam";
 import { WipePuff } from "../ui/stall/WipePuff";
+import { GearReveal, type GearArt } from "../ui/stall/GearReveal";
 import { WaterStream } from "../ui/stall/WaterStream";
 import { Rain } from "../ui/stall/Rain";
 import { Daylight } from "../ui/stall/Daylight";
@@ -40,7 +41,7 @@ import { EQUIP, dirtMul, has, type EquipId } from "../sim/equipment";
 import { labelOf } from "../sim/order";
 import { dev } from "../dev/registry";
 import type { DayScene } from "./DayScene";
-import { diffDish, specOf, type Ingredient } from "../sim/order";
+import { diffDish, qtyOf, specOf, type Ingredient } from "../sim/order";
 import { isBare } from "../sim/menu";
 import { CRUST, OVEN_SLOTS, Oven, bandOfCrust, ovenFor, type CrustBand } from "../sim/oven";
 import { Grip, RUN_TEMPO, WALK_TEMPO } from "../sim/grip";
@@ -159,6 +160,9 @@ const REPLY_DELAY_SEC = 0.3;
 /** Đủ cho cú tắt dần 260 ms. */
 const PLAYER_SAY_TAIL = 0.35;
 const HUD_BAND_PX = 74;
+/** Hàng ô cuối camera còn thấy trọn: bàn ghế và xe máy. */
+const CAM_LAST_ROW = 10;
+const CAM_BOTTOM_MARGIN = 16;
 
 /** Im lặng là phản ứng, nhạc đè lên thì mất khoảnh khắc đó. */
 const HUSH_ON: ReadonlySet<StimId> = new Set<StimId>(["BURNT_OR_COLD", "DROPPED_FOOD"]);
@@ -208,6 +212,9 @@ export class StallScene extends Phaser.Scene {
   private handSteam!: Steam;
   private boardSteam!: Steam;
   private wipePuff!: WipePuff;
+  private gearArt = new Map<EquipId, GearArt[]>();
+  private gearReveal: GearReveal | null = null;
+  private installed: EquipId[] = [];
   private tap: WaterStream | null = null;
   private rain: Rain | null = null;
   private daylight!: Daylight;
@@ -306,7 +313,7 @@ export class StallScene extends Phaser.Scene {
 
   constructor() { super("stall"); }
 
-  init(data: { ctx: GameContext; day: DayScene; resume?: boolean }) {
+  init(data: { ctx: GameContext; day: DayScene; resume?: boolean; installed?: EquipId[] }) {
     this.ctx = data.ctx;
     this.day = data.day;
     this.clock = data.ctx.clock;
@@ -343,6 +350,8 @@ export class StallScene extends Phaser.Scene {
     this.actors.clear();
     this.off = [];
     this.resumed = !!data.resume;
+    this.installed = this.resumed ? [] : data.installed ?? [];
+    this.gearReveal = null;
     // Phaser không chạy lại field initializer giữa hai ngày.
     this.talkHoldsClock = false;
     this.talkQueued = -1;
@@ -422,6 +431,7 @@ export class StallScene extends Phaser.Scene {
     this.undo.push(() => this.floorBake.destroy(), () => this.light.destroy(), () => this.sheen.destroy());
     // Dọn TRƯỚC `placeProps` — chính nó gọi `addStationLabel` để nạp lại.
     this.labelY.clear();
+    this.gearArt.clear();
     this.choreAt.clear();
     this.tourSpot.clear();
     this.basketImgs = [];
@@ -499,7 +509,7 @@ export class StallScene extends Phaser.Scene {
           bus, hub: this.ctx.rng, saveId: w.saveId, day: w.progress.dayIndex,
           npcs: w.npcs, bags: w.shuffleBags, dialog: w.dialogState,
           ...dayDeps(w),
-          till: w.econ, flags: w.flags,
+          money: w.money, flags: w.flags,
           equip: w.equipment, loaOn: has(w.equipment, "LOA_RAO") && (w.econ?.loaOffUntil ?? 0) < w.progress.dayIndex,
           noTimePressure: this.settings.noTimePressure,
           todayCounters: w.progress.today,
@@ -609,7 +619,16 @@ export class StallScene extends Phaser.Scene {
           });
         }
 
-        this.time.delayedCall(900, () => this.autoPhone());
+        const shown = this.installed.filter((id) => this.gearArt.has(id)).map((id) => [id, this.gearArt.get(id)!] as [EquipId, GearArt[]]);
+        if (shown.length) {
+          const gr = this.gearReveal = new GearReveal(this, this.cam, shown, this.settings.reducedMotion);
+          this.undo.push(() => { if (gr.active) gr.destroy(); });
+        }
+        // Đợi cửa cuốn kéo lên xong.
+        this.time.delayedCall(900, () => {
+          if (!this.gearReveal) return this.autoPhone();
+          void this.gearReveal.run().then(() => { this.gearReveal = null; this.autoPhone(); });
+        });
 
         // Ghi lại `world.stall` chỉ khi đã dựng xong: dừng giữa chừng thì nó chưa bị đọc ra.
         this.undo.push(() => {
@@ -664,10 +683,11 @@ export class StallScene extends Phaser.Scene {
     this.listen("save:written", () => this.hud.flashSaved());
   }
 
-  /** Hình bao thật của cảnh chứ không của lưới ô: tường cao nhô lên cả trăm pixel. */
+  /** Hình bao thật của cảnh chứ không của lưới ô: tường cao nhô lên cả trăm pixel; đáy dừng ở hàng xe máy cho khỏi lộ lòng đường trống. */
   private sceneBounds(ground: Phaser.Geom.Rectangle, props: Phaser.GameObjects.Image[]) {
     const bounds = Phaser.Geom.Rectangle.Clone(ground);
     for (const img of props) Phaser.Geom.Rectangle.Union(bounds, img.getBounds(), bounds);
+    bounds.height = Math.min(bounds.bottom, footY(toScreen(WORLD_W, CAM_LAST_ROW + 1).sy) + CAM_BOTTOM_MARGIN) - bounds.y;
     return bounds;
   }
 
@@ -742,6 +762,16 @@ export class StallScene extends Phaser.Scene {
     return id !== undefined && !has(this.world.equipment, id as EquipId);
   }
 
+  /** `code` là mã ô hoặc mã đồ nghề; ghi hình lại để sáng hôm giao đồ cho nó bật ra. */
+  private addGear<T extends Phaser.GameObjects.GameObject>(code: string, objs: T[], at?: { x: number; y: number }) {
+    const id = (BUYABLE_TILES[code] ?? (code in EQUIP ? code : undefined)) as EquipId | undefined;
+    if (!id) return objs;
+    const list = this.gearArt.get(id) ?? [];
+    for (const obj of objs) list.push({ obj, at });
+    this.gearArt.set(id, list);
+    return objs;
+  }
+
   private placeProps() {
     const placed: Phaser.GameObjects.Image[] = [];
     for (let ty = 0; ty < WORLD_H; ty++) {
@@ -759,11 +789,12 @@ export class StallScene extends Phaser.Scene {
         if (!key || !this.textures.exists(key)) continue;
 
         if (key === PROP.tableLong) {
-          if (tileAt(tx - 1, ty) !== "Z") placed.push(...this.addLong(key, tx, ty));
+          if (tileAt(tx - 1, ty) !== "Z") placed.push(...this.addGear(code, this.addLong(key, tx, ty)));
           continue;
         }
         // Nửa xa của bàn dài cùng khung ảnh với nửa gần nên neo theo ô gần.
         const img = this.addAt(key, tx, ty, key === PROP.benchFar ? ty + 1 : ty);
+        this.addGear(key === PROP.ovenE ? "LO_DIEN" : code, [img]);
         placed.push(this.sheen.register(this.light.add(img), key));
         if (code === "#" || code === "N" || code === "D") this.light.addWall(img);
         const st = stationAtTile(tx, ty);
@@ -872,7 +903,7 @@ export class StallScene extends Phaser.Scene {
     const seenEsc = new WeakSet<KeyboardEvent>(), seenKey = new WeakSet<KeyboardEvent>();
     const first = (set: WeakSet<KeyboardEvent>, ev: KeyboardEvent) => !set.has(ev) && !!set.add(ev);
     kb.on("keydown-ESC", (ev: KeyboardEvent) => {
-      if (!first(seenEsc, ev) || this.closed) return;
+      if (!first(seenEsc, ev) || this.closed || this.gearReveal) return;
       if (!this.paused && this.assembly.isOpen) { this.assembly.park(); return; }
       if (this.overlay && this.overlayBack) this.overlayBack();
       else if (this.paused) this.resume();
@@ -891,7 +922,10 @@ export class StallScene extends Phaser.Scene {
       else if (ev.code === "KeyF") this.intent.fire("talk");
     });
     this.intent.releaseAll();
-    this.intent.onAction((a) => this.act(a));
+    this.intent.onAction((a) => {
+      if (!this.gearReveal) this.act(a);
+      else if (a === "interact") this.gearReveal.skip();
+    });
     const releaseAll = () => this.intent.releaseAll();
     window.addEventListener("blur", releaseAll);
     const onHidden = () => { if (document.hidden) releaseAll(); };
@@ -942,7 +976,7 @@ export class StallScene extends Phaser.Scene {
         frameDeltas.push(raw);
         this.clock.busy = this.service.busy || this.talkHoldsClock;
         // dt = 0 thì `runFrame` bỏ qua cả frame, đóng băng mọi hệ.
-        if (this.tourHolding() || this.eyeLesson || this.handsLesson === "show") return 0;
+        if (this.tourHolding() || this.eyeLesson || this.handsLesson === "show" || this.gearReveal) return 0;
         return this.closed ? 0 : this.clock.advance(raw);
       },
       input: (dt) => {
@@ -950,9 +984,7 @@ export class StallScene extends Phaser.Scene {
         const rooted = this.handsBusy || !!this.busy;
         if (rooted) this.player.interrupt();
         this.player.move(rooted ? { up: false, down: false, left: false, right: false, run: false } : this.intent.move(), dt);
-        this.near = stationNear(this.player.x, this.player.y, this.near);
-        // Chưa mua máy trà thì không có trạm trà; lọc ở đây vì `STATIONS` là dữ liệu tĩnh.
-        if (this.near?.id === "tea" && !has(this.world.equipment, "BINH_TRA")) this.near = null;
+        this.near = stationNear(this.player.x, this.player.y, this.near, this.stationMissing);
         if (this.assembly.isOpen && this.near?.id !== "board") this.assembly.park();
         if (this.busy && this.near?.id !== this.busy.st.id) this.busy = null;
       },
@@ -979,8 +1011,9 @@ export class StallScene extends Phaser.Scene {
         this.service.playerHand = this.player.hand;
         this.service.playerOnStreet = this.player.y > COUNTER_Y + 0.5;
         const hand = this.player.hand;
-        this.service.soldOut = stockOf(this.world.inventory, "BANH", this.world.progress.dayIndex) === 0
-          && this.oven.count === 0 && !this.boardLoaf && !hand.startsWith("loaf");
+        const banh = stockOf(this.world.inventory, "BANH", this.world.progress.dayIndex);
+        this.service.soldOut = banh === 0 && this.oven.count === 0 && !this.boardLoaf && !hand.startsWith("loaf");
+        this.service.stock = banh + this.oven.count + this.basket.length + (this.boardLoaf ? 1 : 0) + (hand.startsWith("loaf") ? 1 : 0);
         const weather = this.world.progress.weather;
         if (this.player.hand === "loaf_hot" || this.player.hand === "loaf_filled") this.handWarmth = cool(this.handWarmth, dt, weather);
         if (this.boardLoaf) this.boardWarmth = cool(this.boardWarmth, dt, weather);
@@ -1034,6 +1067,9 @@ export class StallScene extends Phaser.Scene {
     this.touch?.update(this.touchView());
   }
 
+  /** Loại trước khi tìm gần nhất, không thì máy trà chưa mua vẫn giành chỗ của lò. */
+  private stationMissing = (s: Station) => s.id === "tea" && !has(this.world.equipment, "BINH_TRA");
+
   private syncPlayerActivity() {
     const st = this.near;
     const wiping = this.handsBusy && this.handsBusyWhat === WIPE_LABEL;
@@ -1046,8 +1082,7 @@ export class StallScene extends Phaser.Scene {
   /** Chỉ đọc state rồi vẽ; `dt` là giây thật, 0 khi pause. */
   private renderSync(dt: number) {
     this.talkAimNow = null;
-    const p = toScreen(this.player.x, this.player.y);
-    this.cam.lookAt(p.sx, footY(p.sy));
+    this.cam.lookAt(this.player.x, this.player.y, this.hud.statsBottom, dt);
     this.syncActors();
     this.syncMusic();
     this.player.heldCrust = this.handCrust;
@@ -1222,7 +1257,7 @@ export class StallScene extends Phaser.Scene {
       ctx = { kind: "discard", icon: pick ? "pick" : "drop", text: pick ? "Nhặt" : "Đặt xuống" };
     }
     return {
-      visible: !this.closed && !this.paused && !this.overlay && !this.assembly.isOpen && !this.talk.isOpen
+      visible: !this.closed && !this.paused && !this.overlay && !this.gearReveal && !this.assembly.isOpen && !this.talk.isOpen
         && !this.menuBoard?.open && !this.storageView?.open && !this.phoneView?.open,
       action: this.actionLabel(),
       run: !busy,
@@ -1249,7 +1284,9 @@ export class StallScene extends Phaser.Scene {
   private frontTicket() {
     const c = this.service.front;
     if (!c || !c.orderLine || c.phase === "leaving") return null;
-    return { name: this.service.label(c), text: `"${c.orderLine}"`, urgent: false };
+    const qty = c.order ? qtyOf(c.order) : 1;
+    const left = qty > 1 ? ` · đã giao ${c.handed}/${qty}` : "";
+    return { name: this.service.label(c), text: `"${c.orderLine}"${left}`, urgent: false };
   }
 
   private syncActors() {
@@ -1308,7 +1345,7 @@ export class StallScene extends Phaser.Scene {
     // Hết hạn sau 4 s, lâu hơn thì người chơi đã quên mình bấm gì.
     if (this.talkQueued >= 0) {
       if (this.elapsed - this.talkQueued > 4) this.talkQueued = -1;
-      else if (!this.handsBusy) { this.talkQueued = -1; this.askFront(); }
+      else if (!this.handsBusy && !this.service.talkLoading()) { this.talkQueued = -1; this.askFront(); }
     }
   }
 
@@ -1901,8 +1938,8 @@ export class StallScene extends Phaser.Scene {
     }
     const view = this.service.openTalk();
     if (view) { this.openTalkPanel(view); return; }
-    // `null` = không có lý do CON NGƯỜI nào (chưa nạp xong / không ai trong tầm) ⇒ im.
-    // Nói dối về một tình huống kỹ thuật là làm hỏng cả mười câu còn lại (P2-06 §2.9).
+    // Thoại chưa nạp xong thì xếp hàng, không thì cú bấm mất trắng.
+    if (this.service.talkLoading()) { this.talkQueued = this.elapsed; return; }
     const why = this.service.talkUnavailable();
     if (why) this.hud.toast(why, "info", this.popClock);
   }
@@ -2688,39 +2725,40 @@ export class StallScene extends Phaser.Scene {
     const at = (tx: number, ty: number) => { const p = toScreen(tx, ty); return { x: p.sx, y: footY(p.sy) }; };
     const depth = (tx: number, ty: number) => depthOf(tx, ty) + 5;
     // LÒ ĐIỆN KHÔNG VẼ Ở ĐÂY: nâng cấp THAY ảnh ô `O` sang `prop_e-oven` (xem `placeProps`, `art/index.ts` `textureForTile`).
-    const draw = (tx: number, ty: number, fn: (x: number, y: number, gg: Phaser.GameObjects.Graphics) => void) => {
+    const draw = (tx: number, ty: number, fn: (x: number, y: number, gg: Phaser.GameObjects.Graphics) => void, id: EquipId) => {
       const gg = this.add.graphics().setDepth(depth(tx, ty));
       const p = at(tx, ty);
       fn(p.x, p.y, gg);
+      this.addGear(id, [gg], p);
     };
-    if (has(e, "LONG_BAN")) draw(8.5, 4.3, (x, y, gg) => { gg.fillStyle(0xdfe8ec, 0.55).fillEllipse(x, y - 52, 44, 18); gg.lineStyle(1.5, 0x8a979f, 0.9).strokeEllipse(x, y - 52, 44, 18); });
+    if (has(e, "LONG_BAN")) draw(8.5, 4.3, (x, y, gg) => { gg.fillStyle(0xdfe8ec, 0.55).fillEllipse(x, y - 52, 44, 18); gg.lineStyle(1.5, 0x8a979f, 0.9).strokeEllipse(x, y - 52, 44, 18); }, "LONG_BAN");
     if (has(e, "DU_CHE")) this.addUmbrella();
     /*
      * MÁY NƯỚC TRÀ không vẽ ở đây: nó là đạo cụ `T` thật trên bản đồ, và `propHidden` mở
      * ô đó ra lúc mua. Vẽ thêm một cái bình nhỏ cạnh cái thùng là hai cái bình cho một món đồ.
      * BẢNG HIỆU cũng vậy — `createSign` dựng tấm bảng thật trên vách.
      */
-    if (has(e, "QUAT_DIEN")) this.addMounted("aircon", 3.28, 2.42, 60, 0.238, 0.992, depthOf(3.5, 2.4) + 1);
+    if (has(e, "QUAT_DIEN")) this.addMounted("QUAT_DIEN", "aircon", 3.28, 2.42, 60, 0.238, 0.992, depthOf(3.5, 2.4) + 1);
     // Mặt tường ngoài nhìn ra đường, sát lối vào quán.
-    if (has(e, "LOA_RAO")) this.addMounted("speaker", 2.97, 6, 76, 0.996, 0.487, depthOf(2.9, 6.05));
+    if (has(e, "LOA_RAO")) this.addMounted("LOA_RAO", "speaker", 2.97, 6, 76, 0.996, 0.487, depthOf(2.9, 6.05));
     const top = this.orderTop;
     if (has(e, "BANG_QR") && top && this.textures.exists("qr")) {
-      fitPhoto(this.add.image(top.x - 9, top.y + 6, "qr")).setOrigin(0.697, 0.994).setDepth(top.depth + 1);
+      this.addGear("BANG_QR", [fitPhoto(this.add.image(top.x - 9, top.y + 6, "qr")).setOrigin(0.697, 0.994).setDepth(top.depth + 1)]);
     }
     /* Vẽ đúng `SEAT_SPOT`, chỗ người ta ngồi. */
     if (has(e, "GHE_BAN")) draw(SEAT_SPOT.x, SEAT_SPOT.y, (x, y, gg) => {
       gg.fillStyle(0x2f6fb3, 1).fillRect(x - 10, y - 12, 20, 4).fillRect(x - 9, y - 8, 3, 8).fillRect(x + 6, y - 8, 3, 8);
-    });
-    if (has(e, "GIA_TREO")) draw(8.5, 4.0, (x, y, gg) => { gg.lineStyle(2, 0x8a7a60, 1).lineBetween(x - 60, y - 86, x + 60, y - 86); });
-    if (has(e, "KEP_GAP")) draw(3.8, 4.5, (x, y, gg) => { gg.lineStyle(1.5, 0xbfc7cc, 1).lineBetween(x - 5, y - 49, x + 6, y - 46).lineBetween(x - 5, y - 47, x + 6, y - 46); });
+    }, "GHE_BAN");
+    if (has(e, "GIA_TREO")) draw(8.5, 4.0, (x, y, gg) => { gg.lineStyle(2, 0x8a7a60, 1).lineBetween(x - 60, y - 86, x + 60, y - 86); }, "GIA_TREO");
+    if (has(e, "KEP_GAP")) draw(3.8, 4.5, (x, y, gg) => { gg.lineStyle(1.5, 0xbfc7cc, 1).lineBetween(x - 5, y - 49, x + 6, y - 46).lineBetween(x - 5, y - 47, x + 6, y - 46); }, "KEP_GAP");
     this.addStorage(has(e, "TU_MAT"));
   }
 
   /** Ảnh gắn tường: điểm (`ax`, `ay`) của ảnh nằm ở điểm thế giới (`wx`, `wy`) cao `z` px. */
-  private addMounted(key: keyof typeof MOUNTED, wx: number, wy: number, z: number, ax: number, ay: number, depth: number) {
+  private addMounted(id: EquipId, key: keyof typeof MOUNTED, wx: number, wy: number, z: number, ax: number, ay: number, depth: number) {
     if (!this.textures.exists(key)) return;
     const { sx, sy } = toScreen(wx, wy);
-    fitPhoto(this.add.image(sx, sy + BASE - z, key)).setOrigin(ax, ay).setDepth(depth);
+    this.addGear(id, [fitPhoto(this.add.image(sx, sy + BASE - z, key)).setOrigin(ax, ay).setDepth(depth)]);
   }
 
   /**
@@ -2738,7 +2776,7 @@ export class StallScene extends Phaser.Scene {
     this.addPhotoProp(PROP.umbrella, tx, ty, (x, y, gg) => {
       gg.lineStyle(2, 0x6b5a4a, 1).lineBetween(x, y, x, y - 92);
       gg.fillStyle(0xc0443a, 0.92).fillTriangle(x - 46, y - 88, x + 46, y - 88, x, y - 110);
-    });
+    }, "DU_CHE");
   }
 
   /** Ô `F` luôn chặn: thùng xốp lúc đầu, mua tủ lạnh thì thay bằng tủ. */
@@ -2747,7 +2785,7 @@ export class StallScene extends Phaser.Scene {
       const h = fridge ? 40 : 20;
       gg.fillStyle(0xe8eef1, 1).fillRoundedRect(x - 12, y - h, 24, h, 3);
       gg.lineStyle(1, 0x9aa6ae, 1).strokeRoundedRect(x - 12, y - h, 24, h, 3);
-    });
+    }, fridge ? "TU_MAT" : null);
     const { sx, sy } = toScreen(3.5, 2.4);
     const h = fridge ? 40 : 29;
     this.tourSpot.set("kho", { x: sx, y: footY(sy) - h / 2, r: h / 2 + 12 });
@@ -2763,15 +2801,19 @@ export class StallScene extends Phaser.Scene {
   private addPhotoProp(
     key: string, wx: number, wy: number,
     veDuPhong: (x: number, y: number, gg: Phaser.GameObjects.Graphics) => void,
+    id: EquipId | null,
   ) {
     const { sx, sy } = toScreen(wx, wy);
     const y = footY(sy);
     const depth = depthOf(wx, wy);
+    let obj: Phaser.GameObjects.Image | Phaser.GameObjects.Graphics;
     if (this.textures.exists(key)) {
-      this.sheen.register(this.light.add(this.add.image(sx, y, key).setOrigin(0.5, 1).setScale(1 / artScale(key)).setDepth(depth)), key);
-      return;
+      obj = this.sheen.register(this.light.add(this.add.image(sx, y, key).setOrigin(0.5, 1).setScale(1 / artScale(key)).setDepth(depth)), key);
+    } else {
+      obj = this.add.graphics().setDepth(depth);
+      veDuPhong(sx, y, obj);
     }
-    veDuPhong(sx, y, this.add.graphics().setDepth(depth));
+    if (id) this.addGear(id, [obj], { x: sx, y });
   }
 
   /**

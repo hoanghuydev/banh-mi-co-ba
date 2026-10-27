@@ -36,7 +36,6 @@ export function dawn(w: SaveFile) {
   pruneOrders(w);
   const wasted = expire(w.inventory, day);
   w.econ.today.wasted = wasted.map((x) => `${fmtUnits(x.units)} ${GOODS[x.good].unit} ${GOODS[x.good].label}`);
-  w.econ.float = w.econ.floatLeft = 100_000;
   dailyNoise(w, DAY_START_MIN + 30, DAY_END_MIN);
   const rent = morningRent(w.econ, w.money);
   return { wasted, rent };
