@@ -44,6 +44,8 @@ const game = new Phaser.Game({
   // Không dùng preFX/postFX; bật thì Phaser dựng sẵn hơn trăm render target chiếm vài trăm MB.
   disablePreFX: true,
   disablePostFX: true,
+  // Chạm vào cần và nút cảm ứng (HTML) cũng chiếm con trỏ Phaser; thiếu con trỏ thì cú chạm lên canvas bị bỏ.
+  input: { activePointers: 3 },
   scene: [BootScene, MenuScene, IntroScene, DayScene, StallScene, EveningScene, BrokeScene, WinScene],
 });
 
@@ -63,6 +65,15 @@ onDeviceChange(() => {
   if (!game.scene.isActive("day")) refitGame(game);
   game.scale.refresh();
 });
+
+// iOS không đưa touchend lên window khi phần tử bị gỡ giữa lúc chạm, con trỏ Phaser kẹt mãi: nhả trước mỗi cú chạm mới.
+window.addEventListener("touchstart", (e) => {
+  const live = new Set(Array.from(e.touches, (t) => t.identifier));
+  const stale = game.input.pointers.filter((p) => p.active && p.wasTouch && !live.has(p.identifier))
+    .map((p) => ({ identifier: p.identifier, target: document.body, pageX: 0, pageY: 0 }));
+  // `onTouchCancel` có trong Phaser nhưng thiếu ở bản khai kiểu.
+  if (stale.length) (game.input as unknown as { onTouchCancel(ev: unknown): void }).onTouchCancel({ changedTouches: stale, timeStamp: e.timeStamp });
+}, { capture: true, passive: true });
 
 const isField = (t: EventTarget | null) => t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement;
 window.addEventListener("contextmenu", (e) => { if (!isField(e.target)) e.preventDefault(); });
