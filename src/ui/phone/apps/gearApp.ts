@@ -149,7 +149,7 @@ function cart(ctx: AppCtx) {
   go.disabled = !!q.blocked;
   dock.append(go);
 
-  const wrap = el("div");
+  const wrap = el("div", "ph-cartwrap");
   wrap.style.cssText = "display:flex;flex-direction:column;flex:1;min-height:0";
   const opts = el("div", "ph-card");
   if (w.system.gearCoupon > 0) {

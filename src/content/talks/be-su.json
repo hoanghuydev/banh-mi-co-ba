@@ -7,7 +7,7 @@
       "topic": "quayphim",
       "source": "NPC_ONLY",
       "depth": "SHORT",
-      "opener": "Chị ơi, em quay cái lò chị được không chị?",
+      "opener": "Chị ơi, em quay cái lò được không?",
       "weight": 14,
       "ignore": {
         "reply": "Ủa… thôi em không quay nữa đâu chị.",
@@ -21,7 +21,8 @@
             "reply": "Em quay lẹ thôi chị.",
             "act": {
               "kind": "FILM",
-              "forSec": 20
+              "forSec": 20,
+              "channel": "su"
             }
           },
           {
@@ -33,32 +34,32 @@
           {
             "say": "Thôi đủ rồi em, chị mỏi tay.",
             "tone": "THANG",
-            "reply": "Đủ rồi. Cảm ơn chị nha chị!"
+            "reply": "Đủ rồi. Cảm ơn chị nha!"
           }
         ]
       },
       "tree": [
         {
-          "say": "Em ngó vô trong xe mà quay cho rõ nè em.",
+          "say": "Em ngó vô trong xe mà quay cho rõ nè.",
           "tone": "AM",
-          "reply": "Chị đứng im đó nha chị, đừng nhìn ống kính.",
+          "reply": "Chị đứng im đó nha, đừng nhìn ống kính.",
           "then": [
             {
-              "say": "Em quay cái này gì vậy em?",
+              "say": "Em quay cái này làm gì vậy?",
               "tone": "AM",
               "reply": "Em làm kênh đồ ăn hẻm mình đó chị. Được hai ngàn người theo rồi.",
               "then": [
                 {
-                  "say": "Hai ngàn người lận hả? Dữ vậy em.",
+                  "say": "Hai ngàn người lận hả? Dữ vậy.",
                   "tone": "DUA",
-                  "reply": "Chút xíu hà chị. Mà quay chị là em lên liền á.",
+                  "reply": "Có chút xíu à chị. Mà quay chị là lên liền luôn á.",
                   "mood": "CUOI",
                   "flag": "suClipHot"
                 },
                 {
-                  "say": "Em quay hẻm mình gì, có gì đâu mà coi.",
+                  "say": "Quay hẻm mình làm gì, có gì đâu mà coi.",
                   "tone": "THANG",
-                  "reply": "Có chứ chị. Hẻm mình đẹp mà. Tại chị ở đây hoài chị không thấy."
+                  "reply": "Có chứ chị. Hẻm mình đẹp mà. Tại chị ở đây hoài nên không thấy."
                 },
                 {
                   "say": "Em ráng học đi, mấy cái đó chơi thôi.",
@@ -69,7 +70,7 @@
                   "say": "Mai chị dọn quầy sạch cho em quay.",
                   "tone": "AM",
                   "flag": "suQuaySach",
-                  "reply": "Thiệt hả chị! Dạ, mai em quay nha chị.",
+                  "reply": "Thiệt hả chị! Mai em quay nha!",
                   "mood": "NGAC_NHIEN"
                 }
               ]
@@ -77,20 +78,20 @@
             {
               "say": "Quay thì quay, mà đừng quay mặt chị nha.",
               "tone": "THUONG",
-              "reply": "Em quay tay chị thôi. Tay chị đẹp mà chị.",
+              "reply": "Em quay tay chị thôi. Tay chị đẹp mà.",
               "ref": "chao"
             },
             {
-              "say": "Em quay rồi chị nổi tiếng chị bán không kịp đó.",
+              "say": "Em quay rồi chị nổi tiếng, bán không kịp đó.",
               "tone": "DUA",
-              "reply": "Vậy chị nhớ chia em một ổ đầy đủ nha chị!",
+              "reply": "Vậy chị nhớ chia em một ổ đầy đủ nha!",
               "ref": "chao",
               "mood": "CUOI"
             },
             {
               "say": "Đứng xa cái lò ra em, nóng.",
               "tone": "THUONG",
-              "reply": "Dạ. Em lùi nè chị."
+              "reply": "Em lùi nè chị."
             }
           ],
           "mood": "CUOI",
@@ -107,11 +108,12 @@
             {
               "say": "Ăn xong rồi quay nha, chị không cấm.",
               "tone": "AM",
-              "reply": "Chị dễ thương ghê á chị.",
+              "reply": "Chị dễ thương ghê luôn á.",
               "mood": "CUOI",
               "act": {
                 "kind": "FILM",
-                "forSec": 20
+                "forSec": 20,
+                "channel": "su"
               }
             },
             {
@@ -120,7 +122,7 @@
               "reply": "Em đi liền."
             },
             {
-              "say": "Ngày nào cũng quay, chán thiệt chứ.",
+              "say": "Ngày nào cũng quay, chán thiệt.",
               "tone": "GAT",
               "anger": 25,
               "silent": true,
@@ -139,7 +141,7 @@
             {
               "say": "Nói dóc. Đẹp nhất hẻm là cô Thuý chứ.",
               "tone": "DUA",
-              "reply": "Cô Thuý đẹp kiểu cô Thuý. Chị đẹp kiểu bánh mì nóng á chị.",
+              "reply": "Cô Thuý đẹp kiểu cô Thuý. Chị đẹp kiểu bánh mì nóng á.",
               "mood": "CUOI"
             },
             {
@@ -149,11 +151,12 @@
               "ref": "chao",
               "act": {
                 "kind": "FILM",
-                "forSec": 20
+                "forSec": 20,
+                "channel": "su"
               }
             },
             {
-              "say": "Em nịnh chị gì vậy em.",
+              "say": "Em nịnh chị gì vậy?",
               "tone": "THANG",
               "reply": "Em nói thiệt mà. Em không biết nịnh đâu chị."
             }
@@ -192,7 +195,7 @@
       "topic": "drama",
       "source": "BOTH",
       "depth": "SHORT",
-      "opener": "Chị ơi biết vụ cái quán chè đường Vườn Chuối không chị?",
+      "opener": "Chị ơi, chị biết vụ quán chè đường Vườn Chuối chưa?",
       "weight": 12,
       "ignore": {
         "reply": "Thôi… chị bận em kể sau.",
@@ -203,7 +206,7 @@
           {
             "say": "Thôi ăn đi em, nguội bánh.",
             "tone": "THUONG",
-            "reply": "Em kể nhiều quá hen chị."
+            "reply": "Em kể nhiều quá ha."
           },
           {
             "say": "Mấy chuyện đó nghe rồi quên đi em.",
@@ -224,26 +227,26 @@
           "reply": "Có người quay được con ruồi trong ly chè. Bốn triệu view. Quán đóng cửa luôn.",
           "then": [
             {
-              "say": "Trời. Một con ruồi mà dẹp luôn cái quán hả em.",
+              "say": "Trời. Một con ruồi mà dẹp luôn cái quán hả?",
               "tone": "AM",
-              "reply": "Mà chị biết gì không — em coi kỹ rồi, cái ly đó không phải ly của quán.",
+              "reply": "Mà chị biết không, em coi kỹ rồi, cái ly đó không phải của quán.",
               "then": [
                 {
-                  "say": "Vậy là người ta dựng chuyện hả em?",
+                  "say": "Vậy là người ta dựng chuyện hả?",
                   "tone": "AM",
-                  "reply": "Em nghĩ vậy. Mà em nói ở lớp không ai tin em hết.",
+                  "reply": "Em nghĩ vậy. Mà em nói ở lớp không ai tin hết.",
                   "mood": "THUONG"
                 },
                 {
-                  "say": "Em coi kỹ dữ ha. Em làm thám tử luôn đi.",
+                  "say": "Coi kỹ dữ ha. Làm thám tử luôn đi.",
                   "tone": "DUA",
-                  "reply": "Em coi tới hai chục lần lận chị. Em rảnh quá mà.",
+                  "reply": "Em coi tới hai chục lần lận chị. Rảnh quá mà.",
                   "mood": "CUOI"
                 },
                 {
                   "say": "Em đừng có nói ra nha, mệt lắm.",
                   "tone": "THANG",
-                  "reply": "Em cũng sợ nên em im luôn rồi chị."
+                  "reply": "Em cũng sợ nên im luôn rồi chị."
                 },
                 {
                   "say": "Chuyện người ta, em xía vô gì.",
@@ -254,17 +257,17 @@
               ]
             },
             {
-              "say": "Vậy chắc quán đó dơ thiệt rồi em.",
+              "say": "Vậy chắc quán đó dơ thiệt rồi.",
               "tone": "THUONG",
               "reply": "Không biết nữa chị. Mà cô Thuý nói hồi trước quán đó sạch nhất khu luôn á.",
               "then": [
                 {
                   "say": "Vậy mà một cái clip là xong. Ghê thiệt.",
                   "tone": "AM",
-                  "reply": "Em sợ luôn á chị. Em quay chị em cũng sợ."
+                  "reply": "Em sợ luôn á chị. Quay chị em cũng sợ."
                 },
                 {
-                  "say": "Nên chị mới không muốn em quay đó em.",
+                  "say": "Nên chị mới không muốn em quay đó.",
                   "tone": "THANG",
                   "reply": "Em hiểu rồi chị."
                 },
@@ -276,21 +279,21 @@
               ]
             },
             {
-              "say": "Chị bận lắm em, để bữa khác nha.",
+              "say": "Chị bận lắm, để hôm khác nha.",
               "tone": "LANH",
-              "reply": "Dạ."
+              "reply": "Em biết rồi ạ."
             }
           ]
         },
         {
-          "say": "Chị không có coi mấy cái đó em.",
+          "say": "Chị không coi mấy cái đó đâu em.",
           "tone": "THUONG",
           "reply": "Chị không coi là đúng rồi. Coi riết em thấy ai cũng xấu hết á chị.",
           "then": [
             {
               "say": "Ai cũng xấu hả? Em nói chị nghe coi.",
               "tone": "AM",
-              "reply": "Tại lên đó người ta chỉ đăng lúc người ta chửi nhau thôi á chị.",
+              "reply": "Tại lên đó người ta chỉ đăng lúc chửi nhau thôi á chị.",
               "mood": "CUOI"
             },
             {
@@ -306,18 +309,18 @@
           ]
         },
         {
-          "say": "Em hóng drama dữ ha em.",
+          "say": "Em hóng drama dữ ha.",
           "tone": "DUA",
           "reply": "Em hóng số một hẻm này luôn á chị. Dì Nguyệt mới số hai.",
           "then": [
             {
               "say": "Dì Nguyệt mà nghe câu đó là em chết nha.",
               "tone": "DUA",
-              "reply": "Chị đừng méc bà nha chị! Em lạy chị á.",
+              "reply": "Chị đừng méc dì Nguyệt nha! Em lạy chị luôn á.",
               "mood": "CUOI"
             },
             {
-              "say": "Em nói xấu người lớn vậy hả em.",
+              "say": "Em nói xấu người lớn vậy hả?",
               "tone": "THANG",
               "reply": "Em giỡn thôi mà chị."
             },
@@ -331,9 +334,9 @@
           ]
         },
         {
-          "say": "Chị đang làm em. Chút nữa nha.",
+          "say": "Chị đang làm bánh nè em. Chút nữa nha.",
           "tone": "LANH",
-          "reply": "Dạ."
+          "reply": "Em biết rồi ạ."
         }
       ],
       "openMood": "CUOI_TUOI",
@@ -362,14 +365,14 @@
           {
             "say": "Hẻm này chị sống mười mấy năm. Nó không dơ.",
             "tone": "AM",
-            "reply": "Em thương hẻm mình mà chị. Em mới quay chứ.",
+            "reply": "Em thương hẻm mình mà chị. Nên em mới quay.",
             "mood": "THUONG"
           },
           {
             "say": "Mai em quay tiếp. Chị lau quầy sạch cho em.",
             "tone": "AM",
             "need": "suQuaySach",
-            "reply": "Thiệt hả chị! Dạ, mai em quay nha chị.",
+            "reply": "Thiệt hả chị! Mai em quay nha!",
             "mood": "NGAC_NHIEN"
           },
           {
@@ -383,7 +386,7 @@
           {
             "say": "Ăn đi rồi đi học, trễ rồi.",
             "tone": "THANG",
-            "reply": "Cảm ơn chị nha chị."
+            "reply": "Cảm ơn chị nha."
           }
         ]
       },
@@ -396,7 +399,7 @@
             {
               "say": "Người ta nói gì em?",
               "tone": "AM",
-              "reply": "Nói hẻm em dơ. Nói đồ ăn vậy mà cũng quay. Em đọc em khóc luôn.",
+              "reply": "Nói hẻm mình dơ. Nói đồ ăn vậy mà cũng quay. Em đọc mà khóc luôn.",
               "then": [
                 {
                   "say": "Tụi đó ngồi nhà gõ phím thôi em. Kệ nó.",
@@ -406,9 +409,9 @@
                   "mood": "CUOI"
                 },
                 {
-                  "say": "Em đọc mấy cái đó gì cho khổ em.",
+                  "say": "Đọc mấy cái đó làm gì cho khổ em.",
                   "tone": "AM",
-                  "reply": "Em không đọc không được chị. Nó cứ hiện lên á.",
+                  "reply": "Không đọc không được chị. Nó cứ hiện lên á.",
                   "ref": "ui",
                   "mood": "CUOI"
                 },
@@ -447,7 +450,7 @@
             {
               "say": "Ai làm gì em? Nói chị nghe.",
               "tone": "THANG",
-              "reply": "Không ai hết chị. Người trên mạng à. Mà đau thiệt đó chị.",
+              "reply": "Không ai hết chị. Người trên mạng thôi. Mà đau thiệt đó.",
               "ref": "ui"
             },
             {
@@ -487,7 +490,7 @@
             {
               "say": "Ăn lẹ đi, trễ học rồi.",
               "tone": "THUONG",
-              "reply": "Dạ."
+              "reply": "Em biết rồi ạ."
             },
             {
               "say": "Mặt mày vậy chị nhìn mệt quá em.",
@@ -502,7 +505,7 @@
           "say": "Chú bảo vệ có con chim đó. Chú nói mai chú mở lồng cho em coi.",
           "tone": "AM",
           "need": "tuMoLong",
-          "reply": "Thiệt hả chị?! …Dạ. Vậy mai em đem máy, em quay con chim.",
+          "reply": "Thiệt hả chị?! …Vậy mai em đem máy quay con chim.",
           "mood": "CUOI",
           "flag": "suHuaQuayChim"
         },
@@ -531,13 +534,13 @@
         "needFlag": "phucThayBeSu"
       },
       "weight": 12,
-      "opener": "Chị ơi. Cái ông già hay ngồi ăn ở ghế đó, ổng hỏi em một bài toán á chị.",
+      "opener": "Chị ơi. Ông già hay ngồi ăn ở ghế đó hỏi em một bài toán á.",
       "shared": {
         "ket": [
           {
             "say": "Em đi học đi, trễ rồi đó.",
             "tone": "THUONG",
-            "reply": "Em dạ em đi nè chị."
+            "reply": "Em đi nè chị."
           },
           {
             "say": "Mai em kể chị nghe tiếp nha.",
@@ -561,10 +564,10 @@
             {
               "say": "Ủa sao vậy em? Em làm ra mà.",
               "tone": "AM",
-              "reply": "Tại em sợ. Năm ngoái em làm ra một bài là bị bắt đi thi. Cực thấy mồ chị.",
+              "reply": "Tại em sợ. Năm ngoái làm ra một bài là bị bắt đi thi. Cực lắm chị.",
               "then": [
                 {
-                  "say": "Vậy em sợ bị bắt đi thi nữa hả em?",
+                  "say": "Vậy em sợ bị bắt đi thi nữa hả?",
                   "tone": "AM",
                   "flag": "suSoThi",
                   "reply": "Đi thi là nghỉ quay, nghỉ chơi, ngồi ôn tới chín giờ tối. Em không thích.",
@@ -573,13 +576,13 @@
                 {
                   "say": "Mà em nói trật, thầy có tin không em?",
                   "tone": "DUA",
-                  "reply": "Không tin chị ơi! Ổng nhìn em, ổng cười cười, ổng nói \"ừ\" rồi ổng đi. Quê thấy mồ.",
+                  "reply": "Không tin chị ơi! Thầy nhìn em, cười cười, nói \"ừ\" rồi đi. Quê muốn xỉu.",
                   "mood": "CUOI"
                 },
                 {
                   "say": "Giỏi mà giấu uổng lắm em.",
                   "tone": "THANG",
-                  "reply": "Ai cũng nói vậy. Mà không ai hỏi em có thích không hết á chị."
+                  "reply": "Ai cũng nói vậy. Mà không ai hỏi em có thích không luôn á."
                 },
                 {
                   "say": "Ừ. Chuyện của em.",
@@ -592,15 +595,15 @@
             {
               "say": "Thầy đó hồi xưa dạy toán đó em.",
               "tone": "THUONG",
-              "reply": "Hả?! Trời ơi. Vậy là ổng biết em xạo rồi. Thôi chết em.",
+              "reply": "Hả?! Trời ơi. Vậy là thầy biết em xạo rồi. Chết em rồi.",
               "ref": "ket",
               "mood": "NGAC_NHIEN"
             },
             {
-              "say": "Lần sau em cứ nói thiệt đi em, không ai bắt em đâu.",
+              "say": "Lần sau em cứ nói thiệt đi, không ai bắt em đâu.",
               "tone": "AM",
               "need": "phucDeYen",
-              "reply": "Chị nói vậy thôi. Người lớn hay nói vậy rồi người lớn bắt à.",
+              "reply": "Chị nói vậy thôi. Người lớn hay nói vậy rồi bắt à.",
               "ref": "ket",
               "mood": "THUONG"
             }
@@ -610,7 +613,7 @@
         {
           "say": "Bài gì mà khó dữ vậy em?",
           "tone": "AM",
-          "reply": "Không khó chị. Ổng hỏi hai cái vòi nước chảy vô cái hồ á. Em tính nhẩm được mà.",
+          "reply": "Không khó chị. Thầy hỏi hai cái vòi nước chảy vô cái hồ á. Em nhẩm được mà.",
           "then": [
             {
               "say": "Em nhẩm được thiệt hả? Chị tính giấy còn sai nữa.",
@@ -618,15 +621,15 @@
               "reply": "Được. Em không biết sao nữa, nó tự ra trong đầu em á chị.",
               "then": [
                 {
-                  "say": "Cái đó là giỏi đó em. Giỏi thiệt chứ không phải giỡn.",
+                  "say": "Cái đó là giỏi đó em. Giỏi thiệt, không phải giỡn.",
                   "tone": "AM",
-                  "reply": "Chị là người thứ hai nói vậy. Người thứ nhất là ổng.",
+                  "reply": "Chị là người thứ hai nói vậy. Người thứ nhất là thầy.",
                   "mood": "THUONG"
                 },
                 {
                   "say": "Vậy chút nữa em tính tiền giùm chị luôn nha.",
                   "tone": "DUA",
-                  "reply": "Được! Chị đưa đây em tính. Chị tính chậm thấy mồ chị ơi.",
+                  "reply": "Được! Chị đưa đây em tính. Chị tính chậm quá trời luôn.",
                   "mood": "CUOI"
                 },
                 {
@@ -638,9 +641,9 @@
               "mood": "CUOI"
             },
             {
-              "say": "Vậy em trả lời ổng đại cái gì?",
+              "say": "Vậy em trả lời thầy đại cái gì?",
               "tone": "DUA",
-              "reply": "Em nói \"dạ ba tiếng\". Mà đúng ra là một tiếng hai mươi. Em nói xong em muốn độn thổ.",
+              "reply": "Em nói \"dạ ba tiếng\". Mà đúng ra là một tiếng hai mươi. Nói xong em muốn độn thổ.",
               "ref": "ket",
               "mood": "NGUONG"
             },
@@ -654,7 +657,7 @@
         {
           "say": "Chị đang đông khách nè em. Chút nữa nha.",
           "tone": "LANH",
-          "reply": "Dạ em đứng đây em đợi cũng được mà chị."
+          "reply": "Em đứng đây đợi cũng được mà chị."
         }
       ],
       "openMood": "NGUONG",
@@ -672,7 +675,7 @@
       "source": "NPC_ONLY",
       "depth": "FULL",
       "weight": 13,
-      "opener": "Chị ơi thối dư em hai ngàn nè chị. Đúng ra là năm ngàn à.",
+      "opener": "Chị ơi, chị thối dư em hai ngàn nè. Đúng ra là năm ngàn á.",
       "shared": {
         "ket": [
           {
@@ -702,13 +705,13 @@
             {
               "say": "Em tính nhanh ghê. Chị chưa kịp nghĩ nữa.",
               "tone": "AM",
-              "reply": "Em tính trong đầu á chị. Em nhìn cái em biết liền.",
+              "reply": "Em tính trong đầu á chị. Nhìn cái là biết liền.",
               "then": [
                 {
                   "say": "Vậy từ mai em đứng đây tính tiền giùm chị luôn nha.",
                   "tone": "DUA",
                   "flag": "suGiuTien",
-                  "reply": "Mà chị trả em bằng gì? Em không lấy tiền đâu, em lấy bánh mì không.",
+                  "reply": "Mà chị trả em bằng gì? Em không lấy tiền, lấy bánh mì thôi.",
                   "mood": "CUOI"
                 },
                 {
@@ -719,7 +722,7 @@
                     "vnd": 2000,
                     "note": "cho bé Hân hai ngàn thối dư"
                   },
-                  "reply": "Thiệt hả chị? Dạ em cảm ơn chị. Em để dành mua thẻ nhớ.",
+                  "reply": "Thiệt hả chị? Em cảm ơn chị. Em để dành mua thẻ nhớ.",
                   "mood": "CUOI",
                   "needCash": 2000
                 },
@@ -742,19 +745,19 @@
               "mood": "THUONG"
             },
             {
-              "say": "Thôi em cầm đi em, coi như chị gửi.",
+              "say": "Thôi em cầm đi, coi như chị gửi.",
               "tone": "THUONG",
               "act": {
                 "kind": "PAY",
                 "vnd": 2000,
                 "note": "cho bé Hân hai ngàn thối dư"
               },
-              "reply": "Vậy em cảm ơn chị. Mà lần sau chị coi kỹ nha chị, không phải ai cũng trả lại đâu.",
+              "reply": "Vậy em cảm ơn chị. Mà lần sau chị coi kỹ nha, không phải ai cũng trả lại đâu.",
               "ref": "ket",
               "needCash": 2000
             },
             {
-              "say": "Em trả lại chị, em ngoan ghê.",
+              "say": "Em trả lại chị, ngoan ghê.",
               "tone": "AM",
               "reply": "Má em dặn. Má nói tiền không phải của mình thì cầm nó nặng tay lắm.",
               "ref": "ket",
@@ -770,7 +773,7 @@
         {
           "say": "Em tính lại coi, chị thấy chị đưa đúng mà.",
           "tone": "THANG",
-          "reply": "Chị ơi, hai lăm trừ hai chục là năm. Chị đưa bảy. Dư hai á chị.",
+          "reply": "Chị ơi, hai lăm trừ hai chục là năm. Chị đưa bảy. Dư hai á.",
           "then": [
             {
               "say": "…Ừ ha. Chị sai thiệt. Chị xin lỗi em.",
@@ -780,13 +783,13 @@
                 {
                   "say": "Em nói nghe lọt tai ghê. Ai dạy em nói vậy?",
                   "tone": "AM",
-                  "reply": "Không ai dạy hết. Em coi clip riết rồi em nói y mấy người trong clip á chị.",
+                  "reply": "Không ai dạy hết. Em coi clip riết rồi nói y chang người trong clip á.",
                   "mood": "CUOI"
                 },
                 {
                   "say": "Mai mốt chị sai nữa em nhắc chị nha.",
                   "tone": "AM",
-                  "reply": "Em nhắc. Mà chị đừng quê nha chị, em nói nhỏ thôi.",
+                  "reply": "Em nhắc. Mà chị đừng quê nha, em nói nhỏ thôi.",
                   "mood": "THUONG"
                 },
                 {
@@ -800,14 +803,14 @@
             {
               "say": "Em này tính nhanh hơn cái máy nữa.",
               "tone": "DUA",
-              "reply": "Chị khen em quá em mắc cỡ nè chị.",
+              "reply": "Chị khen quá em mắc cỡ nè.",
               "ref": "ket",
               "mood": "NGUONG"
             },
             {
               "say": "Thôi em cầm rồi đi học đi, chị bận.",
               "tone": "LANH",
-              "reply": "…Dạ.",
+              "reply": "…Em đi.",
               "mood": "LANH"
             }
           ]
@@ -836,7 +839,7 @@
       "shared": {
         "ket": [
           {
-            "say": "Ừ. Em làm vậy là phải đó em.",
+            "say": "Ừ. Em làm vậy là phải đó.",
             "tone": "AM",
             "reply": "Em không muốn ai buồn vì em hết á chị.",
             "mood": "CUOI"
@@ -855,18 +858,18 @@
       },
       "tree": [
         {
-          "say": "Rồi em xoá chưa em?",
+          "say": "Rồi em xoá chưa?",
           "tone": "THANG",
           "reply": "Xoá rồi. Mà cái đoạn đó đẹp thiệt đó chị. Tiếc gần chết.",
           "then": [
             {
-              "say": "Em xoá liền vậy là em tử tế đó em.",
+              "say": "Em xoá liền vậy là tử tế đó.",
               "tone": "AM",
               "flag": "suXoaClip",
               "reply": "Ảnh nói nhỏ quá chị ơi. Nghe ảnh nói em thấy kỳ kỳ sao á.",
               "then": [
                 {
-                  "say": "Lần sau em hỏi trước rồi quay nha em.",
+                  "say": "Lần sau em hỏi trước rồi quay nha.",
                   "tone": "AM",
                   "reply": "Em hỏi. Mà hỏi rồi người ta làm mặt quê, không tự nhiên nữa chị.",
                   "mood": "CUOI"
@@ -891,22 +894,22 @@
               "mood": "THUONG"
             },
             {
-              "say": "Em quay người ta mà không xin phép là không được đó em.",
+              "say": "Em quay người ta mà không xin phép là không được đó.",
               "tone": "THANG",
-              "reply": "Em biết rồi chị. Em quen tay quá, thấy đẹp là em bấm.",
+              "reply": "Em biết rồi chị. Quen tay quá, thấy đẹp là bấm.",
               "ref": "ket"
             },
             {
               "say": "Đoạn đó đẹp sao em? Kể chị nghe coi.",
               "tone": "DUA",
-              "reply": "Ảnh đứng đợi bánh, ảnh cầm cuốn truyện ảnh đọc, nắng rọi ngang mặt ảnh á chị. Đẹp dã man.",
+              "reply": "Ảnh đứng đợi bánh, cầm cuốn truyện đọc, nắng rọi ngang mặt ảnh á chị. Đẹp dã man.",
               "ref": "ket",
               "mood": "CUOI"
             }
           ]
         },
         {
-          "say": "Ảnh nói gì với em hả em?",
+          "say": "Ảnh nói gì với em hả?",
           "tone": "AM",
           "reply": "Ảnh nói \"dạ… chị xoá giùm em được không\". Ảnh xin lỗi em á chị!",
           "then": [
@@ -922,10 +925,10 @@
                   "mood": "THUONG"
                 },
                 {
-                  "say": "Bữa nào em chào ảnh một tiếng đi em.",
+                  "say": "Hôm nào em chào ảnh một tiếng đi.",
                   "tone": "AM",
                   "flag": "suChaoBao",
-                  "reply": "Để em thử. Mà ảnh cắm mặt điện thoại hoài, em chào ảnh không nghe đâu.",
+                  "reply": "Để em thử. Mà ảnh cắm mặt điện thoại hoài, chào không nghe đâu.",
                   "mood": "CUOI"
                 },
                 {
@@ -939,11 +942,11 @@
             {
               "say": "Ảnh hiền mà em. Đừng chọc ảnh nha.",
               "tone": "THUONG",
-              "reply": "Em không chọc đâu. Em chỉ quay thôi hà.",
+              "reply": "Em không chọc đâu. Em chỉ quay thôi mà.",
               "ref": "ket"
             },
             {
-              "say": "Em kể chuyện người ta hoài vậy em.",
+              "say": "Em kể chuyện người ta hoài vậy.",
               "tone": "THANG",
               "reply": "…Em không kể nữa.",
               "mood": "LANH"
@@ -951,7 +954,7 @@
           ]
         },
         {
-          "say": "Em đừng quay khách của chị nữa nha em.",
+          "say": "Em đừng quay khách của chị nữa nha.",
           "tone": "GAT",
           "anger": 30,
           "reply": "…Em xin lỗi chị.",
@@ -961,9 +964,9 @@
           }
         },
         {
-          "say": "Em dạt qua bên này chút nha em, có người tới mua.",
+          "say": "Em dạt qua bên này chút nha, có người tới mua.",
           "tone": "AM",
-          "reply": "Em đứng choán hả. Dạ em qua liền.",
+          "reply": "Em đứng choán hả. Em qua liền.",
           "mood": "NGUONG",
           "act": {
             "kind": "STEP_ASIDE",
@@ -988,25 +991,25 @@
       "source": "PLAYER_ONLY",
       "depth": "SHORT",
       "weight": 25,
-      "opener": "Chị kêu em hả chị?",
+      "opener": "Chị kêu em hả?",
       "openMood": "NGAC_NHIEN",
       "tree": [
         {
-          "say": "O này có vụ gì mới không em? Kể chị nghe coi.",
+          "say": "Hẻm này có vụ gì mới không em? Kể chị nghe coi.",
           "tone": "DUA",
           "reply": "Có chứ chị! Mà vụ này dài lắm, chị nghe hết nổi không.",
           "mood": "CUOI_TUOI",
           "then": [
             {
-              "say": "Kể đi em. Chị vừa làm chị vừa nghe.",
+              "say": "Kể đi em. Chị vừa làm vừa nghe.",
               "tone": "AM",
               "reply": "Cái tiệm trà sữa ngoài quận ba á chị. Người ta quay được hết trơn.",
               "mood": "CUOI_TUOI"
             },
             {
-              "say": "Em hóng gì dữ vậy em. Mệt đầu.",
+              "say": "Em hóng gì dữ vậy. Mệt đầu.",
               "tone": "THANG",
-              "reply": "Em không hóng thì em đâu có gì kể chị đâu.",
+              "reply": "Em không hóng thì đâu có gì kể chị.",
               "mood": "CUOI_KHAN"
             },
             {
@@ -1018,16 +1021,16 @@
           ]
         },
         {
-          "say": "Bài vở em sao rồi? Có bài nào khó không em?",
+          "say": "Bài vở em sao rồi? Có bài nào khó không?",
           "tone": "THANG",
-          "reply": "Thường thôi chị. Em làm xong hết rồi mà em chưa nộp.",
+          "reply": "Thường thôi chị. Em làm xong hết rồi mà chưa nộp.",
           "mood": "CUOI_KHAN"
         },
         {
           "say": "Ngày nào cũng cầm cái điện thoại. Chán em ghê.",
           "tone": "GAT",
           "anger": 20,
-          "reply": "…Chị nói giống má em quá à.",
+          "reply": "…Chị nói giống má em quá trời luôn á.",
           "mood": "BUON"
         }
       ],
@@ -1045,11 +1048,11 @@
       "source": "PLAYER_ONLY",
       "depth": "SHORT",
       "weight": 20,
-      "opener": "? Chị kêu em hả chị?",
+      "opener": "? Chị kêu em hả?",
       "openMood": "NGAC_NHIEN",
       "tree": [
         {
-          "say": "Nay em quay được cái gì hay chưa em?",
+          "say": "Hôm nay em quay được cái gì hay chưa?",
           "tone": "DUA",
           "reply": "Chưa. Sáng giờ hẻm mình không có gì hết trơn á chị.",
           "mood": "CUOI_KHAN",
@@ -1057,35 +1060,37 @@
             {
               "say": "Quay cái lò của chị nè. Lửa đẹp lắm đó.",
               "tone": "AM",
-              "reply": "Thiệt hả chị? Để em quay lúc chị kéo khay ra, khúc đó khói bay đẹp lắm.",
+              "reply": "Thiệt hả chị? Để em quay lúc chị kéo khay ra, khói bay đẹp lắm.",
               "mood": "CUOI_TUOI",
               "act": {
                 "kind": "FILM",
-                "forSec": 20
+                "forSec": 20,
+                "channel": "su"
               }
             },
             {
               "say": "Hẻm mình ngày nào chả vậy, em quay gì cho mệt.",
               "tone": "THANG",
-              "reply": "Tại em thấy nó khác. Người ta ở xa người ta đâu có thấy đâu chị.",
+              "reply": "Tại em thấy nó khác. Người ở xa đâu có thấy đâu chị.",
               "mood": "NGUONG"
             },
             {
               "say": "Ừ. Em quay đi, chị làm tiếp đây.",
               "tone": "LANH",
-              "reply": "Dạ.",
+              "reply": "Em biết rồi ạ.",
               "mood": "LANH",
               "act": {
                 "kind": "FILM",
-                "forSec": 20
+                "forSec": 20,
+                "channel": "su"
               }
             }
           ]
         },
         {
-          "say": "Cái clip bữa trước người ta còn vô nói nữa không em?",
+          "say": "Cái clip hôm trước người ta còn vô nói nữa không?",
           "tone": "AM",
-          "reply": "Còn. Mà em không đọc nữa. Em kéo xuống em bỏ qua.",
+          "reply": "Còn. Mà em không đọc nữa. Em kéo xuống bỏ qua.",
           "mood": "NGUONG",
           "need": "suClipHot"
         },
@@ -1112,17 +1117,17 @@
       "source": "PLAYER_ONLY",
       "depth": "SHORT",
       "weight": 18,
-      "opener": "Chị ơi em nè chị.",
+      "opener": "Chị ơi, em nè.",
       "openMood": "CUOI",
       "tree": [
         {
-          "say": "Chừng nào em nổi tiếng em nhớ chị nha em.",
+          "say": "Chừng nào nổi tiếng em nhớ chị nha.",
           "tone": "DUA",
-          "reply": "Em nổi tiếng em rước chị lên quay chung luôn á chị.",
+          "reply": "Em nổi tiếng là rước chị lên quay chung luôn á.",
           "mood": "CUOI_TUOI",
           "then": [
             {
-              "say": "Em muốn quay cái gì nhất vậy em?",
+              "say": "Em muốn quay cái gì nhất vậy?",
               "tone": "AM",
               "reply": "Em muốn quay mấy người bán ở hẻm mình. Để sau này hẻm đổi còn cái mà coi.",
               "mood": "THUONG"
@@ -1130,25 +1135,25 @@
             {
               "say": "Nổi tiếng rồi em còn ghé chị không đó.",
               "tone": "DUA",
-              "reply": "Ghé chứ! Chị bán rẻ nhất xóm mà, em dại gì em bỏ.",
+              "reply": "Ghé chứ! Chị bán rẻ nhất xóm mà, em dại gì bỏ.",
               "mood": "CUOI_TUOI"
             },
             {
               "say": "Ừ. Chị đợi coi.",
               "tone": "LANH",
-              "reply": "Chị nhớ đợi nha chị.",
+              "reply": "Chị nhớ đợi nha.",
               "mood": "LANH"
             }
           ]
         },
         {
-          "say": "Em ăn sáng chưa đó em?",
+          "say": "Em ăn sáng chưa đó?",
           "tone": "AM",
           "reply": "Chưa. Em để dành tiền mua cái thẻ nhớ.",
           "mood": "NGUONG",
           "then": [
             {
-              "say": "Cái thẻ nhớ đó nhiêu tiền vậy em?",
+              "say": "Cái thẻ nhớ đó nhiêu tiền vậy?",
               "tone": "AM",
               "reply": "Ba trăm hai. Em để dành được một trăm tám rồi chị.",
               "mood": "THUONG"
@@ -1156,7 +1161,7 @@
             {
               "say": "Chị làm cho em ổ. Khỏi trả.",
               "tone": "AM",
-              "reply": "Thôi chị. …Dạ em cảm ơn chị. Mai em quay cái xe chị cho đẹp.",
+              "reply": "Thôi chị. …Em cảm ơn chị. Mai em quay cái xe chị cho đẹp.",
               "mood": "RUNG_RUNG",
               "act": {
                 "kind": "FREE_LOAF"
@@ -1166,7 +1171,7 @@
               ]
             },
             {
-              "say": "Nhịn ăn hoài là em bệnh đó em.",
+              "say": "Nhịn ăn hoài là bệnh đó em.",
               "tone": "THANG",
               "reply": "Em biết. Mà còn một tháng nữa là em đủ tiền rồi chị.",
               "mood": "NGUONG"
@@ -1176,7 +1181,7 @@
         {
           "say": "Thôi em. Chị làm không kịp nè.",
           "tone": "LANH",
-          "reply": "…Em đứng em đợi.",
+          "reply": "…Em đứng đợi.",
           "mood": "BUON"
         }
       ],
@@ -1196,7 +1201,7 @@
       "depth": "SHORT",
       "weight": 16,
       "initiates": 0.3,
-      "opener": "Chị ơi… điện thoại em sắp hết pin. Em cắm nhờ ổ điện chị chút được không chị?",
+      "opener": "Chị ơi… điện thoại em sắp hết pin. Em cắm nhờ ổ điện chút được không?",
       "openMood": "NGUONG",
       "practice": [
         "GOI_MON",
@@ -1207,19 +1212,19 @@
         {
           "say": "Cắm đi em. Ổ ngay chân bàn đó.",
           "tone": "AM",
-          "reply": "Em cắm chút xíu thôi. Dạ em cảm ơn chị.",
+          "reply": "Em cắm chút xíu thôi. Em cảm ơn chị.",
           "mood": "CUOI_TUOI",
           "then": [
             {
-              "say": "Em quay gì mà tốn pin dữ vậy em?",
+              "say": "Em quay gì mà tốn pin dữ vậy?",
               "tone": "THUONG",
-              "reply": "Em quay từ sáu giờ sáng. Dạ máy em cũ, quay hai tiếng là hết pin.",
+              "reply": "Em quay từ sáu giờ sáng. Máy em cũ, quay hai tiếng là hết pin.",
               "mood": "MET"
             },
             {
-              "say": "Em cắm bao lâu cũng được em.",
+              "say": "Cắm bao lâu cũng được em.",
               "tone": "AM",
-              "reply": "Thôi chị. Dạ hai chục phần trăm là em rút. Dạ em không dám xài ké nhiều.",
+              "reply": "Thôi chị. Hai chục phần trăm là em rút. Em không dám xài ké nhiều.",
               "mood": "NGUONG"
             },
             {
@@ -1231,7 +1236,7 @@
           ]
         },
         {
-          "say": "Em uống miếng trà đá rồi ngồi chờ sạc đi em.",
+          "say": "Em uống miếng trà đá rồi ngồi chờ sạc đi.",
           "tone": "AM",
           "act": {
             "kind": "OFFER_TEA",
@@ -1241,7 +1246,7 @@
             "p.hasTea",
             "!v.gaveTea"
           ],
-          "reply": "Dạ em cảm ơn chị. Dạ sáng giờ em chưa uống gì.",
+          "reply": "Em cảm ơn chị. Sáng giờ em chưa uống gì.",
           "mood": "THUONG"
         },
         {
@@ -1263,7 +1268,7 @@
         "needFlag": "~suHuaQuayChim"
       },
       "initiates": 0.3,
-      "opener": "Chị ơi! Em quay con chim rồi nè chị. Chị coi đi chị.",
+      "opener": "Chị ơi! Em quay con chim rồi nè. Chị coi đi.",
       "openMood": "CUOI_TUOI",
       "practice": [
         "GOI_MON",
@@ -1272,41 +1277,41 @@
       ],
       "tree": [
         {
-          "say": "Ủa em quay thiệt hả em. Chị tưởng em nói cho vui.",
+          "say": "Ủa em quay thiệt hả? Chị tưởng em nói cho vui.",
           "tone": "NGAC_NHIEN",
-          "reply": "Em nói là em làm chứ chị! Em đợi nó đậu ở dây điện em quay nguyên hai phút lận.",
+          "reply": "Em nói là làm chứ chị! Em đợi nó đậu ở dây điện, quay nguyên hai phút lận.",
           "mood": "CUOI_TUOI",
           "then": [
             {
               "say": "Em quay đẹp ghê. Cái chỗ nó bay lên đó.",
               "tone": "AM",
-              "reply": "Chỗ đó em quay bốn lần mới được. Chị là người đầu tiên coi đó chị.",
+              "reply": "Chỗ đó em quay bốn lần mới được. Chị là người đầu tiên coi đó.",
               "mood": "RUNG_RUNG"
             },
             {
-              "say": "Bữa trước em nói em không có hứng mà.",
+              "say": "Hôm trước em nói em không có hứng mà.",
               "tone": "THUONG",
-              "reply": "…Mà chị kêu em quay con chim. Em nghĩ hoài rồi em đi quay.",
+              "reply": "…Mà chị kêu em quay con chim. Em nghĩ hoài rồi đi quay.",
               "mood": "NGUONG"
             },
             {
-              "say": "Em đăng chưa em? Được nhiêu lượt rồi?",
+              "say": "Em đăng chưa? Được nhiêu lượt rồi?",
               "tone": "DUA",
-              "reply": "Chưa. Cái này em không đăng. Em để coi một mình à.",
+              "reply": "Chưa. Cái này em không đăng. Em để coi một mình thôi.",
               "mood": "THUONG"
             }
           ]
         },
         {
-          "say": "Chị coi nè. Chị bỏ bánh xuống chị coi cho kỹ.",
+          "say": "Chị coi nè. Chị bỏ bánh xuống coi cho kỹ.",
           "tone": "AM",
-          "reply": "Chị bỏ bánh xuống coi của em thiệt hả chị.",
+          "reply": "Chị bỏ bánh xuống coi của em thiệt hả?",
           "mood": "RUNG_RUNG",
           "then": [
             {
               "say": "Chứ sao. Em làm cả buổi mà.",
               "tone": "AM",
-              "reply": "Em quay thêm nữa nha chị. Em quay cái hẻm mình.",
+              "reply": "Em quay thêm nữa nha chị. Quay cái hẻm mình.",
               "mood": "CUOI_TUOI"
             },
             {
@@ -1326,7 +1331,7 @@
         {
           "say": "Chị đang làm bánh em ơi. Lát nữa nha.",
           "tone": "LANH",
-          "reply": "…Em đứng đây em đợi.",
+          "reply": "…Em đứng đây đợi.",
           "mood": "BUON"
         }
       ]

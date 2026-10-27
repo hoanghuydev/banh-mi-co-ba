@@ -236,11 +236,19 @@ export function generosityOf(spec: OrderSpec, dish: readonly Ingredient[]) {
   return value;
 }
 
-export function extraPortions(spec: OrderSpec, dish: readonly Ingredient[]): Ingredient[] {
+/** Mọi thứ bỏ dư so với đơn, theo thứ tự xếp lớp. */
+export function extrasOf(spec: OrderSpec, dish: readonly Ingredient[]): Ingredient[] {
   const got = portionsOf(dish);
-  return INGREDIENTS
-    .filter((i) => NICETY.has(i.id) && (got.get(i.id) ?? 0) > (spec.levels[i.id] ?? 0))
-    .map((i) => i.id);
+  return INGREDIENTS.filter((i) => (got.get(i.id) ?? 0) > (spec.levels[i.id] ?? 0)).map((i) => i.id);
+}
+
+export const extraPortions = (spec: OrderSpec, dish: readonly Ingredient[]) =>
+  extrasOf(spec, dish).filter((id) => NICETY.has(id));
+
+/** "đồ chua", "đồ chua với ớt", "đồ chua, ớt với tương ớt". */
+export function monVi(names: readonly string[]): string {
+  if (names.length <= 1) return names[0] ?? "";
+  return `${names.slice(0, -1).join(", ")} với ${names[names.length - 1]}`;
 }
 
 export function dishFor(spec: OrderSpec): Ingredient[] {

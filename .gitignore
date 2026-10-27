@@ -25,3 +25,6 @@ art-raw/_png/
 # File animation trong `art-raw/tripo-anim/` thì VẪN commit — chỉ 1,5 MB mà lấy lại
 # phải bấm qua từng mục trong tab lịch sử của trang Animate, đắt công hơn nhiều.
 art-raw/model/
+
+# Ảnh duyệt nội bộ, giữ trên máy, không commit.
+art-raw/_duyet/

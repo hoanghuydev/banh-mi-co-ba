@@ -10,6 +10,8 @@ import { inTransit } from "../../sim/shop";
 import { chatPage, membersPage, messageList } from "./apps/messageApp";
 import { dayNote, noteEditor, noteList } from "./apps/noteApp";
 import { reviewPage } from "./apps/reviewApp";
+import { achUnseen } from "../../sim/ach";
+import { achApp } from "./apps/achApp";
 import { sellApp } from "./apps/sellApp";
 import { gearApp } from "./apps/gearApp";
 import { shopApp } from "./apps/shopApp";
@@ -18,6 +20,8 @@ import { page, type AppCtx, type Dir, type Host, type Route } from "./ctx";
 import { ICON, btn, el, money } from "./dom";
 import { OrderTour } from "./orderTour";
 import { PhoneShell } from "./PhoneShell";
+import { vietsociApp } from "./apps/vietsociApp";
+import { unseenPosts } from "../../sim/vietsoci";
 
 export type { Route } from "./ctx";
 
@@ -44,14 +48,20 @@ const APPS: AppDef[] = [
   { key: "sys", label: "Hệ thống", icon: ICON.sys, bg: "radial-gradient(circle at 30% 20%,#14485a,#04090d)", show: linked, badge: (w) => (canSpin(w) ? 1 : 0) },
   { key: "shop", label: "Thực phẩm", icon: ICON.bag, bg: "linear-gradient(160deg,#ff8a5c,#e5532b)", badge: (w) => inTransit(w).length },
   { key: "gear", label: "Đồ nghề", icon: ICON.tool, bg: "linear-gradient(160deg,#8d9aa6,#55626e)", badge: (w) => w.shop.gearOrders.filter((o) => !o.delivered).length },
+  { key: "ach", label: "Danh hiệu", icon: ICON.medal, bg: "linear-gradient(160deg,#f0b04a,#b9722a)", badge: () => achUnseen() },
+  { key: "vs", label: "VietSoci", icon: ICON.soci, bg: "linear-gradient(160deg,#4f7cf0,#1d4ed8)", badge: unseenPosts },
   { key: "sell", label: "Rao bán", icon: ICON.tag, bg: "linear-gradient(160deg,#4fc3d9,#2189a8)" },
 ];
+
+/** Chấm đỏ trên nút điện thoại: tin nhắn, đánh giá, bài VietSoci chưa xem. */
+export const phoneBadge = (w: SaveFile) => totalUnread(w.phone) + unseen(w) + unseenPosts(w);
 
 const parentOf = (r: Route): Route | null => {
   switch (r.app) {
     case "chat": return { app: "msg" };
     case "members": return { app: "chat", id: r.id };
     case "edit": case "day": return { app: "note" };
+    case "vs": return r.id ? { app: "vs" } : { app: "home" };
     case "home": return null;
     default: return { app: "home" };
   }
@@ -113,6 +123,8 @@ export class PhoneView {
         case "shop": return shopApp(c);
         case "gear": return gearApp(c);
         case "sell": return sellApp(c);
+        case "ach": return achApp(c);
+        case "vs": return vietsociApp(c);
       }
     };
     let body: HTMLElement;
@@ -129,8 +141,7 @@ export class PhoneView {
   private home() {
     const w = this.w;
     const d = w.progress.dayIndex;
-    const wrap = el("div");
-    wrap.style.cssText = "display:flex;flex-direction:column;flex:1;min-height:0;padding:6px 22px 0";
+    const wrap = el("div", "ph-scroll ph-homewrap");
 
     const widget = el("div", "ph-widget");
     widget.append(el("div", "shop", w.shopName));

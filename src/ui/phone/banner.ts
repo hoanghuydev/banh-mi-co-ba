@@ -2,20 +2,27 @@ import { contactOf } from "../../content/phone/contacts";
 import { avatar } from "./chat";
 import { el } from "./dom";
 import { sfx } from "../../audio/sfx";
+import { isPhone } from "../../core/device";
 
 const STYLE = `
-.ph-banner{position:fixed;top:14px;right:14px;z-index:8994;width:min(340px,calc(100vw - 28px));display:flex;gap:11px;align-items:center;text-align:left;
-  padding:11px 14px;border:0;border-radius:18px;background:rgba(250,248,242,.97);color:#1c2329;font:inherit;cursor:pointer;
+.ph-banner{position:fixed;top:calc(env(safe-area-inset-top) + 14px);right:calc(env(safe-area-inset-right) + 14px);left:auto;z-index:8994;width:min(340px,calc(100vw - 28px));display:flex;gap:11px;align-items:center;text-align:left;
+  min-height:44px;padding:11px 14px;border:0;border-radius:18px;background:rgba(250,248,242,.97);color:#1c2329;font:inherit;cursor:pointer;
   box-shadow:0 10px 30px rgba(0,0,0,.4);animation:ph-ban .3s cubic-bezier(.2,.8,.2,1)}
-.ph-banner:hover{background:#fff}
+@media (hover:hover){.ph-banner:hover{background:#fff}}
 .ph-banner:focus-visible{outline:3px solid #c0392b;outline-offset:2px}
 .ph-banner .tx{min-width:0;flex:1}
-.ph-banner .nm{font-weight:700;font-size:.92em}
+.ph-banner .nm{font-weight:700;font-size:max(14px,.92em)}
 .ph-banner .pv{margin-top:1px;font-size:.88em;color:#4a545c;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.ph-banner .tip{margin-top:4px;font-size:.76em;color:#6b7680}
+.ph-banner .tip{margin-top:4px;font-size:max(14px,.76em);color:#6b7680}
 .ph-banner.out{animation:ph-ban-out .25s ease-in forwards}
 @keyframes ph-ban{from{transform:translateY(-24px);opacity:0}}
 @keyframes ph-ban-out{to{transform:translateY(-24px);opacity:0}}
+html[data-phone="1"] .ph-banner{top:calc(env(safe-area-inset-top) + 4px);right:calc(env(safe-area-inset-right) + 8px);width:min(300px,calc(100vw - 16px));gap:8px;min-height:36px;padding:5px 12px 5px 8px;border-radius:14px;font-size:12px!important}
+html[data-phone="1"] .ph-banner .ph-av{flex:none;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+html[data-phone="1"] .ph-banner .nm,html[data-phone="1"] .ph-banner .pv,html[data-phone="1"] .ph-banner .tip{font-size:12px;line-height:1.35}
+html[data-phone="1"] .ph-banner .pv{-webkit-line-clamp:1}
+html[data-phone="1"] .ph-banner .tip{position:absolute;top:5px;right:12px;margin:0}
+html[data-phone="1"] .ph-banner .tx:has(.tip) .nm{padding-right:84px}
 @media (prefers-reduced-motion:reduce){.ph-banner,.ph-banner.out{animation:none}}
 `;
 
@@ -29,6 +36,8 @@ export function showBanner(msgs: { from: string; text: string }[], onOpen: (thre
     document.head.appendChild(st);
   }
   sfx.ui("ph_tin_den");
+  // Điện thoại: thẻ tổng kết buổi tối chiếm gần hết màn, nút Điện thoại đã có số tin.
+  if (isPhone() && document.querySelector(".ev-book")) return () => {};
   const first = msgs[0];
   const b = el("button", "ph-banner");
   b.type = "button";

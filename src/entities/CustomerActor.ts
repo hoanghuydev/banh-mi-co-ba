@@ -1,14 +1,15 @@
 import Phaser from "phaser";
 import { depthOf, facingOf8, toScreen, type Facing8 } from "../world/iso";
 import { COUNTER_Y, QUEUE_SLOTS } from "../world/map";
-import { pickBubbleSpot, type Box } from "../world/bubbleLayout";
-import { BODY_H, FX, buildBody, footY, textureFor } from "../art";
-import { castShadow } from "../art/fx";
-import { STRIDE, WALK_FRAMES, walkTextureFor } from "../art/character";
-import { artScale, walkLift } from "../art/photo";
+import { BODY_H, buildBody, footY, textureFor } from "../art";
+import { STRIDE, GAIT_FRAMES, isCharacter, walkTextureFor } from "../art/character";
+import { artScale } from "../art/photo";
+import { ActorLight, feetSteps } from "../art/light/actor";
+import { drain } from "../art/steps";
 import type { Customer } from "../sim/customer";
 import { nowState } from "../sim/perception";
-import { FONT } from "../ui/theme";
+import { isPhone, isTouch } from "../core/device";
+import { FONT, worldFont } from "../ui/theme";
 import type { BubblePool } from "../ui/stall/BubblePool";
 import { NEUTRAL, POSES } from "../sim/reaction";
 import { intensityMul } from "../sim/personality";
@@ -20,6 +21,8 @@ import { passerAlpha } from "../sim/passersby";
 const PATIENCE_COLORS = [0x3f7fb0, 0xd8b13c, 0xc0392b] as const;
 const PATIENCE_R = 11;
 const PATIENCE_W = 3.5;
+/** Chu vi lớn nhất ≈ 2π · 11 · zoom 1,7 · RENDER_SCALE 2 ≈ 235 px thật. */
+const PATIENCE_STEPS = 512;
 // Tính từ đỉnh đầu, không từ `markY`.
 const PATIENCE_LIFT = 14;
 const PATIENCE_RED_SEC = 0.9;
@@ -43,39 +46,11 @@ const MARK_STROKE = "#2b2f31";
 // Trên nhãn trạm, vì nhãn quầy nằm đúng chỗ đầu người đứng trước quầy.
 export const OVERLAY_DEPTH = 8_100_000;
 const FX_DEPTH = 9_450_000;
+// Trên mặt và vòng kiên nhẫn của người đứng sau, kẻo chúng đè lên chữ.
+export const BUBBLE_DEPTH = FX_DEPTH + 1;
 
 // Đo từ `sy` (điểm chạm đất), không từ `footY(sy)` vốn thấp hơn 21 px.
 const TAG_BELOW_FEET = 14;
-const EDGE = 6;
-// Giây; đi ~96% quãng trong 0,25 s.
-const BUBBLE_GLIDE_TAU = 0.09;
-
-// `Container.getBounds()` bỏ qua Graphics nên chỉ ra ô chữ, phải nới thêm phần nền giấy.
-function bubbleBox(root: Phaser.GameObjects.Container, scale: number): Box {
-  const t = root.getBounds();
-  const w = Math.max(t.width / scale + 22, 60) * scale;
-  const h = (t.height / scale + 14) * scale;
-  return {
-    x0: t.centerX - w / 2, x1: t.centerX + w / 2 + 2 * scale,
-    y0: t.centerY - h / 2, y1: t.centerY + h / 2 + 9 * scale,
-  };
-}
-
-// Sổ bong bóng đã đặt trong frame (reset khi `time` đổi) để người sau né.
-let bubbleStamp = -1;
-const bubbleBoxes: { sy: number; box: Box }[] = [];
-
-// Vùng cấm động, chỉ những thứ đang cần nhìn (vd. vòng độ giòn lúc ổ sắp sém).
-const bubbleKeepOut: Box[] = [];
-
-export function setBubbleKeepOut(boxes: readonly Box[]) {
-  bubbleKeepOut.length = 0;
-  bubbleKeepOut.push(...boxes);
-}
-
-export type BubbleKeepOutBox = Box;
-export { pickBubbleSpot };
-
 
 const K = 120, DAMP = 14;
 
@@ -91,8 +66,9 @@ function atCounter(c: Customer) {
     && (c.phase === "queueing" || c.phase === "ordering" || c.phase === "waiting");
 }
 type Spring = { v: number; x: number };
+// Euler ẩn để lò xo không nổ khi khung hình chậm (`dt` lớn, giảm chấn `d` cao).
 const spring = (s: Spring, target: number, dt: number, d = DAMP) => {
-  s.v += (-K * (s.x - target) - d * s.v) * dt;
+  s.v = (s.v - K * (s.x - target) * dt) / (1 + d * dt + K * dt * dt);
   s.x += s.v * dt;
 };
 const browColor = (hair: number) => {
@@ -102,10 +78,14 @@ const browColor = (hair: number) => {
 
 export class CustomerActor {
   private body: Phaser.GameObjects.Image;
-  private shadow: Phaser.GameObjects.Image;
+  private light: ActorLight;
   private mark: Phaser.GameObjects.Text;
   private tag: Phaser.GameObjects.Text;
+  /** Các lớp theo thứ tự vẽ; vòng kiên nhẫn và đồ cầm tay đổi mỗi frame nên tách riêng để lớp đứng yên giữ được bộ đệm đỉnh. */
   private fx: Phaser.GameObjects.Graphics;
+  private ring: Phaser.GameObjects.Graphics;
+  private gaze: Phaser.GameObjects.Graphics;
+  private over: Phaser.GameObjects.Graphics;
   private leftAt = -1;
 
   private propFx: Phaser.GameObjects.Graphics;
@@ -122,19 +102,18 @@ export class CustomerActor {
   // Quãng đã đi (ô), cộng dồn để bàn chân khớp mặt đất.
   private gait = 0;
 
-  // `pickBubbleSpot` rời rạc nên phải trượt `live` về `want`, không đặt thẳng.
-  private bubbleOff = { live: { dx: 0, dy: 0 }, want: { dx: 0, dy: 0 }, settled: false };
-  private bubbleSaid = "";
-
-  constructor(private scene: Phaser.Scene, private c: Customer, private bubbles: BubblePool, textScale = 1,
+  constructor(scene: Phaser.Scene, private c: Customer, private bubbles: BubblePool, private textScale = 1,
     private label: (c: Customer) => string = (x) => x.name) {
-    if (!scene.textures.exists(`${c.memKey}_s`)) buildBody(scene, c.memKey, c.body);
+    if (!scene.textures.exists(`${c.memKey}_s`)) {
+      buildBody(scene, c.memKey, c.body);
+      drain(feetSteps(scene.textures, isCharacter));
+    }
 
-    this.shadow = scene.add.image(0, 0, FX.shadow).setOrigin(0.5, 0.5);
     this.body = scene.add.image(0, 0, textureFor("n", c.memKey).key).setOrigin(0.5, 1);
+    this.light = new ActorLight(scene, this.body);
 
     this.tag = scene.add.text(0, 0, label(c), {
-      fontFamily: FONT, fontSize: `${Math.round(10 * textScale)}px`, fontStyle: "500", color: "#f2efe6",
+      fontFamily: FONT, fontSize: `${this.tagPx()}px`, fontStyle: "500", color: "#f2efe6",
       stroke: "#1b2429", strokeThickness: 3,
     }).setOrigin(0.5);
 
@@ -143,10 +122,17 @@ export class CustomerActor {
       stroke: MARK_STROKE, strokeThickness: 4,
     }).setOrigin(0.5);
     this.fx = scene.add.graphics().setDepth(FX_DEPTH);
+    this.ring = scene.add.graphics().setDepth(FX_DEPTH);
+    this.gaze = scene.add.graphics().setDepth(FX_DEPTH);
+    this.over = scene.add.graphics().setDepth(FX_DEPTH);
     this.propFx = scene.add.graphics();
 
     this.lastX = c.x;
     this.lastY = c.y;
+  }
+
+  private tagPx() {
+    return worldFont(Math.round(10 * this.textScale), isPhone() ? 11 : 12);
   }
 
   draw(reducedMotion: boolean, time: number, nowSec: number) {
@@ -167,7 +153,7 @@ export class CustomerActor {
 
     // `null` khi chưa có atlas đi bộ hoặc đứng yên.
     const walkTex = walking
-      ? walkTextureFor(this.facing, Math.floor((this.gait / STRIDE) * WALK_FRAMES), "walk", c.memKey)
+      ? walkTextureFor(this.facing, Math.floor((this.gait / STRIDE) * GAIT_FRAMES.walk), "walk", c.memKey)
       : null;
 
     // Frame đi đã có nhún sẵn nên tắt cả nhún lẫn squash code, tránh nảy hai tầng.
@@ -213,21 +199,24 @@ export class CustomerActor {
     const k = 1 / artScale(tex.key);
     const sitSquash = 1 - (this.sp.sit.x / SIT_DROP) * SIT_SQUASH;
     this.body.setScale(k, k * (this.sp.sy.x + Math.sin(this.bob * 2) * 0.02 * bodyAmp) * sitSquash);
-    // Lúc đi `hop` đã tắt nên bóng lấy độ nhấc từ chính frame đang vẽ.
-    const lift = walkTex ? walkLift(walkTex.key) : hop;
-    castShadow(this.shadow, sx, sy, 1 - lift * 0.03, fade * (1 - lift * 0.05)).setDepth(depth - 1);
+
+    this.light.update({ wx: c.x, wy: c.y, lift: hop + this.sp.up.x - this.sp.sit.x });
 
     const headX = sx + fidget, headY = footY(sy) - BODY_H + 12 - hop;
     const name = this.label(c);
     if (this.tag.text !== name) this.tag.setText(name);
+    const tagPx = `${this.tagPx()}px`;
+    if (this.tag.style.fontSize !== tagPx) this.tag.setFontSize(tagPx);
     // Chip đặt dưới chân vì trên đầu thì đè thân người trước và nhãn trạm.
-    this.tag.setVisible(!c.ambient);
+    this.tag.setVisible(!c.ambient && (!isTouch() || c.phase === "ordering" || c.phase === "waiting"));
     this.tag.setPosition(sx, sy + TAG_BELOW_FEET).setDepth(OVERLAY_DEPTH)
       .setAlpha(c.phase === "leaving" ? 0.45 : 0.9);
-    this.clampInView(this.tag);
 
     const g = this.fx;
     g.clear();
+    this.ring.clear();
+    this.gaze.clear();
+    this.over.clear();
     const watching = c.phase !== "leaving" && c.phase !== "arriving";
 
     const st = watching ? nowState(c, nowSec) : null;
@@ -246,68 +235,21 @@ export class CustomerActor {
     // Không trừ `hop` để vòng đứng yên, dễ đọc.
     this.drawPatience(g, sx, footY(sy) - BODY_H - PATIENCE_LIFT);
 
-    if (watching) this.drawGazeProp(g, headX, headY, time, reducedMotion);
+    if (watching) this.drawGazeProp(this.gaze, headX, headY, time, reducedMotion);
 
     const face = c.react.face;
     if (face !== NEUTRAL && (face[0] || face[1] || face[2])) {
       // Đổi mặt thì giật 1 px trong 90 ms.
       const jolt = !reducedMotion && c.now - c.react.faceChangedAt < 0.09 ? -1 : 0;
-      drawFace(g, sx + 22, markY + 6 + jolt, face, c.body.skin, browColor(c.body.hair), c.phase === "leaving" ? 0.7 : 1);
+      drawFace(this.over, sx + 22, markY + 6 + jolt, face, c.body.skin, browColor(c.body.hair), c.phase === "leaving" ? 0.7 : 1);
     }
 
     this.drawBodyProps(sx + fidget + fx, footY(sy) - hop + fy - this.sp.up.x + this.sp.sit.x, depth, time, reducedMotion);
-    g.setAlpha(fade);
-    this.propFx.setAlpha(fade);
+    for (const o of [g, this.ring, this.gaze, this.over, this.propFx]) o.setAlpha(fade);
 
-    if (c.say) {
-      const b = this.bubbles.acquire(c.id);
-      b.setText(c.say);
-      const scale = c.slot > 0 ? 0.85 : 1;
-      const depthB = OVERLAY_DEPTH + 2;
-      const homeX = sx, homeY = sy - BODY_H - 46;
-      b.place(homeX, homeY, depthB, scale, reducedMotion);
-
-      if (c.say !== this.bubbleSaid) { this.bubbleSaid = c.say; this.bubbleOff.settled = false; }
-
-      if (time !== bubbleStamp) { bubbleStamp = time; bubbleBoxes.length = 0; }
-      const box0 = bubbleBox(b.root, scale);
-      const v = this.scene.cameras.main.worldView;
-      const w = box0.x1 - box0.x0, h = box0.y1 - box0.y0;
-      const centre0 = { x: (box0.x0 + box0.x1) / 2, y: (box0.y0 + box0.y1) / 2 };
-      const off = this.bubbleOff;
-      const spot = pickBubbleSpot(centre0, { w, h },
-        { left: v.left, right: v.right, top: v.top, bottom: v.bottom },
-        bubbleBoxes.map((o) => o.box), bubbleKeepOut, off.settled ? off.want : null);
-      off.want = { dx: spot.x - centre0.x, dy: spot.y - centre0.y };
-      if (!off.settled) { off.live = { ...off.want }; off.settled = true; }
-      else if (reducedMotion) off.live = { ...off.want };
-      else {
-        // Dùng `dt` ở trên vì `this.lastT` đã bị gán `= time`.
-        const k = 1 - Math.exp(-dt / BUBBLE_GLIDE_TAU);
-        off.live = {
-          dx: off.live.dx + (off.want.dx - off.live.dx) * k,
-          dy: off.live.dy + (off.want.dy - off.live.dy) * k,
-        };
-      }
-      const bx = homeX + off.live.dx, by = homeY + off.live.dy;
-      if (bx !== homeX || by !== homeY) b.place(bx, by, depthB, scale, reducedMotion);
-      // Ghi ô đang vẽ chứ không ghi ô đích, để người sau né cái đang thấy.
-      const cx2 = centre0.x + off.live.dx, cy2 = centre0.y + off.live.dy;
-      bubbleBoxes.push({ sy, box: { x0: cx2 - w / 2, x1: cx2 + w / 2, y0: cy2 - h / 2, y1: cy2 + h / 2 } });
-    } else {
-      this.bubbleSaid = "";
-      this.bubbleOff.settled = false;
-      this.bubbles.release(c.id, reducedMotion);
-    }
-  }
-
-  private clampInView(t: Phaser.GameObjects.Text) {
-    const v = this.scene.cameras.main.worldView;
-    const hw = t.displayWidth / 2, hh = t.displayHeight / 2;
-    t.setPosition(
-      Math.min(Math.max(t.x, v.left + EDGE + hw), v.right - EDGE - hw),
-      Math.min(Math.max(t.y, v.top + EDGE + hh), v.bottom - EDGE - hh),
-    );
+    if (c.say) this.bubbles.acquire(c.id).setText(c.say);
+    else this.bubbles.release(c.id, reducedMotion);
+    this.bubbles.anchor(c.id, sx, footY(sy) - BODY_H - PATIENCE_LIFT - PATIENCE_R - 12, BUBBLE_DEPTH, c.slot > 0 ? 0.85 : 1);
   }
 
   private drawBodyProps(x: number, foot: number, depth: number, time: number, rm: boolean) {
@@ -366,8 +308,8 @@ export class CustomerActor {
     }
   }
 
-  private drawPatience(g: Phaser.GameObjects.Graphics, x: number, y: number) {
-    const c = this.c;
+  private drawPatience(track: Phaser.GameObjects.Graphics, x: number, y: number) {
+    const c = this.c, g = this.ring;
     const leaving = c.phase === "leaving";
 
     if (leaving) {
@@ -384,10 +326,11 @@ export class CustomerActor {
     this.leftAt = -1;
     if (c.phase === "arriving" || c.pass) return;
 
-    const frac = c.patienceLeft;
+    // Làm tròn để đầu cung nhích ≤ 0,5 px thật mỗi lần; vòng không phải dựng lại mỗi frame.
+    const frac = Math.ceil(c.patienceLeft * PATIENCE_STEPS) / PATIENCE_STEPS;
     // Rãnh mờ để cung đỏ ngắn lúc gần cạn không trông như vệt bẩn.
-    g.lineStyle(PATIENCE_W, 0x0d1216, 0.22);
-    g.strokeCircle(x, y, PATIENCE_R);
+    track.lineStyle(PATIENCE_W, 0x0d1216, 0.22);
+    track.strokeCircle(x, y, PATIENCE_R);
     if (frac <= 0) return;
     const from = -Math.PI / 2;
     g.lineStyle(PATIENCE_W, patienceColor(frac), 0.95);
@@ -423,11 +366,14 @@ export class CustomerActor {
   }
 
   destroy() {
+    this.light.destroy();
     this.body.destroy();
-    this.shadow.destroy();
     this.tag.destroy();
     this.mark.destroy();
     this.fx.destroy();
+    this.ring.destroy();
+    this.gaze.destroy();
+    this.over.destroy();
     this.propFx.destroy();
     this.bubbles.release(this.c.id, true);
   }

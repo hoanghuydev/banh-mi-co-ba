@@ -4,56 +4,68 @@ import { buildTiles, TILE } from "./tiles";
 import { buildBuilding, BUILD } from "./building";
 import { buildCounter, COUNTER } from "./counter";
 import { buildProps, PROP } from "./props";
-import { buildCharacter } from "./character";
+import { buildCharacter, isCharacter } from "./character";
 import { buildHeld } from "./held";
 import { buildFood } from "./food";
 import { buildFx } from "./fx";
-import { paintPhotos, preloadNpcPhotos, preloadPhotos } from "./photo";
+import type { Step } from "./steps";
+import { npcSteps, photoSteps, preloadPhotos } from "./photo";
+import { feetSteps } from "./light/actor";
 
 export { BASE, footY } from "./canvas";
-export { paintNpcPhotos, warmNpcPhotos } from "./photo";
+export { bakeSourceLoads, bakeRegulars, dropRegular, regularFiles, regularIds, regularReady } from "./photo";
 export {
   textureFor, buildBody, holdAnchor, BODY_H, PLAYER_STYLE,
   type BodyStyle, type Pose,
 } from "./character";
 export { HELD, heldTexture, heldFootPad, type HeldLook } from "./held";
 export { opaqueBox, opaqueEdges, spriteEdges, type Edges, type OpaqueBox, type SpriteBox } from "./opaque";
-export { createSign } from "./sign";
+export { createSign, type Awning } from "./sign";
+export { sliceImage } from "./slices";
 export { createMenuBoard } from "./menuboard";
-export { FX } from "./fx";
+export { FX, RING_SS } from "./fx";
 export { TILE, BUILD, COUNTER, PROP };
 
-// SVG nướng gấp đôi cỡ hiển thị để không nhoè khi FIT phóng lên full-HD.
-export const ICON = { eyeInk: "icon:eye-ink", eyeRed: "icon:eye-red" } as const;
-const SVGS: Record<string, { file: string; w: number; h: number }> = {
-  [ICON.eyeInk]: { file: "art/eye-ink.svg", w: 144, h: 88 },
-  [ICON.eyeRed]: { file: "art/eye-red.svg", w: 144, h: 88 },
+export const ICON = {
+  handClean: "icon:hand-clean", handDirty: "icon:hand-dirty",
+  eyeGlance: "icon:eye-glance", eyeClose: "icon:eye-close",
+} as const;
+const ICON_FILE: Record<string, string> = {
+  [ICON.handClean]: "art/hud_hand_clean.webp", [ICON.handDirty]: "art/hud_hand_dirty.webp",
+  [ICON.eyeGlance]: "art/hud_eye_glance.webp", [ICON.eyeClose]: "art/hud_eye_close.webp",
 };
-const askedSvg = new Set<string>();
+export const NTF = ["phone", "star", "chat", "alert", "box", "check", "info", "flame", "medal_dong", "medal_bac", "medal_vang", "medal_kc"] as const;
+export type NtfIcon = typeof NTF[number];
+export const ntfKey = (n: NtfIcon) => `icon:ntf-${n}`;
+for (const n of NTF) ICON_FILE[ntfKey(n)] = `art/ntf_${n}.webp`;
+const askedIcon = new Set<string>();
 
-export function preloadArt(scene: Phaser.Scene, withNpc = false) {
+export function preloadArt(scene: Phaser.Scene) {
   preloadPhotos(scene);
-  if (withNpc) preloadNpcPhotos(scene);
   // Lúc đang tải `textures.exists` vẫn false, nên phải nhớ key đã xin kẻo Phaser báo trùng.
-  for (const [key, svg] of Object.entries(SVGS)) {
-    if (askedSvg.has(key) || scene.textures.exists(key)) continue;
-    askedSvg.add(key);
-    scene.load.svg(key, svg.file, { width: svg.w, height: svg.h });
+  for (const [key, file] of Object.entries(ICON_FILE)) {
+    if (askedIcon.has(key) || scene.textures.exists(key)) continue;
+    askedIcon.add(key);
+    scene.load.image(key, file);
   }
 }
 
-export function buildTextures(scene: Phaser.Scene) {
-  if (scene.textures.exists(BUILD.door)) return;
-  buildTiles(scene);
-  buildBuilding(scene);
-  buildCounter(scene);
-  buildProps(scene);
-  buildCharacter(scene);
-  buildHeld(scene);
-  buildFood(scene);
-  buildFx(scene);
-  // Ảnh thật phải đè sau cùng lên texture vẽ bằng code.
-  paintPhotos(scene);
+/** Gọi một lần sau khi `preloadArt` tải xong; ảnh thật phải đè sau cùng lên texture vẽ bằng code. */
+export function artSteps(scene: Phaser.Scene): Step[] {
+  return [
+    () => buildTiles(scene),
+    () => buildBuilding(scene),
+    () => buildCounter(scene),
+    () => buildProps(scene),
+    () => buildCharacter(scene),
+    () => buildHeld(scene),
+    () => buildFood(scene),
+    () => buildFx(scene),
+    ...photoSteps(scene),
+    // Đọc chân rồi niêm sau từng người, để lúc nướng chỉ một bộ khung còn giữ canvas.
+    ...npcSteps(scene).flatMap((step) => [() => feetSteps(scene.textures, isCharacter), step]),
+    () => feetSteps(scene.textures, isCharacter),
+  ];
 }
 
 export function floorTextureAt(kind: Floor, tx: number, ty: number) {
@@ -82,6 +94,7 @@ export function textureForTile(
     case "K": return PROP.shelf;
     case "s": return PROP.stool;
     case "b": return PROP.table;
+    case "Z": return PROP.tableLong;
     case "M": return tx % 2 === 0 ? PROP.bike : PROP.scooter;
     case "P": return PROP.pothos;
     case "C": return PROP.crate;

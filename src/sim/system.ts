@@ -302,6 +302,7 @@ export function spin(w: SaveFile): SpinResult | null {
         const k = cashLines(w, "KIM_KHO");
         lines = ["Keng! Xe không còn chỗ cho bảo khí. Tự động chuyển hoá thành 【Tiểu Kim Khố】.", ...k.slice(1)];
       } else {
+        w.ach.baoKhi++;
         lines = [`Keng! Chúc mừng ký chủ thu được 【${r.name}】(${r.tier}).`, `Hiệu quả: nhận ${EQUIP[g].name}, giao và lắp sáng mai.`, `Mô tả: ${r.desc}`];
       }
       break;
@@ -319,6 +320,7 @@ export function spin(w: SaveFile): SpinResult | null {
       lines = [`Keng! Chúc mừng ký chủ thu được 【${r.name}】(${r.tier}).`, `Hiệu quả: ${r.effect}`, `Mô tả: ${r.desc}`];
       break;
   }
+  w.ach.luckRun = id === "LUCK" ? w.ach.luckRun + 1 : 0;
   for (const l of lines) say(w, l);
   return { id, lines };
 }

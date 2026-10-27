@@ -4,9 +4,9 @@ import { GOODS, type GoodId } from "./econ";
 import { itemsOf } from "./shop";
 
 // Dẫn ngày 1, mỗi lúc một việc; lưu trong `flags` nên save cũ đọc ra `undefined` → bước đầu, khỏi migrate.
-export type TourStep = "CHO" | "MENU" | "BANH" | "LO" | "THOT" | "NHAN" | "GOI" | "GIAO" | "TAY" | "DT" | "XONG";
+export type TourStep = "CHO" | "MENU" | "KHO" | "BANH" | "LO" | "THOT" | "NHAN" | "GOI" | "GIAO" | "TAY" | "DT" | "XONG";
 
-const ORDER: readonly TourStep[] = ["CHO", "MENU", "BANH", "LO", "THOT", "NHAN", "GOI", "GIAO", "TAY", "DT", "XONG"];
+const ORDER: readonly TourStep[] = ["CHO", "MENU", "KHO", "BANH", "LO", "THOT", "NHAN", "GOI", "GIAO", "TAY", "DT", "XONG"];
 
 export const TOUR_TOTAL = ORDER.length - 1;
 
@@ -31,6 +31,20 @@ export function tourAt(w: SaveFile, step: TourStep): boolean {
   return touring(w) && tourStep(w) === step;
 }
 
+/** Cờ riêng, ngoài thứ tự bước: mắt sáng lần đầu thì dừng lại giải thích một lần. */
+const EYE_KEY = "tourMat";
+export const eyeExplained = (w: SaveFile) => w.flags[EYE_KEY] === true;
+export function explainEye(w: SaveFile): void {
+  w.flags[EYE_KEY] = true;
+}
+
+/** Cờ riêng: vừa xong việc trong điện thoại (đặt hàng, đọc tin) thì chỉ thêm nút đóng điện thoại. */
+const CLOSE_KEY = "tourDong";
+export const closePending = (w: SaveFile) => w.flags[CLOSE_KEY] === true;
+export function closeDone(w: SaveFile): void {
+  delete w.flags[CLOSE_KEY];
+}
+
 export function tourSkip(w: SaveFile): void {
   w.flags[KEY] = "XONG";
 }
@@ -42,6 +56,7 @@ export function tourDone(w: SaveFile, step: TourStep): number {
   const of = ORDER.indexOf(step);
   if (at > of) return 0;
   w.flags[KEY] = ORDER[of + 1] ?? "XONG";
+  if (step === "CHO" || step === "DT") w.flags[CLOSE_KEY] = true;
   return of - at + 1;
 }
 

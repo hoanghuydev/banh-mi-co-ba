@@ -299,41 +299,64 @@ Ra **báo cáo research + vài phương án mock** trước, chủ dự án ch�
 **Mục tiêu.** Chạm sự kiện hoặc làm được việc gì đó thì được một danh hiệu; app **Danh hiệu** trong điện thoại bày thành lưới ô để sưu tập.
 Vui ở chỗ **không ai nói trước** — ô xám trong lưới là lời mời thử, và vài cái chỉ lộ ra khi đã đạt.
 
-### T8.1 — Bảng danh hiệu (26 cái)
+### T8.1 — Bảng danh hiệu (51 cái)
 
-Điều kiện chỉ đọc dữ liệu **đang có**. Cột nguồn ghi chỗ đọc.
+Dữ liệu: `src/content/ach.ts` (`ACH_LIST`). Hạng Đồng 15 · Bạc 20 · Vàng 11 · Kim cương 5. ✗ = danh hiệu thất bại (13). (ẩn) = che tên và điều kiện tới khi đạt (17).
+Điều kiện chỉ đọc dữ liệu có sẵn; chỗ cần đếm thì có bộ đếm trong `SaveFile.ach`.
 
-| # | Tên danh hiệu | Điều kiện · nguồn dữ liệu | Hiếm | Huy hiệu (SVG/CSS) |
+| # | Tên | Hạng | Điều kiện | Nguồn dữ liệu |
 |---|---|---|---|---|
-| 1 | Mở hàng | Bán được ổ đầu tiên — `progress.today.served` 0 → 1 | Thường | Ổ bánh mì vàng nghiêng, nền cam `#e5532b` |
-| 2 | Hệ thống nhận ký chủ | `system.stage === "linked"` | Thường | Khối vuông xanh neon `#19e3ff` trên nền đen (lấy `ICON.sys`) |
-| 3 | Vào nghề | `tourStep(w) === "XONG"` (`sim/tour.ts`) | Thường | Dấu tick trong vòng tròn, xanh lá `#2f9e57` |
-| 4 | Sao đầu tiên | `reviews.list.length >= 1` | Thường | Một sao vàng `#f5b82e` viền cam |
-| 5 | Năm sao đầu tay | `reviews.list.some(r => r.stars === 5)` | Thường | Năm sao nhỏ xếp vòng cung, vàng |
-| 6 | Trăm ổ qua tay | `sum(ledger[].served) >= 100` | Thường | Ba ổ chồng + số 100, nâu vàng |
-| 7 | Nghìn ổ qua tay | `sum(ledger[].served) >= 1000` | Hiếm | Chồng ổ viền vàng kim `#d9a21b` |
-| 8 | Một tháng không nghỉ | `progress.dayIndex >= 30`, chưa `flags.shutdown`, chưa phá sản | Thường | Tờ lịch số 30, trắng viền xám |
-| 9 | Đủ món | Mở khoá hết 7 `MENU_IDS` (`sim/menu.ts`) | Hiếm | Bảng menu 7 dòng, nền kem |
-| 10 | Bốn rưỡi | `average(w) >= 4.5` và `reviews.list.length >= 50` | Hiếm | Sao vàng khuyết 1/2 cánh + "4,5" |
-| 11 | Sắm đủ đồ nghề | `equipment.owned` có hết `EQUIP` mua được | Hiếm | Kẹp gắp bắt chéo lò điện, xám thép `#55626e` |
-| 12 | Chi nhánh hai | Chạm mốc tiền thắng (T5.1) — `money.cash` | Cực hiếm | Hai biển hiệu nhỏ cạnh nhau, vàng kim |
-| 13 | Khét lẹt | `progress.today.burnt >= 5` trong một ngày | Hiếm | Ổ cháy đen, vệt khói xám |
-| 14 | Mắc quá, thôi | `progress.today.priceLost >= 5` trong một ngày | Thường | Bảng giá + mũi tên quay ra, đỏ `#e03a2c` |
-| 15 | Mắc mà vẫn bán được | Một ngày `menu.price` toàn mốc 2 (đắt) mà `today.lost === 0` và `today.served >= 10` | Hiếm | Túi tiền vàng có ngôi sao nhỏ |
-| 16 | Trà đá miễn phí | Đãi trà đá đủ 20 lượt — đếm `attention:toolUsed` tool `TRA_DA` (hoặc `ServeRecord.gaveTea`) | Thường | Ly trà đá xanh nhạt `#4fc3d9`, viên đá trắng |
-| 17 | Rơi thì bỏ | 10 lượt khách bỏ đi vì ổ rơi — `npc:left` reason `SOILED_FOOD` | Hiếm | Ổ bánh lộn ngược + vệt đất nâu |
-| 18 | Đồ cũ người ta cần | `resell.news` có một dòng "Đã bán" (`sim/resell.ts`) | Thường | Thẻ giá xanh `#2189a8` có lỗ dây |
-| 19 | Nhầm quán rồi | Nhận một đánh giá nhiễu `NHAM_QUAN` (`sim/reviews.ts` → `dailyNoise`) | Hiếm | Tô hủ tiếu + dấu hỏi, nền cam nhạt |
-| 20 | Có qua có lại | `reviews.list.filter(r => r.reply).length >= 10` | Hiếm | Hai bong bóng chat lồng nhau, xanh lá |
-| 21 | Trả hết nợ mặt bằng | `econ.rentOwed > 0` rồi về `0` | Thường | Phong bì đỏ đã mở, rỗng |
-| 22 | *(ẩn)* Không cần hệ thống | `system.stage === "unlinked"` (từ chối hai lần) | Cực hiếm | Khung hệ thống xám, đèn tắt |
-| 23 | *(ẩn)* Nghiêng nước nghiêng thành | `system.beauty >= BEAUTY_MAX` (12) | Cực hiếm | Gương soi sen hồng `#5a1a48` |
-| 24 | *(ẩn)* Trời cho mà không lấy là có tội | Quay trúng `BAO_KHI` (`sim/system.ts`) | Cực hiếm | Rương tím `#6b1f6b` có tia sáng |
-| 25 | *(ẩn)* Hệ thống đã cố gắng | Trúng `LUCK` ba lượt quay liên tiếp — đếm ở `spin()` | Hiếm | Ô vòng quay rỗng, nền đen xanh `#0d2530` |
-| 26 | *(ẩn)* Ế | Một ngày đã mở bán mà dòng `ledger` có `served === 0` | Hiếm | Quầy trống + một con ruồi, xám |
-
-Phân bổ: **Thường 11 · Hiếm 11 · Cực hiếm 4** · ẩn 5 (#22–26).
-Danh hiệu ẩn: lưới che cả tên bằng `?` cho tới khi đạt.
+| 1 | Đầu xuôi đuôi lọt | Đồng | Bán ổ đầu tiên | tổng ổ (ledger + `today.served`) |
+| 2 | Có tiếng có tăm | Đồng | Nhận đánh giá đầu tiên | `reviews.list` |
+| 3 | Học ăn học nói | Đồng | Xong hướng dẫn ngày đầu | `tourStep === XONG` |
+| 4 | Trời xui đất khiến | Đồng | Liên kết Hệ thống | `system.stage` |
+| 5 | Vui lòng khách đến | Đồng | 1 đánh giá 5★ (khách thật) | `reviews.list`, bỏ `noise` |
+| 6 | Năng nhặt chặt bị | Đồng | 100 ổ cộng dồn | tổng ổ |
+| 7 | Một nắng hai sương | Đồng | Sống qua ngày 30 | `dayIndex >= 31` |
+| 8 | Lửa thử vàng ✗ | Đồng | 5 ổ cháy trong 1 ngày | `today.burnt` |
+| 9 | Ngựa có lúc sẩy chân ✗ | Đồng | Đánh giá đau bụng đầu tiên | `review.food` |
+| 10 | Chín người mười ý ✗ | Đồng | Đánh giá 1★ đầu tiên | `reviews.list` |
+| 11 | Vắng như chùa Bà Đanh ✗ | Đồng | Mở cả ngày, bán 0 ổ (không tính đóng quầy sớm) | `ledger.served`, `econ.today.closedAtMin` |
+| 12 | Thắt lưng buộc bụng ✗ | Đồng | Lỗ 3 ngày liền | `ledger` revenue < cost |
+| 13 | Giá cắt cổ ✗ | Đồng | 5 khách bỏ vì giá trong 1 ngày | `today.priceLost` |
+| 14 | Ở hiền gặp lành | Đồng | Đãi 20 ly trà đá | `ach.tea` (`attention:toolUsed` TRA_DA) |
+| 15 | Của bền tại người | Đồng | Bán được 1 đồ cũ | `ach.resold` (`resell.morning`) |
+| 16 | Kiến tha lâu đầy tổ | Bạc | 1.000 ổ | tổng ổ |
+| 17 | Đứng mũi chịu sào | Bạc | Sống qua ngày 60 | `dayIndex >= 61` |
+| 18 | Của ăn của để | Bạc | Có 10 triệu tiền mặt | `money.cash` |
+| 19 | Đắt như tôm tươi | Bạc | Hết sạch bánh khi còn khách đến | `econ.today.soldOut > 0` |
+| 20 | Có qua có lại | Bạc | Trả lời 10 đánh giá | `review.reply` |
+| 21 | Lời ra tiếng vào | Bạc | 100 đánh giá | `reviews.list` |
+| 22 | Tai bay vạ gió ✗ | Bạc | 5 đánh giá 1★ | `reviews.list` |
+| 23 | Quay đầu là bờ | Bạc | Dùng thẻ sửa đánh giá lần đầu | `review.edited` |
+| 24 | Lò Bát Quái ✗ (ẩn) | Bạc | 10 ổ cháy trong 1 ngày | `today.burnt` |
+| 25 | Nước đổ lá khoai ✗ (ẩn) | Bạc | 10 khách bỏ vì ổ rơi | `ach.soiled` (`npc:left` SOILED_FOOD) |
+| 26 | Bệnh từ miệng vào ✗ (ẩn) | Bạc | Bị đóng cửa vì ATTP | `flags.shutdown` |
+| 27 | Nhà tan cửa nát ✗ (ẩn) | Bạc | Phá sản | `flags.broke` |
+| 28 | Ngồi chờ sung rụng ✗ (ẩn) | Bạc | 3 ngày liền bán dưới 5 ổ | `ledger.served` |
+| 29 | Lấy công làm lãi (ẩn) | Bạc | Cả ngày mọi món giá rẻ nhất, bán ≥ 25 ổ | `ach.low` (lấy mẫu `menu.price`) |
+| 30 | Quen mặt đắt hàng | Bạc | 1 khách ghé 50 lần | `npcs[id].visits` |
+| 31 | Tiền nào của nấy | Bạc | Mua tủ mát | `equipment.owned` |
+| 32 | Ăn ngon ngủ yên | Bạc | 30 ngày liền không ai đau bụng | `ledger.sick` |
+| 33 | Buôn có bạn bán có phường | Bạc | Đặt hàng đủ 7 nhà cung cấp | `ach.sup` (`placeOrder`) |
+| 34 | Râu ông cằm bà (ẩn) | Bạc | Nhận đánh giá nhầm quán | `review.noise === nham` |
+| 35 | Trên trời rơi xuống (ẩn) | Bạc | Quay trúng đồ nghề miễn phí | `ach.baoKhi` (`spin`) |
+| 36 | Góp gió thành bão | Vàng | 1.600 ổ | tổng ổ |
+| 37 | Tiền vào như nước | Vàng | Có 20 triệu tiền mặt | `money.cash` |
+| 38 | Mở mày mở mặt | Vàng | Đạt mốc tiền thắng | `flags.won` |
+| 39 | Buôn may bán đắt | Vàng | Thắng trước ngày 100 | `flags.wonDay` |
+| 40 | Trăm hoa đua nở | Vàng | 120 đánh giá 5★ (khách thật) | `reviews.list` |
+| 41 | Đắt xắt ra miếng (ẩn) | Vàng | Cả ngày mọi món giá đắt nhất, bán ≥ 10 ổ, `lost` = 0 | `ach.high`, `today.lost` |
+| 42 | Thêm bạn bớt thù (ẩn) | Vàng | Nói chuyện sâu với đủ 12 nhân vật có tên | `npcs[id].talksDone` |
+| 43 | Đâu vào đấy | Vàng | Lắp kín 14 chỗ trên xe | `equipment` capacity/used |
+| 44 | Mệnh ta do ta (ẩn) | Vàng | Từ chối Hệ thống 2 lần | `system.stage === unlinked` |
+| 45 | Dã tràng xe cát (ẩn) | Vàng | Trúng LUCK 8 lượt quay liền | `ach.luckRun` (`spin`) |
+| 46 | Chim sa cá lặn (ẩn) | Vàng | Nhan sắc đạt cấp 10 | `system.beauty >= 10` |
+| 47 | Một vốn bốn lời (ẩn) | Kim cương | Thắng trước ngày 90 | `flags.wonDay` |
+| 48 | Tiếng lành đồn xa | Kim cương | Sao TB ≥ 4,2 với ≥ 50 đánh giá | `average(w)` |
+| 49 | Sạch như lau như li (ẩn) | Kim cương | Thắng mà cả ván 0 ổ cháy, 0 ổ rơi | `ach.burnt`, `ach.soiled` |
+| 50 | Hai bàn tay trắng (ẩn) | Kim cương | Thắng mà không liên kết Hệ thống | `system.stage` |
+| 51 | Phá gia chi tử ✗ (ẩn) | Kim cương | Phá sản trong 3 ngày đầu | `flags.brokeDay <= 3` |
 
 ### T8.2 — App Danh hiệu trong điện thoại
 
@@ -355,47 +378,40 @@ Dựng theo mẫu `src/ui/phone/apps/sellApp.ts` (danh sách + trang con theo `r
 | Chưa đạt | Khung xám nét đứt, hình huy hiệu dạng bóng, tên mờ |
 | Chưa đạt + ẩn | Khung xám, dấu `?` to, tên cũng là `?` |
 
-Đầu danh sách một dòng `ph-sec`: `Đã đạt 7/26`.
+Đầu danh sách một dòng `ph-sec`: `Đã đạt 7/51`.
 
 **Trang chi tiết** (bấm vào một ô): huy hiệu to · tên · mô tả một câu · điều kiện · `Ngày đạt: ngày 14`.
 Ô chưa đạt vẫn bấm được: hiện điều kiện, không có ngày. Ô ẩn chưa đạt: `?` và một dòng `Chưa rõ`.
 
 ### T8.3 — Chỗ lưu
 
-`src/sim/ach.ts` (mới) giữ bảng danh hiệu + luật chấm. Trường mới trong `SaveFile` (`src/core/save.ts`):
+`src/sim/ach.ts` giữ luật chấm; `src/content/ach.ts` giữ bảng.
 
-```ts
-export type AchState = {
-  /** Mã danh hiệu → ngày đạt. */
-  got: Record<string, number>;
-  /** Mã đã xem trong app, để tắt badge. */
-  seen: string[];
-  /** Số đếm cộng dồn cho danh hiệu nhiều lượt (trà đá, ổ rơi, quay trượt liên tiếp). */
-  counters: Record<string, number>;
-};
-```
+| Gì | Ở đâu | Vì |
+|---|---|---|
+| Danh hiệu đã đạt (`id → ngày`) và `seen` | Theo máy: `platform`, khoá `byesep.ach`, như `core/rewinds.ts` | Thắng/phá sản gọi `save.clear()` xoá `SaveFile` |
+| Bộ đếm cộng dồn theo ván (`SaveFile.ach`: trà đá, ổ rơi, ổ cháy, đồ cũ đã bán, nhà cung cấp, chuỗi LUCK, từng nợ, cờ giá cả ngày) | `SaveFile` | Thuộc về ván đó |
 
-- `SaveFile` thêm `ach: AchState`; `newGame()` thêm `ach: newAch()`.
-- `normalize()` thêm `s.ach = { ...d.ach, ...s.ach }` — y như `s.system`, `s.reviews`.
-- **Migrate:** save cũ thiếu trường → `normalize()` điền `newAch()` → `got` rỗng = chưa đạt gì. **Không tăng `SCHEMA_VERSION`**, không truy ngược lịch sử ván cũ.
-- Save phình không đáng kể: 26 mã, không có log.
+- `normalize()` điền `s.ach = { ...d.ach, ...s.ach }` như `s.system`. Save cũ thiếu trường → bộ đếm 0. **Không tăng `SCHEMA_VERSION`**, không chấm ngược.
+- Chấm: `checkLive` (mỗi giây khi bán, và sau khi chốt thắng/thua) · `checkEvening` (lúc `evening:done`, TRƯỚC `markWin`/`markShutdown`/`markBroke` ở `DayScene`).
+- Sự kiện không qua bus (`spin()`, `placeOrder`, `resell.morning`) tăng bộ đếm thẳng.
 
 ### T8.4 — Lúc đạt thì hiện gì
 
 Hai chỗ, không chặn thao tác, không mở điện thoại giùm:
 
-1. **Toast trong lúc bán** — `Hud.toast` (`src/ui/Hud.ts:203`), tone `good`, một dòng: `Danh hiệu: Khét lẹt`. Nhiều cái cùng lúc thì xếp hàng, mỗi lần một dòng.
+1. **Toast trong lúc bán** — `Hud.toast` (`src/ui/Hud.ts:203`), tone `good`, một dòng: `Danh hiệu: Lửa thử vàng`. Nhiều cái cùng lúc thì xếp hàng, mỗi lần một dòng.
 2. **Một dòng trong app Hệ thống** — gọi `say(w, …)` (`sim/system.ts`), chỉ khi `linked(w)`. Badge app Danh hiệu +1.
 
 Mẫu ba dòng, giọng Hệ thống (skill `giong-he-thong`):
 
 ```
-Keng! Chúc mừng ký chủ thu được danh hiệu 【Khét Lẹt】(Hiếm).
+Keng! Chúc mừng ký chủ thu được danh hiệu 【Lửa Thử Vàng】(Đồng).
 Hiệu quả: không có. Danh hiệu chỉ để trưng.
-Mô tả: Năm ổ vào lò, năm ổ thành than.
+Mô tả: Lửa thử vàng, gian nan thử sức.
 ```
 
-Tên danh hiệu trong câu Hệ thống viết hoa đầu chữ trong `【】`; trong app Danh hiệu và toast giữ nguyên tên gốc.
+Tên danh hiệu giữ nguyên chữ gốc ở mọi chỗ (Hệ thống, toast, app Danh hiệu).
 
 ### T8.5 — Không được làm gì
 
@@ -410,13 +426,105 @@ Tên danh hiệu trong câu Hệ thống viết hoa đầu chữ trong `【】`;
 
 ### T8.6 — Nghiệm thu
 
-- [ ] Ván mới: đạt được #1 · #2 · #3 · #4 trong ngày 1, mỗi cái một toast, không cắt thao tác bán.
+- [ ] Ván mới: đạt được #1 · #2 · #3 · #4 trong ngày 1 (Đầu xuôi đuôi lọt, Có tiếng có tăm, Học ăn học nói, Trời xui đất khiến), mỗi cái một toast, không cắt thao tác bán.
 - [ ] App Danh hiệu lên lưới 3 cột đúng: ô đã đạt có màu + tên, ô chưa đạt xám + tên mờ, ô ẩn là `?`.
 - [ ] Bấm ô đã đạt ra chi tiết có đủ tên · mô tả · điều kiện · ngày đạt; bấm ô ẩn chưa đạt chỉ ra `?`.
 - [ ] Mỗi danh hiệu chỉ chấm một lần; thoát ra vào lại không chấm lại, không mất.
-- [ ] Load save cũ (không có `ach`): vào game được, lưới hiện 0/26, không lỗi.
+- [ ] Load save cũ (không có `ach`): vào game được, lưới hiện 0/51, không lỗi.
 - [ ] Tiền, buff, `system.exp` **không đổi** trước và sau khi đạt danh hiệu.
 - [ ] Chụp màn hình lưới và trang chi tiết ở cả màn rộng lẫn màn hẹp, soi theo checklist `.claude/CLAUDE.md` §3.2.
+
+---
+
+## 7c. Các phase sau R8
+
+> Ghi từ prompt thô của chủ dự án (2026-10-24). Chỉ là **đề bài**; chưa plan, chưa chốt thứ tự. Số trong đây là ước tính — theo Lưu ý 1.
+
+### R9 — Sự kiện bệnh
+
+- Đi ra ngoài ngày mưa → có **xác suất** bệnh.
+- Diễn tiến theo ngày:
+
+| Ngày bệnh | Hậu quả |
+|---|---|
+| 1 | Giảm 8% tốc độ chạy |
+| 2 | Giảm 10% tốc độ chạy |
+| 3 | Không chạy được |
+| 4 | Chết, game over |
+
+- **Dẹp hàng sớm** 1 ngày (làm không quá 1 tiếng) → xoá trạng thái bệnh.
+- Mục đích 3 ngày đệm: để người chơi sắp xếp bán hết hàng tồn.
+- *Chưa rõ:* "dẹp hàng sớm" tính từ lúc mở bán hay từ lúc phát bệnh; xác suất bệnh; có báo trước ngày 4 hay không.
+
+### R10 — Giao hàng thật (shipper)
+
+- Hàng nhà cung cấp do **shipper giao thật**, người chơi **nhận thật** (thay vì hàng tự vào kho).
+- Luồng: xe chạy từ **mép phải map sang trái** → shipper ngồi xe → xuống xe, bê thùng hàng tới trước cửa quán → hiện bong bóng chat "hàng đến" kèm dấu chấm than → người chơi nhấn **E** nhận.
+- Nhận xong hiện thông báo kiểu game khác: `+ 20 [ảnh bánh mì]`, `+ 40 [ảnh ớt]`… (icon + số lượng từng món).
+- Cần asset:
+
+| Asset | Ghi chú |
+|---|---|
+| Model 3D xe | Chạy ngang map phải → trái |
+| Model 3D shipper | Ngồi được trên xe |
+| Animation | Shipper ngồi xe · di chuyển · tay bê hàng |
+| Ảnh thùng hàng | Dùng trong cảnh |
+
+- Làm theo quy trình `tao-anh-game` và `CLAUDE.md` §3.1 (mỗi step render/chụp, xem ảnh).
+- Liên quan: R0.7 (nhà cung cấp).
+
+### R11 — Phần thưởng Hệ thống: bánh mì thần thánh
+
+- Vật phẩm trong **vòng quay** của Hệ thống; độ ngon cực cao.
+- Hiệu lực: **100% xoá** hiệu ứng bất lợi của các item khác (đau bụng, đồ qua đêm, rớt đất); khách ăn xong **chắc chắn 5★**.
+- Dùng **một lần cho một cái**; tỉ lệ xuất hiện trong vòng quay **thấp**, tỉ lệ trúng **thấp**.
+- Lời Hệ thống viết bằng skill `giong-he-thong`; hiệu ứng ngầm ghi kèm số (`CLAUDE.md` §5).
+- Tỉ lệ + tác động cân bằng phải mô phỏng (Lưu ý 1).
+
+### R12 — Hình ảnh 3D
+
+| # | Việc | Ghi chú |
+|---|---|---|
+| 1 | Xem lại **góc quay 3D** | Theo hướng từ điểm gần map nhìn ra điểm xa map |
+| 2 | Cho AI "làm real hơn" | Đưa ảnh chụp game vào AI, rồi quan sát xem cần cải thiện gì |
+| 3 | **Nóc tường**: tường liền nhau gộp thành 1 ô | Áp cùng quy tắc đổ bóng cây lên mặt trên tường; tạo ảnh bóng cây phù hợp, chỉnh độ sáng. **Chỉ chỉnh nóc**, chưa đụng thân tường |
+| 4 | **Viên gạch** thành khối 3D | Hiện là 1 ảnh phẳng → nhìn ngang chỉ thấy lớp mỏng. Thêm cạnh ngang. Dẹp luôn các thanh lòi ra ngoài (không rõ là gì) |
+
+- Ảnh lỗi gạch/sàn: `/home/hoanghuy/Downloads/game/sàn nhà mỏng và có thanh lòi ra ngoài.png`.
+- Đọc `QUY-TAC-CANVAS.md` và skill `anh-sang-vat-the` trước khi làm #3, #4.
+- *Chưa rõ:* #3 "gộp thành 1 ô" là gộp lúc vẽ hay gộp trong bản đồ ô.
+
+### R13 — Lỗi bong bóng thoại lệch
+
+- Bong bóng hội thoại **nhảy lung tung**, không nằm trên đầu NPC: lúc NPC đang di chuyển, lúc vừa di chuyển vừa đứng lại,…
+- Ảnh lỗi: `/home/hoanghuy/Downloads/game/LỆCH CHAT.png`.
+- Nghiệm thu: chụp nhiều khoảnh khắc (đi, dừng, quay hướng), bong bóng luôn bám trên đầu.
+
+### R14 — Tiền lẻ & đổi tiền (phase cuối)
+
+> Chốt 2026-10-26. Hiện tại tiền lẻ chỉ là một con số ẩn (`sim/till.ts`); dòng "chạy qua cô Thuý đổi" chỉ là chữ, không có gì xảy ra.
+
+| Phần | Cách làm |
+|---|---|
+| Tiền game | Thiết kế bộ tờ tiền có mệnh giá (1k, 2k, 5k, 10k, 20k, 50k…), có ảnh riêng |
+| Thối tiền | **Tự động trừ** tờ trong két, người chơi không tính |
+| Thiếu lẻ ≤ 5k | Bớt luôn cho khách (free) |
+| Thiếu lẻ > 5k | Người chơi phải **chạy đi đổi tiền** |
+| Đổi tiền | Cô Thúy là **một xe nhỏ** trên map. Chạy tới, nhấn **E** → modal chat → chọn đổi tiền → logic đổi |
+| Xem két | Đứng ở quầy thanh toán nhấn **R** → hộc két kéo ra (animation + âm thanh kéo hộc) → xem tờ tiền bên trong |
+| Kẹt tiền lẻ | Nhấn **F** chat với khách đang chờ thối. Lúc kẹt lẻ, các lựa chọn chat cũ **được thay** bằng hai lựa chọn dưới |
+
+Hai lựa chọn khi kẹt tiền lẻ (`{npc}` = cách gọi khách, `{me}` = người chơi tự xưng):
+
+| Lựa chọn | Câu người chơi nói | Hệ quả |
+|---|---|---|
+| Đi đổi | "{npc} đợi {me} xíu, {me} đi đổi tiền lẻ tý nha." | Khách đứng chờ, người chơi chạy qua xe cô Thúy đổi |
+| Bớt tiền | "{me} bớt cho {npc} {số tiền} nha." | Bớt phần lẻ xuống tờ chẵn: ổ 28k thì lấy 20k (bớt 8k) |
+
+- Câu thoại trên là ý, viết lại theo skill `research-giong-viet` lúc làm.
+
+- *Chưa rõ:* khách làm gì trong lúc người chơi chạy đi đổi (đứng chờ, mất kiên nhẫn?); cô Thúy đổi tối đa bao nhiêu, có mất phí không; sáng có được đổi sẵn lẻ khi đi chợ không.
+- Tỉ lệ khách đưa tờ lớn + số lẻ đầu ngày phải mô phỏng (Lưu ý 1). Canvas xe cô Thúy, hộc két: `QUY-TAC-CANVAS.md`.
 
 ---
 

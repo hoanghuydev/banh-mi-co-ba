@@ -3,10 +3,10 @@ import { TW } from "../world/iso";
 import { PAL } from "./palette";
 import { BASE, faceRect, facePoint, heightFor, isoBox, prop, shade, type Face, type Pen } from "./canvas";
 
-// Tường có 4 biến thể để 16 ô liền nhau không lộ nhịp lặp texture.
+// Tường có 6 biến thể để 16 ô liền nhau không lộ nhịp lặp texture.
 export const BUILD = {
   wall: (i: number) => `b_wall${i}`,
-  WALL_COUNT: 4,
+  WALL_COUNT: 6,
   door: "b_door",
   neighbour: (i: number) => `b_neighbour${i}`,
   NEIGHBOUR_COUNT: 4,
@@ -92,7 +92,7 @@ function wall(scene: Phaser.Scene, i: number) {
     const at = facePoint("left", cx, cy - WALL_H);
     if (i === 1) meter(g, at);
     else if (i === 2) smallWindow(g, at);
-    else if (i === 3) poster(g, at);
+    else if (i >= 3) poster(g, at);
   });
 }
 

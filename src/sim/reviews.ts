@@ -17,6 +17,8 @@ export type Review = {
   edited: boolean;
   /** Lời chủ quán trả lời dưới đánh giá. */
   reply?: string;
+  /** Đánh giá không đến từ khách thật. */
+  noise?: "nham" | "doi_thu" | "spam" | "hiem" | "clip";
 };
 
 /** Đánh giá đã hẹn giờ nhưng chưa hiện lên app. */
@@ -117,6 +119,8 @@ export type ServeRecord = {
   /** Khách vãng lai: `who` chỉ là dáng người, đánh giá phải mượn tên khác. */
   anon?: boolean;
   dirtyHands?: boolean;
+  /** Số ruồi quanh thớt lúc đưa bánh (`fliesAt`). */
+  flies?: number;
   gaveExtra?: boolean;
   gaveTea?: boolean;
   wasCut?: boolean;
@@ -157,6 +161,9 @@ const SILENT_ODDS = 0.18;
  */
 const STAR_CAP: Record<string, number> = { "co-san": 2, "tay-ban": 2, "het-banh": 3 };
 
+/** Có ruồi là trừ 1★ ở `starsOf`; bu nhiều thì chặn thêm trần. */
+const FLY_CAP: Record<number, number> = { 3: 3, 5: 2 };
+
 export function starsOf(r: ServeRecord, rng: Rng): number {
   if (r.sick) return rng.next() < 0.6 ? 1 : 2;
   let s = 5 - r.silentScore / SCORE_PER_STAR;
@@ -165,6 +172,7 @@ export function starsOf(r: ServeRecord, rng: Rng): number {
   s -= qualityPenalty(r.quality);
   s += PRICE_STAR[r.pricePick] ?? 0;
   s -= r.waitStage * WAIT_PENALTY;
+  if (r.flies) s -= 1;
   s += rng.range(-0.4, 0.4);
   return Math.min(capOf(r), Math.max(1, Math.round(s)));
 }
@@ -174,6 +182,7 @@ function capOf(r: ServeRecord): number {
   let cap = 5;
   if (r.defect) cap = Math.min(cap, STAR_CAP[r.defect] ?? 5);
   if (r.dirtyHands) cap = Math.min(cap, STAR_CAP["tay-ban"]);
+  if (r.flies) cap = Math.min(cap, FLY_CAP[r.flies] ?? 5);
   return cap;
 }
 
@@ -193,6 +202,7 @@ function factorsOf(r: ServeRecord, stars: number): Topic[] {
   if (r.sick) out.push("dau-bung");
   if (r.defect) out.push(r.defect as Topic);
   if (r.dirtyHands) out.push("tay-ban");
+  if (r.flies) out.push("ruoi");
   if (r.wasCut) out.push("chen-hang");
   if (r.loaOn) out.push("loa-on");
   if (r.waitStage >= 2) out.push("cho-lau");
@@ -290,15 +300,15 @@ export function dailyNoise(w: SaveFile, from: number, to: number): void {
   const day = w.progress.dayIndex;
   const rng = new Rng(splitmix32(fnv1a(`${w.saveId}|noise|${day}`)));
   const n = expected(w);
-  const put = (text: string, stars: number, who: string) =>
-    enqueue(w, { at: rng.int(from, to), r: { day, who, stars, text, food: false } });
+  const put = (noise: NonNullable<Review["noise"]>, text: string, stars: number, who: string) =>
+    enqueue(w, { at: rng.int(from, to), r: { day, who, stars, text, food: false, noise } });
 
-  if (rng.next() < NOISE_SHARE.nham * n) put(rng.pick(NHAM_QUAN), rng.int(1, 4), rng.pick(NAMES));
+  if (rng.next() < NOISE_SHARE.nham * n) put("nham", rng.pick(NHAM_QUAN), rng.int(1, 4), rng.pick(NAMES));
   if (w.reviews.list.length >= DOI_THU_FROM && rng.next() < NOISE_SHARE.doiThu * n) {
-    put(rng.pick(DOI_THU), rng.int(1, 3), rng.pick(NAMES));
+    put("doi_thu", rng.pick(DOI_THU), rng.int(1, 3), rng.pick(NAMES));
   }
-  if (rng.next() < NOISE_SHARE.spam * n) put(rng.pick(SPAM), rng.int(1, 6), rng.pick(NAMES));
-  if (rng.next() < NOISE_SHARE.hiem * n) put(rng.pick(HIEM), rng.int(4, 6), rng.pick(NAMES));
+  if (rng.next() < NOISE_SHARE.spam * n) put("spam", rng.pick(SPAM), rng.int(1, 6), rng.pick(NAMES));
+  if (rng.next() < NOISE_SHARE.hiem * n) put("hiem", rng.pick(HIEM), rng.int(4, 6), rng.pick(NAMES));
 }
 
 /** Đánh giá tới giờ thì lên app; trả về những cái vừa hiện để báo. */

@@ -1,14 +1,20 @@
 import Phaser from "phaser";
-import { setCast } from "../../art/fx";
 import { TW, toScreen } from "../../world/iso";
-import { SKY_FROM_Y, SUN_BAND as BAND, WORLD_H } from "../../world/map";
+import { SKY_FROM_Y, SUN_BAND as BAND, WORLD_H, WORLD_W } from "../../world/map";
 import { OVERCAST, sunAt, type Sun } from "../../world/daylight";
+import { materialOf } from "../../art/light/materials";
+import { floorAtScreen } from "../../world/lightParams";
+import type { FloorBake } from "../../world/floorBake";
+import { sealTexture } from "../../core/texSeal";
 
 const TONE_DEPTH = 6_900_000;
 const PATCH_DEPTH = -999_999;
 const VIEW_PAD = 24;
 const STEP_MIN = 4;
 const VIGNETTE = "vignette";
+
+/** Phần vạt nắng cộng còn lại trên sàn nhám; ánh nắng ở đó đã nằm trong lightmap. */
+const MATTE_K = 0.3;
 
 const LEAN = -0.4;
 const FEATHER = 16;
@@ -19,11 +25,12 @@ function buildVignette(scene: Phaser.Scene) {
   const ctx = tex.getContext();
   const g = ctx.createRadialGradient(128, 72, 50, 128, 72, 160);
   g.addColorStop(0, "rgba(255,255,255,1)");
-  g.addColorStop(0.65, "rgba(238,240,244,1)");
-  g.addColorStop(1, "rgba(190,196,208,1)");
+  g.addColorStop(0.65, "rgba(246,247,250,1)");
+  g.addColorStop(1, "rgba(222,226,234,1)");
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, 256, 144);
   tex.refresh();
+  sealTexture(scene.textures, VIGNETTE);
 }
 
 /** Vạt nắng mềm nướng một lần: mép nhoè, nhạt dần về phía xa mái hiên. */
@@ -62,11 +69,25 @@ function buildPatch(scene: Phaser.Scene, key: string, ground: Phaser.Geom.Rectan
   ctx.globalCompositeOperation = "destination-in";
   ctx.fillStyle = fall;
   ctx.fillRect(0, 0, w, h);
+
+  const gloss = new ImageData(w, h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const g = materialOf(floorAtScreen(ground.x + x, ground.y + y)).gloss;
+      gloss.data[(y * w + x) * 4 + 3] = (MATTE_K + (1 - MATTE_K) * g) * 255;
+    }
+  }
+  const mask = document.createElement("canvas");
+  mask.width = w;
+  mask.height = h;
+  mask.getContext("2d")!.putImageData(gloss, 0, 0);
+  ctx.drawImage(mask, 0, 0);
+  mask.width = mask.height = 0;
   tex.refresh();
+  sealTexture(scene.textures, key);
 }
 
 export class Daylight {
-  private readonly tone: Phaser.GameObjects.Rectangle;
   private readonly vignette: Phaser.GameObjects.Image;
   private readonly patch: Phaser.GameObjects.Image | null;
   private readonly view = new Phaser.Geom.Rectangle();
@@ -74,33 +95,34 @@ export class Daylight {
   private step = -1;
   private sun: Sun;
 
-  constructor(scene: Phaser.Scene, ground: Phaser.Geom.Rectangle, private readonly overcast: boolean) {
+  constructor(scene: Phaser.Scene, floor: FloorBake, private readonly overcast: boolean) {
+    const ground = floor.rect;
     this.patchX = ground.x;
     this.sun = overcast ? OVERCAST : sunAt(0);
     buildVignette(scene);
-    this.tone = scene.add.rectangle(0, 0, 1, 1, 0xffffff).setOrigin(0, 0)
-      .setDepth(TONE_DEPTH).setBlendMode(Phaser.BlendModes.MULTIPLY);
     this.vignette = scene.add.image(0, 0, VIGNETTE).setOrigin(0, 0)
-      .setDepth(TONE_DEPTH + 1).setBlendMode(Phaser.BlendModes.MULTIPLY);
+      .setDepth(TONE_DEPTH).setBlendMode(Phaser.BlendModes.MULTIPLY);
 
     if (overcast) {
       this.patch = null;
     } else {
       buildPatch(scene, "sunpatch", ground);
-      this.patch = scene.add.image(ground.x, ground.y, "sunpatch").setOrigin(0, 0)
-        .setDepth(PATCH_DEPTH).setBlendMode(Phaser.BlendModes.ADD);
+      this.patch = floor.add(scene.make.image({ x: ground.x, y: ground.y, key: "sunpatch" }, false).setOrigin(0, 0)
+        .setDepth(PATCH_DEPTH).setBlendMode(Phaser.BlendModes.ADD), true);
+      floor.clipTo([[0, 0], [WORLD_W, 0], [WORLD_W, WORLD_H], [0, WORLD_H]].map(([tx, ty]) => {
+        const { sx, sy } = toScreen(tx, ty);
+        return { x: sx, y: sy };
+      }));
     }
-    setCast(this.sun.dirX, this.sun.dirY, this.sun.stretch);
   }
 
-  /** Trả `true` khi hướng nắng đổi, để cảnh đặt lại bóng đạo cụ. */
-  update(minutes: number, view: Phaser.Geom.Rectangle): boolean {
+  /** Trả `true` khi vạt nắng đổi, sàn nướng cần vẽ lại. */
+  update(minutes: number, view: Phaser.Geom.Rectangle) {
     if (view.x !== this.view.x || view.y !== this.view.y
       || view.width !== this.view.width || view.height !== this.view.height) {
       this.view.setTo(view.x, view.y, view.width, view.height);
       const x = view.x - VIEW_PAD, y = view.y - VIEW_PAD;
       const w = view.width + VIEW_PAD * 2, h = view.height + VIEW_PAD * 2;
-      this.tone.setPosition(x, y).setSize(w, h);
       this.vignette.setPosition(x, y).setDisplaySize(w, h);
     }
 
@@ -109,16 +131,14 @@ export class Daylight {
     this.step = step;
     if (!this.overcast) this.sun = sunAt(minutes);
     const s = this.sun;
-    this.tone.setFillStyle(s.tone);
+    // Màu ngày nhân vào vignette: hai lớp MULTIPLY gộp thành một lượt phủ màn.
+    this.vignette.setTint(s.tone);
     this.patch?.setX(this.patchX + s.patchShift * (TW / 2))
       .setAlpha(s.patchAlpha).setTint(s.patchTint);
-    setCast(s.dirX, s.dirY, s.stretch);
-    return true;
+    return this.patch !== null;
   }
 
   destroy() {
-    this.tone.destroy();
     this.vignette.destroy();
-    this.patch?.destroy();
   }
 }

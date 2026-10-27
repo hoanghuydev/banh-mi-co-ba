@@ -119,6 +119,13 @@ function wheelAsScrollX(row: HTMLElement) {
     row.scrollLeft += e.deltaY;
     e.preventDefault();
   }, { passive: false });
+  // Đánh dấu mép còn cuộn được để CSS làm mờ.
+  const edges = () => {
+    row.toggleAttribute("data-fl", row.scrollLeft > 2);
+    row.toggleAttribute("data-fr", row.scrollLeft + row.clientWidth < row.scrollWidth - 2);
+  };
+  row.addEventListener("scroll", edges, { passive: true });
+  requestAnimationFrame(edges);
 }
 
 function catalog(ctx: AppCtx, cat: string): HTMLElement {
@@ -132,7 +139,7 @@ function catalog(ctx: AppCtx, cat: string): HTMLElement {
 
   const goods = CATEGORIES.flatMap((c) => c.goods).filter((g) => goodOpen(g, day));
   if (goodFilter && !goods.includes(goodFilter)) goodFilter = "";
-  const kinds = el("div", "ph-chips");
+  const kinds = el("div", "ph-chips ph-kinds");
   const kind = (g: GoodId | "", label: string) =>
     kinds.append(btn(`ph-pill${g === goodFilter ? " on" : ""}`, label, () => { goodFilter = g; ctx.rerender(); }));
   kind("", "Mọi món");
@@ -164,7 +171,7 @@ function catalog(ctx: AppCtx, cat: string): HTMLElement {
   if (n) {
     const q = quote(ctx.w, ctx.w.shop.cart, ctx.host.minutes(), { coupon: false, express: false, beforeOpen: ctx.host.beforeOpen() });
     const bar = btn("ph-cartbar", "", () => ctx.go({ app: "shop", tab: "cart" }));
-    bar.append(el("span", "", `${n} món trong giỏ`), el("b", "", money(q.subtotal)), el("span", "go", "Xem giỏ ›"));
+    bar.append(el("span", "", `Giỏ (${n})`), el("b", "", money(q.subtotal)), el("span", "go", "Đặt ›"));
     wrap.append(bar);
   }
   return wrap;
@@ -257,7 +264,7 @@ function cart(ctx: AppCtx): HTMLElement {
   go.disabled = !!q.blocked;
   dock.append(go);
 
-  const wrap = el("div");
+  const wrap = el("div", "ph-cartwrap");
   wrap.style.cssText = "display:flex;flex-direction:column;flex:1;min-height:0";
   wrap.append(scroller(lines, ...(opts.childElementCount ? [opts] : []), sum), dock);
   return wrap;

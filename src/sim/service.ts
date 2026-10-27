@@ -11,16 +11,17 @@ import { newNpcState, type NpcState } from "../core/save";
 import { orderDefectKey } from "../core/stimid";
 import { Customer, DEFAULT_PATIENCE_SEC, LEAVE_AT, PATIENCE_BONUS_SEC, TEA, teaSuspectAtCup, type LeaveReason } from "./customer";
 import {
-  INGREDIENTS, diffDish, extraPortions, generosityOf, labelOf, levelsOf, mkDefect,
+  INGREDIENTS, diffDish, extraPortions, extrasOf, generosityOf, monVi, labelOf, levelsOf, mkDefect,
   sayOrder,
   type Defect, type DefectKind, type Ingredient, type OrderSpec,
 } from "./order";
 import type { ServeRecord } from "./reviews";
+import type { Channel, ClipState } from "./vietsoci";
 import {
   MAX_LIVE_STIMULI, SALIENCE, STIM_SPEC, observe, peakOf, peakOfKey, rank, stateOf,
   type ActiveStim, type ObsState, type Occluder, type Zone,
 } from "./perception";
-import { ASIDE_SPOT, CART_CHUNG, CART_LAN, CART_XA, CUSTOMER_GATE, GANH_IN, GANH_OUT, QUEUE_SLOTS, SEAT_CAPACITY, SEAT_SPOT, SHADE_CAPACITY, SHADE_SPOT, STREET_BIN, hitsWall } from "../world/map";
+import { ASIDE_SPOT, BALK_SPOT, CUSTOMER_GATE, QUEUE_SLOTS, SEAT_CAPACITY, SEAT_SPOT, SHADE_CAPACITY, SHADE_SPOT, STREET_BIN, hitsWall } from "../world/map";
 import { PASSERS_MAX, PASSER_NAMES, inviteChance, nextGapSec, planPasser } from "./passersby";
 import { rollVisit } from "./schedule";
 import { SHARED_POOL, TalkStore } from "../content/talks";
@@ -41,7 +42,7 @@ import { nhanOf, type MenuItemId } from "./menu";
 import { isOpen } from "./unlock";
 import { easeBalk } from "./ease";
 import { peakCap } from "./ease";
-import { has, type EquipId, type EquipState } from "./equipment";
+import { AIRCON, has, priceWalkMul, type EquipId, type EquipState } from "./equipment";
 import { makeChange } from "./till";
 import { moodBaseFace, moodPatienceMul, rollMood } from "./mood";
 import { faceHoldSec, intensityMul, isSilentGrudge, reactionDelay } from "./personality";
@@ -77,10 +78,9 @@ const PASSER_TALK_TAIL = 4;
 /** `talkedThisVisit` chỉ chặn mở LẠI cùng một cuộc, không chặn mở cuộc khác — trần phải nằm riêng. */
 const PASSER_TALKS_MAX = 2;
 
-const DIRT_ON_CAMERA = 0.35;
-
-/** Khác cái gánh dì Liên: gánh chắn LỐI (đo được bằng `balkChance`), xe thì ăn bớt khách LẠ đi ngang. */
-const KIET_STEAL = 0.18;
+export const FLY_DIRT_MIN = 0.35;
+/** Số ruồi quanh thớt theo độ bẩn; khách chấm sao theo đúng số người chơi thấy. */
+export const fliesAt = (dirt: number) => dirt <= FLY_DIRT_MIN ? 0 : dirt >= 0.7 ? 5 : dirt >= 0.5 ? 3 : 1;
 
 /** Phần người đi ngang ngoái lại khi nghe rao — chỉ bật `t.glanced`, người chơi vẫn phải mời. */
 const RAO_TURN = 0.45;
@@ -123,12 +123,12 @@ const OVEN_SMELL_SEC = 90;
 
 /** ⚠️ Giây THẬT, không phải phút game: đồng hồ tua nhanh khi quầy trống thì mọi lời hứa cùng hết hạn một lượt. */
 const DEED_DUE: Record<string, number> = {
-  ROT_TRA: 25, DUA_BANH: 15, BUNG_GANH: 15, LAY_SO: 40, DOI_DON: 20,
+  ROT_TRA: 25, DUA_BANH: 15, LAY_SO: 40, DOI_DON: 20,
 };
 
 const DEED_LABEL: Record<string, string> = {
   ROT_TRA: "rót cho người ta ly trà", DUA_BANH: "đưa người ta miếng bánh",
-  BUNG_GANH: "bưng giúp cái gánh", LAY_SO: "lấy giúp cuốn sổ", DOI_DON: "sửa lại cái đơn",
+  LAY_SO: "lấy giúp cuốn sổ", DOI_DON: "sửa lại cái đơn",
 };
 
 /** Nhắc → nói nặng → bỏ đi. Nóng tính bỏ nấc một; người lạ bỏ cả ba. */
@@ -209,12 +209,6 @@ export function balkChance(o: {
   return Math.min(BALK_CEIL, base * intensityMul(o.person) * mood * (o.rushing ? BALK_RUSH : 1));
 }
 
-/** Lùi thêm một bậc sau chỗ cuối hàng. Phải là điểm THẬT trên vỉa hè, không thì người chơi chỉ thấy một buổi vắng khách. */
-const BALK_LOOK = (() => {
-  const n = SLOTS.length;
-  const p = n >= 2 ? { x: 2 * SLOTS[n - 1].x - SLOTS[n - 2].x, y: SLOTS[n - 1].y } : { ...SLOTS[0] };
-  return hitsWall(p.x, p.y) ? { x: SLOTS[n - 1].x, y: SLOTS[n - 1].y } : p;
-})();
 const BALK_LOOK_SEC = 0.8;
 
 const ASIDE_HOLD_SEC = 6;
@@ -259,7 +253,8 @@ export type ServeResult = { ok: boolean; reason?: string; playerSay?: string };
 
 export type ServiceEvent =
   | { kind: "log"; text: string }
-  | { kind: "paid"; amount: number; item: "dish" }
+  /** `amount` đã gồm `tip`. */
+  | { kind: "paid"; amount: number; item: "dish"; tip: number }
   | { kind: "cost"; amount: number; item: "tea" | "talk" }
   | { kind: "talkOffer"; npcId: string; name: string }
   /** ⚠️ Phải đi qua đây, KHÔNG tự đặt `this.playerHand` — `StallScene` gán lại nó mỗi frame. */
@@ -311,8 +306,14 @@ export type ServiceDeps = {
   flags?: Record<string, string | number | boolean>;
   /** Mỗi lượt phục vụ xong; bên ngoài lăn thành đánh giá. */
   onServed?: (rec: ServeRecord) => void;
+  /** Kênh đã quay clip hôm nay. */
+  filmed?: (ch: Channel) => boolean;
+  /** Clip quay xong, sạch hay dơ. */
+  onClip?: (clip: { channel: Channel; state: ClipState }) => void;
   /** Vừa lắp đồ nghề mới trong vài ngày gần đây. */
   freshGear?: boolean;
+  /** Khách quen chưa có hình thì dời lượt ghé từng phút tới khi có. */
+  ready?: (npcId: string) => boolean;
 };
 
 type Visit = { at: number; npc: NpcDef | null; seq: number; defer?: number };
@@ -403,6 +404,7 @@ export type DiffedDefect = Defect & { key: string | null; witness: "ANTICIPATED"
 export class Service {
   readonly customers: Customer[] = [];
   private active: ActiveStim[] = [];
+  private readonly obsBefore = new Map<string, ObsState>();
   private schedule: Visit[] = [];
   private barks: Barks;
   readonly speaker: Speaker;
@@ -446,7 +448,7 @@ export class Service {
   private offersLocal = 0;
   /** ⚠️ Phải giữ lại: rút lại mỗi lần mở thì mở–Esc–mở là một cái máy reroll nội dung. */
   private heldTalk = new Map<string, Talk>();
-  /** ⚠️ Không ghi vào `mem(memKey).talksDone`: `memKey` của người lạ là `walkin<dáng>` — tám dáng dùng chung một sổ. */
+  /** ⚠️ Không ghi vào `mem(memKey).talksDone`: `memKey` của người lạ là `walkin<dáng>` — mọi dáng dùng chung một sổ. */
   private talkedThisVisit = new Map<string, string[]>();
   /** Đếm MỌI cuộc kể cả túi dùng chung — `talkedThisVisit` cố ý không ghi cuộc `ANY`. */
   private passerTalks = new Map<string, number>();
@@ -455,7 +457,7 @@ export class Service {
   private lastTarget: Customer | null = null;
   private actReply: { text: string; mood: TalkMood } | null = null;
   private pledges = new Map<string, { promised: string[]; discount: number; free: boolean }>();
-  /** 0 khi chưa mua bình trà — chính nó khoá `p.hasTea` cho mọi nhánh thoại mời trà. */
+  /** 0 khi chưa mua máy trà — chính nó khoá `p.hasTea` cho mọi nhánh thoại mời trà. */
   teaLeft = 0;
   dirt = 0;
   handsDirty = false;
@@ -479,10 +481,6 @@ export class Service {
   playerOnStreet = false;
   shadeFree = false;
   seatFree = false;
-  /** `"NGOAI"` chiếm một chỗ mặt tiền cho tới khi được mời dời vô. */
-  ganh: "NGOAI" | "TRONG" | null = null;
-  /** Xe chú Đạt; tới là `"LAN"` (lấn mặt tiền) mặc định, `null` là vắng. */
-  cart: "LAN" | "XA" | "CHUNG" | null = null;
   /** Giây THẬT. */
   raoUntil = -1;
   stock = 0;
@@ -565,10 +563,14 @@ export class Service {
     return (this.deps.npcs[id] ??= newNpcState());
   }
 
-  /** Người đang đứng chờ lúc này, tính như lúc sinh lượt ghé; gánh để ngoài là thêm một người. */
+  /** Người đang đứng chờ lúc này, tính như lúc sinh lượt ghé. */
+  private queueFull() {
+    return this.customers.filter((x) => x.phase !== "leaving" && !x.pass && !x.balking && !x.aside && !x.sitting).length
+      >= SLOTS.length;
+  }
+
   private aheadNow(except: Customer) {
-    return this.customers.filter((x) => x !== except && x.phase !== "leaving" && !x.pass && !x.balking).length
-      + (this.ganh === "NGOAI" ? 1 : 0);
+    return this.customers.filter((x) => x !== except && x.phase !== "leaving" && !x.pass && !x.balking).length;
   }
 
   private patienceOf(npc: NpcDef | null, at: number, ahead: number) {
@@ -577,8 +579,21 @@ export class Service {
     return base * rush * queuePatienceMul(ahead) * (this.deps.patienceMul ?? 1) + PATIENCE_BONUS_SEC + (this.deps.patienceBonusSec ?? 0);
   }
 
+  /** Khách quen đang ở quán (phút 0) hoặc còn lượt ghé (phút ghé sớm nhất). */
+  regulars(): Map<string, number> {
+    const out = new Map<string, number>();
+    for (const c of this.customers) if (c.npc) out.set(c.npc.id, 0);
+    for (const v of this.schedule) if (v.npc && !out.has(v.npc.id)) out.set(v.npc.id, v.at);
+    return out;
+  }
+
   private spawn(v: Visit, nowMin: number) {
     const npc = v.npc;
+    if (npc && this.deps.ready && !this.deps.ready(npc.id)) {
+      this.schedule.unshift({ ...v, at: nowMin + 1 });
+      this.schedule.sort((a, b) => a.at - b.at);
+      return;
+    }
     // Trần chỉ đếm khách vãng lai; quá trần thì dời lượt ghé một phút, không mất.
     const unlimited = !!this.deps.noTimePressure;
     if (unlimited || !npc) {
@@ -602,17 +617,9 @@ export class Service {
           deTha: 0.5 + rng.next() * 0.4, thanThien: 0.3 + rng.next() * 0.5 };
 
     const mood = rollMood(this.deps.hub.derive(`mood:${v.seq}`), this.deps.day);
-    // Tính một lần lúc xếp vào; gánh để ngoài tính như thêm một người.
-    const ahead = this.customers.filter((x) => x.phase !== "leaving" && !x.pass && !x.balking).length
-      + (this.ganh === "NGOAI" ? 1 : 0);
+    const ahead = this.customers.filter((x) => x.phase !== "leaving" && !x.pass && !x.balking).length;
 
-    // ⚠️ Dòng số riêng `kiet:` — rút ké là dịch chuỗi số của cả lượt ghé.
-    const kietLay = this.cart === "LAN" && !npc
-      && this.deps.hub.derive(`kiet:${v.seq}`).next() < KIET_STEAL;
-    if (kietLay) this.out.push({ kind: "log", text: "một người ghé xe chú Đạt thay vì xe mình." });
-
-
-    const balking = kietLay || (!this.deps.noTimePressure
+    const balking = this.queueFull() || (!this.deps.noTimePressure
       && this.deps.hub.derive(`balk:${v.seq}`).next() < easeBalk(this.deps.day) * balkChance({
         ahead, slots: SLOTS.length, person, moodPatience: moodPatienceMul(mood),
         rushing: !!npc?.rush && nowMin >= npc.rush[0] && nowMin < npc.rush[1],
@@ -625,7 +632,6 @@ export class Service {
       { ...GATE }, this.patienceOf(npc, nowMin, ahead) * moodPatienceMul(mood), rng,
     );
     c.balking = balking;
-    c.lured = kietLay;
     // Không `await`: họ còn đi bộ mấy giây, và `openTalk()` đã có đường lui nếu chưa kịp.
     void this.talks.ensure(npc ? npc.id : "WALKIN");
     c.dayMood = mood;
@@ -635,7 +641,7 @@ export class Service {
     if (mood.prop === "VAI_XUOI") c.react.basePose = c.react.pose = "SETTLE_IN";
     c.rollOrder(this.deps.day);
     if (!c.balking && c.order && this.deps.hub.derive(`price:${v.seq}`).next()
-      < PRICE_FX.walkAway[pickOf(this.deps.prices, c.order.intent.mon)]) {
+      < PRICE_FX.walkAway[pickOf(this.deps.prices, c.order.intent.mon)] * priceWalkMul(this.deps.equip)) {
       c.balking = true;
       c.priceWalk = true;
     }
@@ -697,11 +703,12 @@ export class Service {
   /** ⚠️ Không được hoãn — hoãn perception là đổi kết quả game. */
   perceive(dt: number, nowSec: number, occluders: readonly Occluder[] = []) {
     this.nowSec = nowSec;
-    this.active = this.active.filter((s) => s.until > nowSec - 30);
+    if (this.active.some((s) => s.until <= nowSec - 30)) this.active = this.active.filter((s) => s.until > nowSec - 30);
 
+    const before = this.obsBefore;
     for (const c of this.audience) {
       c.traitMul = Math.min(2.2, c.baseTrait * (1 + 0.35 * this.dirt)) - (c.now < c.washRelief ? 0.12 : 0);
-      const before = new Map<string, ObsState>();
+      before.clear();
       for (const [k, o] of c.observations) before.set(k, stateOf(o.certainty));
       observe(c, this.active, nowSec, dt, occluders);
       for (const [key, o] of c.observations) {
@@ -858,7 +865,6 @@ export class Service {
       const who = i % 2 === 0 ? a : b;
       this.say(who, text, 3, false, 18, undefined, i * CHAT_LINE_GAP);
     });
-    this.out.push({ kind: "log", text: `${this.label(a)} với ${this.label(b)} đứng tám chuyện.` });
   }
 
   private spawnPasser(rng: Rng) {
@@ -935,10 +941,10 @@ export class Service {
     }
     // Sinh ra ngay tại `GATE` nên phải đi ra chỗ ngó hàng trước khi `leave()`, không thì biến mất cùng frame.
     if (c.balking && c.phase !== "leaving") {
-      walk(c, BALK_LOOK, dt);
-      if (!near(c, BALK_LOOK, 0.25)) return;
+      walk(c, BALK_SPOT, dt);
+      if (!near(c, BALK_SPOT, 0.25)) return;
       // Chốt lúc ĐỨNG NHÌN, không phải lúc sinh ra: hàng vãn giữa đường thì họ vào thật.
-      if (!c.priceWalk && !c.lured && this.aheadNow(c) < balkFrom(SLOTS.length)) {
+      if (!c.priceWalk && this.aheadNow(c) < balkFrom(SLOTS.length)) {
         c.balking = false;
         c.visitCount = ++this.mem(c.memKey).visits;
         return;
@@ -1101,6 +1107,7 @@ export class Service {
       sick: o.sick,
       defect: o.topic,
       dirtyHands: saw("DIRTY_HANDS"),
+      flies: fliesAt(this.dirt),
       gaveExtra: o.gaveExtra,
       gaveTea: c.visit.gaveTea,
       wasCut: c.wasCut,
@@ -1150,10 +1157,8 @@ export class Service {
       this.out.push({ kind: "log", text: `${this.label(c)} xem giá rồi quay đi — đắt quá.` });
     } else if (reason === "balked") {
       this.balkedCount++;
-      if (!c.lured) {
-        this.speakConcept(c, "FAREWELL", { leaveReason: "BALKED" }, 80);
-        this.out.push({ kind: "log", text: `${this.label(c)} nhìn hàng rồi quay về — đông quá.` });
-      }
+      this.speakConcept(c, "FAREWELL", { leaveReason: "BALKED" }, 80);
+      this.out.push({ kind: "log", text: `${this.label(c)} nhìn hàng rồi quay về — đông quá.` });
     }
     this.talks.release(this.talkKey(c));
     this.speaker.sync(this.nowSec);
@@ -1177,8 +1182,6 @@ export class Service {
     for (const c of this.customers) if (!queue.includes(c)) { c.cutLine = false; c.blocking = false; }
 
     this.shadeFree = this.customers.filter((c) => c.inShade).length < SHADE_CAPACITY;
-    if (this.ganh === null && this.customers.some((c) => c.memKey === "BA_SAU")) this.ganh = "NGOAI";
-    if (this.cart === null && this.customers.some((c) => c.memKey === "CHU_KIET")) this.cart = "LAN";
 
     this.seatFree = has(this.deps.equip, "GHE_BAN")
       && this.customers.filter((c) => c.sitting).length < SEAT_CAPACITY;
@@ -1234,8 +1237,10 @@ export class Service {
     for (const c of this.customers) {
       if (c.phase === "leaving" || c.balking) continue;
       if (c.aside || c.sitting) { c.slot = -1; c.occluder = 1; continue; }
+      // Hàng đầy mà vẫn tới được (vd. được mời vào) thì đứng ngó rồi đi, không chen chồng lên chỗ cuối.
+      if (i >= SLOTS.length && c.phase === "arriving") { c.balking = true; c.slot = -1; continue; }
       const from = c.zone;
-      c.slot = i < SLOTS.length ? i : SLOTS.length - 1;
+      c.slot = Math.min(i, SLOTS.length - 1);
       c.zone = SLOTS[c.slot].zone;
       c.occluder = c.slot >= 2 ? 0.7 : 1;
       if (from !== c.zone && c.phase !== "arriving") {
@@ -1298,8 +1303,9 @@ export class Service {
       return false;
     }
     // Dài quá thì vế cảm ơn (`pre`) rụng trước, vế chê ở lại.
-    const full = [wrap?.pre, got.text, wrap?.post].filter(Boolean).join(" ");
-    const text = full.length > WRAP_SOFT_MAX ? [got.text, wrap?.post].filter(Boolean).join(" ") : full;
+    const said = this.fill(c, got.text);
+    const full = [wrap?.pre, said, wrap?.post].filter(Boolean).join(" ");
+    const text = full.length > WRAP_SOFT_MAX ? [said, wrap?.post].filter(Boolean).join(" ") : full;
     this.say(c, text, got.tier, log, pri, got.rule, wait);
     return true;
   }
@@ -1429,10 +1435,10 @@ export class Service {
     const others = crustDefect ? defects.filter((d) => d !== crustDefect) : defects;
     const spoken = this.pickSpoken(others.length ? others : defects);
     const crustTail = crustDefect && spoken !== crustDefect ? crustDefect : null;
-    // Cho thêm trên ổ có lỗi vẫn được nói ra, dù không được điểm.
-    const extraMons = extraPortions(c.order!, dish).map(labelOf);
-    const gaveExtra = extraMons.length > 0;
-    const playerSay = gaveExtra
+    // Câu nói kể đủ mọi thứ bỏ dư; chỉ đồ "dễ thương" mới tính là cho thêm.
+    const extraMons = extrasOf(c.order!, dish).map(labelOf);
+    const gaveExtra = extraPortions(c.order!, dish).length > 0;
+    const playerSay = extraMons.length
       ? this.fill(c, this.barks.take("extraOffer", c.memKey, { mon: monVi(extraMons) }))
       : undefined;
     let positive = 0;
@@ -1559,7 +1565,7 @@ export class Service {
     if (!c || c.phase === "leaving") return { ok: false, reason: "chưa có ai để mời" };
     if (c.holdingTea) return { ok: false, reason: `${this.label(c)} còn cầm ly kia` };
     if (this.teaSuspect(c)) return this.refuseTea(c);
-    if (!has(this.deps.equip, "BINH_TRA")) return { ok: false, reason: "chưa có bình nước trà" };
+    if (!has(this.deps.equip, "BINH_TRA")) return { ok: false, reason: "chưa có máy nước trà" };
     if (this.teaLeft <= 0) return { ok: false, reason: "hết đá rồi" };
 
     const cup = (this.teaToday.get(c.memKey) ?? 0) + 1;
@@ -1727,9 +1733,6 @@ export class Service {
       shadeFree: this.shadeFree,
       seatFree: this.seatFree,
       menuDayDu: isOpen("daydu", this.deps.day),
-      ganhOut: this.ganh === "NGOAI",
-      cartLan: this.cart === "LAN",
-      cartChung: this.cart === "CHUNG",
       ovenHot: this.ovenHot,
       meVuaRa: this.meVuaRa,
       band: bandOfMinutes(this.nowMin),
@@ -1965,6 +1968,7 @@ export class Service {
       holds: w ? (key: string) => holds(key, w) : undefined,
       cash: this.deps.till?.floatLeft,
       noInvite: !!c?.inviteRefused,
+      filmed: this.deps.filmed,
       hasEquip: (id: string) => has(this.deps.equip, id as EquipId),
     };
   }
@@ -1997,8 +2001,10 @@ export class Service {
     return c.npc ? c.npc.id : c.ambient ? "QUA_DUONG" : "WALKIN";
   }
 
+  /** Dùng ngay trong một lượt lọc rồi bỏ, nên ảnh chụp thế giới dựng một lần cho mọi `holds`. */
   private talkCtx(c: Customer): TalkCtx {
     const m = this.mem(c.memKey);
+    let w: WorldSnapshot | undefined;
     return {
       npcId: this.talkKey(c),
       day: this.deps.day,
@@ -2009,8 +2015,9 @@ export class Service {
       usedBefore: c.npc ? (m.talksDone ?? []) : (this.talkedThisVisit.get(c.id) ?? []),
       hasEquip: (id: string) => has(this.deps.equip, id as EquipId),
       practice: this.practiceOf(c),
-      holds: (key: string) => holds(key, this.snapshot(c)),
+      holds: (key: string) => holds(key, w ??= this.snapshot(c)),
       score: (t) => this.scoreTalk(c, t),
+      filmed: this.deps.filmed,
     };
   }
 
@@ -2104,16 +2111,10 @@ export class Service {
         this.theySit(c, act.forSec);
         break;
       case "FILM":
-        this.startFilm(c, act.forSec);
+        this.startFilm(c, act.forSec, act.channel);
         break;
       case "STOP_FILM":
         this.stopFilm(c);
-        break;
-      case "CARRY_GANH":
-        this.carryGanh(c, true);
-        break;
-      case "MOVE_GANH":
-        this.carryGanh(c, false);
         break;
       case "LEAVE_SHADE":
         this.leaveShade(c);
@@ -2135,9 +2136,6 @@ export class Service {
         break;
       case "BARTER":
         this.barter(c, act.nhan);
-        break;
-      case "MOVE_CART":
-        this.moveCart(c, act.toi);
         break;
       case "RAO":
         this.rao(act.forSec);
@@ -2189,7 +2187,7 @@ export class Service {
     c.ambient = false;
     c.pass = null;
     c.phase = "arriving";
-    c.rollOrder();
+    c.rollOrder(this.deps.day);
     c.dayMood = rollMood(this.deps.hub.derive(`invite-mood:${c.id}`), this.deps.day);
     c.gazeMul = this.deps.gazeMul ?? 1;
     const m = this.mem(c.memKey);
@@ -2277,21 +2275,22 @@ export class Service {
     this.out.push({ kind: "log", text: `${this.label(c)} ngồi xuống ghế.` });
   }
 
-  /** Clip phụ thuộc vào mình làm gì trong lúc máy đang chạy — `filmSpoiled` chấm liên tục, không chỉ lúc bắt đầu. */
-  private startFilm(c: Customer, forSec: ForSec) {
+  /** Clip phụ thuộc vào mình làm gì trong lúc máy đang chạy — `filmState` chấm liên tục, không chỉ lúc bắt đầu. */
+  private startFilm(c: Customer, forSec: ForSec, channel: Channel) {
     if (c.filming) return;
     c.filming = true;
     c.filmUntil = c.now + (forSecOf(forSec) ?? 20);
-    c.filmSpoiled = this.filmDirtyNow();
+    c.filmChannel = channel;
+    c.filmState = this.filmStateNow();
     this.out.push({ kind: "log", text: `${this.label(c)} giơ điện thoại lên quay.` });
   }
 
-  private filmDirtyNow() {
-    return this.dirt >= DIRT_ON_CAMERA || this.handsDirty;
+  private filmStateNow(): ClipState {
+    return fliesAt(this.dirt) > 0 ? "ruoi" : this.handsDirty ? "tay" : "sach";
   }
 
   private tickFilm(c: Customer) {
-    if (this.filmDirtyNow()) c.filmSpoiled = true;
+    if (c.filmState === "sach") c.filmState = this.filmStateNow();
     if (c.now < c.filmUntil) return;
     this.endFilm(c, true);
   }
@@ -2303,27 +2302,11 @@ export class Service {
   }
 
   private endFilm(c: Customer, quayXong: boolean) {
-    const hong = c.filmSpoiled;
     c.filming = false;
     c.filmUntil = 0;
-    c.filmSpoiled = false;
     if (!quayXong) return;
-    if (hong) {
-      this.out.push({ kind: "log", text: `đoạn quay dính cảnh quầy chưa dọn.` });
-      return;
-    }
-    this.out.push({ kind: "log", text: `${this.label(c)} quay xong một đoạn ưng ý.` });
-  }
-
-  /** `minhBung` phân biệt hai việc: mình bưng giùm (lối thông, và là một việc mình làm) với bảo bà tự dời. */
-  private carryGanh(c: Customer, minhBung: boolean) {
-    if (this.ganh !== "NGOAI") return;
-    this.ganh = "TRONG";
-    void GANH_IN; void GANH_OUT;
-    this.out.push({
-      kind: "log",
-      text: minhBung ? `mình bưng gánh vào trong giúp ${this.label(c)}.` : `${this.label(c)} dời gánh vào sát vách.`,
-    });
+    this.out.push({ kind: "log", text: `${this.label(c)} quay xong, đăng lên VietSoci.` });
+    this.deps.onClip?.({ channel: c.filmChannel, state: c.filmState });
   }
 
   /** Ổ RỜI KHO thật và cầm về một món — không tiền, mà cũng không phải cho không. */
@@ -2332,17 +2315,6 @@ export class Service {
     this.stock = Math.max(0, this.stock - 1);
     c.visit.gaveFood = true;
     this.out.push({ kind: "log", text: `đổi một ổ lấy ${nhan} của ${this.label(c)}.` });
-  }
-
-  /** `XA` dọn sạch mặt tiền (mà mình vừa đuổi một người đi) · `CHUNG` chung một mái lúc mưa (mình mất một khúc). */
-  private moveCart(c: Customer, toi: "XA" | "CHUNG") {
-    if (this.cart === null || this.cart === toi) return;
-    this.cart = toi;
-    void CART_LAN; void CART_XA; void CART_CHUNG;
-    this.out.push({
-      kind: "log",
-      text: toi === "XA" ? `${this.label(c)} đẩy xe về chỗ cũ.` : `hai cái xe đứng chung một mái.`,
-    });
   }
 
   /**
@@ -2658,7 +2630,12 @@ export class Service {
         }
       }
     }
-    this.out.push({ kind: "paid", amount, item: "dish" });
+    let tip = 0;
+    if (has(this.deps.equip, "QUAT_DIEN") && r.next() < AIRCON.tipChance) {
+      const [lo, hi] = AIRCON.tip;
+      tip = lo + Math.floor(r.next() * ((hi - lo) / 1000 + 1)) * 1000;
+    }
+    this.out.push({ kind: "paid", amount: amount + tip, item: "dish", tip });
   }
 
   label(c: Customer) {
@@ -2716,12 +2693,6 @@ const isCrustDefect = (d: Defect) => d.kind === "WRONG_TEMP" && (d.label === UND
 
 /** Vế bổ sung nói bằng mấy chữ nào: "chưa giòn" / "cháy cạnh". */
 const crustTailWord = (d: Defect) => (d.label === SINGED_LABEL ? "cháy cạnh" : "chưa giòn");
-
-/** "đồ chua", "đồ chua với ớt", "đồ chua, ớt với tương ớt" — cách kể món của người mình. */
-function monVi(names: readonly string[]): string {
-  if (names.length <= 1) return names[0] ?? "";
-  return `${names.slice(0, -1).join(", ")} với ${names[names.length - 1]}`;
-}
 
 // ───────────────────────────────────────────────────────────────────── đi lại
 

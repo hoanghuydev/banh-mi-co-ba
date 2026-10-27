@@ -34,6 +34,16 @@ npm run sim -- --days 30 --policy newbie   # chạy N ngày không render
 | `python3 tools/prep-art.py` | `art-raw/` → `public/art/` (cần Pillow) |
 | `python3 tools/render-character.py` | render 8 hướng nhân vật từ model 3D đã rig |
 
+## Chạy trên điện thoại
+
+| Việc | Cách |
+|---|---|
+| Mở từ máy cùng wifi | `npm run dev` (đã `host: true`, cổng 5174) → `http://<IP máy tính>:5174` |
+| Điều khiển | joystick + nút ngữ cảnh; quán chỉ chơi ngang |
+| Chụp giả lập | `node tools/screenshot.mjs --size 844,390 --touch --dpr 3` · cả ma trận: `tools/shot-matrix.mjs` |
+
+Chi tiết và giới hạn: [`docs/responsive/PLAN.md`](docs/responsive/PLAN.md).
+
 ## Một ngày
 
 ```
@@ -59,7 +69,6 @@ Chợ sáng  →  Quầy (6:00–11:00 giờ game)  →  Tối đếm tiền  �
 | `1`–`9`, `0` / chạm | bỏ thêm một phần nguyên liệu trong bảng kẹp nhân · `Backspace` hoàn tác · `Esc` gác ổ lại |
 | `R` | nhấc ổ đang gác trên thớt |
 | `Q` | bỏ thứ đang cầm vô thùng |
-| giữ `C` | nghiêng người che tay — khách khó thấy hơn, nhưng không đi được |
 | `F` | trả lời / bắt chuyện người gần nhất. Đồng hồ vẫn chạy |
 | `P` / `Esc` / ⏸ | tạm dừng |
 

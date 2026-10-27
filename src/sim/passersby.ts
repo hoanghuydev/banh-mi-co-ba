@@ -29,7 +29,7 @@ export const SPEED_MUL: readonly [number, number] = [0.8, 1.25];
 /** Khớp 1–1 theo chỉ số với `WALKIN_STYLES`. */
 export const PASSER_NAMES = [
   "người đi đường", "chị đeo khẩu trang", "cô xách giỏ", "bà cụ",
-  "cô nón lá", "anh chạy xe", "chị áo hồng", "chú đeo kính",
+  "cô nón lá", "anh chạy xe", "chị áo hồng", "chú đeo kính", "báo thủ",
 ];
 
 export type PassPlan = {

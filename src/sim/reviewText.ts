@@ -59,11 +59,11 @@ const closerOdds = (stars: number) => (stars >= 4 ? 0.4 : 0.45);
 const personaOdds = 0.22;
 const monOdds = 0.18;
 
-/** Vế phụ không được nói lại đúng cái câu lõi vừa nói. */
-function addOn(topic: Topic, good: boolean, rng: Rng): string {
+/** Vế phụ không được nói lại câu lõi, cũng không được cãi vế trái chiều. */
+function addOn(topics: (Topic | null)[], good: boolean, rng: Rng): string {
   const pool = good ? RAW.them.tot : RAW.them.xau;
-  const ky = RAW.ky[topic];
-  const ok = ky ? pool.filter((x) => !x.includes(ky)) : pool;
+  const ky = topics.map((t) => t && RAW.ky[t]).filter((k): k is string => !!k);
+  const ok = pool.filter((x) => !ky.some((k) => x.includes(k)));
   return ok.length ? rng.pick(ok) : "";
 }
 
@@ -91,7 +91,7 @@ export function reviewText(rng: Rng, s: TextSpec): string {
   }
   // Chuyện nặng thì không chêm vế vặt vào, nghe như đang kể chuyện khác.
   if (!RAW.nghiem.includes(s.topic)) {
-    if (rng.next() < extraOdds(s.stars)) parts.push(addOn(s.topic, good, rng));
+    if (rng.next() < extraOdds(s.stars)) parts.push(addOn([s.topic, s.contrast ?? null], good, rng));
     if (rng.next() < personaOdds) parts.push(rng.pick(RAW.persona[s.persona]));
   }
   if (rng.next() < closerOdds(s.stars)) {

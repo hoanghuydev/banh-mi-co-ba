@@ -4,66 +4,117 @@ import { ECON, dishPriceVnd, pickOf, vnd, type PricePick } from "../../sim/econ"
 import { isOpen } from "../../sim/unlock";
 import { INGREDIENTS, levelsOf, type IngredientInfo } from "../../sim/order";
 import { shopName } from "../../content/shop";
+import { isPhone, isTouch } from "../../core/device";
+import { guardStrayClick } from "../tapGuard";
 
 // Mọi tên món và con số đọc từ `sim/menu` + `sim/econ`, để bảng dạy đúng cái `diffDish` chấm.
 
 const STYLE = `
-.mb-root{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(12,15,18,.74);font-family:"Be Vietnam Pro",system-ui,sans-serif;color:#2b2f31}
+.mb-root{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;padding:max(18px,var(--safe-top)) max(18px,var(--safe-right)) max(18px,var(--safe-bottom)) max(18px,var(--safe-left));box-sizing:border-box;background:rgba(12,15,18,.74);font-family:"Be Vietnam Pro",system-ui,sans-serif;color:#2b2f31}
 .mb-card{display:flex;flex-direction:column;gap:12px;width:min(940px,100%);max-height:100%;min-height:0}
 .mb-cols{display:flex;gap:16px;align-items:stretch;flex:1;min-height:0}
 
-.mb-board{position:relative;display:flex;flex-direction:column;flex:0 0 clamp(290px,36%,380px);background:#a83226;border:7px solid #6f6256;border-radius:4px;box-shadow:0 14px 40px rgba(0,0,0,.5);color:#f8d978;transform:rotate(-.4deg)}
-.mb-board::after{content:"";position:absolute;inset:4px;border:1px solid rgba(248,217,120,.35);border-radius:2px;pointer-events:none}
-.mb-board-in{display:flex;flex-direction:column;flex:1;min-height:0;overflow:auto;padding:16px 18px 14px}
-.mb-nail{position:absolute;top:-4px;left:50%;width:9px;height:9px;margin-left:-4px;border-radius:50%;background:#d9d2c4;box-shadow:0 1px 2px rgba(0,0,0,.6)}
+.mb-board{position:relative;display:flex;flex-direction:column;flex:0 0 clamp(290px,36%,380px);margin-top:46px;border:solid transparent;border-width:34px;border-image:url(art/menu_khung.webp) 46 fill/34px stretch;color:#f8d978;filter:drop-shadow(0 14px 22px rgba(0,0,0,.5))}
+.mb-board-in{display:flex;flex-direction:column;flex:1;min-height:0;overflow:auto;padding:4px 6px 2px}
+.mb-day{position:absolute;left:50%;bottom:calc(100% + 31px);width:min(280px,76%);aspect-ratio:399/83;transform:translateX(-50%);background:url(art/menu_day.webp) center/100% 100% no-repeat;pointer-events:none}
 .mb-ten{font-weight:700;font-size:1.4em;letter-spacing:.05em;line-height:1.2;text-shadow:0 1px 0 rgba(0,0,0,.35)}
-.mb-gio{font-size:.88em;font-weight:500;letter-spacing:.1em;color:#ffe3a3;margin-top:3px}
+.mb-gio{font-size:max(14px,.88em);font-weight:500;letter-spacing:.1em;color:#ffe3a3;margin-top:3px}
 .mb-ke{height:2px;background:#f8d978;opacity:.7;margin:10px 0 6px}
-.mb-cot{display:flex;justify-content:space-between;font-size:.82em;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#edbe62;padding-bottom:6px}
+.mb-cot{display:flex;justify-content:space-between;font-size:max(14px,.82em);font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#edbe62;padding-bottom:6px}
 .mb-row{padding:6px 0}
 .mb-row .top{display:flex;align-items:baseline;gap:6px}
 .mb-row .n{font-weight:700;white-space:nowrap}
 .mb-row .d{flex:1;border-bottom:1px dotted rgba(248,217,120,.5);transform:translateY(-3px)}
 .mb-row .g{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
 .mb-pk{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:6px}
-.mb-pk button{font:inherit;font-size:.88em;padding:5px 2px;min-height:34px;border-radius:5px;border:1px solid rgba(248,217,120,.6);background:transparent;color:#f8d978;cursor:pointer;font-variant-numeric:tabular-nums;line-height:1.3}
+.mb-pk button{font:inherit;font-size:max(14px,.88em);padding:5px 2px;min-height:44px;border-radius:5px;border:1px solid rgba(248,217,120,.6);background:transparent;color:#f8d978;cursor:pointer;font-variant-numeric:tabular-nums;line-height:1.3}
 .mb-pk button[aria-pressed=true]{background:#f8d978;color:#6b1d15;font-weight:700;border-color:#f8d978}
 .mb-pk button:focus-visible{outline:2px solid #fff2c6;outline-offset:2px}
-.mb-chan{margin-top:auto;padding-top:14px;border-top:1px solid rgba(248,217,120,.3);font-size:.88em;line-height:1.6}
+.mb-chan{margin-top:auto;padding-top:14px;border-top:1px solid rgba(248,217,120,.3);font-size:max(14px,.88em);line-height:1.6}
 .mb-chan b{color:#fff2c6}
 
-.mb-giay{position:relative;display:flex;flex-direction:column;flex:1 1 auto;min-width:0;background:#f6f0e1;border-radius:3px;box-shadow:0 10px 30px rgba(0,0,0,.4);transform:rotate(.3deg)}
-.mb-giay-in{flex:1;min-height:0;overflow:auto;padding:18px 22px 20px 30px;background-image:linear-gradient(90deg,transparent 16px,rgba(176,52,42,.45) 16px 17px,transparent 17px)}
-.mb-bang{position:absolute;top:-11px;left:30px;width:74px;height:22px;background:rgba(222,210,180,.8);border:1px solid rgba(0,0,0,.08);transform:rotate(-3deg)}
+.mb-giay{position:relative;display:flex;flex-direction:column;flex:1 1 auto;min-width:0;border:solid transparent;border-width:16px;border-image:url(art/menu_giay.webp) 22 fill/16px stretch;filter:drop-shadow(0 10px 18px rgba(0,0,0,.4))}
+.mb-giay-in{flex:1;min-height:0;overflow:auto;margin-top:40px;padding:4px 8px 6px 46px}
+.mb-bang{position:absolute;top:-52px;left:-36px;width:124px;height:98px;background:url(art/menu_bang_dan.webp) center/100% 100% no-repeat;pointer-events:none;z-index:1}
 .mb-h{font-weight:700;font-size:1.25em;margin:0 0 12px;padding-bottom:7px;border-bottom:2px solid #2b2f31}
-.mb-h2{font-size:.82em;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#8e2a20;margin:18px 0 6px}
+.mb-h2{font-size:max(14px,.82em);font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#8e2a20;margin:18px 0 6px}
 .mb-h2.dau{margin-top:0}
 .mb-mon{padding:9px 0;border-bottom:1px dashed #d6c9a8}
 .mb-mon:last-of-type{border-bottom:none}
 .mb-mon .n{font-weight:700}
 .mb-ing{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-.mb-ing>span{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:14px;border:1px solid #cdbf9f;background:rgba(255,255,255,.6);font-size:.88em;line-height:1.5}
+.mb-ing>span{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:14px;border:1px solid #cdbf9f;background:rgba(255,255,255,.6);font-size:max(14px,.88em);line-height:1.5}
 .mb-ing>span.nhan{border-color:#b0342a;background:rgba(176,52,42,.09);font-weight:600}
 .mb-ing i{font-style:normal;font-weight:700;color:#8e2a20;font-variant-numeric:tabular-nums}
-.mb-mon .note{font-size:.88em;color:#5f5542;line-height:1.5;margin-top:6px}
-.mb-mon .trong{font-size:.88em;color:#5f5542;margin-top:6px}
-.mb-tip{display:flex;align-items:baseline;gap:8px;padding:5px 0;font-size:.88em;line-height:1.5}
+.mb-mon .note{font-size:max(14px,.88em);color:#5f5542;line-height:1.5;margin-top:6px}
+.mb-mon .trong{font-size:max(14px,.88em);color:#5f5542;margin-top:6px}
+.mb-tip{display:flex;align-items:baseline;gap:8px;padding:5px 0;font-size:max(14px,.88em);line-height:1.5}
 .mb-tip .s{font-weight:700;color:#8e2a20;white-space:nowrap}
 .mb-tip .d{flex:1;border-bottom:1px dotted #c3b696;transform:translateY(-3px)}
 
-.mb-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:.88em;color:#ded5c6}
-.mb-btn{font:inherit;font-size:1em;padding:7px 16px;border-radius:6px;border:1px solid #b8ab8e;background:#fbf7ec;color:#2b2f31;cursor:pointer;min-height:34px}
+.mb-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:max(14px,.88em);color:#ded5c6}
+.mb-bar:has(.mb-btn:only-child){justify-content:flex-end}
+.mb-btn{font:inherit;font-size:1em;padding:7px 18px;border-radius:6px;border:1px solid #b8ab8e;background:#fbf7ec;color:#2b2f31;cursor:pointer;min-height:44px;min-width:88px}
 .mb-btn:focus-visible{outline:2px solid #fff2c6;outline-offset:2px}
 
+.mb-x{position:absolute;top:-4px;right:-4px;z-index:3;width:44px;height:44px;padding:0;border-radius:50%;font:inherit;font-size:1.5em;line-height:1;border:1px solid #b8ab8e;background:#fbf7ec;color:#2b2f31;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.45)}
+.mb-x:focus-visible{outline:2px solid #fff2c6;outline-offset:2px}
+.mb-card.t{position:relative;width:min(720px,100%);height:100%}
+.mb-card.t .mb-board{flex:1 1 auto;min-height:0;margin-top:0;border-width:22px;border-image-width:22px;border-image-source:url(art/menu_khung.webp)}
+.mb-card.t .mb-board-in{padding:2px 6px 2px 2px}
+.mb-card.t .mb-head{display:flex;align-items:baseline;flex-wrap:wrap;gap:0 14px;padding-right:46px}
+.mb-card.t .mb-rau{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;margin:6px 0 2px}
+.mb-card.t .mb-rau .mb-sec,.mb-card.t .mb-rau .mb-ing{margin:0}
+.mb-card.t .mb-mrow .info{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}
+.mb-card.t .mb-mrow .info .mb-ing{margin:0}
+.mb-card.t .mb-ten{font-size:1.2em}
+.mb-card.t .mb-sec{font-size:max(14px,.82em);font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#edbe62;margin:8px 0 2px}
+.mb-card.t .mb-ing{margin-top:4px}
+.mb-card.t .mb-ing>span{border-color:rgba(248,217,120,.5);background:rgba(255,255,255,.07);color:#ffe9b0;padding:2px 10px}
+.mb-card.t .mb-ing>span.nhan{border-color:#f8d978;background:rgba(248,217,120,.16);color:#fff2c6}
+.mb-card.t .mb-ing i{color:#f8d978}
+.mb-card.t .mb-mrow{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px dashed rgba(248,217,120,.25)}
+.mb-card.t .mb-mrow .info{flex:1;min-width:0}
+.mb-card.t .mb-mrow .n{font-weight:700}
+.mb-card.t .mb-mrow .trong{font-size:max(14px,.88em);color:#ded5c6}
+.mb-card.t .mb-pk{display:flex;gap:5px;margin:0;flex:none}
+.mb-card.t .mb-pk button{min-width:52px;padding:5px 6px}
+.mb-card.t .mb-chan{margin-top:8px;padding-top:8px}
+.mb-card.t .mb-tip .d{border-bottom-color:rgba(248,217,120,.4)}
+.mb-card.t .mb-tip{color:#ffe9b0}
+.mb-card.t .mb-tip .s{color:#f8d978}
+
+html[data-phone="1"] .mb-root{padding:max(6px,var(--safe-top)) max(8px,var(--safe-right)) max(6px,var(--safe-bottom)) max(8px,var(--safe-left))}
+html[data-phone="1"] .mb-card.t{width:min(760px,100%);height:auto;max-height:100%}
+html[data-phone="1"] .mb-card.t .mb-board{border-width:14px;border-image-width:14px}
+html[data-phone="1"] .mb-card.t .mb-head{padding-right:50px}
+html[data-phone="1"] .mb-card.t .mb-ten{font-size:1.15em}
+html[data-phone="1"] :is(.mb-gio,.mb-card.t .mb-sec,.mb-card.t .mb-ing>span,.mb-card.t .mb-mrow .trong,.mb-tip,.mb-chan,.mb-pk button){font-size:max(12px,.9em)}
+html[data-phone="1"] .mb-card.t .mb-sec{margin:4px 0 0}
+html[data-phone="1"] .mb-card.t .mb-rau{margin:2px 0 0}
+html[data-phone="1"] .mb-card.t .mb-ing>span{padding:0 8px}
+html[data-phone="1"] .mb-card.t .mb-mrow{padding:3px 0}
+html[data-phone="1"] .mb-card.t .mb-pk button{min-height:36px;min-width:44px;padding:2px 4px}
+html[data-phone="1"] .mb-card.t .mb-chan{margin-top:4px;padding-top:4px;line-height:1.4}
+html[data-phone="1"] .mb-tips{display:grid;grid-template-columns:1fr 1fr;column-gap:20px}
+html[data-phone="1"] .mb-tip{padding:2px 0;line-height:1.35}
+html[data-phone="1"] .mb-x{top:24px;right:24px;width:36px;height:36px;font-size:1.2em}
+
 @media (max-height:640px){
-  .mb-root{padding:10px}
+  .mb-root{padding:max(10px,var(--safe-top)) max(10px,var(--safe-right)) max(10px,var(--safe-bottom)) max(10px,var(--safe-left))}
   .mb-row{padding:4px 0}
-  .mb-pk button{min-height:30px}
   .mb-mon{padding:7px 0}
 }
+@media (max-height:520px){
+  .mb-card{gap:8px}
+  .mb-board{margin-top:34px;border-width:22px;border-image-width:22px}
+  .mb-day{bottom:calc(100% + 19px);width:min(220px,76%)}
+  .mb-giay-in{margin-top:28px;padding-left:34px}
+  .mb-bang{top:-40px;left:-26px;width:92px;height:73px}
+}
 @media (max-width:760px){
-  .mb-cols{flex-direction:column;overflow:auto}
-  .mb-board,.mb-giay{flex:0 0 auto;transform:none}
+  .mb-cols{flex-direction:column;overflow:auto;gap:34px}
+  .mb-board,.mb-giay{flex:0 0 auto}
   .mb-board-in,.mb-giay-in{overflow:visible}
 }
 `;
@@ -98,10 +149,11 @@ export class MenuBoardView {
     }
     this.root = document.createElement("div");
     this.root.className = "mb-root";
-    this.root.style.fontSize = `${Math.round(16 * opts.textScale)}px`;
+    this.root.style.fontSize = `${Math.round((isPhone() ? 13 : 16) * opts.textScale)}px`;
     this.root.addEventListener("keydown", this.keyGuard, true);
     this.root.addEventListener("keyup", (e) => { if (e.code !== "KeyP") e.stopPropagation(); }, true);
     this.root.addEventListener("pointerdown", (e) => { if (e.target === this.root) this.close(); });
+    guardStrayClick(this.root);
     document.body.appendChild(this.root);
     if (this.game.input.keyboard) this.game.input.keyboard.enabled = false;
     this.render();
@@ -148,7 +200,7 @@ export class MenuBoardView {
 
   private board(): HTMLElement {
     const b = this.el("div", "mb-board");
-    b.appendChild(this.el("div", "mb-nail"));
+    b.appendChild(this.el("div", "mb-day"));
     const inner = this.el("div", "mb-board-in");
 
     // Phải trùng tên trên biển ngoài vách (`art/sign.ts`).
@@ -198,6 +250,74 @@ export class MenuBoardView {
     return b;
   }
 
+  private touchBoard(): HTMLElement {
+    const b = this.el("div", "mb-board");
+    const inner = this.el("div", "mb-board-in");
+    const head = this.el("div", "mb-head");
+    head.appendChild(this.el("div", "mb-ten", shopName(this.opts.shopName ?? "")));
+    head.appendChild(this.el("div", "mb-gio", "bán từ 6 giờ sáng"));
+    inner.appendChild(head);
+
+    const rau0 = this.el("div", "mb-rau");
+    rau0.appendChild(this.el("div", "mb-sec", "Rau nền"));
+    rau0.appendChild(this.chipRow((i) => (i.kind === "nhan" ? 0 : RAU_NEN[i.id] ?? 0)));
+    inner.appendChild(rau0);
+
+    inner.appendChild(this.el("div", "mb-sec", "Món · giá bán · nhân"));
+    for (const it of this.shown()) {
+      const pick = pickOf(this.opts.prices, it.id);
+      const row = this.el("div", "mb-mrow");
+      const info = this.el("div", "info");
+      info.appendChild(this.el("div", "n", it.name));
+      const lv = this.levels(it);
+      const nhan = this.chipRow((i) => (i.kind === "nhan" ? lv[i.id] ?? 0 : 0));
+      info.appendChild(nhan.childElementCount ? nhan : this.el("div", "trong", "không nhân"));
+      const khacNen = INGREDIENTS.some((i) => i.kind !== "nhan" && (lv[i.id] ?? 0) !== (RAU_NEN[i.id] ?? 0));
+      if (khacNen) {
+        const rau = this.chipRow((i) => (i.kind === "nhan" ? 0 : lv[i.id] ?? 0));
+        info.appendChild(rau.childElementCount ? rau : this.el("div", "trong", "không rau"));
+      }
+      row.appendChild(info);
+
+      const pk = this.el("div", "mb-pk");
+      pk.setAttribute("role", "group");
+      pk.setAttribute("aria-label", `Giá bán — ${it.name}`);
+      for (const i of [0, 1, 2] as const) {
+        const bt = this.el("button", "", `${it.k[i]}k`);
+        bt.type = "button";
+        bt.setAttribute("aria-pressed", String(pick === i));
+        bt.dataset.k = `${it.id}-${i}`;
+        bt.onclick = () => { this.opts.prices[it.id] = i; this.render(`${it.id}-${i}`); };
+        pk.appendChild(bt);
+      }
+      row.appendChild(pk);
+      inner.appendChild(row);
+    }
+
+    const chan = this.el("div", "mb-chan");
+    if (isOpen("daydu", this.opts.day)) {
+      const db = this.el("div");
+      db.append("thêm một thứ nhân — +");
+      db.appendChild(this.el("b", "", tien(vnd(ECON.menu.extra_k))));
+      chan.appendChild(db);
+    }
+    for (const d of MENU_DRINKS) chan.appendChild(this.el("div", "", `${d.name} — ${d.price}`));
+    inner.appendChild(chan);
+
+    inner.appendChild(this.el("div", "mb-sec", "Khách dặn thêm"));
+    const tips = this.el("div", "mb-tips");
+    for (const t of MENU_TIPS) {
+      const row = this.el("div", "mb-tip");
+      row.appendChild(this.el("span", "s", t.say));
+      row.appendChild(this.el("span", "d"));
+      row.appendChild(this.el("span", "", t.means));
+      tips.appendChild(row);
+    }
+    inner.appendChild(tips);
+    b.appendChild(inner);
+    return b;
+  }
+
   private paper(): HTMLElement {
     const p = this.el("div", "mb-giay");
     p.appendChild(this.el("div", "mb-bang"));
@@ -243,18 +363,28 @@ export class MenuBoardView {
     const scroll = [".mb-board-in", ".mb-giay-in"].map((s) => this.root.querySelector<HTMLElement>(s)?.scrollTop ?? 0);
     this.root.textContent = "";
 
-    const card = this.el("div", "mb-card");
-    const cols = this.el("div", "mb-cols");
-    cols.appendChild(this.board());
-    cols.appendChild(this.paper());
-    card.appendChild(cols);
+    const touch = isTouch();
+    const card = this.el("div", touch ? "mb-card t" : "mb-card");
+    if (touch) {
+      card.appendChild(this.touchBoard());
+      const x = this.el("button", "mb-x", "×");
+      x.type = "button";
+      x.setAttribute("aria-label", "Đóng");
+      x.onclick = () => this.close();
+      card.appendChild(x);
+    } else {
+      const cols = this.el("div", "mb-cols");
+      cols.appendChild(this.board());
+      cols.appendChild(this.paper());
+      card.appendChild(cols);
 
-    const bar = this.el("div", "mb-bar");
-    bar.appendChild(this.el("span", "", "Esc hoặc E — đóng"));
-    const btn = this.el("button", "mb-btn", "Đóng");
-    btn.onclick = () => this.close();
-    bar.appendChild(btn);
-    card.appendChild(bar);
+      const bar = this.el("div", "mb-bar");
+      bar.appendChild(this.el("span", "", "Esc hoặc E — đóng"));
+      const btn = this.el("button", "mb-btn", "Đóng");
+      btn.onclick = () => this.close();
+      bar.appendChild(btn);
+      card.appendChild(bar);
+    }
 
     this.root.appendChild(card);
     [".mb-board-in", ".mb-giay-in"].forEach((s, i) => { const e = this.root.querySelector<HTMLElement>(s); if (e) e.scrollTop = scroll[i]; });

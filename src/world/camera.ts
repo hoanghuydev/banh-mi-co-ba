@@ -4,20 +4,43 @@
  */
 import Phaser from "phaser";
 import { GAME_W, GAME_H } from "../core/config";
-import { RENDER_SCALE, fitDesignFrame } from "../core/render";
+import { MAX_SCALE, RENDER_SCALE, fitDesignFrame } from "../core/render";
+import { fitScale, isTouch } from "../core/device";
 
-/** Khung nhìn 800 × 450: vừa cả hàng trạm trên lẫn hàng khách dưới; độ nét đến từ `RENDER_SCALE`. */
-export const ZOOM = 1.28;
+/** Khung 16:9 thấy 613 × 345 px thế giới: gần người chơi, vẫn vừa hàng trạm với quầy đưa hàng; độ nét đến từ `RENDER_SCALE`. */
+export const BASE_ZOOM = 1.67;
+/** Pixel texture tối đa trên một pixel thế giới mà PC vẽ ra màn: dư hơn là phí bộ nhớ, thiếu là mờ. */
+export const WORLD_SS_MAX = BASE_ZOOM * MAX_SCALE;
+/** Trần phóng thêm trên cảm ứng, còn thấy đủ hàng trạm. */
+const TOUCH_ZOOM_MAX = 2.2;
+/** Pixel CSS thật tối thiểu cho một pixel thế giới ở vòng lò (R = 11 → khoảng 16 px). */
+const TOUCH_WORLD_PX = 1.44;
 
-/** Rộng hơn quãng thớt → chỗ đưa hàng (360 px) để mỗi lượt khách không thành một cú lia máy. */
-const DEADZONE_W = 420;
-const DEADZONE_H = 170;
+/** Đổi theo thiết bị mỗi lần dựng camera; PC luôn `BASE_ZOOM`. */
+export let ZOOM = BASE_ZOOM;
+
+let touchMode = false;
+
+export function applyDeviceZoom() {
+  touchMode = isTouch();
+  ZOOM = touchMode
+    ? Math.min(TOUCH_ZOOM_MAX, Math.max(BASE_ZOOM, TOUCH_WORLD_PX / fitScale()))
+    : BASE_ZOOM;
+}
+
+/** Bằng quãng thớt → chỗ đưa hàng (360 px) để mỗi lượt khách không thành một cú lia máy. */
+const DEADZONE_W = 360;
+const DEADZONE_H = 140;
 
 /** 0..1 mỗi frame; thấp = trôi mượt, cao = bám sát. */
 const LERP = 0.09;
 
-/** Camera nhìn thấp hơn chân người chơi chừng này px, để dải đáng nhìn (y ≈ 75…302) nằm giữa khung. */
-const LOOK_DOWN = 4;
+/** Âm là nhìn cao hơn chân người chơi, để hàng vòng lò không chui xuống dưới nút HUD. */
+const LOOK_DOWN = -36;
+/** Cảm ứng nhìn cao hơn để hàng vòng lò không chui xuống dưới nút HUD. */
+const LOOK_DOWN_TOUCH = -48;
+/** Cảm ứng nhìn lệch trái để hàng khách ở mép trái nằm ngoài tầm ngón cái và vùng cắt của khung. */
+const LOOK_LEFT_TOUCH = 60;
 
 export class StallCamera {
   readonly ui: Phaser.Cameras.Scene2D.Camera;
@@ -31,6 +54,7 @@ export class StallCamera {
   private onPreRender: () => void;
 
   constructor(private scene: Phaser.Scene, bounds: Phaser.Geom.Rectangle) {
+    applyDeviceZoom();
     // Scene được dùng lại giữa hai ngày: không dọn thì mỗi `create()` chồng thêm một camera UI.
     this.world = scene.cameras.resetAll();
     // Viewport tính bằng pixel canvas thật; `fitDesignFrame` kéo về khung thiết kế 1024 × 576.
@@ -40,7 +64,8 @@ export class StallCamera {
 
     this.world.setBounds(bounds.x, bounds.y, bounds.width, bounds.height);
     this.world.setZoom(ZOOM * RENDER_SCALE);
-    this.world.setDeadzone(DEADZONE_W, DEADZONE_H);
+    const k = BASE_ZOOM / ZOOM;
+    this.world.setDeadzone(DEADZONE_W * k, DEADZONE_H * k);
 
     // Bám mốc vô hình vì `Player` giữ sprite private.
     this.target = scene.add.zone(bounds.centerX, bounds.centerY, 1, 1);
@@ -57,10 +82,11 @@ export class StallCamera {
 
   /** Toạ độ màn hình (đã qua `toScreen` + `footY`). */
   lookAt(sx: number, sy: number) {
-    const y = sy + LOOK_DOWN;
-    this.target.setPosition(sx, y);
+    const y = sy + (touchMode ? LOOK_DOWN_TOUCH : LOOK_DOWN);
+    const x = sx - (touchMode ? LOOK_LEFT_TOUCH : 0);
+    this.target.setPosition(x, y);
     // Frame đầu nhảy thẳng tới, không trôi từ giữa bản đồ vào.
-    if (!this.snapped) { this.snapped = true; this.world.centerOn(sx, y); }
+    if (!this.snapped) { this.snapped = true; this.world.centerOn(x, y); }
   }
 
   /** Chạy ở `PRE_RENDER` vì `setScrollFactor` và `container.add()` gọi sau lúc dựng object. */

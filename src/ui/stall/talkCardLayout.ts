@@ -34,6 +34,7 @@ export function placeTalkCard(
   anchor: { x: number; y: number } | undefined,
   card: { w: number; h: number },
   screen: { w: number; h: number },
+  gap = CARD_ANCHOR_GAP,
 ): CardSpot {
   const { w, h } = card;
   const fit = (top: number) => Math.max(CARD_EDGE, Math.min(screen.h - CARD_EDGE - h, top));
@@ -43,8 +44,8 @@ export function placeTalkCard(
   if (!anchor) return { cx: fitX(w / 2 + CARD_EDGE), top: fit(screen.h - CARD_EDGE - h) };
 
   // Bên nào còn chỗ thì đặt bên đó — người đứng sát mép trái thì thẻ phải nhảy sang phải.
-  const right = anchor.x + CARD_ANCHOR_GAP + w / 2;
-  const left = anchor.x - CARD_ANCHOR_GAP - w / 2;
+  const right = anchor.x + gap + w / 2;
+  const left = anchor.x - gap - w / 2;
   const cx = right + w / 2 <= screen.w - CARD_EDGE ? right
     : left - w / 2 >= CARD_EDGE ? left
       : screen.w / 2;

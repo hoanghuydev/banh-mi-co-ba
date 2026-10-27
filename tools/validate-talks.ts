@@ -141,6 +141,10 @@ export function validateTalks(dir: string): Report {
       }
 
       const act = node.act as { kind: string; forSec?: unknown } | undefined;
+      const channel = (act as { channel?: unknown } | undefined)?.channel;
+      if (act?.kind === "FILM" && channel !== "su" && channel !== "review") {
+        r.add("T006", "ERROR", file, at, `act 'FILM' thiếu \`channel\` ("su" | "review"): "${node.say}"`);
+      }
       if (act && ACT_CO_GIO.has(act.kind) && act.forSec === undefined) {
         r.add("T006", "ERROR", file, at, `act '${act.kind}' có thời lượng mà không khai \`forSec\`: "${node.say}"`);
       }

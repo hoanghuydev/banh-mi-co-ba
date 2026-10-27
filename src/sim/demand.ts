@@ -3,6 +3,7 @@ import type { SaveFile } from "../core/save";
 import { Rng, fnv1a, splitmix32 } from "../core/rng";
 import { CAL, crowdMul, isRain, weatherOf } from "./econ";
 import { has, walkInMul } from "./equipment";
+import { boostOf } from "./vietsoci";
 
 /** Khách nền ngày 1; cộng 1 sau mỗi `STEP_DAYS` ngày, tới `BASE_CAP` thì dừng — quầy không phục vụ nổi hơn. */
 const BASE_DAY1 = 14;
@@ -39,7 +40,7 @@ export function crowdFactor(stars: number | null): number {
 export const baseGuests = (day: number) =>
   Math.min(BASE_CAP, BASE_DAY1 + Math.floor((Math.max(1, day) - 1) / STEP_DAYS));
 
-/** Số lượt khách dự kiến: nền theo ngày × sao × trời × sự kiện × đồ nghề, nhiễu ±10%. */
+/** Số lượt khách dự kiến: nền theo ngày × sao × trời × sự kiện × đồ nghề, nhiễu ±10%, cộng khách xem clip. */
 export function guestsOf(w: SaveFile, day = w.progress.dayIndex): number {
   const wx = weatherOf(day);
   const loaOn = has(w.equipment, "LOA_RAO") && (w.econ?.loaOffUntil ?? 0) < day;
@@ -49,5 +50,5 @@ export function guestsOf(w: SaveFile, day = w.progress.dayIndex): number {
     * crowdMul(day)
     * walkInMul(w.equipment, isRain(wx), wx === "NANG_GAT", loaOn);
   const rng = new Rng(splitmix32(fnv1a(`${w.saveId}|guests|${day}`)));
-  return Math.max(1, Math.round(m * (1 + (rng.next() * 2 - 1) * NOISE)));
+  return Math.max(1, Math.round(m * (1 + (rng.next() * 2 - 1) * NOISE)) + boostOf(w, day));
 }

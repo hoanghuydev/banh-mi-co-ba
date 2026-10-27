@@ -43,18 +43,35 @@ const DUCK_GAIN = 0.25;
 
 const VOICE_DUCK_GAIN = 0.2;
 
+/** Phát thẳng từ file (không giải mã cả bài vào RAM); âm lượng qua `GainNode` vì iOS bỏ qua `el.volume`. */
+type Voice = {
+  el: HTMLAudioElement;
+  gain: GainNode | null;
+};
+
 type Track = {
-  sound: Phaser.Sound.BaseSound & { setVolume(v: number): unknown };
+  id: CueId;
+  voice: Voice;
   level: number;
   target: number;
   rate: number;
   stopAtZero: boolean;
 };
 
+const GESTURES = ["pointerup", "touchend", "click", "keydown"] as const;
+
+/** Đủ cho một bài đang vào, một bài đang ra và một bài bị đổi ý giữa chừng. */
+const POOL = 3;
+
+/** WAV im 1 mẫu: phát một lần trong cú chạm đầu để iOS cho phép phần tử đó tự phát về sau. */
+const SILENT = "data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQIAAAAAAA==";
+
 class MusicDirector {
   private game: Phaser.Game | null = null;
   private tracks = new Map<CueId, Track>();
   private currentId: CueId | null = null;
+  private pool: Voice[] = [];
+  private free: Voice[] = [];
 
   private volume = 0.55;
   private duckGain = 1;
@@ -62,13 +79,71 @@ class MusicDirector {
   private voiceDuckGain = 1;
   private hushLeft = 0;
 
-  private loading = new Set<CueId>();
+  private gestured = false;
+  private pending: { id: CueId; fadeMs: number } | null = null;
 
   attach(game: Phaser.Game) {
     if (this.game) return;
     this.game = game;
     this.applySettings(loadSettings());
     game.events.on(Phaser.Core.Events.PRE_STEP, this.step, this);
+    // Như `pauseOnBlur` của Phaser: context bị treo thì phần tử cũng phải dừng, không thì bài trôi tiếp trong im lặng.
+    game.events.on(Phaser.Core.Events.BLUR, () => this.tracks.forEach((t) => t.voice.el.pause()));
+    game.events.on(Phaser.Core.Events.FOCUS, () => this.tracks.forEach((t) => this.resume(t.voice)));
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") this.resumeContext();
+    });
+    const onGesture = () => {
+      for (const g of GESTURES) window.removeEventListener(g, onGesture, true);
+      this.gestured = true;
+      this.resumeContext();
+      this.unlock();
+      const p = this.pending;
+      this.pending = null;
+      if (p && this.currentId === p.id) this.start(p.id, p.fadeMs);
+    };
+    for (const g of GESTURES) window.addEventListener(g, onGesture, { capture: true, passive: true });
+  }
+
+  private get context() {
+    return (this.game?.sound as { context?: AudioContext } | undefined)?.context;
+  }
+
+  private resumeContext() {
+    const ctx = this.context;
+    if (ctx && ctx.state !== "running") ctx.resume().catch(() => {});
+  }
+
+  private voices() {
+    if (this.pool.length) return;
+    const ctx = this.context;
+    const out = (this.game?.sound as { destination?: AudioNode } | undefined)?.destination ?? ctx?.destination;
+    for (let i = 0; i < POOL; i++) {
+      const el = new Audio();
+      el.loop = true;
+      el.preload = "auto";
+      let gain: GainNode | null = null;
+      if (ctx && out) {
+        gain = ctx.createGain();
+        gain.gain.value = 0;
+        ctx.createMediaElementSource(el).connect(gain);
+        gain.connect(out);
+      } else el.volume = 0;
+      this.pool.push({ el, gain });
+    }
+    this.free = [...this.pool];
+  }
+
+  private unlock() {
+    this.voices();
+    for (const v of this.free) {
+      v.el.src = SILENT;
+      v.el.play().then(() => { if (v.el.src === SILENT) v.el.pause(); }).catch(() => {});
+    }
+  }
+
+  private resume(v: Voice) {
+    if (v.el.paused) v.el.play().catch(() => {});
   }
 
   applySettings(s: Settings) {
@@ -79,26 +154,18 @@ class MusicDirector {
   }
 
   /** Gọi lại với cue đang phát thì không làm gì, nên gọi mỗi frame cũng được. */
-  play(scene: Phaser.Scene, id: CueId, fadeMs = 1400) {
+  play(id: CueId, fadeMs = 1400) {
     if (this.currentId === id) return;
-    if (this.volume === 0) { this.currentId = id; return; }
-
-    const cue = CUES[id];
-    if (!scene.cache.audio.exists(cue.key)) {
-      this.currentId = id;
-      this.load(scene, id, () => { if (this.currentId === id) this.start(scene, id, fadeMs); });
-      this.fadeOthers(id, fadeMs);
-      return;
-    }
-
+    if (this.volume === 0) { this.currentId = id; this.pending = null; return; }
     this.currentId = id;
-    this.start(scene, id, fadeMs);
+    this.start(id, fadeMs);
     this.fadeOthers(id, fadeMs);
   }
 
   stop(fadeMs = 900) {
     this.currentId = null;
-    this.tracks.forEach((t) => this.fadeTo(t, 0, fadeMs, true));
+    this.pending = null;
+    [...this.tracks.values()].forEach((t) => this.fadeTo(t, 0, fadeMs, true));
   }
 
   /** Menu tạm dừng: hạ −12 dB chứ không tắt. */
@@ -129,32 +196,30 @@ class MusicDirector {
     return this.currentId ? CUES[this.currentId] : null;
   }
 
-  private load(scene: Phaser.Scene, id: CueId, done: () => void) {
-    if (this.loading.has(id)) return;
-    this.loading.add(id);
-
-    const cue = CUES[id];
-    scene.load.audio(cue.key, cue.file);
-    scene.load.once(Phaser.Loader.Events.COMPLETE, () => {
-      this.loading.delete(id);
-      // scene có thể đã tắt trong lúc tải; `done` tự kiểm tra lại ý định hiện tại
-      if (scene.cache.audio.exists(cue.key)) done();
-    });
-    scene.load.once(Phaser.Loader.Events.FILE_LOAD_ERROR, () => this.loading.delete(id));
-    if (!scene.load.isLoading()) scene.load.start();
-  }
-
-  private start(scene: Phaser.Scene, id: CueId, fadeMs: number) {
+  private start(id: CueId, fadeMs: number) {
+    if (!this.gestured) { this.pending = { id, fadeMs }; return; }
     let t = this.tracks.get(id);
     if (!t) {
-      const sound = scene.sound.add(CUES[id].key, { loop: true, volume: 0 }) as Track["sound"];
-      t = { sound, level: 0, target: 0, rate: 0, stopAtZero: false };
+      const voice = this.take();
+      voice.el.src = CUES[id].file;
+      t = { id, voice, level: 0, target: 0, rate: 0, stopAtZero: false };
       this.tracks.set(id, t);
+      this.applyGain(t);
     }
-    // Bị chặn autoplay thì Phaser tự xếp hàng và phát sau cú chạm đầu tiên.
-    if (!t.sound.isPlaying) t.sound.play();
+    this.resume(t.voice);
     t.stopAtZero = false;
     this.fadeTo(t, 1, fadeMs, false);
+  }
+
+  /** Hết phần tử rảnh thì lấy bài nhỏ tiếng nhất đang tắt dần. */
+  private take(): Voice {
+    this.voices();
+    const v = this.free.pop();
+    if (v) return v;
+    let quiet: Track | null = null;
+    this.tracks.forEach((t) => { if (t.id !== this.currentId && (!quiet || t.level < quiet.level)) quiet = t; });
+    this.retire(quiet!);
+    return this.free.pop()!;
   }
 
   private fadeOthers(keep: CueId, fadeMs: number) {
@@ -170,13 +235,15 @@ class MusicDirector {
     if (ms <= 0) {
       t.level = target;
       this.applyGain(t);
-      if (target === 0 && stopAtZero) t.sound.stop();
+      if (target === 0 && stopAtZero) this.retire(t);
     }
   }
 
   private applyGain(t: Track) {
     const hushed = this.hushLeft > 0 ? 0 : 1;
-    t.sound.setVolume(t.level * this.volume * BUS_CEILING * this.duckGain * this.voiceDuckGain * hushed);
+    const v = t.level * this.volume * BUS_CEILING * this.duckGain * this.voiceDuckGain * hushed;
+    if (t.voice.gain) t.voice.gain.gain.value = v;
+    else t.voice.el.volume = Math.min(1, v);
   }
 
   private refreshGains() {
@@ -191,7 +258,7 @@ class MusicDirector {
       if (this.hushLeft <= 0) { this.hushLeft = 0; this.refreshGains(); }
     }
 
-    this.tracks.forEach((t, id) => {
+    [...this.tracks.values()].forEach((t) => {
       if (t.level === t.target) return;
       const stepSize = t.rate === Infinity ? 1 : t.rate * dt;
       t.level = t.level < t.target
@@ -199,12 +266,19 @@ class MusicDirector {
         : Math.max(t.target, t.level - stepSize);
       this.applyGain(t);
 
-      if (t.level === 0 && t.stopAtZero) {
-        t.sound.stop();
-        t.sound.destroy();
-        this.tracks.delete(id);
-      }
+      if (t.level === 0 && t.stopAtZero) this.retire(t);
     });
+  }
+
+  /** Bỏ `src` để trình duyệt nhả bộ đệm của bài. */
+  private retire(t: Track) {
+    const el = t.voice.el;
+    el.pause();
+    el.removeAttribute("src");
+    el.load();
+    if (t.voice.gain) t.voice.gain.gain.value = 0;
+    this.tracks.delete(t.id);
+    this.free.push(t.voice);
   }
 }
 

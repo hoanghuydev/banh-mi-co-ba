@@ -5,6 +5,7 @@ import type { Weather } from "../core/types";
 import type { Ingredient } from "../sim/order";
 import { music } from "./music";
 import { sfx, type SfxId } from "./sfx";
+import { FLY_DIRT_MIN } from "../sim/service";
 
 // Nền âm khai báo trạng thái mong muốn mỗi frame, không bật/tắt tại chỗ xảy ra chuyện.
 
@@ -38,8 +39,6 @@ const ANGRY_EXITS: ReadonlySet<string> = new Set([
   "SOILED_FOOD",
 ]);
 
-/** Phải khớp `FLY_DIRT_MIN` ở `StallScene`. */
-const FLY_DIRT_MIN = 0.35;
 
 const AMBIENT_EVERY: Record<TimeBand, number> = {
   PRE_OPEN: 14, PEAK: 22, MID: 26, LULL: 18,

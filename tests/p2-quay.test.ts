@@ -16,26 +16,24 @@ async function quay(dirt: number) {
   if (!c) return null;
   svc.dirt = dirt;
   svc.handsDirty = false;
-  const logs: string[] = [];
-  const push = svc.out.push.bind(svc.out);
-  svc.out.push = (...ev: any[]) => { for (const e of ev) if (e.kind === "log") logs.push(e.text); return push(...ev); };
-  (svc as any).startFilm(c, 1);
+  const posts = w.vietsoci.posts.length;
+  (svc as any).startFilm(c, 1, "su");
   for (let i = 0; i < 200; i++) h.step(1000 / 30);
-  return { logs, filming: c.filming };
+  return { post: w.vietsoci.posts.length > posts ? w.vietsoci.posts[0] : null, filming: c.filming };
 }
 
-test("Q-1 quay xong lúc quầy SẠCH thì đoạn quay ưng ý", async () => {
+test("Q-1 quay xong lúc quầy SẠCH thì clip sạch lên VietSoci", async () => {
   const r = await quay(0);
   assert.ok(r, "không có khách nào để thử");
   assert.equal(r.filming, false, "quay hoài không cất máy");
-  assert.ok(r.logs.some((l) => l.includes("quay xong một đoạn ưng ý")), "quầy sạch mà đoạn quay không ưng");
+  assert.equal(r.post?.img, "clip_sach");
 });
 
-test("Q-2 quầy DƠ thì đoạn quay hỏng, và nó để lại dấu", async () => {
+test("Q-2 quầy DƠ thì clip dính ruồi", async () => {
   const r = await quay(0.9);
   assert.ok(r);
   assert.equal(r.filming, false);
-  assert.ok(r.logs.some((l) => l.includes("quầy chưa dọn")), "quay trúng quầy dơ mà không ghi lại gì");
+  assert.equal(r.post?.img, "clip_ruoi", "quay trúng quầy dơ mà clip vẫn sạch");
 });
 
 test("Q-3 câu CHO PHÉP quay phải mang `FILM`, câu CẤM phải mang `STOP_FILM`", async () => {

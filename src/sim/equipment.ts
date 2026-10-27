@@ -123,5 +123,10 @@ export function dirtMul(e: EquipState | undefined) {
 
 /** Nhân vào `patienceMul` (`day.dayDeps`). */
 export function equipPatienceMul(e: EquipState | undefined) {
-  return has(e, "QUAT_DIEN") ? 1.15 : 1;
+  return has(e, "QUAT_DIEN") ? AIRCON.patience : 1;
 }
+
+/** Máy lạnh: kiên nhẫn ×, tỉ lệ bỏ đi vì giá ×, xác suất tip mỗi ổ, tip [min, max] đồng. */
+export const AIRCON = { patience: 1.15, priceWalk: 0.8, tipChance: 0.2, tip: [5_000, 10_000] as const };
+
+export const priceWalkMul = (e: EquipState | undefined) => (has(e, "QUAT_DIEN") ? AIRCON.priceWalk : 1);

@@ -109,23 +109,57 @@ Cắt `_note` cũ còn nhắc P1/P2, cô Ba, arc theo ngày.
 - [ ] Bảng trước/sau từng người và duyệt câu nghi ngờ — thay bằng `R6-MAU-DUYET.md` (mẫu 10 câu/người); phần còn lại là sửa từ, không đổi cấu trúc cây.
 - [ ] Người 55+ đời thường và học sinh cấp 2: chưa có mẫu thật, giọng giữ theo câu cũ.
 
-## 9. Tiến độ từng nhân vật
+## 9. Chia phase nhỏ
 
-Chưa ai được duyệt. Chỉ đánh ✅ khi đã đọc lại cả cây thoại, viết lại, và user duyệt bảng trước/sau.
+R6 chia thành **R6.1–R6.15**, mỗi phase một kho thoại. Số câu = câu người chơi/NPC nói trong `talks` + `rules` (đo 2026-10-24, chưa tính `lines`, `reviews`).
 
-| Người | `id` | Trạng thái |
-|---|---|---|
-| Dì Nguyệt | `BA_BAY` | ⬜ |
-| Chú Quang | `CHU_TU` | ⬜ |
-| Minh Quân | `ANH_DUNG` | ⬜ |
-| Ngọc Trâm | `CHI_LAN` | ⬜ |
-| Khả Hân | `BE_SU` | ⬜ |
-| Chú Thịnh | `ONG_HAI` | ⬜ |
-| Cô Thuý | `CO_MAI` | ⬜ |
-| Thầy Khải | `THAY_PHUC` | ⬜ |
-| Thu Hà | `CHI_HANH` | ⬜ |
-| Gia Bảo | `ANH_BAO` | ⬜ |
-| Dì Liên | `BA_SAU` | ⬜ |
-| Chú Đạt | `CHU_KIET` | ⬜ |
+| Phase | Kho | Người | Số câu | Chữ cổ (đo thô) |
+|---|---|---|---|---|
+| R6.1 | `anh-dung` | Minh Quân | 282 | 46 |
+| R6.2 | `chi-lan` | Ngọc Trâm | 228 | 67 |
+| R6.3 | `be-su` | Khả Hân | 326 | 98 |
+| R6.4 | `chi-hanh` | Thu Hà | 277 | 72 |
+| R6.5 | `ba-bay` | Dì Nguyệt | 355 | 102 |
+| R6.6 | `chu-tu` | Chú Quang | 263 | 62 |
+| R6.7 | `ong-hai` | Chú Thịnh | 255 | 83 |
+| R6.8 | `co-mai` | Cô Thuý | 259 | 81 |
+| R6.9 | `thay-phuc` | Thầy Khải | 278 | 83 |
+| R6.10 | `ba-sau` | Dì Liên | 234 | 70 |
+| R6.11 | `chu-kiet` | Chú Đạt | 259 | 73 |
+| R6.12 | `anh-bao` (rà lại) | Gia Bảo | 233 | 88 |
+| R6.13 | `walkin` + `any` | Khách ghé · khách chung | 560 | 124 |
+| R6.14 | `qua-duong` + `rules/generic` + `_blackboard` | Người qua đường · luật chung | 540+ | 95 |
+| R6.15 | `lines/*`, `reviews/lines`, `phone/events` | Câu lẻ · rà giọng | ~450 | — |
 
-Còn lại sau khi xong cả 12: mẫu thật cho người 55+ đời thường và học sinh cấp 2; dọn `_note`; soát lại chỗ bỏ `Dạ` nghe cụt.
+Quy trình **mỗi phase**:
+
+1. Đọc cả cây thoại bằng `tools/read-talks.ts` (không sửa mò theo từ khoá).
+2. Viết lại **từng câu** vào bảng `docs/revamp/thoai-<id>-truoc-sau.md`: đường dẫn câu · trước · sau · lý do nếu đổi nghĩa.
+3. Câu nào giữ nguyên cũng ghi "giữ" để duyệt đủ.
+4. Bạn duyệt bảng, sửa tay chỗ không ưng.
+5. Chỉ khi duyệt xong mới ghi vào `src/content/*.json`; chạy `npm run ci`, chụp bong bóng thoại.
+6. Đánh ✅ ở bảng dưới.
+
+## 10. Tiến độ
+
+| Phase | Trạng thái |
+|---|---|
+| R6.1 Minh Quân | ✅ đã duyệt và ghi vào `src/content` (`thoai-anh-dung-truoc-sau.md`) |
+| R6.2 Ngọc Trâm | ✅ đã duyệt và ghi vào `src/content` (`thoai-chi-lan-truoc-sau.md`) |
+| R6.3 Khả Hân | ✅ đã duyệt và ghi vào `src/content` (`thoai-be-su-truoc-sau.md`) |
+| R6.4 Thu Hà | ✅ đã duyệt và ghi vào `src/content` (`thoai-chi-hanh-truoc-sau.md`) |
+| R6.5 Dì Nguyệt | ✅ đã duyệt và ghi vào `src/content` (`thoai-ba-bay-truoc-sau.md`) |
+| R6.6 Chú Quang | ✅ đã duyệt và ghi vào `src/content` (`thoai-chu-tu-truoc-sau.md`) |
+| R6.7 Chú Thịnh | ✅ đã duyệt và ghi vào `src/content` (`thoai-ong-hai-truoc-sau.md`) |
+| R6.8 Cô Thuý | ✅ đã duyệt và ghi vào `src/content` (`thoai-co-mai-truoc-sau.md`) |
+| R6.9 Thầy Khải | ✅ đã duyệt và ghi vào `src/content` (`thoai-thay-phuc-truoc-sau.md`) |
+| R6.10 Dì Liên | ✅ đã duyệt và ghi vào `src/content` (`thoai-ba-sau-truoc-sau.md`) |
+| R6.11 Chú Đạt | ✅ đã duyệt và ghi vào `src/content` (`thoai-chu-kiet-truoc-sau.md`) |
+| R6.12 Gia Bảo | ✅ đã duyệt và ghi vào `src/content` (`thoai-anh-bao-ra-lai.md`) |
+| R6.13a `walkin` | ✅ đã duyệt và ghi vào `src/content` (`thoai-walkin-truoc-sau.md`) |
+| R6.13b `any` | ✅ đã duyệt và ghi vào `src/content` (`thoai-any-truoc-sau.md`) |
+| R6.14a `qua-duong` | ✅ đã duyệt và ghi vào `src/content` (`thoai-qua-duong-truoc-sau.md`) |
+| R6.14b `rules/generic` | ✅ đã duyệt và ghi vào `src/content` (`thoai-rules-generic-truoc-sau.md`) |
+| R6.15 câu lẻ | ✅ đã duyệt và ghi vào `src/content` (`thoai-cau-le-truoc-sau.md`) |
+
+Còn lại: chụp bong bóng thoại thật trong game (PC + mobile) — `dev` chưa có lệnh mở thoại; thống nhất `bả/cổ`, `thấy mồ`, `Dạ.` đứng một mình, số năm lệch trong chuyện nhân vật; mẫu thật cho người 55+ và học sinh cấp 2; dọn `_note`; soát lại `Dạ` nghe cụt.

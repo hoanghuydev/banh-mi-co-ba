@@ -1,6 +1,7 @@
+import { hint, isTouch } from "../../core/device";
 import type { SaveFile } from "../../core/save";
-import { QUEST_TEXT } from "../../content/system";
-import { TOUR_ORDER, TOUR_SUPPLIER, TOUR_TOTAL, tourAt, tourIndex, tourOrderReady, tourOrderSteps, tourOrdered, tourSkip } from "../../sim/tour";
+import { CLOSE_TEXT, QUEST_TEXT } from "../../content/system";
+import { TOUR_ORDER, TOUR_SUPPLIER, TOUR_TOTAL, closePending, tourAt, tourIndex, tourOrderReady, tourOrderSteps, tourOrdered, tourSkip } from "../../sim/tour";
 import { linked } from "../../sim/system";
 import { supplierById } from "../../sim/suppliers";
 import { TourCoach } from "../tour/TourCoach";
@@ -8,19 +9,27 @@ import type { Route } from "./ctx";
 
 const q = (sel: string) => document.querySelector<HTMLElement>(`.ph-root ${sel}`);
 
-/** Dắt đặt hàng ngày đầu từng món trong app Thực phẩm: chọn nơi bán, bấm + đủ lần, xem giỏ, đặt, rồi chỉ giờ hàng về. */
+/** Dắt đặt hàng ngày đầu từng món trong app Thực phẩm: chọn nơi bán, bấm + đủ lần, xem giỏ, đặt, chỉ giờ hàng về; cảm ứng thì chỉ thêm nút đóng. */
 export class OrderTour {
   private coach: TourCoach | null = null;
   private timer = 0;
   private shipNoted = false;
   private waitClick = false;
+  private scrolled: Element | null = null;
+  /** Mở điện thoại đọc tin thì chờ một lúc mới chỉ nút đóng, khỏi che chữ đang đọc. */
+  private readMs = 0;
+  private routeAt = 0;
 
   constructor(private w: SaveFile, private textScale: number, private onOrdered: () => void) {}
 
-  get active() { return tourAt(this.w, "CHO"); }
+  get active() { return tourAt(this.w, "CHO") || this.closing; }
+
+  private get closing() { return isTouch() && closePending(this.w); }
 
   update(r: Route) {
     if (!this.active) { this.destroy(); return; }
+    this.routeAt = Date.now();
+    if (!this.coach && this.closing) this.readMs = 2500;
     this.coach ??= new TourCoach({
       textScale: this.textScale,
       onSkip: () => { tourSkip(this.w); this.destroy(); },
@@ -37,14 +46,26 @@ export class OrderTour {
 
   private aim(r: Route, point: (el: HTMLElement | null, text: string) => void, intro: string) {
     if (!this.coach) return;
+    if (this.closing) {
+      // Vòng quay có nút đóng riêng sau khi quay.
+      if (q(".sys-wheel") || Date.now() - this.routeAt < this.readMs) { this.coach.hide(); return; }
+      point(q(".ph-x"), CLOSE_TEXT[linked(this.w) ? "sys" : "plain"]);
+      return;
+    }
     if (tourOrdered(this.w)) {
       const at = q(".ph-order .ph-st");
       if (!at) { this.coach.hide(); return; }
-      this.armClick(() => { this.onOrdered(); this.destroy(); });
-      point(at, "Đây là giờ hàng về dự kiến. Bấm chuột để tiếp.");
+      this.reveal(at);
+      this.armClick(() => { this.onOrdered(); if (!this.closing) this.destroy(); });
+      point(at, "Đây là giờ hàng về dự kiến. " + hint("Bấm chuột để tiếp.", "Chạm để tiếp."));
       return;
     }
-    if (r.app === "home") { point(q('.ph-app[aria-label="Thực phẩm"]'), `${intro}Mở Thực phẩm để đặt hàng.`); return; }
+    if (r.app === "home") {
+      const app = q('.ph-app[aria-label="Thực phẩm"]');
+      this.reveal(app);
+      point(app, `${intro}Mở Thực phẩm để đặt hàng.`);
+      return;
+    }
     if (r.app !== "shop") { this.coach.hide(); return; }
     const tab = r.tab ?? "shop";
     if (tab === "orders") { point(q(".ph-tab"), "Quay lại Mua sắm."); return; }
@@ -55,8 +76,8 @@ export class OrderTour {
         ship.scrollIntoView({ block: "center" });
         this.armClick(() => { this.shipNoted = true; });
         point(ship, ship.disabled
-          ? "Hình thức giao: hàng kịp về trước giờ bán, khỏi hoả tốc. Bấm chuột để tiếp."
-          : "Hình thức giao: hoả tốc về sớm hơn nhưng tốn phí. Bấm chuột để tiếp.");
+          ? "Hình thức giao: hàng kịp về trước giờ bán, khỏi hoả tốc. " + hint("Bấm chuột để tiếp.", "Chạm để tiếp.")
+          : "Hình thức giao: hoả tốc về sớm hơn nhưng tốn phí. " + hint("Bấm chuột để tiếp.", "Chạm để tiếp."));
         return;
       }
       point(q(".ph-primary"), "Bấm Đặt hàng.");
@@ -79,7 +100,14 @@ export class OrderTour {
       : `${cap(next.label)}: bấm + một lần.`);
   }
 
-  /** Câu chỉ để đọc: bấm chuột chỗ nào cũng qua bước sau. */
+  /** Cuộn mục tiêu vào khung một lần, sau đó để người chơi tự cuộn. */
+  private reveal(el: HTMLElement | null) {
+    if (!el || el === this.scrolled) return;
+    this.scrolled = el;
+    el.scrollIntoView({ block: "center", inline: "center" });
+  }
+
+  /** Câu chỉ để đọc: chạm chỗ nào cũng qua bước sau. */
   private armClick(done: () => void) {
     if (this.waitClick) return;
     this.waitClick = true;

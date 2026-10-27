@@ -12,7 +12,6 @@
     "check": "tsc --noEmit",
     "test": "node --import tsx --test \"tests/**/*.test.ts\"",
     "gates": "tsx tools/check-gates.ts",
-    "icons": "tsx tools/make-icons.ts",
     "optimize:art": "python3 tools/optimize-art.py",
     "recode:music": "python3 tools/audio/recode-music.py",
     "validate:rules": "tsx tools/validate-rules.ts",
@@ -35,10 +34,13 @@
     "probe:price": "tsx tools/probe-price.ts",
     "probe:review": "tsx tools/probe-review.ts",
     "probe:life": "tsx tools/probe-life.ts",
+    "probe:ach": "tsx tools/probe-ach.ts",
     "dump:reviews": "tsx tools/dump-reviews.ts",
     "probe:topics": "tsx tools/probe-topics.ts"
   },
   "dependencies": {
+    "@fortawesome/free-regular-svg-icons": "^6.7.2",
+    "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "phaser": "^3.90.0"
   },
   "devDependencies": {

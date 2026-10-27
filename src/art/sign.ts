@@ -1,48 +1,108 @@
 import Phaser from "phaser";
-import { TH, TW } from "../world/iso";
-import { PAL } from "./palette";
-import { FACE_SLOPE, shade } from "./canvas";
-import { WALL_H } from "./building";
+import { depthOf, toScreen } from "../world/iso";
+import { bakeWall, drawPhoto, photoRatio } from "./photo";
+import { WALL_OVERHANG, sliceColumns, yieldTo } from "./slices";
 import { FONT } from "../ui/theme";
 import { shopName } from "../content/shop";
 
-// Object trong scene (trải qua nhiều ô tường), nghiêng theo mặt vách: hình bình hành dốc TH/TW, chữ xoay atan(TH/TW).
-const HALF_W = 78;
-const HALF_H = 18;
-/** Cách mép trên của tường, đo dọc theo mặt vách. */
-const DROP = 26;
-const BASE_PX = 18;
-const MIN_PX = 9;
+/** Cột x thế giới của đầu trái bảng, và độ cao mép sau mái dù (px) trên sàn. */
+const LEFT_X = 6.5;
+const RIDGE_Z = 74;
 
-export function createSign(scene: Phaser.Scene, sx: number, sy: number, depth: number, name = "") {
-  // Mép trên mặt vách "left" tại hoành độ sx (như `facePoint`).
-  const cy = sy - WALL_H + TH / 2 + DROP;
-  const at = (u: number, v: number) => ({ x: sx + u, y: cy + u * FACE_SLOPE + v });
-  const quad = (u0: number, u1: number, v0: number, v1: number) =>
-    [at(u0, v0), at(u1, v0), at(u1, v1), at(u0, v1)];
+/** Ảnh `shopfront` nguyên bản 1360 px rộng; mọi số "SRC" dưới đây đo trên ảnh đó. */
+const SRC_W = 1360;
+const SCALE = 0.1384;
+const W = SRC_W * SCALE;
+/** Điểm mép sau mái dù ở đầu trái bảng. */
+const ANCHOR = { x: 163, y: 203 };
+/** Đường giữa mặt bảng: y = FACE_Y + 0.5 · (x − FACE_X). */
+const FACE_X = 179;
+const FACE_Y = 111;
+const TEXT_X = 602;
+const TEXT_ROOM = 775;
+const FACE_H = 140;
 
-  const g = scene.add.graphics().setDepth(depth);
-  g.fillStyle(0x2f2a26, 0.25);                         // bóng bảng hắt lên tường
-  g.fillPoints(quad(-HALF_W + 3, HALF_W + 3, -HALF_H + 4, HALF_H + 4), true);
-  g.fillStyle(PAL.signRedDark, 1);
-  g.fillPoints(quad(-HALF_W, HALF_W, -HALF_H, HALF_H), true);
-  g.fillStyle(PAL.signRed, 1);
-  g.fillPoints(quad(-HALF_W + 2, HALF_W - 2, -HALF_H + 2, HALF_H - 2), true);
-  g.lineStyle(1.4, shade(PAL.signRed, 20), 0.85);
-  g.strokePoints(quad(-HALF_W + 6, HALF_W - 6, -HALF_H + 5, HALF_H - 5), true, true);
+const INK = "#7f261c";
+const BASE_PX = 22;
+const MIN_PX = 8;
+const TEX = "shopfront_wall";
+/** Mép trước mái dù nhô ra tới đây: đồ và người đứng hàng y1 nằm dưới mái. */
+const AWNING_Y = 1.7;
 
-  const mid = at(0, 0);
-  const t = scene.add.text(mid.x, mid.y, shopName(name), {
-    fontFamily: FONT, fontSize: `${BASE_PX}px`, fontStyle: "700",
-    color: Phaser.Display.Color.IntegerToColor(PAL.signYellow).rgba,
-  })
-    .setOrigin(0.5)
-    .setRotation(Math.atan2(TH, TW))
-    .setDepth(depth + 1);
+/** Đặt lại depth theo chỗ người chơi mỗi khung hình. */
+export type Awning = { follow(x: number, y: number): void };
 
-  // Tên quán do người chơi gõ nên thu chữ cho vừa bảng.
-  const room = (HALF_W - 7) * 2;
-  if (t.width > room) t.setFontSize(Math.max(MIN_PX, Math.floor(BASE_PX * room / t.width)));
+/** Trên mọi đồ hàng y1 chạm cột `m`: đồ xa nhất chạm tới có tâm (m + 3,5; 1,5). */
+const underDepth = (m: number) => depthOf(m + 3.5, 1.5) + 50;
 
-  return [g, t] as const;
+export function createSign(scene: Phaser.Scene, name = ""): Awning | null {
+  const ratio = photoRatio(scene, "shopfront");
+  if (!ratio) return null;
+  const h = W * ratio;
+
+  const text = shopName(name);
+  const paint = (ctx: CanvasRenderingContext2D) => {
+    drawPhoto(ctx, scene, "shopfront", W, h);
+
+    const lines = fitLines(ctx, text, TEXT_ROOM * SCALE, FACE_H * SCALE * 0.9);
+    ctx.save();
+    ctx.translate(TEXT_X * SCALE, (FACE_Y + 0.5 * (TEXT_X - FACE_X)) * SCALE);
+    ctx.transform(1, 0.5, 0, 1, 0, 0);
+    ctx.fillStyle = INK;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = `800 ${lines.px}px ${FONT}`;
+    ctx.letterSpacing = "0.6px";
+    const step = lines.px * 1.15;
+    lines.text.forEach((line, i) => {
+      ctx.fillText(line, 0, (i - (lines.text.length - 1) / 2) * step + lines.px * 0.08);
+    });
+    ctx.restore();
+  };
+  bakeWall(scene, TEX, W, h, 0, paint);
+  // Phông về sau lúc vẽ thì chữ ra phông dự phòng lẫn với dấu: vẽ lại lên cùng tấm.
+  const font = `800 ${BASE_PX}px ${FONT}`;
+  if (!document.fonts.check(font, text)) {
+    void document.fonts.load(font, text).then(() => {
+      if (!scene.textures.exists(TEX)) return;
+      const tex = scene.textures.get(TEX) as Phaser.Textures.CanvasTexture;
+      const ctx = tex.getContext();
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, tex.width, tex.height);
+      ctx.restore();
+      paint(ctx);
+      tex.refresh();
+    });
+  }
+
+  const at = toScreen(LEFT_X, 1.1);
+  const left = at.sx - ANCHOR.x * SCALE;
+  const top = at.sy - RIDGE_Z - ANCHOR.y * SCALE;
+  const slices = sliceColumns(scene, TEX, left, top, W, underDepth, -WALL_OVERHANG);
+  return { follow: (x, y) => yieldTo(slices, underDepth, x, y, y >= AWNING_Y) };
+}
+
+/** Một dòng nếu đủ to, không thì tách hai dòng ở chỗ cân nhất; chọn cỡ chữ lớn hơn. */
+function fitLines(ctx: CanvasRenderingContext2D, text: string, room: number, tall: number) {
+  const widthAt = (s: string, px: number) => {
+    ctx.font = `800 ${px}px ${FONT}`;
+    ctx.letterSpacing = "0.6px";
+    return ctx.measureText(s).width;
+  };
+  const fit = (lines: string[]) => {
+    let px = BASE_PX;
+    const widest = () => Math.max(...lines.map((l) => widthAt(l, px)));
+    while (px > MIN_PX && (widest() > room || px * 1.15 * lines.length > tall)) px--;
+    return { text: lines, px };
+  };
+  const one = fit([text]);
+  const words = text.split(" ");
+  if (words.length < 2) return one;
+  let best = one;
+  for (let i = 1; i < words.length; i++) {
+    const two = fit([words.slice(0, i).join(" "), words.slice(i).join(" ")]);
+    if (two.px > best.px) best = two;
+  }
+  return best;
 }

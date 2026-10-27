@@ -184,9 +184,6 @@ function loaf(scene: Phaser.Scene) {
   const g = scene.make.graphics({ x: 0, y: 0 }, false);
   const cx = W / 2, cy = H / 2 + FOOD.CRUMB_DY;
 
-  g.fillStyle(0x1a2228, 0.1);                          // bóng dưới ổ
-  g.fillEllipse(cx, cy + 30, 250, 16);
-
   // nắp bánh lật ra phía sau: vành khuyết nằm cao hơn, hơi lệch
   g.fillStyle(0xa56d38, 1);
   g.fillEllipse(cx + 6, cy - 30, 250, 40);

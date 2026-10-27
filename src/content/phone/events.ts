@@ -14,6 +14,8 @@ export type PhoneEvent = {
   replies?: [Reply, Reply] | ((vars: Vars) => [Reply, Reply]);
   when: (w: SaveFile) => boolean;
   vars?: (w: SaveFile) => Vars;
+  /** Mã tin VietSoci gửi kèm link. */
+  tin?: string;
 };
 
 /** Mẹ nhắn xin tiền học cho em; chỉ có một nút Gửi. */
@@ -50,6 +52,8 @@ export const PENDING_SIM = {
   sickAlarm: 10,
   lowCashVnd: 150_000,
   recordMinDay: 3,
+  /** Doanh thu ngày kỷ lục phải từ mức này: bot mấy ngày đầu bán 150–250k, chơi khá chạm 400k quanh ngày 5–10. */
+  trendMinVnd: 400_000,
 } as const;
 
 const firedFor = (w: SaveFile, id: string) =>
@@ -130,7 +134,7 @@ export const EVENTS: PhoneEvent[] = [
     when: (w) => lossStreak(w) === PENDING_SIM.lossStreak,
   },
   {
-    id: "ky-luc-linh", from: "linh",
+    id: "ky-luc-linh", from: "linh", tin: "xu-huong",
     text: "quán bà lên xu hướng trong group review ăn uống kìa 🔥",
     replies: [
       { me: "trời ơi thiệt hả, cảm ơn bà đã kéo khách", answer: "ổ đầu tiên của bà là tui mua đó nha" },
@@ -138,7 +142,7 @@ export const EVENTS: PhoneEvent[] = [
     ],
     when: (w) => {
       const r = today(w);
-      if (!r || w.progress.dayIndex < PENDING_SIM.recordMinDay) return false;
+      if (!r || w.progress.dayIndex < PENDING_SIM.recordMinDay || r.revenue < PENDING_SIM.trendMinVnd) return false;
       return w.ledger.filter((x) => x.day < r.day).every((x) => x.revenue < r.revenue);
     },
   },
@@ -185,7 +189,7 @@ export const EVENTS: PhoneEvent[] = [
     when: (w) => firedFor(w, "ky-luc-linh") >= PENDING_SIM.huyEnvyAfterDays,
   },
   {
-    id: "huy-bi-duoi-tin", from: "linh",
+    id: "huy-bi-duoi-tin", from: "linh", tin: "huy-sa-thai",
     text: "bà ơi tin nóng: Huy bị sa thải rồi 😭😂 sếp nói cắt giảm nhân sự, ổng bị cắt đầu tiên",
     when: (w) => firedFor(w, "ky-luc-linh") >= PENDING_SIM.huyFiredAfterDays,
   },
@@ -218,7 +222,7 @@ export const EVENTS: PhoneEvent[] = [
   },
   {
     id: "sao-bon-rem-sep", from: "sep",
-    text: "anh thấy quán em trên map, 4,5 sao luôn. em làm bên ngoài cũng giỏi quá ta 😊 cần người bán giúp thì gọi anh nha",
+    text: "anh thấy quán em trên map, 4,5 sao luôn. em làm bên ngoài cũng giỏi quá 😊 cần người bán giúp thì gọi anh nha",
     replies: [
       { me: "dạ cảm ơn anh. quán em một người lo được", answer: "ừ, anh nói thật mà. bên này cũng còn chỗ cho em" },
       { me: "anh ghé mua ổ đi, em tính giá khách quen", answer: "haha được, hôm nào anh ghé" },
@@ -238,7 +242,7 @@ export const EVENTS: PhoneEvent[] = [
     id: "gan-moc-me", from: "mom",
     text: "con ơi chú Tâm nói gần quán con có chỗ sang lại. con để dành được nhiêu rồi",
     replies: [
-      { me: "con gần đủ rồi mẹ, còn chút nữa", answer: "ừ. đủ thì nói mẹ, mẹ coi chỗ giùm con" },
+      { me: "con gần đủ rồi mẹ, còn chút nữa", answer: "ừ. đủ thì nói mẹ, mẹ coi chỗ cho con" },
       { me: "mẹ đừng hỏi, con sợ hớ", answer: "haha ừ. mẹ không hỏi nữa" },
     ],
     when: (w) => w.money.cash >= WIN_VND * WIN_NEAR,

@@ -12,7 +12,7 @@
       "shared": {
         "ket": [
           {
-            "say": "Dạ bữa nào thầy chỉ con pha đi thầy.",
+            "say": "Dạ hôm nào thầy chỉ con pha đi.",
             "tone": "AM",
             "reply": "Được. Mà con phải chịu khó cân. Không cân thì đừng pha.",
             "mood": "CUOI"
@@ -36,7 +36,7 @@
               "reply": "Ừ. Thầy có cái cân tiểu ly. Vợ thầy nói thầy khùng. Mà thầy uống thầy biết.",
               "then": [
                 {
-                  "say": "Thầy cân cà phê mà vợ thầy chịu nổi hả thầy.",
+                  "say": "Thầy cân cà phê mà vợ thầy chịu nổi hả?",
                   "tone": "DUA",
                   "reply": "Bà ấy chịu bốn mươi năm rồi con. Chắc quen.",
                   "mood": "CUOI"
@@ -53,7 +53,7 @@
                   "reply": "Ừ. Mỗi người một kiểu, con à."
                 },
                 {
-                  "say": "Thầy rảnh quá thầy ơi.",
+                  "say": "Thầy rảnh quá ha.",
                   "tone": "GAT",
                   "anger": 20,
                   "silent": true,
@@ -62,13 +62,13 @@
               ]
             },
             {
-              "say": "Con đong bằng muỗng hà thầy.",
+              "say": "Con đong bằng muỗng thôi thầy.",
               "tone": "THUONG",
-              "reply": "Muỗng thì bữa đậm bữa lạt. Con biết vậy là được rồi.",
+              "reply": "Muỗng thì lúc đậm lúc lạt. Con biết vậy là được rồi.",
               "ref": "ket"
             },
             {
-              "say": "Thầy kỹ ghê thầy.",
+              "say": "Thầy kỹ ghê.",
               "tone": "AM",
               "reply": "Già rồi, còn mỗi cái đó để kỹ.",
               "ref": "ket"
@@ -76,24 +76,24 @@
           ]
         },
         {
-          "say": "Thầy uống thử một ly đi thầy, con mời.",
+          "say": "Thầy uống thử một ly đi, con mời.",
           "tone": "AM",
           "reply": "Ừ… thầy uống. Mà thầy nói trước, thầy khó tính lắm nha.",
           "then": [
             {
-              "say": "Thầy chê thẳng đi thầy, con sửa.",
+              "say": "Thầy chê thẳng đi, con sửa.",
               "tone": "THANG",
               "reply": "Đậm quá. Mà được. Lần sau bớt một muỗng.",
               "mood": "CUOI"
             },
             {
-              "say": "Thầy chê là con không mời nữa đó thầy.",
+              "say": "Thầy chê là con không mời nữa đó.",
               "tone": "DUA",
               "reply": "Vậy thầy khen. Ngon. Ha.",
               "mood": "CUOI_TUOI"
             },
             {
-              "say": "Thầy uống đi thầy.",
+              "say": "Thầy uống đi.",
               "tone": "THUONG",
               "reply": "Ừ."
             }
@@ -106,7 +106,7 @@
           "reply": "Ừ. Con làm đi. Thầy đứng đây được."
         },
         {
-          "say": "Thầy uống miếng trà đá đi thầy, cà phê con chưa pha xong.",
+          "say": "Thầy uống miếng trà đá đi, cà phê con chưa pha xong.",
           "tone": "AM",
           "reply": "Ừ. Trà đá cũng được. Mà con nhớ: cà phê để quá năm phút là chua.",
           "mood": "NGHIEM",
@@ -144,9 +144,9 @@
       "shared": {
         "ket": [
           {
-            "say": "Thầy kể con nghe nữa đi thầy.",
+            "say": "Thầy kể con nghe nữa đi.",
             "tone": "AM",
-            "reply": "Thôi. Để bữa khác. Con còn bán hàng.",
+            "reply": "Thôi. Để hôm khác. Con còn bán hàng.",
             "mood": "CUOI"
           },
           {
@@ -163,24 +163,24 @@
           "reply": "Nó nói nhờ thầy mà nó không bỏ học. Thầy đọc xong thầy ngồi im nửa tiếng.",
           "then": [
             {
-              "say": "Thầy có nhớ nó không thầy?",
+              "say": "Thầy có nhớ nó không?",
               "tone": "AM",
               "reply": "Không. Thầy dạy ba mươi mấy năm, mấy ngàn đứa. Thầy không nhớ nổi.",
               "then": [
                 {
-                  "say": "Vậy chắc thầy buồn hả thầy?",
+                  "say": "Vậy chắc thầy buồn hả?",
                   "tone": "AM",
                   "reply": "Ừ. Mình quên mà người ta nhớ. Thấy mình mắc nợ sao đó con.",
                   "mood": "THUONG"
                 },
                 {
-                  "say": "Thầy làm gì cho nó mà nó nhớ dữ vậy thầy?",
+                  "say": "Thầy làm gì cho nó mà nó nhớ dữ vậy?",
                   "tone": "AM",
                   "reply": "Nó nói thầy cho nó mượn tiền đóng học phí. Thầy không nhớ luôn.",
                   "mood": "CUOI"
                 },
                 {
-                  "say": "Thầy nhắn lại chưa thầy?",
+                  "say": "Thầy nhắn lại chưa?",
                   "tone": "THUONG",
                   "reply": "Chưa. Thầy không biết viết gì. Viết 'thầy nhớ con' thì thầy nói dối."
                 },
@@ -193,7 +193,7 @@
               "mood": "CUOI"
             },
             {
-              "say": "Thầy cứ nhắn thiệt đi thầy. Quên thì nói quên.",
+              "say": "Thầy cứ nhắn thiệt đi. Quên thì nói quên.",
               "tone": "THANG",
               "reply": "…Ừ. Nói thật thì không bao giờ sai. Thầy quên mất điều đó.",
               "mood": "THUONG"
@@ -232,7 +232,7 @@
           "reply": "Ừ, thầy xin lỗi. Thầy đứng thầy đợi."
         },
         {
-          "say": "Thầy uống miếng trà rồi kể con nghe nó nhắn gì thầy.",
+          "say": "Thầy uống miếng trà rồi kể con nghe nó nhắn gì.",
           "tone": "AM",
           "reply": "…Ừ. Nó nói nó đang dạy học. Thầy đọc xong thầy ngồi im nửa tiếng.",
           "mood": "RUNG_RUNG",
@@ -276,13 +276,13 @@
               "mood": "THUONG"
             },
             {
-              "say": "Thầy hỏi rồi thầy không nghe, kỳ ghê thầy.",
+              "say": "Thầy hỏi rồi lại không nghe, kỳ ghê.",
               "tone": "DUA",
               "reply": "Ha. Thầy cũng là người mà con.",
               "mood": "CUOI_TUOI"
             },
             {
-              "say": "Con kể thầy nghe nè thầy.",
+              "say": "Con kể thầy nghe nè.",
               "tone": "THANG",
               "reply": "Thôi con. Thầy không muốn biết nữa."
             }
@@ -294,7 +294,7 @@
           "reply": "Vậy tốt. Thầy hỏi vậy thôi, thầy cũng không nên hỏi.",
           "then": [
             {
-              "say": "Thầy hỏi cũng bình thường mà thầy.",
+              "say": "Thầy hỏi cũng bình thường mà.",
               "tone": "THUONG",
               "reply": "Ừ. Bình thường. Mà bình thường quá nên mới phiền người ta."
             },
@@ -312,7 +312,7 @@
           "reply": "Ừ. Vậy là con hơn thầy rồi đó."
         },
         {
-          "say": "Thầy mà cũng hóng chuyện hả thầy.",
+          "say": "Thầy mà cũng hóng chuyện hả?",
           "tone": "DUA",
           "reply": "…Ừ. Con nói đúng. Thầy quê rồi đó.",
           "then": [
@@ -322,7 +322,7 @@
               "reply": "Thầy biết. Mà con nói đúng thật."
             },
             {
-              "say": "Thầy giáo mà vậy đó thầy.",
+              "say": "Thầy giáo mà vậy đó.",
               "tone": "GAT",
               "anger": 20,
               "silent": true,
@@ -350,12 +350,12 @@
       "shared": {
         "ket": [
           {
-            "say": "Thầy ngồi ăn đi thầy, nguội mất.",
+            "say": "Thầy ngồi ăn đi, nguội mất.",
             "tone": "THUONG",
             "reply": "Ờ. Thầy ăn đây."
           },
           {
-            "say": "Bữa nào thầy kể con nghe tiếp nha thầy.",
+            "say": "Hôm nào thầy kể con nghe tiếp nha.",
             "tone": "AM",
             "reply": "Ờ. Chuyện này còn dài lắm con.",
             "mood": "CUOI"
@@ -369,13 +369,13 @@
       },
       "tree": [
         {
-          "say": "Dạ bé Hân đó thầy. Mà thầy biết nó nói trật thiệt hả thầy?",
+          "say": "Dạ bé Hân đó thầy. Mà thầy biết nó nói trật thiệt hả?",
           "tone": "AM",
           "flag": "phucThayBeSu",
           "reply": "Nó trả lời trong hai giây. Trật mà trả lời trong hai giây thì nó biết, con à.",
           "then": [
             {
-              "say": "Sao thầy biết hay vậy thầy?",
+              "say": "Sao thầy biết hay vậy?",
               "tone": "AM",
               "reply": "Ba mươi tám năm đứng lớp. Đứa không biết thì mắt nó chạy. Đứa giấu thì mắt đứng im.",
               "then": [
@@ -387,12 +387,12 @@
                   "mood": "THUONG"
                 },
                 {
-                  "say": "Thầy ngồi im mà thầy thấy hết trơn ha thầy.",
+                  "say": "Thầy ngồi im mà thấy hết trơn ha.",
                   "tone": "DUA",
                   "reply": "Ngồi im mới thấy chứ con. Nói nhiều thì chỉ nghe được tiếng mình."
                 },
                 {
-                  "say": "Thầy nên kêu nó đi thi đi thầy. Giỏi vậy uổng.",
+                  "say": "Thầy nên kêu nó đi thi đi. Giỏi vậy uổng.",
                   "tone": "THANG",
                   "reply": "…Thầy đẩy tụi nhỏ đi thi ba mươi mấy năm rồi con. Giờ thầy không chắc cái đó đúng nữa.",
                   "mood": "LANH"
@@ -425,13 +425,13 @@
                   "mood": "NGHIEM"
                 },
                 {
-                  "say": "Thôi thầy đừng thử nó nữa thầy.",
+                  "say": "Thôi thầy đừng thử nó nữa.",
                   "tone": "THANG",
                   "reply": "…Ừ. Thầy nghe con. Thầy không thử nữa.",
                   "mood": "THUONG"
                 },
                 {
-                  "say": "Thầy chờ con chạy lấy cuốn sổ với cây bút cho thầy.",
+                  "say": "Thầy chờ con chạy lấy cuốn sổ với cây bút.",
                   "tone": "AM",
                   "reply": "Ừ. Con lấy đi. Thầy ra cho nó một bài, coi nó nghĩ tới đâu.",
                   "mood": "NGHIEM",
@@ -443,7 +443,7 @@
               ]
             },
             {
-              "say": "Thầy thử tụi nhỏ gì vậy thầy?",
+              "say": "Thầy thử tụi nhỏ gì vậy?",
               "tone": "THANG",
               "reply": "Thói quen. Thầy nghỉ dạy tám năm rồi mà cái tay vẫn muốn chấm bài.",
               "ref": "ket"
@@ -452,7 +452,7 @@
           "mood": "CUOI"
         },
         {
-          "say": "Thầy hỏi nó bài gì vậy thầy?",
+          "say": "Thầy hỏi nó bài gì vậy?",
           "tone": "AM",
           "reply": "Hai vòi nước chảy vô hồ. Bài cũ mèm, hồi thầy đi dạy đứa nào cũng rớt bài đó.",
           "then": [
@@ -467,7 +467,7 @@
                   "reply": "Đó. Cả nước làm vậy. Rồi cả nước trật."
                 },
                 {
-                  "say": "Thầy nói chuyện gì cũng ra bài học hết thầy ha.",
+                  "say": "Thầy nói chuyện gì cũng ra bài học hết ha.",
                   "tone": "AM",
                   "reply": "…Ờ. Tật nghề. Con chịu khó nghe thầy, thầy cảm ơn con.",
                   "mood": "THUONG"
@@ -480,7 +480,7 @@
               ]
             },
             {
-              "say": "Vậy thầy ra đề cho con một bài đi thầy.",
+              "say": "Vậy thầy ra đề cho con một bài đi.",
               "tone": "DUA",
               "reply": "Ha. Được. Con bán một ngày bao nhiêu ổ thì hoà vốn? Đó, bài của con đó.",
               "ref": "ket",
@@ -494,13 +494,13 @@
           ]
         },
         {
-          "say": "Dạ thầy đừng thử tụi nhỏ ở quán con nha thầy.",
+          "say": "Dạ thầy đừng thử tụi nhỏ ở quán con nha.",
           "tone": "THANG",
           "reply": "…Ờ. Con nói phải. Đây là chỗ con bán, không phải lớp của thầy.",
           "mood": "LANH"
         },
         {
-          "say": "Con đang làm thầy. Chút nữa nha thầy.",
+          "say": "Con đang làm. Chút nữa nha thầy.",
           "tone": "LANH",
           "reply": "Ờ. Con làm đi. Thầy ngồi thầy đợi."
         }
@@ -525,13 +525,13 @@
       "shared": {
         "ket": [
           {
-            "say": "Thầy đi đường cẩn thận nha thầy.",
+            "say": "Thầy đi đường cẩn thận nha.",
             "tone": "AM",
             "reply": "Ờ. Thầy đi chậm mà. Thầy có gấp đi đâu.",
             "mood": "THUONG"
           },
           {
-            "say": "Ổ của thầy đây thầy.",
+            "say": "Ổ của thầy đây.",
             "tone": "THUONG",
             "reply": "Cảm ơn con.",
             "mood": "CUOI"
@@ -542,7 +542,7 @@
             "silent": true
           },
           {
-            "say": "Dạ nhóm thầy đạp tới đâu nữa thầy?",
+            "say": "Dạ nhóm thầy đạp tới đâu nữa?",
             "tone": "AM",
             "reply": "Tháng sau đi Vũng Tàu. Trăm hai chục cây. Thầy đăng ký rồi.",
             "mood": "NGHIEM"
@@ -551,28 +551,28 @@
       },
       "tree": [
         {
-          "say": "Sáu mươi tám tuổi mà thầy đạp bốn chục cây hả thầy?",
+          "say": "Sáu mươi tám tuổi mà thầy đạp bốn chục cây hả?",
           "tone": "AM",
           "reply": "Sáu mươi tám. Mà thầy đi từ bốn giờ sáng, lúc đường còn vắng. Gió mát lắm con.",
           "then": [
             {
-              "say": "Thầy đi một mình hả thầy?",
+              "say": "Thầy đi một mình hả?",
               "tone": "AM",
               "reply": "Có nhóm. Mười hai người. Thầy già nhất, mà thầy không phải người về sau cùng.",
               "then": [
                 {
-                  "say": "Thầy khoe khéo ghê thầy.",
+                  "say": "Thầy khoe khéo ghê.",
                   "tone": "DUA",
                   "reply": "Ha. Thầy khoe đó. Cả tuần thầy chờ có người hỏi câu này.",
                   "mood": "CUOI_TUOI"
                 },
                 {
-                  "say": "Thầy ngon hơn con rồi thầy. Con đi bộ ra chợ là thở.",
+                  "say": "Thầy ngon hơn con rồi. Con đi bộ ra chợ là thở.",
                   "tone": "DUA",
                   "reply": "Con đứng từ bốn giờ sáng tới trưa. Thầy đạp xe thầy còn được ngồi."
                 },
                 {
-                  "say": "Thầy đạp vậy đầu gối chịu nổi không thầy?",
+                  "say": "Thầy đạp vậy đầu gối chịu nổi không?",
                   "tone": "AM",
                   "reply": "…Gối trái nó kêu. Thầy biết. Thầy đạp nhẹ bên đó, thầy quen rồi.",
                   "mood": "THUONG"
@@ -586,13 +586,13 @@
               "mood": "CUOI"
             },
             {
-              "say": "Thầy đạp gì cho cực vậy thầy?",
+              "say": "Thầy đạp gì cho cực vậy?",
               "tone": "THANG",
               "reply": "Để sáng thứ Hai thầy còn thấy mình đi được. Không có cái đó thì thầy ngồi không cả tuần.",
               "ref": "ket"
             },
             {
-              "say": "Thầy đạp xe mà thầy ăn mỗi ổ pate ít rau hả thầy.",
+              "say": "Thầy đạp xe mà ăn mỗi ổ pate ít rau hả?",
               "tone": "DUA",
               "reply": "Thầy ăn ít mà ăn đúng. Ăn nhiều rồi đạp không nổi, con à.",
               "ref": "ket"
@@ -605,13 +605,13 @@
           ]
         },
         {
-          "say": "Thầy chống xe chỗ này nè thầy, con coi giùm cho.",
+          "say": "Thầy chống xe chỗ này nè, con coi giùm cho.",
           "tone": "AM",
           "flag": "phucGuiXe",
-          "reply": "…Ờ. Vậy thầy ngồi ăn được rồi. Mọi bữa thầy ăn mà mắt thầy ngó cái xe.",
+          "reply": "…Ờ. Vậy thầy ngồi ăn được rồi. Mọi hôm thầy ăn mà mắt thầy ngó cái xe.",
           "then": [
             {
-              "say": "Thầy ngồi ăn đi thầy. Con ngó giùm cho.",
+              "say": "Thầy ngồi ăn đi. Con ngó giùm cho.",
               "tone": "AM",
               "calm": 24,
               "reply": "Ờ. Lâu lắm rồi thầy mới ăn mà không phải canh cái gì.",
@@ -623,13 +623,13 @@
                   "mood": "THUONG"
                 },
                 {
-                  "say": "Thầy giữ cái bao thơ đó không thầy?",
+                  "say": "Thầy giữ cái bao thơ đó không?",
                   "tone": "AM",
                   "reply": "…Giữ. Trong ngăn kéo. Thầy không dám bỏ, mà thầy cũng không dám mở ra coi hoài.",
                   "mood": "RUNG_RUNG"
                 },
                 {
-                  "say": "Thầy ăn đi thầy, con qua bên kia chút.",
+                  "say": "Thầy ăn đi, con qua bên kia chút.",
                   "tone": "THUONG",
                   "reply": "Ờ. Con làm việc con đi."
                 }
@@ -643,7 +643,7 @@
               "ref": "ket"
             },
             {
-              "say": "Thầy tự coi xe thầy giùm con, con bận.",
+              "say": "Thầy tự coi xe giùm con, con bận.",
               "tone": "LANH",
               "reply": "Ờ. Thầy đẩy xe lại gần đây. Thầy ngồi ngó cũng được."
             }
@@ -669,7 +669,7 @@
           ]
         },
         {
-          "say": "Thầy kể chuyện xe cộ hoài con rối tay quá thầy.",
+          "say": "Thầy kể chuyện xe cộ hoài con rối tay quá.",
           "tone": "GAT",
           "anger": 20,
           "reply": "…Ờ. Thầy xin lỗi con. Thầy quên con đang làm.",
@@ -700,20 +700,20 @@
       "shared": {
         "ket": [
           {
-            "say": "Thầy ngồi ăn đi thầy. Con nhớ giùm thầy.",
+            "say": "Thầy ngồi ăn đi. Con nhớ giùm thầy.",
             "tone": "AM",
             "reply": "…Ờ. Vậy thầy đỡ lo. Cảm ơn con.",
             "mood": "RUNG_RUNG"
           },
           {
-            "say": "Xe thầy con ngó giùm, tiền thầy con nhớ giùm luôn thầy.",
+            "say": "Xe thầy con ngó giùm, tiền thầy con nhớ giùm luôn.",
             "tone": "AM",
             "need": "phucGuiXe",
             "reply": "…Con coi cái xe giùm thầy, giờ con coi luôn cái đầu thầy. Thầy mắc nợ con.",
             "mood": "RUNG_RUNG"
           },
           {
-            "say": "Thầy đừng lo, chuyện nhỏ mà thầy.",
+            "say": "Thầy đừng lo, chuyện nhỏ mà.",
             "tone": "THUONG",
             "reply": "Ờ. Chuyện nhỏ. Mà nó cứ nhỏ hoài rồi nó thành chuyện lớn con à."
           }
@@ -721,7 +721,7 @@
       },
       "tree": [
         {
-          "say": "Thầy trả rồi thầy. Thầy cất tờ đó đi thầy.",
+          "say": "Thầy trả rồi. Thầy cất tờ đó đi.",
           "tone": "AM",
           "reply": "…Trả rồi hả. Ờ. Thầy quên.",
           "then": [
@@ -731,7 +731,7 @@
               "reply": "Ờ. Mà thầy quên cái này ba lần trong tuần này rồi con.",
               "then": [
                 {
-                  "say": "Thầy có đi khám chưa thầy?",
+                  "say": "Thầy có đi khám chưa?",
                   "tone": "AM",
                   "reply": "…Chưa. Thầy sợ. Đi khám rồi người ta đặt tên cho nó thì nó có thiệt.",
                   "mood": "THUONG"
@@ -743,7 +743,7 @@
                   "mood": "RUNG_RUNG"
                 },
                 {
-                  "say": "Thầy ghi vô cuốn sổ của thầy đi thầy.",
+                  "say": "Thầy ghi vô cuốn sổ của thầy đi.",
                   "tone": "THANG",
                   "reply": "Ghi rồi. Mà hôm qua thầy ghi xong thầy quên luôn cuốn sổ ở nhà."
                 },
@@ -756,13 +756,13 @@
               "mood": "CUOI"
             },
             {
-              "say": "Thầy cứ ngồi ăn đi thầy, tiền nong tính sau.",
+              "say": "Thầy cứ ngồi ăn đi, tiền nong tính sau.",
               "tone": "THUONG",
               "reply": "Ờ. Thầy ngồi.",
               "ref": "ket"
             },
             {
-              "say": "Thầy nhớ giùm con cái ổ ít rau là được rồi thầy.",
+              "say": "Thầy nhớ giùm con cái ổ ít rau là được rồi.",
               "tone": "DUA",
               "reply": "Ha. Cái đó thầy nhớ. Cái gì ăn được là thầy nhớ dai lắm.",
               "ref": "ket",
@@ -772,7 +772,7 @@
           "mood": "RUNG_RUNG"
         },
         {
-          "say": "Thầy chưa trả. Thầy đưa con đi thầy.",
+          "say": "Thầy chưa trả. Thầy đưa con đi.",
           "tone": "THANG",
           "reply": "…Ờ. Vậy hả. Thầy tưởng thầy trả rồi.",
           "then": [
@@ -803,7 +803,7 @@
           "mood": "BUON"
         },
         {
-          "say": "Thầy cầm ổ đi thầy, bữa sau thầy trả cũng được.",
+          "say": "Thầy cầm ổ đi, hôm sau thầy trả cũng được.",
           "tone": "AM",
           "reply": "…Không. Thầy ghi lại. Mai thầy trả đúng hai lăm ngàn, không hơn không kém.",
           "mood": "NGHIEM",
@@ -828,7 +828,7 @@
       "openMood": "NGAC_NHIEN",
       "tree": [
         {
-          "say": "Thầy còn ngửi thấy mùi cà phê từ đầu hẻm không thầy?",
+          "say": "Thầy còn ngửi thấy mùi cà phê từ đầu hẻm không?",
           "tone": "DUA",
           "reply": "Ngửi chứ. Mà con có cân không? Hai mươi hai gam, không hơn.",
           "mood": "NGHIEM",
@@ -836,17 +836,17 @@
             {
               "say": "Dạ con không có cân thầy ơi.",
               "tone": "THUONG",
-              "reply": "Vậy con đong bằng gì? Bằng tay thì mỗi bữa một khác, con à.",
+              "reply": "Vậy con đong bằng gì? Bằng tay thì mỗi hôm một khác, con à.",
               "mood": "NGHIEM"
             },
             {
-              "say": "Hai mươi hai gam thầy đếm kiểu gì vậy thầy?",
+              "say": "Hai mươi hai gam thầy đếm kiểu gì vậy?",
               "tone": "DUA",
               "reply": "Thầy cân. Ba mươi năm trước thầy dạy hoá, thầy cân quen tay rồi.",
               "mood": "CUOI"
             },
             {
-              "say": "Dạ bữa nào con mua cái cân thầy coi giùm con nha.",
+              "say": "Dạ hôm nào con mua cái cân, thầy coi giùm con nha.",
               "tone": "AM",
               "reply": "Được. Con mua loại điện tử, một gam một vạch. Đừng mua cân lò xo.",
               "mood": "NGHIEM"
@@ -854,7 +854,7 @@
           ]
         },
         {
-          "say": "Thầy ăn gì chưa thầy?",
+          "say": "Thầy ăn gì chưa?",
           "tone": "AM",
           "reply": "Chưa. Thầy ăn ít mà ăn đúng, con à.",
           "mood": "NGHIEM",
@@ -866,13 +866,13 @@
               "mood": "NGHIEM"
             },
             {
-              "say": "Vậy giờ là trễ của thầy rồi đó thầy.",
+              "say": "Vậy giờ là trễ của thầy rồi đó.",
               "tone": "DUA",
               "reply": "…Ừ. Trễ bảy phút. Tại thầy đứng đọc cái bảng giá của con.",
               "mood": "CUOI_KHAN"
             },
             {
-              "say": "Con làm lẹ cho thầy nha thầy.",
+              "say": "Con làm lẹ cho thầy nha.",
               "tone": "THUONG",
               "reply": "Từ từ thôi con. Làm vội thì hỏng, mà hỏng thì mất nhiều giờ hơn.",
               "mood": "NGHIEM"
@@ -906,25 +906,25 @@
       "openMood": "NGHIEM",
       "tree": [
         {
-          "say": "Thứ Bảy rồi thầy đạp tới đâu thầy?",
+          "say": "Thứ Bảy rồi thầy đạp tới đâu?",
           "tone": "AM",
           "reply": "Cần Giuộc. Bốn chục cây. Thầy về tới nhà là mười giờ.",
           "mood": "CUOI_TUOI",
           "then": [
             {
-              "say": "Bốn chục cây lận hả thầy? Thầy đạp một mình hả thầy?",
+              "say": "Bốn chục cây lận hả thầy? Thầy đạp một mình hả?",
               "tone": "AM",
               "reply": "Một mình. Thầy đi từ bốn giờ sáng cho mát. Đường đó ít xe tải.",
               "mood": "NGHIEM"
             },
             {
-              "say": "Thầy đạp làm gì cho cực vậy thầy?",
+              "say": "Thầy đạp làm gì cho cực vậy?",
               "tone": "THANG",
               "reply": "Để còn biết mình đi được bao xa. Năm ngoái thầy đi được sáu chục.",
               "mood": "NGHIEM"
             },
             {
-              "say": "Thầy giữ sức nha thầy.",
+              "say": "Thầy giữ sức nha.",
               "tone": "THUONG",
               "reply": "Ừ. Thầy biết lượng sức. Mệt là thầy dừng, không ráng.",
               "mood": "THUONG"
@@ -932,7 +932,7 @@
           ]
         },
         {
-          "say": "Có đứa học trò cũ nào nhắn thầy nữa không thầy?",
+          "say": "Có đứa học trò cũ nào nhắn thầy nữa không?",
           "tone": "DUA",
           "reply": "Có một đứa. Thầy đọc xong thầy ngồi im nửa tiếng.",
           "mood": "THUONG",
@@ -944,13 +944,13 @@
               "mood": "RUNG_RUNG"
             },
             {
-              "say": "Sao thầy ngồi im nửa tiếng vậy thầy?",
+              "say": "Sao thầy ngồi im nửa tiếng vậy?",
               "tone": "THUONG",
               "reply": "…Thầy không nghĩ còn ai nhớ. Nghỉ hưu mười mấy năm rồi con.",
               "mood": "RUNG_RUNG"
             },
             {
-              "say": "Thầy nhắn lại nó đi thầy.",
+              "say": "Thầy nhắn lại nó đi.",
               "tone": "AM",
               "reply": "…Ừ. Thầy sẽ nhắn. Thầy còn đang nghĩ nên viết gì.",
               "mood": "THUONG"
@@ -988,7 +988,7 @@
       ],
       "tree": [
         {
-          "say": "Con không để ý thầy ơi. Lệch nhiều không thầy?",
+          "say": "Con không để ý thầy ơi. Lệch nhiều không?",
           "tone": "THUONG",
           "reply": "Bốn phút. Thầy so với đài phát thanh sáu giờ sáng, không sai được.",
           "mood": "NGHIEM",
@@ -1006,31 +1006,31 @@
               "mood": "NGHIEM"
             },
             {
-              "say": "Thầy chờ con lấy cái ghế thầy đứng chỉnh giùm con.",
+              "say": "Thầy chờ con lấy cái ghế, thầy đứng chỉnh giùm con.",
               "tone": "AM",
               "act": {
                 "kind": "PROMISE_DEED",
                 "deed": "LAY_SO"
               },
-              "reply": "Được. Thầy chỉnh cho. Tay thầy còn vững hơn con tưởng đấy.",
+              "reply": "Được. Thầy chỉnh cho. Tay thầy còn vững hơn con tưởng đó.",
               "mood": "CUOI"
             }
           ]
         },
         {
-          "say": "Thầy để ý ghê thầy.",
+          "say": "Thầy để ý ghê.",
           "tone": "AM",
           "reply": "Ba mươi năm vào lớp đúng giờ. Bỏ không được nữa con à.",
           "mood": "NGHIEM",
           "then": [
             {
-              "say": "Thầy nhớ cả tiếng chuông trường không thầy?",
+              "say": "Thầy nhớ cả tiếng chuông trường không?",
               "tone": "AM",
               "reply": "Nhớ. Chuông trường thầy kêu ba hồi. Thầy nghe trong đầu tới giờ.",
               "mood": "RUNG_RUNG"
             },
             {
-              "say": "Vậy giờ thầy canh giờ cho ai thầy?",
+              "say": "Vậy giờ thầy canh giờ cho ai?",
               "tone": "THUONG",
               "reply": "…Cho thầy thôi. Mà canh quen rồi, bỏ thì thấy trống.",
               "mood": "BUON"

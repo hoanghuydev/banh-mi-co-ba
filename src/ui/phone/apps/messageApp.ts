@@ -3,25 +3,33 @@ import { markRead, pendingEvent, reply, sortedThreads, unreadOf, type Thread } f
 import { sfx } from "../../../audio/sfx";
 import { avatar, bubbleNodes } from "../chat";
 import { navBar, page, scroller, type AppCtx } from "../ctx";
-import { btn, el } from "../dom";
+import { ICON, btn, el } from "../dom";
+import { postImg } from "./vietsociApp";
 
-export function messageList(ctx: AppCtx): HTMLElement {
+function threadList(ctx: AppCtx, current = ""): HTMLElement {
   const list = el("div", "ph-list");
   const threads = sortedThreads(ctx.w.phone);
   if (!threads.length) list.append(el("div", "ph-blank", "Chưa có tin nhắn"));
-  for (const t of threads) list.append(threadRow(ctx, t));
-  return page(
-    navBar(ctx, { back: { label: "Màn chính", to: { app: "home" } } }),
-    el("div", "ph-title-l", "Message"),
-    scroller(list),
-  );
+  for (const t of threads) list.append(threadRow(ctx, t, t.id === current));
+  return list;
 }
 
-function threadRow(ctx: AppCtx, t: Thread) {
+const listNav = (ctx: AppCtx) => navBar(ctx, { title: "Message", shortOnly: true, back: { label: "Màn chính", to: { app: "home" } } });
+
+/** Điện thoại ngang: danh sách bên trái, khung chat bên phải. */
+export function messageList(ctx: AppCtx): HTMLElement {
+  const empty = el("div", "ph-md-empty");
+  empty.innerHTML = ICON.msgBig;
+  const root = page(listNav(ctx), el("div", "ph-title-l", "Message"), scroller(threadList(ctx)), empty);
+  root.classList.add("ph-md");
+  return root;
+}
+
+function threadRow(ctx: AppCtx, t: Thread, on: boolean) {
   const c = contactOf(t.id);
   const last = t.msgs[t.msgs.length - 1];
   const un = unreadOf(t);
-  const row = btn(`ph-row${un || t.pending ? " unread" : ""}`, "", () => ctx.go({ app: "chat", id: t.id }));
+  const row = btn(`ph-row${un || t.pending ? " unread" : ""}${on ? " on" : ""}`, "", () => ctx.go({ app: "chat", id: t.id }));
   const mid = el("span", "mid");
   const preview = last ? (last.attach ? "📎 " + last.attach : last.text) : "";
   mid.append(el("div", "nm", c.name), el("div", "pv", preview));
@@ -47,7 +55,19 @@ export function chatPage(ctx: AppCtx, id: string): HTMLElement {
   const body = el("div", "ph-chat");
   const sc = scroller(body);
   const msgs = t?.msgs ?? [];
-  msgs.forEach((m, i) => body.append(...bubbleNodes(m, msgs[i - 1], !!c.group, msgs[i + 1])));
+  const link = (pid: number) => {
+    const p = w.vietsoci.posts.find((x) => x.id === pid);
+    if (!p) return null;
+    const card = btn("ph-vslink", "", () => ctx.go({ app: "vs", id: String(p.id) }), `Mở bài VietSoci của ${p.kenh}`);
+    const img = el("img") as HTMLImageElement;
+    img.src = postImg(p);
+    img.alt = "";
+    const tx = el("span", "tx");
+    tx.append(el("b", "", `VietSoci · ${p.kenh}`), el("span", "", p.caption));
+    card.append(img, tx);
+    return card;
+  };
+  msgs.forEach((m, i) => body.append(...bubbleNodes(m, msgs[i - 1], !!c.group, msgs[i + 1], link)));
   const dock = el("div");
   const pe = t && pendingEvent(t);
   if (pe) {
@@ -61,7 +81,11 @@ export function chatPage(ctx: AppCtx, id: string): HTMLElement {
     dock.append(box);
   }
   queueMicrotask(() => { sc.scrollTop = sc.scrollHeight; });
-  return page(nav, sc, dock);
+  const side = page(listNav(ctx), scroller(threadList(ctx, id)));
+  side.classList.add("ph-md-side");
+  const root = page(nav, sc, dock, side);
+  root.classList.add("ph-md", "chat");
+  return root;
 }
 
 export function membersPage(ctx: AppCtx, id: string): HTMLElement {

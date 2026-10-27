@@ -44,6 +44,7 @@ export class GameContext {
   }
 
   setScene(scene: SceneKey) {
+    this.save.capture();
     const from = this.world.progress.scene;
     this.world.progress.scene = scene;
     if (from !== scene) this.bus.emit("scene:transition", { from, to: scene });

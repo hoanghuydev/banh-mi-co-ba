@@ -19,7 +19,7 @@ const MUA_VU = /\bmai\b|\bhôm qua\b|bữa trước|bữa nay như|như mọi kh
 const HEN_MAI = /\bmai\b.*(ghé|qua|lấy|đem|trả|đưa)|(ghé|qua|lấy|đem|trả|đưa).*\bmai\b/i;
 
 const ACT_HUA = new Set(["PROMISE", "PROMISE_DEED"]);
-const ACT_DOI_CHO = new Set(["STAND_IN_SHADE", "THEY_SIT", "STEP_ASIDE", "INVITE", "MOVE_GANH", "CARRY_GANH", "MOVE_CART"]);
+const ACT_DOI_CHO = new Set(["STAND_IN_SHADE", "THEY_SIT", "STEP_ASIDE", "INVITE"]);
 
 const hit: Record<string, string[]> = { M1: [], M2: [], M3: [], M4: [] };
 let nodes = 0;
@@ -63,7 +63,7 @@ console.log(
   "\nCòn sót thì đọc kỹ trước khi sửa — mấy chỗ này đã soi và CHO QUA:\n"
   + "  · \"mai ghé nữa\" của người ngày nào cũng tới (chị Hà giao hàng, chú Quang) —\n"
   + "    game giữ được lời đó mà không cần ghi gì.\n"
-  + "  · người lạ hẹn hôm sau: tám dáng `walkin<dáng>` dùng chung cả ván,\n"
+  + "  · người lạ hẹn hôm sau: các dáng `walkin<dáng>` dùng chung cả ván,\n"
   + "    nên cái dáng đó CÓ quay lại thật.\n"
   + "  · câu nói đá kiểu \"chú đứng đây hai phút là con mất một khách\" không phải lời mời.",
 );

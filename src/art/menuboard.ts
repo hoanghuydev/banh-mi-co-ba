@@ -1,59 +1,53 @@
 import Phaser from "phaser";
-import { TH, TW } from "../world/iso";
-import { PAL } from "./palette";
-import { FACE_SLOPE, shade } from "./canvas";
+import { TH, depthOf } from "../world/iso";
+import { FACE_SLOPE } from "./canvas";
 import { WALL_H } from "./building";
-import { FONT } from "../ui/theme";
+import { artScale, bakeWall, drawFrame } from "./photo";
+import { WALL_OVERHANG, sliceColumns } from "./slices";
+import { HAND_FONT } from "../ui/theme";
 import { MENU_BOARD } from "../sim/menu";
 import { isOpen } from "../sim/unlock";
 
-// Bảng là hình bình hành theo độ dốc vách (như `art/sign.ts`), treo cao vì cả tấm chỉ có một depth nên thấp là bị người chơi che.
-const HALF_W = 40;
-const HALF_H = 24;
+const W = 70;
+const H = 52;
 /** Px từ mép trên tường, đo dọc mặt vách. */
-const DROP = 28;
+const DROP = 33;
 const TILT = 0.015;
+const GOLD = "#f8d978";
+const CREAM = "#ffe9b8";
+/** Bề dày khung gỗ, và lề trái của chữ tính từ mép bảng. */
+const BORDER = 6;
+const LEFT = 11;
+const TEX = "menu_wall";
 
-export function createMenuBoard(scene: Phaser.Scene, sx: number, sy: number, depth: number, day: number) {
-  const cy = sy - WALL_H + TH / 2 + DROP;
-  const at = (u: number, v: number) => ({ x: sx + u, y: cy + u * FACE_SLOPE + v + u * TILT });
-  const quad = (u0: number, u1: number, v0: number, v1: number) =>
-    [at(u0, v0), at(u1, v0), at(u1, v1), at(u0, v1)];
+/** Lát `m` dán trên mặt ô tường (m + 1, 0): ngay trên ô đó, dưới người đứng trước tường. */
+const onWall = (m: number) => depthOf(m + 1.5, 0.5) + 50;
 
-  const g = scene.add.graphics().setDepth(depth);
-  g.fillStyle(0x2f2a26, 0.25);                                   // bóng hắt lên vách
-  g.fillPoints(quad(-HALF_W + 3, HALF_W + 3, -HALF_H + 4, HALF_H + 4), true);
-  g.fillStyle(0x6f6256, 1);                                      // mép tôn gỉ
-  g.fillPoints(quad(-HALF_W, HALF_W, -HALF_H, HALF_H), true);
-  g.fillStyle(PAL.signRedDark, 1);
-  g.fillPoints(quad(-HALF_W + 2, HALF_W - 2, -HALF_H + 2, HALF_H - 2), true);
-  g.fillStyle(PAL.signRed, 1);
-  g.fillPoints(quad(-HALF_W + 4, HALF_W - 4, -HALF_H + 4, HALF_H - 4), true);
-  g.fillStyle(shade(PAL.signRed, -14), 0.5);
-  g.fillPoints(quad(HALF_W - 19, HALF_W - 7, HALF_H - 10, HALF_H - 5), true);
+export function createMenuBoard(scene: Phaser.Scene, sx: number, sy: number, day: number) {
+  bakeWall(scene, TEX, W, H, FACE_SLOPE + TILT, (ctx) => {
+    drawFrame(ctx, scene, "menu_khung", W, H, 46, BORDER);
 
-  const rot = Math.atan2(TH, TW) + TILT;
-  const line = (u: number, v: number, text: string, size: number, weight: "500" | "700") => {
-    const p = at(u, v);
-    return scene.add.text(p.x, p.y, text, {
-      fontFamily: FONT, fontSize: `${size}px`, fontStyle: weight,
-      color: Phaser.Display.Color.IntegerToColor(PAL.signYellow).rgba,
-    }).setOrigin(0, 0.5).setRotation(rot).setDepth(depth + 1);
-  };
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = ctx.strokeStyle = GOLD;
+    ctx.font = `9.5px ${HAND_FONT}`;
+    // Viền cùng màu cho nét đậm như bút sơn: font chỉ có một độ đậm.
+    ctx.lineWidth = 0.45;
+    ctx.strokeText("BÁNH MÌ", LEFT, 13.5);
+    ctx.fillText("BÁNH MÌ", LEFT, 13.5);
+    ctx.fillRect(LEFT, 18, ctx.measureText("BÁNH MÌ").width, 0.7);
 
-  const objs: Phaser.GameObjects.GameObject[] = [g];
-  objs.push(line(-HALF_W + 7, -HALF_H + 8, "BÁNH MÌ", 7, "700"));
-  g.lineStyle(1.2, PAL.signYellow, 0.65);
-  g.strokePoints([at(-HALF_W + 7, -HALF_H + 13), at(-HALF_W + 38, -HALF_H + 13.6)], false, false);
-
-  // Chỉ ghi tên món, không ghi giá: cỡ chữ này thêm cột số là nhoè; giá xem ở bảng bấm E.
-  const COT = 4;                                                  // mỗi cột mấy dòng
-  MENU_BOARD.filter((it) => isOpen(it.id, day)).forEach((it, i) => {
-    const cot = Math.floor(i / COT), hang = i % COT;
-    const jitter = [0, 1.1, -0.7, 0.5][hang];
-    objs.push(line(-HALF_W + 7 + jitter + cot * 36, -HALF_H + 19 + hang * 6.5,
-      it.call, 6, "500"));
+    // Chỉ ghi tên món, không ghi giá: cỡ chữ này thêm cột số là nhoè; giá xem ở bảng bấm E.
+    const COT = 4;
+    ctx.font = `6.4px ${HAND_FONT}`;
+    ctx.fillStyle = CREAM;
+    MENU_BOARD.filter((it) => isOpen(it.id, day)).forEach((it, i) => {
+      const x = LEFT + Math.floor(i / COT) * 24;
+      ctx.fillText(it.call, x, 23.5 + (i % COT) * 6.2, W - BORDER - 3 - x);
+    });
   });
 
-  return objs;
+  const cy = sy - WALL_H + TH / 2 + DROP;
+  const src = scene.textures.get(TEX).getSourceImage();
+  const w = src.width / artScale(TEX), h = src.height / artScale(TEX);
+  return sliceColumns(scene, TEX, sx - w / 2, cy - h / 2, w, onWall, -WALL_OVERHANG).map((s) => s.img);
 }

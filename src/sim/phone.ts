@@ -3,8 +3,9 @@ import { ME } from "../content/phone/contacts";
 import { EVENTS, TUITION, type PhoneEvent, type Vars } from "../content/phone/events";
 import { Rng, fnv1a, splitmix32 } from "../core/rng";
 import type { Beat, Chapter } from "../content/phone/intro";
+import { postTin } from "./vietsoci";
 
-export type Msg = { n: number; from: string; text: string; at: string; attach?: string };
+export type Msg = { n: number; from: string; text: string; at: string; attach?: string; /** Mã bài VietSoci. */ link?: number };
 export type Thread = {
   id: string;
   msgs: Msg[];
@@ -155,13 +156,20 @@ export function phoneTick(w: SaveFile, evening = false): { from: string; text: s
     w.phone.firedDay[ev.id] = w.progress.dayIndex;
     const vars = ev.vars?.(w);
     const text = fill(ev.text, vars);
-    push(w.phone, ev.from, ev.from, text, stamp(w));
+    const m = push(w.phone, ev.from, ev.from, text, stamp(w));
+    const post = ev.tin ? postTin(w, ev.tin) : null;
+    if (post) m.link = post.id;
     if (ev.replies) thread(w.phone, ev.from).pending = { ev: ev.id, vars };
     out.push({ from: ev.from, text });
   }
   const t = evening ? tuitionTick(w) : null;
   if (t) out.push(t);
   return out;
+}
+
+/** Người quen nhắn kèm link một bài VietSoci. */
+export function pushLink(w: SaveFile, from: string, text: string, post: number) {
+  push(w.phone, from, from, text, stamp(w)).link = post;
 }
 
 export function addNote(w: SaveFile, text: string): Note | null {

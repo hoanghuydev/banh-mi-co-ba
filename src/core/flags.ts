@@ -40,6 +40,8 @@ export type Settings = {
   telemetry: boolean | null;
   /** Mũi tên trên đầu người chơi — nhân vật duy nhất không có bảng tên. */
   playerMarker: boolean;
+  /** Điều khiển cảm ứng: `auto` theo thiết bị, `on` luôn hiện, `off` luôn ẩn. */
+  touchControls: "auto" | "on" | "off";
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -58,12 +60,15 @@ export const DEFAULT_SETTINGS: Settings = {
   monoAudio: false,
   telemetry: DEV_TOOLS || PLAYTEST ? true : null,
   playerMarker: true,
+  touchControls: "auto",
 };
 
 /** Cài đặt sống độc lập với save. */
 const SKEY = "byesep.settings.v1";
 
-export function loadSettings(): Settings {
+let cached: Settings | null = null;
+
+function readSettings(): Settings {
   const raw = platform.read(SKEY);
   if (!raw) return { ...DEFAULT_SETTINGS };
   try {
@@ -75,10 +80,24 @@ export function loadSettings(): Settings {
   }
 }
 
-export function saveSettings(s: Settings) {
-  platform.write(SKEY, JSON.stringify(s));
+/** Bản đọc chung, không được sửa; cần sửa thì dùng `loadSettings()`. */
+export function settings(): Readonly<Settings> {
+  return (cached ??= readSettings());
 }
 
-export const flags = {
-  get a11y(): Settings { return loadSettings(); },
-};
+export function loadSettings(): Settings {
+  return { ...settings() };
+}
+
+if (typeof window !== "undefined") window.addEventListener("storage", (e) => { if (e.key === SKEY) cached = null; });
+
+const savedListeners = new Set<() => void>();
+
+export function onSettingsSaved(cb: () => void) { savedListeners.add(cb); }
+
+export function saveSettings(s: Settings) {
+  platform.write(SKEY, JSON.stringify(s));
+  cached = { ...s };
+  for (const cb of savedListeners) cb();
+}
+

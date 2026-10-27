@@ -1,6 +1,8 @@
 import Phaser from "phaser";
 import { GAME_H, GAME_W } from "../../core/config";
-import { FONT, UI, label, panel, textScale } from "../theme";
+import { designFor, isPhone, isTouch, onDeviceChange } from "../../core/device";
+import { FONT, UI, label, textScale, touchFont, touchSize } from "../theme";
+import { sfx } from "../../audio/sfx";
 import type { TalkTone } from "../../sim/talk";
 import { CARD_EDGE, placeTalkCard } from "./talkCardLayout";
 
@@ -14,7 +16,11 @@ import { CARD_EDGE, placeTalkCard } from "./talkCardLayout";
 
 /** Bề ngang thẻ. Hẹp là CỐ Ý: nó phải lọt vào khoảng trống cạnh người, không chiếm hàng ghế đầu. */
 const CARD_W = 310;
+const CARD_W_TOUCH = 430;
 const PAD = 12;
+/** Điện thoại, pixel CSS thật: bề ngang thẻ và khoảng né nửa bong bóng của người nói. */
+const PHONE_CARD_CSS = 230;
+const PHONE_GAP_CSS = 104;
 
 /** Màu mép trái của mỗi dòng theo giọng. Chỉ là GỢI Ý khí, không phải điểm số (T3). */
 const TONE_TINT: Record<TalkTone, number> = {
@@ -41,12 +47,13 @@ export type TalkPanelView = {
 
 export class TalkPanel {
   private root: Phaser.GameObjects.Container | null = null;
-  private rows: { bg: Phaser.GameObjects.Graphics; w: number; h: number }[] = [];
+  private rows: { bg: Phaser.GameObjects.Graphics; row: Phaser.GameObjects.Container; y: number; w: number; h: number }[] = [];
   private cursor = 0;
   private count = 0;
   private off: (() => void)[] = [];
   /** ⚠️ Khoá riêng điểm neo là chưa đủ: chiều cao đổi theo nhịp, nên nhịp dày chạm mép dưới thì cú kẹp đẩy thẻ LÊN rồi nhịp sau mỏng lại nó RƠI XUỐNG. Khoá chỗ ĐÃ GIẢI XONG, và cho đi MỘT CHIỀU. */
   private locked: { cx: number; top: number } | null = null;
+  private view: TalkPanelView | null = null;
 
   /**
    * @param onPick  người chơi chọn dòng thứ i
@@ -58,7 +65,10 @@ export class TalkPanel {
     private onPick: (i: number) => void,
     private onClose: () => void,
     private blocked: () => boolean = () => false,
-  ) {}
+  ) {
+    const off = onDeviceChange(() => { const v = this.view; if (v) { this.locked = null; this.show(v); } });
+    scene.events.once(Phaser.Scenes.Events.SHUTDOWN, off);
+  }
 
   get isOpen() {
     return this.root !== null;
@@ -70,38 +80,44 @@ export class TalkPanel {
     const lock = this.locked;
     this.destroy();
     this.locked = lock;
+    this.view = v;
     const sz = Math.min(textScale(), 1.35);
-    const w = Math.min(CARD_W * Math.min(sz, 1.2), GAME_W - CARD_EDGE * 2);
+    const touch = isTouch(), phone = isPhone();
+    const w = Math.min(phone ? designFor(PHONE_CARD_CSS * Math.min(sz, 1.2)) : (touch ? CARD_W_TOUCH : CARD_W) * Math.min(sz, 1.2), GAME_W - CARD_EDGE * 2);
     const c = this.scene.add.container(0, 0).setDepth(9_400_000).setScrollFactor(0);
 
 
     // Mỗi dòng lựa chọn cao theo CHÍNH chữ của nó. Bản cũ dùng một `rowH` cố định rồi
     // kẹp chiều cao cả bảng — đó là chỗ cỡ chữ 200% làm hàng cuối rơi ra ngoài màn hình.
     const rowTexts = v.options.map((o) => this.scene.add.text(0, 0, o.say, {
-      fontFamily: FONT, fontSize: `${Math.round(14 * sz)}px`, color: UI.ink,
+      fontFamily: FONT, fontSize: `${touchFont(Math.round(14 * sz))}px`, color: UI.ink,
       lineSpacing: Math.round(5 * sz), wordWrap: { width: w - PAD * 2 - 30 },
     }).setOrigin(0, 0.5));
-    const rowH = rowTexts.map((t) => Math.max(Math.round(30 * sz), t.height + Math.round(14 * sz)));
+    const rowPad = phone ? designFor(8) : Math.round(14 * sz);
+    const rowH = rowTexts.map((t) => Math.max(touchSize(Math.round(30 * sz)), t.height + rowPad));
 
-    const nameH = Math.round(16 * sz);
+    const closeH = touch ? touchSize(44) : 0;
+    const nameH = Math.max(Math.round(16 * sz), closeH);
     /** Bong bóng SỐNG CÓ HẠN rồi tắt, trong khi thẻ đứng chờ tới lúc người chơi bấm — nên tới lúc bấm thì câu mình đang ĐÁP LẠI đã biến mất. Im lặng cố ý vẫn phải có hình: "…" chứ không phải ô trống. */
     const quote = v.silent ? "…" : v.line.trim();
     const lineTxt = quote
       ? this.scene.add.text(0, 0, `“${quote}”`, {
-        fontFamily: FONT, fontSize: `${Math.round(13 * sz)}px`, color: UI.ink,
+        fontFamily: FONT, fontSize: `${touchFont(Math.round(13 * sz))}px`, color: UI.ink,
         fontStyle: "italic", lineSpacing: Math.round(4 * sz),
         wordWrap: { width: w - PAD * 2 },
+        ...(touch ? { maxLines: phone ? 2 : 3 } : {}),
       }).setOrigin(0, 0)
       : null;
     const lineH = lineTxt ? lineTxt.height + Math.round(10 * sz) : 0;
-    const hintH = Math.round(15 * sz) + 6;
+    const hintH = touch ? 0 : Math.round(15 * sz) + 6;
     const h = PAD * 2 + nameH + lineH + rowH.reduce((a, x) => a + x + 5, 0) + hintH;
 
     const { cx, cy } = this.place(v.anchor, w, h);
     const top = cy - h / 2;
 
-    c.add(panel(this.scene, cx, cy, w, h, UI.paper, 0.97));
+    c.add(this.card(cx, cy, w, h));
     c.add(label(this.scene, cx - w / 2 + PAD, top + PAD + nameH / 2, `nói với ${v.name}`, 12, UI.muted, "700").setOrigin(0, 0.5));
+    if (touch) c.add(this.closeButton(cx + w / 2 - PAD - closeH / 2, top + PAD + nameH / 2, closeH));
 
     if (lineTxt) {
       lineTxt.setPosition(cx - w / 2 + PAD, top + PAD + nameH + Math.round(3 * sz));
@@ -117,14 +133,16 @@ export class TalkPanel {
     let y = top + PAD + nameH + lineH;
     this.rows = [];
     this.count = v.options.length;
-    this.cursor = 0;
+    this.cursor = touch ? -1 : 0;
     v.options.forEach((o, i) => {
       c.add(this.makeRow(cx, y + rowH[i] / 2, w - PAD * 2, rowH[i], i, rowTexts[i], o.tone, sz));
       y += rowH[i] + 5;
     });
 
-    const hint = v.done ? "Enter — thôi" : "1–3 · ↑↓ + Enter · Esc đóng";
-    c.add(label(this.scene, cx, top + h - PAD / 2 - hintH / 2, hint, 10, UI.muted, "400"));
+    if (!touch) {
+      const hint = v.done ? "Enter — thôi" : "1–3 · ↑↓ + Enter · Esc đóng";
+      c.add(label(this.scene, cx, top + h - PAD / 2 - hintH / 2, hint, 10, UI.muted, "400"));
+    }
 
     this.root = c;
     this.paint();
@@ -133,11 +151,47 @@ export class TalkPanel {
 
   /** ⚠️ NEO BẰNG MÉP TRÊN, KHÔNG BẰNG TÂM: chiều cao đổi theo từng nhịp, neo bằng tâm thì cả hai mép cùng xê dịch. Mắt đọc từ trên xuống nên mỏ neo phải là chỗ họ đang nhìn. */
   private place(a: { x: number; y: number } | undefined, w: number, h: number) {
-    const r = placeTalkCard(this.locked, a, { w, h }, { w: GAME_W, h: GAME_H });
+    const gap = isPhone() ? designFor(PHONE_GAP_CSS) : undefined;
+    const r = placeTalkCard(this.locked, a, { w, h }, { w: GAME_W, h: GAME_H }, gap);
     this.locked = { cx: r.cx, top: r.top };
     return { cx: r.cx, cy: r.top + h / 2 };
   }
 
+
+  private closeButton(x: number, y: number, size: number) {
+    const b = this.scene.add.container(x, y);
+    const g = this.scene.add.graphics();
+    const r = size / 2;
+    g.fillStyle(0x3c1c0a, 0.18).fillRoundedRect(-r, -r + 3, size, size, 12);
+    g.fillStyle(0xfbf8ef, 1).fillRoundedRect(-r, -r, size, size, 12);
+    g.lineStyle(1.5, UI.line, 1).strokeRoundedRect(-r, -r, size, size, 12);
+    const a = size * 0.18;
+    g.lineStyle(Math.max(3, size * 0.07), 0x222a31, 1).beginPath()
+      .moveTo(-a, -a).lineTo(a, a).moveTo(a, -a).lineTo(-a, a).strokePath();
+    b.add(g);
+    b.setSize(size, size);
+    b.setInteractive(new Phaser.Geom.Rectangle(0, 0, size, size), Phaser.Geom.Rectangle.Contains);
+    let pressed = false;
+    b.on("pointerdown", () => { pressed = true; });
+    b.on("pointerout", () => { pressed = false; });
+    b.on("pointerup", () => {
+      if (!pressed) return;
+      sfx.play(this.scene, "ui_click");
+      this.close();
+    });
+    return b;
+  }
+
+  /** Thẻ giấy phẳng: viền mảnh, hai lớp bóng mềm. */
+  private card(cx: number, cy: number, w: number, h: number) {
+    const g = this.scene.add.graphics();
+    const x = cx - w / 2, y = cy - h / 2;
+    g.fillStyle(0x3c1c0a, 0.1).fillRoundedRect(x - 4, y + 3, w + 8, h + 10, 18);
+    g.fillStyle(0x3c1c0a, 0.2).fillRoundedRect(x - 1, y + 3, w + 2, h + 3, 14);
+    g.fillStyle(0xf7f1e2, 1).fillRoundedRect(x, y, w, h, 12);
+    g.lineStyle(1.5, UI.line, 1).strokeRoundedRect(x, y, w, h, 12);
+    return g;
+  }
 
   private makeRow(x: number, y: number, w: number, h: number, i: number, txt: Phaser.GameObjects.Text, tone: TalkTone, sz: number) {
     const row = this.scene.add.container(x, y);
@@ -150,10 +204,13 @@ export class TalkPanel {
     // Container cộng displayOrigin vào toạ độ local trước khi gọi Contains — hit area
     // phải tính từ (0,0), y hệt bẫy đã gặp ở `theme.button`.
     row.setInteractive(new Phaser.Geom.Rectangle(0, 0, w, h), Phaser.Geom.Rectangle.Contains);
+    let pressed = false;
     row.on("pointerover", () => { this.cursor = i; this.paint(); });
-    row.on("pointerup", () => this.pick(i));
+    row.on("pointerdown", () => { pressed = true; });
+    row.on("pointerout", () => { pressed = false; });
+    row.on("pointerup", () => { if (pressed) this.pick(i); });
 
-    this.rows.push({ bg, w, h });
+    this.rows.push({ bg, row, y, w, h });
     (bg as any).__tone = tone;
     void sz;
     return row;
@@ -163,12 +220,13 @@ export class TalkPanel {
     this.rows.forEach((r, i) => {
       const on = i === this.cursor;
       const tone = (r.bg as any).__tone as TalkTone;
+      r.row.setY(r.y - (on ? 1.5 : 0));
       r.bg.clear();
-      r.bg.fillStyle(on ? 0xe9e4d6 : 0xf7f5ee, 1);
+      if (on) r.bg.fillStyle(0x3c1c0a, 0.16).fillRoundedRect(-r.w / 2 + 1, -r.h / 2 + 3, r.w - 2, r.h, 8);
+      r.bg.fillStyle(on ? 0xffffff : 0xfbf8ef, 1);
       r.bg.fillRoundedRect(-r.w / 2, -r.h / 2, r.w, r.h, 8);
       r.bg.lineStyle(1.5, on ? UI.accent : UI.line, 1);
       r.bg.strokeRoundedRect(-r.w / 2, -r.h / 2, r.w, r.h, 8);
-      // mép trái theo giọng — đủ để thấy "cái này gắt" mà không thành một con số
       r.bg.fillStyle(TONE_TINT[tone], on ? 1 : 0.75);
       r.bg.fillRoundedRect(-r.w / 2, -r.h / 2 + 5, 3, r.h - 10, 2);
     });
@@ -214,7 +272,7 @@ export class TalkPanel {
       if (ev.code === "Enter" || ev.code === "Space") {
         ev.preventDefault();
         if (done || !this.count) this.close();
-        else this.pick(this.cursor);
+        else this.pick(Math.max(0, this.cursor));
         return;
       }
       /** Esc LUÔN MIỄN PHÍ (luật L4). "Làm thinh" đã thành một DÒNG viết sẵn trong dải, giọng `IM`, đọc được hệ quả trước khi bấm. */
@@ -243,6 +301,7 @@ export class TalkPanel {
   }
 
   destroy() {
+    this.view = null;
     this.locked = null;
     this.unbind();
     this.root?.destroy(true);

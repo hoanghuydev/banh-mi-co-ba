@@ -1,24 +1,26 @@
 import Phaser from "phaser";
-import { TW, TH } from "../world/iso";
-import { SKY_FROM_Y } from "../world/map";
-import { SHADOW } from "./palette";
 
 /** Các texture hạt vẽ trắng để emitter `tint`. */
 export const FX = {
-  shadow: "shadow", ring: "ring", fly: "fly", puff: "puff", you: "you",
+  ring: "ring", fly: "fly", puff: "puff", you: "you",
   drop: "drop", ripple: "ripple",
 } as const;
 
 /** Tam giác đặc chứ không chữ, vì trên đầu khách đã có `?` và `!`. */
-const YOU_W = 18, YOU_H = 13, YOU_PAD = 3;
+const YOU_W = 13, YOU_H = 9, YOU_PAD = 3;
 const YOU_INK = 0x2b2f31;
 const YOU_FILL = 0xffe9a8;
 
-/** Nét ngoài dày 6 thò ra 3px, cộng 1px để khỏi bị xén. */
-const RING_PAD = 4;
-const RING_INK = YOU_INK;
-const RING_EDGE = 0xffa726;
-const RING_CORE = 0xfff0c2;
+/** Nửa bề ngang ô thoi của khung góc, hụt mép ô 2,5 px để nhịp phình không chạm ô bên. */
+const RING_HW = 27.5;
+/** Mỗi nhánh chữ V dài bằng chừng này phần cạnh ô. */
+const RING_ARM = 0.3;
+const RING_PAD = 3;
+/** Nướng dày gấp chừng này để nét dưới 1 px vẫn mịn khi camera phóng; `StallScene` chia lại. */
+export const RING_SS = 4;
+const RING_SHADOW = "rgba(70,44,18,0.38)";
+const RING_EDGE = "#dc9636";
+const RING_CORE = "rgba(255,247,226,0.95)";
 
 /** Cố ý to hơn cỡ thật để độ bẩn nhìn thấy được. */
 export const FLY_W = 7;
@@ -38,97 +40,8 @@ export const DROP_H = 28;
 export const RIPPLE_W = 32;
 const RIPPLE_H = 16;
 
-/** Rộng hơn bóng nhìn thấy vì phần dư là vùng nhoè. */
-const SHADOW_W = 44, SHADOW_H = 22;
-/** Bằng sải chân; mốc quy đổi bóng đạo cụ: `scale = bề ngang muốn có / SHADOW_CORE`. */
-export const SHADOW_CORE = 24;
-
-/** `w` theo bề ngang vật che nắng (không theo đáy) · `a` < 1 cho vật cao khỏi sàn; không có tên = không có bóng. */
-export const PROP_SHADOW: Record<string, { w: number; a?: number }> = {
-  oven: { w: 40 }, oven_e: { w: 42 }, shelf: { w: 40 }, tea: { w: 30 },
-  stool: { w: 22 }, pothos: { w: 22 }, bin: { w: 28 }, crate: { w: 30 },
-  sign: { w: 26 }, fire: { w: 15 }, fridge: { w: 28 }, cooler: { w: 24 },
-  table: { w: 56, a: 0.75 },
-  order: { w: 30 }, prep: { w: 44 }, bench_near: { w: 44 }, bench_far: { w: 44 },
-  bike: { w: 58, a: 0.8 }, scooter: { w: 52, a: 0.8 },
-  sink: { w: 34, a: 0.6 },
-  // khớp bản vẽ dự phòng `fillEllipse(x, y + 2, 76, 26)` trong `StallScene`
-  umbrella: { w: 76, a: 0.45 },
-};
-
-/** Vẽ bằng canvas vì cần gradient: lớp nhoè rộng + lõi tiếp đất đậm. */
-function buildShadow(scene: Phaser.Scene) {
-  if (scene.textures.exists(FX.shadow)) scene.textures.remove(FX.shadow);
-  const tex = scene.textures.createCanvas(FX.shadow, SHADOW_W, SHADOW_H);
-  if (!tex) return;
-  const ctx = tex.getContext();
-  const cx = SHADOW_W / 2, cy = SHADOW_H / 2;
-  const r = SHADOW.color >> 16 & 0xff, g = SHADOW.color >> 8 & 0xff, b = SHADOW.color & 0xff;
-  const rgba = (a: number) => `rgba(${r},${g},${b},${a})`;
-
-  // Bóp trục Y để gradient tròn thành ê-líp.
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.scale(1, SHADOW_H / SHADOW_W);
-  const soft = ctx.createRadialGradient(0, 0, 0, 0, 0, SHADOW_W / 2);
-  // Mốc dồn vào trong để vầng nhoè thấy được chỉ ~30px.
-  soft.addColorStop(0, rgba(SHADOW.alpha * 0.85));
-  soft.addColorStop(0.3, rgba(SHADOW.alpha * 0.55));
-  soft.addColorStop(0.55, rgba(SHADOW.alpha * 0.22));
-  soft.addColorStop(0.78, rgba(SHADOW.alpha * 0.05));
-  soft.addColorStop(1, rgba(0));
-  ctx.fillStyle = soft;
-  ctx.beginPath();
-  ctx.arc(0, 0, SHADOW_W / 2, 0, Math.PI * 2);
-  ctx.fill();
-
-  const core = ctx.createRadialGradient(0, 0, 0, 0, 0, SHADOW_CORE / 2);
-  core.addColorStop(0, rgba(SHADOW.alpha * 0.75));
-  core.addColorStop(0.6, rgba(SHADOW.alpha * 0.4));
-  core.addColorStop(1, rgba(0));
-  ctx.fillStyle = core;
-  ctx.beginPath();
-  ctx.arc(0, 0, SHADOW_CORE / 2, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-
-  tex.refresh();
-}
-
-/** Dưới mái hiên bóng chỉ dài bằng chừng này so với ngoài nắng. */
-const SHADE_RATIO = 1 / 3;
-
-let cast = { rot: 0, stretch: 1 };
-
-export function setCast(dirX: number, dirY: number, stretch: number) {
-  cast = { rot: Math.atan2(dirY, dirX), stretch };
-}
-
-/** Đặt bóng tại chân vật: đuôi kéo theo hướng nắng, chân bóng giữ ở `(sx, sy)`. */
-export function castShadow(img: Phaser.GameObjects.Image, sx: number, sy: number, scale = 1, alpha = 1) {
-  const wy = (sy / (TH / 2) - sx / (TW / 2)) / 2;
-  const sun = Math.min(1, Math.max(0, (wy - (SKY_FROM_Y - 0.4)) / 0.8));
-  const stretch = 1 + (cast.stretch - 1) * (SHADE_RATIO + (1 - SHADE_RATIO) * sun);
-  const ox = 0.5 - Math.min(0.3, (stretch - 1) * 0.25);
-  return img.setPosition(sx, sy).setOrigin(ox, 0.5).setRotation(cast.rot)
-    .setScale(scale * stretch, scale).setAlpha(alpha);
-}
-
 export function buildFx(scene: Phaser.Scene) {
-  buildShadow(scene);
-
-  // Ba nét (mực sậm · hổ phách · lõi sáng) để đọc được trên cả nền gạch trắng lẫn nền sậm.
-  const g2 = scene.make.graphics({ x: 0, y: 0 }, false);
-  const cx = (TW + RING_PAD * 2) / 2, cy = (TH + RING_PAD * 2) / 2;
-  const rw = TW - 12, rh = TH - 6;
-  g2.lineStyle(6, RING_INK, 0.5);
-  g2.strokeEllipse(cx, cy, rw, rh);
-  g2.lineStyle(3.5, RING_EDGE, 1);
-  g2.strokeEllipse(cx, cy, rw, rh);
-  g2.lineStyle(1.5, RING_CORE, 1);
-  g2.strokeEllipse(cx, cy, rw, rh);
-  g2.generateTexture(FX.ring, TW + RING_PAD * 2, TH + RING_PAD * 2);
-  g2.destroy();
+  ringTexture(scene);
 
   // Dự phòng; `art/photo.ts` đè ảnh thật lên nếu `fly.png` tải kịp.
   const g3 = scene.make.graphics({ x: 0, y: 0 }, false);
@@ -179,4 +92,33 @@ export function buildFx(scene: Phaser.Scene) {
   g7.strokeEllipse(rcx, rcy, RIPPLE_W - 4, RIPPLE_H - 4);
   g7.generateTexture(FX.ripple, RIPPLE_W, RIPPLE_H);
   g7.destroy();
+}
+
+/** Bốn góc chữ V ôm ô thoi; bóng nâu lệch xuống để vàng nhạt vẫn nổi trên gạch trắng. */
+function ringTexture(scene: Phaser.Scene) {
+  if (scene.textures.exists(FX.ring)) scene.textures.remove(FX.ring);
+  const hh = RING_HW / 2, w = (RING_HW + RING_PAD) * 2, h = (hh + RING_PAD) * 2;
+  const tex = scene.textures.createCanvas(FX.ring, w * RING_SS, h * RING_SS);
+  if (!tex) return;
+  const ctx = tex.getContext();
+  ctx.scale(RING_SS, RING_SS);
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  const V = [[0, -hh], [RING_HW, 0], [0, hh], [-RING_HW, 0]];
+  const corners = (dy: number) => {
+    ctx.beginPath();
+    V.forEach(([x, y], i) => {
+      const [px, py] = V[(i + 3) % 4], [nx, ny] = V[(i + 1) % 4];
+      ctx.moveTo(w / 2 + x + (px - x) * RING_ARM, h / 2 + dy + y + (py - y) * RING_ARM);
+      ctx.lineTo(w / 2 + x, h / 2 + dy + y);
+      ctx.lineTo(w / 2 + x + (nx - x) * RING_ARM, h / 2 + dy + y + (ny - y) * RING_ARM);
+    });
+  };
+  for (const [dy, lw, col] of [[0.8, 2.9, RING_SHADOW], [0, 2, RING_EDGE], [0, 0.6, RING_CORE]] as const) {
+    corners(dy);
+    ctx.lineWidth = lw;
+    ctx.strokeStyle = col;
+    ctx.stroke();
+  }
+  tex.refresh();
 }

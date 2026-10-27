@@ -29,7 +29,6 @@ export type EconToday = {
 export type EconBook = { today: EconToday };
 
 export type EconState = {
-  rentOwed: number;
   today: EconToday;
   /** Tiền lẻ đổi ở cô Thuý sáng nay (đồng) và còn lại bao nhiêu. */
   float: number;
@@ -39,7 +38,7 @@ export type EconState = {
 };
 
 export const newEconState = (): EconState => ({
-  rentOwed: 0, today: newToday(1), float: 0, floatLeft: 0, neighborAnnoyance: 0, loaOffUntil: 0,
+  today: newToday(1), float: 0, floatLeft: 0, neighborAnnoyance: 0, loaOffUntil: 0,
 });
 export const newToday = (day: number): EconToday =>
   ({ day, market: 0, fixed: 0, rent: 0, tools: 0, talk: 0, family: 0,
@@ -50,17 +49,12 @@ export const rentVnd = () => scaledVnd(ECON.rent_k);
 
 export type Money = { cash: number };
 
-/** Buổi sáng: thu tiền thuê (trả nợ cũ trước). Không đủ thì dồn nợ sang mai. */
+/** Buổi sáng: thu tiền thuê. Không đủ thì đêm trước đã phá sản (`sim/broke`). */
 export function morningRent(e: EconState, m: Money): { paid: number } {
-  const due = e.rentOwed + rentVnd();
-  if (m.cash >= due) {
-    m.cash -= due;
-    e.today.rent += due;
-    e.rentOwed = 0;
-    return { paid: due };
-  }
-  e.rentOwed = due;
-  return { paid: 0 };
+  const paid = Math.min(m.cash, rentVnd());
+  m.cash -= paid;
+  e.today.rent += paid;
+  return { paid };
 }
 
 /** Đếm tiền tối, MỘT lần mỗi tối: trừ chi phí cố định, không để két âm. */

@@ -7,7 +7,6 @@ export const PAL = {
   roadFloor: [0x5f696e, 0x5b656a, 0x646e73, 0x586268] as const,
   roadJoint: 0x4c565b,
   roadPaint: 0xd8d5c6,
-  floorStain: 0x7d8c90,
 
   wall: 0xcfc7b4,
   wallTop: 0xded7c6,
@@ -127,5 +126,3 @@ export const PAL = {
   paper: 0xf3f0e7,
 } as const;
 
-// Bóng chung mọi vật (`art/fx.ts` nhân gradient với alpha này); 0,38 cho tâm ~0,52, đủ rõ trên sàn trắng.
-export const SHADOW = { color: 0x19222a, alpha: 0.38 } as const;

@@ -117,6 +117,7 @@ export function morning(w: SaveFile): string[] {
       w.money.cash += l.ask;
       w.econ.today.tools -= l.ask;
       w.resell.listings = w.resell.listings.filter((x) => x.id !== l.id);
+      w.ach.resold++;
       news.push(`Đã bán ${nameOf(l)}: +${l.ask.toLocaleString("vi-VN")}₫`);
     } else if (day >= l.expireDay) {
       withdraw(w, l);

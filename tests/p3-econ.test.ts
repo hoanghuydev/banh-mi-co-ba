@@ -72,14 +72,11 @@ test("lịch quay vòng: ngày quá độ dài lịch vẫn có thời tiết v�
   assert.ok(priceOf("PATE", n + 22) > priceOf("PATE", n + 15) * 1.3, "dịch heo không quay lại ở vòng lịch sau");
 });
 
-test("tiền thuê một mức mỗi ngày; thiếu thì dồn sang mai, trả nợ cũ trước", () => {
-  const e = newEconState(); const m = { cash: 0 };
-  assert.equal(morningRent(e, m).paid, 0);
-  assert.equal(e.rentOwed, rentVnd());
-  m.cash = 10 * rentVnd();
-  assert.equal(morningRent(e, m).paid, 2 * rentVnd());
-  assert.equal(e.rentOwed, 0);
-  assert.equal(m.cash, 8 * rentVnd());
+test("tiền thuê một mức mỗi ngày, không dồn nợ", () => {
+  const e = newEconState(); const m = { cash: 10 * rentVnd() };
+  assert.equal(morningRent(e, m).paid, rentVnd());
+  assert.equal(m.cash, 9 * rentVnd());
+  assert.equal(e.today.rent, rentVnd());
 });
 
 test("két không bao giờ âm: thiếu tiền than thì trả phần có", () => {

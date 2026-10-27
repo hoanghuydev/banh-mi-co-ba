@@ -445,7 +445,7 @@ REMEMBERED_USUAL--0.20--> "ngon nhất khu này"           # tin tốt cũng ph�
 |---|---|---|
 | **Thắng** | Tổng tiền ≥ **mốc thắng** (50tr chỉ gợi ý). Tiêu chí chọn mốc: chơi ổn định thắng trong thời lượng mục tiêu · **không thắng được trước khi mở hết topping** · chơi bẩn lời nhanh nhưng rủi ro ATTP **lớn hơn lợi** | **Mở chi nhánh 2**, quán thành thương hiệu. Tường review, biển hiệu mới |
 | **Thua — điều tra ATTP** | Sao TB **≤ 3★** **và** **> 10 review 1–2★ do đau bụng** → đóng cửa | Màn game over đơn giản. Màn "nộp lại CV" **tuỳ chọn**, có thể không làm |
-| **Thua — phá sản** | **Hết tiền nhập hàng** (user chốt 2026-10-20) | Màn game over đơn giản |
+| **Thua — phá sản** | Ống **không đủ tiền chỗ** sáng mai (user chốt 2026-10-27), **hoặc** trả tiền chỗ xong + bán đồ nghề vẫn **hết tiền nhập hàng** (user chốt 2026-10-20). Không có nợ tiền chỗ | Màn game over đơn giản |
 
 ☠️ ~~**Fail mềm nhưng vĩnh viễn**: nghĩa vụ định kỳ — tiền thuê chỗ, tiền hụi, tiền học. Không trả không chết, nhưng mất thứ không lấy lại được. Và khách ruột mất là mất thật.~~
 
@@ -512,6 +512,18 @@ Nhân: thịt / heo quay / pate / xíu mại / chả lụa / cá / gà / ốp la
 **Icon:** dưa leo / ngò / hành lá đều xanh → phải khác nhau về **HÌNH DÁNG**, không chỉ màu. Font **sans, line-height rộng** (tiếng Việt có dấu chồng dấu: ề, ộ, ỡ, ữ). **Không viết hoa toàn bộ.**
 
 > ☠️ ~~**Nguyên tắc kết game:** "Đừng làm ending dựa trên 'bạn đã làm tốt tới đâu'. Cho mọi ending đều tử tế, chỉ khác nhau về ai còn ở đó với mình."~~ → Kết game giờ là **thắng 50tr / thua ATTP** (§13). Màn thua vẫn phải **tử tế, không chế giễu nghề** (§14.1).
+
+### 15.1. Nền tảng và điều khiển
+
+| | PC | Cảm ứng (điện thoại, máy tính bảng) |
+|---|---|---|
+| Đi | `WASD` / mũi tên, `Shift` chạy | Joystick ảo, nút chạy riêng |
+| Làm việc | `E` / `Space`, chuột | Một nút hành động lớn đổi nhãn theo trạm; nút nhỏ chạy / che / bỏ / nhấc / nói chỉ hiện khi dùng được |
+| Cảnh quán | Cửa sổ nào cũng được | **Chỉ ngang**; máy dọc hiện lớp nhắc xoay. Menu và intro dùng được cả dọc |
+
+- Hiện điều khiển cảm ứng theo thiết bị; cài đặt `touchControls` (tự động / bật / tắt) đè được.
+- **Chuẩn chạm: nút ≥ 44 CSS px, chữ ≥ 14 CSS px.** Không thao tác nào chỉ có phím hoặc hover.
+- Không đổi số cân bằng theo thiết bị. Chi tiết: `responsive/PLAN.md`.
 
 ---
 

@@ -49,7 +49,7 @@ export const STATIONS: Station[] = [
   },
   {
     id: "oven", tx: 7, ty: STATION_ROW_Y, name: "lò than", verb: "nướng bánh",
-    slot: "OVEN", needs: ["loaf_cold"], gives: "loaf_hot",
+    slot: "OVEN", needs: ["loaf_cold", "loaf_hot"], gives: "loaf_hot",
     holdMs: 1500, overcookMs: 2300, spoils: "loaf_burnt",
   },
   {
@@ -85,7 +85,7 @@ export const STATIONS: Station[] = [
   },
   {
     // Chỉ có khi đã mua `BINH_TRA` (`StallScene` lọc, `propHidden` giấu trên bản đồ).
-    id: "tea", tx: 9, ty: STATION_ROW_Y, name: "bình nước trà", verb: "rót ly nước trà",
+    id: "tea", tx: 9, ty: STATION_ROW_Y, name: "máy nước trà", verb: "rót ly nước trà",
     slot: "UNDER_COUNTER", needs: ["empty"], gives: "tea", holdMs: 600,
   },
 ];

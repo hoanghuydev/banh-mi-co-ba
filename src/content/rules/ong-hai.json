@@ -14,6 +14,6 @@
     {"id": "hai.del.unwanted.found", "concept": "DELIVERY", "when": {"npcId": "ONG_HAI", "defectKind": "UNWANTED", "defectWasSeen": false}, "say": ["Ủa cái gì đây? {mon} hả? Tao dặn rồi mà!"]},
     {"id": "hai.del.toomuch", "concept": "DELIVERY", "when": {"npcId": "ONG_HAI", "defectCount": 0, "freeExtraTooMuch": true}, "say": ["Được! Bây rộng rãi! Mai tao dẫn thằng bạn qua!"]},
     {"id": "hai.tea", "concept": "INTERACT", "when": {"npcId": "ONG_HAI", "interaction": "TEA"}, "say": ["Bây biết điều à nha. Ngồi xuống chú kể cho nghe cái này."]},
-    {"id": "hai.thangcon", "concept": "SMALLTALK", "when": {"npcId": "ONG_HAI", "queueLength": "<=2", "hour": "<=959", "npcVisitCount": ">=3"}, "say": ["Ờ… thằng con tao. Nó còn giận tao."], "norepeat": true, "odds": 50}
+    {"id": "hai.thangcon", "concept": "SMALLTALK", "when": {"npcId": "ONG_HAI", "queueLength": "<=2", "hour": "<=959", "npcVisitCount": ">=3"}, "say": ["Ờ… con gái tao. Nó còn giận tao."], "norepeat": true, "odds": 50}
   ]
 }

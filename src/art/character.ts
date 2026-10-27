@@ -48,6 +48,20 @@ export function markEightWay(who: string) {
   EIGHT.add(who);
 }
 
+export const hasEightWay = (who: string) => EIGHT.has(who);
+
+/** Ai có thân vẽ bằng code; cùng `EIGHT`/`GAITS` cho biết một tiền tố texture là nhân vật, không phải đồ đạc. */
+const BODIES = new Set<string>();
+
+export const isCharacter = (who: string) => EIGHT.has(who) || GAITS.has(who) || BODIES.has(who);
+
+/** Gỡ mọi dấu đã sơn của `who`; texture phải xoá cùng lúc. */
+export function unmarkCharacter(who: string) {
+  EIGHT.delete(who);
+  GAITS.delete(who);
+  BODIES.delete(who);
+}
+
 /** Hướng chéo lấy hình nghiêng, vẽ chính diện thì nhìn ra đi giật lùi. */
 const FOLD: Record<Facing8, { dir: Dir; flip: boolean }> = {
   s: { dir: "s", flip: false },
@@ -66,14 +80,14 @@ export function textureFor(facing: Facing8, who = "p", pose: Pose = "idle") {
   return { key: keyOf(who, f.dir, pose), flip: f.flip };
 }
 
-/** Đổi số này phải render lại (`--frames`) và gộp lại atlas. */
-export const WALK_FRAMES = 8;
+/** `carry` giữ hai tay yên trước bụng để dán món vào; `walk` vung tay nên không neo được; ba gait còn lại là vòng lặp tại chỗ. */
+export type Gait = "walk" | "carry" | "wipe" | "wash" | "breathe";
 
-/** `carry` giữ hai tay yên trước bụng để dán món vào; `walk` vung tay nên không neo được. */
-export type Gait = "walk" | "carry";
+/** Đổi số này phải render lại (`--frames`) và gộp lại atlas. */
+export const GAIT_FRAMES: Record<Gait, number> = { walk: 8, carry: 8, wipe: 6, wash: 6, breathe: 6 };
 
 /** `h` = hold, tránh đụng `_c` của tư thế `carry`. */
-const GAIT_TAG: Record<Gait, string> = { walk: "w", carry: "h" };
+const GAIT_TAG: Record<Gait, string> = { walk: "w", carry: "h", wipe: "x", wash: "r", breathe: "b" };
 
 /** Nơi đặt tên duy nhất cho cả `photo.paintWalk` lẫn `walkTextureFor`. */
 export function walkKey(who: string, facing: Facing8, gait: Gait, frame: number) {
@@ -98,8 +112,9 @@ export function hasGait(who: string, gait: Gait) {
 /** `null` khi chưa sơn đủ bộ, vì tên texture không tồn tại thì Phaser vẽ ô xanh lá. */
 export function walkTextureFor(facing: Facing8, frame: number, gait: Gait = "walk", who = "p") {
   const use: Gait = hasGait(who, gait) ? gait : "walk";
-  if (!hasGait(who, use)) return null;
-  const i = ((frame % WALK_FRAMES) + WALK_FRAMES) % WALK_FRAMES;
+  if (!hasGait(who, use) || (use !== gait && gait !== "carry")) return null;
+  const n = GAIT_FRAMES[use];
+  const i = ((frame % n) + n) % n;
   return { key: walkKey(who, facing, use, i), flip: false, gait: use, frame: i };
 }
 
@@ -482,6 +497,7 @@ function draw(g: Pen, cx: number, cy: number, dir: Dir, st: BodyStyle, pose: Pos
 export function buildBody(
   scene: Phaser.Scene, who: string, style: BodyStyle, poses: readonly Pose[] = ["idle"],
 ) {
+  BODIES.add(who);
   for (const pose of poses) {
     DIRS.forEach((dir) =>
       prop(scene, keyOf(who, dir, pose), heightFor(BODY_H),

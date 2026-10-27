@@ -14,12 +14,12 @@
           {
             "say": "Rồi, em ăn đi nha.",
             "tone": "THUONG",
-            "reply": "Dạ, em cảm ơn chị."
+            "reply": "Em cảm ơn chị."
           },
           {
             "say": "Mai ghé nữa nha em.",
             "tone": "AM",
-            "reply": "Dạ… mai em ghé.",
+            "reply": "Mai em ghé nha.",
             "mood": "CUOI"
           }
         ]
@@ -39,7 +39,7 @@
                   "say": "Chị thêm chút pate nha, không tính tiền.",
                   "tone": "AM",
                   "flag": "baoDuocCho",
-                  "reply": "Thôi chị ơi… dạ. Em cảm ơn chị nhiều.",
+                  "reply": "Thôi chị ơi… em cảm ơn nhiều.",
                   "act": {
                     "kind": "PROMISE",
                     "item": "pate"
@@ -74,7 +74,7 @@
             {
               "say": "{gia} nha em.",
               "tone": "THUONG",
-              "reply": "Dạ, em gửi chị.",
+              "reply": "Em gửi chị.",
               "ref": "ket"
             }
           ],
@@ -94,7 +94,7 @@
             {
               "say": "Thôi để chị thêm miếng chả.",
               "tone": "AM",
-              "reply": "Ơ… thôi chị. Dạ, em cảm ơn chị.",
+              "reply": "Ơ… thôi chị. Dạ, em cảm ơn.",
               "act": {
                 "kind": "PROMISE",
                 "item": "chalua"
@@ -151,7 +151,7 @@
                 {
                   "say": "Không có tiền mà em làm gì vậy?",
                   "tone": "THANG",
-                  "reply": "Tại em thích… Với lại có người đọc xong vô cmt cảm ơn em.",
+                  "reply": "Tại em thích… Với lại có người đọc xong vô bình luận cảm ơn em.",
                   "mood": "CUOI"
                 },
                 {
@@ -308,7 +308,7 @@
           {
             "say": "Ổ của em nè.",
             "tone": "THUONG",
-            "reply": "Dạ, em cảm ơn chị."
+            "reply": "Em cảm ơn chị."
           },
           {
             "say": "Ừ.",
@@ -402,7 +402,7 @@
             {
               "say": "Chậm mà đọc đều là được rồi.",
               "tone": "AM",
-              "reply": "Dạ… em cảm ơn chị.",
+              "reply": "Ờm… em cảm ơn chị.",
               "ref": "ket",
               "mood": "CUOI"
             },
@@ -440,7 +440,7 @@
           {
             "say": "Ráng giữ sức nha em.",
             "tone": "AM",
-            "reply": "Dạ, em cảm ơn chị.",
+            "reply": "Em cảm ơn chị.",
             "mood": "THUONG"
           },
           {
@@ -464,7 +464,7 @@
             {
               "say": "Ăn sáng cho đàng hoàng chút đi em. Ngủ có ba tiếng mà ăn uống qua loa.",
               "tone": "AM",
-              "reply": "Em quen rồi chị. Thấy cũng đủ mà.",
+              "reply": "Em quen rồi chị. Vậy cũng đủ mà.",
               "then": [
                 {
                   "say": "Hôm nay chị thêm miếng chả cho em nha.",
@@ -473,7 +473,7 @@
                     "kind": "PROMISE",
                     "item": "chalua"
                   },
-                  "reply": "Hả?! Thôi chị ơi… dạ, em cảm ơn chị. Em nợ chị lắm rồi á.",
+                  "reply": "Hả?! Thôi chị ơi… em cảm ơn. Em nợ nhiều lắm rồi á.",
                   "mood": "NGAC_NHIEN"
                 },
                 {
@@ -551,7 +551,7 @@
               "say": "Uống ly trà đá cho tỉnh nha em.",
               "tone": "AM",
               "calm": 20,
-              "reply": "Dạ, em cảm ơn chị.",
+              "reply": "Em cảm ơn chị.",
               "mood": "THUONG",
               "while": [
                 "p.hasTea"
@@ -598,7 +598,7 @@
           {
             "say": "Ổ của em nè.",
             "tone": "THUONG",
-            "reply": "Dạ, em cảm ơn chị."
+            "reply": "Em cảm ơn chị."
           }
         ]
       },
@@ -715,7 +715,7 @@
             {
               "say": "Ổ không khô lắm. Để chị thêm chút pate cho.",
               "tone": "AM",
-              "reply": "Thôi chị, để em trả thêm… …Dạ. Em cảm ơn chị.",
+              "reply": "Thôi chị, để em trả thêm… …Dạ. Em cảm ơn.",
               "mood": "NGUONG",
               "act": {
                 "kind": "PROMISE",
@@ -754,7 +754,7 @@
             {
               "say": "Ở đây em nói bao lâu cũng được.",
               "tone": "AM",
-              "reply": "Dạ… em cảm ơn chị. …Em nói được rồi nè.",
+              "reply": "Ờm… em cảm ơn chị. …Em nói được rồi nè.",
               "mood": "RUNG_RUNG"
             },
             {
@@ -801,7 +801,7 @@
       "source": "PLAYER_ONLY",
       "depth": "SHORT",
       "weight": 20,
-      "opener": "Ủa… chị gọi em hả chị?",
+      "opener": "Ủa… chị gọi em hả?",
       "openMood": "NGUONG",
       "tree": [
         {
@@ -825,7 +825,7 @@
             {
               "say": "Khi nào xong cho chị coi với nha.",
               "tone": "DUA",
-              "reply": "Dạ… Mà sách nấu ăn đó, chị coi chắc cười em xỉu.",
+              "reply": "Dạ… Mà sách nấu ăn đó, chị coi chắc cười em luôn.",
               "mood": "CUOI_KHAN"
             }
           ]
@@ -892,7 +892,7 @@
           "need": [
             "!p.soldOut"
           ],
-          "reply": "Thật hả chị… Mai em trả liền. Em cảm ơn chị.",
+          "reply": "Thật hả chị… Mai em trả liền. Em cảm ơn.",
           "mood": "RUNG_RUNG",
           "then": [
             {
@@ -918,7 +918,7 @@
         {
           "say": "Vậy chị làm ổ nhỏ hơn cho vừa tiền nha.",
           "tone": "THUONG",
-          "reply": "Dạ được chị. Vậy cũng được.",
+          "reply": "Dạ được chị. Vậy cũng ổn.",
           "mood": "NGUONG",
           "then": [
             {

@@ -22,7 +22,7 @@ const W = (over: Partial<WorldSnapshot> = {}): WorldSnapshot => ({
   convo: { tones: [], angered: false, openedBy: "PLAYER" },
   visit: { gaveTea: false, gaveFood: false, apologised: false, promised: [], inviteRefused: false },
   day: { met: false, told: [] },
-  hot: false, rain: false, peak: false, queue: 0, shadeFree: false, seatFree: false, menuDayDu: true, ganhOut: false, cartLan: false, cartChung: false, ovenHot: false, meVuaRa: false, band: "SANG", dayIndex: 5,
+  hot: false, rain: false, peak: false, queue: 0, shadeFree: false, seatFree: false, menuDayDu: true, ovenHot: false, meVuaRa: false, band: "SANG", dayIndex: 5,
   ...over,
 });
 

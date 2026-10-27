@@ -1,63 +1,129 @@
 import Phaser from "phaser";
-import { FONT, UI } from "../theme";
+import { FONT, UI, worldFont } from "../theme";
+import { bubbleX, overlaps, type Box } from "../../world/bubbleLayout";
+import { fitScale, isPhone, isTouch, minFont } from "../../core/device";
+import { ZOOM } from "../../world/camera";
 
 /** Pool bong bóng thoại dựng sẵn, không cấp phát mới trong scene để tránh GC spike giờ cao điểm. */
 export const BUBBLE_POOL_SIZE = 8;
 const FADE_IN = 120, FADE_OUT = 260;
+// Giây; đổi phía né thì trượt ~96% quãng trong 0,3 s.
+const GLIDE_TAU = 0.1;
+/** Điện thoại: bề ngang chữ tối đa, pixel CSS thật. */
+const PHONE_WRAP_CSS = 190;
+/** Điện thoại: bong bóng không né được vùng lò thì mờ bớt để vẫn thấy vòng lò. */
+const PHONE_DIM = 0.55;
+/** Cỡ chữ bong bóng trên khung thiết kế, không theo `ZOOM`, để camera gần mà bong bóng không che cảnh. */
+const BUBBLE_PX = 12;
 
 export class Bubble {
   readonly root: Phaser.GameObjects.Container;
   private bg: Phaser.GameObjects.Graphics;
+  private tail: Phaser.GameObjects.Graphics;
   private label: Phaser.GameObjects.Text;
   owner: string | null = null;
   text = "";
   since = 0;
+  /** Thứ tự câu đang hiện được nói ra; câu nói sau vẽ đè câu nói trước. */
+  saidAt = 0;
+  private static said = 0;
   /** ms theo đồng hồ scene. */
   private shownAt = 0;
   private hidingAt = -1;
-  private targetAlpha = 1;
+  private w = 0;
+  private h = 0;
+  anchor = { x: 0, y: 0, scale: 1, depth: 0 };
+  /** Độ lệch ngang so với `anchor` đang vẽ; `null` là chưa đặt lần nào, frame đầu đặt thẳng. */
+  off: number | null = null;
 
-  constructor(private scene: Phaser.Scene, textScale: number) {
-    const size = Math.round(12 * textScale);
+  private px = 0;
+  /** Tỉ lệ thu cả bong bóng về `BUBBLE_PX`; cảm ứng không thu dưới sàn chữ. */
+  private k = 1;
+
+  constructor(private scene: Phaser.Scene, private textScale: number) {
+    const size = this.px = this.fontPx();
+    this.k = this.shrink(size);
     this.bg = scene.add.graphics();
+    this.tail = scene.add.graphics();
     this.label = scene.add.text(0, 0, "", {
       fontFamily: FONT, fontSize: `${size}px`, color: UI.ink, align: "center",
-      lineSpacing: Math.round(size * 0.7),
-      wordWrap: { width: 190 * Math.min(textScale, 1.5) },
+      lineSpacing: this.lineGap(size),
+      wordWrap: { width: this.wrapW() },
     }).setOrigin(0.5);
-    this.root = scene.add.container(0, 0, [this.bg, this.label]).setVisible(false);
+    this.root = scene.add.container(0, 0, [this.bg, this.tail, this.label]).setVisible(false);
   }
 
   get hiding() { return this.hidingAt >= 0; }
 
+  private fontPx() {
+    return worldFont(Math.round(12 * this.textScale));
+  }
+
+  private shrink(size: number) {
+    const want = Math.max(BUBBLE_PX * this.textScale / ZOOM, isTouch() ? minFont() / (fitScale() * ZOOM) : 0);
+    return Math.min(1, want / size);
+  }
+
+  private lineGap(size: number) {
+    return Math.round(size * (isPhone() ? 0.3 : 0.7));
+  }
+
+  private wrapW() {
+    const pc = 190 * Math.min(this.textScale, 1.5) / (ZOOM * this.k);
+    return isPhone() ? Math.min(pc, Math.round(PHONE_WRAP_CSS / (fitScale() * ZOOM * this.k))) : pc;
+  }
+
   setText(text: string) {
-    if (text === this.text && !this.hiding) return;
+    const size = this.fontPx();
+    if (text === this.text && !this.hiding && size === this.px) return;
+    if (size !== this.px) {
+      this.px = size;
+      this.k = this.shrink(size);
+      this.label.setFontSize(`${size}px`).setLineSpacing(this.lineGap(size)).setWordWrapWidth(this.wrapW());
+    }
     const fresh = this.text === "" || this.hiding;
     this.text = text;
+    this.saidAt = ++Bubble.said;
     this.hidingAt = -1;
-    if (fresh) this.shownAt = this.scene.time.now;
+    if (fresh) { this.shownAt = this.scene.time.now; this.off = null; }
     this.label.setText(text).setPosition(0, 0);
-    const w = Math.max(this.label.width + 22, 60);
-    const h = this.label.height + 14;
+    const w = this.w = Math.max(this.label.width + 22, 60);
+    const h = this.h = this.label.height + 14;
     this.bg.clear();
     this.bg.fillStyle(0x0d1216, 0.2);
     this.bg.fillRoundedRect(-w / 2 + 2, -h / 2 + 3, w, h, 9);
     this.bg.fillStyle(UI.paper, 1);
     this.bg.fillRoundedRect(-w / 2, -h / 2, w, h, 9);
-    // đuôi lệch sang vai, không chĩa thẳng xuống mặt
-    this.bg.fillTriangle(-14, h / 2 - 1, -4, h / 2 - 1, -12, h / 2 + 9);
+    this.tail.clear();
+    this.tail.fillStyle(UI.paper, 1);
+    // Mũi lệch sang vai, không chĩa thẳng xuống mặt.
+    this.tail.fillTriangle(-2, h / 2 - 1, 8, h / 2 - 1, 0, h / 2 + 9);
   }
 
-  /** `y` là mép dưới; bong bóng mọc lên trên. */
-  place(x: number, y: number, depth: number, scale = 1, reducedMotion = false) {
-    const h = this.label.height + 14;
+  /** `y` là mép dưới thân bong bóng, `x` là đỉnh đầu. */
+  setAnchor(x: number, y: number, depth: number, scale = 1) {
+    this.anchor = { x, y, scale, depth };
+  }
+
+  get size() { const s = this.anchor.scale * this.k; return { w: this.w * s, h: this.h * s }; }
+
+  /** Chỉ trượt độ lệch so với đầu, nên đầu đi tới đâu bong bóng theo tới đó. */
+  place(cx: number, dt: number, reducedMotion: boolean, order = 0, dim = false) {
+    const { scale, depth } = this.anchor;
+    const s = scale * this.k;
+    const want = cx - this.anchor.x;
+    this.off = this.off === null || reducedMotion ? want : this.off + (want - this.off) * (1 - Math.exp(-dt / GLIDE_TAU));
+    const x = this.anchor.x + this.off;
     const now = this.scene.time.now;
-    let a = this.targetAlpha = scale < 1 ? 0.85 : 1;
+    let a = (scale < 1 ? 0.85 : 1) * (dim ? PHONE_DIM : 1);
     if (!reducedMotion) {
       if (this.hiding) a *= Math.max(0, 1 - (now - this.hidingAt) / FADE_OUT);
       else a *= Math.min(1, (now - this.shownAt) / FADE_IN);
     } else if (this.hiding) a = 0;
-    this.root.setPosition(x, y - (h / 2) * scale).setScale(scale).setDepth(depth).setAlpha(a).setVisible(a > 0);
+    // Hình đuôi rộng -2…8 quanh mũi, mũi nằm 12 px bên trái đỉnh đầu; giữ đáy đuôi trong phần thẳng của viền.
+    this.tail.setX(Math.min(Math.max((this.anchor.x - x) / s - 12, 11 - this.w / 2), this.w / 2 - 17));
+    this.root.setPosition(x, this.anchor.y - (this.h / 2) * s)
+      .setScale(s).setDepth(depth + order).setAlpha(a).setVisible(a > 0);
   }
 
   /** Trả true khi đã tắt hẳn. */
@@ -65,7 +131,6 @@ export class Bubble {
     const now = this.scene.time.now;
     if (!this.hiding) this.hidingAt = now;
     if (reducedMotion || now - this.hidingAt >= FADE_OUT) { this.hide(); return true; }
-    this.root.setAlpha(this.targetAlpha * Math.max(0, 1 - (now - this.hidingAt) / FADE_OUT));
     return false;
   }
 
@@ -74,6 +139,7 @@ export class Bubble {
     this.owner = null;
     this.text = "";
     this.hidingAt = -1;
+    this.off = null;
   }
 }
 
@@ -81,6 +147,7 @@ export class BubblePool {
   private free: Bubble[] = [];
   private live: Bubble[] = [];
   private tick = 0;
+  private lastNow = -1;
   /** Số lần phải cướp bong bóng; > 0 là lỗi cân bằng lịch nói. */
   steals = 0;
 
@@ -95,6 +162,8 @@ export class BubblePool {
     if (!b) {
       b = this.live.reduce((a, x) => (x.since < a.since ? x : a));
       this.live.splice(this.live.indexOf(b), 1);
+      // Không `hide()`: cướp nhau mỗi frame mà reset độ hiện dần thì cả đám tàng hình.
+      b.off = null;
       this.steals++;
       this.onSteal?.();
     }
@@ -104,6 +173,11 @@ export class BubblePool {
     return b;
   }
 
+  /** Cả bong bóng đang mờ dần cũng phải bám theo người nói. */
+  anchor(owner: string, x: number, y: number, depth: number, scale = 1) {
+    this.live.find((b) => b.owner === owner)?.setAnchor(x, y, depth, scale);
+  }
+
   release(owner: string, reducedMotion = false) {
     const i = this.live.findIndex((b) => b.owner === owner);
     if (i < 0) return;
@@ -111,6 +185,20 @@ export class BubblePool {
     if (!b.fadeOut(reducedMotion)) return;
     this.live.splice(i, 1);
     this.free.push(b);
+  }
+
+  /** Gọi sau khi camera đã cuộn xong frame này, không thì kẹp vào khung cũ. */
+  layout(view: { left: number; right: number }, keepOut: readonly Box[], now: number, reducedMotion: boolean) {
+    const dt = this.lastNow < 0 ? 0 : Math.min(0.05, (now - this.lastNow) / 1000);
+    this.lastNow = now;
+    const rank = [...this.live].sort((a, b) => a.saidAt - b.saidAt);
+    const phone = isPhone();
+    for (const b of this.live) {
+      const { w, h } = b.size;
+      const cx = bubbleX({ x: b.anchor.x, y: b.anchor.y, w, h }, view, keepOut);
+      const box = { x0: cx - w / 2, x1: cx + w / 2, y0: b.anchor.y - h, y1: b.anchor.y };
+      b.place(cx, dt, reducedMotion, rank.indexOf(b) * 1e-3, phone && keepOut.some((k) => overlaps(box, k)));
+    }
   }
 
   get liveCount() { return this.live.length; }

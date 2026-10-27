@@ -5,6 +5,7 @@
  * ⚠️ Mở cuộc KHÔNG được đóng băng đồng hồ (`StallScene` đặt `clock.busy`), và `anger`
  * không bao giờ lên màn hình (CANON T3).
  */
+import type { Channel } from "./vietsoci";
 import type { Rng } from "../core/rng";
 import { weekdayOf, type Weekday } from "./schedule";
 import type { TimeBand } from "../core/clock";
@@ -72,19 +73,12 @@ export type TalkAct =
   | { kind: "STAND_IN_SHADE"; forSec: ForSec }
   /** Mở khoá bằng `GHE_BAN`; ngồi làm kiên nhẫn trôi chậm (`Customer.sitting`), khác `STAND_IN_SHADE` ở chỗ đó. */
   | { kind: "THEY_SIT"; forSec: ForSec }
-  /** Clip ra sao phụ thuộc quầy sạch hay dơ lúc máy đang chạy — xem `Service.filmSpoiled`. */
-  | { kind: "FILM"; forSec: ForSec }
+  /** Quay xong thì clip lên kênh `channel` trên VietSoci. */
+  | { kind: "FILM"; forSec: ForSec; channel: Channel }
   | { kind: "STOP_FILM" }
-  /** Khác `MOVE_GANH` ở chỗ AI làm: bưng giùm là một việc mình bỏ công nên mua được thiện cảm; bảo bà tự dời thì không. */
-  | { kind: "CARRY_GANH" }
-  | { kind: "MOVE_GANH" }
   /** Chiều NHẬN một món vào: đưa ổ bánh mà không lấy tiền, và cầm về một thứ. */
   | { kind: "BARTER"; nhan: string }
-  /** `XA` chú về bên kia hẻm (mặt tiền thông, mà mình vừa đuổi ông ta) · `CHUNG` hai xe chung một mái (mình mất một khúc). */
-  | { kind: "MOVE_CART"; toi: "XA" | "CHUNG" }
-  /**
-   * CẤT TIẾNG RAO (`sau.rao`) — kéo người đi ngang quay đầu lại; ngược với xe chú Đạt lấn.
-   */
+  /** CẤT TIẾNG RAO (`sau.rao`) — kéo người đi ngang quay đầu lại. */
   | { kind: "RAO"; forSec: ForSec }
   /**
    * ĐỔI CÁI ĐƠN — đổi thật `order.intent` nên đổi cả giá; `ok`/`no` là câu đáp khi họ chịu / không chịu.
@@ -327,6 +321,7 @@ export const WALKIN_ADDRESS: readonly Address[] = [
   { self: "tui", you: "em",  call: "anh", me: "em" },   // 5 nón bảo hiểm — anh chạy xe
   { self: "tui", you: "em",  call: "chị", me: "em" },   // 6 đuôi gà, áo hồng — chị
   { self: "tui", you: "con", call: "chú", me: "con" },  // 7 đeo kính, tóc ngắn — chú
+  { self: "em",  you: "chị", call: "em",  me: "chị" },  // 8 mái lệch, sơ mi caro, quần rách gối — báo thủ
 ];
 
 /** Người lạ không có MỘT vai cố định, nên lưới chỉ đòi gọi bằng một trong mấy vai này. */
@@ -362,6 +357,8 @@ export type TalkCtx = {
   holds?: (key: string) => boolean;
   /** Vắng = rơi về `weight`. */
   score?: (t: Talk) => number;
+  /** Kênh này hôm nay đã quay clip thì ẩn mọi cuộc có quay. */
+  filmed?: (ch: Channel) => boolean;
 };
 
 export function okWhen(w: TalkWhen | undefined, c: TalkCtx): boolean {
@@ -401,6 +398,20 @@ export function okPractice(t: Talk, here: PracticeId | undefined): boolean {
   return Array.isArray(t.practice) ? t.practice.includes(here) : t.practice === here;
 }
 
+/** Mọi kênh mà một cuộc có thể quay, quét hết cây. */
+export function filmChannels(t: Talk): Channel[] {
+  const out = new Set<Channel>();
+  const walk = (x: unknown) => {
+    if (Array.isArray(x)) { x.forEach(walk); return; }
+    if (!x || typeof x !== "object") return;
+    const act = (x as TalkNode).act;
+    if (act?.kind === "FILM") out.add(act.channel);
+    Object.values(x).forEach(walk);
+  };
+  walk(t);
+  return [...out];
+}
+
 export function eligible(all: readonly Talk[], c: TalkCtx, by: TalkOpenBy = "PLAYER"): Talk[] {
   return all.filter((t) =>
     (t.npc === c.npcId || t.npc === "ANY")
@@ -408,6 +419,7 @@ export function eligible(all: readonly Talk[], c: TalkCtx, by: TalkOpenBy = "PLA
     && okPractice(t, c.practice)
     && (isSharedTalk(t) || !c.usedBefore.includes(t.id))
     && !c.usedToday.includes(t.topic)
+    && !filmChannels(t).some((ch) => c.filmed?.(ch))
     && okWhen(t.when, c));
 }
 
@@ -465,6 +477,7 @@ export type TalkGate = {
   cash?: number;
   hasEquip?: (id: string) => boolean;
   noInvite?: boolean;
+  filmed?: (ch: Channel) => boolean;
 };
 
 /**
@@ -476,7 +489,8 @@ export type TalkGate = {
  */
 export function visibleOptions(nodes: readonly TalkNode[], gate: TalkGate): TalkNode[] {
   const affordable = (o: TalkNode) => o.needCash === undefined || (gate.cash ?? Infinity) >= o.needCash;
-  const offerable = (o: TalkNode) => !(gate.noInvite && o.act?.kind === "INVITE");
+  const offerable = (o: TalkNode) => !(gate.noInvite && o.act?.kind === "INVITE")
+    && !(o.act?.kind === "FILM" && gate.filmed?.(o.act.channel));
   const equipped = (o: TalkNode) => !o.needEquip || (gate.hasEquip?.(o.needEquip) ?? true);
   const needed = (o: TalkNode) => needKeys(o).every((k) => gateOk(k, gate));
   const out = nodes.filter((o) => needed(o) && affordable(o) && offerable(o) && equipped(o));

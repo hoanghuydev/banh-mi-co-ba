@@ -54,7 +54,7 @@ export class TalkStore {
   /**
    * Người đang đứng ở quán — không bao giờ thả. ĐẾM THAM CHIẾU, không phải `Set`.
    *
-   * Lỗi ẩn H-12 của bản cũ: tám dáng khách lạ dùng chung khoá `WALKIN`, nên ba người
+   * Lỗi ẩn H-12 của bản cũ: các dáng khách lạ dùng chung khoá `WALKIN`, nên ba người
    * cùng đứng ở quầy là ba lần `ensure("WALKIN")` nhưng chỉ cần MỘT người đi là
    * `live.delete` trả về true và kho bị thả — hai người còn đứng đó mất sạch thoại,
    * và `openTalk` trả "…" giữa lúc họ đang chờ được trả lời.

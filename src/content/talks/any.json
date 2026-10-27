@@ -19,7 +19,7 @@
             {
               "say": "{call} đi đâu đó?",
               "tone": "THUONG",
-              "reply": "Có chút chuyện hà.",
+              "reply": "Có chút chuyện thôi.",
               "mood": "CUOI"
             },
             {
@@ -41,7 +41,7 @@
             {
               "say": "Thôi {me} làm tiếp đây.",
               "tone": "LANH",
-              "reply": "Vậy thôi. Bữa khác nói.",
+              "reply": "Vậy thôi. Hôm khác nói.",
               "mood": "LANH"
             }
           ],
@@ -77,7 +77,7 @@
               "mood": "CUOI_TUOI"
             },
             {
-              "say": "Dạ. Vậy thôi.",
+              "say": "Vậy thôi nha.",
               "tone": "LANH",
               "reply": "…Ờ.",
               "mood": "LANH"
@@ -136,7 +136,7 @@
             {
               "say": "Bỏ bữa riết là đau đó {call}.",
               "tone": "AM",
-              "reply": "Biết rồi. Nghe hoài hà.",
+              "reply": "Biết rồi. Nghe hoài.",
               "mood": "CUOI_KHAN"
             },
             {
@@ -225,9 +225,9 @@
           "mood": "CUOI",
           "then": [
             {
-              "say": "Pate hôm nay {me} lấy của bà Tám, béo hơn mọi bữa.",
+              "say": "Pate hôm nay {me} lấy của bà Tám, béo hơn mọi hôm.",
               "tone": "AM",
-              "reply": "Bà Tám đầu hẻm hả? Ờ, pate bả {self} ăn quen rồi.",
+              "reply": "Bà Tám đầu hẻm hả? Ờ, pate cổ {self} ăn quen rồi.",
               "mood": "CUOI"
             },
             {
@@ -236,7 +236,7 @@
               "act": {
                 "kind": "INVITE",
                 "yes": "Ờ thì… cho một ổ coi sao.",
-                "no": "Thôi, bữa khác. {self} đang đi có việc."
+                "no": "Thôi, hôm khác. {self} đang đi có việc."
               },
               "need": [
                 "!p.soldOut",
@@ -390,7 +390,7 @@
           "silent": true
         },
         {
-          "say": "{call} xích qua chút giùm {me} cái.",
+          "say": "{call} xích qua cho {me} chút.",
           "tone": "THANG",
           "reply": "…Xin lỗi nha. Đứng choán đường.",
           "mood": "NGUONG",
@@ -455,7 +455,7 @@
           "while": [
             "w.band(SOM)"
           ],
-          "reply": "Chắc vậy. Sáng nào cũng vậy hà.",
+          "reply": "Chắc vậy. Sáng nào cũng vậy mà.",
           "mood": "NGHI"
         },
         {

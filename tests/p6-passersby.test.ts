@@ -185,7 +185,7 @@ test("mỗi DÁNG người một vai — bà cụ không được gọi bằng '
   assert.notEqual(WALKIN_ADDRESS[3].call, WALKIN_ADDRESS[0].call, "bà cụ và anh thanh niên cùng một vai");
 });
 
-test("kho thoại đường phố KHÔNG viết cứng một vai nào — tám dáng dùng chung mà", async () => {
+test("kho thoại đường phố KHÔNG viết cứng một vai nào — mọi dáng dùng chung mà", async () => {
   const talks = (await TalkStore.loadAll()).filter((t) => t.npc === "QUA_DUONG");
   assert.ok(talks.length >= 6, `mới có ${talks.length} cuộc cho người đi đường`);
   const asPronoun = PRONOUN;

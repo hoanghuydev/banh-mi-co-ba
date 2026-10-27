@@ -7,6 +7,7 @@ import { GazeMachine, WALKIN_GAZE, type GazeState } from "./gaze";
 import { ReactionState } from "./reaction";
 import { CALM_MOOD, type Mood } from "./mood";
 import { newDrives, type DriveLevels } from "./drives";
+import type { Channel, ClipState } from "./vietsoci";
 
 export type CustomerPhase =
   | "arriving"
@@ -100,8 +101,6 @@ export class Customer implements Observer {
   balking = false;
   /** Bỏ đi vì giá chứ không phải vì đông. */
   priceWalk = false;
-  /** Ghé xe chú Đạt thay vì xe mình — không phải chê hàng đông. */
-  lured = false;
   inviteRefused = false;
   /** Bật cả lúc trượt roll, không thì bị xét lại mỗi frame. */
   greeted = false;
@@ -121,7 +120,9 @@ export class Customer implements Observer {
   sitUntil = 0;
   filming = false;
   filmUntil = 0;
-  filmSpoiled = false;
+  /** Clip đang quay đã dính cảnh gì. */
+  filmState: ClipState = "sach";
+  filmChannel: Channel = "su";
   /** Đứng chắn chỗ đưa hàng lúc chưa tới lượt — khác `cutLine` và `aside`. */
   blocking = false;
   eating = false;
@@ -172,7 +173,7 @@ export class Customer implements Observer {
     this.gazeM = new GazeMachine(npc?.gaze ?? WALKIN_GAZE, id, rng);
   }
 
-  rollOrder(day?: number) {
+  rollOrder(day: number) {
     this.order = randomOrder(this.rng, day);
   }
 

@@ -1,0 +1,381 @@
+{
+  "_note": "Nội dung app VietSoci (giao diện kiểu Facebook). Research: docs/research/giong-noi/vietsoci-clip.md, vietsoci-hem.md, vietsoci-drama.md. {kenh} = tên trang đăng clip; {QUAN} = tên quán người chơi, viết hoa. Tin có `troi: \"mua\"` chỉ đăng ngày mưa; `khach` = số khách thêm ngay hôm đăng.",
+  "kenh": {
+    "su": "Khả Hân ăn vặt 🍡",
+    "review": "Ghé Là Mê - Review Ăn Uống SG"
+  },
+  "clip": {
+    "su": {
+      "sach": {
+        "caption": [
+          "đi học về ghé xe bánh mì đầu hẻm nhà con 🥖 chị bán dễ thương lắm, làm bánh nhanh ghê",
+          "ổ bánh mì sáng nay của con nè mọi người ơi, giòn rụm luôn á 😋 10 điểm",
+          "quầy bánh mì gọn gàng nhất hẻm con 🥹 chị lau thớt liền tay luôn nha",
+          "review bánh mì đầu hẻm bằng cái bụng đói lúc 6h sáng 😆 ngon quá trời"
+        ],
+        "comment": [
+          "Gia Bảo mai đi học ghé mua đi",
+          "nhìn ngon dữ vậy Hân 🤤",
+          "xe bánh mì chỗ đó hả, t mua hoài nè",
+          "quay đẹp ghê, kênh lên đời rồi nha",
+          "Ngọc Vy ê thèm",
+          "chị bán xinh mà làm cũng sạch sẽ nữa"
+        ]
+      },
+      "ruoi": {
+        "caption": [
+          "bánh mì đầu hẻm nè mọi người 🥖 ủa có con ruồi lọt vô khung hình luôn kìa 😅",
+          "đứng chờ bánh mà con với con ruồi cùng nhìn khay thịt 😂",
+          "bánh vẫn ngon nha, mà ruồi hôm nay hơi đông 🪰"
+        ],
+        "comment": [
+          "Hân ơi giây thứ 5 có con ruồi đậu cái thớt kìa 😭",
+          "ruồi cũng biết chỗ ngon ha",
+          "nói chị bán đậy khay thịt lại đi em",
+          "thôi t mua chỗ khác nha 🥲",
+          "Minh Thư có con ruồi bay ngang kìa =))",
+          "xe nào vậy em, để né"
+        ]
+      },
+      "tay": {
+        "caption": [
+          "chị bán vừa thối tiền vừa kẹp bánh lẹ ghê, như ảo thuật 😳",
+          "ổ bánh mì 20k của con nè 🥖 chị làm nhanh dữ lắm luôn",
+          "bánh mì sáng nay ✨ quay lại cảnh chị bán làm bánh cho mọi người coi"
+        ],
+        "comment": [
+          "ủa vừa cầm tiền xong bốc bánh luôn hả 😶",
+          "bé ơi chị bán không đeo bao tay hả",
+          "tiền dơ lắm á, nhắc chị bán đeo bao tay đi em",
+          "Gia Bảo coi kìa, tay cầm tiền xong cầm bánh",
+          "nhanh thì nhanh mà nhìn hơi ớn",
+          "t thấy hoài à, xe nào cũng vậy"
+        ]
+      }
+    },
+    "review": {
+      "sach": {
+        "caption": [
+          "XE BÁNH MÌ ĐẦU HẺM MÀ SẠCH NHƯ TIỆM 🥖\n• Bà con nào ở khu này mà chưa ghé là thiếu sót nha. Quầy gọn gàng, thớt lau liền tay, khay nhân đậy kỹ. Bánh nướng giòn, pate thơm, đồ chua vừa miệng. Giá mềm mà làm chỉn chu lắm luôn á.",
+          "Mình đi ăn sáng lang thang thì gặp xe bánh mì này, đứng coi chị chủ làm bánh mà thấy yên tâm ghê. Bao tay, kẹp gắp đầy đủ, bánh ra nhanh. Ổ đầy đặn, ăn no tới trưa. Recommend nha mọi người 👌",
+          "Bánh mì vỉa hè mà gọn gàng sạch sẽ cỡ này thì mình chấm 9/10 🔥\n• Vỏ giòn rụm\n• Pate béo, thịt nhiều\n• Quầy sạch, chủ quán dễ thương\nAi gần đây ghé ủng hộ chị chủ nha.",
+          "Ngon - Sạch - Rẻ, đủ 3 chữ luôn mọi người ơi 🥹 Xe bánh mì nhỏ trong hẻm, chủ quán còn trẻ mà làm bánh nghiêm túc lắm. Cuối tuần ghé lại lần nữa."
+        ],
+        "comment": [
+          "Thanh Trúc mai đi ăn sáng chỗ này đi",
+          "nhìn sạch sẽ ghê, lưu lại",
+          "gần nhà t nè, ngon thiệt á mọi người",
+          "Quốc Huy ụiii nhìn ngon dữ",
+          "cho xin địa chỉ với ạ",
+          "chị chủ có bán buổi chiều không ạ",
+          "bánh mì vỉa hè mà làm vậy là quá có tâm",
+          "mới ăn hôm qua xong, chuẩn luôn"
+        ]
+      },
+      "ruoi": {
+        "caption": [
+          "Xe bánh mì đầu hẻm, bánh thì ổn nhưng phải nói thật: khay nhân để không đậy, ruồi bay quanh thớt suốt lúc mình đứng chờ. Vị 7/10, vệ sinh thì mọi người tự đánh giá nha.",
+          "MÌNH KHÔNG CÓ Ý PHỐT AI… nhưng đang quay mà ruồi bu khay thịt hoài, chủ quán lại không để ý. Ổ bánh ăn cũng được, mà nhớ lại mấy con ruồi là hết muốn ăn 🥲",
+          "Review thật: pate được, vỏ bánh giòn, giá ok. Điểm trừ: quầy hơi dơ, ruồi đậu thớt mấy lần. Chủ quán đậy đồ lại là mình ghé lần hai."
+        ],
+        "comment": [
+          "nể người ăn luôn",
+          "giây 0:12 ruồi đậu ngay cục thịt 😭",
+          "giàu đạm ghê ha =))",
+          "quán nào vậy ad, để né",
+          "mùa này ruồi nhiều thiệt, mà đậy đồ lại có khó gì đâu",
+          "Mai Anh hôm bữa mình mua chỗ này nè, thôi khỏi",
+          "bánh ngon cỡ nào cũng thua",
+          "mua 1 lần không có lần 2"
+        ]
+      },
+      "tay": {
+        "caption": [
+          "Xe bánh mì đầu hẻm: ổ bánh nhìn ngon, nhưng mọi người coi tới cuối nha. Tay cầm tiền thối cho khách xong cầm ổ bánh luôn, không bao tay, không rửa. Mình ăn xong mới để ý 😶",
+          "Đang khen vỏ bánh giòn thì quay trúng cảnh này. Không bao tay, tiền với bánh chung một bàn tay. Chấm 3/10, trừ hết ở khâu vệ sinh.",
+          "Mua ổ bánh mì sáng, tưởng vậy là bình thường… tới lúc coi lại clip mới thấy: thối tiền xong bốc rau, bốc thịt luôn. Mọi người thấy sao?"
+        ],
+        "comment": [
+          "tiền là thứ dơ nhất trên đời luôn á",
+          "Bao tay đâu chị ơi?",
+          "đôi tay làm đủ thứ",
+          "nhìn vậy thôi né cho lành",
+          "Hoàng Nam coi nè, vậy mà hôm bữa ông khen ngon",
+          "đeo bao tay có mấy trăm đồng đâu mà",
+          "vẫn có người mua mới hay",
+          "ăn xong đau bụng đừng hỏi tại sao"
+        ]
+      }
+    }
+  },
+  "danhGia": {
+    "_note": "Người lạ xem clip rồi vào app đánh giá chấm sao, CHƯA TỪNG ĂN — câu phải lộ ra là xem qua clip/VietSoci.",
+    "sach": [
+      "coi clip trên VietSoci thấy quầy sạch sẽ, chủ quán dễ thương, mai ghé thử",
+      "chưa ăn nhưng coi clip là muốn đi liền, xe bánh mì gọn gàng quá",
+      "thấy bên trang review khen quá trời nên vô chấm 5 sao ủng hộ trước",
+      "lướt trúng clip, bánh nhìn giòn rụm, chủ quán làm có tâm 👍",
+      "bánh mì vỉa hè mà sạch cỡ này hiếm lắm, ủng hộ chị chủ nha",
+      "clip cả trăm nghìn lượt xem đó mọi người, cuối tuần mình qua",
+      "coi clip thấy đeo bao tay, đậy khay nhân đàng hoàng. 10 điểm",
+      "nhỏ em coi clip rồi rủ đi ăn quá trời, chấm trước 5 sao",
+      "chưa có dịp ghé nhưng nhìn clip là tin được rồi",
+      "quán nhỏ mà làm chỉn chu vậy thì phải ủng hộ dài dài"
+    ],
+    "ruoi": [
+      "coi clip mà nổi da gà, ruồi bu đầy khay thịt",
+      "chưa ăn và chắc chắn không ăn, clip trên VietSoci nói hết rồi",
+      "ruồi đậu thớt vậy mà vẫn kẹp bánh bán, chịu luôn",
+      "thấy clip bên trang review rồi, mọi người né ra nha",
+      "vệ sinh kiểu này thì ngon cỡ nào cũng thua",
+      "khay nhân không đậy, ruồi bay tùm lum. 1 sao là còn nể",
+      "lướt trúng clip lúc đang ăn cơm, nuốt không nổi luôn",
+      "nghe nói ngon, coi clip xong bỏ ý định ghé",
+      "clip quay rõ vậy chủ quán còn chưa chịu đậy đồ lại hả"
+    ],
+    "tay": [
+      "coi clip thấy cầm tiền xong bốc bánh luôn, xin phép né",
+      "không bao tay, tay thối tiền rồi kẹp thịt. Clip trên VietSoci đó mọi người",
+      "chưa ăn nhưng không dám ăn, tiền dơ cỡ nào ai cũng biết",
+      "thấy clip bên trang review mà tụt hết hứng ăn sáng",
+      "đeo cái bao tay có khó gì đâu chị chủ ơi",
+      "vệ sinh vậy thì 1 sao, bánh ngon tới đâu cũng kệ",
+      "clip quay rõ mồn một luôn, ai còn mua thì nể thật",
+      "đi ngang hoài tính ghé, coi clip xong thôi khỏi",
+      "nhìn tay làm đủ thứ rồi cầm ổ bánh, ớn quá"
+    ]
+  },
+  "tinNhan": {
+    "_note": "Người quen nhắn kèm link bài clip; {kenh} = tên trang đăng clip.",
+    "sach": [
+      {
+        "from": "linh",
+        "text": "bà ơi clip quán bà trên {kenh} nè, nhìn sạch sẽ dễ thương ghê 🥹"
+      },
+      {
+        "from": "linh",
+        "text": "tui share clip của {kenh} lên group công ty rồi nha, ai cũng hỏi địa chỉ 🔥"
+      },
+      {
+        "from": "huy",
+        "text": "thấy {kenh} quay quán bà rồi. chắc nhờ góc máy thôi 🙄"
+      }
+    ],
+    "ruoi": [
+      {
+        "from": "huy",
+        "text": "ủa clip quán bà trên {kenh} kìa 😏 ruồi ghé ủng hộ còn đông hơn khách"
+      },
+      {
+        "from": "linh",
+        "text": "bà ơi coi clip {kenh} đi, ruồi bu khay thịt rõ lắm. đậy đồ lại liền nha 😭"
+      },
+      {
+        "from": "huy",
+        "text": "tui nói rồi mà, bán vỉa hè đâu dễ. coi comment dưới clip {kenh} đi 🙄"
+      }
+    ],
+    "tay": [
+      {
+        "from": "huy",
+        "text": "clip {kenh} quay bà cầm tiền xong bốc bánh luôn kìa 😏 bao tay mấy trăm đồng thôi bà"
+      },
+      {
+        "from": "linh",
+        "text": "bà coi clip trên {kenh} chưa, người ta réo vụ không đeo bao tay đó. mua bao tay liền đi 😭"
+      },
+      {
+        "from": "huy",
+        "text": "dân văn phòng như tui nhìn là thấy lỗi liền. clip {kenh} đó, bà tự coi 🙄"
+      }
+    ]
+  },
+  "tin": [
+    {
+      "id": "dam-cuoi-rap-dau-hem",
+      "loai": "hem",
+      "kenh": "Hóng Hớt Phường Mình",
+      "caption": "Nhà đầu hẻm dựng rạp cưới chiếm nguyên lối vô 2 ngày, ai đi làm về cũng phải dắt xe lách qua bàn tiệc. Tưởng cả hẻm sẽ than, ai ngờ tối qua chủ nhà gõ cửa từng nhà mời xuống ăn, bàn còn dư mời luôn anh shipper đang đứng chờ giao đơn :)))",
+      "comment": [
+        "Minh Khoa: anh shipper ăn xong có nhớ giao đơn không vậy 😂",
+        "Dắt xe lách qua bàn tiệc 2 ngày chắc lên tay lái lụa luôn rồi",
+        "Mỹ Hạnh: tui đi ngang bị kéo vô bàn, giờ mới biết cô dâu tên gì",
+        "Rạp dựng đẹp vậy để thêm tuần nữa cho hẻm có chỗ ngồi hóng mát đi",
+        "Gia Khang: lẩu dê ngon nha cả nhà, tui ăn 2 chén",
+        "Tối nay còn tiệc không mn, tui về sớm nè 🙋‍♀️"
+      ],
+      "anh": "tin-dam-cuoi-rap-dau-hem",
+      "vui": 3
+    },
+    {
+      "id": "mua-chieu-thanh-song",
+      "loai": "thanhpho",
+      "kenh": "Sài Gòn Hôm Nay Có Gì",
+      "caption": "Mưa có 40 phút chiều nay mà mấy tuyến đường quen lại thành sông, xe chết máy dắt bộ dài cả đoạn :))) Ai sắp tan làm thì đi đường vòng, hoặc ngồi lại uống ly nước rồi hẵng về nha. #mưaSàiGòn",
+      "comment": [
+        "Khúc nào rút rồi chỉ giùm với mn ơi",
+        "Trọng Nghĩa: vài năm nữa nghề sửa xe với đóng ghe là giàu nhất",
+        "Hải Yến: đứng trú dưới mái hiên 1 tiếng, quen luôn mấy người đứng kế bên",
+        "Mưa vậy mà đường nhà tui khô ran, chắc nhờ cao",
+        "Ngọc Bích: xe chết máy giữa đường, được chú sửa xe đầu hẻm cứu, cảm ơn chú nhiều 🥹"
+      ],
+      "anh": "tin-mua-chieu-thanh-song",
+      "vui": 2,
+      "troi": "mua"
+    },
+    {
+      "id": "gia-hanh-ngo-tang",
+      "loai": "thanhpho",
+      "kenh": "Người Sài Gòn Mỗi Ngày",
+      "caption": "Mưa mấy tuần liền, rau ngoài chợ lên giá vù vù: hành lá, ngò rí tăng gấp đôi, có chỗ 10k được vài cọng. Nhiều quán ăn bắt đầu bớt rau, ai mê ngò nhớ dặn trước 🥲",
+      "comment": [
+        "Giờ mua 10k hành ngò mà đếm được số cọng",
+        "Thảo Nhi: đi chợ hỏi giá ngò xong lặng lẽ đi về",
+        "Nhà tui trồng được một chậu hành, giờ nó là tài sản quý nhất nhà",
+        "Văn Hiếu: ăn bánh mì xin thêm ngò mà thấy ngại ngại",
+        "Mấy cô bán rau cũng than, mưa hư hết nửa"
+      ],
+      "anh": "tin-gia-hanh-ngo-tang",
+      "vui": 2
+    },
+    {
+      "id": "trend-ghe-nhua-an-sang",
+      "loai": "thanhpho",
+      "kenh": "Sài Gòn Hôm Nay Có Gì",
+      "caption": "Dân văn phòng dạo này có trend mới: 6h30 ra vỉa hè ngồi ghế nhựa ăn sáng, chụp hình đăng story ghi “healing”. Chủ quán kể hồi trước khách ngồi 10 phút, giờ ngồi 40 phút vì còn chụp hình 😂",
+      "comment": [
+        "Healing kiểu Sài Gòn là ghế nhựa với ly cà phê sữa đá",
+        "Thanh Hương: tui ngồi 40 phút mà 30 phút là chờ đứa bạn chụp xong",
+        "Bé Na: chị chủ quán nói chụp thì chụp, ăn lẹ giùm chị kẻo nguội",
+        "Trend này ủng hộ, vừa rẻ vừa ngon",
+        "Ngồi ghế nhựa thấp là dân lâu năm, kêu ghế cao là người mới"
+      ],
+      "anh": "tin-trend-ghe-nhua-an-sang",
+      "vui": 2,
+      "khach": 2
+    },
+    {
+      "id": "xu-huong",
+      "loai": "dacbiet",
+      "kenh": "Ăn Sáng Gì Sài Gòn - Review Thật",
+      "caption": "{QUAN} ĐƯỢC NHẮC NHIỀU NHẤT GROUP TUẦN NÀY 🔥 Chủ quán là một chị trẻ nghỉ làm văn phòng ra bán, làm tại chỗ, bánh nướng giòn, pate béo nhẹ. Tui ghé 2 lần, lần nào cũng phải đứng chờ mà chờ đáng. Ai ở gần thì đi sớm nha, trưa là hết bánh.",
+      "comment": [
+        "Ngọc Hà: Tâm ơi mai đi ăn sáng chỗ này nha",
+        "Ủa địa chỉ quen quen, cách nhà tui có mấy căn mà giờ mới biết :)))",
+        "Thiên Kim: lưu gấp, cuối tuần đi",
+        "Trưa hết bánh hả, tiếc ghê, tui toàn dậy 10h",
+        "Thuỳ Linh: quán bạn thân tui nè, mọi người ghé ủng hộ nha 🔥",
+        "Minh Tú: ăn rồi nè, pate đúng béo nhẹ, chị chủ dễ thương"
+      ],
+      "anh": "mattien",
+      "vui": 3
+    },
+    {
+      "id": "huy-sa-thai",
+      "loai": "dacbiet",
+      "kenh": "Hóng Chuyện Công Sở",
+      "caption": "Đợt cắt giảm nhân sự tuần này ở một công ty quận 1 có một cái tên làm cả phòng im lặng: anh H., người mấy tháng nay chuyên khịa đồng nghiệp cũ nghỉ việc ra bán bánh mì là “bán không nổi đâu”. Nghe nói chiều nay anh dọn bàn xong còn hỏi đường tới quán bánh mì đó 🥲",
+      "comment": [
+        "Hôm trước cười người, hôm sau người cười mình, câu này chưa bao giờ sai",
+        "Kiều Oanh: thôi đừng ghẹo ảnh, mất việc ai cũng buồn, chúc anh sớm có chỗ mới",
+        "Hỏi đường tới quán là đi xin lỗi hay đi xin việc vậy 👀",
+        "Bảo Châu: quán bánh mì đó ở đâu chỉ tui với, hóng xong muốn ăn thử",
+        "Trường Giang: cắt giảm thì ai cũng có thể dính, khịa ít thôi là được",
+        "Ad hóng thêm đi, phần sau sao rồi"
+      ],
+      "anh": "tin-huy-sa-thai",
+      "vui": 3
+    },
+    {
+      "id": "drama-trai-xoai-qua-rao",
+      "loai": "drama",
+      "kenh": "Hội Cư Dân Hẻm Nhỏ (Không Drama)",
+      "caption": "Cập nhật vụ cây xoài nhà ông Tư nghiêng qua rào nhà cô Sáu: sáng nay hai bên ra tận gốc cây đo coi trái nào thuộc đất ai, cả hẻm đứng xem như xem bóng đá. Đo xong chốt 7 trái bên ông, 5 trái bên cô. Chiều tới thì hai nhà ngồi chung một mâm làm gỏi xoài, ông Tư góp xoài, cô Sáu góp khô mực. Thôi hết drama rồi mọi người giải tán 🥲",
+      "comment": [
+        "Thu Trang: group không drama mà drama dữ 😭",
+        "Bảo Long: tưởng đâu ra tòa ai ngờ ra mâm gỏi",
+        "Chú Hai Lộc: Xoai leo qua rao thi chia nhau an, co gi dau ma do voi dac",
+        "Ngọc Hân: Ủa alo phần gỏi có chừa ai không hay ăn hết rồi",
+        "Minh Khoa: cô Sáu mà góp khô mực là biết tình nghĩa xóm này còn dài dài"
+      ],
+      "anh": "tin-drama-trai-xoai-qua-rao",
+      "vui": 3
+    },
+    {
+      "id": "drama-sua-chua-tu-lanh",
+      "loai": "drama",
+      "kenh": "Confession Dân Văn Phòng",
+      "caption": "Kể mọi người nghe drama tủ lạnh công ty tui. Tuần trước tui mất 2 hộp sữa chua, tui dán giấy lên tủ: \"Tui đã đếm.\" Sáng nay mở tủ thấy có 4 hộp mới kèm tờ giấy: \"Xin lỗi, đền gấp đôi, đừng điều tra nữa.\" Nét chữ y chang chữ ký duyệt đơn nghỉ phép của sếp tui 🙂",
+      "comment": [
+        "Diễm My: ủa rồi bà có dám hỏi không 😭",
+        "Thanh Tùng: Fact công sở: sữa chua không mất, sữa chua chỉ được sếp tạm giữ",
+        "Phương Vy: đền gấp đôi là sếp có tâm rồi, sếp tui ăn xong còn chê dở",
+        "Gia Huy: Lần sau mua thêm, bỏ vô tủ cái để lấy lòng luôn =))",
+        "Ánh Tuyết: Đọc tới chữ ký là tui cười muốn xỉu"
+      ],
+      "anh": "tin-drama-sua-chua-tu-lanh",
+      "vui": 3
+    },
+    {
+      "id": "drama-crush-cung-xe-banh-mi",
+      "loai": "drama",
+      "kenh": "Crush Confession Sài Gòn",
+      "caption": "Ba tháng nay sáng nào tui cũng ghé xe bánh mì gần công ty đúng 7h15, chỉ để đứng xếp hàng sau một anh áo sơ mi xanh. Hôm qua tui bận đi trễ, anh đó hỏi cô bán bánh mì: \"Bé áo vàng hôm nay không tới hả cô?\" Cô bán bánh mì nói: \"Hai đứa bây đứng sau lưng nhau ba tháng mà không ai mở miệng, cô sắp hết pate tới nơi rồi.\" Giờ tui phải làm sao mọi người ơi 🫣",
+      "comment": [
+        "Bảo Trân: Mai 7h15 ra đứng TRƯỚC anh đó, hết",
+        "Nhật Minh: cô bán bánh mì là người hùng của bài này",
+        "Lan Chi: hóng phần 2, ad nhớ cập nhật nha",
+        "Đức Thịnh: ba tháng ăn bánh mì mỗi sáng, tình yêu này có mùi pate",
+        "Hồng Nhung: @Khánh Linh bà coi nè, y chang vụ bà với ông chồng bà hồi đó",
+        "Khánh Linh: Hồng Nhung đừng kể chuyện tui ra đây 😤 mà công nhận y chang thiệt"
+      ],
+      "anh": "tin-drama-crush-cung-xe-banh-mi",
+      "vui": 3
+    },
+    {
+      "id": "drama-hai-xe-banh-mi-giam-gia",
+      "loai": "drama",
+      "kenh": "Hóng Biến Chợ Xóm",
+      "caption": "Đường bên chợ có hai xe bánh mì đối diện nhau đang \"chiến giá\": bên này giảm 1 nghìn, sáng hôm sau bên kia giảm 2 nghìn, kéo dài cả tuần. Tới hôm ổ bánh còn 9 nghìn thì cả chợ mới biết hai cô chủ là chị em ruột, giận nhau từ Tết vì vụ ai được giữ công thức pate của má. Hôm nay hai xe đã dọn về đứng chung một chỗ, giá về lại như cũ, khách quen hơi tiếc 🥲",
+      "comment": [
+        "Trúc Linh: Tuần đó tui ăn bánh mì 2 bữa một ngày, cảm ơn hai cô",
+        "Anh Khoa: Công thức pate của má là bí mật gia truyền rồi, giận cũng phải",
+        "Cô Năm bán rau: Hai đứa nó giận chứ thương nhau lắm, má tụi nó nói tui nghe hết rồi",
+        "Thảo Vy: Ủa giá về như cũ thì khỏi đi chợ sớm nữa hả 😭",
+        "Minh Tâm: kết có hậu ghê, mà công thức pate cuối cùng ai giữ ad"
+      ],
+      "anh": "tin-drama-hai-xe-banh-mi-giam-gia",
+      "vui": 3
+    },
+    {
+      "id": "drama-meo-cam-nam-ten",
+      "loai": "drama",
+      "kenh": "Hội Ở Trọ Bình Thạnh",
+      "caption": "Hôm qua tui đăng tìm chủ con mèo cam hay nằm trước cửa phòng tui. Trong 2 tiếng có 5 nhà nhắn nhận mèo: nhà số 12 gọi nó là Bơ, nhà 14 gọi là Mập, quán nước đầu hẻm gọi là Sếp, bà cụ nhà 20 gọi là Cục Vàng. Hóa ra con mèo ăn cơm 5 nhà, mỗi nhà một tên, nhà nào cũng tưởng nó là mèo của mình 🐈",
+      "comment": [
+        "Tường Vi: Con mèo này đi làm 5 công ty mà không công ty nào biết",
+        "Huy Hoàng: Sếp là đúng rồi, nó quản lý cả hẻm mà",
+        "Ngọc Trâm: Tui là nhà số 14 đây, tưởng nó tăng cân vì tui nấu ngon 😭",
+        "Bà Hai nhà 20: Thôi cho nó ăn chung, mèo của hẻm mình",
+        "Thiện Nhân: Nhà thứ 6 xin nhận, nó ngủ trưa nhà tui mỗi ngày nha"
+      ],
+      "anh": "tin-drama-meo-cam-nam-ten",
+      "vui": 3
+    },
+    {
+      "id": "drama-review-1-sao-ba-chu-quan",
+      "loai": "drama",
+      "kenh": "Review Ăn Uống Sài Gòn (Không Quảng Cáo)",
+      "caption": "Đang lướt review thì gặp một khách chấm quán cơm tấm 1 sao: \"Sườn nhỏ hơn năm ngoái, nước mắm ngọt quá, ông chủ trẻ cắt sườn chậm.\" Chủ quán trả lời ngay bên dưới: \"Ba ơi, con thấy ba ngồi bàn số 3 rồi. Tối nay về nhà ba chỉ con pha nước mắm lại nha.\" Thì ra ông ba nghỉ bán giao quán cho con, giờ đi ăn ẩn danh để kiểm tra 😂",
+      "comment": [
+        "Thanh Ngân: Review gắt nhất là review của ba mình",
+        "Phúc Thịnh: Kiểm tra chất lượng cấp gia đình, không trốn được đâu",
+        "Như Quỳnh: Ủa cho xin địa chỉ, sau vụ này chắc sườn to lại rồi",
+        "Bảo Ngọc: Ông ba đeo khẩu trang ngồi bàn số 3 mà tưởng con không nhận ra =))",
+        "Thành Đạt: Đúng ra nên chấm 1 sao phần thái độ của ba, 5 sao phần tình thương"
+      ],
+      "anh": "tin-drama-review-1-sao-ba-chu-quan",
+      "vui": 3
+    }
+  ]
+}

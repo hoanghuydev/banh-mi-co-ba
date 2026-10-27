@@ -3,7 +3,7 @@ import { ECON, newInventory, scaledVnd, weatherOf, type InventoryState } from ".
 import { newEconState, type EconState } from "../sim/obligations";
 import { EQUIP, newEquipState } from "../sim/equipment";
 import { fnv1a, type BagState, type StreamName } from "./rng";
-import { platform as defaultPlatform, type Platform } from "./platform";
+import { platform as defaultPlatform, reportSaveWrite, type Platform } from "./platform";
 import { BUILD_ID, DEFAULT_SETTINGS, loadSettings, type Settings } from "./flags";
 import type { Bus } from "./eventbus";
 import type { AutosaveReason, NpcId, SceneKey, Weather } from "./types";
@@ -13,6 +13,8 @@ import { newSystem, type SystemState } from "../sim/system";
 import { newShop, type ShopState } from "../sim/shop";
 import { newResell, type ResellState } from "../sim/resell";
 import { newReviews, type ReviewState } from "../sim/reviews";
+import { newAch, type AchState } from "../sim/ach";
+import { newVietsoci, type VietsociState } from "../sim/vietsoci";
 
 export { loadSettings, saveSettings, DEFAULT_SETTINGS, type Settings } from "./flags";
 
@@ -104,6 +106,8 @@ export type SaveFile = {
   shop: ShopState;
   resell: ResellState;
   reviews: ReviewState;
+  vietsoci: VietsociState;
+  ach: AchState;
   /** Mốc giá đang chọn theo mã món: 0 rẻ · 1 thường · 2 đắt; thiếu = thường. */
   menu: { price: Record<string, number> };
 
@@ -154,6 +158,8 @@ export function newGame(name: string, saveId = uuid()): SaveFile {
     shop: newShop(),
     resell: newResell(),
     reviews: newReviews(),
+    vietsoci: newVietsoci(),
+    ach: newAch(),
     menu: { price: {} },
     a11y: { ...DEFAULT_SETTINGS, ...loadSettings() },
     telemetry: { optedIn: false, sessionCount: 0 },
@@ -173,6 +179,8 @@ function normalize(s: SaveFile): SaveFile {
   s.shop = { ...d.shop, ...s.shop };
   s.resell = { ...d.resell, ...s.resell };
   s.reviews = { ...d.reviews, ...s.reviews };
+  s.vietsoci = { ...d.vietsoci, ...s.vietsoci };
+  s.ach = { ...d.ach, ...s.ach };
   s.equipment = {
     ...s.equipment,
     owned: s.equipment.owned.filter((id) => id in EQUIP),
@@ -217,7 +225,9 @@ export const DAY_SNAPSHOT_KEEP = 2;
 export type DayStartSnapshot = { key: string; dayIndex: number; payload: SaveFile };
 
 export class SaveService {
+  /** Bản chụp chốt ở lúc chuyển cảnh; `dirty` thì bản mới hơn còn trong `world`. */
   private pending: SaveFile | null = null;
+  private dirty = false;
   private handle: number | null = null;
   private slot: "A" | "B";
   forcedWrites = 0;
@@ -235,8 +245,9 @@ export class SaveService {
     return this.readMeta()?.schemaVersion === SCHEMA_VERSION;
   }
 
+  /** Chỉ đánh dấu; chụp và ghi lúc rảnh, nên nhiều yêu cầu dồn lại thành một lần chụp. */
   request(reason: AutosaveReason) {
-    this.pending = this.snapshot();
+    this.dirty = true;
     this.bus.emit("save:autosaveRequested", { reason });
     if (this.handle !== null) return;
 
@@ -253,11 +264,17 @@ export class SaveService {
     }
   }
 
-  /** Luôn chụp lại vì `request()` đang chờ có thể giữ bản chụp cũ. */
   flushNow(reason: AutosaveReason = "QUIT") {
-    this.pending = this.snapshot();
+    this.dirty = true;
     this.bus.emit("save:autosaveRequested", { reason });
     this.flush();
+  }
+
+  /** Gọi trước khi đổi cảnh: yêu cầu đang chờ phải chụp trạng thái của cảnh cũ. */
+  capture() {
+    if (!this.dirty) return;
+    this.pending = this.snapshot();
+    this.dirty = false;
   }
 
   private flush() {
@@ -267,8 +284,9 @@ export class SaveService {
       g.clearTimeout?.(this.handle);
       this.handle = null;
     }
-    const snap = this.pending;
+    const snap = this.dirty ? this.snapshot() : this.pending;
     this.pending = null;
+    this.dirty = false;
     if (!snap) return;
 
     const t0 = now();
@@ -278,7 +296,9 @@ export class SaveService {
     const { json, checksum } = stringifyWithChecksum(snap);
 
     const next: "A" | "B" = this.slot === "A" ? "B" : "A";
-    if (!this.platform.write(next === "A" ? K.slotA : K.slotB, json)) return;
+    const ok = this.platform.write(next === "A" ? K.slotA : K.slotB, json);
+    reportSaveWrite(ok);
+    if (!ok) return;
     this.platform.write(K.meta, JSON.stringify({
       activeSlot: next, schemaVersion: SCHEMA_VERSION, savedAt: snap.savedAt, checksum,
     } satisfies Meta));
@@ -327,6 +347,7 @@ export class SaveService {
 
   clear() {
     this.pending = null;
+    this.dirty = false;
     for (const k of [K.slotA, K.slotB, K.meta]) this.platform.remove(k);
     for (const k of this.platform.keys(`${PREFIX}day.`)) this.platform.remove(k);
   }

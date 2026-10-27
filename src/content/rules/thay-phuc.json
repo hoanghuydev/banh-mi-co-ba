@@ -8,10 +8,11 @@
     {"id": "phuc.flourish", "concept": "NOTICE_EVENT", "when": {"npcId": "THAY_PHUC", "eventId": "FLOURISH", "obsState": ">=NOTICED"}, "say": ["Một đường dao. Hồi đầu con rạch ba lần lận."], "cooldown": 600},
     {"id": "phuc.wait.confirmed", "concept": "NOTICE_EVENT", "when": {"npcId": "THAY_PHUC", "eventId": "MADE_THEM_WAIT", "obsState": "CONFIRMED"}, "say": ["Con cứ làm đi. Thầy về hưu rồi, thầy nhiều thời gian lắm."]},
     {"id": "phuc.del.seen", "concept": "DELIVERY", "when": {"npcId": "THAY_PHUC", "defectCount": ">=1", "defectWasSeen": true}, "say": ["Thầy thấy con lấy nhầm hũ. Để ý chỗ {mon} nha con."]},
-    {"id": "phuc.del.found", "concept": "DELIVERY", "when": {"npcId": "THAY_PHUC", "defectCount": ">=1", "defectWasSeen": false}, "say": ["Ừ, thiếu chút. Không sao con."]},
+    {"id": "phuc.del.found", "concept": "DELIVERY", "when": {"npcId": "THAY_PHUC", "defectCount": ">=1", "defectWasSeen": false}, "say": ["Ừ, không sao con."]},
+    {"id": "phuc.del.found.thieu", "concept": "DELIVERY", "when": {"npcId": "THAY_PHUC", "defectCount": ">=1", "defectWasSeen": false, "defectKind": ["MISSING", "RATIO_UNDER"]}, "say": ["Ừ, thiếu chút. Không sao con."]},
     {"id": "phuc.del.toomuch", "concept": "DELIVERY", "when": {"npcId": "THAY_PHUC", "defectCount": 0, "freeExtraTooMuch": true}, "say": ["Con cho thầy thì thầy nhận. Nhưng đừng cho ai cũng vậy."]},
     {"id": "phuc.tea", "concept": "INTERACT", "when": {"npcId": "THAY_PHUC", "interaction": "TEA"}, "say": ["Cảm ơn con. Thầy ngồi một chút rồi thầy về."]},
     {"id": "phuc.hocro", "concept": "SMALLTALK", "when": {"npcId": "THAY_PHUC", "queueLength": "<=2", "npcVisitCount": ">=2"}, "say": ["Hồi thầy còn đứng lớp, sáng nào cũng ăn ổ bánh mì ở cổng trường. Ba chục năm."], "norepeat": true, "odds": 50},
-    {"id": "phuc.lodien.aroma", "concept": "DELIVERY", "when": {"npcId": "THAY_PHUC", "defectCount": 0, "equipLoDien": true, "npcVisitCount": ">=12"}, "say": ["Ủa… bánh hôm nay không có mùi khói hả con?"], "odds": 18, "norepeat": true}
+    {"id": "phuc.lodien.aroma", "concept": "DELIVERY", "when": {"npcId": "THAY_PHUC", "defectCount": 0, "equipLoDien": true, "npcVisitCount": ">=12"}, "say": ["…Bánh hôm nay không có mùi khói hả con?"], "odds": 18, "norepeat": true}
   ]
 }

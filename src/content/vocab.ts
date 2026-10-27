@@ -67,7 +67,6 @@ export type DriveId = (typeof DRIVE_IDS)[number];
 export const DEED_IDS = [
   "ROT_TRA",     // rót cho họ ly trà đá
   "DUA_BANH",    // đưa cho họ miếng/ổ bánh
-  "BUNG_GANH",   // bưng giùm cái gánh vô
   "LAY_SO",      // chạy đi lấy giùm cuốn sổ
   "DOI_DON",     // sửa lại đơn cho họ
 ] as const;

@@ -9,7 +9,7 @@ import { eveningCounting, neighborTick } from "../sim/day";
 import { music } from "../audio/music";
 import { sfx } from "../audio/sfx";
 import { phoneTick } from "../sim/phone";
-import { PhoneView, type Route } from "../ui/phone/PhoneView";
+import { PhoneView, phoneBadge, type Route } from "../ui/phone/PhoneView";
 import { showBanner } from "../ui/phone/banner";
 
 export class EveningScene extends Phaser.Scene {
@@ -35,13 +35,17 @@ export class EveningScene extends Phaser.Scene {
     const neighbor = neighborTick(w);
     const incoming = phoneTick(w, true);
     this.ctx.save.request("EVENT");
-    music.play(this, "toi", 2200);
+    music.play("toi", 2200);
     sfx.loop(this, "amb_toi_nha", true, {}, 2500);
     sfx.loop(this, "sfx_quat_may", true, {}, 2500);
     this.cameras.main.setBackgroundColor(0x1d232b);
     this.add.rectangle(GAME_W / 2, GAME_H / 2, GAME_W, GAME_H, 0x141a20, 1);
     const s = loadSettings();
-    this.view = new EveningView(w, { textScale: s.textScale, lines: neighbor, onSleep: () => this.settle() });
+    this.view = new EveningView(w, {
+      textScale: s.textScale, lines: neighbor,
+      unread: () => phoneBadge(w), onPhone: () => this.openPhone(),
+      onSleep: () => this.settle(),
+    });
     this.input.keyboard?.on("keydown-TAB", (ev: KeyboardEvent) => { ev.preventDefault(); this.openPhone(); });
     this.killBanner = showBanner(incoming, (id) => this.openPhone({ app: "chat", id }), s.textScale);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -63,7 +67,7 @@ export class EveningScene extends Phaser.Scene {
         onSave: () => this.ctx.save.request("EVENT"),
       },
       route,
-      onClose: () => { this.phone = null; },
+      onClose: () => { this.phone = null; this.view?.setUnread(); },
     });
   }
 

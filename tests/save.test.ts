@@ -121,6 +121,25 @@ test("autosave gộp: nhiều request liên tiếp chỉ ghi một lần với b
   assert.equal(new SaveService(new Bus(), () => { throw new Error(); }, p).load()!.money.cash, 4);
 });
 
+test("autosave chờ ghi: chuyển cảnh chốt bản chụp của cảnh cũ, yêu cầu sau đó lấy bản mới nhất", async () => {
+  const p = memoryPlatform();
+  const w = newGame("x", "id-8");
+  const sv = service(w, p);
+  const read = () => new SaveService(new Bus(), () => { throw new Error(); }, p).load()!.money.cash;
+  w.money.cash = 1;
+  sv.request("SCENE_CHANGE");
+  sv.capture();
+  w.money.cash = 2;
+  await new Promise((r) => setTimeout(r, 700));
+  assert.equal(read(), 1);
+  sv.request("EVENT");
+  sv.capture();
+  w.money.cash = 3;
+  sv.request("EVENT");
+  await new Promise((r) => setTimeout(r, 700));
+  assert.equal(read(), 3);
+});
+
 test("save thiếu trường điện thoại mới vẫn đọc được, không sập app", async () => {
   const { SaveService } = await import("../src/core/save");
   const { Bus } = await import("../src/core/eventbus");

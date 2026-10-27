@@ -1,15 +1,17 @@
 // Canvas dựng ở GAME_W × RENDER_SCALE, mọi camera zoom RENDER_SCALE nên code vẫn dùng toạ độ thiết kế.
 import Phaser from "phaser";
-import { GAME_W } from "./config";
+import { GAME_W, GAME_H, applyDesignSize } from "./config";
 
 // Fill rate tăng theo bình phương; nâng trần phải đo lại ngân sách 33 ms/frame.
-const MAX_SCALE = 2;
+export const MAX_SCALE = 2;
 
-/** Pixel thật trên một pixel thiết kế, đo theo màn hình vì texture nướng một lần lúc boot. */
+/** Pixel thật trên một pixel thiết kế; đo theo khung nhìn đặt ngang để xoay máy không làm mờ, vì texture nướng một lần lúc boot. */
 export const RENDER_SCALE: number = (() => {
   if (typeof window === "undefined") return 1;          // test chạy trong node, không có DOM
-  const px = (window.screen?.width ?? window.innerWidth) * (window.devicePixelRatio || 1);
-  return Math.min(MAX_SCALE, Math.max(1, px / GAME_W));
+  const long = Math.max(window.innerWidth, window.innerHeight);
+  const short = Math.min(window.innerWidth, window.innerHeight);
+  const fit = Math.min(long / GAME_W, short / GAME_H);
+  return Math.min(MAX_SCALE, Math.max(1, fit * (window.devicePixelRatio || 1)));
 })();
 
 /** Dư hơn RENDER_SCALE vì chữ trong cảnh còn bị camera thế giới phóng thêm `ZOOM`. */
@@ -33,4 +35,9 @@ export function fitDesignFrame(cam: Phaser.Cameras.Scene2D.Camera) {
   cam.setZoom(RENDER_SCALE);
   cam.setOrigin(0, 0);
   cam.setScroll(0, 0);
+}
+
+/** Khung nhìn đổi tỉ lệ thì dựng lại canvas theo khung mới; chỉ gọi khi không còn cảnh chơi nào đang mở. */
+export function refitGame(game: Phaser.Game) {
+  if (applyDesignSize()) game.scale.setGameSize(Math.round(GAME_W * RENDER_SCALE), Math.round(GAME_H * RENDER_SCALE));
 }

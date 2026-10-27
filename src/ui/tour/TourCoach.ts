@@ -1,5 +1,8 @@
 // Lớp DOM để chỉ được cả phần tử DOM lẫn ô trên canvas; không nuốt chuột trừ bong bóng.
+import { isPhone, isTouch, onDeviceChange } from "../../core/device";
+
 export type CoachShape = "circle" | "rect";
+type Box = { x: number; y: number; w: number; h: number };
 
 export type CoachAim = {
   /** Toạ độ CSS px theo khung nhìn. */
@@ -8,6 +11,13 @@ export type CoachAim = {
   text: string;
   step?: number;
   total?: number;
+  /** Có thì hiện nút "Đã hiểu" gọi hàm này. */
+  ok?: () => void;
+  okText?: string;
+  /** Cảm ứng: đặt bong bóng vào khoảng trống bên trái khung này. */
+  beside?: DOMRect;
+  /** Điện thoại: vùng trống ngoài HUD để đặt thẻ, toạ độ CSS px. */
+  zone?: Box;
 };
 
 const STYLE = `
@@ -22,18 +32,51 @@ const STYLE = `
   background:#f6f2e6;color:#2b2f31;border-radius:12px;padding:12px 14px;pointer-events:auto;
   box-shadow:0 14px 34px rgba(0,0,0,.5);border-top:3px solid #8e2a20}
 .tg-col{min-width:0;flex:1}
-.tg-who{font-size:.72em;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8e2a20}
+.tg-who{font-size:max(14px,.72em);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8e2a20}
 .tg-text{margin:2px 0 0;font-size:.98em;line-height:1.5}
 .tg-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px}
-.tg-step{font-size:.76em;color:#8a7d64;font-variant-numeric:tabular-nums}
-.tg-skip{font:inherit;font-size:.8em;padding:5px 11px;border-radius:7px;border:1px solid #b8ab8e;
-  background:#fbf7ec;color:#4a4330;cursor:pointer;min-height:30px}
-.tg-skip:hover{background:#efe7d3}
+.tg-step{font-size:max(14px,.76em);color:#8a7d64;font-variant-numeric:tabular-nums}
+.tg-skip{font:inherit;font-size:max(14px,.8em);padding:5px 14px;border-radius:7px;border:1px solid #b8ab8e;
+  background:#fbf7ec;color:#4a4330;cursor:pointer;min-height:44px;min-width:44px}
+.tg-dots{display:none;gap:4px;align-items:center}
+.tg-dot{width:7px;height:7px;border-radius:50%;background:#cdbf9f}
+.tg-dot.on{background:#8e2a20}
+.tg-bub.strip{display:grid;grid-template-columns:auto 1fr auto;column-gap:10px;row-gap:2px;align-items:center;padding:8px 10px 8px 14px;box-sizing:border-box}
+.tg-bub.strip .tg-col,.tg-bub.strip .tg-bar{display:contents}
+.tg-bub.strip .tg-who{grid-column:1;grid-row:1}
+.tg-bub.strip .tg-dots{display:flex;grid-column:2;grid-row:1}
+.tg-bub.strip .tg-step{display:none}
+.tg-bub.strip .tg-text{grid-column:1/3;grid-row:2;margin:0;font-size:max(14px,.93em);line-height:1.3}
+.tg-bub.strip .tg-skip{grid-column:3;grid-row:1/3;padding:0 12px}
+@media (hover:hover){.tg-skip:hover{background:#efe7d3}}
 .tg-skip:focus-visible{outline:2px solid #8e2a20;outline-offset:2px}
+.tg-btns{display:flex;gap:8px}
+.tg-ok{font:inherit;font-size:max(14px,.8em);font-weight:700;padding:5px 13px;border-radius:7px;border:1px solid #8e2a20;
+  background:#8e2a20;color:#fff7e6;cursor:pointer;min-height:44px;min-width:44px}
+@media (hover:hover){.tg-ok:hover{background:#a63427}}
+.tg-bub.strip .tg-btns{grid-column:3;grid-row:1/3}
+.tg-ok:focus-visible{outline:2px solid #2b2f31;outline-offset:2px}
+html[data-phone="1"] .tg-bub.strip{padding:5px 5px 5px 11px;column-gap:8px;border-radius:10px;border-top-width:2px;max-width:none}
+html[data-phone="1"] .tg-bub.strip .tg-who{font-size:11px}
+html[data-phone="1"] .tg-bub.strip .tg-text{font-size:max(12px,.84em);line-height:1.3}
+html[data-phone="1"] .tg-bub.strip .tg-dots{display:none}
+html[data-phone="1"] .tg-bub.strip .tg-step{display:block;grid-column:2;grid-row:1;font-size:11px}
+html[data-phone="1"] .tg-bub.strip :is(.tg-skip,.tg-ok){font-size:max(12px,.8em);padding:0 10px;min-height:36px;min-width:36px}
 `;
 
 const GAP = 14;
 const EDGE = 10;
+const AVOID_PAD = 8;
+const PHONE_MAX_W = 360;
+type Rect = { left: number; top: number; right: number; bottom: number };
+type Spot = { bx: number; by: number };
+type Side = [Spot, (p: Spot, r: Rect) => Spot];
+
+/** Vùng nút và cần cảm ứng đang hiện, toạ độ CSS px theo khung nhìn. */
+function touchRects(): DOMRect[] {
+  return [...document.querySelectorAll<HTMLElement>(".tc-root.on .tc-btn:not([hidden]), .tc-root.on .tc-base")]
+    .map((e) => e.getBoundingClientRect());
+}
 
 export class TourCoach {
   private root: HTMLDivElement;
@@ -41,8 +84,15 @@ export class TourCoach {
   private bub: HTMLDivElement;
   private txt: HTMLParagraphElement;
   private stepEl: HTMLSpanElement;
+  private dots: HTMLDivElement;
+  private dotCount = 0;
   private last = "";
+  private lastGeo = "";
   private who!: HTMLDivElement;
+  private okBtn: HTMLButtonElement;
+  private onOk: (() => void) | null = null;
+  private lastAim: CoachAim | null = null;
+  private offDevice: () => void;
 
   constructor(opts: { textScale?: number; onSkip: () => void }) {
     if (!document.getElementById("tg-style")) {
@@ -76,16 +126,29 @@ export class TourCoach {
     skip.className = "tg-skip";
     skip.textContent = "Bỏ qua";
     skip.onclick = () => { this.hide(); opts.onSkip(); };
-    bar.append(this.stepEl, skip);
+    this.okBtn = document.createElement("button");
+    this.okBtn.className = "tg-ok";
+    this.okBtn.textContent = "Đã hiểu";
+    this.okBtn.onclick = () => this.onOk?.();
+    const btns = document.createElement("div");
+    btns.className = "tg-btns";
+    btns.append(skip, this.okBtn);
+    this.dots = document.createElement("div");
+    this.dots.className = "tg-dots";
+    bar.append(this.stepEl, this.dots, btns);
     col.append(who, this.txt, bar);
     this.bub.append(col);
 
     this.root.append(this.hole, this.bub);
     document.body.appendChild(this.root);
     this.hide();
+    this.offDevice = onDeviceChange(() => { if (this.lastAim && this.root.style.display !== "none") this.aim(this.lastAim); });
   }
 
-  destroy() { this.root.remove(); }
+  destroy() {
+    this.offDevice();
+    this.root.remove();
+  }
 
   setWho(text: string) { if (this.who.textContent !== text) this.who.textContent = text; }
 
@@ -93,41 +156,57 @@ export class TourCoach {
     if (this.root.style.display === "none") return;
     this.root.style.display = "none";
     this.last = "";
+    this.lastGeo = "";
   }
 
-  pointEl(el: Element | null, text: string, step?: number, total?: number, shape: CoachShape = "rect") {
+  pointEl(el: Element | null, text: string, step?: number, total?: number,
+    o: { ok?: () => void; okText?: string; beside?: DOMRect } = {}) {
     if (!el) { this.hide(); return; }
     const r = el.getBoundingClientRect();
     if (!r.width || !r.height) { this.hide(); return; }
-    this.aim({ x: r.left, y: r.top, w: r.width, h: r.height, shape, text, step, total });
+    this.aim({ x: r.left, y: r.top, w: r.width, h: r.height, shape: "rect", text, step, total, ...o });
   }
 
   /** Khoanh một ô theo toạ độ thiết kế; người gọi đã quy về toạ độ thiết kế. */
   pointDesign(canvas: HTMLCanvasElement | null, designW: number, designH: number,
-    o: { x: number; y: number; w: number; h: number; shape?: CoachShape; text: string; step?: number; total?: number }) {
+    o: { x: number; y: number; w: number; h: number; shape?: CoachShape; text: string; step?: number; total?: number; ok?: () => void; zone?: Box }) {
     if (!canvas) { this.hide(); return; }
     const r = canvas.getBoundingClientRect();
     if (!r.width || !r.height) { this.hide(); return; }
     const kx = r.width / designW, ky = r.height / designH;
     this.aim({
       x: r.left + o.x * kx, y: r.top + o.y * ky, w: o.w * kx, h: o.h * ky,
-      shape: o.shape, text: o.text, step: o.step, total: o.total,
+      shape: o.shape, text: o.text, step: o.step, total: o.total, ok: o.ok,
+      zone: o.zone && { x: r.left + o.zone.x * kx, y: r.top + o.zone.y * ky, w: o.zone.w * kx, h: o.zone.h * ky },
     });
   }
 
   private aim(a: CoachAim) {
+    this.lastAim = a;
     const shape = a.shape ?? "circle";
     // Chỉ ghi chữ khi đổi, không thì nút "Bỏ qua" mất focus.
-    const key = `${a.text}|${a.step}|${shape}`;
+    const phone = isPhone();
+    const key = `${a.text}|${a.step}|${shape}|${!!a.ok}|${a.okText}|${phone}`;
+    this.onOk = a.ok ?? null;
     if (key !== this.last) {
       this.last = key;
       this.txt.textContent = a.text;
-      this.stepEl.textContent = a.step && a.total ? `việc ${a.step}/${a.total}` : "";
+      this.okBtn.style.display = a.ok ? "" : "none";
+      this.okBtn.textContent = a.okText ?? "Đã hiểu";
+      this.stepEl.textContent = a.step && a.total ? `${phone ? "" : "việc "}${a.step}/${a.total}` : "";
+      this.paintDots(a.step ?? 0, a.total ?? 0);
     }
-    this.root.style.display = "";
-
     const pad = shape === "circle" ? 10 : 8;
     const x = a.x - pad, y = a.y - pad, w = a.w + pad * 2, h = a.h + pad * 2;
+    // Gọi mỗi khung: chỉ ghi style và đo lại khi lỗ, chữ hoặc khung nhìn đổi, tránh ép layout.
+    const touch = isTouch();
+    const b = a.beside, z = a.zone;
+    const geo = `${this.last}|${Math.round(x)},${Math.round(y)},${Math.round(w)},${Math.round(h)}|${b ? `${Math.round(b.left)},${Math.round(b.top)},${Math.round(b.width)},${Math.round(b.height)}` : ""}|${z ? `${Math.round(z.x)},${Math.round(z.y)},${Math.round(z.w)},${Math.round(z.h)}` : ""}|${touch}|${window.innerWidth}x${window.innerHeight}`;
+    if (geo === this.lastGeo) return;
+    this.lastGeo = geo;
+    this.bub.classList.toggle("strip", touch);
+    this.root.style.display = "";
+
     const s = this.hole.style;
     s.left = `${Math.round(x)}px`;
     s.top = `${Math.round(y)}px`;
@@ -135,25 +214,114 @@ export class TourCoach {
     s.height = `${Math.round(h)}px`;
     s.borderRadius = shape === "circle" ? "50%" : "12px";
 
-    this.place(x, y, w, h);
+    this.place(x, y, w, h, a.beside, a.zone);
   }
 
-  /** Dưới → phải → trên → trái; phải trước trên để không đè ổ bánh khi lỗ khoét cao. */
-  private place(x: number, y: number, w: number, h: number) {
+  private paintDots(step: number, total: number) {
+    if (total !== this.dotCount) {
+      this.dotCount = total;
+      this.dots.replaceChildren(...Array.from({ length: total }, () => {
+        const d = document.createElement("i");
+        d.className = "tg-dot";
+        return d;
+      }));
+    }
+    [...this.dots.children].forEach((d, i) => d.classList.toggle("on", i < step));
+  }
+
+  /** Dải gọn: trên giữa, giữa ô ngày giờ và cột nút; lọt vào ô được chỉ thì xuống dưới. */
+  private placeStrip(x: number, y: number, w: number, h: number) {
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const left = 190, right = 170;
+    const bw = Math.min(560, vw - left - right);
+    this.bub.style.width = `${bw}px`;
+    const bh = this.bub.offsetHeight;
+    const bx = (vw - bw) / 2 + (left - right) / 2;
+    const top = EDGE, bottom = vh - EDGE - bh;
+    const hit = (by: number) => bx < x + w + AVOID_PAD && bx + bw > x - AVOID_PAD && by < y + h + AVOID_PAD && by + bh > y - AVOID_PAD;
+    const by = hit(top) && !hit(bottom) ? bottom : top;
+    this.bub.style.left = `${Math.round(bx)}px`;
+    this.bub.style.top = `${Math.round(by)}px`;
+  }
+
+  /** Điện thoại: thẻ sát mục tiêu (phải, trái, dưới, trên), né nút cảm ứng và cột trái điện thoại; hết chỗ thì về góc. */
+  private placePhone(x: number, y: number, w: number, h: number, zone?: Box) {
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const z = zone ?? { x: 0, y: 0, w: vw, h: vh };
+    const left = Math.max(0, z.x) + EDGE, right = Math.min(vw, z.x + z.w) - EDGE;
+    const top = Math.max(0, z.y) + (zone ? 4 : EDGE), bottom = Math.min(vh, z.y + z.h) - EDGE;
+    this.bub.style.width = "";
+    this.bub.style.left = "0px";
+    this.bub.style.maxWidth = `${Math.min(PHONE_MAX_W, right - left)}px`;
+    const bw = this.bub.offsetWidth, bh = this.bub.offsetHeight;
+    const avoid: Rect[] = touchRects();
+    for (const sel of [".ph-root .ph-status", ".ph-root .ph-tabs"]) {
+      const r = document.querySelector(sel)?.getBoundingClientRect();
+      if (r?.width) avoid.push(r);
+    }
+    const target = { left: x, top: y, right: x + w, bottom: y + h };
+    const over = (bx: number, by: number, r: Rect) =>
+      bx < r.right + AVOID_PAD && bx + bw > r.left - AVOID_PAD && by < r.bottom + AVOID_PAD && by + bh > r.top - AVOID_PAD;
+    const inside = (p: Spot) => p.bx >= left - 0.5 && p.bx + bw <= right + 0.5 && p.by >= top - 0.5 && p.by + bh <= bottom + 0.5;
+    const cx = clamp(x + w / 2 - bw / 2, left, right - bw), cy = clamp(y + h / 2 - bh / 2, top, bottom - bh);
+    // Mỗi phía: đặt sát mục tiêu, vướng vật cản thì đẩy tiếp ra xa theo phía đó.
+    const rightOf: Side = [{ bx: x + w + GAP, by: cy }, (p, r) => ({ ...p, bx: r.right + AVOID_PAD })];
+    const leftOf: Side = [{ bx: x - GAP - bw, by: cy }, (p, r) => ({ ...p, bx: r.left - AVOID_PAD - bw })];
+    const below: Side = [{ bx: cx, by: y + h + GAP }, (p, r) => ({ ...p, by: r.bottom + AVOID_PAD })];
+    const above: Side = [{ bx: cx, by: y - GAP - bh }, (p, r) => ({ ...p, by: r.top - AVOID_PAD - bh })];
+    // Trong quán ưu tiên hai bên cho khỏi che lối đi; trong điện thoại ưu tiên dưới cho khỏi che hàng tiêu đề.
+    const sides = zone ? [rightOf, leftOf, below, above] : [below, rightOf, leftOf, above];
+    const spots: Spot[] = sides.map(([p, push]) => {
+      for (let i = 0; i < 4; i++) {
+        const r = avoid.find((a) => over(p.bx, p.by, a));
+        if (!r) break;
+        p = push(p, r);
+      }
+      return p;
+    });
+    for (const by of [top, bottom - bh]) for (const bx of [left, right - bw]) spots.push({ bx, by });
+    const dist = (p: Spot) => Math.hypot(
+      Math.max(0, target.left - (p.bx + bw), p.bx - target.right),
+      Math.max(0, target.top - (p.by + bh), p.by - target.bottom));
+    const ok = spots.filter((p) => inside(p) && !over(p.bx, p.by, target) && !avoid.some((r) => over(p.bx, p.by, r)));
+    const pick = ok.reduce<Spot | null>((a, p) => (!a || dist(p) < dist(a) - 1 ? p : a), null)
+      ?? spots.slice(4).find((p) => !over(p.bx, p.by, target)) ?? spots[4];
+    this.bub.style.left = `${Math.round(pick.bx)}px`;
+    this.bub.style.top = `${Math.round(pick.by)}px`;
+  }
+
+  private placeBeside(y: number, h: number, r: DOMRect) {
+    const bw = Math.min(560, r.left - EDGE * 3);
+    this.bub.style.width = `${bw}px`;
+    const bh = this.bub.offsetHeight;
+    this.bub.style.left = `${Math.round(r.left - EDGE * 2 - bw)}px`;
+    this.bub.style.top = `${Math.round(clamp(y + h / 2 - bh / 2, EDGE, window.innerHeight - EDGE - bh))}px`;
+  }
+
+  /** Dưới → phải → trên → trái; bỏ vị trí đè lên nút cảm ứng, hết chỗ thì lấy vị trí đầu tiên lọt khung. */
+  private place(x: number, y: number, w: number, h: number, beside?: DOMRect, zone?: Box) {
+    this.bub.style.maxWidth = "";
+    if (isTouch() && beside) { this.placeBeside(y, h, beside); return; }
+    if (isPhone()) { this.placePhone(x, y, w, h, zone); return; }
+    if (isTouch()) { this.placeStrip(x, y, w, h); return; }
+    this.bub.style.width = "";
     const bw = this.bub.offsetWidth, bh = this.bub.offsetHeight;
     const vw = window.innerWidth, vh = window.innerHeight;
     const midX = () => clamp(x + w / 2 - bw / 2, EDGE, vw - EDGE - bw);
     const midY = () => clamp(y + h / 2 - bh / 2, EDGE, vh - EDGE - bh);
+    const avoid = touchRects();
+    const hits = (bx: number, by: number) => avoid.some((r) =>
+      bx < r.right + AVOID_PAD && bx + bw > r.left - AVOID_PAD && by < r.bottom + AVOID_PAD && by + bh > r.top - AVOID_PAD);
 
-    let bx: number, by: number;
-    if (y + h + GAP + bh <= vh - EDGE) { bx = midX(); by = y + h + GAP; }
-    else if (x + w + GAP + bw <= vw - EDGE) { bx = x + w + GAP; by = midY(); }
-    else if (y - GAP - bh >= EDGE) { bx = midX(); by = y - GAP - bh; }
-    else if (x - GAP - bw >= EDGE) { bx = x - GAP - bw; by = midY(); }
-    else { bx = midX(); by = midY(); }
+    const below = y + h + GAP + bh <= vh - EDGE ? { bx: midX(), by: y + h + GAP } : null;
+    const right = x + w + GAP + bw <= vw - EDGE ? { bx: x + w + GAP, by: midY() } : null;
+    const above = y - GAP - bh >= EDGE ? { bx: midX(), by: y - GAP - bh } : null;
+    const left = x - GAP - bw >= EDGE ? { bx: x - GAP - bw, by: midY() } : null;
+    const options = [below, right, above, left].filter((o): o is { bx: number; by: number } => !!o);
+    const pick = options.find((o) => !hits(o.bx, o.by)) ?? options[0] ?? { bx: midX(), by: midY() };
 
-    this.bub.style.left = `${Math.round(bx)}px`;
-    this.bub.style.top = `${Math.round(by)}px`;
+    this.bub.style.left = `${Math.round(pick.bx)}px`;
+    this.bub.style.top = `${Math.round(pick.by)}px`;
   }
 }
 
