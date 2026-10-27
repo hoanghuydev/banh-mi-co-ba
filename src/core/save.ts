@@ -88,13 +88,14 @@ export type SaveFile = {
     cleanliness: number; layoutSide: "LEFT" | "RIGHT"
     presets: { id: string; name: string; dish: Record<string, number>; prepped: number }[];
     /** Ổ dở dang lúc thoát giữa buổi (bánh đã trừ kho); `dish` để `string[]` cho `core/` khỏi biết kiểu `sim/`. */
-    board?: { dish: string[]; warmth: number; crust: number; q: number } | null;
-    hand?: { item: string; warmth: number; crust: number; q: number } | null;
+    board?: { dish: string[]; warmth: number; crust: number; q: number; fresh?: number } | null;
+    hand?: { item: string; warmth: number; crust: number; q: number; fresh?: number } | null;
     basket?: {
-      hand?: string; warmth: number; crust: number; q: number; soiled?: boolean;
+      hand?: string; warmth: number; crust: number; q: number; fresh?: number; soiled?: boolean;
       dish?: string[]; dishQ?: number; dishSick?: number;
+      flaws?: { stale: { loss: number; item: string }; poor: { loss: number; item: string } };
     }[] | null;
-    floor?: { x: number; y: number; hand: string; warmth: number; crust: number; q: number; soiled?: boolean; dish: string[] }[] | null;
+    floor?: { x: number; y: number; hand: string; warmth: number; crust: number; q: number; fresh?: number; soiled?: boolean; dish: string[] }[] | null;
     handSoiled?: boolean;
     boardSoiled?: boolean;
   };

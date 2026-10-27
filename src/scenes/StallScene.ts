@@ -35,7 +35,7 @@ import { openIngredients, openedOn } from "../sim/unlock";
 import { SWIFT_MUL, canSpin, cleanHandsToday, finishRookie, linked, questDone, swiftToday } from "../sim/system";
 import { EYE_TEXT, HANDS_TEXT, QUEST_DONE, QUEST_TEXT, ROOKIE_DONE, etaText } from "../content/system";
 import { TourCoach } from "../ui/tour/TourCoach";
-import { dishQuality, isRain, portionsFor, putBack, sickChance, stockOf, take, takeFull, goodsFor, type Portion } from "../sim/econ";
+import { NO_FLAWS, dishQuality, isRain, portionsFor, putBack, sickChance, stockOf, take, takeFull, goodsFor, tasteFlaws, type DishFlaws, type Portion } from "../sim/econ";
 import { EQUIP, dirtMul, has, type EquipId } from "../sim/equipment";
 import { labelOf } from "../sim/order";
 import { dev } from "../dev/registry";
@@ -188,7 +188,9 @@ export class StallScene extends Phaser.Scene {
   private coach: TourCoach | null = null;
   /** Theo từng ổ, không dùng chung, kẻo gác ổ A nướng ổ B thì A bị chấm bằng số của B. */
   private breadQ = 1;
+  private breadFresh = 1;
   private dishQ = 1;
+  private dishFlaws: DishFlaws = NO_FLAWS;
   private dishSick = 0;
 
   private near: Station | null = null;
@@ -214,7 +216,7 @@ export class StallScene extends Phaser.Scene {
   private light!: SceneLight;
   private floorBake!: FloorBake;
   /** Chỗ đặt tạm cho rảnh tay, nhặt lại giữ nguyên thông số. */
-  private floor: { x: number; y: number; hand: Hand; warmth: number; crust: number; q: number; dish: Ingredient[] }[] = [];
+  private floor: { x: number; y: number; hand: Hand; warmth: number; crust: number; q: number; fresh: number; dish: Ingredient[] }[] = [];
   /** Đi theo ổ bánh chứ không theo bàn tay; chỉ bỏ ổ mới tẩy được. */
   private handSoiled = false;
   private boardSoiled = false;
@@ -225,6 +227,7 @@ export class StallScene extends Phaser.Scene {
   private handCrust = 0;
   private boardCrust = 0;
   private boardQ = 1;
+  private boardFresh = 1;
   private oven = new Oven();
   /** Vòng lò ba lớp theo thứ tự vẽ; chỉ `ovenArc` đổi mỗi frame khi nướng nên hai lớp kia giữ được bộ đệm đỉnh. */
   private ovenGfx!: Phaser.GameObjects.Graphics;
@@ -232,8 +235,8 @@ export class StallScene extends Phaser.Scene {
   private ovenTop!: Phaser.GameObjects.Graphics;
   private choreGfx!: Phaser.GameObjects.Graphics;
   private basket: {
-    hand: Hand; warmth: number; crust: number; q: number; soiled: boolean;
-    dish: Ingredient[]; dishQ: number; dishSick: number;
+    hand: Hand; warmth: number; crust: number; q: number; fresh: number; soiled: boolean;
+    dish: Ingredient[]; dishQ: number; dishFlaws: DishFlaws; dishSick: number;
   }[] = [];
   private basketImgs: Phaser.GameObjects.Image[] = [];
   private basketTopY = 0;
@@ -320,7 +323,9 @@ export class StallScene extends Phaser.Scene {
     this.handCrust = 0;
     this.boardCrust = 0;
     this.breadQ = 1;
+    this.breadFresh = 1;
     this.boardQ = 1;
+    this.boardFresh = 1;
     this.oven = ovenFor(has(this.world.equipment, "LO_DIEN"));
     this.grip = new Grip();
     this.handsBusyUntil = 0;
@@ -568,22 +573,24 @@ export class StallScene extends Phaser.Scene {
           if (this.resumed) {
             if (st.board) {
               this.boardLoaf = st.board.dish as Ingredient[];
-              this.boardWarmth = st.board.warmth; this.boardCrust = st.board.crust; this.boardQ = st.board.q;
+              this.boardWarmth = st.board.warmth; this.boardCrust = st.board.crust; this.boardQ = st.board.q; this.boardFresh = st.board.fresh ?? 1;
             }
             if (st.hand) {
               this.player.hand = st.hand.item as Player["hand"];
-              this.handWarmth = st.hand.warmth; this.handCrust = st.hand.crust; this.breadQ = st.hand.q;
+              this.handWarmth = st.hand.warmth; this.handCrust = st.hand.crust; this.breadQ = st.hand.q; this.breadFresh = st.hand.fresh ?? 1;
             }
             this.basket = (st.basket ?? []).slice(0, BASKET_SLOTS).map((l) => ({
               ...l,
               hand: (l.hand ?? "loaf_hot") as Hand,
               soiled: !!l.soiled,
               dish: (l.dish ?? []) as Ingredient[],
+              fresh: l.fresh ?? 1,
               dishQ: l.dishQ ?? 1,
+              dishFlaws: (l.flaws ?? NO_FLAWS) as DishFlaws,
               dishSick: l.dishSick ?? 0,
             }));
             this.floor = (st.floor ?? []).slice(0, FLOOR_MAX)
-              .map((f) => ({ ...f, hand: f.hand as Hand, dish: f.dish as Ingredient[] }));
+              .map((f) => ({ ...f, fresh: f.fresh ?? 1, hand: f.hand as Hand, dish: f.dish as Ingredient[] }));
             this.handSoiled = !!st.handSoiled;
             this.boardSoiled = !!st.boardSoiled;
           } else {
@@ -612,12 +619,12 @@ export class StallScene extends Phaser.Scene {
           this.coach = null;
           const st = this.world.stall;
           st.board = this.boardLoaf
-            ? { dish: [...this.boardLoaf], warmth: this.boardWarmth, crust: this.boardCrust, q: this.boardQ }
+            ? { dish: [...this.boardLoaf], warmth: this.boardWarmth, crust: this.boardCrust, q: this.boardQ, fresh: this.boardFresh }
             : null;
           st.hand = this.player.hand !== "empty"
-            ? { item: this.player.hand, warmth: this.handWarmth, crust: this.handCrust, q: this.breadQ }
+            ? { item: this.player.hand, warmth: this.handWarmth, crust: this.handCrust, q: this.breadQ, fresh: this.breadFresh }
             : null;
-          st.basket = this.basket.length ? this.basket.map((l) => ({ ...l })) : null;
+          st.basket = this.basket.length ? this.basket.map(({ dishFlaws, ...l }) => ({ ...l, flaws: dishFlaws })) : null;
           st.floor = this.floor.length ? this.floor.map((f) => ({ ...f, dish: [...f.dish] })) : null;
           st.handSoiled = this.handSoiled;
           st.boardSoiled = this.boardSoiled;
@@ -1394,8 +1401,8 @@ export class StallScene extends Phaser.Scene {
     if (h === "loaf_hot" || h === "loaf_cold" || h === "loaf_filled") {
       if (this.basket.length >= BASKET_SLOTS) { this.hud.toast("chỗ để bánh đầy rồi", "info", this.popClock); return; }
       this.basket.push({
-        hand: h, warmth: this.handWarmth, crust: this.handCrust, q: this.breadQ,
-        soiled: this.handSoiled, dish: [...this.dish], dishQ: this.dishQ, dishSick: this.dishSick,
+        hand: h, warmth: this.handWarmth, crust: this.handCrust, q: this.breadQ, fresh: this.breadFresh,
+        soiled: this.handSoiled, dish: [...this.dish], dishQ: this.dishQ, dishFlaws: this.dishFlaws, dishSick: this.dishSick,
       });
       this.audio.putDown();
       this.player.hand = "empty";
@@ -1421,8 +1428,10 @@ export class StallScene extends Phaser.Scene {
     this.handCrust = l.crust;
     this.handSoiled = l.soiled;
     this.breadQ = l.q;
+    this.breadFresh = l.fresh;
     this.dish = l.dish;
     this.dishQ = l.dishQ;
+    this.dishFlaws = l.dishFlaws;
     this.dishSick = l.dishSick;
   }
 
@@ -1471,6 +1480,7 @@ export class StallScene extends Phaser.Scene {
     this.boardCrust = this.handCrust;
     this.boardSoiled = this.handSoiled;
     this.boardQ = this.breadQ;
+    this.boardFresh = this.breadFresh;
     this.player.hand = "empty";
     this.dish = [];
     this.audio.wrap();                                   // tiếng giấy gói — lần này là mở ra
@@ -1485,6 +1495,7 @@ export class StallScene extends Phaser.Scene {
     this.handCrust = this.boardCrust;
     this.handSoiled = this.boardSoiled;
     this.breadQ = this.boardQ;
+    this.breadFresh = this.boardFresh;
     this.hud.toast("cầm ổ trên thớt lên", "info", this.popClock);
   }
 
@@ -1516,6 +1527,7 @@ export class StallScene extends Phaser.Scene {
         this.boardCrust = this.handCrust;
         this.boardSoiled = this.handSoiled;
         this.boardQ = this.breadQ;
+        this.boardFresh = this.breadFresh;
         this.audio.putDown();
         this.openBoard();
         return;
@@ -1551,7 +1563,8 @@ export class StallScene extends Phaser.Scene {
         if (st.gives === "loaf_cold") {
           const q = take(this.world.inventory, "bread", 1, this.world.progress.dayIndex);
           if (!q.length) { this.hud.toast("hết bánh mì rồi, mai mua thêm", "bad", this.popClock); return; }
-          this.breadQ = q[0];
+          this.breadQ = q[0].q;
+          this.breadFresh = q[0].fresh;
           this.handCrust = 0;                            // ổ mới lấy ở kệ: chưa nướng
           this.handSoiled = false;                       // …và chưa chạm đất
           this.audio.layLoaf();
@@ -1586,15 +1599,16 @@ export class StallScene extends Phaser.Scene {
     this.handCrust = this.boardCrust;
     this.handSoiled = this.boardSoiled;
     this.breadQ = this.boardQ;
+    this.breadFresh = this.boardFresh;
     this.dish = dish;
     this.player.hand = "loaf_filled";
     // gói xong mới trừ kho — lô cũ nhất trước (P3-03); chất lượng từng phần vào dishQuality
     const day = this.world.progress.dayIndex;
-    const parts: { ing: Ingredient; q: number }[] = [];
-    const taken: Portion[] = [];
-    for (const ing of dish) for (const p of takeFull(this.world.inventory, ing, 1, day)) { parts.push({ ing, q: p.q }); taken.push(p); }
+    const parts: (Portion & { ing: Ingredient })[] = [];
+    for (const ing of dish) for (const p of takeFull(this.world.inventory, ing, 1, day)) parts.push({ ...p, ing });
     this.dishQ = dishQuality(this.breadQ, parts);
-    this.dishSick = sickChance(taken);
+    this.dishFlaws = tasteFlaws({ q: this.breadQ, fresh: this.breadFresh }, parts);
+    this.dishSick = sickChance(parts);
 
     // Lỗi trong ổ phát tại BOARD với KHOÁ RIÊNG của ổ này + người này.
     this.addDirt(0.002);                               // giấy gói, vụn bánh
@@ -1796,7 +1810,7 @@ export class StallScene extends Phaser.Scene {
       if (this.near?.id !== "board" || !this.boardLoaf) return;
       if (this.floor.length >= FLOOR_MAX) { this.hud.toast("dưới sàn hết chỗ rồi", "info", this.popClock); return; }
       // Đặt xuống sàn là đặt Ổ BÁNH, không đặt mấy phần nhân đã rải lên nó.
-      this.putFloor("loaf_hot", this.boardWarmth, this.boardCrust, this.boardQ, []);
+      this.putFloor("loaf_hot", this.boardWarmth, this.boardCrust, this.boardQ, this.boardFresh, []);
       this.boardLoaf = null;
       this.beBusy(this.workSeconds(FLOOR_SEC), "đang dọn thớt", "quick");
       this.hud.toast("đặt ổ trên thớt xuống sàn", "info", this.popClock);
@@ -1804,7 +1818,7 @@ export class StallScene extends Phaser.Scene {
     }
 
     if (this.floor.length >= FLOOR_MAX) { this.hud.toast("dưới sàn hết chỗ rồi", "info", this.popClock); return; }
-    this.putFloor(this.player.hand, this.handWarmth, this.handCrust, this.breadQ, this.dish);
+    this.putFloor(this.player.hand, this.handWarmth, this.handCrust, this.breadQ, this.breadFresh, this.dish);
     this.player.hand = "empty";
     this.dish = [];
     this.busy = null;
@@ -1823,10 +1837,10 @@ export class StallScene extends Phaser.Scene {
   }
 
   /** ⚠️ Phát `DROPPED_FOOD` kể cả khi ĐẶT CÓ CHỦ Ý — không thì bấm Q rồi nhặt lên là cách rửa sạch lý lịch ổ bánh. */
-  private putFloor(hand: Hand, warmth: number, crust: number, q: number, dish: readonly Ingredient[]) {
+  private putFloor(hand: Hand, warmth: number, crust: number, q: number, fresh: number, dish: readonly Ingredient[]) {
     // Cùng một tiếng cho "đặt xuống" và "làm rớt", y như `putFloor` phát cùng một `DROPPED_FOOD`.
     this.audio.drop();
-    this.floor.push({ x: this.player.x, y: this.player.y, hand, warmth, crust, q, dish: [...dish] });
+    this.floor.push({ x: this.player.x, y: this.player.y, hand, warmth, crust, q, fresh, dish: [...dish] });
     this.emit("DROPPED_FOOD", "HANDS");
     this.addDirt(0.02);                                // ít hơn cú rớt (0,06): đặt xuống thì gọn hơn
   }
@@ -1839,6 +1853,7 @@ export class StallScene extends Phaser.Scene {
     this.handWarmth = f.warmth;
     this.handCrust = f.crust;
     this.breadQ = f.q;
+    this.breadFresh = f.fresh;
     this.dish = f.dish;
     // Đã nằm dưới đất thì phủi cách mấy cũng vẫn là đã nằm dưới đất. Không có đường nào
     // gỡ cờ này ngoài bỏ ổ đó đi — người chơi phải CHỌN: liều đưa, hay chịu mất một ổ.
@@ -1851,7 +1866,7 @@ export class StallScene extends Phaser.Scene {
     const h = this.player.hand;
     if (h === "loaf_cold" || h === "loaf_hot") {
       // Ổ mang cả chất lượng lô lẫn phần vỏ đã nướng dở vào lò.
-      if (!this.oven.put(this.breadQ, this.handCrust, this.handSoiled)) { this.hud.toast("lò đầy rồi", "info", this.popClock); return; }
+      if (!this.oven.put(this.breadQ, this.handCrust, this.handSoiled, this.breadFresh)) { this.hud.toast("lò đầy rồi", "info", this.popClock); return; }
       this.audio.ovenDoor();
       this.player.hand = "empty";
       this.handCrust = 0;
@@ -1870,6 +1885,7 @@ export class StallScene extends Phaser.Scene {
     this.handCrust = l.crust;
     this.handSoiled = l.soiled;                        // nướng lại KHÔNG tẩy được chuyện rớt đất
     this.breadQ = l.q;
+    this.breadFresh = l.fresh;
     if (band === "RAW") this.hud.toast("ổ này chưa giòn", "bad", this.popClock);
     if (band === "SINGED") this.hud.toast("ổ này sém cạnh rồi", "bad", this.popClock);
   }
@@ -2073,7 +2089,7 @@ export class StallScene extends Phaser.Scene {
     if (!this.grip.tick(dt, tempo, p.bumped)) return;
     // Rớt là RƠI XUỐNG SÀN, không phải bốc hơi.
     if (this.floor.length < FLOOR_MAX) {
-      this.putFloor(this.player.hand, this.handWarmth, this.handCrust, this.breadQ, this.dish);  // tự phát DROPPED_FOOD
+      this.putFloor(this.player.hand, this.handWarmth, this.handCrust, this.breadQ, this.breadFresh, this.dish);  // tự phát DROPPED_FOOD
     } else {
       this.emit("DROPPED_FOOD", "HANDS");             // sàn đầy: ổ mất luôn, nhưng vẫn có người thấy
     }
@@ -2486,17 +2502,26 @@ export class StallScene extends Phaser.Scene {
     }
   }
 
-  /** Ba nấc độ chắc tay quanh món đang cầm: không có gì · vòng cam · vòng đỏ run tay. */
+  /** Ba nấc độ chắc tay: không có gì · 2 nét rung cam · 3 nét rung đỏ, hai bên món đang cầm. */
   private drawGrip() {
     const g = this.gripGfx;
     g.clear();
     const held = this.player.heldSprite;
     if (this.player.hand === "empty" || !held.visible || this.grip.tier === "SAFE") return;
-    const shake = this.grip.tier === "SHAKE" && !this.settings.reducedMotion ? Math.sin(this.time.now / 30) * 1.5 : 0;
-    // Rung bằng vị trí object để lệnh vẽ đứng yên, giữ được bộ đệm đỉnh.
-    g.setDepth(held.depth + 2).setPosition(shake, 0);
-    g.lineStyle(3, this.grip.tier === "SHAKE" ? 0xd0503c : 0xe39a3b, 0.95);
-    g.strokeCircle(held.x, held.y, 17 * markScale());
+    const red = this.grip.tier === "SHAKE";
+    const bob = this.settings.reducedMotion ? 0 : Math.sin(this.time.now / (red ? 60 : 110)) * 1.2;
+    // Lắc bằng vị trí object để lệnh vẽ đứng yên, giữ được bộ đệm đỉnh.
+    g.setDepth(held.depth + 2).setPosition(0, bob);
+    g.lineStyle(2, red ? 0xd0503c : 0xe39a3b, 0.95);
+    const r0 = 14 * markScale(), spread = 0.35;
+    for (let i = 0; i < (red ? 3 : 2); i++) {
+      const r = r0 + i * 3.5;
+      for (const mid of [0, Math.PI]) {
+        g.beginPath();
+        g.arc(held.x, held.y, r, mid - spread, mid + spread, false);
+        g.strokePath();
+      }
+    }
   }
 
   /** ⚠️ `smell` chỉ cho `BURNT_OR_COLD`, phân biệt ổ CHÁY (có mùi) với ổ NGUỘI. Quên cờ này là cả hàng than phiền bánh nguội trước ổ than đen. */

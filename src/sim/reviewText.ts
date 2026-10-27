@@ -39,6 +39,8 @@ export type TextSpec = {
   persona: Persona;
   stars: number;
   mon: MenuItemId;
+  /** Món gây lỗi vị; câu chê vị viết `{nl}`. */
+  nl?: string;
 };
 
 export const GOOD_TOPICS = ["ngon", "gia-re", "cho-them", "tra-da", "troi-mua", "do-nghe-moi"] as const;
@@ -73,7 +75,9 @@ const closers = (stars: number) => (stars >= 4 ? RAW.ket.tot : stars === 3 ? RAW
 const KEY = ["quay lại", "cân nhắc", "thất vọng", "chỗ khác", "xem lại", "ủng hộ", "ghé", "thử"];
 const trung = (a: string, b: string) => KEY.some((k) => a.includes(k) && b.includes(k));
 
-export function reviewText(rng: Rng, s: TextSpec): string {
+export const reviewText = (rng: Rng, s: TextSpec): string => compose(rng, s).replaceAll("{nl}", s.nl ?? "nhân");
+
+function compose(rng: Rng, s: TextSpec): string {
   const good = s.stars >= 4;
   const core = coreOf(s.topic, s.tone, rng);
   if (!core) return "";

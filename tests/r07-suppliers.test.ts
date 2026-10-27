@@ -56,8 +56,8 @@ test("hàng dỏm kém ngon, mau hỏng và mới có xác suất đau bụng", 
 });
 
 test("ổ nhiều phần dỏm: 1 − Π(1 − p)", () => {
-  assert.ok(Math.abs(sickChance([{ q: 1, sick: 0.4 }, { q: 1, sick: 0.35 }]) - (1 - 0.6 * 0.65)) < 1e-9);
-  assert.equal(sickChance([{ q: 1, sick: 0 }]), 0);
+  assert.ok(Math.abs(sickChance([{ q: 1, fresh: 1, sick: 0.4 }, { q: 1, fresh: 1, sick: 0.35 }]) - (1 - 0.6 * 0.65)) < 1e-9);
+  assert.equal(sickChance([{ q: 1, fresh: 1, sick: 0 }]), 0);
 });
 
 test("đặt đơn theo dòng hàng: giao đúng mức vào kho, đơn cũ mã món vẫn đọc được", () => {
